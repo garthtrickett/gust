@@ -16,6 +16,8 @@ FILES=(
     "src/typechecker.rs"
     "src/codegen.rs"
     "src/main.rs"
+    "tests/compile_tests.rs"
+    "src/lib.rs"
 )
 
 # Append each file with clear boundaries
