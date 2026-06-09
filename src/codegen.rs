@@ -7,6 +7,7 @@ pub struct Codegen {
     symbol_table: RefCell<HashMap<String, Type>>,
     struct_registry: HashMap<String, StructLayout>,
     function_registry: HashMap<String, FunctionSignature>,
+    enum_registry: HashMap<String, Vec<String>>, // Added enum registry to Codegen
     current_alloc_struct: RefCell<Option<String>>,
 }
 
@@ -46,6 +47,7 @@ impl Codegen {
         symbol_table: HashMap<String, Type>,
         struct_registry: HashMap<String, StructLayout>,
         function_registry: HashMap<String, FunctionSignature>,
+        enum_registry: HashMap<String, Vec<String>>, // Added enum_registry parameter
     ) -> Self {
         // Step 1: Collapse struct layouts structurally via Brand Erasure
         let mut erased_struct_registry = HashMap::new();
@@ -90,6 +92,7 @@ impl Codegen {
             symbol_table: RefCell::new(erased_symbol_table),
             struct_registry: erased_struct_registry,
             function_registry: erased_function_registry,
+            enum_registry, // Saved here
             current_alloc_struct: RefCell::new(None),
         }
     }
@@ -144,7 +147,8 @@ impl Codegen {
 
         c_code.push_str("#include <stdio.h>\n");
         c_code.push_str("#include <stdlib.h>\n");
-        c_code.push_str("#include <stdint.h>\n\n");
+        c_code.push_str("#include <stdint.h>\n");
+        c_code.push_str("#include <string.h>\n\n");
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// GUST PRODUCTION-GRADE BUMP ALLOCATOR RUNTIME\n");
@@ -253,9 +257,57 @@ impl Codegen {
         c_code.push_str("}\n\n");
 
         c_code.push_str("// ====================================================\n");
+        c_code.push_str("// GUST NATIVE FILE I/O RUNTIME\n");
+        c_code.push_str("// ====================================================\n");
+        c_code.push_str(
+            "Slice_unsigned_char os_ReadFile(os_Arena* arena, Slice_unsigned_char path) {\n",
+        );
+        c_code.push_str("    Slice_unsigned_char result;\n");
+        c_code.push_str("    result.data = NULL;\n");
+        c_code.push_str("    result.len = 0;\n\n");
+        c_code.push_str("    char* path_c = malloc(path.len + 1);\n");
+        c_code.push_str("    memcpy(path_c, path.data, path.len);\n");
+        c_code.push_str("    path_c[path.len] = '\\0';\n\n");
+        c_code.push_str("    FILE* f = fopen(path_c, \"rb\");\n");
+        c_code.push_str("    free(path_c);\n");
+        c_code.push_str("    if (f == NULL) {\n");
+        c_code.push_str("        return result;\n");
+        c_code.push_str("    }\n\n");
+        c_code.push_str("    fseek(f, 0, SEEK_END);\n");
+        c_code.push_str("    long size = ftell(f);\n");
+        c_code.push_str("    fseek(f, 0, SEEK_SET);\n");
+        c_code.push_str("    if (size < 0) {\n");
+        c_code.push_str("        fclose(f);\n");
+        c_code.push_str("        return result;\n");
+        c_code.push_str("    }\n\n");
+        c_code.push_str("    int offset = os_ArenaAlloc(arena, size);\n");
+        c_code.push_str("    char* buffer = (char*)arena->BaseAddress + offset;\n");
+        c_code.push_str("    size_t read_bytes = fread(buffer, 1, size, f);\n");
+        c_code.push_str("    fclose(f);\n\n");
+        c_code.push_str("    result.data = (unsigned char*)buffer;\n");
+        c_code.push_str("    result.len = (int)read_bytes;\n");
+        c_code.push_str("    return result;\n");
+        c_code.push_str("}\n\n");
+
+        c_code.push_str(
+            "int os_WriteFile(Slice_unsigned_char path, Slice_unsigned_char contents) {\n",
+        );
+        c_code.push_str("    char* path_c = malloc(path.len + 1);\n");
+        c_code.push_str("    memcpy(path_c, path.data, path.len);\n");
+        c_code.push_str("    path_c[path.len] = '\\0';\n\n");
+        c_code.push_str("    FILE* f = fopen(path_c, \"wb\");\n");
+        c_code.push_str("    free(path_c);\n");
+        c_code.push_str("    if (f == NULL) {\n");
+        c_code.push_str("        return 0;\n");
+        c_code.push_str("    }\n\n");
+        c_code.push_str("    size_t written = fwrite(contents.data, 1, contents.len, f);\n");
+        c_code.push_str("    fclose(f);\n");
+        c_code.push_str("    return written == (size_t)contents.len ? 1 : 0;\n");
+        c_code.push_str("}\n\n");
+
+        c_code.push_str("// ====================================================\n");
         c_code.push_str("// GUST NATIVE COLLECTIONS RUNTIME (VECTOR & HASHMAP)\n");
         c_code.push_str("// ====================================================\n");
-        c_code.push_str("#include <string.h>\n\n");
 
         c_code.push_str("static inline uint32_t os_hash_key(void* key_ptr, int is_str_key) {\n");
         c_code.push_str("    if (is_str_key) {\n");
@@ -394,23 +446,77 @@ impl Codegen {
         c_code.push_str("// DYNAMICALLY TRANSPILED USER STRUCTS\n");
         c_code.push_str("// ====================================================\n");
 
-        for (struct_name, layout) in &self.struct_registry {
-            c_code.push_str(&format!("struct {} {{\n", struct_name));
-
-            // Sort the fields alphabetically to ensure stable layout alignment on C side
-            let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
-            sorted_fields.sort_by(|a, b| a.0.cmp(b.0));
-
-            for (field_name, field_type) in sorted_fields {
-                let field_c_type = self.get_c_type(field_type);
-                c_code.push_str(&format!("    {} {};\n", field_c_type, field_name));
+        // Sort structures: variants structs containing '_' must be output before Enums to satisfy C value-embedding complete-type rules
+        let mut sorted_structs: Vec<(&String, &StructLayout)> =
+            self.struct_registry.iter().collect();
+        sorted_structs.sort_by(|a, b| {
+            let a_has_underscore = a.0.contains('_');
+            let b_has_underscore = b.0.contains('_');
+            if a_has_underscore && !b_has_underscore {
+                std::cmp::Ordering::Less
+            } else if !a_has_underscore && b_has_underscore {
+                std::cmp::Ordering::Greater
+            } else {
+                a.0.cmp(b.0)
             }
-            c_code.push_str("};\n\n");
+        });
 
-            c_code.push_str("typedef struct {\n");
-            c_code.push_str(&format!("    {}* Val;\n", struct_name));
-            c_code.push_str("    int Ok;\n");
-            c_code.push_str(&format!("}} CastResult_{};\n\n", struct_name));
+        for (struct_name, layout) in sorted_structs {
+            if let Some(variants) = self.enum_registry.get(struct_name) {
+                // 1. Generate typedef enum for variant tags
+                c_code.push_str("typedef enum {\n");
+                for (idx, variant) in variants.iter().enumerate() {
+                    c_code.push_str(&format!(
+                        "    {}_Tag__{} = {},\n",
+                        struct_name, variant, idx
+                    ));
+                }
+                c_code.push_str(&format!("}} {}_Tag;\n\n", struct_name));
+
+                // 2. Generate struct with anonymous union
+                c_code.push_str(&format!("struct {} {{\n", struct_name));
+                c_code.push_str("    int tag; \n");
+                c_code.push_str("    union {\n");
+
+                let mut sorted_variants = variants.clone();
+                sorted_variants.sort();
+                for variant in sorted_variants {
+                    let field_type_name = format!("{}_{}", struct_name, variant);
+                    c_code.push_str(&format!(
+                        "        struct {} {};\n",
+                        field_type_name, variant
+                    ));
+                }
+
+                c_code.push_str("    };\n");
+                c_code.push_str("};\n\n");
+
+                c_code.push_str("typedef struct {\n");
+                c_code.push_str(&format!("    {}* Val;\n", struct_name));
+                c_code.push_str("    int Ok;\n");
+                c_code.push_str(&format!("}} CastResult_{};\n\n", struct_name));
+            } else {
+                c_code.push_str(&format!("struct {} {{\n", struct_name));
+
+                // Sort structural fields alphabetically for stable alignments
+                let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
+                sorted_fields.sort_by(|a, b| a.0.cmp(b.0));
+
+                if sorted_fields.is_empty() {
+                    c_code.push_str("    char dummy;\n"); // Standard portable dummy C99 member
+                } else {
+                    for (field_name, field_type) in sorted_fields {
+                        let field_c_type = self.get_c_type(field_type);
+                        c_code.push_str(&format!("    {} {};\n", field_c_type, field_name));
+                    }
+                }
+                c_code.push_str("};\n\n");
+
+                c_code.push_str("typedef struct {\n");
+                c_code.push_str(&format!("    {}* Val;\n", struct_name));
+                c_code.push_str("    int Ok;\n");
+                c_code.push_str(&format!("}} CastResult_{};\n\n", struct_name));
+            }
         }
 
         c_code.push_str("// ====================================================\n");
@@ -449,6 +555,7 @@ impl Codegen {
         let mut result = String::new();
         match stmt {
             Statement::StructDecl { .. } => {}
+            Statement::EnumDecl { .. } => {}
             Statement::FunctionDecl {
                 name,
                 params,
@@ -592,6 +699,34 @@ impl Codegen {
                 if let Some(alt_body) = alternative {
                     result.push_str("    } else {\n");
                     result.push_str(&self.gen_loop_body(alt_body));
+                }
+                result.push_str("    }\n");
+            }
+            Statement::Match { expression, cases } => {
+                let expr_str = self.gen_expression(expression);
+                let expr_type = self.get_expr_type(expression).unwrap_or(Type::Void);
+
+                let mut enum_name = "Shape".to_string();
+                if let Type::Struct(name, _) = expr_type {
+                    enum_name = name;
+                }
+
+                result.push_str(&format!("    switch ({}.tag) {{\n", expr_str));
+                for case in cases {
+                    // Look up the unique enum tag integer for this variant
+                    let tag_val = if let Some(variants) = self.enum_registry.get(&enum_name) {
+                        variants
+                            .iter()
+                            .position(|v| *v == case.variant_name)
+                            .unwrap_or(0)
+                    } else {
+                        0
+                    };
+
+                    result.push_str(&format!("        case {}: {{\n", tag_val));
+                    result.push_str(&self.gen_loop_body(&case.body));
+                    result.push_str("            break;\n");
+                    result.push_str("        }\n");
                 }
                 result.push_str("    }\n");
             }
@@ -943,23 +1078,30 @@ impl Codegen {
                     );
                 }
 
-                if let Expression::Selector { left, right } = &**function
-                    && let Expression::Identifier(name) = &**left
-                    && let Some(var_type) = self.symbol_table.borrow().get(name)
-                    && right == "Free"
-                {
-                    if let Type::RawPointer(inner) = var_type
-                        && **inner == Type::Arena
-                    {
-                        return format!("os_Arena_Free({})", name);
-                    }
-                    return format!("os_Arena_Free(&{})", name);
+                // os.ReadFile
+                if func_path == "os.ReadFile" || func_path == "os_ReadFile" {
+                    let arg_arena = self.gen_expression(&arguments[0]);
+                    let arg_path = self.gen_expression(&arguments[1]);
+
+                    let mut is_ptr = false;
+                    if let Expression::Identifier(name) = &arguments[0]
+                        && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
+                            && **inner == Type::Arena {
+                                is_ptr = true;
+                            }
+                    let arena_expr = if is_ptr {
+                        arg_arena
+                    } else {
+                        format!("&{}", arg_arena)
+                    };
+                    return format!("os_ReadFile({}, {})", arena_expr, arg_path);
                 }
 
-                // LogStr mapping
-                if func_path == "os.LogStr" || func_path == "os_LogStr" {
-                    let arg_str = self.gen_expression(&arguments[0]);
-                    return format!("os_LogStr({})", arg_str);
+                // os.WriteFile
+                if func_path == "os.WriteFile" || func_path == "os_WriteFile" {
+                    let arg_path = self.gen_expression(&arguments[0]);
+                    let arg_contents = self.gen_expression(&arguments[1]);
+                    return format!("os_WriteFile({}, {})", arg_path, arg_contents);
                 }
 
                 if let Expression::Selector { left, right } = &**function {

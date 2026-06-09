@@ -16,7 +16,7 @@ pub enum Type {
     Str, // Added for String Views Option 2
 }
 
-fn types_match(expected: &Type, actual: &Type) -> bool {
+pub fn types_match(expected: &Type, actual: &Type) -> bool {
     match (expected, actual) {
         (Type::Int, Type::Byte) | (Type::Byte, Type::Int) => true,
         (Type::RawPointer(e_inner), Type::Arena) if matches!(**e_inner, Type::Arena) => true,
@@ -131,6 +131,7 @@ pub struct TypeChecker {
     pub in_unsafe_block: bool,
     pub struct_registry: HashMap<String, StructLayout>,
     pub struct_templates: HashMap<String, StructTemplate>,
+    pub enum_registry: HashMap<String, Vec<String>>, // Added Enum Registry
     pub variable_origins: HashMap<String, HashSet<String>>, // Upgraded to Set-Based Union Tracker
     pub function_registry: HashMap<String, FunctionSignature>, // Function Registry
     pub expected_return_type: Option<Type>,
@@ -244,6 +245,7 @@ impl TypeChecker {
             in_unsafe_block: false,
             struct_registry,
             struct_templates,
+            enum_registry: HashMap::new(),
             variable_origins: HashMap::new(),
             function_registry: HashMap::new(),
             expected_return_type: None,
@@ -271,7 +273,7 @@ impl TypeChecker {
     }
 
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {
-        // Pre-pass: Dynamically register structs, templates, and functions [3]
+        // Pre-pass: Dynamically register structs, templates, enums, and functions [3]
         for stmt in &program.statements {
             if let Statement::StructDecl {
                 name,
@@ -300,6 +302,53 @@ impl TypeChecker {
                         },
                     );
                 }
+            }
+
+            if let Statement::EnumDecl {
+                name,
+                generics: _,
+                variants,
+            } = stmt
+            {
+                // Register the enum in the enum registry
+                let variant_names: Vec<String> = variants.iter().map(|v| v.name.clone()).collect();
+                self.enum_registry.insert(name.clone(), variant_names);
+
+                // Register nested variant structs in struct_registry
+                let mut enum_fields = HashMap::new();
+                enum_fields.insert("tag".to_string(), Type::Int);
+
+                for variant in variants {
+                    let concrete_variant_struct_name = format!("{}_{}", name, variant.name);
+
+                    // Register the variant struct fields in struct_registry
+                    let mut variant_fields = HashMap::new();
+                    for field in &variant.fields {
+                        variant_fields.insert(field.name.clone(), field.field_type.clone());
+                    }
+                    self.struct_registry.insert(
+                        concrete_variant_struct_name.clone(),
+                        StructLayout {
+                            brand: None,
+                            fields: variant_fields,
+                        },
+                    );
+
+                    // Add the variant as a field of the Enum struct
+                    enum_fields.insert(
+                        variant.name.clone(),
+                        Type::Struct(concrete_variant_struct_name, None),
+                    );
+                }
+
+                // Register the Enum struct itself
+                self.struct_registry.insert(
+                    name.clone(),
+                    StructLayout {
+                        brand: None,
+                        fields: enum_fields,
+                    },
+                );
             }
 
             if let Statement::FunctionDecl {
@@ -338,6 +387,7 @@ impl TypeChecker {
     fn check_statement(&mut self, stmt: &Statement) -> Result<(), TypeError> {
         match stmt {
             Statement::StructDecl { .. } => {}
+            Statement::EnumDecl { .. } => {}
             Statement::FunctionDecl {
                 name,
                 params,
@@ -581,6 +631,75 @@ impl TypeChecker {
 
                     self.variable_origins = merged_origins;
                     self.moved_vars = merged_moved;
+                }
+            }
+            Statement::Match { expression, cases } => {
+                let expr_type = self.check_expression(expression)?;
+
+                // Get the enum name from expr_type
+                if let Type::Struct(enum_name, _) = &expr_type {
+                    if let Some(expected_variants) = self.enum_registry.get(enum_name).cloned() {
+                        let mut matched_variants = HashSet::new();
+
+                        for case in cases {
+                            if !expected_variants.contains(&case.variant_name) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Semantic Error: Variant '{}' is not a valid variant of enum '{}'",
+                                        case.variant_name, enum_name
+                                    ),
+                                });
+                            }
+
+                            if matched_variants.contains(&case.variant_name) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Semantic Error: Duplicate match case for variant '{}' of enum '{}'",
+                                        case.variant_name, enum_name
+                                    ),
+                                });
+                            }
+                            matched_variants.insert(case.variant_name.clone());
+
+                            // Typecheck the case body in its own scope
+                            let parent_scope = self.symbol_table.clone();
+                            for s in &case.body.statements {
+                                self.check_statement(s)?;
+                            }
+                            self.symbol_table = parent_scope;
+                        }
+
+                        // Exhaustiveness check: Ensure all variants are matched
+                        for expected in &expected_variants {
+                            if !matched_variants.contains(expected) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Semantic Error: Match on enum '{}' is not exhaustive. Missing variant '{}'",
+                                        enum_name, expected
+                                    ),
+                                });
+                            }
+                        }
+                    } else {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: Match target type '{:?}' is not a registered enum",
+                                expr_type
+                            ),
+                        });
+                    }
+                } else {
+                    return Err(TypeError {
+                        kind: TypeErrorKind::TypeMismatch,
+                        message: format!(
+                            "Semantic Error: Match target type '{:?}' is not an enum struct",
+                            expr_type
+                        ),
+                    });
                 }
             }
             Statement::UnsafeBlock { body } => {
@@ -1410,6 +1529,65 @@ impl TypeChecker {
                     }
                     let brand_name = expression_to_string(&arguments[0]);
                     return Ok(Type::Struct("HashMap_Any".to_string(), Some(brand_name)));
+                }
+
+                if func_path == "os.ReadFile" {
+                    if arguments.len() != 2 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.ReadFile expects exactly 2 arguments (allocator, path)".to_string(),
+                        });
+                    }
+                    let alloc_type = self.check_expression(&arguments[0])?;
+                    if alloc_type != Type::Arena
+                        && !matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: "Semantic Error: os.ReadFile first argument must be an Arena allocator".to_string(),
+                        });
+                    }
+                    let path_type = self.check_expression(&arguments[1])?;
+                    if path_type != Type::Str {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: os.ReadFile path argument must be Str, but got {:?}",
+                                path_type
+                            ),
+                        });
+                    }
+                    return Ok(Type::Str);
+                }
+
+                if func_path == "os.WriteFile" {
+                    if arguments.len() != 2 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.WriteFile expects exactly 2 arguments (path, contents)".to_string(),
+                        });
+                    }
+                    let path_type = self.check_expression(&arguments[0])?;
+                    if path_type != Type::Str {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: os.WriteFile path argument must be Str, but got {:?}",
+                                path_type
+                            ),
+                        });
+                    }
+                    let contents_type = self.check_expression(&arguments[1])?;
+                    if contents_type != Type::Str {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: os.WriteFile contents argument must be Str, but got {:?}",
+                                contents_type
+                            ),
+                        });
+                    }
+                    return Ok(Type::Int);
                 }
 
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {

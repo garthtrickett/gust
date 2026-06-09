@@ -56,6 +56,7 @@ fn run_compile_pass(source_code: &str, output_filename: &str) {
                 checker.variable_types,
                 checker.struct_registry,
                 checker.function_registry,
+                checker.enum_registry, // Passed enum registry
             );
             let c_output = codegen.generate(&program);
 

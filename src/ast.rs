@@ -18,11 +18,28 @@ pub struct Parameter {
 }
 
 #[derive(Debug, Clone)]
+pub struct VariantDef {
+    pub name: String,
+    pub fields: Vec<FieldDef>,
+}
+
+#[derive(Debug, Clone)]
+pub struct MatchCase {
+    pub variant_name: String,
+    pub body: BlockStatement,
+}
+
+#[derive(Debug, Clone)]
 pub enum Statement {
     StructDecl {
         name: String,
         generics: Vec<String>,
         fields: Vec<FieldDef>,
+    },
+    EnumDecl {
+        name: String,
+        generics: Vec<String>,
+        variants: Vec<VariantDef>,
     },
     FunctionDecl {
         name: String,
@@ -48,6 +65,10 @@ pub enum Statement {
         condition: Expression,
         consequence: BlockStatement,
         alternative: Option<BlockStatement>,
+    },
+    Match {
+        expression: Expression,
+        cases: Vec<MatchCase>,
     },
     UnsafeBlock {
         body: BlockStatement,

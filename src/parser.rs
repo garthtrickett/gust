@@ -1,4 +1,6 @@
-use crate::ast::{BlockStatement, Expression, FieldDef, Parameter, Program, Statement};
+use crate::ast::{
+    BlockStatement, Expression, FieldDef, MatchCase, Parameter, Program, Statement, VariantDef,
+};
 use crate::lexer::Lexer;
 use crate::token::{Token, TokenType};
 use crate::typechecker::Type;
@@ -57,6 +59,7 @@ impl Parser {
             TokenType::If => self.parse_if_statement(),
             TokenType::Unsafe => self.parse_unsafe_block(),
             TokenType::Return => self.parse_return_statement(),
+            TokenType::Match => self.parse_match_statement(),
             TokenType::Ident if self.peek_token.token_type == TokenType::Assign => {
                 self.parse_var_decl(false)
             }
@@ -101,54 +104,132 @@ impl Parser {
             self.next_token(); // consume ']'
         }
 
-        if self.cur_token.token_type != TokenType::Struct {
-            return None;
-        }
-        self.next_token();
+        if self.cur_token.token_type == TokenType::Struct {
+            self.next_token();
 
-        if self.cur_token.token_type != TokenType::LBrace {
-            return None;
-        }
-        self.next_token();
+            if self.cur_token.token_type != TokenType::LBrace {
+                return None;
+            }
+            self.next_token();
 
-        let mut fields = Vec::new();
-        while self.cur_token.token_type != TokenType::RBrace
-            && self.cur_token.token_type != TokenType::Eof
-        {
-            if self.cur_token.token_type == TokenType::Ident {
-                let field_name = self.cur_token.literal.clone();
-                self.next_token();
+            let mut fields = Vec::new();
+            while self.cur_token.token_type != TokenType::RBrace
+                && self.cur_token.token_type != TokenType::Eof
+            {
+                if self.cur_token.token_type == TokenType::Ident {
+                    let field_name = self.cur_token.literal.clone();
+                    self.next_token();
 
-                if self.cur_token.token_type != TokenType::Colon {
-                    return None;
-                }
-                self.next_token();
+                    if self.cur_token.token_type != TokenType::Colon {
+                        return None;
+                    }
+                    self.next_token();
 
-                let field_type = self.parse_type_signature()?;
-                fields.push(FieldDef {
-                    name: field_name,
-                    field_type,
-                });
+                    let field_type = self.parse_type_signature()?;
+                    fields.push(FieldDef {
+                        name: field_name,
+                        field_type,
+                    });
 
-                if self.cur_token.token_type == TokenType::Comma
-                    || self.cur_token.token_type == TokenType::Semicolon
-                {
+                    if self.cur_token.token_type == TokenType::Comma
+                        || self.cur_token.token_type == TokenType::Semicolon
+                    {
+                        self.next_token();
+                    }
+                } else {
                     self.next_token();
                 }
-            } else {
-                self.next_token();
             }
-        }
 
-        if self.cur_token.token_type != TokenType::RBrace {
-            return None;
-        }
+            if self.cur_token.token_type != TokenType::RBrace {
+                return None;
+            }
 
-        Some(Statement::StructDecl {
-            name,
-            generics,
-            fields,
-        })
+            Some(Statement::StructDecl {
+                name,
+                generics,
+                fields,
+            })
+        } else if self.cur_token.token_type == TokenType::Enum {
+            self.next_token(); // consume 'enum'
+
+            if self.cur_token.token_type != TokenType::LBrace {
+                return None;
+            }
+            self.next_token(); // consume '{'
+
+            let mut variants = Vec::new();
+            while self.cur_token.token_type != TokenType::RBrace
+                && self.cur_token.token_type != TokenType::Eof
+            {
+                if self.cur_token.token_type == TokenType::Ident {
+                    let variant_name = self.cur_token.literal.clone();
+                    self.next_token();
+
+                    let mut fields = Vec::new();
+                    // Optional fields block: VariantName { field1: Type, ... }
+                    if self.cur_token.token_type == TokenType::LBrace {
+                        self.next_token(); // consume '{'
+                        while self.cur_token.token_type != TokenType::RBrace
+                            && self.cur_token.token_type != TokenType::Eof
+                        {
+                            if self.cur_token.token_type == TokenType::Ident {
+                                let f_name = self.cur_token.literal.clone();
+                                self.next_token();
+
+                                if self.cur_token.token_type != TokenType::Colon {
+                                    return None;
+                                }
+                                self.next_token();
+
+                                let f_type = self.parse_type_signature()?;
+                                fields.push(FieldDef {
+                                    name: f_name,
+                                    field_type: f_type,
+                                });
+
+                                if self.cur_token.token_type == TokenType::Comma
+                                    || self.cur_token.token_type == TokenType::Semicolon
+                                {
+                                    self.next_token();
+                                }
+                            } else {
+                                self.next_token();
+                            }
+                        }
+                        if self.cur_token.token_type != TokenType::RBrace {
+                            return None;
+                        }
+                        self.next_token(); // consume '}'
+                    }
+
+                    variants.push(VariantDef {
+                        name: variant_name,
+                        fields,
+                    });
+
+                    if self.cur_token.token_type == TokenType::Comma
+                        || self.cur_token.token_type == TokenType::Semicolon
+                    {
+                        self.next_token();
+                    }
+                } else {
+                    self.next_token();
+                }
+            }
+
+            if self.cur_token.token_type != TokenType::RBrace {
+                return None;
+            }
+
+            Some(Statement::EnumDecl {
+                name,
+                generics,
+                variants,
+            })
+        } else {
+            None
+        }
     }
 
     fn parse_function_decl(&mut self) -> Option<Statement> {
@@ -394,6 +475,52 @@ impl Parser {
             consequence,
             alternative,
         })
+    }
+
+    fn parse_match_statement(&mut self) -> Option<Statement> {
+        self.next_token(); // consume 'match'
+        let expression = self.parse_expression(1)?;
+
+        self.next_token();
+        if self.cur_token.token_type != TokenType::LBrace {
+            return None;
+        }
+        self.next_token(); // consume '{'
+
+        let mut cases = Vec::new();
+        while self.cur_token.token_type != TokenType::RBrace
+            && self.cur_token.token_type != TokenType::Eof
+        {
+            if self.cur_token.token_type != TokenType::Ident {
+                return None;
+            }
+            let variant_name = self.cur_token.literal.clone();
+            self.next_token();
+
+            if self.cur_token.token_type != TokenType::FatArrow {
+                return None;
+            }
+            self.next_token(); // consume '=>'
+
+            if self.cur_token.token_type != TokenType::LBrace {
+                return None;
+            }
+            let body = self.parse_block_statement()?;
+            // parse_block_statement leaves cur_token at '}'
+            self.next_token(); // consume '}'
+
+            cases.push(MatchCase { variant_name, body });
+
+            if self.cur_token.token_type == TokenType::Comma {
+                self.next_token();
+            }
+        }
+
+        if self.cur_token.token_type != TokenType::RBrace {
+            return None;
+        }
+
+        Some(Statement::Match { expression, cases })
     }
 
     fn parse_unsafe_block(&mut self) -> Option<Statement> {
@@ -668,5 +795,34 @@ mod tests {
         assert_eq!(format_expr(&parse_expr_str("a[b].c")), "a[b].c");
         assert_eq!(format_expr(&parse_expr_str("a.b[c]")), "a.b[c]");
         assert_eq!(format_expr(&parse_expr_str("a[b][c]")), "a[b][c]");
+    }
+
+    #[test]
+    fn test_enum_and_match_parsing() {
+        let input = "
+            type Shape enum {
+                Circle { radius: int },
+                Rectangle { width: int, height: int },
+                Point,
+            }
+
+            func process(shape: Shape) {
+                match shape {
+                    Circle => {
+                        return 1;
+                    }
+                    Rectangle => {
+                        return 2;
+                    }
+                    Point => {
+                        return 3;
+                    }
+                }
+            }
+        ";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(program.statements.len(), 2);
     }
 }

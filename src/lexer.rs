@@ -98,6 +98,12 @@ impl Lexer {
                         token_type: TokenType::EqEq,
                         literal: "==".to_string(),
                     }
+                } else if self.peek_char() == '>' {
+                    self.read_char();
+                    Token {
+                        token_type: TokenType::FatArrow,
+                        literal: "=>".to_string(),
+                    }
                 } else {
                     Token {
                         token_type: TokenType::Eq,
@@ -253,6 +259,8 @@ fn lookup_ident(ident: &str) -> TokenType {
         "unsafe" => TokenType::Unsafe,
         "type" => TokenType::Type,
         "struct" => TokenType::Struct,
+        "enum" => TokenType::Enum,
+        "match" => TokenType::Match,
         "return" => TokenType::Return,
         _ => TokenType::Ident,
     }
@@ -362,5 +370,40 @@ mod tests {
 
         let tok_eof = l.next_token();
         assert_eq!(tok_eof.token_type, TokenType::Eof);
+    }
+
+    #[test]
+    fn test_enum_and_match_lexing() {
+        let input = "type Shape enum { Circle, Rectangle } match s { Circle => { return 1; } }";
+        let mut l = Lexer::new(input);
+
+        let expected = vec![
+            (TokenType::Type, "type"),
+            (TokenType::Ident, "Shape"),
+            (TokenType::Enum, "enum"),
+            (TokenType::LBrace, "{"),
+            (TokenType::Ident, "Circle"),
+            (TokenType::Comma, ","),
+            (TokenType::Ident, "Rectangle"),
+            (TokenType::RBrace, "}"),
+            (TokenType::Match, "match"),
+            (TokenType::Ident, "s"),
+            (TokenType::LBrace, "{"),
+            (TokenType::Ident, "Circle"),
+            (TokenType::FatArrow, "=>"),
+            (TokenType::LBrace, "{"),
+            (TokenType::Return, "return"),
+            (TokenType::Int, "1"),
+            (TokenType::Semicolon, ";"),
+            (TokenType::RBrace, "}"),
+            (TokenType::RBrace, "}"),
+            (TokenType::Eof, ""),
+        ];
+
+        for (expected_type, expected_literal) in expected {
+            let tok = l.next_token();
+            assert_eq!(tok.token_type, expected_type);
+            assert_eq!(tok.literal, expected_literal);
+        }
     }
 }

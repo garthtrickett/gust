@@ -22,6 +22,7 @@ pub enum TokenType {
     LBracket,  // "["
     RBracket,  // "]"
     Ampersand, // "&"
+    FatArrow,  // "=>"
 
     // Arithmetic & Comparisons
     Plus,
@@ -46,6 +47,8 @@ pub enum TokenType {
     Unsafe, // "unsafe"
     Type,   // "type"
     Struct, // "struct"
+    Enum,   // "enum"
+    Match,  // "match"
     Return, // "return"
 }
 

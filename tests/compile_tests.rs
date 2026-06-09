@@ -322,3 +322,114 @@ fn test_branded_hashmap_safety_rejected() {
     assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
     assert!(err.message.contains("Value-Branded Lifetime Violation"));
 }
+
+// === VALUE-BRANDED ENUM & PATTERN MATCH COMPILE TIME TESTS ===
+
+#[test]
+fn test_adt_match_type_safety_accepted() {
+    let source = "
+        type Shape enum {
+            Circle { radius: int },
+            Rectangle { width: int, height: int },
+            Point
+        }
+
+        func process(shape: Shape) int {
+            match shape {
+                Circle => {
+                    return shape.Circle.radius;
+                }
+                Rectangle => {
+                    return shape.Rectangle.width + shape.Rectangle.height;
+                }
+                Point => {
+                    return 0;
+                }
+            }
+        }
+
+        func main() {
+            mut s: Shape;
+            s.tag = 0;
+            s.Circle.radius = 42;
+            os.LogInt(process(s));
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_adt_match_non_exhaustive_rejected() {
+    let source = "
+        type Shape enum {
+            Circle { radius: int },
+            Rectangle { width: int, height: int },
+            Point
+        }
+
+        func process(shape: Shape) int {
+            match shape {
+                Circle => {
+                    return shape.Circle.radius;
+                }
+                Point => {
+                    return 0;
+                }
+            } // Error: Match is not exhaustive (missing Rectangle)
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(err.message.contains("is not exhaustive"));
+}
+
+#[test]
+fn test_adt_match_invalid_variant_rejected() {
+    let source = "
+        type Shape enum {
+            Circle { radius: int },
+            Point
+        }
+
+        func process(shape: Shape) int {
+            match shape {
+                Circle => {
+                    return shape.Circle.radius;
+                }
+                Point => {
+                    return 0;
+                }
+                Triangle => { // Error: Triangle is not a variant of Shape
+                    return 3;
+                }
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(err.message.contains("is not a valid variant of enum"));
+}
+
+// === NATIVE FILE I/O TYPE SAFETY COMPILE TIME TESTS ===
+
+#[test]
+fn test_file_io_type_safety_accepted() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut path := \"test_input.txt\";
+            mut contents := \"Hello File I/O\";
+            mut success := os.WriteFile(path, contents);
+            
+            mut read_back := os.ReadFile(ctx, path);
+            os.LogStr(read_back);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
