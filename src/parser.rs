@@ -1,4 +1,4 @@
-use crate::ast::{BlockStatement, Expression, Program, Statement};
+use crate::ast::{BlockStatement, Expression, FieldDef, Parameter, Program, Statement};
 use crate::lexer::Lexer;
 use crate::token::{Token, TokenType};
 use crate::typechecker::Type;
@@ -32,7 +32,6 @@ impl Parser {
             if let Some(stmt) = self.parse_statement() {
                 statements.push(stmt);
             }
-            // Consume optional statement-terminating semicolon
             if self.peek_token.token_type == TokenType::Semicolon {
                 self.next_token();
             }
@@ -44,12 +43,14 @@ impl Parser {
 
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.cur_token.token_type {
+            TokenType::Type => self.parse_struct_decl(),
             TokenType::Func => self.parse_function_decl(),
             TokenType::Mut => self.parse_var_decl(true),
             TokenType::Defer => self.parse_defer_statement(),
             TokenType::While => self.parse_while_statement(),
             TokenType::If => self.parse_if_statement(),
             TokenType::Unsafe => self.parse_unsafe_block(),
+            TokenType::Return => self.parse_return_statement(),
             TokenType::Ident if self.peek_token.token_type == TokenType::Assign => {
                 self.parse_var_decl(false)
             }
@@ -70,30 +71,145 @@ impl Parser {
         }
     }
 
-    fn parse_function_decl(&mut self) -> Option<Statement> {
-        self.next_token();
+    fn parse_struct_decl(&mut self) -> Option<Statement> {
+        self.next_token(); // consume 'type'
         if self.cur_token.token_type != TokenType::Ident {
             return None;
         }
         let name = self.cur_token.literal.clone();
-
         self.next_token();
+
+        let mut generics = Vec::new();
+        if self.cur_token.token_type == TokenType::LBracket {
+            self.next_token(); // consume '['
+            while self.cur_token.token_type == TokenType::Ident {
+                generics.push(self.cur_token.literal.clone());
+                self.next_token();
+                if self.cur_token.token_type == TokenType::Comma {
+                    self.next_token();
+                }
+            }
+            if self.cur_token.token_type != TokenType::RBracket {
+                return None;
+            }
+            self.next_token(); // consume ']'
+        }
+
+        if self.cur_token.token_type != TokenType::Struct {
+            return None;
+        }
+        self.next_token();
+
+        if self.cur_token.token_type != TokenType::LBrace {
+            return None;
+        }
+        self.next_token();
+
+        let mut fields = Vec::new();
+        while self.cur_token.token_type != TokenType::RBrace
+            && self.cur_token.token_type != TokenType::Eof
+        {
+            if self.cur_token.token_type == TokenType::Ident {
+                let field_name = self.cur_token.literal.clone();
+                self.next_token();
+
+                if self.cur_token.token_type != TokenType::Colon {
+                    return None;
+                }
+                self.next_token();
+
+                let field_type = self.parse_type_signature()?;
+                fields.push(FieldDef {
+                    name: field_name,
+                    field_type,
+                });
+
+                if self.cur_token.token_type == TokenType::Comma
+                    || self.cur_token.token_type == TokenType::Semicolon
+                {
+                    self.next_token();
+                }
+            } else {
+                self.next_token();
+            }
+        }
+
+        if self.cur_token.token_type != TokenType::RBrace {
+            return None;
+        }
+
+        Some(Statement::StructDecl {
+            name,
+            generics,
+            fields,
+        })
+    }
+
+    fn parse_function_decl(&mut self) -> Option<Statement> {
+        self.next_token(); // consume 'func'
+        if self.cur_token.token_type != TokenType::Ident {
+            return None;
+        }
+        let name = self.cur_token.literal.clone();
+        self.next_token();
+
         if self.cur_token.token_type != TokenType::LParen {
             return None;
         }
+        self.next_token(); // consume '('
 
-        self.next_token();
+        let mut params = Vec::new();
+        while self.cur_token.token_type != TokenType::RParen
+            && self.cur_token.token_type != TokenType::Eof
+        {
+            if self.cur_token.token_type != TokenType::Ident {
+                return None;
+            }
+            let param_name = self.cur_token.literal.clone();
+            self.next_token();
+
+            if self.cur_token.token_type != TokenType::Colon {
+                return None;
+            }
+            self.next_token(); // consume ':'
+
+            let param_type = self.parse_type_signature()?;
+            params.push(Parameter {
+                name: param_name,
+                param_type,
+            });
+
+            if self.cur_token.token_type == TokenType::Comma {
+                self.next_token(); // consume ','
+            }
+        }
+
         if self.cur_token.token_type != TokenType::RParen {
             return None;
         }
+        self.next_token(); // consume ')'
 
-        self.next_token();
+        // Parse optional return type
+        let mut return_type = Type::Void;
+        if self.cur_token.token_type == TokenType::Ident
+            || self.cur_token.token_type == TokenType::LBracket
+            || self.cur_token.token_type == TokenType::Asterisk
+            || self.cur_token.token_type == TokenType::Ampersand
+        {
+            return_type = self.parse_type_signature()?;
+        }
+
         if self.cur_token.token_type != TokenType::LBrace {
             return None;
         }
 
         let body = self.parse_block_statement()?;
-        Some(Statement::FunctionDecl { name, body })
+        Some(Statement::FunctionDecl {
+            name,
+            params,
+            return_type,
+            body,
+        })
     }
 
     fn parse_block_statement(&mut self) -> Option<BlockStatement> {
@@ -132,12 +248,12 @@ impl Parser {
             var_type = Some(self.parse_type_signature()?);
         }
 
-        if self.cur_token.token_type != TokenType::Assign {
-            return None;
+        let mut value = None;
+        if self.cur_token.token_type == TokenType::Assign {
+            self.next_token();
+            value = Some(self.parse_expression(1)?);
         }
 
-        self.next_token();
-        let value = self.parse_expression(1)?;
         Some(Statement::VarDecl {
             name,
             is_mut,
@@ -147,7 +263,10 @@ impl Parser {
     }
 
     fn parse_type_signature(&mut self) -> Option<Type> {
-        if self.cur_token.token_type == TokenType::Asterisk {
+        // Accept both '*' and '&' as safe pointer references in signature declarations [1]
+        if self.cur_token.token_type == TokenType::Asterisk
+            || self.cur_token.token_type == TokenType::Ampersand
+        {
             self.next_token();
             let target = self.parse_type_signature()?;
             return Some(Type::RawPointer(Box::new(target)));
@@ -159,36 +278,69 @@ impl Parser {
                 return None;
             }
             self.next_token();
-            let slice_base = self.cur_token.literal.clone();
-            self.next_token();
-
-            if slice_base == "byte" {
-                return Some(Type::ByteSlice);
-            }
-            return None;
+            let element_type = self.parse_type_signature()?;
+            return Some(Type::Slice(Box::new(element_type)));
         }
 
         let base_name = self.cur_token.literal.clone();
         self.next_token();
 
         if self.cur_token.token_type == TokenType::LBracket {
-            self.next_token();
-            let brand_name = self.cur_token.literal.clone();
-            self.next_token();
+            self.next_token(); // consume '['
+            let mut args = Vec::new();
+
+            if self.cur_token.token_type != TokenType::RBracket {
+                args.push(self.parse_type_signature()?);
+                while self.cur_token.token_type == TokenType::Comma {
+                    self.next_token(); // consume ','
+                    args.push(self.parse_type_signature()?);
+                }
+            }
+
             if self.cur_token.token_type != TokenType::RBracket {
                 return None;
             }
-            self.next_token();
+            self.next_token(); // consume ']'
 
+            // Backward-compatible Index matching
             if base_name == "Index" {
-                return Some(Type::Index("SessionNode".to_string(), Some(brand_name)));
+                if args.len() == 1 {
+                    let brand = match &args[0] {
+                        Type::Struct(name, _) => Some(name.clone()),
+                        _ => None,
+                    };
+                    return Some(Type::Index("SessionNode".to_string(), brand));
+                } else if args.len() == 2 {
+                    let struct_name = match &args[0] {
+                        Type::Struct(name, _) => name.clone(),
+                        _ => "SessionNode".to_string(),
+                    };
+                    let brand = match &args[1] {
+                        Type::Struct(name, _) => Some(name.clone()),
+                        _ => None,
+                    };
+                    return Some(Type::Index(struct_name, brand));
+                }
             }
-            return Some(Type::Struct(base_name, Some(brand_name)));
+
+            // Single parameter shorthand: Branded struct (e.g. SessionNode[connCtx])
+            if args.len() == 1 {
+                let brand = match &args[0] {
+                    Type::Struct(name, _) => Some(name.clone()),
+                    _ => None,
+                };
+                return Some(Type::Struct(base_name, brand));
+            }
+
+            // Multi-parameter instantiations: fully generic models (e.g. Vector[int, connCtx])
+            return Some(Type::Generic(base_name, args));
         }
 
         match base_name.as_str() {
             "int" => Some(Type::Int),
+            "byte" => Some(Type::Byte),
             "Arena" | "os_Arena" => Some(Type::Arena),
+            "str" => Some(Type::Str), // Added for String Views Option 2
             _ => Some(Type::Struct(base_name, None)),
         }
     }
@@ -248,10 +400,25 @@ impl Parser {
         Some(Statement::UnsafeBlock { body })
     }
 
+    fn parse_return_statement(&mut self) -> Option<Statement> {
+        self.next_token(); // consume 'return'
+        if self.cur_token.token_type == TokenType::Semicolon
+            || self.cur_token.token_type == TokenType::RBrace
+        {
+            return Some(Statement::Return(None));
+        }
+
+        let expr = self.parse_expression(1)?;
+        Some(Statement::Return(Some(expr)))
+    }
+
     pub fn parse_expression(&mut self, precedence: i32) -> Option<Expression> {
         let mut left = self.parse_primary_expression()?;
 
         while precedence < self.peek_token_precedence() {
+            if self.cur_token.token_type == TokenType::Semicolon {
+                break;
+            }
             match self.peek_token.token_type {
                 TokenType::Dot => {
                     self.next_token();
@@ -338,6 +505,7 @@ impl Parser {
                 let val: i64 = self.cur_token.literal.parse().ok()?;
                 Some(Expression::Integer(val))
             }
+            TokenType::String => Some(Expression::String(self.cur_token.literal.clone())), // Added string literals
             TokenType::Move => {
                 self.next_token();
                 let expr = self.parse_expression(6)?;

@@ -6,15 +6,34 @@ pub struct Program {
 }
 
 #[derive(Debug, Clone)]
+pub struct FieldDef {
+    pub name: String,
+    pub field_type: Type,
+}
+
+#[derive(Debug, Clone)]
+pub struct Parameter {
+    pub name: String,
+    pub param_type: Type,
+}
+
+#[derive(Debug, Clone)]
 pub enum Statement {
+    StructDecl {
+        name: String,
+        generics: Vec<String>,
+        fields: Vec<FieldDef>,
+    },
     FunctionDecl {
         name: String,
+        params: Vec<Parameter>,
+        return_type: Type,
         body: BlockStatement,
     },
     VarDecl {
         name: String,
         is_mut: bool,
-        value: Expression,
+        value: Option<Expression>,
         var_type: Option<Type>,
     },
     Assignment {
@@ -30,13 +49,13 @@ pub enum Statement {
         consequence: BlockStatement,
         alternative: Option<BlockStatement>,
     },
-    // unsafe { body }
     UnsafeBlock {
         body: BlockStatement,
     },
     Defer {
         expr: Expression,
     },
+    Return(Option<Expression>),
     Expression(Expression),
 }
 
@@ -49,11 +68,10 @@ pub struct BlockStatement {
 pub enum Expression {
     Identifier(String),
     Integer(i64),
+    String(String), // Added for String Views
     Move(Box<Expression>),
     Take(Box<Expression>),
-    // Pointer address-of: &expr (e.g., &ctx[node].SessionID)
     AddressOf(Box<Expression>),
-    // Pointer dereference: *expr (e.g., *rawPtr)
     Dereference(Box<Expression>),
     IndexAccess {
         allocator: Box<Expression>,

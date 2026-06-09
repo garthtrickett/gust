@@ -6,6 +6,7 @@ pub enum TokenType {
     // Identifiers + Literals
     Ident,
     Int,
+    String, // Added for string literal views
 
     // Operators & Delimiters
     Assign,    // ":="
@@ -43,6 +44,9 @@ pub enum TokenType {
     Else,   // "else"
     As,     // "as"
     Unsafe, // "unsafe"
+    Type,   // "type"
+    Struct, // "struct"
+    Return, // "return"
 }
 
 #[derive(Debug, Clone)]

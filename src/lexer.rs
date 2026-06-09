@@ -59,6 +59,19 @@ impl Lexer {
         self.input[start_pos..self.position].iter().collect()
     }
 
+    fn read_string(&mut self) -> String {
+        let start_pos = self.position + 1;
+        loop {
+            self.read_char();
+            if self.ch == '"' || self.ch == '\0' {
+                break;
+            }
+        }
+        let out = self.input[start_pos..self.position].iter().collect();
+        self.read_char(); // consume closing '"'
+        out
+    }
+
     pub fn next_token(&mut self) -> Token {
         self.skip_whitespace();
 
@@ -183,6 +196,10 @@ impl Lexer {
                 token_type: TokenType::Eof,
                 literal: "".to_string(),
             },
+            '"' => Token {
+                token_type: TokenType::String,
+                literal: self.read_string(),
+            },
             c => {
                 if is_letter(c) {
                     let literal = self.read_identifier();
@@ -231,6 +248,8 @@ fn lookup_ident(ident: &str) -> TokenType {
         "else" => TokenType::Else,
         "as" => TokenType::As,
         "unsafe" => TokenType::Unsafe,
+        "type" => TokenType::Type,
+        "struct" => TokenType::Struct,
         _ => TokenType::Ident,
     }
 }
