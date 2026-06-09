@@ -43,7 +43,15 @@ fn types_match(expected: &Type, actual: &Type) -> bool {
         }
         (Type::Struct(e_struct, e_brand), Type::Struct(a_struct, a_brand)) => {
             if e_struct != a_struct {
-                return false;
+                let is_vector_any = (e_struct.starts_with("Vector_")
+                    && a_struct.starts_with("Vector_Any"))
+                    || (a_struct.starts_with("Vector_") && e_struct.starts_with("Vector_Any"));
+                let is_hashmap_any = (e_struct.starts_with("HashMap_")
+                    && a_struct.starts_with("HashMap_Any"))
+                    || (a_struct.starts_with("HashMap_") && e_struct.starts_with("HashMap_Any"));
+                if !is_vector_any && !is_hashmap_any {
+                    return false;
+                }
             }
             if e_brand.is_none() || a_brand.is_none() {
                 return true;
@@ -167,18 +175,99 @@ impl TypeChecker {
             },
         );
 
+        let mut struct_templates = HashMap::new();
+
+        // Vector[T, ctx]
+        let mut vector_fields = Vec::new();
+        vector_fields.push(FieldDef {
+            name: "data".to_string(),
+            field_type: Type::RawPointer(Box::new(Type::Struct("T".to_string(), None))),
+        });
+        vector_fields.push(FieldDef {
+            name: "len".to_string(),
+            field_type: Type::Int,
+        });
+        vector_fields.push(FieldDef {
+            name: "capacity".to_string(),
+            field_type: Type::Int,
+        });
+        vector_fields.push(FieldDef {
+            name: "arena".to_string(),
+            field_type: Type::RawPointer(Box::new(Type::Arena)),
+        });
+        struct_templates.insert(
+            "Vector".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: vector_fields,
+            },
+        );
+
+        // HashMap[K, V, ctx]
+        let mut hashmap_fields = Vec::new();
+        hashmap_fields.push(FieldDef {
+            name: "keys".to_string(),
+            field_type: Type::RawPointer(Box::new(Type::Struct("K".to_string(), None))),
+        });
+        hashmap_fields.push(FieldDef {
+            name: "values".to_string(),
+            field_type: Type::RawPointer(Box::new(Type::Struct("V".to_string(), None))),
+        });
+        hashmap_fields.push(FieldDef {
+            name: "occupied".to_string(),
+            field_type: Type::RawPointer(Box::new(Type::Int)),
+        });
+        hashmap_fields.push(FieldDef {
+            name: "len".to_string(),
+            field_type: Type::Int,
+        });
+        hashmap_fields.push(FieldDef {
+            name: "capacity".to_string(),
+            field_type: Type::Int,
+        });
+        hashmap_fields.push(FieldDef {
+            name: "arena".to_string(),
+            field_type: Type::RawPointer(Box::new(Type::Arena)),
+        });
+        struct_templates.insert(
+            "HashMap".to_string(),
+            StructTemplate {
+                generics: vec!["K".to_string(), "V".to_string(), "ctx".to_string()],
+                fields: hashmap_fields,
+            },
+        );
+
         TypeChecker {
             symbol_table: HashMap::new(),
             variable_types: HashMap::new(),
             moved_vars: HashSet::new(),
             in_unsafe_block: false,
             struct_registry,
-            struct_templates: HashMap::new(),
+            struct_templates,
             variable_origins: HashMap::new(),
             function_registry: HashMap::new(),
             expected_return_type: None,
             current_function_return_origins: None,
         }
+    }
+
+    fn get_vector_element_type(&self, struct_name: &str) -> Option<Type> {
+        if let Some(layout) = self.struct_registry.get(struct_name)
+            && let Some(Type::RawPointer(inner)) = layout.fields.get("data") {
+                return Some((**inner).clone());
+            }
+        None
+    }
+
+    fn get_hashmap_key_value_types(&self, struct_name: &str) -> Option<(Type, Type)> {
+        if let Some(layout) = self.struct_registry.get(struct_name) {
+            let k = layout.fields.get("keys")?;
+            let v = layout.fields.get("values")?;
+            if let (Type::RawPointer(k_inner), Type::RawPointer(v_inner)) = (k, v) {
+                return Some(((**k_inner).clone(), (**v_inner).clone()));
+            }
+        }
+        None
     }
 
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {
@@ -576,6 +665,12 @@ impl TypeChecker {
     pub fn get_expression_origins(&self, expr: &Expression) -> HashSet<String> {
         match expr {
             Expression::Identifier(name) => {
+                if let Some(t) = self.symbol_table.get(name) {
+                    // Value-types do not borrow/carry origins
+                    if matches!(t, Type::Struct(_, None)) || *t == Type::Int || *t == Type::Byte {
+                        return HashSet::new();
+                    }
+                }
                 if let Some(origins) = self.variable_origins.get(name) {
                     origins.clone()
                 } else if name == "null" {
@@ -591,13 +686,29 @@ impl TypeChecker {
             Expression::Dereference(inner) => self.get_expression_origins(inner),
             Expression::Selector { left, .. } => self.get_expression_origins(left),
             Expression::IndexAccess { allocator, .. } => self.get_expression_origins(allocator),
-            Expression::Move(inner) => self.get_expression_origins(inner),
-            Expression::Take(inner) => self.get_expression_origins(inner),
+            Expression::Move(inner) => {
+                if let Expression::Identifier(name) = &**inner
+                    && let Some(t) = self.symbol_table.get(name)
+                    && (matches!(t, Type::Struct(_, None)) || *t == Type::Int || *t == Type::Byte)
+                {
+                    return HashSet::new();
+                }
+                self.get_expression_origins(inner)
+            }
+            Expression::Take(inner) => {
+                if let Expression::Identifier(name) = &**inner
+                    && let Some(t) = self.symbol_table.get(name)
+                    && (matches!(t, Type::Struct(_, None)) || *t == Type::Int || *t == Type::Byte)
+                {
+                    return HashSet::new();
+                }
+                self.get_expression_origins(inner)
+            }
             Expression::Call {
                 function,
                 arguments,
             } => {
-                let func_path = self.expression_to_string(function);
+                let func_path = expression_to_string(function);
                 if let Some(sig) = self.function_registry.get(&func_path) {
                     let mut call_origins = HashSet::new();
                     let mut param_map = HashMap::new();
@@ -706,6 +817,15 @@ impl TypeChecker {
         }
 
         if !self.struct_registry.contains_key(&concrete_name) {
+            // First insert a placeholder to short-circuit recursive structural self-references [1]
+            self.struct_registry.insert(
+                concrete_name.clone(),
+                StructLayout {
+                    brand: brand.clone(),
+                    fields: HashMap::new(),
+                },
+            );
+
             let mut concrete_fields = HashMap::new();
             for field in &template.fields {
                 let substituted_type =
@@ -714,13 +834,10 @@ impl TypeChecker {
                 concrete_fields.insert(field.name.clone(), resolved_field_type);
             }
 
-            self.struct_registry.insert(
-                concrete_name.clone(),
-                StructLayout {
-                    brand: brand.clone(),
-                    fields: concrete_fields,
-                },
-            );
+            // Populate resolved layout fields [3]
+            if let Some(layout) = self.struct_registry.get_mut(&concrete_name) {
+                layout.fields = concrete_fields;
+            }
         }
 
         Ok(Type::Struct(concrete_name, brand))
@@ -1030,10 +1147,51 @@ impl TypeChecker {
                         });
                     }
                     Ok(Type::Byte)
+                } else if let Type::Struct(struct_name, _) = &alloc_type {
+                    if struct_name.starts_with("Vector_") {
+                        if index_type != Type::Int && index_type != Type::Byte {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::InvalidIndexType,
+                                message: "Vector index must resolve to an Int or Byte".to_string(),
+                            });
+                        }
+                        let elem_type =
+                            self.get_vector_element_type(struct_name)
+                                .ok_or_else(|| TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Invalid Vector struct layout".to_string(),
+                                })?;
+                        Ok(elem_type)
+                    } else if struct_name.starts_with("HashMap_") {
+                        let (k_type, v_type) = self
+                            .get_hashmap_key_value_types(struct_name)
+                            .ok_or_else(|| TypeError {
+                                kind: TypeErrorKind::TypeMismatch,
+                                message: "Invalid HashMap struct layout".to_string(),
+                            })?;
+                        if !types_match(&k_type, &index_type) {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::InvalidIndexType,
+                                message: format!(
+                                    "HashMap index type mismatch. Expected {:?} but got {:?}",
+                                    k_type, index_type
+                                ),
+                            });
+                        }
+                        Ok(v_type)
+                    } else {
+                        Err(TypeError {
+                            kind: TypeErrorKind::InvalidIndexTarget,
+                            message: format!(
+                                "Semantic Error: Subscript indexing is only valid on Arenas, Slices, Vectors, or HashMaps, but got {:?}",
+                                alloc_type
+                            ),
+                        })
+                    }
                 } else if alloc_type == Type::Arena
                     || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
                 {
-                    let alloc_name = self.expression_to_string(allocator);
+                    let alloc_name = expression_to_string(allocator);
                     if let Type::Index(struct_name, Some(brand_name)) = index_type {
                         if brand_name != alloc_name {
                             return Err(TypeError {
@@ -1041,7 +1199,7 @@ impl TypeChecker {
                                 message: format!(
                                     "Semantic Error: Value-Branded Lifetime Violation! Attempted to index allocator '{}' with index '{}' branded for '{}'",
                                     alloc_name,
-                                    self.expression_to_string(index),
+                                    expression_to_string(index),
                                     brand_name
                                 ),
                             });
@@ -1066,7 +1224,7 @@ impl TypeChecker {
                     Err(TypeError {
                         kind: TypeErrorKind::InvalidIndexTarget,
                         message: format!(
-                            "Semantic Error: Subscript indexing is only valid on Arenas or Slices, but got {:?}",
+                            "Semantic Error: Subscript indexing is only valid on Arenas, Slices, Vectors, or HashMaps, but got {:?}",
                             alloc_type
                         ),
                     })
@@ -1118,7 +1276,7 @@ impl TypeChecker {
             }
             Expression::Selector { left, right } => {
                 let left_type = self.check_expression(left)?;
-                let left_str = self.expression_to_string(left);
+                let left_str = expression_to_string(left);
                 let path = format!("{}.{}", left_str, right);
 
                 if path == "os.Arena" {
@@ -1178,7 +1336,7 @@ impl TypeChecker {
                     self.check_expression(arg)?;
                 }
 
-                let func_path = self.expression_to_string(function);
+                let func_path = expression_to_string(function);
 
                 if func_path == "len" {
                     if arguments.len() != 1 {
@@ -1194,13 +1352,64 @@ impl TypeChecker {
                     if arg_type == Type::Str {
                         return Ok(Type::Int);
                     }
+                    if let Type::Struct(struct_name, _) = &arg_type
+                        && (struct_name.starts_with("Vector_") || struct_name.starts_with("HashMap_"))
+                        {
+                            return Ok(Type::Int);
+                        }
                     return Err(TypeError {
                         kind: TypeErrorKind::ArgumentMismatch,
                         message: format!(
-                            "Semantic Error: len expects a Slice or Str argument, but got {:?}",
+                            "Semantic Error: len expects a Slice, Str, Vector, or HashMap argument, but got {:?}",
                             arg_type
                         ),
                     });
+                }
+
+                if func_path == "os.VectorNew" {
+                    if arguments.len() != 1 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.VectorNew expects exactly 1 argument"
+                                .to_string(),
+                        });
+                    }
+                    let arg_type = self.check_expression(&arguments[0])?;
+                    if arg_type != Type::Arena
+                        && !matches!(arg_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message:
+                                "Semantic Error: VectorNew argument must be an Arena allocator"
+                                    .to_string(),
+                        });
+                    }
+                    let brand_name = expression_to_string(&arguments[0]);
+                    return Ok(Type::Struct("Vector_Any".to_string(), Some(brand_name)));
+                }
+
+                if func_path == "os.HashMapNew" {
+                    if arguments.len() != 1 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.HashMapNew expects exactly 1 argument"
+                                .to_string(),
+                        });
+                    }
+                    let arg_type = self.check_expression(&arguments[0])?;
+                    if arg_type != Type::Arena
+                        && !matches!(arg_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message:
+                                "Semantic Error: HashMapNew argument must be an Arena allocator"
+                                    .to_string(),
+                        });
+                    }
+                    let brand_name = expression_to_string(&arguments[0]);
+                    return Ok(Type::Struct("HashMap_Any".to_string(), Some(brand_name)));
                 }
 
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
@@ -1227,7 +1436,7 @@ impl TypeChecker {
                         };
                         if *param_type == Type::Arena || is_arena_ptr {
                             let formal_name = &sig.param_names[i];
-                            let actual_name = self.expression_to_string(arg);
+                            let actual_name = expression_to_string(arg);
                             brand_map.insert(formal_name.clone(), actual_name);
                         }
                     }
@@ -1292,7 +1501,7 @@ impl TypeChecker {
                                     .to_string(),
                         });
                     }
-                    let brand_name = self.expression_to_string(&arguments[0]);
+                    let brand_name = expression_to_string(&arguments[0]);
                     return Ok(Type::Index("Any".to_string(), Some(brand_name)));
                 }
 
@@ -1340,12 +1549,100 @@ impl TypeChecker {
 
                 if let Expression::Selector { left, right } = &**function {
                     let left_type = self.check_expression(left)?;
+                    if let Type::Struct(struct_name, _) = &left_type {
+                        if struct_name.starts_with("Vector_") && right == "Push" {
+                            if arguments.len() != 1 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Vector.Push expects exactly 1 argument".to_string(),
+                                });
+                            }
+                            let arg_type = self.check_expression(&arguments[0])?;
+                            let elem_type =
+                                self.get_vector_element_type(struct_name).ok_or_else(|| {
+                                    TypeError {
+                                        kind: TypeErrorKind::TypeMismatch,
+                                        message: "Invalid Vector struct layout".to_string(),
+                                    }
+                                })?;
+                            if !types_match(&elem_type, &arg_type) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Argument type mismatch for Vector.Push. Expected {:?} but got {:?}",
+                                        elem_type, arg_type
+                                    ),
+                                });
+                            }
+                            return Ok(Type::Void);
+                        }
+                        if struct_name.starts_with("HashMap_") && right == "Insert" {
+                            if arguments.len() != 2 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "HashMap.Insert expects exactly 2 arguments"
+                                        .to_string(),
+                                });
+                            }
+                            let k_arg = self.check_expression(&arguments[0])?;
+                            let v_arg = self.check_expression(&arguments[1])?;
+                            let (k_type, v_type) = self
+                                .get_hashmap_key_value_types(struct_name)
+                                .ok_or_else(|| TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Invalid HashMap struct layout".to_string(),
+                                })?;
+                            if !types_match(&k_type, &k_arg) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Key type mismatch for HashMap.Insert. Expected {:?} but got {:?}",
+                                        k_type, k_arg
+                                    ),
+                                });
+                            }
+                            if !types_match(&v_type, &v_arg) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Value type mismatch for HashMap.Insert. Expected {:?} but got {:?}",
+                                        v_type, v_arg
+                                    ),
+                                });
+                            }
+                            return Ok(Type::Void);
+                        }
+                        if struct_name.starts_with("HashMap_") && right == "Get" {
+                            if arguments.len() != 1 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "HashMap.Get expects exactly 1 argument".to_string(),
+                                });
+                            }
+                            let k_arg = self.check_expression(&arguments[0])?;
+                            let (k_type, v_type) = self
+                                .get_hashmap_key_value_types(struct_name)
+                                .ok_or_else(|| TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Invalid HashMap struct layout".to_string(),
+                                })?;
+                            if !types_match(&k_type, &k_arg) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Key type mismatch for HashMap.Get. Expected {:?} but got {:?}",
+                                        k_type, k_arg
+                                    ),
+                                });
+                            }
+                            return Ok(v_type);
+                        }
+                    }
                     if left_type == Type::Arena && right == "Free" {
                         if !arguments.is_empty() {
                             return Err(TypeError {
                                 kind: TypeErrorKind::ArgumentMismatch,
-                                message: "Semantic Error: Arena.Free() expects 0 arguments"
-                                    .to_string(),
+                                message: "Arena.Free() expects 0 arguments".to_string(),
                             });
                         }
                         return Ok(Type::Void);
@@ -1362,49 +1659,49 @@ impl TypeChecker {
             }
         }
     }
+}
 
-    fn expression_to_string(&self, expr: &Expression) -> String {
-        match expr {
-            Expression::Identifier(name) => name.clone(),
-            Expression::Integer(val) => val.to_string(),
-            Expression::String(val) => format!("\"{}\"", val),
-            Expression::Call {
-                function,
-                arguments,
-            } => {
-                let args_strs: Vec<String> = arguments
-                    .iter()
-                    .map(|arg| self.expression_to_string(arg))
-                    .collect();
-                format!(
-                    "{}({})",
-                    self.expression_to_string(function),
-                    args_strs.join(", ")
-                )
-            }
-            Expression::Selector { left, right } => {
-                format!("{}.{}", self.expression_to_string(left), right)
-            }
-            Expression::IndexAccess { allocator, index } => {
-                format!(
-                    "{}[{}]",
-                    self.expression_to_string(allocator),
-                    self.expression_to_string(index)
-                )
-            }
-            Expression::Move(inner) => self.expression_to_string(inner),
-            Expression::Take(inner) => self.expression_to_string(inner),
-            Expression::Binary { op, left, right } => {
-                format!(
-                    "{} {} {}",
-                    self.expression_to_string(left),
-                    op,
-                    self.expression_to_string(right)
-                )
-            }
-            Expression::AsCast { left, .. } => self.expression_to_string(left),
-            Expression::AddressOf(inner) => format!("&{}", self.expression_to_string(inner)),
-            Expression::Dereference(inner) => format!("*{}", self.expression_to_string(inner)),
+pub fn expression_to_string(expr: &Expression) -> String {
+    match expr {
+        Expression::Identifier(name) => name.clone(),
+        Expression::Integer(val) => val.to_string(),
+        Expression::String(val) => format!("\"{}\"", val),
+        Expression::Call {
+            function,
+            arguments,
+        } => {
+            let args_strs: Vec<String> = arguments
+                .iter()
+                .map(expression_to_string)
+                .collect();
+            format!(
+                "{}({})",
+                expression_to_string(function),
+                args_strs.join(", ")
+            )
         }
+        Expression::Selector { left, right } => {
+            format!("{}.{}", expression_to_string(left), right)
+        }
+        Expression::IndexAccess { allocator, index } => {
+            format!(
+                "{}[{}]",
+                expression_to_string(allocator),
+                expression_to_string(index)
+            )
+        }
+        Expression::Move(inner) => expression_to_string(inner),
+        Expression::Take(inner) => expression_to_string(inner),
+        Expression::Binary { op, left, right } => {
+            format!(
+                "{} {} {}",
+                expression_to_string(left),
+                op,
+                expression_to_string(right)
+            )
+        }
+        Expression::AsCast { left, .. } => expression_to_string(left),
+        Expression::AddressOf(inner) => format!("&{}", expression_to_string(inner)),
+        Expression::Dereference(inner) => format!("*{}", expression_to_string(inner)),
     }
 }

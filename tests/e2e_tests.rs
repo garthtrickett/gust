@@ -181,3 +181,127 @@ fn test_e2e_mock_payload_slicing() {
     ";
     run_e2e_test(source, "42\n1024");
 }
+
+// =====================================================================
+// === THREE RE-DRAFTED PRESSURE-TEST PROGRAMS ===
+// =====================================================================
+
+#[test]
+fn test_e2e_program_a_zero_copy_network_processor() {
+    let source = "
+        type Packet struct {
+            ProtocolID: int,
+            SeqNum: int,
+            Length: int
+        }
+
+        func main() {
+            mut payload := os.MockPayload();
+            
+            // Cast the raw byte slice dynamically to a struct reference
+            mut result := payload as &Packet;
+            
+            if result.Ok {
+                os.LogInt(result.Val.ProtocolID);
+            } else {
+                os.LogInt(0);
+            }
+        }
+    ";
+    run_e2e_test(source, "42");
+}
+
+#[test]
+fn test_e2e_program_b_safe_arena_cyclic_graph() {
+    let source = "
+        type GraphNode[ctx] struct {
+            Value: int,
+            Next: Index[GraphNode, ctx]
+        }
+
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut nodeA: Index[GraphNode, ctx] := os.ArenaAlloc(ctx);
+            mut nodeB: Index[GraphNode, ctx] := os.ArenaAlloc(ctx);
+            mut nodeC: Index[GraphNode, ctx] := os.ArenaAlloc(ctx);
+
+            ctx[nodeA].Value = 10;
+            ctx[nodeB].Value = 20;
+            ctx[nodeC].Value = 30;
+
+            ctx[nodeA].Next = nodeB;
+            ctx[nodeB].Next = nodeC;
+            ctx[nodeC].Next = nodeA;
+
+            mut curr := nodeA;
+            mut count := 0;
+            while count < 6 {
+                os.LogInt(ctx[curr].Value);
+                curr = ctx[curr].Next;
+                count = count + 1;
+            }
+        }
+    ";
+    run_e2e_test(source, "10\n20\n30\n10\n20\n30");
+}
+
+#[test]
+fn test_e2e_program_c_universal_ownership_operators() {
+    let source = "
+        type DataWrapper struct {
+            Value: int
+        }
+
+        func main() {
+            mut wrapper: DataWrapper;
+            wrapper.Value = 100;
+            
+            mut movedWrapper := move wrapper;
+            os.LogInt(movedWrapper.Value);
+            
+            mut payload := os.MockPayload();
+            mut taken := take payload;
+            
+            os.LogInt(taken[0]);
+            os.LogInt(len(taken));
+        }
+    ";
+    run_e2e_test(source, "100\n42\n1024");
+}
+
+// === NEW E2E TESTS FOR THE NATIVE VECTOR & HASHMAP IMPLEMENTATION ===
+
+#[test]
+fn test_e2e_native_collections_evaluation() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut vec: Vector[int, ctx] := os.VectorNew(ctx);
+            vec.Push(10);
+            vec.Push(20);
+            vec.Push(30);
+
+            os.LogInt(len(vec));
+            os.LogInt(vec[0]);
+            os.LogInt(vec[1]);
+            os.LogInt(vec[2]);
+
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            map.Insert(100, 42);
+            map.Insert(200, 84);
+
+            os.LogInt(len(map));
+            os.LogInt(map[100]);
+            os.LogInt(map[200]);
+
+            // Mutable Assignment (L-value Subscription checks)
+            map[100] = 999;
+            os.LogInt(map[100]);
+        }
+    ";
+    run_e2e_test(source, "3\n10\n20\n30\n2\n42\n84\n999");
+}

@@ -1,5 +1,5 @@
 use crate::ast::{BlockStatement, Expression, Program, Statement};
-use crate::typechecker::{FunctionSignature, StructLayout, Type};
+use crate::typechecker::{FunctionSignature, StructLayout, Type, expression_to_string};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -10,17 +10,132 @@ pub struct Codegen {
     current_alloc_struct: RefCell<Option<String>>,
 }
 
+// Brand Erasure Helpers
+fn erase_struct_name(name: &str, brand: &Option<String>) -> String {
+    if let Some(b) = brand {
+        let suffix = format!("_{}", b);
+        if name.ends_with(&suffix) {
+            return name[..name.len() - suffix.len()].to_string();
+        }
+    }
+    name.to_string()
+}
+
+fn erase_type(t: &Type) -> Type {
+    match t {
+        Type::Struct(name, brand) => {
+            let erased_name = erase_struct_name(name, brand);
+            Type::Struct(erased_name, None)
+        }
+        Type::Index(struct_name, brand) => {
+            let erased_struct = erase_struct_name(struct_name, brand);
+            Type::Index(erased_struct, None)
+        }
+        Type::RawPointer(inner) => Type::RawPointer(Box::new(erase_type(inner))),
+        Type::Slice(inner) => Type::Slice(Box::new(erase_type(inner))),
+        Type::Generic(name, args) => {
+            let erased_args: Vec<Type> = args.iter().map(erase_type).collect();
+            Type::Generic(name.clone(), erased_args)
+        }
+        _ => t.clone(),
+    }
+}
+
 impl Codegen {
     pub fn new(
         symbol_table: HashMap<String, Type>,
         struct_registry: HashMap<String, StructLayout>,
         function_registry: HashMap<String, FunctionSignature>,
     ) -> Self {
+        // Step 1: Collapse struct layouts structurally via Brand Erasure
+        let mut erased_struct_registry = HashMap::new();
+        for (struct_name, layout) in &struct_registry {
+            let erased_name = erase_struct_name(struct_name, &layout.brand);
+            let mut erased_fields = HashMap::new();
+            for (f_name, f_type) in &layout.fields {
+                erased_fields.insert(f_name.clone(), erase_type(f_type));
+            }
+            erased_struct_registry.insert(
+                erased_name,
+                StructLayout {
+                    brand: None,
+                    fields: erased_fields,
+                },
+            );
+        }
+
+        // Step 2: Normalize variable typing boundaries
+        let mut erased_symbol_table = HashMap::new();
+        for (var_name, var_type) in symbol_table {
+            erased_symbol_table.insert(var_name.clone(), erase_type(&var_type));
+        }
+
+        // Step 3: Align function boundaries
+        let mut erased_function_registry = HashMap::new();
+        for (func_name, sig) in &function_registry {
+            let erased_params: Vec<Type> = sig.params.iter().map(erase_type).collect();
+            let erased_return = erase_type(&sig.return_type);
+            erased_function_registry.insert(
+                func_name.clone(),
+                FunctionSignature {
+                    param_names: sig.param_names.clone(),
+                    params: erased_params,
+                    return_type: erased_return,
+                    return_origins: sig.return_origins.clone(),
+                },
+            );
+        }
+
         Codegen {
-            symbol_table: RefCell::new(symbol_table),
-            struct_registry,
-            function_registry,
+            symbol_table: RefCell::new(erased_symbol_table),
+            struct_registry: erased_struct_registry,
+            function_registry: erased_function_registry,
             current_alloc_struct: RefCell::new(None),
+        }
+    }
+
+    fn get_hashmap_key_value_types(&self, struct_name: &str) -> Option<(Type, Type)> {
+        if let Some(layout) = self.struct_registry.get(struct_name) {
+            let k = layout.fields.get("keys")?;
+            let v = layout.fields.get("values")?;
+            if let (Type::RawPointer(k_inner), Type::RawPointer(v_inner)) = (k, v) {
+                return Some(((**k_inner).clone(), (**v_inner).clone()));
+            }
+        }
+        None
+    }
+
+    fn get_expr_type(&self, expr: &Expression) -> Option<Type> {
+        match expr {
+            Expression::Identifier(name) => self.symbol_table.borrow().get(name).cloned(),
+            Expression::Selector { left, right } => {
+                let left_type = self.get_expr_type(left)?;
+                if let Type::Struct(struct_name, _) = left_type
+                    && let Some(layout) = self.struct_registry.get(&struct_name) {
+                        return layout.fields.get(right).cloned();
+                    }
+                None
+            }
+            Expression::IndexAccess { allocator, .. } => {
+                let alloc_type = self.get_expr_type(allocator)?;
+                if let Type::Slice(elem_type) = alloc_type {
+                    return Some(*elem_type);
+                }
+                if let Type::Struct(struct_name, _) = alloc_type {
+                    if struct_name.starts_with("Vector_") {
+                        if let Some(layout) = self.struct_registry.get(&struct_name)
+                            && let Some(Type::RawPointer(inner)) = layout.fields.get("data") {
+                                return Some((**inner).clone());
+                            }
+                    } else if struct_name.starts_with("HashMap_")
+                        && let Some(layout) = self.struct_registry.get(&struct_name)
+                            && let Some(Type::RawPointer(inner)) = layout.fields.get("values") {
+                                return Some((**inner).clone());
+                            }
+                }
+                None
+            }
+            _ => None,
         }
     }
 
@@ -76,6 +191,8 @@ impl Codegen {
         c_code.push_str("    printf(\"%d\\n\", val);\n");
         c_code.push_str("}\n\n");
 
+        c_code.push_str("typedef void* map_void_ptr;\n\n");
+
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// FORWARD DECLARATIONS\n");
         c_code.push_str("// ====================================================\n");
@@ -126,13 +243,152 @@ impl Codegen {
         c_code.push_str("    slice.data = malloc(1024);\n");
         c_code.push_str("    slice.len = 1024;\n");
         c_code.push_str("    ((int*)slice.data)[0] = 42;\n");
+        c_code.push_str("    ((int*)slice.data)[1] = 42;\n");
+        c_code.push_str("    ((int*)slice.data)[2] = 42;\n");
         c_code.push_str("    return slice;\n");
         c_code.push_str("}\n\n");
 
-        // Added built-in os_LogStr mapping read-only byte slices [1]
         c_code.push_str("void os_LogStr(Slice_unsigned_char s) {\n");
         c_code.push_str("    printf(\"%.*s\\n\", s.len, (char*)s.data);\n");
         c_code.push_str("}\n\n");
+
+        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// GUST NATIVE COLLECTIONS RUNTIME (VECTOR & HASHMAP)\n");
+        c_code.push_str("// ====================================================\n");
+        c_code.push_str("#include <string.h>\n\n");
+
+        c_code.push_str("static inline uint32_t os_hash_key(void* key_ptr, int is_str_key) {\n");
+        c_code.push_str("    if (is_str_key) {\n");
+        c_code.push_str("        Slice_unsigned_char s = *(Slice_unsigned_char*)key_ptr;\n");
+        c_code.push_str("        uint32_t hash = 5381;\n");
+        c_code.push_str("        for (int i = 0; i < s.len; i++) {\n");
+        c_code.push_str("            hash = ((hash << 5) + hash) + s.data[i];\n");
+        c_code.push_str("        }\n");
+        c_code.push_str("        return hash;\n");
+        c_code.push_str("    } else {\n");
+        c_code.push_str("        return (uint32_t)(*(int*)key_ptr);\n");
+        c_code.push_str("    }\n");
+        c_code.push_str("}\n\n");
+
+        c_code.push_str(
+            "static inline int os_key_eq(void* k1_ptr, void* k2_ptr, int is_str_key) {\n",
+        );
+        c_code.push_str("    if (is_str_key) {\n");
+        c_code.push_str("        Slice_unsigned_char s1 = *(Slice_unsigned_char*)k1_ptr;\n");
+        c_code.push_str("        Slice_unsigned_char s2 = *(Slice_unsigned_char*)k2_ptr;\n");
+        c_code.push_str("        if (s1.len != s2.len) return 0;\n");
+        c_code.push_str("        for (int i = 0; i < s1.len; i++) {\n");
+        c_code.push_str("            if (s1.data[i] != s2.data[i]) return 0;\n");
+        c_code.push_str("        }\n");
+        c_code.push_str("        return 1;\n");
+        c_code.push_str("    } else {\n");
+        c_code.push_str("        return *(int*)k1_ptr == *(int*)k2_ptr;\n");
+        c_code.push_str("    }\n");
+        c_code.push_str("}\n\n");
+
+        c_code.push_str("static inline void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {\n");
+        c_code.push_str("    typedef struct {\n");
+        c_code.push_str("        os_Arena* arena;\n");
+        c_code.push_str("        int capacity;\n");
+        c_code.push_str("        char* keys;\n");
+        c_code.push_str("        int len;\n");
+        c_code.push_str("        int* occupied;\n");
+        c_code.push_str("        char* values;\n");
+        c_code.push_str("    } GenericHashMap;\n\n");
+        c_code.push_str("    GenericHashMap* m = (GenericHashMap*)map_void;\n\n");
+        c_code.push_str("    if (m->capacity == 0) {\n");
+        c_code.push_str("        m->capacity = 16;\n");
+        c_code.push_str(
+            "        int keys_offset = os_ArenaAlloc(m->arena, m->capacity * key_size);\n",
+        );
+        c_code.push_str("        m->keys = (char*)m->arena->BaseAddress + keys_offset;\n\n");
+        c_code.push_str(
+            "        int vals_offset = os_ArenaAlloc(m->arena, m->capacity * val_size);\n",
+        );
+        c_code.push_str("        m->values = (char*)m->arena->BaseAddress + vals_offset;\n\n");
+        c_code.push_str(
+            "        int occupied_offset = os_ArenaAlloc(m->arena, m->capacity * sizeof(int));\n",
+        );
+        c_code.push_str(
+            "        m->occupied = (int*)((char*)m->arena->BaseAddress + occupied_offset);\n",
+        );
+        c_code.push_str("        for (int i = 0; i < m->capacity; i++) m->occupied[i] = 0;\n");
+        c_code.push_str("    }\n\n");
+        c_code.push_str("    if (m->len * 2 >= m->capacity) {\n");
+        c_code.push_str("        int old_cap = m->capacity;\n");
+        c_code.push_str("        m->capacity *= 2;\n");
+        c_code.push_str("        char* old_keys = m->keys;\n");
+        c_code.push_str("        char* old_vals = m->values;\n");
+        c_code.push_str("        int* old_occupied = m->occupied;\n\n");
+        c_code.push_str(
+            "        int keys_offset = os_ArenaAlloc(m->arena, m->capacity * key_size);\n",
+        );
+        c_code.push_str("        m->keys = (char*)m->arena->BaseAddress + keys_offset;\n\n");
+        c_code.push_str(
+            "        int vals_offset = os_ArenaAlloc(m->arena, m->capacity * val_size);\n",
+        );
+        c_code.push_str("        m->values = (char*)m->arena->BaseAddress + vals_offset;\n\n");
+        c_code.push_str(
+            "        int occupied_offset = os_ArenaAlloc(m->arena, m->capacity * sizeof(int));\n",
+        );
+        c_code.push_str(
+            "        m->occupied = (int*)((char*)m->arena->BaseAddress + occupied_offset);\n",
+        );
+        c_code.push_str("        for (int i = 0; i < m->capacity; i++) m->occupied[i] = 0;\n\n");
+        c_code.push_str("        for (int i = 0; i < old_cap; i++) {\n");
+        c_code.push_str("            if (old_occupied[i]) {\n");
+        c_code.push_str("                void* k_ptr = old_keys + i * key_size;\n");
+        c_code.push_str("                uint32_t h = os_hash_key(k_ptr, is_str_key);\n");
+        c_code.push_str("                int idx = h % m->capacity;\n");
+        c_code.push_str("                while (m->occupied[idx]) {\n");
+        c_code.push_str("                    idx = (idx + 1) % m->capacity;\n");
+        c_code.push_str("                }\n");
+        c_code.push_str("                memcpy(m->keys + idx * key_size, k_ptr, key_size);\n");
+        c_code.push_str("                memcpy(m->values + idx * val_size, old_vals + i * val_size, val_size);\n");
+        c_code.push_str("                m->occupied[idx] = 1;\n");
+        c_code.push_str("            }\n");
+        c_code.push_str("        }\n");
+        c_code.push_str("    }\n\n");
+        c_code.push_str("    uint32_t h = os_hash_key(key_ptr, is_str_key);\n");
+        c_code.push_str("    int idx = h % m->capacity;\n");
+        c_code.push_str("    while (m->occupied[idx]) {\n");
+        c_code
+            .push_str("        if (os_key_eq(m->keys + idx * key_size, key_ptr, is_str_key)) {\n");
+        c_code.push_str("            return m->values + idx * val_size;\n");
+        c_code.push_str("        }\n");
+        c_code.push_str("        idx = (idx + 1) % m->capacity;\n");
+        c_code.push_str("    }\n\n");
+        c_code.push_str("    memcpy(m->keys + idx * key_size, key_ptr, key_size);\n");
+        c_code.push_str("    m->occupied[idx] = 1;\n");
+        c_code.push_str("    m->len++;\n");
+        c_code.push_str("    return m->values + idx * val_size;\n");
+        c_code.push_str("}\n\n");
+
+        c_code.push_str("#define os_HashMapRef(map_ptr, key, is_str_key) \\\n");
+        c_code.push_str("    ((__typeof__((map_ptr)->values))os_HashMapRef_impl((map_void_ptr)(map_ptr), &((__typeof__(*(map_ptr)->keys)){key}), (is_str_key), sizeof(*(map_ptr)->keys), sizeof(*(map_ptr)->values)))\n\n");
+
+        c_code.push_str("#define os_VectorPush(vec_ptr, val) do { \\\n");
+        c_code.push_str("    if ((vec_ptr)->len >= (vec_ptr)->capacity) { \\\n");
+        c_code.push_str(
+            "        int new_cap = (vec_ptr)->capacity == 0 ? 8 : (vec_ptr)->capacity * 2; \\\n",
+        );
+        c_code.push_str("        int offset = os_ArenaAlloc((vec_ptr)->arena, new_cap * sizeof(*(vec_ptr)->data)); \\\n");
+        c_code.push_str(
+            "        void* new_data = (void*)((char*)(vec_ptr)->arena->BaseAddress + offset); \\\n",
+        );
+        c_code.push_str("        if ((vec_ptr)->data != NULL) { \\\n");
+        c_code.push_str("            memcpy(new_data, (vec_ptr)->data, (vec_ptr)->len * sizeof(*(vec_ptr)->data)); \\\n");
+        c_code.push_str("        } \\\n");
+        c_code.push_str("        (vec_ptr)->data = new_data; \\\n");
+        c_code.push_str("        (vec_ptr)->capacity = new_cap; \\\n");
+        c_code.push_str("    } \\\n");
+        c_code.push_str("    (vec_ptr)->data[(vec_ptr)->len++] = (val); \\\n");
+        c_code.push_str("} while(0)\n\n");
+
+        c_code.push_str("#define os_VectorNew(arena_ptr) { NULL, 0, 0, (arena_ptr) }\n");
+        c_code.push_str(
+            "#define os_HashMapNew(arena_ptr) { NULL, NULL, NULL, 0, 0, (arena_ptr) }\n\n",
+        );
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// DYNAMICALLY TRANSPILED USER STRUCTS\n");
@@ -140,7 +396,12 @@ impl Codegen {
 
         for (struct_name, layout) in &self.struct_registry {
             c_code.push_str(&format!("struct {} {{\n", struct_name));
-            for (field_name, field_type) in &layout.fields {
+
+            // Sort the fields alphabetically to ensure stable layout alignment on C side
+            let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
+            sorted_fields.sort_by(|a, b| a.0.cmp(b.0));
+
+            for (field_name, field_type) in sorted_fields {
                 let field_c_type = self.get_c_type(field_type);
                 c_code.push_str(&format!("    {} {};\n", field_c_type, field_name));
             }
@@ -164,16 +425,17 @@ impl Codegen {
     }
 
     fn get_c_type(&self, t: &Type) -> String {
-        match t {
+        let erased_t = erase_type(t);
+        match erased_t {
             Type::Int => "int".to_string(),
             Type::Byte => "unsigned char".to_string(),
             Type::Void => "void".to_string(),
             Type::Arena => "os_Arena".to_string(),
             Type::ByteSlice => "Slice_unsigned_char".to_string(),
-            Type::Slice(inner) => format!("Slice_{}", self.get_c_type_ident(inner)),
+            Type::Slice(inner) => format!("Slice_{}", self.get_c_type_ident(&inner)),
             Type::Index(_, _) => "int".to_string(),
             Type::Struct(name, _) => name.clone(),
-            Type::RawPointer(inner) => format!("{}*", self.get_c_type(inner)),
+            Type::RawPointer(inner) => format!("{}*", self.get_c_type(&inner)),
             Type::Generic(name, _) => name.clone(),
             Type::Str => "Slice_unsigned_char".to_string(),
         }
@@ -277,6 +539,8 @@ impl Codegen {
                 let mut target_struct = None;
                 if let Type::Index(struct_name, _) = &var_type {
                     target_struct = Some(struct_name.clone());
+                } else if let Type::Struct(struct_name, _) = &var_type {
+                    target_struct = Some(struct_name.clone());
                 }
                 *self.current_alloc_struct.borrow_mut() = target_struct;
 
@@ -296,12 +560,12 @@ impl Codegen {
             }
             Statement::Assignment { left, value } => {
                 let mut target_struct = None;
-                if let Expression::Identifier(left_name) = left
-                    && let Some(Type::Index(struct_name, _)) =
-                        self.symbol_table.borrow().get(left_name)
-                    {
-                        target_struct = Some(struct_name.clone());
-                    }
+                let left_type = self.get_expr_type(left).unwrap_or(Type::Void);
+                if let Type::Index(struct_name, _) = &left_type {
+                    target_struct = Some(struct_name.clone());
+                } else if let Type::Struct(struct_name, _) = &left_type {
+                    target_struct = Some(struct_name.clone());
+                }
                 *self.current_alloc_struct.borrow_mut() = target_struct;
 
                 let left_str = self.gen_expression(left);
@@ -445,8 +709,12 @@ impl Codegen {
                         left_str
                     )
                 } else {
-                    if let Type::RawPointer(_) = target_type {
-                        format!("(({}){})", target_str, left_str)
+                    if let Type::RawPointer(inner) = target_type {
+                        format!(
+                            "(({}){})",
+                            self.get_c_type(&Type::RawPointer(inner.clone())),
+                            left_str
+                        )
                     } else if let Type::Struct(_, _) = target_type {
                         format!("(*(({}*){}.data))", target_str, left_str)
                     } else {
@@ -458,17 +726,58 @@ impl Codegen {
                 let alloc_str = self.gen_expression(allocator);
                 let index_str = self.gen_expression(index);
 
-                let mut is_slice = false;
-                if let Expression::Identifier(name) = &**allocator
-                    && let Some(t) = self.symbol_table.borrow().get(name)
-                        && (matches!(t, Type::Slice(_)) || *t == Type::Str) {
-                            is_slice = true;
+                let alloc_type = self.get_expr_type(allocator).unwrap_or(Type::Void);
+                let is_slice = matches!(alloc_type, Type::Slice(_)) || alloc_type == Type::Str;
+
+                let mut is_vector = false;
+                let mut is_hashmap = false;
+                let mut is_str_key = false;
+
+                if let Type::Struct(struct_name, _) = &alloc_type {
+                    if struct_name.starts_with("Vector_") {
+                        is_vector = true;
+                    } else if struct_name.starts_with("HashMap_") {
+                        is_hashmap = true;
+                        if let Some(layout) = self.struct_registry.get(struct_name)
+                            && let Some(Type::RawPointer(k_inner)) = layout.fields.get("keys")
+                                && **k_inner == Type::Str {
+                                    is_str_key = true;
+                                }
+                    }
+                } else {
+                    // Fallback to checking the allocator variable name in symbol table directly
+                    let alloc_ident = expression_to_string(allocator);
+                    if let Some(Type::Struct(struct_name, _)) =
+                        self.symbol_table.borrow().get(&alloc_ident)
+                    {
+                        if struct_name.starts_with("Vector_") {
+                            is_vector = true;
+                        } else if struct_name.starts_with("HashMap_") {
+                            is_hashmap = true;
+                            if let Some(layout) = self.struct_registry.get(struct_name)
+                                && let Some(Type::RawPointer(k_inner)) = layout.fields.get("keys")
+                                    && **k_inner == Type::Str {
+                                        is_str_key = true;
+                                    }
                         }
+                    }
+                }
 
                 if is_slice {
                     format!(
                         "(*({{ if ({} < 0 || {} >= {}.len) {{ printf(\"Slice bounds check failed at line %d\\n\", __LINE__); exit(1); }} &({}.data[{}]); }}))",
                         index_str, index_str, alloc_str, alloc_str, index_str
+                    )
+                } else if is_vector {
+                    format!(
+                        "(*({{ if ({} < 0 || {} >= {}.len) {{ printf(\"Vector bounds check failed at line %d\\n\", __LINE__); exit(1); }} &({}.data[{}]); }}))",
+                        index_str, index_str, alloc_str, alloc_str, index_str
+                    )
+                } else if is_hashmap {
+                    let is_str_key_str = if is_str_key { "1" } else { "0" };
+                    format!(
+                        "(*os_HashMapRef(&{}, {}, {}))",
+                        alloc_str, index_str, is_str_key_str
                     )
                 } else {
                     // Arena indexing (Value-Branded)
@@ -476,16 +785,18 @@ impl Codegen {
                     if let Expression::Identifier(idx_name) = &**index
                         && let Some(Type::Index(struct_name, _)) =
                             self.symbol_table.borrow().get(idx_name)
-                        && struct_name != "Any" {
-                            target_struct = struct_name.clone();
-                        }
+                        && struct_name != "Any"
+                    {
+                        target_struct = struct_name.clone();
+                    }
 
                     let mut use_arrow = false;
                     if let Expression::Identifier(name) = &**allocator
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
-                            && **inner == Type::Arena {
-                                use_arrow = true;
-                            }
+                        && **inner == Type::Arena
+                    {
+                        use_arrow = true;
+                    }
 
                     if use_arrow {
                         format!(
@@ -512,26 +823,27 @@ impl Codegen {
                 if matches!(**left, Expression::IndexAccess { .. }) {
                     if let Expression::IndexAccess { allocator, .. } = &**left
                         && let Expression::Identifier(name) = &**allocator
-                            && let Some(t) = self.symbol_table.borrow().get(name) {
-                                let is_arena_ptr = if let Type::RawPointer(inner) = t {
-                                    **inner == Type::Arena
-                                } else {
-                                    false
-                                };
-                                if *t == Type::Arena || is_arena_ptr {
-                                    use_arrow = true;
-                                }
-                            }
+                        && let Some(t) = self.symbol_table.borrow().get(name)
+                    {
+                        let is_arena_ptr = if let Type::RawPointer(inner) = t {
+                            **inner == Type::Arena
+                        } else {
+                            false
+                        };
+                        if *t == Type::Arena || is_arena_ptr {
+                            use_arrow = true;
+                        }
+                    }
                 } else if let Expression::Selector {
                     left: inner_left,
                     right: inner_right,
                 } = &**left
                     && let Expression::Identifier(name) = &**inner_left
-                        && name == "result"
-                        && inner_right == "Val"
-                    {
-                        use_arrow = true;
-                    }
+                    && name == "result"
+                    && inner_right == "Val"
+                {
+                    use_arrow = true;
+                }
 
                 if use_arrow {
                     format!("{}->{}", left_str, right)
@@ -547,18 +859,88 @@ impl Codegen {
 
                 if func_path == "len" {
                     let arg_str = self.gen_expression(&arguments[0]);
+                    let mut is_coll = false;
+                    let arg_type = self.get_expr_type(&arguments[0]).unwrap_or(Type::Void);
+                    if let Type::Struct(struct_name, _) = &arg_type {
+                        if struct_name.starts_with("Vector_") || struct_name.starts_with("HashMap_")
+                        {
+                            is_coll = true;
+                        }
+                    } else {
+                        let arg_ident = expression_to_string(&arguments[0]);
+                        if let Some(Type::Struct(struct_name, _)) =
+                            self.symbol_table.borrow().get(&arg_ident)
+                            && (struct_name.starts_with("Vector_")
+                                || struct_name.starts_with("HashMap_"))
+                            {
+                                is_coll = true;
+                            }
+                    }
+                    if is_coll {
+                        return format!("{}.len", arg_str);
+                    }
                     return format!("{}.len", arg_str);
                 }
 
                 // Compile-time resolution of os.ArenaAlloc [3]
                 if func_path == "os_ArenaAlloc" || func_path == "os.ArenaAlloc" {
                     let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
-                        format!("sizeof({})", struct_name)
+                        struct_name.clone()
                     } else {
                         "sizeof(SessionNode)".to_string()
                     };
                     let arg_str = self.gen_expression(&arguments[0]);
-                    return format!("os_ArenaAlloc(&{}, {})", arg_str, size_str);
+                    return format!("os_ArenaAlloc(&{}, sizeof({}))", arg_str, size_str);
+                }
+
+                // os.VectorNew
+                if func_path == "os.VectorNew" || func_path == "os_VectorNew" {
+                    let arg_str = self.gen_expression(&arguments[0]);
+                    let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
+                        struct_name.clone()
+                    } else {
+                        "Vector_int".to_string()
+                    };
+                    let mut is_ptr = false;
+                    if let Expression::Identifier(name) = &arguments[0]
+                        && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
+                            && **inner == Type::Arena {
+                                is_ptr = true;
+                            }
+                    let arena_expr = if is_ptr {
+                        arg_str
+                    } else {
+                        format!("&{}", arg_str)
+                    };
+                    return format!(
+                        "(struct {}){{ .data = NULL, .len = 0, .capacity = 0, .arena = {} }}",
+                        type_str, arena_expr
+                    );
+                }
+
+                // os.HashMapNew
+                if func_path == "os.HashMapNew" || func_path == "os_HashMapNew" {
+                    let arg_str = self.gen_expression(&arguments[0]);
+                    let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
+                        struct_name.clone()
+                    } else {
+                        "HashMap_int_int".to_string()
+                    };
+                    let mut is_ptr = false;
+                    if let Expression::Identifier(name) = &arguments[0]
+                        && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
+                            && **inner == Type::Arena {
+                                is_ptr = true;
+                            }
+                    let arena_expr = if is_ptr {
+                        arg_str
+                    } else {
+                        format!("&{}", arg_str)
+                    };
+                    return format!(
+                        "(struct {}){{ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = {} }}",
+                        type_str, arena_expr
+                    );
                 }
 
                 if let Expression::Selector { left, right } = &**function
@@ -567,9 +949,10 @@ impl Codegen {
                     && right == "Free"
                 {
                     if let Type::RawPointer(inner) = var_type
-                        && **inner == Type::Arena {
-                            return format!("os_Arena_Free({})", name);
-                        }
+                        && **inner == Type::Arena
+                    {
+                        return format!("os_Arena_Free({})", name);
+                    }
                     return format!("os_Arena_Free(&{})", name);
                 }
 
@@ -579,15 +962,91 @@ impl Codegen {
                     return format!("os_LogStr({})", arg_str);
                 }
 
+                if let Expression::Selector { left, right } = &**function {
+                    let left_str = self.gen_expression(left);
+
+                    let mut is_vec = false;
+                    let mut is_map = false;
+                    let left_type = self.get_expr_type(left).unwrap_or(Type::Void);
+
+                    if let Type::Struct(struct_name, _) = &left_type {
+                        if struct_name.starts_with("Vector_") {
+                            is_vec = true;
+                        } else if struct_name.starts_with("HashMap_") {
+                            is_map = true;
+                        }
+                    } else {
+                        let left_ident = expression_to_string(left);
+                        if let Some(Type::Struct(struct_name, _)) =
+                            self.symbol_table.borrow().get(&left_ident)
+                        {
+                            if struct_name.starts_with("Vector_") {
+                                is_vec = true;
+                            } else if struct_name.starts_with("HashMap_") {
+                                is_map = true;
+                            }
+                        }
+                    }
+
+                    if is_vec && right == "Push" {
+                        let arg_str = self.gen_expression(&arguments[0]);
+                        return format!("os_VectorPush(&{}, {})", left_str, arg_str);
+                    }
+                    if is_map && right == "Insert" {
+                        let k_str = self.gen_expression(&arguments[0]);
+                        let v_str = self.gen_expression(&arguments[1]);
+                        let mut is_str_key = false;
+                        let left_ident = expression_to_string(left);
+                        if let Some(Type::Struct(struct_name, _)) =
+                            self.symbol_table.borrow().get(&left_ident)
+                        {
+                            is_str_key = self
+                                .get_hashmap_key_value_types(struct_name)
+                                .map(|(k, _)| k == Type::Str)
+                                .unwrap_or(false);
+                        }
+                        let is_str_key_str = if is_str_key { "1" } else { "0" };
+                        return format!(
+                            "*os_HashMapRef(&{}, {}, {}) = {}",
+                            left_str, k_str, is_str_key_str, v_str
+                        );
+                    }
+                    if is_map && right == "Get" {
+                        let k_str = self.gen_expression(&arguments[0]);
+                        let mut is_str_key = false;
+                        let left_ident = expression_to_string(left);
+                        if let Some(Type::Struct(struct_name, _)) =
+                            self.symbol_table.borrow().get(&left_ident)
+                        {
+                            is_str_key = self
+                                .get_hashmap_key_value_types(struct_name)
+                                .map(|(k, _)| k == Type::Str)
+                                .unwrap_or(false);
+                        }
+                        let is_str_key_str = if is_str_key { "1" } else { "0" };
+                        return format!(
+                            "*os_HashMapRef(&{}, {}, {})",
+                            left_str, k_str, is_str_key_str
+                        );
+                    }
+
+                    let left_type_str = expression_to_string(left);
+                    if let Some(var_type) = self.symbol_table.borrow().get(&left_type_str)
+                        && *var_type == Type::Arena && right == "Free" {
+                            return format!("os_Arena_Free(&{})", left_type_str);
+                        }
+                }
+
                 let func_c = func_path.replace(".", "_");
                 let mut arg_strs = Vec::new();
                 for arg in arguments {
                     if let Expression::Identifier(name) = arg
                         && let Some(var_type) = self.symbol_table.borrow().get(name)
-                        && *var_type == Type::Arena {
-                            arg_strs.push(format!("&{}", name));
-                            continue;
-                        }
+                        && *var_type == Type::Arena
+                    {
+                        arg_strs.push(format!("&{}", name));
+                        continue;
+                    }
                     arg_strs.push(self.gen_expression(arg));
                 }
                 format!("{}({})", func_c, arg_strs.join(", "))

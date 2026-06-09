@@ -252,3 +252,73 @@ fn test_function_view_origin_propagation_rejected() {
             .contains("cannot be used because its backing origin")
     );
 }
+
+// === VALUE-BRANDED VECTOR & HASHMAP COMPILE TIME TESTS ===
+
+#[test]
+fn test_branded_vector_safety_rejected() {
+    let source = "
+        type Node[ctx] struct { val: int }
+        func main() {
+            mut ctx1 := os.Arena.New();
+            defer ctx1.Free();
+            mut ctx2 := os.Arena.New();
+            defer ctx2.Free();
+
+            mut vec: Vector[Index[Node, ctx1], ctx1] := os.VectorNew(ctx1);
+            mut n: Index[Node, ctx1] := os.ArenaAlloc(ctx1);
+            vec.Push(n);
+
+            ctx2[vec[0]].val = 100; // Error: Value-Branded Lifetime Violation!
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Value-Branded Lifetime Violation"));
+}
+
+#[test]
+fn test_dangling_vector_use_rejected() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            mut vec: Vector[int, ctx] := os.VectorNew(ctx);
+            mut movedCtx := move ctx;
+            vec.Push(10); // Error: vec's allocator 'ctx' has been moved or freed
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::AllocatorMovedOrFreed);
+    assert!(
+        err.message
+            .contains("branding allocator 'ctx' has been moved")
+    );
+}
+
+#[test]
+fn test_branded_hashmap_safety_rejected() {
+    let source = "
+        type Node[ctx] struct { val: int }
+        func main() {
+            mut ctx1 := os.Arena.New();
+            defer ctx1.Free();
+            mut ctx2 := os.Arena.New();
+            defer ctx2.Free();
+
+            mut map: HashMap[int, Index[Node, ctx1], ctx1] := os.HashMapNew(ctx1);
+            mut n: Index[Node, ctx1] := os.ArenaAlloc(ctx1);
+            map.Insert(1, n);
+
+            ctx2[map[1]].val = 100; // Error: Value-Branded Lifetime Violation!
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Value-Branded Lifetime Violation"));
+}
