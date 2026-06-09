@@ -77,12 +77,10 @@ fn test_brand_lifetime_mismatch_rejected() {
     ";
     let res = check_program(source);
 
-    assert!(res.is_err(), "Expected an error but compilation succeeded!");
-    let err = res.unwrap_err();
+    assert!(res.is_err());
     assert!(
-        err.contains("Value-Branded Lifetime Violation"),
-        "Expected error to contain 'Value-Branded Lifetime Violation', but got:\n\n{:?}\n",
-        err
+        res.unwrap_err()
+            .contains("Value-Branded Lifetime Violation")
     );
 }
 

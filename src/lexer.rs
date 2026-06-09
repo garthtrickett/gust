@@ -43,6 +43,7 @@ impl Lexer {
         }
     }
 
+    // Fixed: Now allows digits inside identifiers so 'ctx1' is not split into 'ctx' and '1'
     fn read_identifier(&mut self) -> String {
         let start_pos = self.position;
         while is_letter(self.ch) || is_digit(self.ch) {
@@ -196,10 +197,12 @@ impl Lexer {
                 token_type: TokenType::Eof,
                 literal: "".to_string(),
             },
-            '"' => Token {
-                token_type: TokenType::String,
-                literal: self.read_string(),
-            },
+            '"' => {
+                return Token {
+                    token_type: TokenType::String,
+                    literal: self.read_string(),
+                };
+            }
             c => {
                 if is_letter(c) {
                     let literal = self.read_identifier();
@@ -250,6 +253,114 @@ fn lookup_ident(ident: &str) -> TokenType {
         "unsafe" => TokenType::Unsafe,
         "type" => TokenType::Type,
         "struct" => TokenType::Struct,
+        "return" => TokenType::Return,
         _ => TokenType::Ident,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_next_token_basic() {
+        let input = "mut five := 5; func add(x: int, y: int) int { return x + y; }";
+        let mut l = Lexer::new(input);
+
+        let expected = vec![
+            (TokenType::Mut, "mut"),
+            (TokenType::Ident, "five"),
+            (TokenType::Assign, ":="),
+            (TokenType::Int, "5"),
+            (TokenType::Semicolon, ";"),
+            (TokenType::Func, "func"),
+            (TokenType::Ident, "add"),
+            (TokenType::LParen, "("),
+            (TokenType::Ident, "x"),
+            (TokenType::Colon, ":"),
+            (TokenType::Ident, "int"),
+            (TokenType::Comma, ","),
+            (TokenType::Ident, "y"),
+            (TokenType::Colon, ":"),
+            (TokenType::Ident, "int"),
+            (TokenType::RParen, ")"),
+            (TokenType::Ident, "int"),
+            (TokenType::LBrace, "{"),
+            (TokenType::Return, "return"),
+            (TokenType::Ident, "x"),
+            (TokenType::Plus, "+"),
+            (TokenType::Ident, "y"),
+            (TokenType::Semicolon, ";"),
+            (TokenType::RBrace, "}"),
+            (TokenType::Eof, ""),
+        ];
+
+        for (expected_type, expected_literal) in expected {
+            let tok = l.next_token();
+            assert_eq!(tok.token_type, expected_type);
+            assert_eq!(tok.literal, expected_literal);
+        }
+    }
+
+    #[test]
+    fn test_identifiers_with_digits() {
+        let input = "ctx1 ctx2 var_3 node_42";
+        let mut l = Lexer::new(input);
+
+        let expected = vec![
+            (TokenType::Ident, "ctx1"),
+            (TokenType::Ident, "ctx2"),
+            (TokenType::Ident, "var_3"),
+            (TokenType::Ident, "node_42"),
+            (TokenType::Eof, ""),
+        ];
+
+        for (expected_type, expected_literal) in expected {
+            let tok = l.next_token();
+            assert_eq!(tok.token_type, expected_type);
+            assert_eq!(tok.literal, expected_literal);
+        }
+    }
+
+    #[test]
+    fn test_string_literals_and_comments() {
+        let input = r#"
+            // This is a comment
+            mut msg := "Hello World"; // Trailing comment
+            mut empty := "";
+        "#;
+        let mut l = Lexer::new(input);
+
+        let expected = vec![
+            (TokenType::Mut, "mut"),
+            (TokenType::Ident, "msg"),
+            (TokenType::Assign, ":="),
+            (TokenType::String, "Hello World"),
+            (TokenType::Semicolon, ";"),
+            (TokenType::Mut, "mut"),
+            (TokenType::Ident, "empty"),
+            (TokenType::Assign, ":="),
+            (TokenType::String, ""),
+            (TokenType::Semicolon, ";"),
+            (TokenType::Eof, ""),
+        ];
+
+        for (expected_type, expected_literal) in expected {
+            let tok = l.next_token();
+            assert_eq!(tok.token_type, expected_type);
+            assert_eq!(tok.literal, expected_literal);
+        }
+    }
+
+    #[test]
+    fn test_edge_cases() {
+        let input = "\"unclosed string";
+        let mut l = Lexer::new(input);
+        let tok = l.next_token();
+        assert_eq!(tok.token_type, TokenType::String);
+        assert_eq!(tok.literal, "unclosed string");
+
+        let tok_eof = l.next_token();
+        assert_eq!(tok_eof.token_type, TokenType::Eof);
     }
 }

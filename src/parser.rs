@@ -7,6 +7,7 @@ pub struct Parser {
     lexer: Lexer,
     cur_token: Token,
     peek_token: Token,
+    pushback_tokens: Vec<Token>,
 }
 
 impl Parser {
@@ -17,12 +18,17 @@ impl Parser {
             lexer,
             cur_token,
             peek_token,
+            pushback_tokens: Vec::new(),
         }
     }
 
     fn next_token(&mut self) {
         self.cur_token = self.peek_token.clone();
-        self.peek_token = self.lexer.next_token();
+        if let Some(tok) = self.pushback_tokens.pop() {
+            self.peek_token = tok;
+        } else {
+            self.peek_token = self.lexer.next_token();
+        }
     }
 
     pub fn parse_program(&mut self) -> Program {
@@ -263,7 +269,6 @@ impl Parser {
     }
 
     fn parse_type_signature(&mut self) -> Option<Type> {
-        // Accept both '*' and '&' as safe pointer references in signature declarations [1]
         if self.cur_token.token_type == TokenType::Asterisk
             || self.cur_token.token_type == TokenType::Ampersand
         {
@@ -340,7 +345,7 @@ impl Parser {
             "int" => Some(Type::Int),
             "byte" => Some(Type::Byte),
             "Arena" | "os_Arena" => Some(Type::Arena),
-            "str" => Some(Type::Str), // Added for String Views Option 2
+            "str" => Some(Type::Str),
             _ => Some(Type::Struct(base_name, None)),
         }
     }
@@ -469,6 +474,17 @@ impl Parser {
                         target_type,
                         is_reference,
                     };
+
+                    // Realign the token stream state with the Pratt parser loop expectations
+                    let next_op = self.cur_token.clone();
+                    let token_after = self.peek_token.clone();
+
+                    self.pushback_tokens.push(token_after);
+                    self.peek_token = next_op;
+                    self.cur_token = Token {
+                        token_type: TokenType::Illegal,
+                        literal: "".to_string(),
+                    };
                 }
                 TokenType::Plus
                 | TokenType::Minus
@@ -505,7 +521,7 @@ impl Parser {
                 let val: i64 = self.cur_token.literal.parse().ok()?;
                 Some(Expression::Integer(val))
             }
-            TokenType::String => Some(Expression::String(self.cur_token.literal.clone())), // Added string literals
+            TokenType::String => Some(Expression::String(self.cur_token.literal.clone())),
             TokenType::Move => {
                 self.next_token();
                 let expr = self.parse_expression(6)?;
@@ -565,5 +581,92 @@ impl Parser {
         self.next_token();
 
         Some(args)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn format_expr(expr: &Expression) -> String {
+        match expr {
+            Expression::Identifier(name) => name.clone(),
+            Expression::Integer(val) => val.to_string(),
+            Expression::String(val) => format!("\"{}\"", val),
+            Expression::Move(inner) => format!("(move {})", format_expr(inner)),
+            Expression::Take(inner) => format!("(take {})", format_expr(inner)),
+            Expression::AddressOf(inner) => format!("(& {})", format_expr(inner)),
+            Expression::Dereference(inner) => format!("(* {})", format_expr(inner)),
+            Expression::IndexAccess { allocator, index } => {
+                format!("{}[{}]", format_expr(allocator), format_expr(index))
+            }
+            Expression::AsCast {
+                left,
+                target_type,
+                is_reference,
+            } => {
+                let ref_str = if *is_reference { "&" } else { "" };
+                format!("({} as {}{:?})", format_expr(left), ref_str, target_type)
+            }
+            Expression::Binary { op, left, right } => {
+                format!("({} {} {})", format_expr(left), op, format_expr(right))
+            }
+            Expression::Selector { left, right } => {
+                format!("{}.{}", format_expr(left), right)
+            }
+            Expression::Call {
+                function,
+                arguments,
+            } => {
+                let args_strs: Vec<String> = arguments.iter().map(format_expr).collect();
+                format!("{}({})", format_expr(function), args_strs.join(", "))
+            }
+        }
+    }
+
+    fn parse_expr_str(input: &str) -> Expression {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        parser
+            .parse_expression(1)
+            .expect("Failed to parse expression")
+    }
+
+    #[test]
+    fn test_arithmetic_operator_precedence() {
+        assert_eq!(format_expr(&parse_expr_str("a + b * c")), "(a + (b * c))");
+        assert_eq!(format_expr(&parse_expr_str("a * b + c")), "((a * b) + c)");
+        assert_eq!(format_expr(&parse_expr_str("a - b / c")), "(a - (b / c))");
+        assert_eq!(
+            format_expr(&parse_expr_str("a == b != c")),
+            "((a == b) != c)"
+        );
+        assert_eq!(format_expr(&parse_expr_str("a < b > c")), "((a < b) > c)");
+    }
+
+    #[test]
+    fn test_selector_and_call_precedence() {
+        assert_eq!(format_expr(&parse_expr_str("a.b.c")), "a.b.c");
+        assert_eq!(format_expr(&parse_expr_str("a.b(c)")), "a.b(c)");
+        assert_eq!(format_expr(&parse_expr_str("a(b).c")), "a(b).c");
+    }
+
+    #[test]
+    fn test_as_cast_precedence() {
+        assert_eq!(
+            format_expr(&parse_expr_str("a + b as int")),
+            "(a + (b as Int))"
+        );
+        assert_eq!(
+            format_expr(&parse_expr_str("a as int + b")),
+            "((a as Int) + b)"
+        );
+    }
+
+    #[test]
+    fn test_index_access_precedence() {
+        assert_eq!(format_expr(&parse_expr_str("a[b].c")), "a[b].c");
+        assert_eq!(format_expr(&parse_expr_str("a.b[c]")), "a.b[c]");
+        assert_eq!(format_expr(&parse_expr_str("a[b][c]")), "a[b][c]");
     }
 }
