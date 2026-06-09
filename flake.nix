@@ -30,6 +30,7 @@
             rust-analyzer # Highly recommended for LSP/IDE support
             rustfmt
             clippy
+            python3
           ];
 
           shellHook = ''
