@@ -1,2 +1,13 @@
-/target
-a.txt
+# Rust build artifacts
+/target/
+
+# Transpiled C files
+/gust_output.c
+/gust_unsafe.c
+
+# Compiled native binaries
+/gust_program
+/gust_unsafe_program
+
+# Aggregator output
+/a.txt
