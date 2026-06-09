@@ -184,3 +184,71 @@ fn test_string_view_logint_rejected() {
     assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
     assert!(err.message.contains("os.LogInt expects an Int/Byte"));
 }
+
+// === NEW PRESSURE TESTS FOR PHASE 1 SET-BASED ORIGIN TRACKING ===
+
+#[test]
+fn test_conditional_origin_union_rejected() {
+    let source = "
+        func main() {
+            mut temp1 := os.MockPayload();
+            mut temp2 := os.MockPayload();
+            mut view := temp1;
+            
+            mut cond := 1;
+            if cond {
+                view = temp1;
+            } else {
+                view = temp2;
+            }
+            
+            // Move temp2
+            mut moved := move temp2;
+            
+            // view has merged origins {temp1, temp2}. Since temp2 was moved, using view is an error!
+            os.LogInt(view[0]); 
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
+    assert!(
+        err.message
+            .contains("cannot be used because its backing origin")
+    );
+}
+
+#[test]
+fn test_function_view_origin_propagation_rejected() {
+    let source = "
+        func choose_payload(cond: int, a: []byte, b: []byte) []byte {
+            if cond {
+                return a;
+            } else {
+                return b;
+            }
+        }
+        
+        func main() {
+            mut p1 := os.MockPayload();
+            mut p2 := os.MockPayload();
+            
+            mut result := choose_payload(1, p1, p2);
+            
+            // Move p1
+            mut moved := move p1;
+            
+            // Since result's origin is union of p1 and p2, moving p1 invalidates result!
+            os.LogInt(result[0]);
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
+    assert!(
+        err.message
+            .contains("cannot be used because its backing origin")
+    );
+}

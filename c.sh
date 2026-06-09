@@ -17,6 +17,7 @@ FILES=(
     "src/codegen.rs"
     "src/main.rs"
     "tests/compile_tests.rs"
+    "tests/e2e_tests.rs"
     "src/lib.rs"
 )
 

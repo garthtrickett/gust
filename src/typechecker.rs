@@ -113,6 +113,7 @@ pub struct FunctionSignature {
     pub param_names: Vec<String>,
     pub params: Vec<Type>,
     pub return_type: Type,
+    pub return_origins: HashSet<String>, // Added Set-Based formal return origins
 }
 
 pub struct TypeChecker {
@@ -122,9 +123,10 @@ pub struct TypeChecker {
     pub in_unsafe_block: bool,
     pub struct_registry: HashMap<String, StructLayout>,
     pub struct_templates: HashMap<String, StructTemplate>,
-    pub variable_origins: HashMap<String, String>, // Dynamic Origin Tracker [1]
-    pub function_registry: HashMap<String, FunctionSignature>, // Function Registry [3]
+    pub variable_origins: HashMap<String, HashSet<String>>, // Upgraded to Set-Based Union Tracker
+    pub function_registry: HashMap<String, FunctionSignature>, // Function Registry
     pub expected_return_type: Option<Type>,
+    pub current_function_return_origins: Option<HashSet<String>>, // Track return statement origins
 }
 
 impl Default for TypeChecker {
@@ -175,6 +177,7 @@ impl TypeChecker {
             variable_origins: HashMap::new(),
             function_registry: HashMap::new(),
             expected_return_type: None,
+            current_function_return_origins: None,
         }
     }
 
@@ -230,6 +233,7 @@ impl TypeChecker {
                         param_names,
                         params: resolved_params?,
                         return_type: resolved_return,
+                        return_origins: HashSet::new(), // Populated in the actual pass
                     },
                 );
             }
@@ -246,32 +250,52 @@ impl TypeChecker {
         match stmt {
             Statement::StructDecl { .. } => {}
             Statement::FunctionDecl {
-                name: _,
+                name,
                 params,
                 return_type,
                 body,
             } => {
                 let parent_scope = self.symbol_table.clone();
+                let parent_origins = self.variable_origins.clone();
 
-                // Register all function parameters in the local symbol table [3]
+                // Register all function parameters in the local symbol table & origins
                 for param in params {
                     let resolved_param_type = self.resolve_type(&param.param_type)?;
                     self.symbol_table
                         .insert(param.name.clone(), resolved_param_type);
+
+                    let mut param_origins = HashSet::new();
+                    param_origins.insert(param.name.clone());
+                    self.variable_origins
+                        .insert(param.name.clone(), param_origins);
                 }
 
                 // Register and track expected return types inside local scope [3]
                 let resolved_return_type = self.resolve_type(return_type)?;
                 let old_expected = self.expected_return_type.clone();
+                let old_return_origins = self.current_function_return_origins.clone();
                 self.expected_return_type = Some(resolved_return_type);
+                self.current_function_return_origins = Some(HashSet::new());
 
                 for s in &body.statements {
                     self.check_statement(s)?;
                 }
 
+                let formal_return_origins = self
+                    .current_function_return_origins
+                    .clone()
+                    .unwrap_or_default();
+
+                // Populate formal return origins on signature for propagation
+                if let Some(sig) = self.function_registry.get_mut(name) {
+                    sig.return_origins = formal_return_origins;
+                }
+
                 // Clean-up and restore parent scopes [3]
                 self.symbol_table = parent_scope;
+                self.variable_origins = parent_origins;
                 self.expected_return_type = old_expected;
+                self.current_function_return_origins = old_return_origins;
             }
             Statement::VarDecl {
                 name,
@@ -283,15 +307,18 @@ impl TypeChecker {
                     let mut t = self.check_expression(val_expr)?;
                     t = self.resolve_type(&t)?;
 
-                    if let Some(orig) = self.get_expression_origin(val_expr) {
-                        self.variable_origins.insert(name.clone(), orig);
-                    } else {
-                        self.variable_origins.insert(name.clone(), name.clone());
+                    let mut origs = self.get_expression_origins(val_expr);
+                    // Fallback to itself as a root origin if expression contains no active origins
+                    if origs.is_empty() {
+                        origs.insert(name.clone());
                     }
+                    self.variable_origins.insert(name.clone(), origs);
                     t
                 } else {
                     if let Some(explicit_t) = var_type {
-                        self.variable_origins.insert(name.clone(), name.clone());
+                        let mut origs = HashSet::new();
+                        origs.insert(name.clone());
+                        self.variable_origins.insert(name.clone(), origs);
                         self.resolve_type(explicit_t)?
                     } else {
                         return Err(TypeError {
@@ -336,6 +363,16 @@ impl TypeChecker {
                         ),
                     });
                 }
+
+                // Track assignments to variables to update their active memory origins
+                if let Expression::Identifier(left_name) = left {
+                    let mut origs = self.get_expression_origins(value);
+                    // Fallback to itself as a root origin if assignment expression has no origins
+                    if origs.is_empty() {
+                        origs.insert(left_name.clone());
+                    }
+                    self.variable_origins.insert(left_name.clone(), origs);
+                }
             }
             Statement::While { condition, body } => {
                 let cond_type = self.check_expression(condition)?;
@@ -365,18 +402,96 @@ impl TypeChecker {
                     });
                 }
 
+                let pre_origins = self.variable_origins.clone();
+                let pre_moved = self.moved_vars.clone();
+
                 let parent_scope = self.symbol_table.clone();
                 for s in &consequence.statements {
                     self.check_statement(s)?;
                 }
                 self.symbol_table = parent_scope;
 
+                let consequence_origins = self.variable_origins.clone();
+                let consequence_moved = self.moved_vars.clone();
+
                 if let Some(alt_body) = alternative {
+                    // Reset to pre-if state for alternative branch evaluation
+                    self.variable_origins = pre_origins.clone();
+                    self.moved_vars = pre_moved.clone();
+
                     let parent_scope = self.symbol_table.clone();
                     for s in &alt_body.statements {
                         self.check_statement(s)?;
                     }
                     self.symbol_table = parent_scope;
+
+                    let alternative_origins = self.variable_origins.clone();
+                    let alternative_moved = self.moved_vars.clone();
+
+                    // Classic compiler join-point union for conditional path merging
+                    let mut merged_origins = pre_origins.clone();
+                    let mut all_vars = HashSet::new();
+                    all_vars.extend(consequence_origins.keys().cloned());
+                    all_vars.extend(alternative_origins.keys().cloned());
+
+                    for var in all_vars {
+                        let orig_conseq = consequence_origins.get(&var);
+                        let orig_alt = alternative_origins.get(&var);
+
+                        match (orig_conseq, orig_alt) {
+                            (Some(c_set), Some(a_set)) => {
+                                let mut union_set = c_set.clone();
+                                union_set.extend(a_set.clone());
+                                merged_origins.insert(var, union_set);
+                            }
+                            (Some(c_set), None) => {
+                                if let Some(p_set) = pre_origins.get(&var) {
+                                    let mut union_set = p_set.clone();
+                                    union_set.extend(c_set.clone());
+                                    merged_origins.insert(var, union_set);
+                                } else {
+                                    merged_origins.insert(var, c_set.clone());
+                                }
+                            }
+                            (None, Some(a_set)) => {
+                                if let Some(p_set) = pre_origins.get(&var) {
+                                    let mut union_set = p_set.clone();
+                                    union_set.extend(a_set.clone());
+                                    merged_origins.insert(var, union_set);
+                                } else {
+                                    merged_origins.insert(var, a_set.clone());
+                                }
+                            }
+                            (None, None) => {}
+                        }
+                    }
+
+                    let mut merged_moved = pre_moved;
+                    merged_moved.extend(consequence_moved);
+                    merged_moved.extend(alternative_moved);
+
+                    self.variable_origins = merged_origins;
+                    self.moved_vars = merged_moved;
+                } else {
+                    // Merging consequence outcomes with pre-if context
+                    let mut merged_origins = pre_origins.clone();
+                    for (var, c_set) in &consequence_origins {
+                        if let Some(p_set) = pre_origins.get(var) {
+                            if p_set != c_set {
+                                let mut union_set = p_set.clone();
+                                union_set.extend(c_set.clone());
+                                merged_origins.insert(var.clone(), union_set);
+                            }
+                        } else {
+                            merged_origins.insert(var.clone(), c_set.clone());
+                        }
+                    }
+
+                    let mut merged_moved = pre_moved;
+                    merged_moved.extend(consequence_moved);
+
+                    self.variable_origins = merged_origins;
+                    self.moved_vars = merged_moved;
                 }
             }
             Statement::UnsafeBlock { body } => {
@@ -398,6 +513,14 @@ impl TypeChecker {
                 let actual_return = if let Some(expr) = maybe_expr {
                     let mut t = self.check_expression(expr)?;
                     t = self.resolve_type(&t)?;
+
+                    // Retrieve expression origins immutably first
+                    let expr_origins = self.get_expression_origins(expr);
+
+                    // Populate return statement origins to the enclosing function
+                    if let Some(ref mut return_origins_set) = self.current_function_return_origins {
+                        return_origins_set.extend(expr_origins);
+                    }
                     t
                 } else {
                     Type::Void
@@ -449,21 +572,57 @@ impl TypeChecker {
         }
     }
 
-    fn get_expression_origin(&self, expr: &Expression) -> Option<String> {
+    // Dynamic, recursive Set-Based memory origin extractor
+    pub fn get_expression_origins(&self, expr: &Expression) -> HashSet<String> {
         match expr {
             Expression::Identifier(name) => {
-                if let Some(origin) = self.variable_origins.get(name) {
-                    Some(origin.clone())
+                if let Some(origins) = self.variable_origins.get(name) {
+                    origins.clone()
+                } else if name == "null" {
+                    HashSet::new()
                 } else {
-                    Some(name.clone())
+                    let mut s = HashSet::new();
+                    s.insert(name.clone());
+                    s
                 }
             }
-            Expression::AsCast { left, .. } => self.get_expression_origin(left),
-            Expression::AddressOf(inner) => self.get_expression_origin(inner),
-            Expression::Dereference(inner) => self.get_expression_origin(inner),
-            Expression::Selector { left, .. } => self.get_expression_origin(left),
-            Expression::IndexAccess { allocator, .. } => self.get_expression_origin(allocator),
-            _ => None,
+            Expression::AsCast { left, .. } => self.get_expression_origins(left),
+            Expression::AddressOf(inner) => self.get_expression_origins(inner),
+            Expression::Dereference(inner) => self.get_expression_origins(inner),
+            Expression::Selector { left, .. } => self.get_expression_origins(left),
+            Expression::IndexAccess { allocator, .. } => self.get_expression_origins(allocator),
+            Expression::Move(inner) => self.get_expression_origins(inner),
+            Expression::Take(inner) => self.get_expression_origins(inner),
+            Expression::Call {
+                function,
+                arguments,
+            } => {
+                let func_path = self.expression_to_string(function);
+                if let Some(sig) = self.function_registry.get(&func_path) {
+                    let mut call_origins = HashSet::new();
+                    let mut param_map = HashMap::new();
+                    for (i, param_name) in sig.param_names.iter().enumerate() {
+                        if i < arguments.len() {
+                            param_map.insert(
+                                param_name.clone(),
+                                self.get_expression_origins(&arguments[i]),
+                            );
+                        }
+                    }
+                    // Propagate and map formal argument placeholders to call-site values
+                    for formal_origin in &sig.return_origins {
+                        if let Some(actual_origins) = param_map.get(formal_origin) {
+                            call_origins.extend(actual_origins.clone());
+                        } else {
+                            call_origins.insert(formal_origin.clone());
+                        }
+                    }
+                    call_origins
+                } else {
+                    HashSet::new()
+                }
+            }
+            _ => HashSet::new(),
         }
     }
 
@@ -657,13 +816,10 @@ impl TypeChecker {
                 let mut new_struct_name = struct_name.clone();
                 for (old_b, new_b) in map {
                     let suffix = format!("_{}", old_b);
-                    let new_suffix = format!("_{}", new_b);
+                    let suffix_2 = format!("_{}", new_b);
                     if new_struct_name.ends_with(&suffix) {
-                        new_struct_name = format!(
-                            "{}{}",
-                            new_struct_name.trim_end_matches(&suffix),
-                            new_suffix
-                        );
+                        new_struct_name =
+                            format!("{}{}", new_struct_name.trim_end_matches(&suffix), suffix_2);
                     }
                 }
                 Type::Struct(new_struct_name, Some(new_brand))
@@ -693,16 +849,19 @@ impl TypeChecker {
                     });
                 }
 
-                if let Some(origin) = self.variable_origins.get(name)
-                    && self.moved_vars.contains(origin)
-                {
-                    return Err(TypeError {
-                        kind: TypeErrorKind::VariableOriginInvalidated,
-                        message: format!(
-                            "Semantic Error: Variable '{}' cannot be used because its backing origin '{}' has been moved or invalidated",
-                            name, origin
-                        ),
-                    });
+                // Union evaluation: Reject reading if ANY of the potential origins are moved/invalid
+                if let Some(origins) = self.variable_origins.get(name) {
+                    for origin in origins {
+                        if self.moved_vars.contains(origin) {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::VariableOriginInvalidated,
+                                message: format!(
+                                    "Semantic Error: Variable '{}' cannot be used because its backing origin '{}' has been moved or invalidated",
+                                    name, origin
+                                ),
+                            });
+                        }
+                    }
                 }
 
                 if let Some(t) = self.symbol_table.get(name) {
@@ -1208,7 +1367,7 @@ impl TypeChecker {
         match expr {
             Expression::Identifier(name) => name.clone(),
             Expression::Integer(val) => val.to_string(),
-            Expression::String(val) => format!("\"{}\"", val), // Added for String Views
+            Expression::String(val) => format!("\"{}\"", val),
             Expression::Call {
                 function,
                 arguments,
