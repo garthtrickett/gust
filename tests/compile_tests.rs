@@ -77,15 +77,13 @@ fn test_brand_lifetime_mismatch_rejected() {
     ";
     let res = check_program(source);
 
-    // If it is an error, print it clearly inside a panic so we can diagnose it [1]
-    if let Err(ref err) = res {
-        panic!(
-            "\n\n🔍 DIAGNOSTIC: Compiler returned this error:\n{}\n\n",
-            err
-        );
-    }
-
-    assert!(res.is_err());
+    assert!(res.is_err(), "Expected an error but compilation succeeded!");
+    let err = res.unwrap_err();
+    assert!(
+        err.contains("Value-Branded Lifetime Violation"),
+        "Expected error to contain 'Value-Branded Lifetime Violation', but got:\n\n{:?}\n",
+        err
+    );
 }
 
 #[test]

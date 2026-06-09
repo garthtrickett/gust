@@ -45,7 +45,7 @@ impl Lexer {
 
     fn read_identifier(&mut self) -> String {
         let start_pos = self.position;
-        while is_letter(self.ch) {
+        while is_letter(self.ch) || is_digit(self.ch) {
             self.read_char();
         }
         self.input[start_pos..self.position].iter().collect()
