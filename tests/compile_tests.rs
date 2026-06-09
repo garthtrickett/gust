@@ -1,8 +1,8 @@
 use gust_lexer::lexer::Lexer;
 use gust_lexer::parser::Parser;
-use gust_lexer::typechecker::TypeChecker;
+use gust_lexer::typechecker::{TypeChecker, TypeError, TypeErrorKind};
 
-fn check_program(source: &str) -> Result<(), String> {
+fn check_program(source: &str) -> Result<(), TypeError> {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
@@ -38,7 +38,9 @@ fn test_safety_double_move_rejected() {
     ";
     let res = check_program(source);
     assert!(res.is_err());
-    assert!(res.unwrap_err().contains("already been moved"));
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+    assert!(err.message.contains("already been moved"));
 }
 
 #[test]
@@ -56,8 +58,10 @@ fn test_safety_escape_rejected() {
     ";
     let res = check_program(source);
     assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
     assert!(
-        res.unwrap_err()
+        err.message
             .contains("cannot be used because its backing origin")
     );
 }
@@ -76,12 +80,10 @@ fn test_brand_lifetime_mismatch_rejected() {
         }
     ";
     let res = check_program(source);
-
     assert!(res.is_err());
-    assert!(
-        res.unwrap_err()
-            .contains("Value-Branded Lifetime Violation")
-    );
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Value-Branded Lifetime Violation"));
 }
 
 #[test]
@@ -97,8 +99,10 @@ fn test_dangling_index_use_rejected() {
     ";
     let res = check_program(source);
     assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::AllocatorMovedOrFreed);
     assert!(
-        res.unwrap_err()
+        err.message
             .contains("branding allocator 'ctx' has been moved")
     );
 }
@@ -113,8 +117,10 @@ fn test_take_primitive_rejected() {
     ";
     let res = check_program(source);
     assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TakePrimitiveBanned);
     assert!(
-        res.unwrap_err()
+        err.message
             .contains("strictly banned on primitive POD types")
     );
 }
@@ -130,8 +136,10 @@ fn test_dereference_outside_unsafe_rejected() {
     ";
     let res = check_program(source);
     assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UnsafeProhibited);
     assert!(
-        res.unwrap_err()
+        err.message
             .contains("strictly prohibited outside 'unsafe' blocks")
     );
 }
@@ -172,5 +180,7 @@ fn test_string_view_logint_rejected() {
     ";
     let res = check_program(source);
     assert!(res.is_err());
-    assert!(res.unwrap_err().contains("os.LogInt expects an Int/Byte"));
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(err.message.contains("os.LogInt expects an Int/Byte"));
 }

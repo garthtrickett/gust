@@ -56,6 +56,46 @@ fn types_match(expected: &Type, actual: &Type) -> bool {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TypeErrorKind {
+    UninitializedVariable,
+    TypeMismatch,
+    LoopConditionInvalid,
+    IfConditionInvalid,
+    ReturnOutsideFunction,
+    TemplateNotFound,
+    TemplateArgumentMismatch,
+    UseOfMovedVariable,
+    VariableOriginInvalidated,
+    AllocatorMovedOrFreed,
+    UndefinedVariable,
+    InvalidMoveTarget,
+    TakePrimitiveBanned,
+    UnsafeProhibited,
+    DereferenceNonPointer,
+    InvalidCast,
+    InvalidIndexType,
+    BrandLifetimeViolation,
+    InvalidIndexTarget,
+    FieldNotFound,
+    MethodNotFound,
+    UnresolvedSelector,
+    ArgumentMismatch,
+    UndefinedFunction,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TypeError {
+    pub kind: TypeErrorKind,
+    pub message: String,
+}
+
+impl std::fmt::Display for TypeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Semantic Error [{:?}]: {}", self.kind, self.message)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct StructLayout {
     pub brand: Option<String>,
@@ -138,7 +178,7 @@ impl TypeChecker {
         }
     }
 
-    pub fn check_program(&mut self, program: &Program) -> Result<(), String> {
+    pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {
         // Pre-pass: Dynamically register structs, templates, and functions [3]
         for stmt in &program.statements {
             if let Statement::StructDecl {
@@ -177,7 +217,7 @@ impl TypeChecker {
                 ..
             } = stmt
             {
-                let resolved_params: Result<Vec<Type>, String> = params
+                let resolved_params: Result<Vec<Type>, TypeError> = params
                     .iter()
                     .map(|p| self.resolve_type(&p.param_type))
                     .collect();
@@ -202,7 +242,7 @@ impl TypeChecker {
         Ok(())
     }
 
-    fn check_statement(&mut self, stmt: &Statement) -> Result<(), String> {
+    fn check_statement(&mut self, stmt: &Statement) -> Result<(), TypeError> {
         match stmt {
             Statement::StructDecl { .. } => {}
             Statement::FunctionDecl {
@@ -254,20 +294,26 @@ impl TypeChecker {
                         self.variable_origins.insert(name.clone(), name.clone());
                         self.resolve_type(explicit_t)?
                     } else {
-                        return Err(format!(
-                            "Semantic Error: Uninitialized variable '{}' must have an explicit type annotation",
-                            name
-                        ));
+                        return Err(TypeError {
+                            kind: TypeErrorKind::UninitializedVariable,
+                            message: format!(
+                                "Semantic Error: Uninitialized variable '{}' must have an explicit type annotation",
+                                name
+                            ),
+                        });
                     }
                 };
 
                 if let Some(explicit_t) = var_type {
                     let resolved_explicit = self.resolve_type(explicit_t)?;
                     if !types_match(&resolved_explicit, &val_type) {
-                        return Err(format!(
-                            "Semantic Error: Explicit Type Annotation Mismatch. Declared {:?} but got value {:?}",
-                            resolved_explicit, val_type
-                        ));
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: Explicit Type Annotation Mismatch. Declared {:?} but got value {:?}",
+                                resolved_explicit, val_type
+                            ),
+                        });
                     }
                     self.symbol_table
                         .insert(name.clone(), resolved_explicit.clone());
@@ -282,16 +328,22 @@ impl TypeChecker {
                 let left_type = self.check_expression(left)?;
                 let val_type = self.check_expression(value)?;
                 if !types_match(&left_type, &val_type) {
-                    return Err(format!(
-                        "Semantic Error: Mismatched types in assignment. Cannot assign {:?} to {:?}",
-                        val_type, left_type
-                    ));
+                    return Err(TypeError {
+                        kind: TypeErrorKind::TypeMismatch,
+                        message: format!(
+                            "Semantic Error: Mismatched types in assignment. Cannot assign {:?} to {:?}",
+                            val_type, left_type
+                        ),
+                    });
                 }
             }
             Statement::While { condition, body } => {
                 let cond_type = self.check_expression(condition)?;
                 if cond_type != Type::Int {
-                    return Err("Semantic Error: Loop condition must evaluate to an Int (binary comparison)".to_string());
+                    return Err(TypeError {
+                        kind: TypeErrorKind::LoopConditionInvalid,
+                        message: "Semantic Error: Loop condition must evaluate to an Int (binary comparison)".to_string(),
+                    });
                 }
 
                 let parent_scope = self.symbol_table.clone();
@@ -307,10 +359,10 @@ impl TypeChecker {
             } => {
                 let cond_type = self.check_expression(condition)?;
                 if cond_type != Type::Int {
-                    return Err(
-                        "Semantic Error: If condition must evaluate to an Int (binary comparison)"
-                            .to_string(),
-                    );
+                    return Err(TypeError {
+                        kind: TypeErrorKind::IfConditionInvalid,
+                        message: "Semantic Error: If condition must evaluate to an Int (binary comparison)".to_string(),
+                    });
                 }
 
                 let parent_scope = self.symbol_table.clone();
@@ -353,15 +405,20 @@ impl TypeChecker {
 
                 if let Some(expected_t) = &self.expected_return_type {
                     if !types_match(expected_t, &actual_return) {
-                        return Err(format!(
-                            "Semantic Error: Return type mismatch. Expected {:?} but got {:?}",
-                            expected_t, actual_return
-                        ));
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: Return type mismatch. Expected {:?} but got {:?}",
+                                expected_t, actual_return
+                            ),
+                        });
                     }
                 } else {
-                    return Err(
-                        "Semantic Error: Return statement used outside function body".to_string(),
-                    );
+                    return Err(TypeError {
+                        kind: TypeErrorKind::ReturnOutsideFunction,
+                        message: "Semantic Error: Return statement used outside function body"
+                            .to_string(),
+                    });
                 }
             }
             Statement::Expression(expr) => {
@@ -410,10 +467,10 @@ impl TypeChecker {
         }
     }
 
-    pub fn resolve_type(&mut self, t: &Type) -> Result<Type, String> {
+    pub fn resolve_type(&mut self, t: &Type) -> Result<Type, TypeError> {
         match t {
             Type::Generic(name, args) => {
-                let resolved_args: Result<Vec<Type>, String> =
+                let resolved_args: Result<Vec<Type>, TypeError> =
                     args.iter().map(|arg| self.resolve_type(arg)).collect();
                 self.monomorphize(name, &resolved_args?)
             }
@@ -450,28 +507,31 @@ impl TypeChecker {
         }
     }
 
-    fn monomorphize(&mut self, template_name: &str, args: &[Type]) -> Result<Type, String> {
+    fn monomorphize(&mut self, template_name: &str, args: &[Type]) -> Result<Type, TypeError> {
         let template = self
             .struct_templates
             .get(template_name)
             .cloned()
-            .ok_or_else(|| {
-                format!(
+            .ok_or_else(|| TypeError {
+                kind: TypeErrorKind::TemplateNotFound,
+                message: format!(
                     "Semantic Error: Generic template '{}' not found",
                     template_name
-                )
+                ),
             })?;
 
         if template.generics.len() != args.len() {
-            return Err(format!(
-                "Semantic Error: Template '{}' expects {} generic arguments but got {}",
-                template_name,
-                template.generics.len(),
-                args.len()
-            ));
+            return Err(TypeError {
+                kind: TypeErrorKind::TemplateArgumentMismatch,
+                message: format!(
+                    "Semantic Error: Template '{}' expects {} generic arguments but got {}",
+                    template_name,
+                    template.generics.len(),
+                    args.len()
+                ),
+            });
         }
 
-        // FIXED: Zip template generics and args to avoid index out of bounds loop range clippy warning
         let mut substitution_map = HashMap::new();
         for (generic, arg) in template.generics.iter().zip(args.iter()) {
             substitution_map.insert(generic.clone(), arg.clone());
@@ -623,35 +683,49 @@ impl TypeChecker {
         }
     }
 
-    pub fn check_expression(&mut self, expr: &Expression) -> Result<Type, String> {
+    pub fn check_expression(&mut self, expr: &Expression) -> Result<Type, TypeError> {
         match expr {
             Expression::Identifier(name) => {
                 if self.moved_vars.contains(name) {
-                    return Err(format!("Semantic Error: Use of moved variable '{}'", name));
+                    return Err(TypeError {
+                        kind: TypeErrorKind::UseOfMovedVariable,
+                        message: format!("Semantic Error: Use of moved variable '{}'", name),
+                    });
                 }
 
                 if let Some(origin) = self.variable_origins.get(name)
-                    && self.moved_vars.contains(origin) {
-                        return Err(format!(
+                    && self.moved_vars.contains(origin)
+                {
+                    return Err(TypeError {
+                        kind: TypeErrorKind::VariableOriginInvalidated,
+                        message: format!(
                             "Semantic Error: Variable '{}' cannot be used because its backing origin '{}' has been moved or invalidated",
                             name, origin
-                        ));
-                    }
+                        ),
+                    });
+                }
 
                 if let Some(t) = self.symbol_table.get(name) {
                     if let Some(brand) = self.get_type_brand(t)
-                        && self.moved_vars.contains(&brand) {
-                            return Err(format!(
+                        && self.moved_vars.contains(&brand)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::AllocatorMovedOrFreed,
+                            message: format!(
                                 "Semantic Error: Variable '{}' cannot be used because its branding allocator '{}' has been moved or freed",
                                 name, brand
-                            ));
-                        }
+                            ),
+                        });
+                    }
                     Ok(t.clone())
                 } else {
                     if name == "null" {
                         return Ok(Type::Index("SessionNode".to_string(), None));
                     }
-                    Err(format!("Semantic Error: Undefined variable '{}'", name))
+                    Err(TypeError {
+                        kind: TypeErrorKind::UndefinedVariable,
+                        message: format!("Semantic Error: Undefined variable '{}'", name),
+                    })
                 }
             }
             Expression::Integer(_) => Ok(Type::Int),
@@ -659,28 +733,40 @@ impl TypeChecker {
             Expression::Move(inner_expr) => {
                 if let Expression::Identifier(name) = &**inner_expr {
                     if self.moved_vars.contains(name) {
-                        return Err(format!(
-                            "Semantic Error: Variable '{}' has already been moved",
-                            name
-                        ));
+                        return Err(TypeError {
+                            kind: TypeErrorKind::UseOfMovedVariable,
+                            message: format!(
+                                "Semantic Error: Variable '{}' has already been moved",
+                                name
+                            ),
+                        });
                     }
                     if !self.symbol_table.contains_key(name) {
-                        return Err(format!(
-                            "Semantic Error: Cannot move undefined variable '{}'",
-                            name
-                        ));
+                        return Err(TypeError {
+                            kind: TypeErrorKind::UndefinedVariable,
+                            message: format!(
+                                "Semantic Error: Cannot move undefined variable '{}'",
+                                name
+                            ),
+                        });
                     }
 
                     self.moved_vars.insert(name.clone());
                     Ok(self.symbol_table.get(name).unwrap().clone())
                 } else {
-                    Err("Semantic Error: Only variables can be moved".to_string())
+                    Err(TypeError {
+                        kind: TypeErrorKind::InvalidMoveTarget,
+                        message: "Semantic Error: Only variables can be moved".to_string(),
+                    })
                 }
             }
             Expression::Take(inner_expr) => {
                 let expr_type = self.check_expression(inner_expr)?;
                 if expr_type == Type::Int {
-                    return Err("Semantic Error: The 'take' operator is strictly banned on primitive POD types (like Int)".to_string());
+                    return Err(TypeError {
+                        kind: TypeErrorKind::TakePrimitiveBanned,
+                        message: "Semantic Error: The 'take' operator is strictly banned on primitive POD types (like Int)".to_string(),
+                    });
                 }
                 Ok(expr_type)
             }
@@ -690,17 +776,23 @@ impl TypeChecker {
             }
             Expression::Dereference(inner) => {
                 if !self.in_unsafe_block {
-                    return Err("Semantic Error: Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks".to_string());
+                    return Err(TypeError {
+                        kind: TypeErrorKind::UnsafeProhibited,
+                        message: "Semantic Error: Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks".to_string(),
+                    });
                 }
 
                 let inner_type = self.check_expression(inner)?;
                 if let Type::RawPointer(target_type) = inner_type {
                     Ok((*target_type).clone())
                 } else {
-                    Err(format!(
-                        "Semantic Error: Cannot dereference non-pointer type {:?}",
-                        inner_type
-                    ))
+                    Err(TypeError {
+                        kind: TypeErrorKind::DereferenceNonPointer,
+                        message: format!(
+                            "Semantic Error: Cannot dereference non-pointer type {:?}",
+                            inner_type
+                        ),
+                    })
                 }
             }
             Expression::AsCast {
@@ -713,7 +805,10 @@ impl TypeChecker {
 
                 if let Type::RawPointer(_) = left_type {
                     if !self.in_unsafe_block {
-                        return Err("Semantic Error: Casting pointers is strictly prohibited outside 'unsafe' blocks".to_string());
+                        return Err(TypeError {
+                            kind: TypeErrorKind::UnsafeProhibited,
+                            message: "Semantic Error: Casting pointers is strictly prohibited outside 'unsafe' blocks".to_string(),
+                        });
                     }
                     if let Type::RawPointer(_) = &resolved_target {
                         return Ok(resolved_target.clone());
@@ -721,26 +816,37 @@ impl TypeChecker {
                 }
 
                 if let Type::RawPointer(_) = &resolved_target
-                    && !self.in_unsafe_block {
-                        return Err("Semantic Error: Casting to raw pointers is strictly prohibited outside 'unsafe' blocks".to_string());
-                    }
+                    && !self.in_unsafe_block
+                {
+                    return Err(TypeError {
+                            kind: TypeErrorKind::UnsafeProhibited,
+                            message: "Semantic Error: Casting to raw pointers is strictly prohibited outside 'unsafe' blocks".to_string(),
+                        });
+                }
 
                 if !matches!(left_type, Type::Slice(_)) && left_type != Type::ByteSlice {
-                    return Err(format!(
-                        "Semantic Error: Casting source must be a Slice, but got {:?}",
-                        left_type
-                    ));
+                    return Err(TypeError {
+                        kind: TypeErrorKind::InvalidCast,
+                        message: format!(
+                            "Semantic Error: Casting source must be a Slice, but got {:?}",
+                            left_type
+                        ),
+                    });
                 }
 
                 if let Type::Struct(struct_name, _) = &resolved_target
-                    && self.struct_registry.contains_key(struct_name) {
-                        return Ok(Type::Struct(format!("CastResult_{}", struct_name), None));
-                    }
+                    && self.struct_registry.contains_key(struct_name)
+                {
+                    return Ok(Type::Struct(format!("CastResult_{}", struct_name), None));
+                }
 
-                Err(format!(
-                    "Semantic Error: Unsupported cast target type {:?}",
-                    resolved_target
-                ))
+                Err(TypeError {
+                    kind: TypeErrorKind::InvalidCast,
+                    message: format!(
+                        "Semantic Error: Unsupported cast target type {:?}",
+                        resolved_target
+                    ),
+                })
             }
             Expression::IndexAccess { allocator, index } => {
                 let alloc_type = self.check_expression(allocator)?;
@@ -748,17 +854,21 @@ impl TypeChecker {
 
                 if let Type::Slice(elem_type) = &alloc_type {
                     if index_type != Type::Int && index_type != Type::Byte {
-                        return Err("Semantic Error: Slice index must resolve to an Int or Byte"
-                            .to_string());
+                        return Err(TypeError {
+                            kind: TypeErrorKind::InvalidIndexType,
+                            message: "Semantic Error: Slice index must resolve to an Int or Byte"
+                                .to_string(),
+                        });
                     }
                     let resolved_elem = self.resolve_type(elem_type)?;
                     Ok(resolved_elem)
                 } else if alloc_type == Type::Str {
                     if index_type != Type::Int && index_type != Type::Byte {
-                        return Err(
-                            "Semantic Error: String index must resolve to an Int or Byte"
+                        return Err(TypeError {
+                            kind: TypeErrorKind::InvalidIndexType,
+                            message: "Semantic Error: String index must resolve to an Int or Byte"
                                 .to_string(),
-                        );
+                        });
                     }
                     Ok(Type::Byte)
                 } else if alloc_type == Type::Arena
@@ -767,12 +877,15 @@ impl TypeChecker {
                     let alloc_name = self.expression_to_string(allocator);
                     if let Type::Index(struct_name, Some(brand_name)) = index_type {
                         if brand_name != alloc_name {
-                            return Err(format!(
-                                "Semantic Error: Value-Branded Lifetime Violation! Attempted to index allocator '{}' with index '{}' branded for '{}'",
-                                alloc_name,
-                                self.expression_to_string(index),
-                                brand_name
-                            ));
+                            return Err(TypeError {
+                                kind: TypeErrorKind::BrandLifetimeViolation,
+                                message: format!(
+                                    "Semantic Error: Value-Branded Lifetime Violation! Attempted to index allocator '{}' with index '{}' branded for '{}'",
+                                    alloc_name,
+                                    self.expression_to_string(index),
+                                    brand_name
+                                ),
+                            });
                         }
 
                         let mut actual_struct = struct_name;
@@ -782,16 +895,22 @@ impl TypeChecker {
 
                         Ok(Type::Struct(actual_struct, Some(brand_name)))
                     } else {
-                        Err(format!(
-                            "Semantic Error: Expected a branded Index offset for subscript indexing, but got {:?}",
-                            index_type
-                        ))
+                        Err(TypeError {
+                            kind: TypeErrorKind::InvalidIndexTarget,
+                            message: format!(
+                                "Semantic Error: Expected a branded Index offset for subscript indexing, but got {:?}",
+                                index_type
+                            ),
+                        })
                     }
                 } else {
-                    Err(format!(
-                        "Semantic Error: Subscript indexing is only valid on Arenas or Slices, but got {:?}",
-                        alloc_type
-                    ))
+                    Err(TypeError {
+                        kind: TypeErrorKind::InvalidIndexTarget,
+                        message: format!(
+                            "Semantic Error: Subscript indexing is only valid on Arenas or Slices, but got {:?}",
+                            alloc_type
+                        ),
+                    })
                 }
             }
             Expression::Binary { op, left, right } => {
@@ -814,20 +933,26 @@ impl TypeChecker {
                 }
 
                 if !types_match(&left_type, &right_type) {
-                    return Err(format!(
-                        "Semantic Error: Mismatched types in binary operation '{}'. Left: {:?}, Right: {:?}",
-                        op, left_type, right_type
-                    ));
+                    return Err(TypeError {
+                        kind: TypeErrorKind::TypeMismatch,
+                        message: format!(
+                            "Semantic Error: Mismatched types in binary operation '{}'. Left: {:?}, Right: {:?}",
+                            op, left_type, right_type
+                        ),
+                    });
                 }
 
                 if (op == "+" || op == "-" || op == "*" || op == "/")
                     && left_type != Type::Int
                     && left_type != Type::Byte
                 {
-                    return Err(format!(
-                        "Semantic Error: Math operation '{}' is only allowed on Int or Byte types, but got {:?}",
-                        op, left_type
-                    ));
+                    return Err(TypeError {
+                        kind: TypeErrorKind::TypeMismatch,
+                        message: format!(
+                            "Semantic Error: Math operation '{}' is only allowed on Int or Byte types, but got {:?}",
+                            op, left_type
+                        ),
+                    });
                 }
 
                 Ok(Type::Int)
@@ -858,10 +983,13 @@ impl TypeChecker {
                             let resolved_returned = self.resolve_type(&returned_type)?;
                             return Ok(resolved_returned);
                         }
-                        return Err(format!(
-                            "Semantic Error: Field '{}' not found on struct layout '{}'",
-                            right, struct_name
-                        ));
+                        return Err(TypeError {
+                            kind: TypeErrorKind::FieldNotFound,
+                            message: format!(
+                                "Semantic Error: Field '{}' not found on struct layout '{}'",
+                                right, struct_name
+                            ),
+                        });
                     }
                 }
 
@@ -869,16 +997,19 @@ impl TypeChecker {
                     if right == "Free" {
                         return Ok(Type::Void);
                     }
-                    return Err(format!(
-                        "Semantic Error: Method '{}' not found on Arena allocator",
-                        right
-                    ));
+                    return Err(TypeError {
+                        kind: TypeErrorKind::MethodNotFound,
+                        message: format!(
+                            "Semantic Error: Method '{}' not found on Arena allocator",
+                            right
+                        ),
+                    });
                 }
 
-                Err(format!(
-                    "Semantic Error: Unresolved namespace selector '{}'",
-                    path
-                ))
+                Err(TypeError {
+                    kind: TypeErrorKind::UnresolvedSelector,
+                    message: format!("Semantic Error: Unresolved namespace selector '{}'", path),
+                })
             }
             Expression::Call {
                 function,
@@ -892,34 +1023,40 @@ impl TypeChecker {
 
                 if func_path == "len" {
                     if arguments.len() != 1 {
-                        return Err("Semantic Error: len expects exactly 1 argument".to_string());
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: len expects exactly 1 argument".to_string(),
+                        });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
                     if let Type::Slice(_) = arg_type {
                         return Ok(Type::Int);
                     }
                     if arg_type == Type::Str {
-                        // Added support for Str length Option 2
                         return Ok(Type::Int);
                     }
-                    return Err(format!(
-                        "Semantic Error: len expects a Slice or Str argument, but got {:?}",
-                        arg_type
-                    ));
+                    return Err(TypeError {
+                        kind: TypeErrorKind::ArgumentMismatch,
+                        message: format!(
+                            "Semantic Error: len expects a Slice or Str argument, but got {:?}",
+                            arg_type
+                        ),
+                    });
                 }
 
-                // If calling a registered user-defined function, typecheck parameters [3]
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
                     if sig.params.len() != arguments.len() {
-                        return Err(format!(
-                            "Semantic Error: Function '{}' expects {} arguments but got {}",
-                            func_path,
-                            sig.params.len(),
-                            arguments.len()
-                        ));
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: format!(
+                                "Semantic Error: Function '{}' expects {} arguments but got {}",
+                                func_path,
+                                sig.params.len(),
+                                arguments.len()
+                            ),
+                        });
                     }
 
-                    // FIXED: Zip params with arguments to avoid manual indexing clippy warning [3]
                     let mut brand_map = HashMap::new();
                     for (i, (param_type, arg)) in
                         sig.params.iter().zip(arguments.iter()).enumerate()
@@ -936,20 +1073,21 @@ impl TypeChecker {
                         }
                     }
 
-                    // FIXED: Enumerate over arguments iterator to avoid manual indexing clippy warning [3]
                     for (i, arg) in arguments.iter().enumerate() {
                         let arg_type = self.check_expression(arg)?;
                         let resolved_arg = self.resolve_type(&arg_type)?;
 
-                        // Substitute brand names in expected types before validation [3]
                         let substituted_expected =
                             self.substitute_brand_names(&sig.params[i], &brand_map);
 
                         if !types_match(&substituted_expected, &resolved_arg) {
-                            return Err(format!(
-                                "Semantic Error: Argument type mismatch for function '{}'. Expected {:?} but got {:?}",
-                                func_path, substituted_expected, resolved_arg
-                            ));
+                            return Err(TypeError {
+                                kind: TypeErrorKind::TypeMismatch,
+                                message: format!(
+                                    "Semantic Error: Argument type mismatch for function '{}'. Expected {:?} but got {:?}",
+                                    func_path, substituted_expected, resolved_arg
+                                ),
+                            });
                         }
                     }
                     return Ok(sig.return_type);
@@ -957,34 +1095,43 @@ impl TypeChecker {
 
                 if func_path == "os.Arena.New" {
                     if !arguments.is_empty() {
-                        return Err(
-                            "Semantic Error: os.Arena.New() expects 0 arguments".to_string()
-                        );
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.Arena.New() expects 0 arguments"
+                                .to_string(),
+                        });
                     }
                     return Ok(Type::Arena);
                 }
 
                 if func_path == "os.MockPayload" {
                     if !arguments.is_empty() {
-                        return Err(
-                            "Semantic Error: os.MockPayload() expects 0 arguments".to_string()
-                        );
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.MockPayload() expects 0 arguments"
+                                .to_string(),
+                        });
                     }
                     return Ok(Type::Slice(Box::new(Type::Byte)));
                 }
 
                 if func_path == "os.ArenaAlloc" {
                     if arguments.len() != 1 {
-                        return Err("Semantic Error: os.ArenaAlloc expects exactly 1 argument (the allocator variable)".to_string());
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.ArenaAlloc expects exactly 1 argument (the allocator variable)".to_string(),
+                        });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
                     if arg_type != Type::Arena
                         && !matches!(arg_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
                     {
-                        return Err(
-                            "Semantic Error: ArenaAlloc argument must be an Arena allocator"
-                                .to_string(),
-                        );
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message:
+                                "Semantic Error: ArenaAlloc argument must be an Arena allocator"
+                                    .to_string(),
+                        });
                     }
                     let brand_name = self.expression_to_string(&arguments[0]);
                     return Ok(Type::Index("Any".to_string(), Some(brand_name)));
@@ -992,33 +1139,42 @@ impl TypeChecker {
 
                 if func_path == "os.LogInt" {
                     if arguments.len() != 1 {
-                        return Err(
-                            "Semantic Error: os.LogInt expects exactly 1 argument".to_string()
-                        );
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.LogInt expects exactly 1 argument"
+                                .to_string(),
+                        });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
                     if arg_type != Type::Int && arg_type != Type::Byte {
-                        return Err(format!(
-                            "Semantic Error: os.LogInt expects an Int/Byte argument, but got {:?}",
-                            arg_type
-                        ));
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: os.LogInt expects an Int/Byte argument, but got {:?}",
+                                arg_type
+                            ),
+                        });
                     }
                     return Ok(Type::Void);
                 }
 
                 if func_path == "os.LogStr" {
-                    // Added os.LogStr built-in Option 2
                     if arguments.len() != 1 {
-                        return Err(
-                            "Semantic Error: os.LogStr expects exactly 1 argument".to_string()
-                        );
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.LogStr expects exactly 1 argument"
+                                .to_string(),
+                        });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
                     if arg_type != Type::Str {
-                        return Err(format!(
-                            "Semantic Error: os.LogStr expects a Str argument, but got {:?}",
-                            arg_type
-                        ));
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: os.LogStr expects a Str argument, but got {:?}",
+                                arg_type
+                            ),
+                        });
                     }
                     return Ok(Type::Void);
                 }
@@ -1027,18 +1183,23 @@ impl TypeChecker {
                     let left_type = self.check_expression(left)?;
                     if left_type == Type::Arena && right == "Free" {
                         if !arguments.is_empty() {
-                            return Err(
-                                "Semantic Error: Arena.Free() expects 0 arguments".to_string()
-                            );
+                            return Err(TypeError {
+                                kind: TypeErrorKind::ArgumentMismatch,
+                                message: "Semantic Error: Arena.Free() expects 0 arguments"
+                                    .to_string(),
+                            });
                         }
                         return Ok(Type::Void);
                     }
                 }
 
-                Err(format!(
-                    "Semantic Error: Call to unresolved function '{}'",
-                    func_path
-                ))
+                Err(TypeError {
+                    kind: TypeErrorKind::UndefinedFunction,
+                    message: format!(
+                        "Semantic Error: Call to unresolved function '{}'",
+                        func_path
+                    ),
+                })
             }
         }
     }
