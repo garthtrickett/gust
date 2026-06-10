@@ -1011,3 +1011,40 @@ fn test_move_linear_type_invalidates() {
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
 }
+
+#[test]
+fn test_monomorphized_pod_collection_is_copyable() {
+    let source = "
+        type Wrapper[T] struct {
+            val: T
+        }
+        func main() {
+            mut w1: Wrapper[int];
+            w1.val = 42;
+
+            mut w2 := move w1; // Since T is int, Wrapper[int] is POD and copyable!
+            os.LogInt(w1.val); // Should be fine to read again
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_monomorphized_linear_collection_is_linear() {
+    let source = "
+        type Wrapper[T] struct {
+            val: T
+        }
+        func main() {
+            mut w1: Wrapper[str];
+            w1.val = \"Hello\";
+
+            mut w2 := move w1; // Wrapper[str] is Linear!
+            os.LogStr(w1.val); // Error: w1 was moved
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+}

@@ -152,6 +152,9 @@ impl TypeChecker {
             if let Some(layout) = self.struct_registry.get_mut(&concrete_name) {
                 layout.fields = concrete_fields;
             }
+
+            // Allow is_linear to dynamically evaluate the monomorphized structure
+            tracing::debug!("🔄 Monomorphized layout resolved for: {}", concrete_name);
         }
 
         Ok(Type::Struct(concrete_name, brand))

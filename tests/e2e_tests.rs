@@ -486,3 +486,22 @@ fn test_e2e_enum_indirection_pattern() {
     ";
     run_e2e_test(source, "60");
 }
+
+#[test]
+fn test_e2e_universal_move_semantics_monomorphized() {
+    let source = "
+        type Wrapper[T] struct {
+            val: T
+        }
+
+        func main() {
+            mut w1: Wrapper[int];
+            w1.val = 100;
+
+            mut w2 := move w1;
+            os.LogInt(w1.val); // POD copy - remains valid
+            os.LogInt(w2.val);
+        }
+    ";
+    run_e2e_test(source, "100\n100");
+}
