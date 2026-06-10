@@ -109,7 +109,7 @@ def replace_closest_edit_distance(whole_lines, part, part_lines, replace_lines):
         return None
 
     # --- SAFETY CATCH: Prevent O(N^2) infinite stalling on massive blocks ---
-    if len(part_lines) > 50:
+    if len(part_lines) > 52:
         print(f"    ⚠️  Block is too large for fuzzy matching ({len(part_lines)} lines). Skipping to prevent stall.", flush=True)
         return None
 
