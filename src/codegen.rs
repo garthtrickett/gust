@@ -1049,10 +1049,10 @@ impl Codegen {
                     let mut src_brand = "current_ctx".to_string();
                     let mut found = false;
 
-                    if let Expression::Identifier(name) = &*arguments[1] {
-                        if let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name) {
-                            struct_name = s_name.clone();
-                            src_brand = brand.clone();
+                    if let Expression::Identifier(name) = &arguments[1] {
+                        if let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name).cloned() {
+                            struct_name = s_name;
+                            src_brand = brand;
                             found = true;
                         }
                     }
