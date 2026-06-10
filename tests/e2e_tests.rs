@@ -47,7 +47,8 @@ fn run_e2e_test(source: &str, expected_output: &str) {
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
     // 3. Invoke a system C compiler to compile it
-    let compile_output = Command::new("cc")
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let compile_output = Command::new(&cc_compiler)
         .arg(&c_path)
         .arg("-o")
         .arg(&bin_path)
@@ -60,21 +61,23 @@ fn run_e2e_test(source: &str, expected_output: &str) {
                 println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
                 println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
             }
-            output.status.success()
+            (output.status.success(), output)
         }
         Err(e) => {
             let _ = fs::remove_file(&c_path);
-            panic!(
-                "Failed to invoke system C compiler 'cc'. Is gcc/clang/cc installed? Error: {:?}",
+            panic!( 
+                "Failed to invoke system C compiler '{}'. Is gcc/clang/cc installed? Error: {:?}",
+                cc_compiler,
                 e
             );
         }
     };
 
-    if !compile_success {
+    if !compile_success.0 {
+        let stderr_str = String::from_utf8_lossy(&compile_success.1.stderr);
         let _ = fs::remove_file(&c_path);
         let _ = fs::remove_file(&bin_path);
-        panic!("Compilation of the transpiled C code failed.");
+        panic!("Compilation of the transpiled C code failed. STDERR:\n{}", stderr_str);
     }
 
     // 4. Run the compiled binary and capture its standard output
@@ -717,7 +720,44 @@ fn test_e2e_pool_allocation_recycling() {
             // idx4 should reuse index 2 (which was idx3) because standard stack-based freelist reclaims the last freed slot!
             os.LogInt(idx4);
             os.LogInt(pool[idx4].val);
-        }
+        } 
     ";
     run_e2e_test(source, "0\n111\n1\n222\n2\n333\n2\n444");
+}
+
+#[test]
+fn test_e2e_generational_arena_loop() {
+    let source = "
+        type Node[ctx] struct {
+            val: int
+        }
+
+        func main() {
+            mut current_ctx := os.Arena.New();
+            defer current_ctx.Free();
+            mut next_ctx := os.Arena.New();
+            defer next_ctx.Free();
+
+            mut survivor: Index[Node, current_ctx] := os.ArenaAlloc(current_ctx);
+            current_ctx[survivor].val = 0;
+
+            mut i := 0;
+            while i < 1000 {
+                mut temp: Index[Node, current_ctx] := os.ArenaAlloc(current_ctx);
+                current_ctx[temp].val = i;
+
+                mut cloned_survivor: Index[Node, next_ctx] := std.Clone(next_ctx, survivor);
+                next_ctx[cloned_survivor].val = next_ctx[cloned_survivor].val + current_ctx[temp].val;
+
+                std.GenerationalSwap(current_ctx, next_ctx);
+
+                survivor = cloned_survivor;
+
+                i = i + 1;
+            }
+
+            os.LogInt(current_ctx[survivor].val);
+        }
+    ";
+    run_e2e_test(source, "499500");
 }

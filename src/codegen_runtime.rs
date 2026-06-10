@@ -29,6 +29,12 @@ void os_Arena_Free(os_Arena* arena) {
     }
 }
 
+void std_GenerationalSwap(os_Arena* current, os_Arena* next) {
+    os_Arena_Free(current);
+    *current = *next;
+    *next = os_Arena_New();
+}
+
 // Standard Hardware-aligned Bump Allocation [1]
 int os_ArenaAlloc(os_Arena* arena, size_t size) {
     // Round up size to 8-byte boundary to satisfy hardware alignments [1]

@@ -794,14 +794,15 @@ impl Codegen {
                 let target_str = self.get_c_type(target_type);
 
                 if *is_reference {
-                    format!(
+                    let clean_target = target_str.trim_end_matches('*').trim();
+                    format!( 
                         "({{ CastResult_{} res; res.Ok = ((((uintptr_t){}.data) & (__alignof__({}) - 1)) == 0) && ({}.len >= sizeof({})); res.Val = ({}*){}.data; res; }})",
-                        target_str,
+                        clean_target,
                         left_str,
-                        target_str,
+                        clean_target,
                         left_str,
-                        target_str,
-                        target_str,
+                        clean_target,
+                        clean_target,
                         left_str
                     )
                 } else {
@@ -1067,6 +1068,12 @@ impl Codegen {
                     } else {
                         return src_arg_str;
                     }
+                }
+
+                if func_path == "std.GenerationalSwap" || func_path == "std_GenerationalSwap" {
+                    let arg0 = self.gen_expression(&arguments[0]);
+                    let arg1 = self.gen_expression(&arguments[1]);
+                    return format!("std_GenerationalSwap(&{}, &{})", arg0, arg1);
                 }
 
                 // os.VectorNew / std.VectorNew

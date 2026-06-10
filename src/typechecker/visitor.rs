@@ -172,6 +172,26 @@ impl TypeChecker {
         );
 
         self.function_registry.insert(
+            "std.GenerationalSwap".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["current_ctx".to_string(), "next_ctx".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Void,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "std_GenerationalSwap".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["current_ctx".to_string(), "next_ctx".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Void,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
             "std.PoolNew".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["ctx".to_string()],
@@ -1495,6 +1515,55 @@ impl TypeChecker {
                     
                     let cloned_type = self.substitute_brand_names(&src_type, &brand_map);
                     return Ok(cloned_type);
+                }
+
+                if func_path == "std.GenerationalSwap" || func_path == "std_GenerationalSwap" {
+                    if arguments.len() != 2 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: std.GenerationalSwap expects exactly 2 arguments (current_ctx, next_ctx)".to_string(),
+                        });
+                    }
+                    let current_type = self.check_expression(&arguments[0])?;
+                    let next_type = self.check_expression(&arguments[1])?;
+                    if current_type != Type::Arena || next_type != Type::Arena {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: "Semantic Error: std.GenerationalSwap arguments must be Arena allocators".to_string(),
+                        });
+                    }
+
+                    let current_brand = expression_to_string(&arguments[0]);
+                    let next_brand = expression_to_string(&arguments[1]);
+
+                    // 1. Invalidate all variables branded with `current_brand`
+                    let mut to_invalidate = Vec::new();
+                    for (var_name, var_type) in &self.symbol_table {
+                        if self.get_type_brand(var_type) == Some(current_brand.clone()) {
+                            to_invalidate.push(var_name.clone());
+                        }
+                    }
+                    for var in to_invalidate {
+                        self.moved_vars.insert(var);
+                    }
+
+                    // 2. Rebrand all variables branded with `next_brand` to `current_brand`
+                    let mut brand_map = HashMap::new();
+                    brand_map.insert(next_brand.clone(), current_brand.clone());
+
+                    let mut updated_symbols = HashMap::new();
+                    for (var_name, var_type) in &self.symbol_table {
+                        if self.get_type_brand(var_type) == Some(next_brand.clone()) {
+                            let updated_type = self.substitute_brand_names(var_type, &brand_map);
+                            updated_symbols.insert(var_name.clone(), updated_type);
+                        }
+                    }
+                    for (var_name, updated_type) in updated_symbols {
+                        self.symbol_table.insert(var_name.clone(), updated_type.clone());
+                        self.variable_types.insert(var_name.clone(), updated_type);
+                    }
+
+                    return Ok(Type::Void);
                 }
 
                 if func_path == "os.VectorNew" || func_path == "std.VectorNew" {
