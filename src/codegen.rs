@@ -691,21 +691,16 @@ impl Codegen {
                 let inner_str = self.gen_expression(inner);
                 format!("*({})", inner_str)
             }
-            Expression::Take(inner_expr) => {
-                if let Expression::Identifier(name) = &**inner_expr {
-                    let var_type = self
-                        .symbol_table
-                        .borrow()
-                        .get(name)
-                        .cloned()
-                        .unwrap_or(Type::Void);
-                    let type_str = self.get_c_type(&var_type);
-                    format!(
-                        "({{ {} _temp = {}; {}.data = NULL; _temp; }})",
-                        type_str, name, name
-                    )
+            Expression::Take(inner) => {
+                let expr_str = self.gen_expression(inner);
+                let mut is_lin = false;
+                if let Some(t) = self.get_expr_type(inner) {
+                    is_lin = self.is_linear(&t);
+                }
+                if is_lin {
+                    format!("(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))", expr_str)
                 } else {
-                    self.gen_expression(inner_expr)
+                    expr_str
                 }
             }
             Expression::AddressOf(inner) => {
@@ -718,16 +713,12 @@ impl Codegen {
             }
             Expression::Move(inner) => {
                 let expr_str = self.gen_expression(inner);
-                if let Expression::Identifier(name) = &**inner {
-                    let mut is_lin = false;
-                    if let Some(t) = self.symbol_table.borrow().get(name) {
-                        is_lin = self.is_linear(t);
-                    }
-                    if is_lin {
-                        format!("(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))", expr_str)
-                    } else {
-                        expr_str
-                    }
+                let mut is_lin = false;
+                if let Some(t) = self.get_expr_type(inner) {
+                    is_lin = self.is_linear(&t);
+                }
+                if is_lin {
+                    format!("(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))", expr_str)
                 } else {
                     expr_str
                 }

@@ -531,3 +531,37 @@ fn test_e2e_relaxed_monomorphized_pod_performance() {
     ";
     run_e2e_test(source, "101\n42\n101\n42");
 }
+
+#[test]
+fn test_e2e_take_and_empty_reinitialization() {
+    let source = "
+        type Resource[T] struct {
+            val: T,
+            active: int
+        }
+
+        func swap_resources(a: *Resource[str], b: *Resource[str]) {
+            mut temp := take (*a);
+            *a = take (*b);
+            *b = move temp;
+        }
+
+        func main() {
+            mut r1: Resource[str];
+            r1.val = \"Hello\";
+            r1.active = 1;
+
+            mut r2: Resource[str];
+            r2.val = \"World\";
+            r2.active = 2;
+
+            swap_resources(&r1, &r2);
+
+            os.LogStr(r1.val);
+            os.LogInt(r1.active);
+            os.LogStr(r2.val);
+            os.LogInt(r2.active);
+        }
+    ";
+    run_e2e_test(source, "World\n2\nHello\n1");
+}

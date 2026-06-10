@@ -1320,3 +1320,41 @@ fn test_take_linear_struct_accepted() {
     ";
     assert!(check_program(source).is_ok());
 }
+
+#[test]
+fn test_monomorphized_take_codegen() {
+    let source = "
+        type MyPod struct {
+            x: int,
+            y: int
+        }
+        type MyLinear struct {
+            ptr: *int
+        }
+        func main() {
+            mut p1: MyPod;
+            p1.x = 10;
+            mut p2 := take p1; // should emit no memset/cleanup
+
+            mut l1: MyLinear;
+            mut l2 := take l1; // should emit memset
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    assert!(checker.check_program(&program).is_ok());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+    );
+    let c_code = codegen.generate(&program);
+
+    // Assert that C code contains memset for l1 but not for p1
+    assert!(c_code.contains("memset(&l1"));
+    assert!(!c_code.contains("memset(&p1"));
+}
