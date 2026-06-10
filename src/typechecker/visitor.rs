@@ -672,6 +672,22 @@ impl TypeChecker {
                     // Retrieve expression origins immutably first
                     let expr_origins = self.get_expression_origins(expr);
 
+                    if self.contains_ephemeral_view(&t) {
+                        if let Some(ref local_vars) = self.current_function_local_vars {
+                            for origin in &expr_origins {
+                                if local_vars.contains(origin) {
+                                    return Err(TypeError {
+                                        kind: TypeErrorKind::BrandLifetimeViolation,
+                                        message: format!(
+                                            "Semantic Error: Escape analysis violation. Returning ephemeral view of type {:?} whose origin traces back to local stack variable '{}'",
+                                            t, origin
+                                        ),
+                                    });
+                                } 
+                            } 
+                        }
+                    }
+
                     // Populate return statement origins to the enclosing function
                     if let Some(ref mut return_origins_set) = self.current_function_return_origins {
                         return_origins_set.extend(expr_origins);

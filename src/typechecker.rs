@@ -65,6 +65,33 @@ impl TypeChecker {
         }
     }
 
+    pub fn contains_ephemeral_view(&self, t: &Type) -> bool {
+        let mut visited = HashSet::new();
+        self.contains_ephemeral_view_impl(t, &mut visited)
+    }
+
+    fn contains_ephemeral_view_impl(&self, t: &Type, visited: &mut HashSet<String>) -> bool {
+        match t {
+            Type::Str | Type::ByteSlice | Type::Slice(_) => true,
+            Type::Struct(name, _) => {
+                if visited.contains(name) {
+                    return false;
+                }
+                visited.insert(name.clone());
+                if let Some(layout) = self.struct_registry.get(name) {
+                    for field_type in layout.fields.values() {
+                        if self.contains_ephemeral_view_impl(field_type, visited) {
+                            return true;
+                        }
+                    }
+                }
+                false
+            }
+            Type::RawPointer(inner) => self.contains_ephemeral_view_impl(inner, visited),
+            _ => false,
+        }
+    }
+
     pub fn insert_symbol(&mut self, name: String, t: Type) {
         self.symbol_table.insert(name.clone(), t.clone());
         let mut origins = HashSet::new();

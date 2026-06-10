@@ -1521,3 +1521,41 @@ fn test_identical_nested_brands_accepted() {
     ";
     assert!(check_program(source).is_ok());
 }
+
+#[test]
+fn test_return_local_variable_view_rejected() {
+    let source = "
+        func leak() str {
+            mut local := \"hello\";
+            return local; // Error: escape analysis violation
+        }
+        func main() {}
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Escape analysis violation"));
+}
+
+#[test]
+fn test_return_parameter_view_accepted() {
+    let source = "
+        func pass(p: str) str {
+            return p; // OK: parameter view is safe to return (lifespan determined down-stack)
+        }
+        func main() {}
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_return_static_literal_view_accepted() {
+    let source = "
+        func constant() str {
+            return \"Hello\"; // OK: static read-only view is safe to return
+        }
+        func main() {}
+    ";
+    assert!(check_program(source).is_ok());
+}
