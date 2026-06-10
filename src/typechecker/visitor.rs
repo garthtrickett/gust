@@ -664,7 +664,7 @@ impl TypeChecker {
             Expression::Move(inner) => {
                 if let Expression::Identifier(name) = &**inner
                     && let Some(t) = self.symbol_table.get(name)
-                    && (matches!(t, Type::Struct(_, None)) || *t == Type::Int || *t == Type::Byte)
+                    && !self.is_linear(t)
                 {
                     return HashSet::new();
                 }
@@ -673,7 +673,7 @@ impl TypeChecker {
             Expression::Take(inner) => {
                 if let Expression::Identifier(name) = &**inner
                     && let Some(t) = self.symbol_table.get(name)
-                    && (matches!(t, Type::Struct(_, None)) || *t == Type::Int || *t == Type::Byte)
+                    && !self.is_linear(t)
                 {
                     return HashSet::new();
                 }
@@ -773,7 +773,7 @@ impl TypeChecker {
                             ),
                         });
                     }
-                    if !self.symbol_table.contains_key(name) {
+                    let Some(var_type) = self.symbol_table.get(name).cloned() else {
                         return Err(TypeError {
                             kind: TypeErrorKind::UndefinedVariable,
                             message: format!(
@@ -781,10 +781,27 @@ impl TypeChecker {
                                 name
                             ),
                         });
+                    };
+
+                    if let Some(origins) = self.variable_origins.get(name) {
+                        for origin in origins {
+                            if self.moved_vars.contains(origin) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::VariableOriginInvalidated,
+                                    message: format!(
+                                        "Semantic Error: Variable '{}' cannot be moved because its backing origin '{}' has been moved or invalidated",
+                                        name,
+                                        origin
+                                    ),
+                                });
+                            } 
+                        }
                     }
 
-                    self.moved_vars.insert(name.clone());
-                    Ok(self.symbol_table.get(name).unwrap().clone())
+                    if self.is_linear(&var_type) {
+                        self.moved_vars.insert(name.clone());
+                    }
+                    Ok(var_type)
                 } else {
                     Err(TypeError {
                         kind: TypeErrorKind::InvalidMoveTarget,

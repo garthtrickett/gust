@@ -948,7 +948,7 @@ fn test_pod_struct_propagation_recognized_as_copyable() {
 }
 
 #[test]
-fn test_linear_struct_propagation_recognized_as_linear() {
+fn test_linear_struct_propagation_recognized_as_linear() { 
     let source = "
         type MyLinear struct {
             name: str,
@@ -963,4 +963,51 @@ fn test_linear_struct_propagation_recognized_as_linear() {
 
     let linear_type = Type::Struct("MyLinear".to_string(), None);
     assert!(checker.is_linear(&linear_type));
+}
+
+#[test]
+fn test_move_pod_type_does_not_invalidate() {
+    let source = "
+        type MyPod struct {
+            x: int,
+            y: int
+        }
+        func main() {
+            mut p: MyPod;
+            p.x = 10;
+            p.y = 20;
+
+            mut p2 := move p; // Move POD struct
+
+            // Should be perfectly fine to read p again since it is a copyable POD!
+            os.LogInt(p.x); 
+            
+            mut a := 42;
+            mut b := move a; // Move primitive int
+            os.LogInt(a); // Should be fine to read again
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_move_linear_type_invalidates() {
+    let source = "
+        type MyLinear struct {
+            name: str
+        }
+        func main() {
+            mut p: MyLinear;
+            p.name = \"Gust\";
+
+            mut p2 := move p; // Move Linear struct
+
+            // Should fail because p contains a Linear field and is now invalidated
+            os.LogInt(p.name); 
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
 }
