@@ -54,7 +54,9 @@ fn test_safety_escape_rejected() {
             mut payload := os.MockPayload();
             mut result := payload as &Node[ctx];
             mut movedPayload := move payload;
-            os.LogInt(result.Val.val); // Error: payload invalidated
+            if result.Ok {
+                os.LogInt(result.Val.val); // Error: payload invalidated
+            }
         }
     ";
     let res = check_program(source);
@@ -446,7 +448,9 @@ fn test_fallible_lookup_type_checking() {
             mut lookup := map.Get(42);
 
             mut ok := lookup.Ok;
-            mut val := lookup.Val;
+            if lookup.Ok {
+                mut val := lookup.Val;
+            }
         }
     ";
     assert!(check_program(source).is_ok());
@@ -614,4 +618,248 @@ fn test_codegen_synthesized_is_valid() {
     // Verify standard byte checks
     assert!(c_output.contains("if (req->Active != 0x00 && req->Active != 0x01) return 0;"));
     assert!(c_output.contains("if (req->Enabled != 0x00 && req->Enabled != 0x01) return 0;"));
+}
+
+// === NEW UNIT TESTS FOR STEP 1: DEFINITE CHECK RULE SCOPING ===
+
+#[test]
+fn test_checked_results_scoping() {
+    let source = "
+        type CustomNode[connCtx] struct {
+            SessionID: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut payload := os.MockPayload();
+            mut result := payload as &CustomNode[ctx];
+            if result.Ok {
+                // Consequence block
+            } else {
+                // Else block
+            }
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+
+    // Check program is valid
+    assert!(checker.check_program(&program).is_ok());
+
+    // Verify that after checking the program, 'result' is not in the checked_results map (no leaks out of if statement)
+    assert!(!checker.checked_results.contains("result"));
+}
+
+#[test]
+fn test_checked_results_manual_inspection() {
+    let mut checker = TypeChecker::new();
+
+    // Manually register variables in the symbol table so we can check Statement::If
+    checker.insert_symbol(
+        "result".to_string(),
+        gust_lexer::typechecker::Type::Struct("CastResult_CustomNode".to_string(), None),
+    );
+
+    // Construct If condition: result.Ok == 1
+    let cond = gust_lexer::ast::Expression::Binary {
+        op: "==".to_string(),
+        left: Box::new(gust_lexer::ast::Expression::Selector {
+            left: Box::new(gust_lexer::ast::Expression::Identifier(
+                "result".to_string(),
+            )),
+            right: "Ok".to_string(),
+        }),
+        right: Box::new(gust_lexer::ast::Expression::Integer(1)),
+    };
+
+    // Construct consequence block containing dummy statement
+    let consequence = gust_lexer::ast::BlockStatement {
+        statements: vec![gust_lexer::ast::Statement::Expression(
+            gust_lexer::ast::Expression::Integer(1),
+        )],
+    };
+
+    // Construct If statement
+    let if_stmt = gust_lexer::ast::Statement::If {
+        condition: cond,
+        consequence,
+        alternative: Some(gust_lexer::ast::BlockStatement {
+            statements: vec![gust_lexer::ast::Statement::Expression(
+                gust_lexer::ast::Expression::Integer(2),
+            )],
+        }),
+    };
+
+    // Initially empty
+    assert!(checker.checked_results.is_empty());
+
+    // Check statement
+    let res = checker.check_statement(&if_stmt);
+    assert!(res.is_ok());
+
+    // Verified scope cleanup (the state did not leak)
+    assert!(checker.checked_results.is_empty());
+}
+
+// === NEW UNIT TESTS FOR STEP 2: DEFINITE CHECK RULE ON SELECTORS ===
+
+#[test]
+fn test_definite_check_cast_result_outside_if_rejected() {
+    let source = "
+        type CustomNode struct {
+            SessionID: int
+        }
+        func main() {
+            mut payload := os.MockPayload();
+            mut result := payload as &CustomNode;
+            os.LogInt(result.Val.SessionID); // Error: result is unchecked
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(
+        err.message
+            .contains("Accessing the .Val payload of an unchecked result wrapper")
+    );
+}
+
+#[test]
+fn test_definite_check_lookup_result_outside_if_rejected() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            mut lookup := map.Get(42);
+            os.LogInt(lookup.Val); // Error: lookup is unchecked
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(
+        err.message
+            .contains("Accessing the .Val payload of an unchecked result wrapper")
+    );
+}
+
+#[test]
+fn test_definite_check_inside_else_rejected() {
+    let source = "
+        type CustomNode struct {
+            SessionID: int
+        }
+        func main() {
+            mut payload := os.MockPayload();
+            mut result := payload as &CustomNode;
+            if result.Ok {
+                os.LogInt(result.Val.SessionID); // OK
+            } else {
+                os.LogInt(result.Val.SessionID); // Error: unchecked in else branch
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(
+        err.message
+            .contains("Accessing the .Val payload of an unchecked result wrapper")
+    );
+}
+
+#[test]
+fn test_definite_check_inside_if_accepted() {
+    let source = "
+        type CustomNode struct {
+            SessionID: int
+        }
+        func main() {
+            mut payload := os.MockPayload();
+            mut result := payload as &CustomNode;
+            if result.Ok {
+                os.LogInt(result.Val.SessionID); // OK: result is checked
+            }
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_definite_check_lookup_inside_if_accepted() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            mut lookup := map.Get(42);
+            if lookup.Ok {
+                os.LogInt(lookup.Val); // OK: lookup is checked
+            }
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+// === NEW PRESSURE TESTS FOR STEP 3: NESTED STRUCTURES & COMPLEX SCOPING ===
+
+#[test]
+fn test_nested_scoping_definite_checks_accepted() {
+    let source = "
+        type InnerNode struct {
+            val: int
+        }
+        type OuterNode struct {
+            inner: LookupResult_InnerNode
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut map: HashMap[int, OuterNode, ctx] := os.HashMapNew(ctx);
+            mut outer := map.Get(42);
+            if outer.Ok {
+                if outer.Val.inner.Ok {
+                    os.LogInt(outer.Val.inner.Val.val); // OK: outer and outer.Val.inner are checked
+                }
+            }
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_nested_scoping_definite_checks_rejected() {
+    let source = "
+        type InnerNode struct {
+            val: int
+        }
+        type OuterNode struct {
+            inner: LookupResult_InnerNode
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut map: HashMap[int, OuterNode, ctx] := os.HashMapNew(ctx);
+            mut outer := map.Get(42);
+            if outer.Ok {
+                // Error: outer.Val.inner is accessed without checking outer.Val.inner.Ok
+                os.LogInt(outer.Val.inner.Val.val); 
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(
+        err.message.contains(
+            "Accessing the .Val payload of an unchecked result wrapper 'outer.Val.inner'"
+        )
+    );
 }

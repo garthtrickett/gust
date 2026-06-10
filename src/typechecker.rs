@@ -21,6 +21,7 @@ pub struct TypeChecker {
     pub function_registry: HashMap<String, FunctionSignature>,     // Function Registry
     pub(crate) expected_return_type: Option<Type>,
     pub(crate) current_function_return_origins: Option<HashSet<String>>, // Track return statement origins
+    pub checked_results: HashSet<String>, // Added for Definite Check Rule
 }
 
 impl Default for TypeChecker {
@@ -30,6 +31,13 @@ impl Default for TypeChecker {
 }
 
 impl TypeChecker {
+    pub fn insert_symbol(&mut self, name: String, t: Type) {
+        self.symbol_table.insert(name.clone(), t.clone());
+        let mut origins = HashSet::new();
+        origins.insert(name.clone());
+        self.variable_origins.insert(name, origins);
+    }
+
     pub fn new() -> Self {
         let mut struct_registry = HashMap::new();
 
@@ -137,6 +145,7 @@ impl TypeChecker {
             function_registry: HashMap::new(),
             expected_return_type: None,
             current_function_return_origins: None,
+            checked_results: HashSet::new(),
         }
     }
 }

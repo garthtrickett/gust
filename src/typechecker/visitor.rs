@@ -69,6 +69,44 @@ impl TypeChecker {
         self.has_boolean_fields_recursive(t, &mut visited)
     }
 
+    fn extract_ok_checked_variable(&self, expr: &Expression) -> Option<String> {
+        match expr {
+            Expression::Selector { left, right } => {
+                if right == "Ok"
+                    && let Expression::Identifier(name) = &**left {
+                        return Some(name.clone());
+                    }
+                None
+            }
+            Expression::Binary { op, left, right } => {
+                if op == "==" {
+                    // Case: result.Ok == 1
+                    if let Expression::Selector {
+                        left: sel_left,
+                        right: sel_right,
+                    } = &**left
+                        && sel_right == "Ok"
+                            && let Expression::Identifier(name) = &**sel_left
+                                && let Expression::Integer(1) = &**right {
+                                    return Some(name.clone());
+                                }
+                    // Case: 1 == result.Ok
+                    if let Expression::Selector {
+                        left: sel_left,
+                        right: sel_right,
+                    } = &**right
+                        && sel_right == "Ok"
+                            && let Expression::Identifier(name) = &**sel_left
+                                && let Expression::Integer(1) = &**left {
+                                    return Some(name.clone());
+                                }
+                }
+                None
+            }
+            _ => None,
+        }
+    }
+
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {
         // Pre-pass: Dynamically register structs, templates, enums, and functions [3]
         for stmt in &program.statements {
@@ -363,6 +401,12 @@ impl TypeChecker {
 
                 let pre_origins = self.variable_origins.clone();
                 let pre_moved = self.moved_vars.clone();
+                let pre_checked = self.checked_results.clone();
+
+                let checked_var = self.extract_ok_checked_variable(condition);
+                if let Some(ref var) = checked_var {
+                    self.checked_results.insert(var.clone());
+                }
 
                 let parent_scope = self.symbol_table.clone();
                 for s in &consequence.statements {
@@ -377,6 +421,7 @@ impl TypeChecker {
                     // Reset to pre-if state for alternative branch evaluation
                     self.variable_origins = pre_origins.clone();
                     self.moved_vars = pre_moved.clone();
+                    self.checked_results = pre_checked.clone();
 
                     let parent_scope = self.symbol_table.clone();
                     for s in &alt_body.statements {
@@ -452,6 +497,9 @@ impl TypeChecker {
                     self.variable_origins = merged_origins;
                     self.moved_vars = merged_moved;
                 }
+
+                // Restore checked_results for the parent scope
+                self.checked_results = pre_checked;
             }
             Statement::Match { expression, cases } => {
                 let expr_type = self.check_expression(expression)?;

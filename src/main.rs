@@ -123,7 +123,9 @@ fn run_self_tests() {
             
             mut movedPayload := move payload;
             
-            os.LogInt(result.Val.SessionID);
+            if result.Ok {
+                os.LogInt(result.Val.SessionID);
+            }
         }
     ";
 

@@ -390,12 +390,18 @@ fn test_e2e_fallible_lookup_evaluation() {
             // Existing key
             mut lookup1 := map.Get(100);
             os.LogInt(lookup1.Ok);
-            os.LogInt(lookup1.Val);
+            if lookup1.Ok {
+                os.LogInt(lookup1.Val);
+            }
 
             // Non-existent key
             mut lookup2 := map.Get(300);
             os.LogInt(lookup2.Ok);
-            os.LogInt(lookup2.Val);
+            if lookup2.Ok {
+                os.LogInt(lookup2.Val);
+            } else {
+                os.LogInt(0);
+            }
         }
     ";
     run_e2e_test(source, "1\n42\n0\n0");
