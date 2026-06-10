@@ -1,9 +1,9 @@
 {
-  "summary": "fix: correct dereference and type pattern matching on original_symbol_table",
+  "summary": "fix: apply brand erasure to struct name inside std.Clone code generation",
   "files": [
     {
       "file_path": "src/codegen.rs",
-      "code_diff": "<<<<<<< SEARCH\n                    let mut struct_name = \"Node\".to_string();\n                    let mut src_brand = \"current_ctx\".to_string();\n                    let mut found = false;\n\n                    if let Expression::Identifier(name) = &*arguments[1] {\n                        if let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name) {\n                            struct_name = s_name.clone();\n                            src_brand = brand.clone();\n                            found = true;\n                        }\n                    }\n=======\n                    let mut struct_name = \"Node\".to_string();\n                    let mut src_brand = \"current_ctx\".to_string();\n                    let mut found = false;\n\n                    if let Expression::Identifier(name) = &arguments[1] {\n                        if let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name).cloned() {\n                            struct_name = s_name;\n                            src_brand = brand;\n                            found = true;\n                        }\n                    }\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n                    if let Expression::Identifier(name) = &arguments[1] {\n                        if let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name).cloned() {\n                            struct_name = s_name;\n                            src_brand = brand;\n                            found = true;\n                        }\n                    }\n=======\n                    if let Expression::Identifier(name) = &arguments[1] {\n                        if let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name).cloned() {\n                            struct_name = erase_struct_name(&s_name, &Some(brand.clone()));\n                            src_brand = brand;\n                            found = true;\n                        }\n                    }\n>>>>>>> REPLACE"
     }
   ]
 }

@@ -1051,7 +1051,7 @@ impl Codegen {
 
                     if let Expression::Identifier(name) = &arguments[1] {
                         if let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name).cloned() {
-                            struct_name = s_name;
+                            struct_name = erase_struct_name(&s_name, &Some(brand.clone()));
                             src_brand = brand;
                             found = true;
                         }
