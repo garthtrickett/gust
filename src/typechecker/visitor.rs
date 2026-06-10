@@ -22,7 +22,9 @@ fn get_root_variable(expr: &Expression) -> Option<String> {
 fn is_ephemeral_view(t: &Type) -> bool {
     match t {
         Type::Str | Type::Slice(_) | Type::ByteSlice | Type::RawPointer(_) => true,
-        Type::Struct(name, _) => name.starts_with("CastResult_") || name.starts_with("LookupResult_"),
+        Type::Struct(name, _) => {
+            name.starts_with("CastResult_") || name.starts_with("LookupResult_")
+        }
         _ => false,
     }
 }
@@ -107,18 +109,20 @@ impl TypeChecker {
                         right: sel_right,
                     } = &**left
                         && sel_right == "Ok"
-                            && let Expression::Integer(1) = &**right {
-                                return Some(expression_to_string(sel_left));
-                            }
+                        && let Expression::Integer(1) = &**right
+                    {
+                        return Some(expression_to_string(sel_left));
+                    }
                     // Case: 1 == path.Ok
                     if let Expression::Selector {
                         left: sel_left,
                         right: sel_right,
                     } = &**right
                         && sel_right == "Ok"
-                            && let Expression::Integer(1) = &**left {
-                                return Some(expression_to_string(sel_left));
-                            }
+                        && let Expression::Integer(1) = &**left
+                    {
+                        return Some(expression_to_string(sel_left));
+                    }
                 }
                 None
             }
@@ -225,15 +229,19 @@ impl TypeChecker {
                         let resolved_t = self.resolve_type(&field.field_type)?;
                         if let Type::Struct(ref struct_name, _) = resolved_t
                             && let Some(layout) = self.struct_registry.get(struct_name)
-                                && layout.fields.len() > 2 {
-                                    return Err(TypeError {
-                                        kind: TypeErrorKind::LargeEnumVariantPayload,
-                                        message: format!(
-                                            "Semantic Error: Variant '{}' contains a large enum variant payload struct '{}' ({} fields). Use Index[{}] or pointer indirection to avoid memory bloat.",
-                                            variant.name, struct_name, layout.fields.len(), struct_name
-                                        ),
-                                    });
-                                }
+                            && layout.fields.len() > 2
+                        {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::LargeEnumVariantPayload,
+                                message: format!(
+                                    "Semantic Error: Variant '{}' contains a large enum variant payload struct '{}' ({} fields). Use Index[{}] or pointer indirection to avoid memory bloat.",
+                                    variant.name,
+                                    struct_name,
+                                    layout.fields.len(),
+                                    struct_name
+                                ),
+                            });
+                        }
                         variant_fields.insert(field.name.clone(), field.field_type.clone());
                     }
                     self.struct_registry.insert(
@@ -345,7 +353,7 @@ impl TypeChecker {
                     param_origins.insert(param.name.clone());
                     self.variable_origins
                         .insert(param.name.clone(), param_origins);
-                } 
+                }
 
                 // Register and track expected return types inside local scope [3]
                 let resolved_return_type = self.resolve_type(return_type)?;
@@ -359,7 +367,7 @@ impl TypeChecker {
                 self.current_function_inout_params = Some(inout_params.clone());
                 self.current_function_local_vars = Some(HashSet::new());
 
-                for s in &body.statements { 
+                for s in &body.statements {
                     self.check_statement(s)?;
                 }
 
@@ -465,9 +473,12 @@ impl TypeChecker {
                         } else {
                             Err(TypeError {
                                 kind: TypeErrorKind::UndefinedVariable,
-                                message: format!("Semantic Error: Undefined variable '{}' in assignment LHS", name),
+                                message: format!(
+                                    "Semantic Error: Undefined variable '{}' in assignment LHS",
+                                    name
+                                ),
                             })
-                        } 
+                        }
                     }
                     _ => self.check_expression(left),
                 }?;
@@ -488,7 +499,7 @@ impl TypeChecker {
                     for (var_name, origins) in &self.variable_origins {
                         if var_name != &root_name && origins.contains(&root_name) {
                             to_invalidate.push(var_name.clone());
-                        } 
+                        }
                     }
                     for var in to_invalidate {
                         self.moved_vars.insert(var);
@@ -756,19 +767,20 @@ impl TypeChecker {
                     let expr_origins = self.get_expression_origins(expr);
 
                     if self.contains_ephemeral_view(&t)
-                        && let Some(ref local_vars) = self.current_function_local_vars {
-                            for origin in &expr_origins {
-                                if local_vars.contains(origin) {
-                                    return Err(TypeError {
-                                        kind: TypeErrorKind::BrandLifetimeViolation,
-                                        message: format!(
-                                            "Semantic Error: Escape analysis violation. Returning ephemeral view of type {:?} whose origin traces back to local stack variable '{}'",
-                                            t, origin
-                                        ),
-                                    });
-                                } 
-                            } 
+                        && let Some(ref local_vars) = self.current_function_local_vars
+                    {
+                        for origin in &expr_origins {
+                            if local_vars.contains(origin) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::BrandLifetimeViolation,
+                                    message: format!(
+                                        "Semantic Error: Escape analysis violation. Returning ephemeral view of type {:?} whose origin traces back to local stack variable '{}'",
+                                        t, origin
+                                    ),
+                                });
+                            }
                         }
+                    }
 
                     // Populate return statement origins to the enclosing function
                     if let Some(ref mut return_origins_set) = self.current_function_return_origins {
@@ -965,11 +977,10 @@ impl TypeChecker {
                                     kind: TypeErrorKind::VariableOriginInvalidated,
                                     message: format!(
                                         "Semantic Error: Variable '{}' cannot be moved because its backing origin '{}' has been moved or invalidated",
-                                        name,
-                                        origin
+                                        name, origin
                                     ),
                                 });
-                            } 
+                            }
                         }
                     }
 
@@ -981,26 +992,29 @@ impl TypeChecker {
                                     continue;
                                 }
                                 if let Some(v_type) = self.symbol_table.get(v)
-                                    && self.get_type_brand(v_type) == Some(name.clone()) {
-                                        for origin in origins {
-                                            if local_vars.contains(origin) && origin != name {
-                                                let is_origin_branded = if let Some(orig_type) = self.symbol_table.get(origin) {
-                                                    self.get_type_brand(orig_type) == Some(name.clone())
-                                                } else {
-                                                    false
-                                                };
-                                                if !is_origin_branded {
-                                                    return Err(TypeError {
-                                                        kind: TypeErrorKind::BrandLifetimeViolation,
-                                                        message: format!( 
-                                                            "Semantic Error: Thread-safety violation. Branded variable '{}' has origin tracing back to thread-local stack variable '{}', preventing safe handoff of arena '{}'",
-                                                            v, origin, name
-                                                        ),
-                                                    });
-                                                } 
+                                    && self.get_type_brand(v_type) == Some(name.clone())
+                                {
+                                    for origin in origins {
+                                        if local_vars.contains(origin) && origin != name {
+                                            let is_origin_branded = if let Some(orig_type) =
+                                                self.symbol_table.get(origin)
+                                            {
+                                                self.get_type_brand(orig_type) == Some(name.clone())
+                                            } else {
+                                                false
+                                            };
+                                            if !is_origin_branded {
+                                                return Err(TypeError {
+                                                    kind: TypeErrorKind::BrandLifetimeViolation,
+                                                    message: format!(
+                                                        "Semantic Error: Thread-safety violation. Branded variable '{}' has origin tracing back to thread-local stack variable '{}', preventing safe handoff of arena '{}'",
+                                                        v, origin, name
+                                                    ),
+                                                });
                                             }
                                         }
-                                    } 
+                                    }
+                                }
                             }
                         }
 
@@ -1065,7 +1079,7 @@ impl TypeChecker {
             Expression::AsCast {
                 left,
                 target_type,
-                is_reference,
+                is_reference: _,
             } => {
                 let left_type = self.check_expression(left)?;
                 let resolved_target = self.resolve_type(target_type)?;
@@ -1145,7 +1159,8 @@ impl TypeChecker {
                     }
                     Ok(Type::Byte)
                 } else if let Type::Struct(struct_name, _) = &alloc_type {
-                    if struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_") {
+                    if struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_")
+                    {
                         if index_type != Type::Int && index_type != Type::Byte {
                             return Err(TypeError {
                                 kind: TypeErrorKind::InvalidIndexType,
@@ -1159,7 +1174,9 @@ impl TypeChecker {
                                     message: "Invalid Vector struct layout".to_string(),
                                 })?;
                         Ok(elem_type)
-                    } else if struct_name.starts_with("HashMap_") || struct_name.starts_with("std_HashMap_") {
+                    } else if struct_name.starts_with("HashMap_")
+                        || struct_name.starts_with("std_HashMap_")
+                    {
                         let (k_type, v_type) = self
                             .get_hashmap_key_value_types(struct_name)
                             .ok_or_else(|| TypeError {
@@ -1281,7 +1298,9 @@ impl TypeChecker {
                 }
 
                 if let Type::Struct(struct_name, _brand) = &left_type {
-                    if struct_name.starts_with("CastResult_") || struct_name.starts_with("LookupResult_") {
+                    if struct_name.starts_with("CastResult_")
+                        || struct_name.starts_with("LookupResult_")
+                    {
                         if right == "Ok" {
                             return Ok(Type::Int);
                         }
@@ -1302,8 +1321,7 @@ impl TypeChecker {
                             } else {
                                 "LookupResult_"
                             };
-                            let target_struct = 
-                                struct_name.trim_start_matches(prefix).to_string();
+                            let target_struct = struct_name.trim_start_matches(prefix).to_string();
                             if target_struct == "int" {
                                 return Ok(Type::Int);
                             }
@@ -1369,8 +1387,10 @@ impl TypeChecker {
                         return Ok(Type::Int);
                     }
                     if let Type::Struct(struct_name, _) = &arg_type
-                        && (struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_")
-                            || struct_name.starts_with("HashMap_") || struct_name.starts_with("std_HashMap_"))
+                        && (struct_name.starts_with("Vector_")
+                            || struct_name.starts_with("std_Vector_")
+                            || struct_name.starts_with("HashMap_")
+                            || struct_name.starts_with("std_HashMap_"))
                     {
                         return Ok(Type::Int);
                     }
@@ -1626,7 +1646,10 @@ impl TypeChecker {
                 if let Expression::Selector { left, right } = &**function {
                     let left_type = self.check_expression(left)?;
                     if let Type::Struct(struct_name, _) = &left_type {
-                        if (struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_")) && right == "Push" {
+                        if (struct_name.starts_with("Vector_")
+                            || struct_name.starts_with("std_Vector_"))
+                            && right == "Push"
+                        {
                             if arguments.len() != 1 {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
@@ -1652,7 +1675,10 @@ impl TypeChecker {
                             }
                             return Ok(Type::Void);
                         }
-                        if (struct_name.starts_with("HashMap_") || struct_name.starts_with("std_HashMap_")) && right == "Insert" {
+                        if (struct_name.starts_with("HashMap_")
+                            || struct_name.starts_with("std_HashMap_"))
+                            && right == "Insert"
+                        {
                             if arguments.len() != 2 {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
@@ -1688,7 +1714,10 @@ impl TypeChecker {
                             }
                             return Ok(Type::Void);
                         }
-                        if (struct_name.starts_with("HashMap_") || struct_name.starts_with("std_HashMap_")) && right == "Get" {
+                        if (struct_name.starts_with("HashMap_")
+                            || struct_name.starts_with("std_HashMap_"))
+                            && right == "Get"
+                        {
                             if arguments.len() != 1 {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
