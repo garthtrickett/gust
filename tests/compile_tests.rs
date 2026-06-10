@@ -1559,3 +1559,48 @@ fn test_return_static_literal_view_accepted() {
     ";
     assert!(check_program(source).is_ok());
 }
+
+#[test]
+fn test_view_invalidated_on_parent_reassignment() {
+    let source = "
+        func main() {
+            mut temp := os.MockPayload();
+            mut view := temp;
+            
+            temp = os.MockPayload(); // Reassignment of parent
+            
+            os.LogInt(view[0]); // Error: view is invalidated because temp was modified!
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
+    assert!(err.message.contains("backing origin"));
+}
+
+#[test]
+fn test_view_invalidated_on_parent_field_mutation() {
+    let source = "
+        type Packet struct {
+            val: int
+        }
+        func main() {
+            mut payload: Packet;
+            payload.val = 42;
+            
+            mut view := &payload;
+            
+            payload.val = 100; // Mutating a field of the backing payload
+            
+            unsafe {
+                os.LogInt((*view).val); // Error: view is invalidated because payload was mutated!
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
+    assert!(err.message.contains("backing origin"));
+}

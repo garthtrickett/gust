@@ -5,6 +5,20 @@ use super::types::{
 use crate::ast::{Expression, Program, Statement};
 use std::collections::{HashMap, HashSet};
 
+fn get_root_variable(expr: &Expression) -> Option<String> {
+    match expr {
+        Expression::Identifier(name) => Some(name.clone()),
+        Expression::Selector { left, .. } => get_root_variable(left),
+        Expression::IndexAccess { allocator, .. } => get_root_variable(allocator),
+        Expression::Dereference(inner) => get_root_variable(inner),
+        Expression::AddressOf(inner) => get_root_variable(inner),
+        Expression::AsCast { left, .. } => get_root_variable(left),
+        Expression::Move(inner) => get_root_variable(inner),
+        Expression::Take(inner) => get_root_variable(inner),
+        _ => None,
+    }
+}
+
 impl TypeChecker {
     fn get_vector_element_type(&self, struct_name: &str) -> Option<Type> {
         if let Some(layout) = self.struct_registry.get(struct_name)
@@ -423,6 +437,19 @@ impl TypeChecker {
                             val_type, left_type
                         ),
                     });
+                }
+
+                // Invalidate any active views that borrow from the root variable being modified
+                if let Some(root_name) = get_root_variable(left) {
+                    let mut to_invalidate = Vec::new();
+                    for (var_name, origins) in &self.variable_origins {
+                        if var_name != &root_name && origins.contains(&root_name) {
+                            to_invalidate.push(var_name.clone());
+                        } 
+                    }
+                    for var in to_invalidate {
+                        self.moved_vars.insert(var);
+                    }
                 }
 
                 // Track assignments to variables to update their active memory origins
