@@ -1049,21 +1049,19 @@ impl Codegen {
                     let mut src_brand = "current_ctx".to_string();
                     let mut found = false;
 
-                    if let Expression::Identifier(name) = &arguments[1] {
-                        if let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name).cloned() {
+                    if let Expression::Identifier(name) = &arguments[1]
+                        && let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name).cloned() {
                             struct_name = erase_struct_name(&s_name, &Some(brand.clone()));
                             src_brand = brand;
                             found = true;
                         }
-                    }
 
                     if found {
                         let mut src_is_ptr = false;
-                        if let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(&src_brand) {
-                            if **inner == Type::Arena {
+                        if let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(&src_brand)
+                            && **inner == Type::Arena {
                                 src_is_ptr = true;
                             }
-                        }
                         let src_base = if src_is_ptr {
                             format!("{}->BaseAddress", src_brand)
                         } else {

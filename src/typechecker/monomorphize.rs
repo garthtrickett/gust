@@ -137,6 +137,49 @@ impl TypeChecker {
                             },
                         );
                     }
+
+                if (name.starts_with("RcNode_") || name.starts_with("std_RcNode_"))
+                    && !self.struct_registry.contains_key(name) {
+                        let inner_t_name = if name.starts_with("RcNode_") {
+                            name.trim_start_matches("RcNode_")
+                        } else {
+                            name.trim_start_matches("std_RcNode_")
+                        };
+                        let inner_t = if inner_t_name == "int" {
+                            Type::Int
+                        } else if inner_t_name == "byte" {
+                            Type::Byte
+                        } else {
+                            Type::Struct(inner_t_name.to_string(), None)
+                        };
+                        let template = if name.starts_with("RcNode_") { "RcNode" } else { "std.RcNode" };
+                        let _ = self.monomorphize(template, &[inner_t]);
+                    }
+
+                if (name.starts_with("GraphNode_") || name.starts_with("std_GraphNode_"))
+                    && !self.struct_registry.contains_key(name) {
+                        let suffix = if name.starts_with("GraphNode_") {
+                            name.trim_start_matches("GraphNode_")
+                        } else {
+                            name.trim_start_matches("std_GraphNode_")
+                        };
+                        let parts: Vec<&str> = suffix.split('_').collect();
+                        if parts.len() == 2 {
+                            let inner_t_name = parts[0];
+                            let ctx_name = parts[1];
+                            let inner_t = if inner_t_name == "int" {
+                                Type::Int
+                            } else if inner_t_name == "byte" {
+                                Type::Byte
+                            } else {
+                                Type::Struct(inner_t_name.to_string(), None)
+                            };
+                            let ctx_t = Type::Struct(ctx_name.to_string(), None);
+                            let template = if name.starts_with("GraphNode_") { "GraphNode" } else { "std.GraphNode" };
+                            let _ = self.monomorphize(template, &[inner_t, ctx_t]);
+                        }
+                    }
+
                 if let Some(brand_name) = brand {
                     if self.struct_templates.contains_key(name) {
                         let args = vec![Type::Struct(brand_name.clone(), None)];
@@ -300,8 +343,8 @@ impl TypeChecker {
                             format!("std_RcNode_{}", t_ident)
             };
                     }
-                } else if new_name == "GraphNode_T_ctx" || new_name == "std_GraphNode_T_ctx" {
-                    if let Some(substituted_t) = map.get("T")
+                } else if (new_name == "GraphNode_T_ctx" || new_name == "std_GraphNode_T_ctx")
+                    && let Some(substituted_t) = map.get("T")
                         && let Some(substituted_ctx) = map.get("ctx") {
                             let t_ident = self.get_type_ident(substituted_t);
                             let ctx_ident = self.get_type_ident(substituted_ctx);
@@ -311,7 +354,6 @@ impl TypeChecker {
                                 format!("std_GraphNode_{}_{}", t_ident, ctx_ident)
                             };
                         }
-                }
                 if let Some(substituted) = map.get(&new_name) {
                     substituted.clone()
                 } else {
@@ -338,8 +380,8 @@ impl TypeChecker {
                             format!("std_RcNode_{}", t_ident)
                         };
                     }
-                } else if new_struct == "GraphNode_T_ctx" || new_struct == "std_GraphNode_T_ctx" {
-                    if let Some(substituted_t) = map.get("T")
+                } else if (new_struct == "GraphNode_T_ctx" || new_struct == "std_GraphNode_T_ctx")
+                    && let Some(substituted_t) = map.get("T")
                         && let Some(substituted_ctx) = map.get("ctx") {
                             let t_ident = self.get_type_ident(substituted_t);
                             let ctx_ident = self.get_type_ident(substituted_ctx);
@@ -349,7 +391,6 @@ impl TypeChecker {
                                 format!("std_GraphNode_{}_{}", t_ident, ctx_ident)
                             };
                         }
-                }
                 let final_struct = if let Some(substituted) = map.get(&new_struct) {
                     match substituted {
                         Type::Struct(name, _) => name.clone(),

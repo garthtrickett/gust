@@ -1645,17 +1645,15 @@ impl TypeChecker {
                     let pool_type = self.check_expression(&arguments[0])?;
                     let val_type = self.check_expression(&arguments[1])?;
 
-                    if let Type::RawPointer(pool_inner) = &pool_type {
-                        if let Type::Generic(pool_name, pool_args) = &**pool_inner {
-                            if (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2 {
+                    if let Type::RawPointer(pool_inner) = &pool_type
+                        && let Type::Generic(pool_name, pool_args) = &**pool_inner
+                            && (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2 {
                                 let ctx_type = &pool_args[1];
                                 if let Type::Struct(ctx_name, _) = ctx_type {
                                     let concrete_rc = format!("std_Rc_{}_{}", self.get_type_ident(&val_type), ctx_name);
                                     return Ok(Type::Struct(concrete_rc, Some(ctx_name.clone())));
                                 }
                             }
-                        }
-                    }
                     return Err(TypeError {
                         kind: TypeErrorKind::TypeMismatch,
                         message: format!("Semantic Error: Invalid pool argument in RcNew: {:?}", pool_type),
@@ -2095,15 +2093,12 @@ impl TypeChecker {
                                     message: "Rc.Get expects exactly 0 arguments".to_string(),
                                 });
                             }
-                            if let Some(layout) = self.struct_registry.get(struct_name) {
-                                if let Some(Type::Index(rcnode_name, _)) = layout.fields.get("node_index") {
-                                    if let Some(rcnode_layout) = self.struct_registry.get(rcnode_name) {
-                                        if let Some(t_type) = rcnode_layout.fields.get("value") {
+                            if let Some(layout) = self.struct_registry.get(struct_name)
+                                && let Some(Type::Index(rcnode_name, _)) = layout.fields.get("node_index")
+                                    && let Some(rcnode_layout) = self.struct_registry.get(rcnode_name)
+                                        && let Some(t_type) = rcnode_layout.fields.get("value") {
                                             return Ok(Type::RawPointer(Box::new(t_type.clone())));
                                         }
-                                    }
-                                }
-                            }
                             return Err(TypeError {
                                 kind: TypeErrorKind::TypeMismatch,
                                 message: format!("Rc.Get: cannot find value type for Rc struct {}", struct_name),
@@ -2120,24 +2115,18 @@ impl TypeChecker {
                             let arg_type = self.check_expression(&arguments[0])?;
                             
                             let mut t_type = None;
-                            if let Some(layout) = self.struct_registry.get(struct_name) {
-                                if let Some(Type::Struct(pool_name, _)) = layout.fields.get("nodes") {
-                                    if let Some(pool_layout) = self.struct_registry.get(pool_name) {
-                                        if let Some(Type::RawPointer(node_ptr)) = pool_layout.fields.get("data") {
-                                            if let Type::Struct(gnode_name, _) = &**node_ptr {
-                                                if let Some(gnode_layout) = self.struct_registry.get(gnode_name) {
-                                                    if let Some(val_type) = gnode_layout.fields.get("value") {
+                            if let Some(layout) = self.struct_registry.get(struct_name)
+                                && let Some(Type::Struct(pool_name, _)) = layout.fields.get("nodes")
+                                    && let Some(pool_layout) = self.struct_registry.get(pool_name)
+                                        && let Some(Type::RawPointer(node_ptr)) = pool_layout.fields.get("data")
+                                            && let Type::Struct(gnode_name, _) = &**node_ptr
+                                                && let Some(gnode_layout) = self.struct_registry.get(gnode_name)
+                                                    && let Some(val_type) = gnode_layout.fields.get("value") {
                                                         t_type = Some(val_type.clone());
                                                     }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                             
-                            if let Some(expected_t) = t_type {
-                                if !types_match(&expected_t, &arg_type) {
+                            if let Some(expected_t) = t_type
+                                && !types_match(&expected_t, &arg_type) {
                                     return Err(TypeError {
                                         kind: TypeErrorKind::TypeMismatch,
                                         message: format!( 
@@ -2146,7 +2135,6 @@ impl TypeChecker {
                                         ),
                                     });
                                 }
-                            }
                             return Ok(Type::Int);
                         }
 
@@ -2233,21 +2221,15 @@ impl TypeChecker {
                             }
                             
                             let mut t_type = None;
-                            if let Some(layout) = self.struct_registry.get(struct_name) {
-                                if let Some(Type::Struct(pool_name, _)) = layout.fields.get("nodes") {
-                                    if let Some(pool_layout) = self.struct_registry.get(pool_name) {
-                                        if let Some(Type::RawPointer(node_ptr)) = pool_layout.fields.get("data") {
-                                            if let Type::Struct(gnode_name, _) = &**node_ptr {
-                                                if let Some(gnode_layout) = self.struct_registry.get(gnode_name) {
-                                                    if let Some(val_type) = gnode_layout.fields.get("value") {
+                            if let Some(layout) = self.struct_registry.get(struct_name)
+                                && let Some(Type::Struct(pool_name, _)) = layout.fields.get("nodes")
+                                    && let Some(pool_layout) = self.struct_registry.get(pool_name)
+                                        && let Some(Type::RawPointer(node_ptr)) = pool_layout.fields.get("data")
+                                            && let Type::Struct(gnode_name, _) = &**node_ptr
+                                                && let Some(gnode_layout) = self.struct_registry.get(gnode_name)
+                                                    && let Some(val_type) = gnode_layout.fields.get("value") {
                                                         t_type = Some(val_type.clone());
                                                     }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                             
                             if let Some(expected_t) = t_type {
                                 return Ok(Type::RawPointer(Box::new(expected_t)));
