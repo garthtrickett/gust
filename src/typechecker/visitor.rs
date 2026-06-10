@@ -969,6 +969,7 @@ impl TypeChecker {
     }
 
     pub fn check_expression(&mut self, expr: &Expression) -> Result<Type, TypeError> {
+        eprintln!("check_expression: {:?}", expr);
         match expr {
             Expression::Identifier(name) => {
                 if self.moved_vars.contains(name) {
