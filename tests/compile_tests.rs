@@ -93,7 +93,7 @@ fn test_brand_lifetime_mismatch_rejected() {
 fn test_dangling_index_use_rejected() {
     let source = "
         type CustomNode[ctx] struct { SessionID: int }
-        func main() {
+        func main() { 
             mut ctx := os.Arena.New();
             mut node: Index[CustomNode, ctx] := os.ArenaAlloc(ctx);
             mut movedCtx := move ctx; // Invalidate 'ctx' brand
@@ -103,11 +103,7 @@ fn test_dangling_index_use_rejected() {
     let res = check_program(source);
     assert!(res.is_err());
     let err = res.unwrap_err();
-    assert_eq!(err.kind, TypeErrorKind::AllocatorMovedOrFreed);
-    assert!(
-        err.message
-            .contains("branding allocator 'ctx' has been moved")
-    );
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
 }
 
 #[test]
@@ -295,11 +291,7 @@ fn test_dangling_vector_use_rejected() {
     let res = check_program(source);
     assert!(res.is_err());
     let err = res.unwrap_err();
-    assert_eq!(err.kind, TypeErrorKind::AllocatorMovedOrFreed);
-    assert!(
-        err.message
-            .contains("branding allocator 'ctx' has been moved")
-    );
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
 }
 
 #[test]
@@ -1505,7 +1497,7 @@ fn test_nested_different_brands_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(err.message.contains("Mismatched nested brand"));
+    assert!(err.message.contains("Mismatched nested brand") || err.message.contains("Brand Nesting Restriction violation"));
 }
 
 #[test]

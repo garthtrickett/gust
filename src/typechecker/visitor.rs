@@ -949,8 +949,8 @@ impl TypeChecker {
                                 if v == name {
                                     continue;
                                 }
-                                if let Some(v_type) = self.symbol_table.get(v) {
-                                    if self.get_type_brand(v_type) == Some(name.clone()) {
+                                if let Some(v_type) = self.symbol_table.get(v)
+                                    && self.get_type_brand(v_type) == Some(name.clone()) {
                                         for origin in origins {
                                             if local_vars.contains(origin) && origin != name {
                                                 let is_origin_branded = if let Some(orig_type) = self.symbol_table.get(origin) {
@@ -969,8 +969,7 @@ impl TypeChecker {
                                                 } 
                                             }
                                         }
-                                    }
-                                } 
+                                    } 
                             }
                         }
 

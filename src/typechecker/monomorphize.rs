@@ -23,30 +23,36 @@ impl TypeChecker {
         if matches!(element, Type::Str | Type::Slice(_) | Type::ByteSlice) {
             return true;
         }
-        if let Some(ib) = self.get_type_brand(element) {
-            if ib == ob {
+        if let Some(ib) = self.get_type_brand(element)
+            && ib == ob {
                 return true;
             }
-        }
         false
     }
 
     pub(crate) fn check_brand_hierarchy(&self, t: &Type, outer_brand: &Option<String>) -> Result<(), TypeError> {
         if let Some(ob) = outer_brand {
-            let is_brand_param = if let Type::Struct(name, _) = t {
-                name == ob
-            } else {
-                false
-            };
-
-            if !is_brand_param && !self.is_element_allowed_in_brand(t, ob) {
-                return Err(TypeError {
-                    kind: TypeErrorKind::BrandLifetimeViolation,
-                    message: format!( 
-                        "Semantic Error: Brand Nesting Restriction violation. Element '{:?}' inside collection branded with '{}' must be copyable POD or branded with identical brand '{}'",
-                        t, ob, ob
-                    ),
-                });
+            if let Type::Struct(name, _) = t {
+                if name != ob && !self.is_element_allowed_in_brand(t, ob) {
+                    return Err(TypeError {
+                        kind: TypeErrorKind::BrandLifetimeViolation,
+                        message: format!( 
+                            "Semantic Error: Brand Nesting Restriction violation. Element '{:?}' inside collection branded with '{}' must be copyable POD or branded with identical brand '{}'",
+                            t, ob, ob
+                        ),
+                    });
+                }
+            }
+            if let Type::Index(name, _) = t { 
+                if !self.is_element_allowed_in_brand(t, ob) {
+                    return Err(TypeError {
+                        kind: TypeErrorKind::BrandLifetimeViolation,
+                        message: format!( 
+                            "Semantic Error: Brand Nesting Restriction violation. Element '{:?}' inside collection branded with '{}' must be copyable POD or branded with identical brand '{}'",
+                            t, ob, ob
+                        ),
+                    });
+                }
             }
         }
 
