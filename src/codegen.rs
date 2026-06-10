@@ -1251,6 +1251,16 @@ impl Codegen {
                         }
                     }
 
+                    if is_rc && right == "Clone" {
+                        return format!("std_RcClone(&{})", left_str);
+                    }
+                    if is_rc && right == "Release" {
+                        return format!("std_RcRelease(&{})", left_str);
+                    }
+                    if is_rc && right == "Get" {
+                        return format!("std_RcGet(&{})", left_str);
+                    }
+
                     if is_vec && right == "Push" {
                         let arg_str = self.gen_expression(&arguments[0]);
                         return format!("os_VectorPush(&{}, {})", left_str, arg_str);

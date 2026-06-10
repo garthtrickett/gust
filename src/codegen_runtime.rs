@@ -379,4 +379,28 @@ static inline void std_PoolFree_impl(void* pool_void, int index) {
     _idx; \
 })
 #define std_PoolFree(pool_ptr, index) std_PoolFree_impl((void*)(pool_ptr), (index))
+
+#define std_RcNew(pool_ptr, val, rc_type) ({ \
+    __typeof__(*(pool_ptr)->data) _rc_node; \
+    _rc_node.value = (val); \
+    _rc_node.ref_count = 1; \
+    int _idx = std_PoolAlloc((pool_ptr), _rc_node); \
+    (rc_type){ .node_index = _idx, .pool = (pool_ptr) }; \
+})
+
+#define std_RcClone(rc_ptr) ({ \
+    (rc_ptr)->pool->data[(rc_ptr)->node_index].ref_count++; \
+    *(rc_ptr); \
+})
+
+#define std_RcRelease(rc_ptr) do { \
+    if ((rc_ptr)->pool != NULL && (rc_ptr)->node_index != 0xFFFFFFFF) { \
+        (rc_ptr)->pool->data[(rc_ptr)->node_index].ref_count--; \
+        if ((rc_ptr)->pool->data[(rc_ptr)->node_index].ref_count == 0) { \
+            std_PoolFree((rc_ptr)->pool, (rc_ptr)->node_index); \
+        } \
+    } \
+} while(0)
+
+#define std_RcGet(rc_ptr) (&((rc_ptr)->pool->data[(rc_ptr)->node_index].value))
 "#;
