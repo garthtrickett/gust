@@ -31,6 +31,38 @@ impl Default for TypeChecker {
 }
 
 impl TypeChecker {
+    pub fn is_linear(&self, t: &Type) -> bool {
+        let mut visited = HashSet::new();
+        self.is_linear_impl(t, &mut visited)
+    }
+
+    fn is_linear_impl(&self, t: &Type, visited: &mut HashSet<String>) -> bool {
+        match t {
+            Type::Int | Type::Byte | Type::Arena | Type::Void | Type::Index(_, _) => false,
+            Type::RawPointer(_) | Type::Slice(_) | Type::ByteSlice | Type::Str => true,
+            Type::Generic(_, _) => true,
+            Type::Struct(name, _) => {
+                if name == "T" || name == "K" || name == "V" {
+                    return true;
+                }
+                if visited.contains(name) {
+                    return false;
+                }
+                visited.insert(name.clone());
+                if let Some(layout) = self.struct_registry.get(name) {
+                    for field_type in layout.fields.values() {
+                        if self.is_linear_impl(field_type, visited) {
+                            return true;
+                        }
+                    }
+                    false
+                } else {
+                    true // Conservative fallback
+                }
+            }
+        }
+    }
+
     pub fn insert_symbol(&mut self, name: String, t: Type) {
         self.symbol_table.insert(name.clone(), t.clone());
         let mut origins = HashSet::new();

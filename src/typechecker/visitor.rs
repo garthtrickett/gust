@@ -157,9 +157,9 @@ impl TypeChecker {
                     let mut variant_fields = HashMap::new();
                     for field in &variant.fields {
                         let resolved_t = self.resolve_type(&field.field_type)?;
-                        if let Type::Struct(ref struct_name, _) = resolved_t {
-                            if let Some(layout) = self.struct_registry.get(struct_name) {
-                                if layout.fields.len() > 2 {
+                        if let Type::Struct(ref struct_name, _) = resolved_t
+                            && let Some(layout) = self.struct_registry.get(struct_name)
+                                && layout.fields.len() > 2 {
                                     return Err(TypeError {
                                         kind: TypeErrorKind::LargeEnumVariantPayload,
                                         message: format!(
@@ -168,8 +168,6 @@ impl TypeChecker {
                                         ),
                                     });
                                 }
-                            }
-                        }
                         variant_fields.insert(field.name.clone(), field.field_type.clone());
                     }
                     self.struct_registry.insert(

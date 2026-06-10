@@ -1,7 +1,7 @@
 use gust_lexer::codegen::Codegen;
 use gust_lexer::lexer::Lexer;
 use gust_lexer::parser::Parser;
-use gust_lexer::typechecker::{TypeChecker, TypeError, TypeErrorKind};
+use gust_lexer::typechecker::{TypeChecker, TypeError, TypeErrorKind, Type};
 
 fn check_program(source: &str) -> Result<(), TypeError> {
     let lexer = Lexer::new(source);
@@ -927,4 +927,40 @@ fn test_large_enum_variant_indirection_accepted() {
         }
     ";
     assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_pod_struct_propagation_recognized_as_copyable() {
+    let source = "
+        type MyPod struct {
+            a: int,
+            b: int
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    assert!(checker.check_program(&program).is_ok());
+
+    let pod_type = Type::Struct("MyPod".to_string(), None);
+    assert!(!checker.is_linear(&pod_type));
+}
+
+#[test]
+fn test_linear_struct_propagation_recognized_as_linear() {
+    let source = "
+        type MyLinear struct {
+            name: str,
+            id: int
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    assert!(checker.check_program(&program).is_ok());
+
+    let linear_type = Type::Struct("MyLinear".to_string(), None);
+    assert!(checker.is_linear(&linear_type));
 }
