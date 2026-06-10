@@ -72,34 +72,31 @@ impl TypeChecker {
     fn extract_ok_checked_variable(&self, expr: &Expression) -> Option<String> {
         match expr {
             Expression::Selector { left, right } => {
-                if right == "Ok"
-                    && let Expression::Identifier(name) = &**left {
-                        return Some(name.clone());
-                    }
+                if right == "Ok" {
+                    return Some(expression_to_string(left));
+                }
                 None
             }
             Expression::Binary { op, left, right } => {
                 if op == "==" {
-                    // Case: result.Ok == 1
+                    // Case: path.Ok == 1
                     if let Expression::Selector {
                         left: sel_left,
                         right: sel_right,
                     } = &**left
                         && sel_right == "Ok"
-                            && let Expression::Identifier(name) = &**sel_left
-                                && let Expression::Integer(1) = &**right {
-                                    return Some(name.clone());
-                                }
-                    // Case: 1 == result.Ok
+                            && let Expression::Integer(1) = &**right {
+                                return Some(expression_to_string(sel_left));
+                            }
+                    // Case: 1 == path.Ok
                     if let Expression::Selector {
                         left: sel_left,
                         right: sel_right,
                     } = &**right
                         && sel_right == "Ok"
-                            && let Expression::Identifier(name) = &**sel_left
-                                && let Expression::Integer(1) = &**left {
-                                    return Some(name.clone());
-                                }
+                            && let Expression::Integer(1) = &**left {
+                                return Some(expression_to_string(sel_left));
+                            }
                 }
                 None
             }
@@ -1031,13 +1028,32 @@ impl TypeChecker {
                 }
 
                 if let Type::Struct(struct_name, _brand) = &left_type {
-                    if struct_name.starts_with("CastResult_") {
+                    if struct_name.starts_with("CastResult_") || struct_name.starts_with("LookupResult_") {
                         if right == "Ok" {
                             return Ok(Type::Int);
                         }
                         if right == "Val" {
-                            let target_struct =
-                                struct_name.trim_start_matches("CastResult_").to_string();
+                            // Definite Check Rule
+                            if !self.checked_results.contains(&left_str) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Semantic Error: Accessing the .Val payload of an unchecked result wrapper '{}'",
+                                        left_str
+                                    ),
+                                });
+                            }
+
+                            let prefix = if struct_name.starts_with("CastResult_") {
+                                "CastResult_"
+                            } else {
+                                "LookupResult_"
+                            };
+                            let target_struct = 
+                                struct_name.trim_start_matches(prefix).to_string();
+                            if target_struct == "int" {
+                                return Ok(Type::Int);
+                            }
                             return Ok(Type::Struct(target_struct, None));
                         }
                     }

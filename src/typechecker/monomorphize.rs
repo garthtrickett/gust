@@ -27,14 +27,38 @@ impl TypeChecker {
     pub(crate) fn resolve_type(&mut self, t: &Type) -> Result<Type, TypeError> {
         match t {
             Type::Generic(name, args) => {
-                let resolved_args: Result<Vec<Type>, TypeError> =
+                let resolved_args: Result<Vec<Type>, TypeError> = 
                     args.iter().map(|arg| self.resolve_type(arg)).collect();
                 self.monomorphize(name, &resolved_args?)
             }
-            Type::Struct(name, Some(brand)) => {
-                if self.struct_templates.contains_key(name) {
-                    let args = vec![Type::Struct(brand.clone(), None)];
-                    self.monomorphize(name, &args)
+            Type::Struct(name, brand) => {
+                if name.starts_with("LookupResult_") {
+                    if !self.struct_registry.contains_key(name) {
+                        let target_struct = name.trim_start_matches("LookupResult_").to_string();
+                        let v_type = if target_struct == "int" {
+                            Type::Int
+                        } else {
+                            Type::Struct(target_struct, None)
+                        };
+                        let mut fields = HashMap::new();
+                        fields.insert("Ok".to_string(), Type::Int);
+                        fields.insert("Val".to_string(), v_type);
+                        self.struct_registry.insert(
+                            name.clone(),
+                            StructLayout {
+                                brand: None,
+                                fields,
+                            },
+                        );
+                    }
+                }
+                if let Some(brand_name) = brand {
+                    if self.struct_templates.contains_key(name) {
+                        let args = vec![Type::Struct(brand_name.clone(), None)];
+                        self.monomorphize(name, &args)
+                    } else {
+                        Ok(t.clone())
+                    }
                 } else {
                     Ok(t.clone())
                 }
