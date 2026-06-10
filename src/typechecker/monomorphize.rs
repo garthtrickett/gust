@@ -43,7 +43,7 @@ impl TypeChecker {
                     });
                 }
             }
-            if let Type::Index(name, _) = t { 
+            if let Type::Index(_, _) = t { 
                 if !self.is_element_allowed_in_brand(t, ob) {
                     return Err(TypeError {
                         kind: TypeErrorKind::BrandLifetimeViolation,
