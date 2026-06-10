@@ -16,7 +16,40 @@ impl TypeChecker {
         }
     }
 
+    pub(crate) fn is_element_allowed_in_brand(&self, element: &Type, ob: &str) -> bool {
+        if !self.is_linear(element) {
+            return true;
+        }
+        if matches!(element, Type::Str | Type::Slice(_) | Type::ByteSlice) {
+            return true;
+        }
+        if let Some(ib) = self.get_type_brand(element) {
+            if ib == ob {
+                return true;
+            }
+        }
+        false
+    }
+
     pub(crate) fn check_brand_hierarchy(&self, t: &Type, outer_brand: &Option<String>) -> Result<(), TypeError> {
+        if let Some(ob) = outer_brand {
+            let is_brand_param = if let Type::Struct(name, _) = t {
+                name == ob
+            } else {
+                false
+            };
+
+            if !is_brand_param && !self.is_element_allowed_in_brand(t, ob) {
+                return Err(TypeError {
+                    kind: TypeErrorKind::BrandLifetimeViolation,
+                    message: format!( 
+                        "Semantic Error: Brand Nesting Restriction violation. Element '{:?}' inside collection branded with '{}' must be copyable POD or branded with identical brand '{}'",
+                        t, ob, ob
+                    ),
+                });
+            }
+        }
+
         match t {
             Type::Struct(name, inner_brand) => {
                 if let Some(ib) = inner_brand
@@ -24,7 +57,7 @@ impl TypeChecker {
                         && ib != ob {
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
-                                message: format!(
+                                message: format!( 
                                     "Semantic Error: Mismatched nested brand. Outer brand is '{}', but nested type '{}' has brand '{}'",
                                     ob, name, ib
                                 ),

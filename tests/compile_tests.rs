@@ -1523,6 +1523,41 @@ fn test_identical_nested_brands_accepted() {
 }
 
 #[test]
+fn test_unbranded_linear_struct_in_branded_collection_rejected() {
+    let source = "
+        type MyLinear struct {
+            ptr: *int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            // Vector[MyLinear, ctx] is rejected because MyLinear is an unbranded linear struct!
+            mut vec: Vector[MyLinear, ctx] := os.VectorNew(ctx);
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Brand Nesting Restriction violation"));
+}
+
+#[test]
+fn test_view_and_pod_in_branded_collection_accepted() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut v1: Vector[str, ctx] := os.VectorNew(ctx); // view is accepted
+            mut v2: Vector[int, ctx] := os.VectorNew(ctx); // POD is accepted
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_return_local_variable_view_rejected() {
     let source = "
         func leak() str {
