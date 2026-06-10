@@ -277,10 +277,16 @@ static inline int os_HashMapContains_impl(void* map_void, void* key_ptr, int is_
 }
 
 #define os_HashMapContains(map_ptr, key, is_str_key) \
-    os_HashMapContains_impl((map_void_ptr)(map_ptr), &((__typeof__(*(map_ptr)->keys)){key}), (is_str_key), sizeof(*(map_ptr)->keys))
+    ({ \
+        __typeof__(*(map_ptr)->keys) _key = (key); \
+        os_HashMapContains_impl((map_void_ptr)(map_ptr), &_key, (is_str_key), sizeof(*(map_ptr)->keys)); \
+    })
 
 #define os_HashMapRef(map_ptr, key, is_str_key) \
-    ((__typeof__((map_ptr)->values))os_HashMapRef_impl((map_void_ptr)(map_ptr), &((__typeof__(*(map_ptr)->keys)){key}), (is_str_key), sizeof(*(map_ptr)->keys), sizeof(*(map_ptr)->values)))
+    ((__typeof__((map_ptr)->values))({ \
+        __typeof__(*(map_ptr)->keys) _key = (key); \
+        os_HashMapRef_impl((map_void_ptr)(map_ptr), &_key, (is_str_key), sizeof(*(map_ptr)->keys), sizeof(*(map_ptr)->values)); \
+    }))
 
 #define os_VectorPush(vec_ptr, val) do { \
     if ((vec_ptr)->len >= (vec_ptr)->capacity) { \

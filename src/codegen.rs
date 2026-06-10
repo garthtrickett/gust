@@ -813,8 +813,8 @@ impl Codegen {
             }
             Expression::Integer(val) => val.to_string(),
             Expression::String(val) => {
-                format!(
-                    "(Slice_unsigned_char){{ (unsigned char*)\"{}\", {} }}",
+                format!( 
+                    "((Slice_unsigned_char){{ (unsigned char*)\"{}\", {} }})",
                     val,
                     val.len()
                 )
