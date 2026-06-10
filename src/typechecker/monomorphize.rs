@@ -5,13 +5,66 @@ use std::collections::HashMap;
 impl TypeChecker {
     pub(crate) fn substitute_brand(&self, t: &Type, new_brand: &Option<String>) -> Type {
         match t {
-            Type::Index(struct_name, _) => Type::Index(struct_name.clone(), new_brand.clone()),
-            Type::Struct(struct_name, _) => Type::Struct(struct_name.clone(), new_brand.clone()),
+            Type::Index(struct_name, _)
+                => Type::Index(struct_name.clone(), new_brand.clone()),
+            Type::Struct(struct_name, _)
+                => Type::Struct(struct_name.clone(), new_brand.clone()),
             Type::RawPointer(inner) => {
                 Type::RawPointer(Box::new(self.substitute_brand(inner, new_brand)))
             }
             _ => t.clone(),
         }
+    }
+
+    pub(crate) fn check_brand_hierarchy(&self, t: &Type, outer_brand: &Option<String>) -> Result<(), TypeError> {
+        match t {
+            Type::Struct(name, inner_brand) => {
+                if let Some(ib) = inner_brand {
+                    if let Some(ob) = outer_brand {
+                        if ib != ob {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::BrandLifetimeViolation,
+                                message: format!(
+                                    "Semantic Error: Mismatched nested brand. Outer brand is '{}', but nested type '{}' has brand '{}'",
+                                    ob, name, ib
+                                ),
+                            });
+                        } 
+                    }
+                }
+                if let Some(layout) = self.struct_registry.get(name) {
+                    let current_brand = inner_brand.as_ref().or(outer_brand.as_ref()).cloned();
+                    for field_type in layout.fields.values() {
+                        self.check_brand_hierarchy(field_type, &current_brand)?;
+                    }
+                }
+            }
+            Type::Index(name, inner_brand) => {
+                if let Some(ib) = inner_brand {
+                    if let Some(ob) = outer_brand {
+                        if ib != ob {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::BrandLifetimeViolation,
+                                message: format!(
+                                    "Semantic Error: Mismatched nested brand. Outer brand is '{}', but nested type 'Index[{}]' has brand '{}'",
+                                    ob, name, ib
+                                ),
+                            });
+                        } 
+                    }
+                }
+            }
+            Type::Generic(name, args) => {
+                for arg in args {
+                    self.check_brand_hierarchy(arg, outer_brand)?;
+                }
+            }
+            Type::RawPointer(inner) | Type::Slice(inner) => {
+                self.check_brand_hierarchy(inner, outer_brand)?;
+            }
+            _ => {}
+        }
+        Ok(())
     }
 
     pub(crate) fn get_type_brand(&self, t: &Type) -> Option<String> {
@@ -128,6 +181,10 @@ impl TypeChecker {
             if let Type::Struct(brand_name, _) = arg {
                 brand = Some(brand_name.clone());
             }
+        }
+
+        for arg in args {
+            self.check_brand_hierarchy(arg, &brand)?;
         }
 
         if !self.struct_registry.contains_key(&concrete_name) {

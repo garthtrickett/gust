@@ -1487,3 +1487,37 @@ fn test_branded_generic_instantiated_with_view_accepted() {
     ";
     assert!(check_program(source).is_ok());
 }
+
+#[test]
+fn test_nested_different_brands_rejected() {
+    let source = "
+        func main() {
+            mut innerCtx := os.Arena.New();
+            defer innerCtx.Free();
+            mut outerCtx := os.Arena.New();
+            defer outerCtx.Free();
+
+            // Vector[Vector[str, innerCtx], outerCtx]
+            mut vec: Vector[Vector[str, innerCtx], outerCtx] := os.VectorNew(outerCtx);
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Mismatched nested brand"));
+}
+
+#[test]
+fn test_identical_nested_brands_accepted() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            // Vector[Vector[str, ctx], ctx]
+            mut vec: Vector[Vector[str, ctx], ctx] := os.VectorNew(ctx);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
