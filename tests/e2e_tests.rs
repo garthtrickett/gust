@@ -535,13 +535,13 @@ fn test_e2e_relaxed_monomorphized_pod_performance() {
 #[test]
 fn test_e2e_take_and_empty_reinitialization() {
     let source = "
-        type Resource[T] struct {
+        type Resource[T, ctx] struct {
             val: T,
             active: int
         }
 
-        func swap_resources(a: *Resource[str], b: *Resource[str]) {
-            mut temp: Resource[str] := empty[Resource[str]];
+        func swap_resources(ctx: &Arena, a: *Resource[str, ctx], b: *Resource[str, ctx]) {
+            mut temp: Resource[str, ctx] := empty[Resource[str, ctx]];
             unsafe {
                 temp = take *a;
                 *a = take *b;
@@ -550,15 +550,18 @@ fn test_e2e_take_and_empty_reinitialization() {
         }
 
         func main() {
-            mut r1: Resource[str];
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut r1: Resource[str, ctx];
             r1.val = \"Hello\";
             r1.active = 1;
 
-            mut r2: Resource[str];
+            mut r2: Resource[str, ctx];
             r2.val = \"World\";
             r2.active = 2;
 
-            swap_resources(&r1, &r2);
+            swap_resources(ctx, &r1, &r2);
 
             os.LogStr(r1.val);
             os.LogInt(r1.active);

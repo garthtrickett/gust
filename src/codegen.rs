@@ -59,12 +59,19 @@ impl Codegen {
             Type::Str | Type::Slice(_) | Type::ByteSlice => "{ NULL, 0 }".to_string(),
             Type::Index(_, _) => "0xFFFFFFFF".to_string(),
             Type::Struct(name, _) => {
-                if let Some(layout) = self.struct_registry.get(&name) {
+                if self.enum_registry.contains_key(&name) {
+                    // For enums, only initialize the tag field to avoid C union initialization warnings
+                    format!("(({}){{ .tag = 0 }})", name)
+                } else if let Some(layout) = self.struct_registry.get(&name) {
                     let mut fields_init = Vec::new();
                     let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
                     sorted_fields.sort_by(|a, b| a.0.cmp(b.0));
                     for (field_name, field_type) in sorted_fields {
-                        fields_init.push(format!(".{} = {}", field_name, self.gen_type_aware_initializer(field_type)));
+                        fields_init.push(format!(
+                            ".{} = {}",
+                            field_name,
+                            self.gen_type_aware_initializer(field_type)
+                        ));
                     }
                     format!("(({}){{ {} }})", name, fields_init.join(", "))
                 } else {
@@ -86,7 +93,9 @@ impl Codegen {
     fn is_linear_impl(&self, t: &Type, visited: &mut std::collections::HashSet<String>) -> bool {
         match t {
             Type::Int | Type::Byte | Type::Void | Type::Index(_, _) => false,
-            Type::Arena | Type::RawPointer(_) | Type::Slice(_) | Type::ByteSlice | Type::Str => true,
+            Type::Arena | Type::RawPointer(_) | Type::Slice(_) | Type::ByteSlice | Type::Str => {
+                true
+            }
             Type::Generic(_, _) => true,
             Type::Struct(name, _) => {
                 if name == "T" || name == "K" || name == "V" {
@@ -434,13 +443,12 @@ impl Codegen {
                                 field_name, field_name
                             ));
                         }
-                        Type::Struct(nested_name, _)
-                            if self.has_boolean_fields(field_type) => {
-                                c_code.push_str(&format!(
-                                    "    if (!{}_IsValid(&req->{})) return 0;\n",
-                                    nested_name, field_name
-                                ));
-                            }
+                        Type::Struct(nested_name, _) if self.has_boolean_fields(field_type) => {
+                            c_code.push_str(&format!(
+                                "    if (!{}_IsValid(&req->{})) return 0;\n",
+                                nested_name, field_name
+                            ));
+                        }
                         _ => {}
                     }
                 }
@@ -573,7 +581,7 @@ impl Codegen {
                     .unwrap_or(Type::Void);
                 let type_str = self.get_c_type(&var_type);
 
-                let mut target_struct = None; 
+                let mut target_struct = None;
                 if let Type::Index(struct_name, _) = &var_type {
                     target_struct = Some(struct_name.clone());
                 } else if let Type::Struct(struct_name, _) = &var_type {
@@ -736,7 +744,10 @@ impl Codegen {
                     is_lin = self.is_linear(&t);
                 }
                 if is_lin {
-                    format!("(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))", expr_str)
+                    format!(
+                        "(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))",
+                        expr_str
+                    )
                 } else {
                     expr_str
                 }
@@ -756,7 +767,10 @@ impl Codegen {
                     is_lin = self.is_linear(&t);
                 }
                 if is_lin {
-                    format!("(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))", expr_str)
+                    format!(
+                        "(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))",
+                        expr_str
+                    )
                 } else {
                     expr_str
                 }
@@ -1102,10 +1116,11 @@ impl Codegen {
                         let left_ident = expression_to_string(left);
                         if let Some(Type::Struct(struct_name, _)) =
                             self.symbol_table.borrow().get(&left_ident)
-                            && let Some((k, v)) = self.get_hashmap_key_value_types(struct_name) {
-                                is_str_key = k == Type::Str;
-                                lookup_struct = format!("LookupResult_{}", self.get_type_ident(&v));
-                            }
+                            && let Some((k, v)) = self.get_hashmap_key_value_types(struct_name)
+                        {
+                            is_str_key = k == Type::Str;
+                            lookup_struct = format!("LookupResult_{}", self.get_type_ident(&v));
+                        }
                         let is_str_key_str = if is_str_key { "1" } else { "0" };
                         return format!(
                             "({{ {} res = {{0}}; res.Ok = os_HashMapContains(&{}, {}, {}); if (res.Ok) {{ res.Val = *os_HashMapRef(&{}, {}, {}); }} res; }})",
@@ -1142,9 +1157,7 @@ impl Codegen {
                 }
                 format!("{}({})", func_c, arg_strs.join(", "))
             }
-            Expression::Empty(target_type) => {
-                self.gen_type_aware_initializer(target_type)
-            }
+            Expression::Empty(target_type) => self.gen_type_aware_initializer(target_type),
         }
     }
 }
