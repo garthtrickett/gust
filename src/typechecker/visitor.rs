@@ -39,6 +39,15 @@ impl TypeChecker {
         None
     }
 
+    fn get_pool_element_type(&self, struct_name: &str) -> Option<Type> {
+        if let Some(layout) = self.struct_registry.get(struct_name)
+            && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
+        {
+            return Some((**inner).clone());
+        }
+        None
+    }
+
     fn get_hashmap_key_value_types(&self, struct_name: &str) -> Option<(Type, Type)> {
         if let Some(layout) = self.struct_registry.get(struct_name) {
             let k = layout.fields.get("keys")?;
@@ -138,6 +147,26 @@ impl TypeChecker {
                 param_names: vec!["s1".to_string(), "s2".to_string()],
                 params: vec![Type::Str, Type::Str],
                 return_type: Type::Int,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "std.PoolNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["ctx".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("Pool_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "os.PoolNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["ctx".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("Pool_Any".to_string(), Some("ctx".to_string())),
                 return_origins: std::collections::HashSet::new(),
             },
         );
@@ -1193,11 +1222,27 @@ impl TypeChecker {
                             });
                         }
                         Ok(v_type)
+                    } else if struct_name.starts_with("Pool_")
+                        || struct_name.starts_with("std_Pool_")
+                    {
+                        if index_type != Type::Int && index_type != Type::Byte {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::InvalidIndexType,
+                                message: "Pool index must resolve to an Int or Byte".to_string(),
+                            });
+                        }
+                        let elem_type =
+                            self.get_pool_element_type(struct_name)
+                                .ok_or_else(|| TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Invalid Pool struct layout".to_string(),
+                                })?;
+                        Ok(elem_type)
                     } else {
                         Err(TypeError {
                             kind: TypeErrorKind::InvalidIndexTarget,
                             message: format!(
-                                "Semantic Error: Subscript indexing is only valid on Arenas, Slices, Vectors, or HashMaps, but got {:?}",
+                                "Semantic Error: Subscript indexing is only valid on Arenas, Slices, Vectors, HashMaps, or Pools, but got {:?}",
                                 alloc_type
                             ),
                         })
@@ -1238,7 +1283,7 @@ impl TypeChecker {
                     Err(TypeError {
                         kind: TypeErrorKind::InvalidIndexTarget,
                         message: format!(
-                            "Semantic Error: Subscript indexing is only valid on Arenas, Slices, Vectors, or HashMaps, but got {:?}",
+                            "Semantic Error: Subscript indexing is only valid on Arenas, Slices, Vectors, HashMaps, or Pools, but got {:?}",
                             alloc_type
                         ),
                     })
@@ -1390,14 +1435,16 @@ impl TypeChecker {
                         && (struct_name.starts_with("Vector_")
                             || struct_name.starts_with("std_Vector_")
                             || struct_name.starts_with("HashMap_")
-                            || struct_name.starts_with("std_HashMap_"))
+                            || struct_name.starts_with("std_HashMap_")
+                            || struct_name.starts_with("Pool_")
+                            || struct_name.starts_with("std_Pool_"))
                     {
                         return Ok(Type::Int);
                     }
                     return Err(TypeError {
                         kind: TypeErrorKind::ArgumentMismatch,
                         message: format!(
-                            "Semantic Error: len expects a Slice, Str, Vector, or HashMap argument, but got {:?}",
+                            "Semantic Error: len expects a Slice, Str, Vector, HashMap, or Pool argument, but got {:?}",
                             arg_type
                         ),
                     });
@@ -1447,6 +1494,29 @@ impl TypeChecker {
                     }
                     let brand_name = expression_to_string(&arguments[0]);
                     return Ok(Type::Struct("HashMap_Any".to_string(), Some(brand_name)));
+                }
+
+                if func_path == "os.PoolNew" || func_path == "std.PoolNew" {
+                    if arguments.len() != 1 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: PoolNew expects exactly 1 argument"
+                                .to_string(),
+                        });
+                    }
+                    let arg_type = self.check_expression(&arguments[0])?;
+                    if arg_type != Type::Arena
+                        && !matches!(arg_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message:
+                                "Semantic Error: PoolNew argument must be an Arena allocator"
+                                    .to_string(),
+                        });
+                    }
+                    let brand_name = expression_to_string(&arguments[0]);
+                    return Ok(Type::Struct("Pool_Any".to_string(), Some(brand_name)));
                 }
 
                 if func_path == "os.ReadFile" {
@@ -1755,6 +1825,81 @@ impl TypeChecker {
                                 );
                             }
                             return Ok(Type::Struct(lookup_struct_name, None));
+                        }
+                        if (struct_name.starts_with("Pool_")
+                            || struct_name.starts_with("std_Pool_"))
+                            && right == "Alloc"
+                        {
+                            if arguments.len() != 1 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Pool.Alloc expects exactly 1 argument".to_string(),
+                                });
+                            }
+                            let arg_type = self.check_expression(&arguments[0])?;
+                            let elem_type =
+                                self.get_pool_element_type(struct_name).ok_or_else(|| {
+                                    TypeError {
+                                        kind: TypeErrorKind::TypeMismatch,
+                                        message: "Invalid Pool struct layout".to_string(),
+                                    }
+                                })?;
+                            if !types_match(&elem_type, &arg_type) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Argument type mismatch for Pool.Alloc. Expected {:?} but got {:?}",
+                                        elem_type, arg_type
+                                    ),
+                                });
+                            }
+                            let brand_name = match &left_type {
+                                Type::Struct(_, Some(b)) => Some(b.clone()),
+                                _ => None,
+                            };
+                            let elem_struct_name = match &elem_type {
+                                Type::Struct(n, _) => n.clone(),
+                                _ => "SessionNode".to_string(),
+                            };
+                            return Ok(Type::Index(elem_struct_name, brand_name));
+                        }
+                        if (struct_name.starts_with("Pool_")
+                            || struct_name.starts_with("std_Pool_"))
+                            && right == "Free"
+                        {
+                            if arguments.len() != 1 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Pool.Free expects exactly 1 argument".to_string(),
+                                });
+                            }
+                            let arg_type = self.check_expression(&arguments[0])?;
+                            let elem_type =
+                                self.get_pool_element_type(struct_name).ok_or_else(|| {
+                                    TypeError {
+                                        kind: TypeErrorKind::TypeMismatch,
+                                        message: "Invalid Pool struct layout".to_string(),
+                                    }
+                                })?;
+                            let brand_name = match &left_type {
+                                Type::Struct(_, Some(b)) => Some(b.clone()),
+                                _ => None,
+                            };
+                            let elem_struct_name = match &elem_type {
+                                Type::Struct(n, _) => n.clone(),
+                                _ => "SessionNode".to_string(),
+                            };
+                            let expected_index_type = Type::Index(elem_struct_name, brand_name);
+                            if !types_match(&expected_index_type, &arg_type) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Argument type mismatch for Pool.Free. Expected {:?} but got {:?}",
+                                        expected_index_type, arg_type
+                                    ),
+                                });
+                            }
+                            return Ok(Type::Void);
                         }
                     }
                     if left_type == Type::Arena && right == "Free" {

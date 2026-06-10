@@ -63,7 +63,10 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
                 let is_hashmap_any = (e_clean.starts_with("HashMap_")
                     && a_clean.starts_with("HashMap_Any"))
                     || (a_clean.starts_with("HashMap_") && e_clean.starts_with("HashMap_Any"));
-                if !is_vector_any && !is_hashmap_any {
+                let is_pool_any = (e_clean.starts_with("Pool_")
+                    && a_clean.starts_with("Pool_Any"))
+                    || (a_clean.starts_with("Pool_") && e_clean.starts_with("Pool_Any"));
+                if !is_vector_any && !is_hashmap_any && !is_pool_any {
                     return false;
                 }
             }

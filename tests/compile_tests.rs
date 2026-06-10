@@ -1787,3 +1787,61 @@ fn test_brand_erasure_utility_functions() {
     ";
     assert!(check_program(source).is_ok());
 }
+
+#[test]
+fn test_pool_type_checking_valid() {
+    let source = "
+        type Node struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut pool: std.Pool[Node, ctx] := std.PoolNew(ctx);
+            mut item: Node;
+            item.val = 42;
+
+            mut idx := pool.Alloc(item);
+            pool.Free(idx);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_pool_type_checking_invalid() {
+    let source_mismatch_alloc = "
+        type Node struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut pool: std.Pool[Node, ctx] := std.PoolNew(ctx);
+            mut idx := pool.Alloc(42);
+        }
+    ";
+    let res1 = check_program(source_mismatch_alloc);
+    assert!(res1.is_err());
+    let err1 = res1.unwrap_err();
+    assert_eq!(err1.kind, TypeErrorKind::TypeMismatch);
+
+    let source_invalid_free = "
+        type Node struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut pool: std.Pool[Node, ctx] := std.PoolNew(ctx);
+            pool.Free(42);
+        }
+    ";
+    let res2 = check_program(source_invalid_free);
+    assert!(res2.is_err());
+    let err2 = res2.unwrap_err();
+    assert_eq!(err2.kind, TypeErrorKind::TypeMismatch);
+}

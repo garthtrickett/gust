@@ -1,56 +1,126 @@
 #!/usr/bin/env bash
+# File: bridge.sh
+# ==============================================================================
+
+# Directory where your browser downloads files (e.g., Gemini or AI Studio exports)
 WATCH_DIR="$HOME/Downloads"
 PROJECT_DIR=$(pwd)
-cd "$PROJECT_DIR" || exit
 
-echo "👀 Watching $WATCH_DIR for Gemini responses..."
+cd "$PROJECT_DIR" || exit 1
 
-inotifywait -m -e close_write -e moved_to --format '%f' "$WATCH_DIR" | while read -r FILE; do
-    if [[ "$FILE" == *.json ]] || [[ "$FILE" == *.txt ]] || [[ "$FILE" == *.ts ]]; then
-        sleep 0.2
-        FULL_PATH="$WATCH_DIR/$FILE"
+# Locate the aider-patcher binary
+if command -v aider-patcher &>/dev/null; then
+    PATCHER_BIN="aider-patcher"
+elif [ -f "./aider-patcher" ]; then
+    PATCHER_BIN="./aider-patcher"
+elif [ -f "./target/release/aider-patcher" ]; then
+    PATCHER_BIN="./target/release/aider-patcher"
+else
+    echo "❌ ERROR: 'aider-patcher' binary not found."
+    echo "Please copy it to /usr/local/bin or place it in this project folder."
+    exit 1
+fi
 
-        if [ -f "$FULL_PATH" ]; then
-            echo "----------------------------------------"
-            echo "📂 Detected: $FILE"
-            cp "$FULL_PATH" "current_response.json"
+echo "👀 Watching $WATCH_DIR for incoming patch payloads..."
 
-            echo "⚙️  Processing changes..."
+# File watcher loop
+if command -v inotifywait &>/dev/null; then
+    # Linux (requires inotify-tools)
+    inotifywait -m -e close_write -e moved_to --format '%f' "$WATCH_DIR" | while read -r FILE; do
+        # Check for both .json and .txt files
+        if [[ "$FILE" == *.json || "$FILE" == *.txt ]]; then
+            sleep 0.2
+            FULL_PATH="$WATCH_DIR/$FILE"
+            if [ -f "$FULL_PATH" ]; then
+                echo "----------------------------------------"
+                echo "📂 Detected: $FILE"
+                cp "$FULL_PATH" "current_response.json"
 
-            # Stream Python output directly to terminal AND capture it in a log file simultaneously
-            python3 apply_changes.py "current_response.json" 2>&1 | tee /tmp/gemini_apply.log
+                echo "⚙️  Processing changes with Rust AiderPatcher..."
 
-            # Capture the exit code of the python script (not the tee command)
-            EXIT_CODE=${PIPESTATUS[0]}
+                # Execute patcher
+                "$PATCHER_BIN" --patch "current_response.json" --cwd "$PROJECT_DIR" 2>&1 | tee /tmp/patcher_apply.log
+                EXIT_CODE=${PIPESTATUS[0]}
 
-            # Read the output back from the log for our summary parsing
-            PYTHON_OUT=$(cat /tmp/gemini_apply.log)
+                PATCHER_OUT=$(cat /tmp/patcher_apply.log)
 
-            if [ $EXIT_CODE -eq 0 ]; then
-                # SUCCESS CASE
-                SUMMARY=$(echo "$PYTHON_OUT" | grep "🤖 Summary:" | sed 's/🤖 Summary: //')
+                if [ $EXIT_CODE -eq 0 ]; then
+                    SUMMARY=$(echo "$PATCHER_OUT" | grep "🤖 Summary:" | sed 's/🤖 Summary: //')
 
-                echo -e "\n🔍 Reviewing changes:"
-                git diff --color=always | sed 's/^/  /'
-                echo -e "\n"
+                    echo -e "\n🔍 Reviewing changes:"
+                    git diff --color=always | sed 's/^/  /'
+                    echo -e "\n"
 
-                rm "current_response.json"
+                    git add .
+                    git commit -m "${SUMMARY:-AI Code Update}"
 
-                git add .
-                git commit -m "${SUMMARY:-Gemini Update}"
+                    echo "📜 Files Changed:"
+                    git show --name-only --format="" HEAD | sed 's/^/  📄 /'
+                    if command -v notify-send &>/dev/null; then
+                        notify-send "Patcher Success" "All changes applied and committed."
+                    fi
+                else
+                    echo "⛔ TRANSACTION FAILED: One or more blocks did not match."
+                    if command -v notify-send &>/dev/null; then
+                        notify-send -u critical "Patcher Failed" "Search blocks mismatch. No changes applied."
+                    fi
+                fi
 
-                echo "📜 Files Changed:"
-                git show --name-only --format="" HEAD | sed 's/^/  📄 /'
-                notify-send "Gemini Success" "All changes applied and committed."
-            else
-                # FAILURE CASE
-                echo "⛔ TRANSACTION FAILED: One or more blocks did not match."
-                echo "No files were modified. Re-sync your codebase in Gemini and try again."
-                notify-send -u critical "Gemini Failed" "Search blocks mismatch. No changes applied."
+                rm -f "current_response.json"
+                rm -f "$FULL_PATH"
+                echo "----------------------------------------"
             fi
-
-            rm "$FULL_PATH"
-            echo "----------------------------------------"
         fi
-    fi
-done
+    done
+elif command -v fswatch &>/dev/null; then
+    # macOS (requires fswatch)
+    fswatch -0 "$WATCH_DIR" | while read -r -d "" FULL_PATH; do
+        # Check for both .json and .txt files
+        if [[ "$FULL_PATH" == *.json || "$FULL_PATH" == *.txt ]]; then
+            FILE=$(basename "$FULL_PATH")
+            sleep 0.2
+            if [ -f "$FULL_PATH" ]; then
+                echo "----------------------------------------"
+                echo "📂 Detected: $FILE"
+                cp "$FULL_PATH" "current_response.json"
+
+                echo "⚙️  Processing changes with Rust AiderPatcher..."
+
+                "$PATCHER_BIN" --patch "current_response.json" --cwd "$PROJECT_DIR" 2>&1 | tee /tmp/patcher_apply.log
+                EXIT_CODE=${PIPESTATUS[0]}
+
+                PATCHER_OUT=$(cat /tmp/patcher_apply.log)
+
+                if [ $EXIT_CODE -eq 0 ]; then
+                    SUMMARY=$(echo "$PATCHER_OUT" | grep "🤖 Summary:" | sed 's/🤖 Summary: //')
+
+                    echo -e "\n🔍 Reviewing changes:"
+                    git diff --color=always | sed 's/^/  /'
+                    echo -e "\n"
+
+                    git add .
+                    git commit -m "${SUMMARY:-AI Code Update}"
+
+                    echo "📜 Files Changed:"
+                    git show --name-only --format="" HEAD | sed 's/^/  📄 /'
+                    if command -v osascript &>/dev/null; then
+                        osascript -e 'display notification "All changes applied and committed." with title "Patcher Success"'
+                    fi
+                else
+                    echo "⛔ TRANSACTION FAILED: One or more blocks did not match."
+                    if command -v osascript &>/dev/null; then
+                        osascript -e 'display notification "Search blocks mismatch. No changes applied." with title "Patcher Failed"'
+                    fi
+                fi
+
+                rm -f "current_response.json"
+                rm -f "$FULL_PATH"
+                echo "----------------------------------------"
+            fi
+        fi
+    done
+else
+    echo "❌ ERROR: Neither 'inotifywait' nor 'fswatch' is installed."
+    echo "Please install 'inotify-tools' (Linux) or 'fswatch' (macOS) to run this script."
+    exit 1
+fi

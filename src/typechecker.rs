@@ -208,6 +208,52 @@ impl TypeChecker {
             },
         );
 
+        // Pool[T, ctx]
+        let pool_fields = vec![
+            crate::ast::FieldDef {
+                name: "data".to_string(),
+                field_type: Type::RawPointer(Box::new(Type::Struct("T".to_string(), None))),
+            },
+            crate::ast::FieldDef {
+                name: "occupied".to_string(),
+                field_type: Type::RawPointer(Box::new(Type::Int)),
+            },
+            crate::ast::FieldDef {
+                name: "free_list".to_string(),
+                field_type: Type::RawPointer(Box::new(Type::Int)),
+            },
+            crate::ast::FieldDef {
+                name: "len".to_string(),
+                field_type: Type::Int,
+            },
+            crate::ast::FieldDef {
+                name: "capacity".to_string(),
+                field_type: Type::Int,
+            },
+            crate::ast::FieldDef {
+                name: "free_len".to_string(),
+                field_type: Type::Int,
+            },
+            crate::ast::FieldDef {
+                name: "arena".to_string(),
+                field_type: Type::RawPointer(Box::new(Type::Arena)),
+            },
+        ];
+        struct_templates.insert(
+            "Pool".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: pool_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.Pool".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: pool_fields,
+            },
+        );
+
         TypeChecker {
             symbol_table: HashMap::new(),
             variable_types: HashMap::new(),
