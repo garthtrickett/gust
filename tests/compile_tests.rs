@@ -510,6 +510,8 @@ fn test_malformed_empty_intrinsic_rejected() {
         }
     ";
     assert!(check_program(source).is_err());
+}
+
 #[test]
 fn test_empty_intrinsic_type_checking() {
     let source_valid = "
@@ -536,13 +538,6 @@ fn test_empty_intrinsic_type_checking() {
             SessionID: int
         }
         func main() {
-            mut val: CustomNode := empty[int]; // Type mismatch
-        }
-    ";
-    let res2 = check_program(source_invalid_struct);
-    assert!(res2.is_err());
-    assert_eq!(res2.unwrap_err().kind, TypeErrorKind::TypeMismatch);
-}
             mut val: CustomNode := empty[int]; // Type mismatch
         }
     ";
