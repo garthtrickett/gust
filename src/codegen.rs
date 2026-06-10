@@ -1261,6 +1261,29 @@ impl Codegen {
                         return format!("std_RcGet(&{})", left_str);
                     }
 
+                    if is_rc && right == "Clone" {
+                        return format!("std_RcClone(&{})", left_str);
+                    }
+                    if is_rc && right == "Release" {
+                        return format!("std_RcRelease(&{})", left_str);
+                    }
+                    if is_rc && right == "Get" {
+                        return format!("std_RcGet(&{})", left_str);
+                    }
+                    if is_graph && right == "AddNode" {
+                        let arg_str = self.gen_expression(&arguments[0]);
+                        return format!("std_GraphAddNode(&{}, {})", left_str, arg_str);
+                    }
+                    if is_graph && right == "AddEdge" {
+                        let arg0 = self.gen_expression(&arguments[0]);
+                        let arg1 = self.gen_expression(&arguments[1]);
+                        return format!("std_GraphAddEdge(&{}, {}, {})", left_str, arg0, arg1);
+                    }
+                    if is_graph && right == "GetNode" {
+                        let arg_str = self.gen_expression(&arguments[0]);
+                        return format!("std_GraphGetNode(&{}, {})", left_str, arg_str);
+                    }
+
                     if is_vec && right == "Push" {
                         let arg_str = self.gen_expression(&arguments[0]);
                         return format!("os_VectorPush(&{}, {})", left_str, arg_str);
