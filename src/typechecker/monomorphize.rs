@@ -128,7 +128,7 @@ impl TypeChecker {
             Type::Struct(name, brand) => {
                 if name.starts_with("LookupResult_")
                     && !self.struct_registry.contains_key(name) {
-                        let target_struct = name.trim_start_matches("LookupResult_").to_string();
+                        let target_struct = name.strip_prefix("LookupResult_").unwrap_or(name).to_string();
                         let v_type = if target_struct == "int" {
                             Type::Int
                         } else {
@@ -148,10 +148,10 @@ impl TypeChecker {
 
                 if (name.starts_with("RcNode_") || name.starts_with("std_RcNode_"))
                     && !self.struct_registry.contains_key(name) {
-                        let inner_t_name = if name.starts_with("RcNode_") {
-                            name.trim_start_matches("RcNode_")
+                        let inner_t_name = if let Some(stripped) = name.strip_prefix("RcNode_") {
+                            stripped
                         } else {
-                            name.trim_start_matches("std_RcNode_")
+                            name.strip_prefix("std_RcNode_").unwrap_or(name)
                         };
                         let inner_t = if inner_t_name == "int" {
                             Type::Int
@@ -166,10 +166,10 @@ impl TypeChecker {
 
                 if (name.starts_with("GraphNode_") || name.starts_with("std_GraphNode_"))
                     && !self.struct_registry.contains_key(name) {
-                        let suffix = if name.starts_with("GraphNode_") {
-                            name.trim_start_matches("GraphNode_")
+                        let suffix = if let Some(stripped) = name.strip_prefix("GraphNode_") {
+                            stripped
                         } else {
-                            name.trim_start_matches("std_GraphNode_")
+                            name.strip_prefix("std_GraphNode_").unwrap_or(name)
                         };
                         let parts: Vec<&str> = suffix.split('_').collect();
                         if parts.len() == 2 {
