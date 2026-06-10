@@ -19,9 +19,9 @@ impl TypeChecker {
     pub(crate) fn check_brand_hierarchy(&self, t: &Type, outer_brand: &Option<String>) -> Result<(), TypeError> {
         match t {
             Type::Struct(name, inner_brand) => {
-                if let Some(ib) = inner_brand {
-                    if let Some(ob) = outer_brand {
-                        if ib != ob {
+                if let Some(ib) = inner_brand
+                    && let Some(ob) = outer_brand
+                        && ib != ob {
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
                                 message: format!(
@@ -29,9 +29,7 @@ impl TypeChecker {
                                     ob, name, ib
                                 ),
                             });
-                        } 
-                    }
-                }
+                        }
                 if let Some(layout) = self.struct_registry.get(name) {
                     let current_brand = inner_brand.as_ref().or(outer_brand.as_ref()).cloned();
                     for field_type in layout.fields.values() {
@@ -40,9 +38,9 @@ impl TypeChecker {
                 }
             }
             Type::Index(name, inner_brand) => {
-                if let Some(ib) = inner_brand {
-                    if let Some(ob) = outer_brand {
-                        if ib != ob {
+                if let Some(ib) = inner_brand
+                    && let Some(ob) = outer_brand
+                        && ib != ob {
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
                                 message: format!(
@@ -50,11 +48,9 @@ impl TypeChecker {
                                     ob, name, ib
                                 ),
                             });
-                        } 
-                    }
-                }
+                        }
             }
-            Type::Generic(name, args) => {
+            Type::Generic(_, args) => {
                 for arg in args {
                     self.check_brand_hierarchy(arg, outer_brand)?;
                 }

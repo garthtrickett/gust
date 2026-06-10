@@ -672,8 +672,8 @@ impl TypeChecker {
                     // Retrieve expression origins immutably first
                     let expr_origins = self.get_expression_origins(expr);
 
-                    if self.contains_ephemeral_view(&t) {
-                        if let Some(ref local_vars) = self.current_function_local_vars {
+                    if self.contains_ephemeral_view(&t)
+                        && let Some(ref local_vars) = self.current_function_local_vars {
                             for origin in &expr_origins {
                                 if local_vars.contains(origin) {
                                     return Err(TypeError {
@@ -686,7 +686,6 @@ impl TypeChecker {
                                 } 
                             } 
                         }
-                    }
 
                     // Populate return statement origins to the enclosing function
                     if let Some(ref mut return_origins_set) = self.current_function_return_origins {
