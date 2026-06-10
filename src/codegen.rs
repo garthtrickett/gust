@@ -1214,6 +1214,8 @@ impl Codegen {
                     let mut is_vec = false;
                     let mut is_map = false;
                     let mut is_pool = false;
+                    let mut is_rc = false;
+                    let mut is_graph = false;
                     let left_type = self.get_expr_type(left).unwrap_or(Type::Void);
 
                     if let Type::Struct(struct_name, _) = &left_type {
@@ -1229,6 +1231,14 @@ impl Codegen {
                             || struct_name.starts_with("std_Pool_")
                         {
                             is_pool = true;
+                        } else if struct_name.starts_with("Rc_")
+                            || struct_name.starts_with("std_Rc_")
+                        {
+                            is_rc = true;
+                        } else if struct_name.starts_with("Graph_")
+                            || struct_name.starts_with("std_Graph_")
+                        {
+                            is_graph = true;
                         }
                     } else {
                         let left_ident = expression_to_string(left);
@@ -1247,6 +1257,14 @@ impl Codegen {
                                 || struct_name.starts_with("std_Pool_")
                             {
                                 is_pool = true;
+                            } else if struct_name.starts_with("Rc_")
+                                || struct_name.starts_with("std_Rc_")
+                            {
+                                is_rc = true;
+                            } else if struct_name.starts_with("Graph_")
+                                || struct_name.starts_with("std_Graph_")
+                            {
+                                is_graph = true;
                             }
                         }
                     }

@@ -403,4 +403,19 @@ static inline void std_PoolFree_impl(void* pool_void, int index) {
 } while(0)
 
 #define std_RcGet(rc_ptr) (&((rc_ptr)->pool->data[(rc_ptr)->node_index].value))
+
+#define std_GraphNew(arena_ptr) { std_PoolNew(arena_ptr) }
+
+#define std_GraphAddNode(graph_ptr, val) ({ \
+    __typeof__(*(graph_ptr)->nodes.data) _g_node; \
+    _g_node.value = (val); \
+    _g_node.edges = (struct Vector_int){ .data = NULL, .len = 0, .capacity = 0, .arena = (graph_ptr)->nodes.arena }; \
+    std_PoolAlloc(&(graph_ptr)->nodes, _g_node); \
+})
+
+#define std_GraphAddEdge(graph_ptr, from_idx, to_idx) \
+    os_VectorPush(&(graph_ptr)->nodes.data[from_idx].edges, to_idx)
+
+#define std_GraphGetNode(graph_ptr, index) \
+    (&(graph_ptr)->nodes.data[index].value)
 "#;
