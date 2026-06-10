@@ -848,10 +848,13 @@ impl TypeChecker {
             }
             Expression::Take(inner_expr) => {
                 let expr_type = self.check_expression(inner_expr)?;
-                if expr_type == Type::Int {
+                if !self.is_linear(&expr_type) {
                     return Err(TypeError {
                         kind: TypeErrorKind::TakePrimitiveBanned,
-                        message: "Semantic Error: The 'take' operator is strictly banned on primitive POD types (like Int)".to_string(),
+                        message: format!(
+                            "Semantic Error: The 'take' operator is strictly banned on primitive POD types or copyable POD types like {:?}",
+                            expr_type
+                        ),
                     });
                 }
                 Ok(expr_type)
