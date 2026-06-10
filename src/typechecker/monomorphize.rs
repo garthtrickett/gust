@@ -32,8 +32,8 @@ impl TypeChecker {
 
     pub(crate) fn check_brand_hierarchy(&self, t: &Type, outer_brand: &Option<String>) -> Result<(), TypeError> {
         if let Some(ob) = outer_brand {
-            if let Type::Struct(name, _) = t {
-                if name != ob && !self.is_element_allowed_in_brand(t, ob) {
+            if let Type::Struct(name, _) = t
+                && name != ob && !self.is_element_allowed_in_brand(t, ob) {
                     return Err(TypeError {
                         kind: TypeErrorKind::BrandLifetimeViolation,
                         message: format!( 
@@ -42,9 +42,8 @@ impl TypeChecker {
                         ),
                     });
                 }
-            }
-            if let Type::Index(_, _) = t { 
-                if !self.is_element_allowed_in_brand(t, ob) {
+            if let Type::Index(_, _) = t 
+                && !self.is_element_allowed_in_brand(t, ob) {
                     return Err(TypeError {
                         kind: TypeErrorKind::BrandLifetimeViolation,
                         message: format!( 
@@ -53,7 +52,6 @@ impl TypeChecker {
                         ),
                     });
                 }
-            }
         }
 
         match t {

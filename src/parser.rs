@@ -368,8 +368,21 @@ impl Parser {
             return Some(Type::Slice(Box::new(element_type)));
         }
 
-        let base_name = self.cur_token.literal.clone();
+        if self.cur_token.token_type != TokenType::Ident {
+            return None;
+        }
+        let mut base_name = self.cur_token.literal.clone();
         self.next_token();
+
+        while self.cur_token.token_type == TokenType::Dot {
+            self.next_token(); // consume '.'
+            if self.cur_token.token_type != TokenType::Ident {
+                return None;
+            }
+            base_name.push('.');
+            base_name.push_str(&self.cur_token.literal);
+            self.next_token();
+        }
 
         if self.cur_token.token_type == TokenType::LBracket {
             self.next_token(); // consume '['
@@ -432,7 +445,7 @@ impl Parser {
         match base_name.as_str() {
             "int" => Some(Type::Int),
             "byte" => Some(Type::Byte),
-            "Arena" | "os_Arena" => Some(Type::Arena),
+            "Arena" | "os_Arena" | "os.Arena" => Some(Type::Arena),
             "str" => Some(Type::Str),
             _ => Some(Type::Struct(base_name, None)),
         }
@@ -870,5 +883,66 @@ mod tests {
         } else {
             panic!("Expected empty[Node[ctx]] to parse into Empty(Type::Struct with brand)");
         }
+
+        let input_namespaced = "empty[std.Vector[int, ctx]]";
+        let expr_namespaced = parse_expr_str(input_namespaced);
+        if let Expression::Empty(Type::Generic(name, args)) = expr_namespaced {
+            assert_eq!(name, "std.Vector");
+            assert_eq!(args.len(), 2);
+        } else {
+            panic!("Expected empty[std.Vector[int, ctx]] to parse into Empty(Type::Generic)");
+        }
+    }
+
+    fn parse_type_str(input: &str) -> Type {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        parser
+            .parse_type_signature()
+            .expect("Failed to parse type signature")
+    }
+
+    #[test]
+    fn test_namespaced_type_signature_parsing() {
+        let t1 = parse_type_str("std.Vector[int, ctx]");
+        if let Type::Generic(name, args) = t1 {
+            assert_eq!(name, "std.Vector");
+            assert_eq!(args.len(), 2);
+            assert_eq!(args[0], Type::Int);
+            if let Type::Struct(brand, None) = &args[1] {
+                assert_eq!(brand, "ctx");
+            } else {
+                panic!("Expected brand to be a struct");
+            }
+        } else {
+            panic!("Expected Type::Generic");
+        }
+
+        let t2 = parse_type_str("os.Arena");
+        assert_eq!(t2, Type::Arena);
+
+        let t3 = parse_type_str("std.HashMap[int, str, ctx]");
+        if let Type::Generic(name, args) = t3 {
+            assert_eq!(name, "std.HashMap");
+            assert_eq!(args.len(), 3);
+            assert_eq!(args[0], Type::Int);
+            assert_eq!(args[1], Type::Str);
+            if let Type::Struct(brand, None) = &args[2] {
+                assert_eq!(brand, "ctx");
+            } else {
+                panic!("Expected brand to be a struct");
+            }
+        } else {
+            panic!("Expected Type::Generic");
+        }
+    }
+
+    #[test]
+    fn test_namespaced_statement_parsing() {
+        let input = "mut v: std.Vector[int, ctx] := os.VectorNew(ctx); mut a: os.Arena := os.Arena.New();";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(program.statements.len(), 2);
     }
 }
