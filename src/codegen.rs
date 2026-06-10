@@ -1166,12 +1166,11 @@ impl Codegen {
                                 None
                             }
                         };
-                        if let Some(struct_name) = opt_struct_name {
-                            if let Some((k, v)) = self.get_hashmap_key_value_types(&struct_name) {
+                        if let Some(struct_name) = opt_struct_name
+                            && let Some((k, v)) = self.get_hashmap_key_value_types(&struct_name) {
                                 is_str_key = k == Type::Str;
                                 lookup_struct = format!("LookupResult_{}", self.get_type_ident(&v));
                             }
-                        }
                         let is_str_key_str = if is_str_key { "1" } else { "0" };
                         return format!(
                             "({{ {} res = {{0}}; res.Ok = os_HashMapContains(&{}, {}, {}); if (res.Ok) {{ res.Val = *os_HashMapRef(&{}, {}, {}); }} res; }})",

@@ -17,10 +17,10 @@ pub enum Type {
 }
 
 fn strip_std_prefix(s: &str) -> &str {
-    if s.starts_with("std_") {
-        &s[4..]
-    } else if s.starts_with("std.") {
-        &s[4..]
+    if let Some(stripped) = s.strip_prefix("std_") {
+        stripped
+    } else if let Some(stripped) = s.strip_prefix("std.") {
+        stripped
     } else {
         s
     }
