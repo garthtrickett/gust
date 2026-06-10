@@ -475,7 +475,7 @@ impl TypeChecker {
                     self.moved_vars.remove(left_name); // Re-initialized!
                 }
             }
-            Statement::Assignment { left, value } => {
+            Statement::While { condition, body } => {
                 let cond_type = self.check_expression(condition)?;
                 if cond_type != Type::Int {
                     return Err(TypeError {
