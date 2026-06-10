@@ -1085,7 +1085,12 @@ fn test_monomorphized_pod_move_generates_no_cleanup() {
     let mut checker = TypeChecker::new();
     assert!(checker.check_program(&program).is_ok());
 
-    let mut codegen = Codegen::new(&checker);
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+    );
     let c_code = codegen.generate(&program);
 
     // Assert that the generated C code contains the assignment but NO memset or cleanups for the move!
@@ -1109,7 +1114,12 @@ fn test_monomorphized_linear_move_generates_cleanup() {
     let mut checker = TypeChecker::new();
     assert!(checker.check_program(&program).is_ok());
 
-    let mut codegen = Codegen::new(&checker);
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+    );
     let c_code = codegen.generate(&program);
 
     // Assert that the generated C code contains memset for the Linear struct move!
