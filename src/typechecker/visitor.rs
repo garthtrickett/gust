@@ -1645,15 +1645,30 @@ impl TypeChecker {
                     let pool_type = self.check_expression(&arguments[0])?;
                     let val_type = self.check_expression(&arguments[1])?;
 
-                    if let Type::RawPointer(pool_inner) = &pool_type
-                        && let Type::Generic(pool_name, pool_args) = &**pool_inner
-                            && (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2 {
-                                let ctx_type = &pool_args[1];
-                                if let Type::Struct(ctx_name, _) = ctx_type {
-                                    let concrete_rc = format!("std_Rc_{}_{}", self.get_type_ident(&val_type), ctx_name);
-                                    return Ok(Type::Struct(concrete_rc, Some(ctx_name.clone())));
+                    let mut opt_ctx_name = None;
+                    if let Type::RawPointer(pool_inner) = &pool_type {
+                        match &**pool_inner {
+                            Type::Struct(struct_name, Some(ctx_name)) => {
+                                if struct_name.starts_with("Pool_") || struct_name.starts_with("std_Pool_") {
+                                    opt_ctx_name = Some(ctx_name.clone());
                                 }
                             }
+                            Type::Generic(pool_name, pool_args) => {
+                                if (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2 {
+                                    if let Type::Struct(ctx_name, _) = &pool_args[1] {
+                                        opt_ctx_name = Some(ctx_name.clone());
+                                    }
+                                }
+                            }
+                            _ => {}
+                        } 
+                    }
+
+                    if let Some(ctx_name) = opt_ctx_name {
+                        let concrete_rc = format!("std_Rc_{}_{}", self.get_type_ident(&val_type), ctx_name);
+                        return Ok(Type::Struct(concrete_rc, Some(ctx_name)));
+                    }
+
                     return Err(TypeError {
                         kind: TypeErrorKind::TypeMismatch,
                         message: format!("Semantic Error: Invalid pool argument in RcNew: {:?}", pool_type),
