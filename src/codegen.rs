@@ -165,6 +165,14 @@ impl Codegen {
     fn get_expr_type(&self, expr: &Expression) -> Option<Type> {
         match expr {
             Expression::Identifier(name) => self.symbol_table.borrow().get(name).cloned(),
+            Expression::Dereference(inner) => {
+                let inner_type = self.get_expr_type(inner)?;
+                if let Type::RawPointer(target_type) = inner_type {
+                    Some(*target_type)
+                } else {
+                    None
+                }
+            }
             Expression::Selector { left, right } => {
                 let left_type = self.get_expr_type(left)?;
                 if let Type::Struct(struct_name, _) = left_type
