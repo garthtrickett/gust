@@ -64,6 +64,30 @@ void os_LogStr(Slice_unsigned_char s) {
     printf("%.*s\n", s.len, (char*)s.data);
 }
 
+int std_str_eq(Slice_unsigned_char s1, Slice_unsigned_char s2) {
+    if (s1.len != s2.len) return 0;
+    return memcmp(s1.data, s2.data, s1.len) == 0;
+}
+
+Slice_unsigned_char std_str_slice(Slice_unsigned_char s, int start, int end) {
+    Slice_unsigned_char res;
+    if (start < 0 || end < start || end > s.len) {
+        printf("std.str_slice bounds check failed\n");
+        exit(1);
+    }
+    res.data = s.data + start;
+    res.len = end - start;
+    return res;
+}
+
+unsigned char std_str_byte_at(Slice_unsigned_char s, int idx) {
+    if (idx < 0 || idx >= s.len) {
+        printf("std.str_byte_at bounds check failed\n");
+        exit(1);
+    }
+    return s.data[idx];
+}
+
 "#;
 
 pub const FILE_IO_RUNTIME: &str = r#"// ====================================================

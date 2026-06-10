@@ -127,6 +127,37 @@ impl TypeChecker {
     }
 
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {
+        // Pre-register std.str utilities
+        self.function_registry.insert(
+            "std.str_eq".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s1".to_string(), "s2".to_string()],
+                params: vec![Type::Str, Type::Str],
+                return_type: Type::Int,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "std.str_slice".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string(), "start".to_string(), "end".to_string()],
+                params: vec![Type::Str, Type::Int, Type::Int],
+                return_type: Type::Str,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "std.str_byte_at".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string(), "idx".to_string()],
+                params: vec![Type::Str, Type::Int],
+                return_type: Type::Byte,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
         // Pre-pass: Dynamically register structs, templates, enums, and functions [3]
         for stmt in &program.statements {
             if let Statement::StructDecl {

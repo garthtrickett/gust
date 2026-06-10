@@ -630,3 +630,38 @@ fn test_e2e_namespaced_collections() {
     ";
     run_e2e_test(source, "2\n111\n222\n2\n888\n999");
 }
+
+#[test]
+fn test_e2e_string_utilities_evaluation() {
+    let source = "
+        func main() {
+            mut s := \"Hello World\";
+            
+            // Substring slice
+            mut sub := std.str_slice(s, 0, 5);
+            os.LogStr(sub);
+            
+            // Substring slice 2
+            mut sub2 := std.str_slice(s, 6, 11);
+            os.LogStr(sub2);
+
+            // Equality checks
+            if std.str_eq(sub, \"Hello\") {
+                os.LogInt(1);
+            } else {
+                os.LogInt(0);
+            }
+
+            if std.str_eq(sub, sub2) {
+                os.LogInt(1);
+            } else {
+                os.LogInt(0);
+            }
+
+            // Safe index byte retrieval
+            mut b := std.str_byte_at(s, 6);
+            os.LogInt(b as int);
+        } 
+    ";
+    run_e2e_test(source, "Hello\nWorld\n1\n0\n87");
+}

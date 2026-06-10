@@ -46,7 +46,8 @@ fn erase_type(t: &Type) -> Type {
 impl Codegen {
     pub(crate) fn get_monomorphized_name(&self, template_name: &str, args: &[Type]) -> String {
         let arg_names: Vec<String> = args.iter().map(|arg| self.get_type_ident(arg)).collect();
-        format!("{}_{}", template_name, arg_names.join("_"))
+        let name = format!("{}_{}", template_name, arg_names.join("_"));
+        name.replace(".", "_")
     }
 
     pub fn gen_type_aware_initializer(&self, t: &Type) -> String {
@@ -185,7 +186,7 @@ impl Codegen {
     }
 
     fn get_type_ident(&self, t: &Type) -> String {
-        match t {
+        let base = match t {
             Type::Int => "int".to_string(),
             Type::Byte => "byte".to_string(),
             Type::Arena => "Arena".to_string(),
@@ -197,7 +198,8 @@ impl Codegen {
             Type::Index(name, _) => format!("Index_{}", name),
             Type::Generic(name, args) => self.get_monomorphized_name(name, args),
             _ => "unknown".to_string(),
-        }
+        };
+        base.replace(".", "_")
     }
 
     fn get_expr_type(&self, expr: &Expression) -> Option<Type> {
@@ -226,13 +228,15 @@ impl Codegen {
                     return Some(*elem_type);
                 }
                 if let Type::Struct(struct_name, _) = alloc_type {
-                    if struct_name.starts_with("Vector_") {
+                    if struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_")
+                    {
                         if let Some(layout) = self.struct_registry.get(&struct_name)
                             && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
                         {
                             return Some((**inner).clone());
                         }
-                    } else if struct_name.starts_with("HashMap_")
+                    } else if (struct_name.starts_with("HashMap_")
+                        || struct_name.starts_with("std_HashMap_"))
                         && let Some(layout) = self.struct_registry.get(&struct_name)
                         && let Some(Type::RawPointer(inner)) = layout.fields.get("values")
                     {
@@ -820,9 +824,12 @@ impl Codegen {
                 let mut is_str_key = false;
 
                 if let Type::Struct(struct_name, _) = &alloc_type {
-                    if struct_name.starts_with("Vector_") {
+                    if struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_")
+                    {
                         is_vector = true;
-                    } else if struct_name.starts_with("HashMap_") {
+                    } else if struct_name.starts_with("HashMap_")
+                        || struct_name.starts_with("std_HashMap_")
+                    {
                         is_hashmap = true;
                         if let Some(layout) = self.struct_registry.get(struct_name)
                             && let Some(Type::RawPointer(k_inner)) = layout.fields.get("keys")
@@ -837,9 +844,13 @@ impl Codegen {
                     if let Some(Type::Struct(struct_name, _)) =
                         self.symbol_table.borrow().get(&alloc_ident)
                     {
-                        if struct_name.starts_with("Vector_") {
+                        if struct_name.starts_with("Vector_")
+                            || struct_name.starts_with("std_Vector_")
+                        {
                             is_vector = true;
-                        } else if struct_name.starts_with("HashMap_") {
+                        } else if struct_name.starts_with("HashMap_")
+                            || struct_name.starts_with("std_HashMap_")
+                        {
                             is_hashmap = true;
                             if let Some(layout) = self.struct_registry.get(struct_name)
                                 && let Some(Type::RawPointer(k_inner)) = layout.fields.get("keys")
@@ -950,7 +961,10 @@ impl Codegen {
                     let mut is_coll = false;
                     let arg_type = self.get_expr_type(&arguments[0]).unwrap_or(Type::Void);
                     if let Type::Struct(struct_name, _) = &arg_type {
-                        if struct_name.starts_with("Vector_") || struct_name.starts_with("HashMap_")
+                        if struct_name.starts_with("Vector_")
+                            || struct_name.starts_with("std_Vector_")
+                            || struct_name.starts_with("HashMap_")
+                            || struct_name.starts_with("std_HashMap_")
                         {
                             is_coll = true;
                         }
@@ -959,7 +973,9 @@ impl Codegen {
                         if let Some(Type::Struct(struct_name, _)) =
                             self.symbol_table.borrow().get(&arg_ident)
                             && (struct_name.starts_with("Vector_")
-                                || struct_name.starts_with("HashMap_"))
+                                || struct_name.starts_with("std_Vector_")
+                                || struct_name.starts_with("HashMap_")
+                                || struct_name.starts_with("std_HashMap_"))
                         {
                             is_coll = true;
                         }
@@ -981,8 +997,12 @@ impl Codegen {
                     return format!("os_ArenaAlloc(&{}, sizeof({}))", arg_str, size_str);
                 }
 
-                // os.VectorNew
-                if func_path == "os.VectorNew" || func_path == "os_VectorNew" {
+                // os.VectorNew / std.VectorNew
+                if func_path == "os.VectorNew"
+                    || func_path == "os_VectorNew"
+                    || func_path == "std.VectorNew"
+                    || func_path == "std_VectorNew"
+                {
                     let arg_str = self.gen_expression(&arguments[0]);
                     let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
                         struct_name.clone()
@@ -1007,8 +1027,12 @@ impl Codegen {
                     );
                 }
 
-                // os.HashMapNew
-                if func_path == "os.HashMapNew" || func_path == "os_HashMapNew" {
+                // os.HashMapNew / std.HashMapNew
+                if func_path == "os.HashMapNew"
+                    || func_path == "os_HashMapNew"
+                    || func_path == "std.HashMapNew"
+                    || func_path == "std_HashMapNew"
+                {
                     let arg_str = self.gen_expression(&arguments[0]);
                     let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
                         struct_name.clone()
@@ -1068,9 +1092,13 @@ impl Codegen {
                     let left_type = self.get_expr_type(left).unwrap_or(Type::Void);
 
                     if let Type::Struct(struct_name, _) = &left_type {
-                        if struct_name.starts_with("Vector_") {
+                        if struct_name.starts_with("Vector_")
+                            || struct_name.starts_with("std_Vector_")
+                        {
                             is_vec = true;
-                        } else if struct_name.starts_with("HashMap_") {
+                        } else if struct_name.starts_with("HashMap_")
+                            || struct_name.starts_with("std_HashMap_")
+                        {
                             is_map = true;
                         }
                     } else {
@@ -1078,9 +1106,13 @@ impl Codegen {
                         if let Some(Type::Struct(struct_name, _)) =
                             self.symbol_table.borrow().get(&left_ident)
                         {
-                            if struct_name.starts_with("Vector_") {
+                            if struct_name.starts_with("Vector_")
+                                || struct_name.starts_with("std_Vector_")
+                            {
                                 is_vec = true;
-                            } else if struct_name.starts_with("HashMap_") {
+                            } else if struct_name.starts_with("HashMap_")
+                                || struct_name.starts_with("std_HashMap_")
+                            {
                                 is_map = true;
                             }
                         }
@@ -1094,12 +1126,21 @@ impl Codegen {
                         let k_str = self.gen_expression(&arguments[0]);
                         let v_str = self.gen_expression(&arguments[1]);
                         let mut is_str_key = false;
-                        let left_ident = expression_to_string(left);
-                        if let Some(Type::Struct(struct_name, _)) =
-                            self.symbol_table.borrow().get(&left_ident)
-                        {
+                        let opt_struct_name = if let Type::Struct(struct_name, _) = &left_type {
+                            Some(struct_name.clone())
+                        } else {
+                            let left_ident = expression_to_string(left);
+                            if let Some(Type::Struct(struct_name, _)) =
+                                self.symbol_table.borrow().get(&left_ident)
+                            {
+                                Some(struct_name.clone())
+                            } else {
+                                None
+                            }
+                        };
+                        if let Some(struct_name) = opt_struct_name {
                             is_str_key = self
-                                .get_hashmap_key_value_types(struct_name)
+                                .get_hashmap_key_value_types(&struct_name)
                                 .map(|(k, _)| k == Type::Str)
                                 .unwrap_or(false);
                         }
@@ -1113,13 +1154,23 @@ impl Codegen {
                         let k_str = self.gen_expression(&arguments[0]);
                         let mut is_str_key = false;
                         let mut lookup_struct = "LookupResult_int".to_string();
-                        let left_ident = expression_to_string(left);
-                        if let Some(Type::Struct(struct_name, _)) =
-                            self.symbol_table.borrow().get(&left_ident)
-                            && let Some((k, v)) = self.get_hashmap_key_value_types(struct_name)
-                        {
-                            is_str_key = k == Type::Str;
-                            lookup_struct = format!("LookupResult_{}", self.get_type_ident(&v));
+                        let opt_struct_name = if let Type::Struct(struct_name, _) = &left_type {
+                            Some(struct_name.clone())
+                        } else {
+                            let left_ident = expression_to_string(left);
+                            if let Some(Type::Struct(struct_name, _)) =
+                                self.symbol_table.borrow().get(&left_ident)
+                            {
+                                Some(struct_name.clone())
+                            } else {
+                                None
+                            }
+                        };
+                        if let Some(struct_name) = opt_struct_name {
+                            if let Some((k, v)) = self.get_hashmap_key_value_types(&struct_name) {
+                                is_str_key = k == Type::Str;
+                                lookup_struct = format!("LookupResult_{}", self.get_type_ident(&v));
+                            }
                         }
                         let is_str_key_str = if is_str_key { "1" } else { "0" };
                         return format!(

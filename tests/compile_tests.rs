@@ -1765,3 +1765,25 @@ fn test_namespaced_monomorphization() {
     ";
     assert!(check_program(source).is_ok());
 }
+
+#[test]
+fn test_brand_erasure_utility_functions() {
+    let source = "
+        type Node[ctx] struct {
+            name: str
+        }
+        func process(s: str) int {
+            return std.str_eq(s, \"test\");
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut n: Index[Node, ctx] := os.ArenaAlloc(ctx);
+            ctx[n].name = \"hello\";
+            
+            // Extract view from branded collection
+            mut res := process(ctx[n].name);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
