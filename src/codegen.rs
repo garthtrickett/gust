@@ -44,6 +44,35 @@ fn erase_type(t: &Type) -> Type {
     }
 }
 
+fn get_by_value_dependencies(
+    t: &Type,
+    deps: &mut std::collections::HashSet<String>,
+    struct_registry: &HashMap<String, StructLayout>,
+) {
+    match t {
+        Type::Struct(name, _) => {
+            if struct_registry.contains_key(name) {
+                if deps.insert(name.clone()) {
+                    if let Some(layout) = struct_registry.get(name) {
+                        for field_type in layout.fields.values() {
+                            get_by_value_dependencies(field_type, deps, struct_registry);
+                        }
+                    }
+                }
+            }
+        }
+        Type::Generic(name, args) => {
+            for arg in args {
+                get_by_value_dependencies(arg, deps, struct_registry);
+            }
+        }
+        Type::Slice(inner) => {
+            get_by_value_dependencies(inner, deps, struct_registry);
+        }
+        _ => {}
+    }
+}
+
 impl Codegen {
     pub(crate) fn get_monomorphized_name(&self, template_name: &str, args: &[Type]) -> String {
         let arg_names: Vec<String> = args.iter().map(|arg| self.get_type_ident(arg)).collect();
@@ -216,6 +245,13 @@ impl Codegen {
                     None
                 }
             }
+            Expression::AddressOf(inner) => {
+                let inner_type = self.get_expr_type(inner)?;
+                Some(Type::RawPointer(Box::new(inner_type)))
+            }
+            Expression::AsCast { target_type, .. } => {
+                Some(target_type.clone())
+            }
             Expression::Selector { left, right } => {
                 let left_type = self.get_expr_type(left)?;
                 if let Type::Struct(struct_name, _) = left_type
@@ -357,22 +393,53 @@ impl Codegen {
         c_code.push_str("// DYNAMICALLY TRANSPILED USER STRUCTS\n");
         c_code.push_str("// ====================================================\n");
 
-        // Sort structures: variants structs containing '_' must be output before Enums to satisfy C value-embedding complete-type rules
-        let mut sorted_structs: Vec<(&String, &StructLayout)> =
-            self.struct_registry.iter().collect();
-        sorted_structs.sort_by(|a, b| {
-            let a_has_underscore = a.0.contains('_');
-            let b_has_underscore = b.0.contains('_');
-            if a_has_underscore && !b_has_underscore {
-                std::cmp::Ordering::Less
-            } else if !a_has_underscore && b_has_underscore {
-                std::cmp::Ordering::Greater
-            } else {
-                a.0.cmp(b.0)
-            }
-        });
+        // Topologically sort structs based on value-embedding dependency requirements
+        let mut ordered_struct_names = Vec::new();
+        let mut visited = std::collections::HashSet::new();
+        let mut temp_visited = std::collections::HashSet::new();
 
-        for (struct_name, layout) in sorted_structs {
+        fn visit(
+            name: &str,
+            visited: &mut std::collections::HashSet<String>,
+            temp_visited: &mut std::collections::HashSet<String>,
+            ordered: &mut Vec<String>,
+            registry: &HashMap<String, StructLayout>,
+        ) {
+            if visited.contains(name) {
+                return;
+            }
+            if temp_visited.contains(name) {
+                return; // Prevent infinite loop in case of cyclic structural dependencies
+            }
+            temp_visited.insert(name.to_string());
+
+            if let Some(layout) = registry.get(name) {
+                let mut deps = std::collections::HashSet::new();
+                for field_type in layout.fields.values() {
+                    get_by_value_dependencies(field_type, &mut deps, registry);
+                }
+                let mut sorted_deps: Vec<String> = deps.into_iter().collect();
+                sorted_deps.sort();
+
+                for dep in sorted_deps {
+                    visit(&dep, visited, temp_visited, ordered, registry);
+                }
+            }
+
+            temp_visited.remove(name);
+            visited.insert(name.to_string());
+            ordered.push(name.to_string());
+        }
+
+        let mut all_structs: Vec<String> = self.struct_registry.keys().cloned().collect();
+        all_structs.sort();
+
+        for name in &all_structs {
+            visit(name, &mut visited, &mut temp_visited, &mut ordered_struct_names, &self.struct_registry);
+        }
+
+        for struct_name in &ordered_struct_names {
+            let layout = &self.struct_registry[struct_name];
             if let Some(variants) = self.enum_registry.get(struct_name) {
                 // 1. Generate typedef enum for variant tags
                 c_code.push_str("typedef enum {\n");
@@ -748,7 +815,7 @@ impl Codegen {
             }
             Expression::Dereference(inner) => {
                 let inner_str = self.gen_expression(inner);
-                format!("*({})", inner_str)
+                format!("(*({}))", inner_str)
             }
             Expression::Take(inner) => {
                 let expr_str = self.gen_expression(inner);
@@ -1087,6 +1154,55 @@ impl Codegen {
                     let arg0 = self.gen_expression(&arguments[0]);
                     let arg1 = self.gen_expression(&arguments[1]);
                     return format!("std_GenerationalSwap(&{}, &{})", arg0, arg1);
+                }
+
+                if func_path == "std.RcNew" || func_path == "std_RcNew" {
+                    let pool_expr = self.gen_expression(&arguments[0]);
+                    let val_expr = self.gen_expression(&arguments[1]);
+                    
+                    let pool_type = self.get_expr_type(&arguments[0]).unwrap_or(Type::Void);
+                    let val_type = self.get_expr_type(&arguments[1]).unwrap_or(Type::Void);
+                    
+                    let mut opt_ctx_name = None;
+                    let target_pool_type = if let Type::RawPointer(inner) = &pool_type {
+                        (&**inner).clone()
+                    } else {
+                        pool_type.clone()
+                    };
+                    
+                    match &target_pool_type {
+                        Type::Struct(struct_name, Some(ctx_name)) => {
+                            if struct_name.starts_with("Pool_") || struct_name.starts_with("std_Pool_") {
+                                opt_ctx_name = Some(ctx_name.clone());
+                            }
+                        }
+                        Type::Generic(pool_name, pool_args) => {
+                            if (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2 {
+                                if let Type::Struct(ctx_name, _) = &pool_args[1] {
+                                    opt_ctx_name = Some(ctx_name.clone());
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                    
+                    let ctx_name = opt_ctx_name.unwrap_or_else(|| "ctx".to_string());
+                    let rc_type = format!("std_Rc_{}_{}", self.get_type_ident(&val_type), ctx_name);
+                    
+                    let mut is_pool_ptr = false;
+                    if let Expression::Identifier(name) = &arguments[0] {
+                        if let Some(Type::RawPointer(_)) = self.symbol_table.borrow().get(name) {
+                            is_pool_ptr = true;
+                        }
+                    }
+                    
+                    let pool_ptr_expr = if is_pool_ptr {
+                        pool_expr
+                    } else {
+                        format!("&{}", pool_expr)
+                    };
+                    
+                    return format!("std_RcNew({}, {}, {})", pool_ptr_expr, val_expr, rc_type);
                 }
 
                 // os.VectorNew / std.VectorNew
