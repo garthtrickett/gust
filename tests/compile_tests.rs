@@ -1056,8 +1056,8 @@ fn test_generic_definition_enforces_strict_linear_safety() {
             val: T
         }
         func process(h: Holder[T]) {
-            mut x := move h.val;
-            mut y := h.val; // Error: h.val is conservatively treated as Linear!
+            mut h2 := move h;
+            mut y := h.val; // Error: h is conservatively treated as Linear and is moved!
         }
     ";
     let res = check_program(source);
