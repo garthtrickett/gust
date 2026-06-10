@@ -68,7 +68,7 @@ impl Codegen {
                     }
                     format!("(({}){{ {} }})", name, fields_init.join(", "))
                 } else {
-                    "{0}".to_string}
+                    "{0}".to_string()
                 }
             }
             Type::Generic(name, args) => {
@@ -573,7 +573,7 @@ impl Codegen {
                     .unwrap_or(Type::Void);
                 let type_str = self.get_c_type(&var_type);
 
-                let mut target_struct = None;
+                let mut target_struct = None; 
                 if let Type::Index(struct_name, _) = &var_type {
                     target_struct = Some(struct_name.clone());
                 } else if let Type::Struct(struct_name, _) = &var_type {
@@ -584,12 +584,7 @@ impl Codegen {
                 let val_str = if let Some(val_expr) = value {
                     self.gen_expression(val_expr)
                 } else {
-                    if matches!(var_type, Type::Struct(_, _)) || matches!(var_type, Type::Slice(_))
-                    {
-                        "{0}".to_string()
-                    } else {
-                        "0".to_string()
-                    }
+                    self.gen_type_aware_initializer(&var_type)
                 };
 
                 *self.current_alloc_struct.borrow_mut() = None;
@@ -1148,9 +1143,7 @@ impl Codegen {
                 format!("{}({})", func_c, arg_strs.join(", "))
             }
             Expression::Empty(target_type) => {
-                let c_type = self.get_c_type(target_type);
-                // Lower to standard (T){0} compound literal for standard initialization
-                format!("(({}){{0}})", c_type)
+                self.gen_type_aware_initializer(target_type)
             }
         }
     }

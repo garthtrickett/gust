@@ -1387,3 +1387,33 @@ fn test_sentinel_null_codegen_structure() {
     assert!(init_str.contains(".val = 0"));
     assert_eq!(init_str, "((Node){ .next = 0xFFFFFFFF, .ptr = NULL, .val = 0 })");
 }
+
+#[test]
+fn test_type_aware_vardecl_codegen_structure() {
+    let source = "
+        type Node struct {
+            val: int,
+            ptr: *int,
+            next: Index[Node, ctx]
+        }
+        func main() {
+            mut n: Node;
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    assert!(checker.check_program(&program).is_ok());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+    );
+    let c_code = codegen.generate(&program);
+
+    // Verify that Node n is initialized using gen_type_aware_initializer, not blind {0}
+    assert!(c_code.contains("Node n = ((Node){ .next = 0xFFFFFFFF, .ptr = NULL, .val = 0 });"));
+}
