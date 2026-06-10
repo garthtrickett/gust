@@ -415,6 +415,13 @@ impl Parser {
                     Type::Struct(name, _) => Some(name.clone()),
                     _ => None,
                 };
+                if let Some(brand_name) = &brand { 
+                    if brand_name == "int" || brand_name == "byte" || brand_name == "str" || brand_name == "Arena" || brand_name == "os_Arena" {
+                        return Some(Type::Generic(base_name, args));
+                    }
+                } else {
+                    return Some(Type::Generic(base_name, args));
+                }
                 return Some(Type::Struct(base_name, brand));
             }
 

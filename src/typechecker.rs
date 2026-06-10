@@ -38,8 +38,8 @@ impl TypeChecker {
 
     fn is_linear_impl(&self, t: &Type, visited: &mut HashSet<String>) -> bool {
         match t {
-            Type::Int | Type::Byte | Type::Arena | Type::Void | Type::Index(_, _) => false,
-            Type::RawPointer(_) | Type::Slice(_) | Type::ByteSlice | Type::Str => true,
+            Type::Int | Type::Byte | Type::Void | Type::Index(_, _) => false,
+            Type::Arena | Type::RawPointer(_) | Type::Slice(_) | Type::ByteSlice | Type::Str => true,
             Type::Generic(_, _) => true,
             Type::Struct(name, _) => {
                 if name == "T" || name == "K" || name == "V" {
