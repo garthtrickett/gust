@@ -264,9 +264,14 @@ impl TypeChecker {
                 let parent_scope = self.symbol_table.clone();
                 let parent_origins = self.variable_origins.clone();
 
+                let mut inout_params = Vec::new();
+
                 // Register all function parameters in the local symbol table & origins
                 for param in params {
                     let resolved_param_type = self.resolve_type(&param.param_type)?;
+                    if matches!(resolved_param_type, Type::RawPointer(_)) {
+                        inout_params.push(param.name.clone());
+                    }
                     self.symbol_table
                         .insert(param.name.clone(), resolved_param_type);
 
@@ -274,17 +279,33 @@ impl TypeChecker {
                     param_origins.insert(param.name.clone());
                     self.variable_origins
                         .insert(param.name.clone(), param_origins);
-                }
+                } 
 
                 // Register and track expected return types inside local scope [3]
                 let resolved_return_type = self.resolve_type(return_type)?;
                 let old_expected = self.expected_return_type.clone();
                 let old_return_origins = self.current_function_return_origins.clone();
+                let old_inout_params = self.current_function_inout_params.clone();
                 self.expected_return_type = Some(resolved_return_type);
                 self.current_function_return_origins = Some(HashSet::new());
+                self.current_function_inout_params = Some(inout_params.clone());
 
-                for s in &body.statements {
+                for s in &body.statements { 
                     self.check_statement(s)?;
+                }
+
+                if let Some(ref current_inouts) = self.current_function_inout_params {
+                    for inout_p in current_inouts {
+                        if self.moved_vars.contains(inout_p) {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::UseOfMovedVariable,
+                                message: format!(
+                                    "Semantic Error: Inout reference parameter '{}' was moved but never re-initialized before function exit",
+                                    inout_p
+                                ),
+                            });
+                        }
+                    }
                 }
 
                 let formal_return_origins = self
@@ -302,6 +323,7 @@ impl TypeChecker {
                 self.variable_origins = parent_origins;
                 self.expected_return_type = old_expected;
                 self.current_function_return_origins = old_return_origins;
+                self.current_function_inout_params = old_inout_params;
             }
             Statement::VarDecl {
                 name,
@@ -374,10 +396,11 @@ impl TypeChecker {
                 if let Expression::Identifier(left_name) = left {
                     let mut origs = self.get_expression_origins(value);
                     // Fallback to itself as a root origin if assignment expression has no origins
-                    if origs.is_empty() {
+                    if origs.is_empty() { 
                         origs.insert(left_name.clone());
                     }
                     self.variable_origins.insert(left_name.clone(), origs);
+                    self.moved_vars.remove(left_name); // Re-initialized!
                 }
             }
             Statement::While { condition, body } => {
@@ -595,6 +618,20 @@ impl TypeChecker {
                 self.check_expression(expr)?;
             }
             Statement::Return(maybe_expr) => {
+                if let Some(ref inout_params) = self.current_function_inout_params {
+                    for inout_p in inout_params {
+                        if self.moved_vars.contains(inout_p) {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::UseOfMovedVariable,
+                                message: format!(
+                                    "Semantic Error: Inout reference parameter '{}' was moved but never re-initialized before return",
+                                    inout_p
+                                ),
+                            });
+                        }
+                    }
+                }
+
                 let actual_return = if let Some(expr) = maybe_expr {
                     let mut t = self.check_expression(expr)?;
                     t = self.resolve_type(&t)?;

@@ -22,6 +22,7 @@ pub struct TypeChecker {
     pub(crate) expected_return_type: Option<Type>,
     pub(crate) current_function_return_origins: Option<HashSet<String>>, // Track return statement origins
     pub checked_results: HashSet<String>, // Added for Definite Check Rule
+    pub(crate) current_function_inout_params: Option<Vec<String>>, // Track inout parameters for return checks
 }
 
 impl Default for TypeChecker {
@@ -178,6 +179,7 @@ impl TypeChecker {
             expected_return_type: None,
             current_function_return_origins: None,
             checked_results: HashSet::new(),
+            current_function_inout_params: None,
         }
     }
 }

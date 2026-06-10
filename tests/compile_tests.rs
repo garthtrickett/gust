@@ -1250,3 +1250,36 @@ fn test_move_propagated_linear_enum_invalidates() {
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
 }
+
+#[test]
+fn test_uninitialized_inout_parameter_rejected() {
+    let source = "
+        type Node struct {
+            val: int
+        }
+        func process(p: *Node) {
+            mut x := move p; // Move the pointer parameter p
+            return; // Error: p was moved but not re-initialized before return
+        } 
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+    assert!(err.message.contains("was moved but never re-initialized"));
+}
+
+#[test]
+fn test_reinitialized_inout_parameter_accepted() {
+    let source = "
+        type Node struct {
+            val: int
+        }
+        func process(p: *Node) {
+            mut x := move p;
+            p = empty[*Node]; // Re-initialize p using empty[T]
+            return; // Accepted!
+        } 
+    ";
+    assert!(check_program(source).is_ok());
+}
