@@ -681,8 +681,21 @@ impl Codegen {
                     format!("&({})", inner_str)
                 }
             }
-            Expression::Dereference(inner) => {
-                format!("*({})", self.gen_expression(inner))
+            Expression::Move(inner) => {
+                let expr_str = self.translate_expression(inner);
+                if let Expression::Identifier(name) = &**inner {
+                    let mut is_lin = false;
+                    if let Some(t) = self.checker.symbol_table.get(name) {
+                        is_lin = self.checker.is_linear(t);
+                    }
+                    if is_lin {
+                        format!("(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))", expr_str)
+                    } else {
+                        expr_str
+                    }
+                } else {
+                    expr_str
+                }
             }
             Expression::AsCast {
                 left,

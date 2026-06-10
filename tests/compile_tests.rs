@@ -1065,3 +1065,53 @@ fn test_generic_definition_enforces_strict_linear_safety() {
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
 }
+
+#[test]
+fn test_monomorphized_pod_move_generates_no_cleanup() {
+    let source = "
+        type MyPod struct {
+            x: int,
+            y: int
+        }
+        func main() {
+            mut p1: MyPod;
+            p1.x = 10;
+            mut p2 := move p1;
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    assert!(checker.check_program(&program).is_ok());
+
+    let mut codegen = Codegen::new(&checker);
+    let c_code = codegen.generate(&program);
+
+    // Assert that the generated C code contains the assignment but NO memset or cleanups for the move!
+    assert!(!c_code.contains("memset"));
+}
+
+#[test]
+fn test_monomorphized_linear_move_generates_cleanup() {
+    let source = "
+        type MyLinear struct {
+            ptr: *int
+        }
+        func main() {
+            mut p1: MyLinear;
+            mut p2 := move p1;
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    assert!(checker.check_program(&program).is_ok());
+
+    let mut codegen = Codegen::new(&checker);
+    let c_code = codegen.generate(&program);
+
+    // Assert that the generated C code contains memset for the Linear struct move!
+    assert!(c_code.contains("memset"));
+}
