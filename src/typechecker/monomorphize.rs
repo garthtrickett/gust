@@ -103,7 +103,15 @@ impl TypeChecker {
     pub(crate) fn get_type_brand(&self, t: &Type) -> Option<String> {
         match t {
             Type::Index(_, Some(brand)) => Some(brand.clone()),
-            Type::Struct(_, Some(brand)) => Some(brand.clone()),
+            Type::Struct(name, brand) => {
+                if let Some(b) = brand {
+                    Some(b.clone())
+                } else if let Some(layout) = self.struct_registry.get(name) {
+                    layout.brand.clone()
+                } else {
+                    None
+                }
+            }
             Type::RawPointer(inner) => self.get_type_brand(inner),
             Type::Slice(inner) => self.get_type_brand(inner),
             _ => None,
@@ -253,9 +261,11 @@ impl TypeChecker {
         let concrete_name = self.get_monomorphized_name(template_name, args);
 
         let mut brand = None;
-        for arg in args {
-            if let Type::Struct(brand_name, _) = arg {
-                brand = Some(brand_name.clone());
+        for (generic_name, arg) in template.generics.iter().zip(args.iter()) {
+            if generic_name == "ctx" || generic_name == "connCtx" {
+                if let Type::Struct(brand_name, _) = arg {
+                    brand = Some(brand_name.clone());
+                }
             }
         }
 
