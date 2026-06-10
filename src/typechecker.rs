@@ -23,6 +23,7 @@ pub struct TypeChecker {
     pub(crate) current_function_return_origins: Option<HashSet<String>>, // Track return statement origins
     pub checked_results: HashSet<String>, // Added for Definite Check Rule
     pub(crate) current_function_inout_params: Option<Vec<String>>, // Track inout parameters for return checks
+    pub(crate) current_function_local_vars: Option<HashSet<String>>, // Track local variables inside function body
 }
 
 impl Default for TypeChecker {
@@ -180,6 +181,7 @@ impl TypeChecker {
             current_function_return_origins: None,
             checked_results: HashSet::new(),
             current_function_inout_params: None,
+            current_function_local_vars: None,
         }
     }
 }

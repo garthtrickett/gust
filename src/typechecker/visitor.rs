@@ -299,9 +299,12 @@ impl TypeChecker {
                 let old_expected = self.expected_return_type.clone();
                 let old_return_origins = self.current_function_return_origins.clone();
                 let old_inout_params = self.current_function_inout_params.clone();
+                let old_local_vars = self.current_function_local_vars.clone();
+
                 self.expected_return_type = Some(resolved_return_type);
                 self.current_function_return_origins = Some(HashSet::new());
                 self.current_function_inout_params = Some(inout_params.clone());
+                self.current_function_local_vars = Some(HashSet::new());
 
                 for s in &body.statements { 
                     self.check_statement(s)?;
@@ -337,6 +340,7 @@ impl TypeChecker {
                 self.expected_return_type = old_expected;
                 self.current_function_return_origins = old_return_origins;
                 self.current_function_inout_params = old_inout_params;
+                self.current_function_local_vars = old_local_vars;
             }
             Statement::VarDecl {
                 name,
@@ -390,6 +394,10 @@ impl TypeChecker {
                 } else {
                     self.symbol_table.insert(name.clone(), val_type.clone());
                     self.variable_types.insert(name.clone(), val_type);
+                }
+
+                if let Some(ref mut local_vars) = self.current_function_local_vars {
+                    local_vars.insert(name.clone());
                 }
             }
             Statement::Assignment { left, value } => {
