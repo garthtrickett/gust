@@ -67,7 +67,7 @@ fn get_by_value_dependencies(
                 }
             }
         }
-        Type::Generic(name, args) => {
+        Type::Generic(_, args) => {
             for arg in args {
                 get_by_value_dependencies(arg, deps, struct_registry);
             }
@@ -1124,7 +1124,7 @@ impl Codegen {
 
                     if let Expression::Identifier(name) = &arguments[1]
                         && let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name).cloned() {
-                            struct_name = erase_struct_name(&s_name, &Some(brand.clone()));
+                            struct_name = erase_struct_name_with_registry(&s_name, &Some(brand.clone()), &self.struct_registry);
                             src_brand = brand;
                             found = true;
                         }
