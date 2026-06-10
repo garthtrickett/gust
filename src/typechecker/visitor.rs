@@ -1616,7 +1616,7 @@ impl TypeChecker {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
-                            message: "Semantic Error: PoolNew expects exactly 1 argument"
+                            message: "PoolNew expects exactly 1 argument"
                                 .to_string(),
                         });
                     }
@@ -1633,6 +1633,53 @@ impl TypeChecker {
                     }
                     let brand_name = expression_to_string(&arguments[0]);
                     return Ok(Type::Struct("Pool_Any".to_string(), Some(brand_name)));
+                }
+
+                if func_path == "std.RcNew" || func_path == "std_RcNew" {
+                    if arguments.len() != 2 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "RcNew expects exactly 2 arguments (pool, val)".to_string(),
+                        });
+                    }
+                    let pool_type = self.check_expression(&arguments[0])?;
+                    let val_type = self.check_expression(&arguments[1])?;
+
+                    if let Type::RawPointer(pool_inner) = &pool_type {
+                        if let Type::Generic(pool_name, pool_args) = &**pool_inner {
+                            if (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2 {
+                                let ctx_type = &pool_args[1];
+                                if let Type::Struct(ctx_name, _) = ctx_type {
+                                    let concrete_rc = format!("std_Rc_{}_{}", self.get_type_ident(&val_type), ctx_name);
+                                    return Ok(Type::Struct(concrete_rc, Some(ctx_name.clone())));
+                                }
+                            }
+                        }
+                    }
+                    return Err(TypeError {
+                        kind: TypeErrorKind::TypeMismatch,
+                        message: format!("Semantic Error: Invalid pool argument in RcNew: {:?}", pool_type),
+                    });
+                }
+
+                if func_path == "std.GraphNew" || func_path == "std_GraphNew" {
+                    if arguments.len() != 1 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "GraphNew expects exactly 1 argument (ctx)".to_string(),
+                        });
+                    }
+                    let arg_type = self.check_expression(&arguments[0])?;
+                    if arg_type != Type::Arena
+                        && !matches!(arg_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: "Semantic Error: GraphNew argument must be an Arena allocator".to_string(),
+                        });
+                    }
+                    let brand_name = expression_to_string(&arguments[0]);
+                    return Ok(Type::Struct("std_Graph_Any".to_string(), Some(brand_name)));
                 }
 
                 if func_path == "os.ReadFile" {
