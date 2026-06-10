@@ -44,6 +44,38 @@ fn erase_type(t: &Type) -> Type {
 }
 
 impl Codegen {
+    fn is_linear(&self, t: &Type) -> bool {
+        let mut visited = std::collections::HashSet::new();
+        self.is_linear_impl(t, &mut visited)
+    }
+
+    fn is_linear_impl(&self, t: &Type, visited: &mut std::collections::HashSet<String>) -> bool {
+        match t {
+            Type::Int | Type::Byte | Type::Void | Type::Index(_, _) => false,
+            Type::Arena | Type::RawPointer(_) | Type::Slice(_) | Type::ByteSlice | Type::Str => true,
+            Type::Generic(_, _) => true,
+            Type::Struct(name, _) => {
+                if name == "T" || name == "K" || name == "V" {
+                    return true;
+                }
+                if visited.contains(name) {
+                    return false;
+                }
+                visited.insert(name.clone());
+                if let Some(layout) = self.struct_registry.get(name) {
+                    for field_type in layout.fields.values() {
+                        if self.is_linear_impl(field_type, visited) {
+                            return true;
+                        }
+                    }
+                    false
+                } else {
+                    true // Conservative fallback
+                }
+            }
+        }
+    }
+
     pub fn new(
         symbol_table: HashMap<String, Type>,
         struct_registry: HashMap<String, StructLayout>,
@@ -682,11 +714,11 @@ impl Codegen {
                 }
             }
             Expression::Move(inner) => {
-                let expr_str = self.translate_expression(inner);
+                let expr_str = self.gen_expression(inner);
                 if let Expression::Identifier(name) = &**inner {
                     let mut is_lin = false;
-                    if let Some(t) = self.checker.symbol_table.get(name) {
-                        is_lin = self.checker.is_linear(t);
+                    if let Some(t) = self.symbol_table.borrow().get(name) {
+                        is_lin = self.is_linear(t);
                     }
                     if is_lin {
                         format!("(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))", expr_str)
