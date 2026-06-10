@@ -1065,10 +1065,16 @@ impl TypeChecker {
             Expression::AsCast {
                 left,
                 target_type,
-                is_reference: _,
+                is_reference,
             } => {
                 let left_type = self.check_expression(left)?;
                 let resolved_target = self.resolve_type(target_type)?;
+
+                if (left_type == Type::Int || left_type == Type::Byte)
+                    && (resolved_target == Type::Int || resolved_target == Type::Byte)
+                {
+                    return Ok(resolved_target.clone());
+                }
 
                 if let Type::RawPointer(_) = left_type {
                     if !self.in_unsafe_block {
@@ -1377,11 +1383,11 @@ impl TypeChecker {
                     });
                 }
 
-                if func_path == "os.VectorNew" {
+                if func_path == "os.VectorNew" || func_path == "std.VectorNew" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
-                            message: "Semantic Error: os.VectorNew expects exactly 1 argument"
+                            message: "Semantic Error: VectorNew expects exactly 1 argument"
                                 .to_string(),
                         });
                     }
@@ -1400,11 +1406,11 @@ impl TypeChecker {
                     return Ok(Type::Struct("Vector_Any".to_string(), Some(brand_name)));
                 }
 
-                if func_path == "os.HashMapNew" {
+                if func_path == "os.HashMapNew" || func_path == "std.HashMapNew" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
-                            message: "Semantic Error: os.HashMapNew expects exactly 1 argument"
+                            message: "Semantic Error: HashMapNew expects exactly 1 argument"
                                 .to_string(),
                         });
                     }
