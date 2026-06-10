@@ -20,7 +20,11 @@ fn get_root_variable(expr: &Expression) -> Option<String> {
 }
 
 fn is_ephemeral_view(t: &Type) -> bool {
-    matches!(t, Type::Str | Type::Slice(_) | Type::ByteSlice | Type::RawPointer(_))
+    match t {
+        Type::Str | Type::Slice(_) | Type::ByteSlice | Type::RawPointer(_) => true,
+        Type::Struct(name, _) => name.starts_with("CastResult_") || name.starts_with("LookupResult_"),
+        _ => false,
+    }
 }
 
 impl TypeChecker {
