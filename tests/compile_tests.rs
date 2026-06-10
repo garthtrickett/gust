@@ -1193,3 +1193,60 @@ fn test_deep_nested_linear_propagation() {
     let outer_type = Type::Struct("OuterPod".to_string(), None);
     assert!(checker.is_linear(&outer_type));
 }
+
+#[test]
+fn test_move_propagated_linear_struct_invalidates() {
+    let source = "
+        type MyLinear struct {
+            ptr: *int
+        }
+        type NestedEnum enum {
+            VariantA { val: MyLinear },
+            VariantB
+        }
+        type OuterPod struct {
+            id: int,
+            payload: NestedEnum
+        }
+        func main() {
+            mut o: OuterPod;
+            o.id = 42;
+
+            mut o2 := move o; // o is recursively Linear because of NestedEnum and MyLinear!
+
+            // Attempting to read o.id after the move should fail because o is moved!
+            os.LogInt(o.id);
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+}
+
+#[test]
+fn test_move_propagated_linear_enum_invalidates() {
+    let source = "
+        type MyLinear struct {
+            name: str
+        }
+        type LinearEnum enum {
+            VariantA { val: MyLinear },
+            VariantB
+        }
+        func main() {
+            mut e: LinearEnum;
+            e.tag = 0;
+            e.VariantA.val.name = \"Gust\";
+
+            mut e2 := move e; // e is recursively Linear!
+
+            // Attempting to read e.tag after move should fail because e is moved!
+            os.LogInt(e.tag);
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+}
