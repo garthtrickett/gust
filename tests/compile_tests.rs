@@ -1048,3 +1048,20 @@ fn test_monomorphized_linear_collection_is_linear() {
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
 }
+
+#[test]
+fn test_generic_definition_enforces_strict_linear_safety() {
+    let source = "
+        type Holder[T] struct {
+            val: T
+        }
+        func process(h: Holder[T]) {
+            mut x := move h.val;
+            mut y := h.val; // Error: h.val is conservatively treated as Linear!
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+}
