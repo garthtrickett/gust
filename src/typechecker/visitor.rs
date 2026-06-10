@@ -999,7 +999,7 @@ impl TypeChecker {
                     {
                         return Err(TypeError {
                             kind: TypeErrorKind::AllocatorMovedOrFreed,
-                            message: format!(
+                            message: format!( 
                                 "Semantic Error: Variable '{}' cannot be used because its branding allocator '{}' has been moved or freed",
                                 name, brand
                             ),
@@ -1010,6 +1010,7 @@ impl TypeChecker {
                     if name == "null" {
                         return Ok(Type::Index("SessionNode".to_string(), None));
                     }
+                    eprintln!("DEBUG: Identifier '{}' not found in symbol table. Active keys: {:?}", name, self.symbol_table.keys().collect::<Vec<&String>>());
                     Err(TypeError {
                         kind: TypeErrorKind::UndefinedVariable,
                         message: format!("Semantic Error: Undefined variable '{}'", name),
