@@ -1417,3 +1417,46 @@ fn test_type_aware_vardecl_codegen_structure() {
     // Verify that Node n is initialized using gen_type_aware_initializer, not blind {0}
     assert!(c_code.contains("Node n = ((Node){ .next = 0xFFFFFFFF, .ptr = NULL, .val = 0 });"));
 }
+
+#[test]
+fn test_unbranded_struct_containing_slice_rejected() {
+    let source = "
+        type Packet struct {
+            id: int,
+            data: []byte
+        }
+        func main() {}
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("cannot contain ephemeral slice or view"));
+}
+
+#[test]
+fn test_unbranded_struct_containing_str_rejected() {
+    let source = "
+        type User struct {
+            name: str
+        }
+        func main() {}
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("cannot contain ephemeral slice or view"));
+}
+
+#[test]
+fn test_branded_struct_containing_slice_accepted() {
+    let source = "
+        type CustomNode[ctx] struct {
+            name: str,
+            data: []byte
+        }
+        func main() {}
+    ";
+    assert!(check_program(source).is_ok());
+}
