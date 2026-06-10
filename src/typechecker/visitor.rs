@@ -19,6 +19,10 @@ fn get_root_variable(expr: &Expression) -> Option<String> {
     }
 }
 
+fn is_ephemeral_view(t: &Type) -> bool {
+    matches!(t, Type::Str | Type::Slice(_) | Type::ByteSlice | Type::RawPointer(_))
+}
+
 impl TypeChecker {
     fn get_vector_element_type(&self, struct_name: &str) -> Option<Type> {
         if let Some(layout) = self.struct_registry.get(struct_name)
@@ -366,7 +370,11 @@ impl TypeChecker {
                     let mut t = self.check_expression(val_expr)?;
                     t = self.resolve_type(&t)?;
 
-                    let mut origs = self.get_expression_origins(val_expr);
+                    let mut origs = if is_ephemeral_view(&t) {
+                        self.get_expression_origins(val_expr)
+                    } else {
+                        HashSet::new()
+                    };
                     // Fallback to itself as a root origin if expression contains no active origins
                     if origs.is_empty() {
                         origs.insert(name.clone());
@@ -454,7 +462,11 @@ impl TypeChecker {
 
                 // Track assignments to variables to update their active memory origins
                 if let Expression::Identifier(left_name) = left {
-                    let mut origs = self.get_expression_origins(value);
+                    let mut origs = if is_ephemeral_view(&left_type) {
+                        self.get_expression_origins(value)
+                    } else {
+                        HashSet::new()
+                    };
                     // Fallback to itself as a root origin if assignment expression has no origins
                     if origs.is_empty() { 
                         origs.insert(left_name.clone());
@@ -463,7 +475,7 @@ impl TypeChecker {
                     self.moved_vars.remove(left_name); // Re-initialized!
                 }
             }
-            Statement::While { condition, body } => {
+            Statement::Assignment { left, value } => {
                 let cond_type = self.check_expression(condition)?;
                 if cond_type != Type::Int {
                     return Err(TypeError {
