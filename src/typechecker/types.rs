@@ -93,7 +93,13 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
                 let is_pool_any = (e_clean.starts_with("Pool_")
                     && a_clean.starts_with("Pool_Any"))
                     || (a_clean.starts_with("Pool_") && e_clean.starts_with("Pool_Any"));
-                if !is_vector_any && !is_hashmap_any && !is_pool_any {
+                let is_rc_any = (e_clean.starts_with("Rc_")
+                    && a_clean.starts_with("Rc_Any"))
+                    || (a_clean.starts_with("Rc_") && e_clean.starts_with("Rc_Any"));
+                let is_graph_any = (e_clean.starts_with("Graph_")
+                    && a_clean.starts_with("Graph_Any"))
+                    || (a_clean.starts_with("Graph_") && e_clean.starts_with("Graph_Any"));
+                if !is_vector_any && !is_hashmap_any && !is_pool_any && !is_rc_any && !is_graph_any {
                     return false;
                 }
             }

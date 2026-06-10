@@ -254,6 +254,121 @@ impl TypeChecker {
             },
         );
 
+        // RcNode[T]
+        let rc_node_fields = vec![
+            crate::ast::FieldDef {
+                name: "value".to_string(),
+                field_type: Type::Struct("T".to_string(), None),
+            },
+            crate::ast::FieldDef {
+                name: "ref_count".to_string(),
+                field_type: Type::Int,
+            },
+        ];
+        struct_templates.insert(
+            "RcNode".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string()],
+                fields: rc_node_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.RcNode".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string()],
+                fields: rc_node_fields,
+            },
+        );
+
+        // Rc[T, ctx]
+        let rc_fields = vec![
+            crate::ast::FieldDef {
+                name: "node_index".to_string(),
+                field_type: Type::Index("std_RcNode_T".to_string(), Some("ctx".to_string())),
+            },
+            crate::ast::FieldDef {
+                name: "pool".to_string(),
+                field_type: Type::RawPointer(Box::new(Type::Generic(
+                    "std.Pool".to_string(),
+                    vec![
+                        Type::Struct("std_RcNode_T".to_string(), None),
+                        Type::Struct("ctx".to_string(), None),
+                    ],
+                ))),
+            },
+        ];
+        struct_templates.insert(
+            "Rc".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: rc_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.Rc".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: rc_fields,
+            },
+        );
+
+        // GraphNode[T, ctx]
+        let graph_node_fields = vec![
+            crate::ast::FieldDef {
+                name: "value".to_string(),
+                field_type: Type::Struct("T".to_string(), None),
+            },
+            crate::ast::FieldDef {
+                name: "edges".to_string(),
+                field_type: Type::Generic(
+                    "std.Vector".to_string(),
+                    vec![Type::Int, Type::Struct("ctx".to_string(), None)],
+                ),
+            },
+        ];
+        struct_templates.insert(
+            "GraphNode".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: graph_node_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.GraphNode".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: graph_node_fields,
+            },
+        );
+
+        // Graph[T, ctx]
+        let graph_fields = vec![
+            crate::ast::FieldDef {
+                name: "nodes".to_string(),
+                field_type: Type::Generic(
+                    "std.Pool".to_string(),
+                    vec![
+                        Type::Struct("std_GraphNode_T_ctx".to_string(), None),
+                        Type::Struct("ctx".to_string(), None),
+                    ],
+                ),
+            },
+        ];
+        struct_templates.insert(
+            "Graph".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: graph_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.Graph".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: graph_fields,
+            },
+        );
+
         TypeChecker {
             symbol_table: HashMap::new(),
             variable_types: HashMap::new(),

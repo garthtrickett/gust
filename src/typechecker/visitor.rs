@@ -1998,7 +1998,7 @@ impl TypeChecker {
                                     }
                                 })?;
                             let brand_name = match &left_type {
-                                Type::Struct(_, Some(b)) => Some(b.clone()),
+                                Type::Struct(_, b) => b.clone(),
                                 _ => None,
                             };
                             let elem_struct_name = match &elem_type {
@@ -2009,13 +2009,206 @@ impl TypeChecker {
                             if !types_match(&expected_index_type, &arg_type) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
-                                    message: format!(
+                                    message: format!( 
                                         "Argument type mismatch for Pool.Free. Expected {:?} but got {:?}",
                                         expected_index_type, arg_type
                                     ),
                                 });
                             }
                             return Ok(Type::Void);
+                        }
+
+                        let is_rc = struct_name.starts_with("Rc_") || struct_name.starts_with("std_Rc_");
+                        let is_graph = struct_name.starts_with("Graph_") || struct_name.starts_with("std_Graph_");
+
+                        if is_rc && right == "Clone" {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Rc.Clone expects exactly 0 arguments".to_string(),
+                                });
+                            }
+                            return Ok(left_type.clone());
+                        }
+
+                        if is_rc && right == "Release" {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Rc.Release expects exactly 0 arguments".to_string(),
+                                });
+                            }
+                            return Ok(Type::Void);
+                        }
+
+                        if is_rc && right == "Get" {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Rc.Get expects exactly 0 arguments".to_string(),
+                                });
+                            }
+                            if let Some(layout) = self.struct_registry.get(struct_name) {
+                                if let Some(Type::Index(rcnode_name, _)) = layout.fields.get("node_index") {
+                                    if let Some(rcnode_layout) = self.struct_registry.get(rcnode_name) {
+                                        if let Some(t_type) = rcnode_layout.fields.get("value") {
+                                            return Ok(Type::RawPointer(Box::new(t_type.clone())));
+                                        }
+                                    }
+                                }
+                            }
+                            return Err(TypeError {
+                                kind: TypeErrorKind::TypeMismatch,
+                                message: format!("Rc.Get: cannot find value type for Rc struct {}", struct_name),
+                            });
+                        }
+
+                        if is_graph && right == "AddNode" {
+                            if arguments.len() != 1 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Graph.AddNode expects exactly 1 argument (value)".to_string(),
+                                });
+                            }
+                            let arg_type = self.check_expression(&arguments[0])?;
+                            
+                            let mut t_type = None;
+                            if let Some(layout) = self.struct_registry.get(struct_name) {
+                                if let Some(Type::Struct(pool_name, _)) = layout.fields.get("nodes") {
+                                    if let Some(pool_layout) = self.struct_registry.get(pool_name) {
+                                        if let Some(Type::RawPointer(node_ptr)) = pool_layout.fields.get("data") {
+                                            if let Type::Struct(gnode_name, _) = &**node_ptr {
+                                                if let Some(gnode_layout) = self.struct_registry.get(gnode_name) {
+                                                    if let Some(val_type) = gnode_layout.fields.get("value") {
+                                                        t_type = Some(val_type.clone());
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            if let Some(expected_t) = t_type {
+                                if !types_match(&expected_t, &arg_type) {
+                                    return Err(TypeError {
+                                        kind: TypeErrorKind::TypeMismatch,
+                                        message: format!( 
+                                            "Semantic Error: Graph.AddNode value type mismatch. Expected {:?} but got {:?}",
+                                            expected_t, arg_type
+                                        ),
+                                    });
+                                }
+                            }
+                            return Ok(Type::Int);
+                        }
+
+                        if is_graph && right == "AddEdge" {
+                            if arguments.len() != 2 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Graph.AddEdge expects exactly 2 arguments (from, to)".to_string(),
+                                });
+                            }
+                            let from_type = self.check_expression(&arguments[0])?;
+                            let to_type = self.check_expression(&arguments[1])?;
+                            
+                            let graph_brand = match &left_type {
+                                Type::Struct(_, b) => b.clone(),
+                                _ => None,
+                            };
+                            
+                            if let Type::Index(_, Some(from_brand)) = &from_type { 
+                                if Some(from_brand) != graph_brand.as_ref() {
+                                    return Err(TypeError {
+                                        kind: TypeErrorKind::BrandLifetimeViolation,
+                                        message: format!(
+                                            "Semantic Error: Brand violation in Graph.AddEdge. Node 'from' index brand '{}' does not match graph brand '{:?}'",
+                                            from_brand, graph_brand
+                                        ),
+                                    });
+                                }
+                            } else if from_type != Type::Int && from_type != Type::Byte {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Graph.AddEdge 'from' argument must be an Int, Byte or branded Index".to_string(),
+                                });
+                            }
+                            
+                            if let Type::Index(_, Some(to_brand)) = &to_type {
+                                if Some(to_brand) != graph_brand.as_ref() {
+                                    return Err(TypeError {
+                                        kind: TypeErrorKind::BrandLifetimeViolation,
+                                        message: format!(
+                                            "Semantic Error: Brand violation in Graph.AddEdge. Node 'to' index brand '{}' does not match graph brand '{:?}'",
+                                            to_brand, graph_brand
+                                        ),
+                                    });
+                                }
+                            } else if to_type != Type::Int && to_type != Type::Byte {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Graph.AddEdge 'to' argument must be an Int, Byte or branded Index".to_string(),
+                                });
+                            }
+                            return Ok(Type::Void);
+                        }
+
+                        if is_graph && right == "GetNode" {
+                            if arguments.len() != 1 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Graph.GetNode expects exactly 1 argument (index)".to_string(),
+                                });
+                            }
+                            let index_type = self.check_expression(&arguments[0])?;
+                            
+                            let graph_brand = match &left_type {
+                                Type::Struct(_, b) => b.clone(),
+                                _ => None,
+                            };
+                            
+                            if let Type::Index(_, Some(index_brand)) = &index_type {
+                                if Some(index_brand) != graph_brand.as_ref() {
+                                    return Err(TypeError {
+                                        kind: TypeErrorKind::BrandLifetimeViolation,
+                                        message: format!(
+                                            "Semantic Error: Brand violation in Graph.GetNode. Index brand '{}' does not match graph brand '{:?}'",
+                                            index_brand, graph_brand
+                                        ),
+                                    });
+                                }
+                            } else if index_type != Type::Int && index_type != Type::Byte {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Graph.GetNode index must be an Int, Byte or branded Index".to_string(),
+                                });
+                            }
+                            
+                            let mut t_type = None;
+                            if let Some(layout) = self.struct_registry.get(struct_name) {
+                                if let Some(Type::Struct(pool_name, _)) = layout.fields.get("nodes") {
+                                    if let Some(pool_layout) = self.struct_registry.get(pool_name) {
+                                        if let Some(Type::RawPointer(node_ptr)) = pool_layout.fields.get("data") {
+                                            if let Type::Struct(gnode_name, _) = &**node_ptr {
+                                                if let Some(gnode_layout) = self.struct_registry.get(gnode_name) {
+                                                    if let Some(val_type) = gnode_layout.fields.get("value") {
+                                                        t_type = Some(val_type.clone());
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            if let Some(expected_t) = t_type {
+                                return Ok(Type::RawPointer(Box::new(expected_t)));
+                            }
+                            return Err(TypeError {
+                                kind: TypeErrorKind::TypeMismatch,
+                                message: format!("Graph.GetNode: cannot find value type for Graph struct {}", struct_name),
+                            });
                         }
                     }
                     if left_type == Type::Arena && right == "Free" {

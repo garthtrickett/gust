@@ -1888,3 +1888,86 @@ fn test_brand_crossing_cloning() {
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
 }
+
+#[test]
+fn test_rc_and_graph_type_checking_valid() {
+    let source = "
+        type Node struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut pool: std.Pool[std.RcNode[Node], ctx] := std.PoolNew(ctx);
+            mut item: Node;
+            item.val = 42;
+
+            mut rc: std.Rc[Node, ctx] := std.RcNew(&pool, item);
+            mut cloned_rc := rc.Clone();
+            
+            unsafe {
+                mut val_ptr := rc.Get();
+                os.LogInt((*val_ptr).val);
+            }
+
+            cloned_rc.Release();
+            rc.Release();
+
+            mut graph: std.Graph[Node, ctx] := std.GraphNew(ctx);
+            mut n1 := graph.AddNode(item);
+            mut n2 := graph.AddNode(item);
+            graph.AddEdge(n1, n2);
+
+            unsafe {
+                mut val_ptr2 := graph.GetNode(n1);
+                os.LogInt((*val_ptr2).val);
+            }
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_rc_and_graph_type_checking_invalid() {
+    let source_brand_violation_rc = "
+        type Node struct {
+            val: int
+        }
+        func main() {
+            mut ctx1 := os.Arena.New();
+            defer ctx1.Free();
+            mut ctx2 := os.Arena.New();
+            defer ctx2.Free();
+
+            mut pool1: std.Pool[std.RcNode[Node], ctx1] := std.PoolNew(ctx1);
+            mut item: Node;
+
+            mut rc: std.Rc[Node, ctx2] := std.RcNew(&pool1, item); 
+        }
+    ";
+    let res1 = check_program(source_brand_violation_rc);
+    assert!(res1.is_err());
+    let err1 = res1.unwrap_err();
+    assert_eq!(err1.kind, TypeErrorKind::TypeMismatch);
+
+    let source_non_int_graph = "
+        type Node struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut graph: std.Graph[Node, ctx] := std.GraphNew(ctx);
+            mut item: Node;
+            mut n1 := graph.AddNode(item);
+
+            graph.AddEdge(n1, \"not_an_int\");
+        }
+    ";
+    let res3 = check_program(source_non_int_graph);
+    assert!(res3.is_err());
+    let err3 = res3.unwrap_err();
+    assert_eq!(err3.kind, TypeErrorKind::TypeMismatch);
+}
