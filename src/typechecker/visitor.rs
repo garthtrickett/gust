@@ -116,6 +116,19 @@ impl TypeChecker {
                 if generics.is_empty() {
                     let mut layout_fields = HashMap::new();
                     for field in fields {
+                        let resolved_field_type = self.resolve_type(&field.field_type)?;
+                        if matches!(resolved_field_type, Type::Slice(_))
+                            || resolved_field_type == Type::ByteSlice
+                            || resolved_field_type == Type::Str
+                        {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::BrandLifetimeViolation,
+                                message: format!(
+                                    "Semantic Error: Unbranded struct '{}' cannot contain ephemeral slice or view field '{}' of type '{:?}'",
+                                    name, field.name, resolved_field_type
+                                ),
+                            });
+                        }
                         layout_fields.insert(field.name.clone(), field.field_type.clone());
                     }
                     self.struct_registry.insert(
