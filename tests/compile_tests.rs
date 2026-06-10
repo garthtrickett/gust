@@ -1125,3 +1125,71 @@ fn test_monomorphized_linear_move_generates_cleanup() {
     // Assert that the generated C code contains memset for the Linear struct move!
     assert!(c_code.contains("memset"));
 }
+
+#[test]
+fn test_pod_enum_propagation_recognized_as_copyable() {
+    let source = "
+        type MyPod struct {
+            x: int,
+            y: int
+        }
+        type PodEnum enum {
+            VariantA { val: MyPod },
+            VariantB
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    assert!(checker.check_program(&program).is_ok());
+
+    let enum_type = Type::Struct("PodEnum".to_string(), None);
+    assert!(!checker.is_linear(&enum_type));
+}
+
+#[test]
+fn test_linear_enum_propagation_recognized_as_linear() {
+    let source = "
+        type MyLinear struct {
+            name: str
+        }
+        type LinearEnum enum {
+            VariantA { val: MyLinear },
+            VariantB
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    assert!(checker.check_program(&program).is_ok());
+
+    let enum_type = Type::Struct("LinearEnum".to_string(), None);
+    assert!(checker.is_linear(&enum_type));
+}
+
+#[test]
+fn test_deep_nested_linear_propagation() {
+    let source = "
+        type MyLinear struct {
+            ptr: *int
+        }
+        type NestedEnum enum {
+            VariantA { val: MyLinear },
+            VariantB
+        }
+        type OuterPod struct {
+            id: int,
+            payload: NestedEnum
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    assert!(checker.check_program(&program).is_ok());
+
+    let outer_type = Type::Struct("OuterPod".to_string(), None);
+    assert!(checker.is_linear(&outer_type));
+}
