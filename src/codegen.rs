@@ -241,6 +241,12 @@ impl Codegen {
                         && let Some(Type::RawPointer(inner)) = layout.fields.get("values")
                     {
                         return Some((**inner).clone());
+                    } else if (struct_name.starts_with("Pool_")
+                        || struct_name.starts_with("std_Pool_"))
+                        && let Some(layout) = self.struct_registry.get(&struct_name)
+                        && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
+                    {
+                        return Some((**inner).clone());
                     }
                 }
                 None
@@ -823,6 +829,7 @@ impl Codegen {
 
                 let mut is_vector = false;
                 let mut is_hashmap = false;
+                let mut is_pool = false;
                 let mut is_str_key = false;
 
                 if let Type::Struct(struct_name, _) = &alloc_type {
@@ -839,6 +846,10 @@ impl Codegen {
                         {
                             is_str_key = true;
                         }
+                    } else if struct_name.starts_with("Pool_")
+                        || struct_name.starts_with("std_Pool_")
+                    {
+                        is_pool = true;
                     }
                 } else {
                     // Fallback to checking the allocator variable name in symbol table directly
@@ -860,6 +871,10 @@ impl Codegen {
                             {
                                 is_str_key = true;
                             }
+                        } else if struct_name.starts_with("Pool_")
+                            || struct_name.starts_with("std_Pool_")
+                        {
+                            is_pool = true;
                         }
                     }
                 }
@@ -879,6 +894,11 @@ impl Codegen {
                     format!(
                         "(*os_HashMapRef(&{}, {}, {}))",
                         alloc_str, index_str, is_str_key_str
+                    )
+                } else if is_pool {
+                    format!(
+                        "(*({{ if ({} < 0 || {} >= {}.len) {{ printf(\"Pool bounds check failed at line %d\\n\", __LINE__); exit(1); }} &({}.data[{}]); }}))",
+                        index_str, index_str, alloc_str, alloc_str, index_str
                     )
                 } else {
                     // Arena indexing (Value-Branded)
@@ -1059,6 +1079,36 @@ impl Codegen {
                     );
                 }
 
+                // os.PoolNew / std.PoolNew
+                if func_path == "os.PoolNew"
+                    || func_path == "os_PoolNew"
+                    || func_path == "std.PoolNew"
+                    || func_path == "std_PoolNew"
+                {
+                    let arg_str = self.gen_expression(&arguments[0]);
+                    let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
+                        struct_name.clone()
+                    } else {
+                        "Pool_int".to_string()
+                    };
+                    let mut is_ptr = false;
+                    if let Expression::Identifier(name) = &arguments[0]
+                        && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
+                        && **inner == Type::Arena
+                    {
+                        is_ptr = true;
+                    }
+                    let arena_expr = if is_ptr {
+                        arg_str
+                    } else {
+                        format!("&{}", arg_str)
+                    };
+                    return format!(
+                        "(struct {}){{ .arena = {}, .capacity = 0, .data = NULL, .free_len = 0, .free_list = NULL, .len = 0, .occupied = NULL }}",
+                        type_str, arena_expr
+                    );
+                }
+
                 // os.ReadFile
                 if func_path == "os.ReadFile" || func_path == "os_ReadFile" {
                     let arg_arena = self.gen_expression(&arguments[0]);
@@ -1184,6 +1234,16 @@ impl Codegen {
                             k_str,
                             is_str_key_str
                         );
+                    }
+
+                    if is_pool && right == "Alloc" {
+                        let arg_str = self.gen_expression(&arguments[0]);
+                        return format!("std_PoolAlloc(&{}, {})", left_str, arg_str);
+                    }
+
+                    if is_pool && right == "Free" {
+                        let arg_str = self.gen_expression(&arguments[0]);
+                        return format!("std_PoolFree(&{}, {})", left_str, arg_str);
                     }
 
                     let left_type_str = expression_to_string(left);

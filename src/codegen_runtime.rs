@@ -292,4 +292,85 @@ static inline int os_HashMapContains_impl(void* map_void, void* key_ptr, int is_
 
 #define os_VectorNew(arena_ptr) { NULL, 0, 0, (arena_ptr) }
 #define os_HashMapNew(arena_ptr) { NULL, NULL, NULL, 0, 0, (arena_ptr) }
+
+typedef struct {
+    os_Arena* arena;
+    int capacity;
+    void* data;
+    int free_len;
+    int* free_list;
+    int len;
+    int* occupied;
+} GenericPool;
+
+static inline int std_PoolAlloc_impl(void* pool_void, size_t elem_size) {
+    GenericPool* p = (GenericPool*)pool_void;
+    
+    if (p->capacity == 0) {
+        p->capacity = 16;
+        int data_offset = os_ArenaAlloc(p->arena, p->capacity * elem_size);
+        p->data = (char*)p->arena->BaseAddress + data_offset;
+        
+        int occupied_offset = os_ArenaAlloc(p->arena, p->capacity * sizeof(int));
+        p->occupied = (int*)((char*)p->arena->BaseAddress + occupied_offset);
+        for (int i = 0; i < p->capacity; i++) p->occupied[i] = 0;
+        
+        int free_list_offset = os_ArenaAlloc(p->arena, p->capacity * sizeof(int));
+        p->free_list = (int*)((char*)p->arena->BaseAddress + free_list_offset);
+        p->free_len = 0;
+        p->len = 0;
+    }
+    
+    int index = -1;
+    if (p->free_len > 0) {
+        p->free_len--;
+        index = p->free_list[p->free_len];
+    } else {
+        if (p->len >= p->capacity) {
+            int old_cap = p->capacity;
+            p->capacity *= 2;
+            
+            void* old_data = p->data;
+            int* old_occupied = p->occupied;
+            int* old_free_list = p->free_list;
+            
+            int data_offset = os_ArenaAlloc(p->arena, p->capacity * elem_size);
+            p->data = (char*)p->arena->BaseAddress + data_offset;
+            memcpy(p->data, old_data, old_cap * elem_size);
+            
+            int occupied_offset = os_ArenaAlloc(p->arena, p->capacity * sizeof(int));
+            p->occupied = (int*)((char*)p->arena->BaseAddress + occupied_offset);
+            memcpy(p->occupied, old_occupied, old_cap * sizeof(int));
+            for (int i = old_cap; i < p->capacity; i++) p->occupied[i] = 0;
+            
+            int free_list_offset = os_ArenaAlloc(p->arena, p->capacity * sizeof(int));
+            p->free_list = (int*)((char*)p->arena->BaseAddress + free_list_offset);
+            memcpy(p->free_list, old_free_list, old_cap * sizeof(int));
+        }
+        index = p->len;
+        p->len++;
+    }
+    
+    p->occupied[index] = 1;
+    return index;
+}
+
+static inline void std_PoolFree_impl(void* pool_void, int index) {
+    GenericPool* p = (GenericPool*)pool_void;
+    if (index < 0 || index >= p->len) {
+        printf("Pool index out of bounds on Free\n");
+        exit(1);
+    }
+    p->occupied[index] = 0;
+    p->free_list[p->free_len] = index;
+    p->free_len++;
+}
+
+#define std_PoolNew(arena_ptr) { (arena_ptr), 0, NULL, 0, NULL, 0, NULL }
+#define std_PoolAlloc(pool_ptr, val) ({ 
+    int _idx = std_PoolAlloc_impl((void*)(pool_ptr), sizeof(*(pool_ptr)->data)); 
+    (pool_ptr)->data[_idx] = (val); 
+    _idx; 
+})
+#define std_PoolFree(pool_ptr, index) std_PoolFree_impl((void*)(pool_ptr), (index))
 "#;
