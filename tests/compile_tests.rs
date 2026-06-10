@@ -863,3 +863,68 @@ fn test_nested_scoping_definite_checks_rejected() {
         )
     );
 }
+
+#[test]
+fn test_small_enum_variant_payload_accepted() {
+    let source = "
+        type Small struct {
+            x: int,
+            y: int
+        }
+        type MyEnum enum {
+            VariantA { val: Small },
+            VariantB
+        }
+        func main() {
+            mut e: MyEnum;
+            e.tag = 0;
+            e.VariantA.val.x = 42;
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_large_enum_variant_payload_rejected() {
+    let source = "
+        type Large struct {
+            x: int,
+            y: int,
+            z: int
+        }
+        type MyEnum enum {
+            VariantA { val: Large },
+            VariantB
+        }
+        func main() {
+            mut e: MyEnum;
+            e.tag = 0;
+            e.VariantA.val.x = 42;
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::LargeEnumVariantPayload);
+    assert!(err.message.contains("large enum variant payload"));
+}
+
+#[test]
+fn test_large_enum_variant_indirection_accepted() {
+    let source = "
+        type Large struct {
+            x: int,
+            y: int,
+            z: int
+        }
+        type MyEnum[ctx] enum {
+            VariantA { val: Index[Large, ctx] },
+            VariantB
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}

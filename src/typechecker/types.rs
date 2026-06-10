@@ -90,6 +90,7 @@ pub enum TypeErrorKind {
     UnresolvedSelector,
     ArgumentMismatch,
     UndefinedFunction,
+    LargeEnumVariantPayload,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
