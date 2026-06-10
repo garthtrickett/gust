@@ -380,7 +380,19 @@ impl TypeChecker {
                 }
             }
             Statement::Assignment { left, value } => {
-                let left_type = self.check_expression(left)?;
+                let left_type = match left {
+                    Expression::Identifier(name) => {
+                        if let Some(t) = self.symbol_table.get(name) {
+                            Ok(t.clone())
+                        } else {
+                            Err(TypeError {
+                                kind: TypeErrorKind::UndefinedVariable,
+                                message: format!("Semantic Error: Undefined variable '{}' in assignment LHS", name),
+                            })
+                        } 
+                    }
+                    _ => self.check_expression(left),
+                }?;
                 let val_type = self.check_expression(value)?;
                 if !types_match(&left_type, &val_type) {
                     return Err(TypeError {
@@ -848,13 +860,10 @@ impl TypeChecker {
             }
             Expression::Take(inner_expr) => {
                 let expr_type = self.check_expression(inner_expr)?;
-                if !self.is_linear(&expr_type) {
+                if expr_type == Type::Int || expr_type == Type::Byte {
                     return Err(TypeError {
                         kind: TypeErrorKind::TakePrimitiveBanned,
-                        message: format!(
-                            "Semantic Error: The 'take' operator is strictly banned on primitive POD types or copyable POD types like {:?}",
-                            expr_type
-                        ),
+                        message: "Semantic Error: The 'take' operator is strictly banned on primitive POD types (like Int)".to_string(),
                     });
                 }
                 Ok(expr_type)

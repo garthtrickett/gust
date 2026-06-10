@@ -1285,7 +1285,7 @@ fn test_reinitialized_inout_parameter_accepted() {
 }
 
 #[test]
-fn test_take_pod_struct_rejected() {
+fn test_take_pod_struct_accepted() {
     let source = "
         type MyPod struct {
             x: int,
@@ -1294,14 +1294,10 @@ fn test_take_pod_struct_rejected() {
         func main() {
             mut p: MyPod;
             p.x = 10;
-            mut taken := take p; // Error: Banned on copyable POD struct
+            mut taken := take p; // Accepted on custom structs
         }
     ";
-    let res = check_program(source);
-    assert!(res.is_err());
-    let err = res.unwrap_err();
-    assert_eq!(err.kind, TypeErrorKind::TakePrimitiveBanned);
-    assert!(err.message.contains("strictly banned on primitive POD types"));
+    assert!(check_program(source).is_ok());
 }
 
 #[test]
