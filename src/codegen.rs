@@ -807,6 +807,8 @@ impl Codegen {
                         )
                     } else if let Type::Struct(_, _) = target_type {
                         format!("(*(({}*){}.data))", target_str, left_str)
+                    } else if *target_type == Type::Int || *target_type == Type::Byte {
+                        format!("(({}){})", target_str, left_str)
                     } else {
                         format!("(({}*){})", target_str, left_str)
                     }
