@@ -803,3 +803,117 @@ fn test_e2e_rc_reference_counting() {
     ";
     run_e2e_test(source, "0\n42\n0\n1\n0");
 }
+
+#[test]
+fn test_e2e_graph_cyclic_relationship() {
+    let source = "
+        type Node struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut graph: std.Graph[Node, ctx] := std.GraphNew(ctx);
+            
+            mut item1: Node; item1.val = 10;
+            mut item2: Node; item2.val = 20;
+            mut item3: Node; item3.val = 30;
+
+            mut n1 := graph.AddNode(item1);
+            mut n2 := graph.AddNode(item2);
+            mut n3 := graph.AddNode(item3);
+
+            graph.AddEdge(n1, n2);
+            graph.AddEdge(n2, n3);
+            graph.AddEdge(n3, n1);
+
+            mut curr := n1;
+            mut i := 0;
+            while i < 6 {
+                unsafe {
+                    mut val_ptr := graph.GetNode(curr);
+                    os.LogInt((*val_ptr).val);
+                }
+                curr = graph.nodes[curr].edges[0];
+                i = i + 1;
+            }
+        }
+    ";
+    run_e2e_test(source, "10\n20\n30\n10\n20\n30");
+}
+
+#[test]
+fn test_e2e_lexical_scope_tree() {
+    let source = "
+        type SharedConfig struct {
+            compiler_flag: int
+        }
+        type Scope[ctx] struct {
+            parent: int,
+            variables: std.HashMap[str, int, ctx],
+            config: std.Rc[SharedConfig, ctx]
+        }
+
+        func lookup_variable(pool: *std.Pool[Scope[ctx], ctx], scope_idx: int, name: str) int {
+            mut curr := scope_idx;
+            while curr != 999999 {
+                mut lookup := (*pool)[curr].variables.Get(name);
+                if lookup.Ok {
+                    return lookup.Val;
+                }
+                curr = (*pool)[curr].parent;
+            }
+            return 0 - 1;
+        }
+
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut pool: std.Pool[Scope[ctx], ctx] := std.PoolNew(ctx);
+            mut rc_pool: std.Pool[std.RcNode[SharedConfig], ctx] := std.PoolNew(ctx);
+
+            mut config: SharedConfig;
+            config.compiler_flag = 42;
+
+            mut rc_conf: std.Rc[SharedConfig, ctx] := std.RcNew(&rc_pool, config);
+
+            mut root: Scope[ctx];
+            root.parent = 999999;
+            root.variables = std.HashMapNew(ctx);
+            root.variables.Insert(\"global_var\", 100);
+            root.variables.Insert(\"shadowed_var\", 1);
+            root.config = rc_conf.Clone();
+
+            mut root_idx := pool.Alloc(root);
+
+            mut child: Scope[ctx];
+            child.parent = root_idx;
+            child.variables = std.HashMapNew(ctx);
+            child.variables.Insert(\"local_var\", 200);
+            child.variables.Insert(\"shadowed_var\", 2);
+            child.config = rc_conf.Clone();
+
+            mut child_idx := pool.Alloc(child);
+
+            os.LogInt(lookup_variable(&pool, root_idx, \"global_var\"));
+            os.LogInt(lookup_variable(&pool, root_idx, \"shadowed_var\"));
+            os.LogInt(lookup_variable(&pool, root_idx, \"local_var\"));
+
+            os.LogInt(lookup_variable(&pool, child_idx, \"global_var\"));
+            os.LogInt(lookup_variable(&pool, child_idx, \"shadowed_var\"));
+            os.LogInt(lookup_variable(&pool, child_idx, \"local_var\"));
+
+            unsafe {
+                mut flag_ptr := child.config.Get();
+                os.LogInt((*flag_ptr).compiler_flag);
+            }
+
+            child.config.Release();
+            root.config.Release();
+            rc_conf.Release();
+        }
+    ";
+    run_e2e_test(source, "100\n1\n-1\n100\n2\n200\n42");
+}
