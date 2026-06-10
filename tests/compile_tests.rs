@@ -1283,3 +1283,40 @@ fn test_reinitialized_inout_parameter_accepted() {
     ";
     assert!(check_program(source).is_ok());
 }
+
+#[test]
+fn test_take_pod_struct_rejected() {
+    let source = "
+        type MyPod struct {
+            x: int,
+            y: int
+        }
+        func main() {
+            mut p: MyPod;
+            p.x = 10;
+            mut taken := take p; // Error: Banned on copyable POD struct
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TakePrimitiveBanned);
+    assert!(err.message.contains("strictly banned on primitive POD types"));
+}
+
+#[test]
+fn test_take_linear_struct_accepted() {
+    let source = "
+        type MyLinear struct {
+            ptr: *int
+        }
+        func main() {
+            mut p: MyLinear;
+            unsafe {
+                p.ptr = &10;
+            }
+            mut taken := take p; // Accepted on Linear struct
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
