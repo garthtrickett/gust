@@ -1558,6 +1558,26 @@ fn test_view_and_pod_in_branded_collection_accepted() {
 }
 
 #[test]
+fn test_nested_mismatched_branded_collection_rejected() {
+    let source = "
+        func main() {
+            mut innerCtx := os.Arena.New();
+            defer innerCtx.Free();
+            mut outerCtx := os.Arena.New();
+            defer outerCtx.Free();
+
+            // Vector[Vector[str, innerCtx], outerCtx]
+            mut vec: Vector[Vector[str, innerCtx], outerCtx] := os.VectorNew(outerCtx);
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Mismatched nested brand") || err.message.contains("Brand Nesting Restriction violation"));
+}
+
+#[test]
 fn test_return_local_variable_view_rejected() {
     let source = "
         func leak() str {
