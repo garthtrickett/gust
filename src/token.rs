@@ -50,6 +50,7 @@ pub enum TokenType {
     Enum,   // "enum"
     Match,  // "match"
     Return, // "return"
+    Empty,  // "empty"
 }
 
 #[derive(Debug, Clone)]

@@ -669,6 +669,18 @@ impl Parser {
                 let expr = self.parse_expression(6)?;
                 Some(Expression::Dereference(Box::new(expr)))
             }
+            TokenType::Empty => {
+                self.next_token(); // consume 'empty'
+                if self.cur_token.token_type != TokenType::LBracket {
+                    return None;
+                }
+                self.next_token(); // consume '['
+                let target_type = self.parse_type_signature()?;
+                if self.cur_token.token_type != TokenType::RBracket {
+                    return None;
+                }
+                Some(Expression::Empty(target_type))
+            }
             _ => None,
         }
     }
@@ -748,6 +760,9 @@ mod tests {
                 let args_strs: Vec<String> = arguments.iter().map(format_expr).collect();
                 format!("{}({})", format_expr(function), args_strs.join(", "))
             }
+            Expression::Empty(target_type) => {
+                format!("(empty[{:?}])", target_type)
+            }
         }
     }
 
@@ -824,5 +839,29 @@ mod tests {
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program();
         assert_eq!(program.statements.len(), 2);
+    }
+
+    #[test]
+    fn test_empty_intrinsic_parsing() {
+        let input_int = "empty[int]";
+        let expr_int = parse_expr_str(input_int);
+        assert!(matches!(expr_int, Expression::Empty(Type::Int)));
+
+        let input_node = "empty[Node]";
+        let expr_node = parse_expr_str(input_node);
+        if let Expression::Empty(Type::Struct(name, None)) = expr_node {
+            assert_eq!(name, "Node");
+        } else {
+            panic!("Expected empty[Node] to parse into Empty(Type::Struct)");
+        }
+
+        let input_node_ctx = "empty[Node[ctx]]";
+        let expr_node_ctx = parse_expr_str(input_node_ctx);
+        if let Expression::Empty(Type::Struct(name, Some(brand))) = expr_node_ctx {
+            assert_eq!(name, "Node");
+            assert_eq!(brand, "ctx");
+        } else {
+            panic!("Expected empty[Node[ctx]] to parse into Empty(Type::Struct with brand)");
+        }
     }
 }

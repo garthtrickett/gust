@@ -262,6 +262,7 @@ fn lookup_ident(ident: &str) -> TokenType {
         "enum" => TokenType::Enum,
         "match" => TokenType::Match,
         "return" => TokenType::Return,
+        "empty" => TokenType::Empty,
         _ => TokenType::Ident,
     }
 }
@@ -335,7 +336,7 @@ mod tests {
         let input = r#"
             // This is a comment
             mut msg := "Hello World"; // Trailing comment
-            mut empty := "";
+            mut empty_val := "";
         "#;
         let mut l = Lexer::new(input);
 
@@ -346,7 +347,7 @@ mod tests {
             (TokenType::String, "Hello World"),
             (TokenType::Semicolon, ";"),
             (TokenType::Mut, "mut"),
-            (TokenType::Ident, "empty"),
+            (TokenType::Ident, "empty_val"),
             (TokenType::Assign, ":="),
             (TokenType::String, ""),
             (TokenType::Semicolon, ";"),
@@ -400,6 +401,24 @@ mod tests {
             (TokenType::Eof, ""),
         ];
 
+        for (expected_type, expected_literal) in expected {
+            let tok = l.next_token();
+            assert_eq!(tok.token_type, expected_type);
+            assert_eq!(tok.literal, expected_literal);
+        }
+    }
+
+    #[test]
+    fn test_empty_intrinsic_tokenizing() {
+        let input = "empty[int]";
+        let mut l = Lexer::new(input);
+        let expected = vec![
+            (TokenType::Empty, "empty"),
+            (TokenType::LBracket, "["),
+            (TokenType::Ident, "int"),
+            (TokenType::RBracket, "]"),
+            (TokenType::Eof, ""),
+        ];
         for (expected_type, expected_literal) in expected {
             let tok = l.next_token();
             assert_eq!(tok.token_type, expected_type);

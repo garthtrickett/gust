@@ -1364,6 +1364,10 @@ impl TypeChecker {
                     ),
                 })
             }
+            Expression::Empty(target_type) => {
+                let resolved = self.resolve_type(target_type)?;
+                Ok(resolved)
+            }
         }
     }
 }

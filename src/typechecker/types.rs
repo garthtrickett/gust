@@ -163,5 +163,6 @@ pub fn expression_to_string(expr: &Expression) -> String {
         Expression::AsCast { left, .. } => expression_to_string(left),
         Expression::AddressOf(inner) => format!("&{}", expression_to_string(inner)),
         Expression::Dereference(inner) => format!("*{}", expression_to_string(inner)),
+        Expression::Empty(target_type) => format!("empty[{:?}]", target_type),
     }
 }

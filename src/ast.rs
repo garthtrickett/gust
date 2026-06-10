@@ -116,4 +116,5 @@ pub enum Expression {
         function: Box<Expression>,
         arguments: Vec<Expression>,
     },
+    Empty(Type), // Added for empty[T] intrinsic
 }

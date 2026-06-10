@@ -501,3 +501,48 @@ fn test_tuple_assignment_rejected() {
     // Parsing/checking this program should fail to typecheck/compile due to invalid syntactic form
     assert!(check_program(source).is_err());
 }
+
+#[test]
+fn test_malformed_empty_intrinsic_rejected() {
+    let source = "
+        func main() {
+            mut val := empty(int); // Error: should be empty[int]
+        }
+    ";
+    assert!(check_program(source).is_err());
+}
+
+#[test]
+fn test_empty_intrinsic_type_checking() {
+    let source_valid = "
+        type CustomNode struct {
+            SessionID: int
+        }
+        func main() {
+            mut val1: int := empty[int];
+            mut val2: CustomNode := empty[CustomNode];
+        }
+    ";
+    assert!(check_program(source_valid).is_ok());
+
+    let source_invalid_primitive = "
+        func main() {
+            mut val: byte := empty[int]; // Type mismatch
+        }
+    ";
+    let res = check_program(source_invalid_primitive);
+    assert!(res.is_err());
+    assert_eq!(res.unwrap_err().kind, TypeErrorKind::TypeMismatch);
+
+    let source_invalid_struct = "
+        type CustomNode struct {
+            SessionID: int
+        }
+        func main() {
+            mut val: CustomNode := empty[int]; // Type mismatch
+        }
+    ";
+    let res2 = check_program(source_invalid_struct);
+    assert!(res2.is_err());
+    assert_eq!(res2.unwrap_err().kind, TypeErrorKind::TypeMismatch);
+}
