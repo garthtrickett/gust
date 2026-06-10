@@ -465,18 +465,27 @@ impl TypeChecker {
                 }
 
                 // Track assignments to variables to update their active memory origins
-                if let Expression::Identifier(left_name) = left {
+                if let Some(root_name) = get_root_variable(left) {
                     let mut origs = if is_ephemeral_view(&left_type) {
                         self.get_expression_origins(value)
                     } else {
                         HashSet::new()
                     };
-                    // Fallback to itself as a root origin if assignment expression has no origins
-                    if origs.is_empty() { 
-                        origs.insert(left_name.clone());
+                    if matches!(left, Expression::Identifier(_)) {
+                        if origs.is_empty() {
+                            origs.insert(root_name.clone());
+                        }
+                        self.variable_origins.insert(root_name.clone(), origs);
+                    } else {
+                        if !origs.is_empty() {
+                            if let Some(existing) = self.variable_origins.get_mut(&root_name) {
+                                existing.extend(origs);
+                            } else {
+                                self.variable_origins.insert(root_name.clone(), origs);
+                            }
+                        }
                     }
-                    self.variable_origins.insert(left_name.clone(), origs);
-                    self.moved_vars.remove(left_name); // Re-initialized!
+                    self.moved_vars.remove(&root_name); // Re-initialized!
                 }
             }
             Statement::While { condition, body } => {
@@ -930,6 +939,50 @@ impl TypeChecker {
                                     ),
                                 });
                             } 
+                        }
+                    }
+
+                    if var_type == Type::Arena {
+                        // 1. Isolation Check
+                        if let Some(ref local_vars) = self.current_function_local_vars {
+                            for (v, origins) in &self.variable_origins {
+                                if v == name {
+                                    continue;
+                                }
+                                if let Some(v_type) = self.symbol_table.get(v) {
+                                    if self.get_type_brand(v_type) == Some(name.clone()) {
+                                        for origin in origins {
+                                            if local_vars.contains(origin) && origin != name {
+                                                let is_origin_branded = if let Some(orig_type) = self.symbol_table.get(origin) {
+                                                    self.get_type_brand(orig_type) == Some(name.clone())
+                                                } else {
+                                                    false
+                                                };
+                                                if !is_origin_branded {
+                                                    return Err(TypeError {
+                                                        kind: TypeErrorKind::BrandLifetimeViolation,
+                                                        message: format!( 
+                                                            "Semantic Error: Thread-safety violation. Branded variable '{}' has origin tracing back to thread-local stack variable '{}', preventing safe handoff of arena '{}'",
+                                                            v, origin, name
+                                                        ),
+                                                    });
+                                                } 
+                                            }
+                                        }
+                                    }
+                                } 
+                            }
+                        }
+
+                        // 2. Transitive Invalidation
+                        let mut to_invalidate = Vec::new();
+                        for (v, v_type) in &self.symbol_table {
+                            if self.get_type_brand(v_type) == Some(name.clone()) {
+                                to_invalidate.push(v.clone());
+                            }
+                        }
+                        for v in to_invalidate {
+                            self.moved_vars.insert(v);
                         }
                     }
 

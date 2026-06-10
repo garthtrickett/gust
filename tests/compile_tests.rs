@@ -1578,6 +1578,70 @@ fn test_nested_mismatched_branded_collection_rejected() {
 }
 
 #[test]
+fn test_handoff_isolation_violation_rejected() {
+    let source = "
+        type Packet[ctx] struct {
+            data: []byte
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut local := os.MockPayload(); // stack variable
+            mut p: Packet[ctx];
+            p.data = local; // p.data points to thread-local stack payload
+
+            mut movedCtx := move ctx; // Error: Thread-safety violation
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("preventing safe handoff of arena"));
+}
+
+#[test]
+fn test_handoff_use_after_move_rejected() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut vec: Vector[int, ctx] := os.VectorNew(ctx);
+            vec.Push(10);
+
+            mut movedCtx := move ctx; // Invalidate ctx and vec
+
+            vec.Push(20); // Error: use of moved variable vec
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+}
+
+#[test]
+fn test_handoff_safe_accepted() { 
+    let source = "
+        type Packet[ctx] struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut p: Packet[ctx];
+            p.val = 42;
+
+            mut movedCtx := move ctx; // Safe: no stack references
+        } 
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_return_local_variable_view_rejected() {
     let source = "
         func leak() str {
