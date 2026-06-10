@@ -543,8 +543,8 @@ fn test_e2e_take_and_empty_reinitialization() {
         func swap_resources(a: *Resource[str], b: *Resource[str]) {
             mut temp: Resource[str] := empty[Resource[str]];
             unsafe {
-                temp = take (*a);
-                *a = take (*b);
+                temp = take *a;
+                *a = take *b;
                 *b = move temp;
             }
         }
