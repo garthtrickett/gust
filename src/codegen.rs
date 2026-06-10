@@ -161,6 +161,46 @@ impl Codegen {
         }
     }
 
+    fn has_boolean_fields_recursive(
+        &self,
+        t: &Type,
+        visited: &mut std::collections::HashSet<String>,
+    ) -> bool {
+        match t {
+            Type::Byte => true,
+            Type::Struct(name, _) => {
+                if visited.contains(name) {
+                    return false;
+                }
+                visited.insert(name.clone());
+                if let Some(layout) = self.struct_registry.get(name) {
+                    for field_type in layout.fields.values() {
+                        if self.has_boolean_fields_recursive(field_type, visited) {
+                            return true;
+                        }
+                    }
+                }
+                false
+            }
+            Type::RawPointer(inner) => self.has_boolean_fields_recursive(inner, visited),
+            Type::Slice(inner) => self.has_boolean_fields_recursive(inner, visited),
+            Type::Generic(_, args) => {
+                for arg in args {
+                    if self.has_boolean_fields_recursive(arg, visited) {
+                        return true;
+                    }
+                }
+                false
+            }
+            _ => false,
+        }
+    }
+
+    fn has_boolean_fields(&self, t: &Type) -> bool {
+        let mut visited = std::collections::HashSet::new();
+        self.has_boolean_fields_recursive(t, &mut visited)
+    }
+
     pub fn generate(&self, program: &Program) -> String {
         let mut c_code = String::new();
 
@@ -292,6 +332,45 @@ impl Codegen {
                     c_code.push_str("    int Ok;\n");
                     c_code.push_str(&format!("}} CastResult_{};\n\n", struct_name));
                 }
+            }
+        }
+
+        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// INVARIANT VALIDATION HELPERS\n");
+        c_code.push_str("// ====================================================\n");
+
+        for (struct_name, layout) in &self.struct_registry {
+            if self.has_boolean_fields(&Type::Struct(struct_name.clone(), None)) {
+                c_code.push_str(&format!(
+                    "int {}_IsValid(const {}* req) {{\n",
+                    struct_name, struct_name
+                ));
+                c_code.push_str("    if (req == NULL) return 0;\n"); // Safety check
+
+                // Sort structural fields alphabetically for deterministic validation code
+                let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
+                sorted_fields.sort_by(|a, b| a.0.cmp(b.0));
+
+                for (field_name, field_type) in sorted_fields {
+                    match field_type {
+                        Type::Byte => {
+                            c_code.push_str(&format!(
+                                "    if (req->{} != 0x00 && req->{} != 0x01) return 0;\n",
+                                field_name, field_name
+                            ));
+                        }
+                        Type::Struct(nested_name, _)
+                            if self.has_boolean_fields(field_type) => {
+                                c_code.push_str(&format!(
+                                    "    if (!{}_IsValid(&req->{})) return 0;\n",
+                                    nested_name, field_name
+                                ));
+                            }
+                        _ => {}
+                    }
+                }
+                c_code.push_str("    return 1;\n");
+                c_code.push_str("}\n\n");
             }
         }
 
@@ -595,7 +674,12 @@ impl Codegen {
                 }
             }
             Expression::AddressOf(inner) => {
-                format!("&({})", self.gen_expression(inner))
+                let inner_str = self.gen_expression(inner);
+                if inner_str.ends_with(".Val") {
+                    inner_str
+                } else {
+                    format!("&({})", inner_str)
+                }
             }
             Expression::Dereference(inner) => {
                 format!("*({})", self.gen_expression(inner))
@@ -795,7 +879,7 @@ impl Codegen {
                     return format!("{}.len", arg_str);
                 }
 
-                // Compile-time resolution of os.ArenaAlloc [3]
+                // Compile-time resolution of os_ArenaAlloc [3]
                 if func_path == "os_ArenaAlloc" || func_path == "os.ArenaAlloc" {
                     let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
                         struct_name.clone()

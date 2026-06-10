@@ -26,6 +26,49 @@ impl TypeChecker {
         None
     }
 
+    fn has_boolean_fields_recursive(&self, t: &Type, visited: &mut HashSet<String>) -> bool {
+        match t {
+            Type::Byte => true,
+            Type::Struct(name, _) => {
+                if visited.contains(name) {
+                    return false;
+                }
+                visited.insert(name.clone());
+                if let Some(layout) = self.struct_registry.get(name) {
+                    for field_type in layout.fields.values() {
+                        if self.has_boolean_fields_recursive(field_type, visited) {
+                            return true;
+                        }
+                    }
+                }
+                false
+            }
+            Type::RawPointer(inner) => self.has_boolean_fields_recursive(inner, visited),
+            Type::Slice(inner) => self.has_boolean_fields_recursive(inner, visited),
+            Type::Generic(name, args) => {
+                for arg in args {
+                    if self.has_boolean_fields_recursive(arg, visited) {
+                        return true;
+                    }
+                }
+                if let Some(template) = self.struct_templates.get(name) {
+                    for field in &template.fields {
+                        if self.has_boolean_fields_recursive(&field.field_type, visited) {
+                            return true;
+                        }
+                    }
+                }
+                false
+            }
+            _ => false,
+        }
+    }
+
+    fn has_boolean_fields(&self, t: &Type) -> bool {
+        let mut visited = HashSet::new();
+        self.has_boolean_fields_recursive(t, &mut visited)
+    }
+
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {
         // Pre-pass: Dynamically register structs, templates, enums, and functions [3]
         for stmt in &program.statements {
@@ -129,6 +172,29 @@ impl TypeChecker {
                     },
                 );
             }
+        }
+
+        // Synthesize IsValid helpers for structs containing boolean (byte) fields
+        let mut structs_to_register_is_valid = Vec::new();
+        for struct_name in self.struct_registry.keys() {
+            if self.has_boolean_fields(&Type::Struct(struct_name.clone(), None)) {
+                structs_to_register_is_valid.push(struct_name.clone());
+            }
+        }
+        for struct_name in structs_to_register_is_valid {
+            let func_name = format!("{}_IsValid", struct_name);
+            self.function_registry.insert(
+                func_name,
+                super::types::FunctionSignature {
+                    param_names: vec!["req".to_string()],
+                    params: vec![Type::RawPointer(Box::new(Type::Struct(
+                        struct_name.clone(),
+                        None,
+                    )))],
+                    return_type: Type::Int,
+                    return_origins: HashSet::new(),
+                },
+            );
         }
 
         // Processing Pass

@@ -545,3 +545,73 @@ fn test_empty_intrinsic_type_checking() {
     assert!(res2.is_err());
     assert_eq!(res2.unwrap_err().kind, TypeErrorKind::TypeMismatch);
 }
+
+#[test]
+fn test_synthesized_is_valid_type_checking() {
+    let source_valid = "
+        type StatusPacket struct {
+            ID: int,
+            Active: byte
+        }
+        func main() {
+            mut val: StatusPacket;
+            mut is_ok := StatusPacket_IsValid(&val);
+            mut check: int := is_ok;
+        }
+    ";
+    assert!(check_program(source_valid).is_ok());
+
+    let source_invalid_type = "
+        type StatusPacket struct {
+            ID: int,
+            Active: byte
+        }
+        func main() {
+            mut val: StatusPacket;
+            mut is_ok := StatusPacket_IsValid(val); // Error: expected pointer &val, got val
+        }
+    ";
+    assert!(check_program(source_invalid_type).is_err());
+}
+
+#[test]
+fn test_codegen_synthesized_is_valid() {
+    let source = "
+        type StatusPacket struct {
+            ID: int,
+            Active: byte
+        }
+        type NestedPacket struct {
+            Status: StatusPacket,
+            Enabled: byte,
+            Value: int
+        }
+        func main() {
+            mut val: NestedPacket;
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+    );
+    let c_output = codegen.generate(&program);
+
+    // Verify that both StatusPacket_IsValid and NestedPacket_IsValid are synthesized
+    assert!(c_output.contains("int StatusPacket_IsValid(const StatusPacket* req)"));
+    assert!(c_output.contains("int NestedPacket_IsValid(const NestedPacket* req)"));
+
+    // Verify correct recursive field check in NestedPacket_IsValid
+    assert!(c_output.contains("if (!StatusPacket_IsValid(&req->Status)) return 0;"));
+    // Verify standard byte checks
+    assert!(c_output.contains("if (req->Active != 0x00 && req->Active != 0x01) return 0;"));
+    assert!(c_output.contains("if (req->Enabled != 0x00 && req->Enabled != 0x01) return 0;"));
+}

@@ -400,3 +400,37 @@ fn test_e2e_fallible_lookup_evaluation() {
     ";
     run_e2e_test(source, "1\n42\n0\n0");
 }
+
+#[test]
+fn test_e2e_is_valid_invariant_validation() {
+    let source = "
+        type StatusPacket struct {
+            ID: int,
+            Active: byte,
+            Verified: byte
+        }
+
+        func main() {
+            mut payload := os.MockPayload();
+            mut result := payload as &StatusPacket;
+
+            if result.Ok {
+                result.Val.ID = 101;
+                result.Val.Active = 1;
+                result.Val.Verified = 0;
+
+                // Case A: Valid flags
+                mut ok1 := StatusPacket_IsValid(&result.Val);
+                os.LogInt(ok1);
+
+                // Case B: Corrupted flag
+                result.Val.Active = 5;
+                mut ok2 := StatusPacket_IsValid(&result.Val);
+                os.LogInt(ok2);
+            } else {
+                os.LogInt(999);
+            }
+        }
+    ";
+    run_e2e_test(source, "1\n0");
+}
