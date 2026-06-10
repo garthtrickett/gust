@@ -1604,3 +1604,35 @@ fn test_view_invalidated_on_parent_field_mutation() {
     assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
     assert!(err.message.contains("backing origin"));
 }
+
+#[test]
+fn test_function_call_union_origins_invalidation() {
+    let source = "
+        func choose_payload(cond: int, a: []byte, b: []byte) []byte {
+            if cond {
+                return a;
+            } else {
+                return b;
+            }
+        }
+        
+        func main() {
+            mut p1 := os.MockPayload();
+            mut p2 := os.MockPayload();
+            
+            mut result := choose_payload(1, p1, p2);
+            
+            p1 = os.MockPayload(); // Reassigning/modifying one of the parent inputs!
+            
+            os.LogInt(result[0]); // Error: result is invalidated because its parent origin p1 was modified!
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
+    assert!(
+        err.message
+            .contains("cannot be used because its backing origin")
+    );
+}

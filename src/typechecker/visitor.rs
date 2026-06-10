@@ -796,23 +796,30 @@ impl TypeChecker {
                 arguments,
             } => {
                 let func_path = expression_to_string(function);
-                if let Some(sig) = self.function_registry.get(&func_path) {
+                if let Some(sig) = self.function_registry.get(&func_path).cloned() {
                     let mut call_origins = HashSet::new();
-                    let mut param_map = HashMap::new();
-                    for (i, param_name) in sig.param_names.iter().enumerate() {
-                        if i < arguments.len() {
-                            param_map.insert(
-                                param_name.clone(),
-                                self.get_expression_origins(&arguments[i]),
-                            );
+                    if self.contains_ephemeral_view(&sig.return_type) {
+                        for arg in arguments {
+                            let arg_origins = self.get_expression_origins(arg);
+                            call_origins.extend(arg_origins);
                         }
-                    }
-                    // Propagate and map formal argument placeholders to call-site values
-                    for formal_origin in &sig.return_origins {
-                        if let Some(actual_origins) = param_map.get(formal_origin) {
-                            call_origins.extend(actual_origins.clone());
-                        } else {
-                            call_origins.insert(formal_origin.clone());
+                    } else {
+                        let mut param_map = HashMap::new();
+                        for (i, param_name) in sig.param_names.iter().enumerate() {
+                            if i < arguments.len() {
+                                param_map.insert(
+                                    param_name.clone(),
+                                    self.get_expression_origins(&arguments[i]),
+                                );
+                            }
+                        }
+                        // Propagate and map formal argument placeholders to call-site values
+                        for formal_origin in &sig.return_origins {
+                            if let Some(actual_origins) = param_map.get(formal_origin) {
+                                call_origins.extend(actual_origins.clone());
+                            } else {
+                                call_origins.insert(formal_origin.clone());
+                            }
                         }
                     }
                     call_origins
