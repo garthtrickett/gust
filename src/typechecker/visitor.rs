@@ -1145,7 +1145,7 @@ impl TypeChecker {
                     }
                     Ok(Type::Byte)
                 } else if let Type::Struct(struct_name, _) = &alloc_type {
-                    if struct_name.starts_with("Vector_") {
+                    if struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_") {
                         if index_type != Type::Int && index_type != Type::Byte {
                             return Err(TypeError {
                                 kind: TypeErrorKind::InvalidIndexType,
@@ -1159,7 +1159,7 @@ impl TypeChecker {
                                     message: "Invalid Vector struct layout".to_string(),
                                 })?;
                         Ok(elem_type)
-                    } else if struct_name.starts_with("HashMap_") {
+                    } else if struct_name.starts_with("HashMap_") || struct_name.starts_with("std_HashMap_") {
                         let (k_type, v_type) = self
                             .get_hashmap_key_value_types(struct_name)
                             .ok_or_else(|| TypeError {
@@ -1369,8 +1369,8 @@ impl TypeChecker {
                         return Ok(Type::Int);
                     }
                     if let Type::Struct(struct_name, _) = &arg_type
-                        && (struct_name.starts_with("Vector_")
-                            || struct_name.starts_with("HashMap_"))
+                        && (struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_")
+                            || struct_name.starts_with("HashMap_") || struct_name.starts_with("std_HashMap_"))
                     {
                         return Ok(Type::Int);
                     }
@@ -1626,7 +1626,7 @@ impl TypeChecker {
                 if let Expression::Selector { left, right } = &**function {
                     let left_type = self.check_expression(left)?;
                     if let Type::Struct(struct_name, _) = &left_type {
-                        if struct_name.starts_with("Vector_") && right == "Push" {
+                        if (struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_")) && right == "Push" {
                             if arguments.len() != 1 {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
@@ -1652,7 +1652,7 @@ impl TypeChecker {
                             }
                             return Ok(Type::Void);
                         }
-                        if struct_name.starts_with("HashMap_") && right == "Insert" {
+                        if (struct_name.starts_with("HashMap_") || struct_name.starts_with("std_HashMap_")) && right == "Insert" {
                             if arguments.len() != 2 {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
@@ -1688,7 +1688,7 @@ impl TypeChecker {
                             }
                             return Ok(Type::Void);
                         }
-                        if struct_name.starts_with("HashMap_") && right == "Get" {
+                        if (struct_name.starts_with("HashMap_") || struct_name.starts_with("std_HashMap_")) && right == "Get" {
                             if arguments.len() != 1 {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
