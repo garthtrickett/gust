@@ -14,8 +14,14 @@ pub struct Codegen {
 }
 
 // Brand Erasure Helpers
-fn erase_struct_name(name: &str, brand: &Option<String>) -> String {
-    if let Some(b) = brand {
+fn erase_struct_name_with_registry(name: &str, brand: &Option<String>, registry: &HashMap<String, StructLayout>) -> String {
+    let mut actual_brand = brand.clone();
+    if actual_brand.is_none() {
+        if let Some(layout) = registry.get(name) {
+            actual_brand = layout.brand.clone();
+        }
+    }
+    if let Some(b) = &actual_brand {
         let suffix = format!("_{}", b);
         if name.ends_with(&suffix) {
             return name[..name.len() - suffix.len()].to_string();
@@ -24,20 +30,20 @@ fn erase_struct_name(name: &str, brand: &Option<String>) -> String {
     name.to_string()
 }
 
-fn erase_type(t: &Type) -> Type {
+fn erase_type_with_registry(t: &Type, registry: &HashMap<String, StructLayout>) -> Type { 
     match t {
         Type::Struct(name, brand) => {
-            let erased_name = erase_struct_name(name, brand);
+            let erased_name = erase_struct_name_with_registry(name, brand, registry);
             Type::Struct(erased_name, None)
         }
         Type::Index(struct_name, brand) => {
-            let erased_struct = erase_struct_name(struct_name, brand);
+            let erased_struct = erase_struct_name_with_registry(struct_name, brand, registry);
             Type::Index(erased_struct, None)
         }
-        Type::RawPointer(inner) => Type::RawPointer(Box::new(erase_type(inner))),
-        Type::Slice(inner) => Type::Slice(Box::new(erase_type(inner))),
+        Type::RawPointer(inner) => Type::RawPointer(Box::new(erase_type_with_registry(inner, registry))),
+        Type::Slice(inner) => Type::Slice(Box::new(erase_type_with_registry(inner, registry))),
         Type::Generic(name, args) => {
-            let erased_args: Vec<Type> = args.iter().map(erase_type).collect();
+            let erased_args: Vec<Type> = args.iter().map(|arg| erase_type_with_registry(arg, registry)).collect();
             Type::Generic(name.clone(), erased_args)
         }
         _ => t.clone(),
@@ -81,7 +87,7 @@ impl Codegen {
     }
 
     pub fn gen_type_aware_initializer(&self, t: &Type) -> String {
-        let erased_t = erase_type(t);
+        let erased_t = erase_type_with_registry(t, &self.struct_registry);
         match erased_t {
             Type::Int | Type::Byte => "0".to_string(),
             Type::Void => "".to_string(),
@@ -159,10 +165,10 @@ impl Codegen {
         // Step 1: Collapse struct layouts structurally via Brand Erasure
         let mut erased_struct_registry = HashMap::new();
         for (struct_name, layout) in &struct_registry {
-            let erased_name = erase_struct_name(struct_name, &layout.brand);
+            let erased_name = erase_struct_name_with_registry(struct_name, &layout.brand, &struct_registry);
             let mut erased_fields = HashMap::new();
             for (f_name, f_type) in &layout.fields {
-                erased_fields.insert(f_name.clone(), erase_type(f_type));
+                erased_fields.insert(f_name.clone(), erase_type_with_registry(f_type, &struct_registry));
             }
             erased_struct_registry.insert(
                 erased_name,
@@ -177,14 +183,14 @@ impl Codegen {
         let mut erased_symbol_table = HashMap::new();
         let original_symbol_table = symbol_table.clone();
         for (var_name, var_type) in symbol_table {
-            erased_symbol_table.insert(var_name.clone(), erase_type(&var_type));
+            erased_symbol_table.insert(var_name.clone(), erase_type_with_registry(&var_type, &struct_registry));
         }
 
         // Step 3: Align function boundaries
         let mut erased_function_registry = HashMap::new();
         for (func_name, sig) in &function_registry {
-            let erased_params: Vec<Type> = sig.params.iter().map(erase_type).collect();
-            let erased_return = erase_type(&sig.return_type);
+            let erased_params: Vec<Type> = sig.params.iter().map(|param| erase_type_with_registry(param, &struct_registry)).collect();
+            let erased_return = erase_type_with_registry(&sig.return_type, &struct_registry);
             erased_function_registry.insert(
                 func_name.clone(),
                 FunctionSignature {
@@ -549,7 +555,7 @@ impl Codegen {
     }
 
     fn get_c_type(&self, t: &Type) -> String {
-        let erased_t = erase_type(t);
+        let erased_t = erase_type_with_registry(t, &self.struct_registry);
         match erased_t {
             Type::Int => "int".to_string(),
             Type::Byte => "unsigned char".to_string(),
@@ -1188,13 +1194,9 @@ impl Codegen {
                     
                     let ctx_name = opt_ctx_name.unwrap_or_else(|| "ctx".to_string());
                     let rc_type = format!("std_Rc_{}_{}", self.get_type_ident(&val_type), ctx_name);
+                    let erased_rc_type = erase_struct_name_with_registry(&rc_type, &Some(ctx_name.clone()), &self.struct_registry);
                     
-                    let mut is_pool_ptr = false;
-                    if let Expression::Identifier(name) = &arguments[0] {
-                        if let Some(Type::RawPointer(_)) = self.symbol_table.borrow().get(name) {
-                            is_pool_ptr = true;
-                        }
-                    }
+                    let is_pool_ptr = matches!(pool_type, Type::RawPointer(_));
                     
                     let pool_ptr_expr = if is_pool_ptr {
                         pool_expr
@@ -1202,7 +1204,7 @@ impl Codegen {
                         format!("&{}", pool_expr)
                     };
                     
-                    return format!("std_RcNew({}, {}, {})", pool_ptr_expr, val_expr, rc_type);
+                    return format!("std_RcNew({}, {}, {})", pool_ptr_expr, val_expr, erased_rc_type);
                 }
 
                 // os.VectorNew / std.VectorNew

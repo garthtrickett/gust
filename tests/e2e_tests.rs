@@ -850,14 +850,14 @@ fn test_e2e_lexical_scope_tree() {
             compiler_flag: int
         }
         type Scope[ctx] struct {
-            parent: int,
+            parent: Index[Scope[ctx], ctx],
             variables: std.HashMap[str, int, ctx],
             config: std.Rc[SharedConfig, ctx]
         }
 
-        func lookup_variable(pool: *std.Pool[Scope[ctx], ctx], scope_idx: int, name: str) int {
+        func lookup_variable(pool: *std.Pool[Scope[ctx], ctx], scope_idx: Index[Scope[ctx], ctx], name: str) int {
             mut curr := scope_idx;
-            while curr != 999999 {
+            while curr != null {
                 unsafe {
                     mut lookup := (*pool)[curr].variables.Get(name);
                     if lookup.Ok {
@@ -882,7 +882,7 @@ fn test_e2e_lexical_scope_tree() {
             mut rc_conf: std.Rc[SharedConfig, ctx] := std.RcNew(&rc_pool, config);
 
             mut root: Scope[ctx];
-            root.parent = 999999;
+            root.parent = null;
             root.variables = std.HashMapNew(ctx);
             root.variables.Insert(\"global_var\", 100);
             root.variables.Insert(\"shadowed_var\", 1);
