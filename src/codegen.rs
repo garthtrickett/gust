@@ -6,6 +6,7 @@ use std::collections::HashMap;
 
 pub struct Codegen {
     symbol_table: RefCell<HashMap<String, Type>>,
+    original_symbol_table: HashMap<String, Type>,
     struct_registry: HashMap<String, StructLayout>,
     function_registry: HashMap<String, FunctionSignature>,
     enum_registry: HashMap<String, Vec<String>>, // Added enum registry to Codegen
@@ -145,6 +146,7 @@ impl Codegen {
 
         // Step 2: Normalize variable typing boundaries
         let mut erased_symbol_table = HashMap::new();
+        let original_symbol_table = symbol_table.clone();
         for (var_name, var_type) in symbol_table {
             erased_symbol_table.insert(var_name.clone(), erase_type(&var_type));
         }
@@ -167,6 +169,7 @@ impl Codegen {
 
         Codegen {
             symbol_table: RefCell::new(erased_symbol_table),
+            original_symbol_table,
             struct_registry: erased_struct_registry,
             function_registry: erased_function_registry,
             enum_registry, // Saved here
@@ -1042,13 +1045,25 @@ impl Codegen {
                         format!("{}.BaseAddress", dest_arg_str)
                     };
 
-                    let src_type = self.get_expr_type(&arguments[1]).unwrap_or(Type::Void);
-                    if let Type::Index(struct_name, Some(src_brand)) = src_type {
+                    let mut struct_name = "Node".to_string();
+                    let mut src_brand = "current_ctx".to_string();
+                    let mut found = false;
+
+                    if let Expression::Identifier(name) = &*arguments[1] {
+                        if let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name) {
+                            struct_name = s_name.clone();
+                            src_brand = brand.clone();
+                            found = true;
+                        }
+                    }
+
+                    if found {
                         let mut src_is_ptr = false;
-                        if let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(&src_brand)
-                            && **inner == Type::Arena {
+                        if let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(&src_brand) {
+                            if **inner == Type::Arena {
                                 src_is_ptr = true;
                             }
+                        }
                         let src_base = if src_is_ptr {
                             format!("{}->BaseAddress", src_brand)
                         } else {

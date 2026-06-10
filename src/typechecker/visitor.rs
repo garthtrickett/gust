@@ -1265,10 +1265,10 @@ impl TypeChecker {
                     } else if struct_name.starts_with("Pool_")
                         || struct_name.starts_with("std_Pool_")
                     {
-                        if index_type != Type::Int && index_type != Type::Byte {
+                        if index_type != Type::Int && index_type != Type::Byte && !matches!(index_type, Type::Index(_, _)) {
                             return Err(TypeError {
                                 kind: TypeErrorKind::InvalidIndexType,
-                                message: "Pool index must resolve to an Int or Byte".to_string(),
+                                message: "Pool index must resolve to an Int or Byte or Index".to_string(),
                             });
                         }
                         let elem_type =
