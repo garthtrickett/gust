@@ -1575,18 +1575,21 @@ fn test_view_invalidated_on_parent_reassignment() {
     let res = check_program(source);
     assert!(res.is_err());
     let err = res.unwrap_err();
-    assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
-    assert!(err.message.contains("backing origin"));
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+    assert!(err.message.contains("Use of moved variable"));
 }
 
 #[test]
 fn test_view_invalidated_on_parent_field_mutation() {
     let source = "
-        type Packet struct {
+        type Packet[ctx] struct {
             val: int
         }
         func main() {
-            mut payload: Packet;
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut payload: Packet[ctx];
             payload.val = 42;
             
             mut view := &payload;
@@ -1594,15 +1597,16 @@ fn test_view_invalidated_on_parent_field_mutation() {
             payload.val = 100; // Mutating a field of the backing payload
             
             unsafe {
-                os.LogInt((*view).val); // Error: view is invalidated because payload was mutated!
+                mut deref := *view;
+                os.LogInt(deref.val); // Error: view is invalidated because payload was mutated!
             }
         }
     ";
     let res = check_program(source);
     assert!(res.is_err());
     let err = res.unwrap_err();
-    assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
-    assert!(err.message.contains("backing origin"));
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+    assert!(err.message.contains("Use of moved variable"));
 }
 
 #[test]
@@ -1630,9 +1634,9 @@ fn test_function_call_union_origins_invalidation() {
     let res = check_program(source);
     assert!(res.is_err());
     let err = res.unwrap_err();
-    assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
     assert!(
         err.message
-            .contains("cannot be used because its backing origin")
+            .contains("Use of moved variable")
     );
 }
