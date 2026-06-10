@@ -1008,7 +1008,7 @@ impl TypeChecker {
                     Ok(t.clone())
                 } else {
                     if name == "null" {
-                        return Ok(Type::Index("SessionNode".to_string(), None));
+                        return Ok(Type::Index("Any".to_string(), None));
                     }
                     Err(TypeError {
                         kind: TypeErrorKind::UndefinedVariable,
