@@ -109,6 +109,21 @@ impl Codegen {
         None
     }
 
+    fn get_type_ident(&self, t: &Type) -> String {
+        match t {
+            Type::Int => "int".to_string(),
+            Type::Byte => "byte".to_string(),
+            Type::Arena => "Arena".to_string(),
+            Type::Void => "void".to_string(),
+            Type::Str => "str".to_string(),
+            Type::RawPointer(inner) => format!("{}_ptr", self.get_type_ident(inner)),
+            Type::Slice(inner) => format!("Slice_{}", self.get_type_ident(inner)),
+            Type::Struct(name, _) => name.clone(),
+            Type::Index(name, _) => format!("Index_{}", name),
+            _ => "unknown".to_string(),
+        }
+    }
+
     fn get_expr_type(&self, expr: &Expression) -> Option<Type> {
         match expr {
             Expression::Identifier(name) => self.symbol_table.borrow().get(name).cloned(),
@@ -271,10 +286,12 @@ impl Codegen {
                 }
                 c_code.push_str("};\n\n");
 
-                c_code.push_str("typedef struct {\n");
-                c_code.push_str(&format!("    {}* Val;\n", struct_name));
-                c_code.push_str("    int Ok;\n");
-                c_code.push_str(&format!("}} CastResult_{};\n\n", struct_name));
+                if !struct_name.starts_with("LookupResult_") {
+                    c_code.push_str("typedef struct {\n");
+                    c_code.push_str(&format!("    {}* Val;\n", struct_name));
+                    c_code.push_str("    int Ok;\n");
+                    c_code.push_str(&format!("}} CastResult_{};\n\n", struct_name));
+                }
             }
         }
 
@@ -920,19 +937,24 @@ impl Codegen {
                     if is_map && right == "Get" {
                         let k_str = self.gen_expression(&arguments[0]);
                         let mut is_str_key = false;
+                        let mut lookup_struct = "LookupResult_int".to_string();
                         let left_ident = expression_to_string(left);
                         if let Some(Type::Struct(struct_name, _)) =
                             self.symbol_table.borrow().get(&left_ident)
-                        {
-                            is_str_key = self
-                                .get_hashmap_key_value_types(struct_name)
-                                .map(|(k, _)| k == Type::Str)
-                                .unwrap_or(false);
-                        }
+                            && let Some((k, v)) = self.get_hashmap_key_value_types(struct_name) {
+                                is_str_key = k == Type::Str;
+                                lookup_struct = format!("LookupResult_{}", self.get_type_ident(&v));
+                            }
                         let is_str_key_str = if is_str_key { "1" } else { "0" };
                         return format!(
-                            "*os_HashMapRef(&{}, {}, {})",
-                            left_str, k_str, is_str_key_str
+                            "({{ {} res = {{0}}; res.Ok = os_HashMapContains(&{}, {}, {}); if (res.Ok) {{ res.Val = *os_HashMapRef(&{}, {}, {}); }} res; }})",
+                            lookup_struct,
+                            left_str,
+                            k_str,
+                            is_str_key_str,
+                            left_str,
+                            k_str,
+                            is_str_key_str
                         );
                     }
 

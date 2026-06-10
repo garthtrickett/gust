@@ -1328,7 +1328,21 @@ impl TypeChecker {
                                     ),
                                 });
                             }
-                            return Ok(v_type);
+                            let lookup_struct_name =
+                                format!("LookupResult_{}", self.get_type_ident(&v_type));
+                            if !self.struct_registry.contains_key(&lookup_struct_name) {
+                                let mut fields = HashMap::new();
+                                fields.insert("Ok".to_string(), Type::Int);
+                                fields.insert("Val".to_string(), v_type.clone());
+                                self.struct_registry.insert(
+                                    lookup_struct_name.clone(),
+                                    StructLayout {
+                                        brand: None,
+                                        fields,
+                                    },
+                                );
+                            }
+                            return Ok(Type::Struct(lookup_struct_name, None));
                         }
                     }
                     if left_type == Type::Arena && right == "Free" {

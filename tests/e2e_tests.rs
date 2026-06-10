@@ -375,3 +375,28 @@ fn test_e2e_file_io_evaluation() {
     ";
     run_e2e_test(source, "1\nHello from Gust Compiler File I/O!\n34");
 }
+
+#[test]
+fn test_e2e_fallible_lookup_evaluation() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            map.Insert(100, 42);
+            map.Insert(200, 84);
+
+            // Existing key
+            mut lookup1 := map.Get(100);
+            os.LogInt(lookup1.Ok);
+            os.LogInt(lookup1.Val);
+
+            // Non-existent key
+            mut lookup2 := map.Get(300);
+            os.LogInt(lookup2.Ok);
+            os.LogInt(lookup2.Val);
+        }
+    ";
+    run_e2e_test(source, "1\n42\n0\n0");
+}

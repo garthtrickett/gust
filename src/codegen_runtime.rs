@@ -222,6 +222,33 @@ static inline void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str
     return m->values + idx * val_size;
 }
 
+static inline int os_HashMapContains_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size) {
+    typedef struct {
+        os_Arena* arena;
+        int capacity;
+        char* keys;
+        int len;
+        int* occupied;
+        char* values;
+    } GenericHashMap;
+
+    GenericHashMap* m = (GenericHashMap*)map_void;
+    if (m->capacity == 0) return 0;
+
+    uint32_t h = os_hash_key(key_ptr, is_str_key);
+    int idx = h % m->capacity;
+    while (m->occupied[idx]) {
+        if (os_key_eq(m->keys + idx * key_size, key_ptr, is_str_key)) {
+            return 1;
+        }
+        idx = (idx + 1) % m->capacity;
+    }
+    return 0;
+}
+
+#define os_HashMapContains(map_ptr, key, is_str_key) \
+    os_HashMapContains_impl((map_void_ptr)(map_ptr), &((__typeof__(*(map_ptr)->keys)){key}), (is_str_key), sizeof(*(map_ptr)->keys))
+
 #define os_HashMapRef(map_ptr, key, is_str_key) \
     ((__typeof__((map_ptr)->values))os_HashMapRef_impl((map_void_ptr)(map_ptr), &((__typeof__(*(map_ptr)->keys)){key}), (is_str_key), sizeof(*(map_ptr)->keys), sizeof(*(map_ptr)->values)))
 

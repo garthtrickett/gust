@@ -1,3 +1,4 @@
+use gust_lexer::codegen::Codegen;
 use gust_lexer::lexer::Lexer;
 use gust_lexer::parser::Parser;
 use gust_lexer::typechecker::{TypeChecker, TypeError, TypeErrorKind};
@@ -432,4 +433,71 @@ fn test_file_io_type_safety_accepted() {
         }
     ";
     assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_fallible_lookup_type_checking() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            mut lookup := map.Get(42);
+
+            mut ok := lookup.Ok;
+            mut val := lookup.Val;
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_lookup_result_c_codegen_emission() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            mut lookup := map.Get(42);
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+    );
+    let c_output = codegen.generate(&program);
+
+    // Verify that LookupResult_int is defined as a struct
+    assert!(c_output.contains("struct LookupResult_int"));
+    // Verify that it contains Ok and Val fields
+    assert!(c_output.contains("int Ok;"));
+    assert!(c_output.contains("int Val;"));
+    // Verify that os_HashMapContains is referenced/generated
+    assert!(c_output.contains("os_HashMapContains"));
+}
+
+#[test]
+fn test_tuple_assignment_rejected() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            // Tuple assignments are strictly not supported by Gust syntax
+            val, ok := map.Get(42); 
+        }
+    ";
+    // Parsing/checking this program should fail to typecheck/compile due to invalid syntactic form
+    assert!(check_program(source).is_err());
 }
