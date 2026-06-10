@@ -26,6 +26,33 @@ fn strip_std_prefix(s: &str) -> &str {
     }
 }
 
+// Brand crossing rule helper: checks if two types are structurally identical
+// but differ only by their value-brands.
+pub fn types_match_except_brand(expected: &Type, actual: &Type) -> bool {
+    match (expected, actual) {
+        (Type::Index(e_struct, _), Type::Index(a_struct, _)) => e_struct == a_struct,
+        (Type::Struct(e_struct, _), Type::Struct(a_struct, _)) => e_struct == a_struct,
+        (Type::RawPointer(e_inner), Type::RawPointer(a_inner)) => {
+            types_match_except_brand(e_inner, a_inner)
+        }
+        (Type::Slice(e_inner), Type::Slice(a_inner)) => {
+            types_match_except_brand(e_inner, a_inner)
+        }
+        (Type::Generic(e_name, e_args), Type::Generic(a_name, a_args)) => {
+            if e_name != a_name || e_args.len() != a_args.len() {
+                return false;
+            }
+            for i in 0..e_args.len() {
+                if !types_match_except_brand(&e_args[i], &a_args[i]) {
+                    return false;
+                }
+            }
+            true
+        }
+        _ => types_match(expected, actual),
+    } 
+}
+
 pub fn types_match(expected: &Type, actual: &Type) -> bool {
     match (expected, actual) {
         (Type::Int, Type::Byte) | (Type::Byte, Type::Int) => true,

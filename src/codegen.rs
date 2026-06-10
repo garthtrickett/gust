@@ -1019,6 +1019,57 @@ impl Codegen {
                     return format!("os_ArenaAlloc(&{}, sizeof({}))", arg_str, size_str);
                 }
 
+                if func_path == "std.Clone" || func_path == "std_Clone" {
+                    let dest_arg_str = self.gen_expression(&arguments[0]);
+                    let src_arg_str = self.gen_expression(&arguments[1]);
+                    
+                    let mut dest_is_ptr = false;
+                    if let Expression::Identifier(name) = &arguments[0]
+                        && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
+                        && **inner == Type::Arena
+                    {
+                        dest_is_ptr = true;
+                    }
+                    let dest_arena_expr = if dest_is_ptr {
+                        dest_arg_str.clone()
+                    } else {
+                        format!("&{}", dest_arg_str)
+                    };
+                    let dest_base = if dest_is_ptr {
+                        format!("{}->BaseAddress", dest_arg_str)
+                    } else {
+                        format!("{}.BaseAddress", dest_arg_str)
+                    };
+
+                    let src_type = self.get_expr_type(&arguments[1]).unwrap_or(Type::Void);
+                    if let Type::Index(struct_name, Some(src_brand)) = src_type {
+                        let mut src_is_ptr = false;
+                        if let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(&src_brand) {
+                            if **inner == Type::Arena {
+                                src_is_ptr = true;
+                            }
+                        }
+                        let src_base = if src_is_ptr {
+                            format!("{}->BaseAddress", src_brand)
+                        } else {
+                            format!("{}.BaseAddress", src_brand)
+                        };
+                        
+                        return format!(
+                            "({{ int _src_idx = {}; int _dest_idx = os_ArenaAlloc({}, sizeof({})); *(struct {}*)((char*){} + _dest_idx) = *(struct {}*)((char*){} + _src_idx); _dest_idx; }})",
+                            src_arg_str,
+                            dest_arena_expr,
+                            struct_name,
+                            struct_name,
+                            dest_base,
+                            struct_name,
+                            src_base
+                        );
+                    } else {
+                        return src_arg_str;
+                    }
+                }
+
                 // os.VectorNew / std.VectorNew
                 if func_path == "os.VectorNew"
                     || func_path == "os_VectorNew"

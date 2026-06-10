@@ -152,6 +152,26 @@ impl TypeChecker {
         );
 
         self.function_registry.insert(
+            "std.Clone".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["dest_ctx".to_string(), "src_val".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::Index("Any".to_string(), None)],
+                return_type: Type::Index("Any".to_string(), None),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "std_Clone".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["dest_ctx".to_string(), "src_val".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::Index("Any".to_string(), None)],
+                return_type: Type::Index("Any".to_string(), None),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
             "std.PoolNew".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["ctx".to_string()],
@@ -1448,6 +1468,33 @@ impl TypeChecker {
                             arg_type
                         ),
                     });
+                }
+
+                if func_path == "std.Clone" || func_path == "std_Clone" {
+                    if arguments.len() != 2 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: std.Clone expects exactly 2 arguments (destination_allocator, source_value)".to_string(),
+                        });
+                    }
+                    let dest_type = self.check_expression(&arguments[0])?;
+                    if dest_type != Type::Arena
+                        && !matches!(dest_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    { 
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: "Semantic Error: std.Clone first argument must be an Arena allocator".to_string(),
+                        });
+                    }
+                    let src_type = self.check_expression(&arguments[1])?;
+                    let dest_brand = expression_to_string(&arguments[0]);
+                    let src_brand = self.get_type_brand(&src_type).unwrap_or_else(|| "Any".to_string());
+                    
+                    let mut brand_map = HashMap::new();
+                    brand_map.insert(src_brand, dest_brand);
+                    
+                    let cloned_type = self.substitute_brand_names(&src_type, &brand_map);
+                    return Ok(cloned_type);
                 }
 
                 if func_path == "os.VectorNew" || func_path == "std.VectorNew" {

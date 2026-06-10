@@ -1845,3 +1845,46 @@ fn test_pool_type_checking_invalid() {
     let err2 = res2.unwrap_err();
     assert_eq!(err2.kind, TypeErrorKind::TypeMismatch);
 }
+
+#[test]
+fn test_brand_crossing_cloning() {
+    let source = "
+        type Node[ctx] struct { val: int }
+        func main() {
+            mut ctx1 := os.Arena.New();
+            defer ctx1.Free();
+            mut ctx2 := os.Arena.New();
+            defer ctx2.Free();
+
+            mut n1: Index[Node, ctx1] := os.ArenaAlloc(ctx1);
+            ctx1[n1].val = 42;
+
+            // Direct assignment should still fail (this would fail if uncommented)
+            // mut n2_err: Index[Node, ctx2] := n1; 
+
+            // Cloning with std.Clone should succeed!
+            mut n2: Index[Node, ctx2] := std.Clone(ctx2, n1);
+            ctx2[n2].val = 100;
+        }
+    ";
+    assert!(check_program(source).is_ok());
+
+    let source_invalid = "
+        type Node[ctx] struct { val: int }
+        func main() {
+            mut ctx1 := os.Arena.New();
+            defer ctx1.Free();
+            mut ctx2 := os.Arena.New();
+            defer ctx2.Free();
+
+            mut n1: Index[Node, ctx1] := os.ArenaAlloc(ctx1);
+            
+            // Direct assignment across different brands must be rejected!
+            mut n2: Index[Node, ctx2] := n1; 
+        }
+    ";
+    let res = check_program(source_invalid);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+}
