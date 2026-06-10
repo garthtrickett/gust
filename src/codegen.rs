@@ -687,7 +687,10 @@ impl Codegen {
                     val.len()
                 )
             }
-            Expression::Move(inner_expr) => self.gen_expression(inner_expr),
+            Expression::Dereference(inner) => {
+                let inner_str = self.gen_expression(inner);
+                format!("*({})", inner_str)
+            }
             Expression::Take(inner_expr) => {
                 if let Expression::Identifier(name) = &**inner_expr {
                     let var_type = self
