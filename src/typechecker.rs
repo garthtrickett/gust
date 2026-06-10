@@ -155,6 +155,13 @@ impl TypeChecker {
             "Vector".to_string(),
             StructTemplate {
                 generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: vector_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.Vector".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
                 fields: vector_fields,
             },
         );
@@ -188,6 +195,13 @@ impl TypeChecker {
         ];
         struct_templates.insert(
             "HashMap".to_string(),
+            StructTemplate {
+                generics: vec!["K".to_string(), "V".to_string(), "ctx".to_string()],
+                fields: hashmap_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.HashMap".to_string(),
             StructTemplate {
                 generics: vec!["K".to_string(), "V".to_string(), "ctx".to_string()],
                 fields: hashmap_fields,

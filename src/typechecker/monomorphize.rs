@@ -266,7 +266,7 @@ impl TypeChecker {
     }
 
     pub(crate) fn get_type_ident(&self, t: &Type) -> String {
-        match t {
+        let base = match t {
             Type::Int => "int".to_string(),
             Type::Byte => "byte".to_string(),
             Type::Arena => "Arena".to_string(),
@@ -277,12 +277,14 @@ impl TypeChecker {
             Type::Struct(name, _) => name.clone(),
             Type::Index(name, _) => format!("Index_{}", name),
             _ => "unknown".to_string(),
-        }
+        };
+        base.replace(".", "_")
     }
 
     pub(crate) fn get_monomorphized_name(&self, template_name: &str, args: &[Type]) -> String {
         let arg_names: Vec<String> = args.iter().map(|arg| self.get_type_ident(arg)).collect();
-        format!("{}_{}", template_name, arg_names.join("_"))
+        let name = format!("{}_{}", template_name, arg_names.join("_"));
+        name.replace(".", "_")
     }
 
     pub(crate) fn substitute_generics(&self, t: &Type, map: &HashMap<String, Type>) -> Type {

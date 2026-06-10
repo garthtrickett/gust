@@ -16,6 +16,16 @@ pub enum Type {
     Str, // Added for String Views Option 2
 }
 
+fn strip_std_prefix(s: &str) -> &str {
+    if s.starts_with("std_") {
+        &s[4..]
+    } else if s.starts_with("std.") {
+        &s[4..]
+    } else {
+        s
+    }
+}
+
 pub fn types_match(expected: &Type, actual: &Type) -> bool {
     match (expected, actual) {
         (Type::Int, Type::Byte) | (Type::Byte, Type::Int) => true,
@@ -33,7 +43,9 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             true
         }
         (Type::Index(e_struct, e_brand), Type::Index(a_struct, a_brand)) => {
-            if e_struct != a_struct && e_struct != "Any" && a_struct != "Any" {
+            let e_clean = strip_std_prefix(e_struct);
+            let a_clean = strip_std_prefix(a_struct);
+            if e_clean != a_clean && e_clean != "Any" && a_clean != "Any" {
                 return false;
             }
             if e_brand.is_none() || a_brand.is_none() {
@@ -42,13 +54,15 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             e_brand == a_brand
         }
         (Type::Struct(e_struct, e_brand), Type::Struct(a_struct, a_brand)) => {
-            if e_struct != a_struct {
-                let is_vector_any = (e_struct.starts_with("Vector_")
-                    && a_struct.starts_with("Vector_Any"))
-                    || (a_struct.starts_with("Vector_") && e_struct.starts_with("Vector_Any"));
-                let is_hashmap_any = (e_struct.starts_with("HashMap_")
-                    && a_struct.starts_with("HashMap_Any"))
-                    || (a_struct.starts_with("HashMap_") && e_struct.starts_with("HashMap_Any"));
+            let e_clean = strip_std_prefix(e_struct);
+            let a_clean = strip_std_prefix(a_struct);
+            if e_clean != a_clean {
+                let is_vector_any = (e_clean.starts_with("Vector_")
+                    && a_clean.starts_with("Vector_Any"))
+                    || (a_clean.starts_with("Vector_") && e_clean.starts_with("Vector_Any"));
+                let is_hashmap_any = (e_clean.starts_with("HashMap_")
+                    && a_clean.starts_with("HashMap_Any"))
+                    || (a_clean.starts_with("HashMap_") && e_clean.starts_with("HashMap_Any"));
                 if !is_vector_any && !is_hashmap_any {
                     return false;
                 }

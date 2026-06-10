@@ -1751,3 +1751,17 @@ fn test_function_call_union_origins_invalidation() {
             .contains("Use of moved variable")
     );
 }
+
+#[test]
+fn test_namespaced_monomorphization() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut v: std.Vector[int, ctx] := os.VectorNew(ctx);
+            mut m: std.HashMap[int, int, ctx] := os.HashMapNew(ctx);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
