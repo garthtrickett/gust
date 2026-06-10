@@ -44,6 +44,11 @@ fn erase_type(t: &Type) -> Type {
 }
 
 impl Codegen {
+    pub(crate) fn get_monomorphized_name(&self, template_name: &str, args: &[Type]) -> String {
+        let arg_names: Vec<String> = args.iter().map(|arg| self.get_type_ident(arg)).collect();
+        format!("{}_{}", template_name, arg_names.join("_"))
+    }
+
     fn is_linear(&self, t: &Type) -> bool {
         let mut visited = std::collections::HashSet::new();
         self.is_linear_impl(t, &mut visited)
