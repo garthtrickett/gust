@@ -409,7 +409,7 @@ static inline void std_PoolFree_impl(void* pool_void, int index) {
 #define std_GraphAddNode(graph_ptr, val) ({ \
     __typeof__(*(graph_ptr)->nodes.data) _g_node; \
     _g_node.value = (val); \
-    _g_node.edges = (struct Vector_int){ .data = NULL, .len = 0, .capacity = 0, .arena = (graph_ptr)->nodes.arena }; \
+    _g_node.edges = (__typeof__(_g_node.edges)){ .data = NULL, .len = 0, .capacity = 0, .arena = (graph_ptr)->nodes.arena }; \
     std_PoolAlloc(&(graph_ptr)->nodes, _g_node); \
 })
 

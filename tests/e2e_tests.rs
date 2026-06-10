@@ -858,11 +858,13 @@ fn test_e2e_lexical_scope_tree() {
         func lookup_variable(pool: *std.Pool[Scope[ctx], ctx], scope_idx: int, name: str) int {
             mut curr := scope_idx;
             while curr != 999999 {
-                mut lookup := (*pool)[curr].variables.Get(name);
-                if lookup.Ok {
-                    return lookup.Val;
+                unsafe {
+                    mut lookup := (*pool)[curr].variables.Get(name);
+                    if lookup.Ok {
+                        return lookup.Val;
+                    }
+                    curr = (*pool)[curr].parent;
                 }
-                curr = (*pool)[curr].parent;
             }
             return 0 - 1;
         }
