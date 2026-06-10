@@ -290,7 +290,29 @@ impl TypeChecker {
     pub(crate) fn substitute_generics(&self, t: &Type, map: &HashMap<String, Type>) -> Type {
         match t {
             Type::Struct(name, brand) => {
-                if let Some(substituted) = map.get(name) {
+                let mut new_name = name.clone();
+                if new_name == "RcNode_T" || new_name == "std_RcNode_T" {
+                    if let Some(substituted_t) = map.get("T") {
+                        let t_ident = self.get_type_ident(substituted_t);
+                        new_name = if name == "RcNode_T" {
+                            format!("RcNode_{}", t_ident)
+                        } else {
+                            format!("std_RcNode_{}", t_ident)
+            };
+                    }
+                } else if new_name == "GraphNode_T_ctx" || new_name == "std_GraphNode_T_ctx" {
+                    if let Some(substituted_t) = map.get("T")
+                        && let Some(substituted_ctx) = map.get("ctx") {
+                            let t_ident = self.get_type_ident(substituted_t);
+                            let ctx_ident = self.get_type_ident(substituted_ctx);
+                            new_name = if name == "GraphNode_T_ctx" {
+                                format!("GraphNode_{}_{}", t_ident, ctx_ident)
+                            } else {
+                                format!("std_GraphNode_{}_{}", t_ident, ctx_ident)
+                            };
+                        }
+                }
+                if let Some(substituted) = map.get(&new_name) {
                     substituted.clone()
                 } else {
                     let new_brand = if let Some(b) = brand {
@@ -302,17 +324,39 @@ impl TypeChecker {
                     } else {
                         None
                     };
-                    Type::Struct(name.clone(), new_brand)
+                    Type::Struct(new_name, new_brand)
                 }
             }
             Type::Index(struct_name, brand) => {
-                let new_struct = if let Some(substituted) = map.get(struct_name) {
+                let mut new_struct = struct_name.clone();
+                if new_struct == "RcNode_T" || new_struct == "std_RcNode_T" {
+                    if let Some(substituted_t) = map.get("T") {
+                        let t_ident = self.get_type_ident(substituted_t);
+                        new_struct = if struct_name == "RcNode_T" {
+                            format!("RcNode_{}", t_ident)
+                        } else {
+                            format!("std_RcNode_{}", t_ident)
+                        };
+                    }
+                } else if new_struct == "GraphNode_T_ctx" || new_struct == "std_GraphNode_T_ctx" {
+                    if let Some(substituted_t) = map.get("T")
+                        && let Some(substituted_ctx) = map.get("ctx") {
+                            let t_ident = self.get_type_ident(substituted_t);
+                            let ctx_ident = self.get_type_ident(substituted_ctx);
+                            new_struct = if struct_name == "GraphNode_T_ctx" {
+                                format!("GraphNode_{}_{}", t_ident, ctx_ident)
+                            } else {
+                                format!("std_GraphNode_{}_{}", t_ident, ctx_ident)
+                            };
+                        }
+                }
+                let final_struct = if let Some(substituted) = map.get(&new_struct) {
                     match substituted {
                         Type::Struct(name, _) => name.clone(),
-                        _ => struct_name.clone(),
+                        _ => new_struct.clone(),
                     }
                 } else {
-                    struct_name.clone()
+                    new_struct
                 };
 
                 let new_brand = if let Some(b) = brand {
@@ -324,12 +368,19 @@ impl TypeChecker {
                 } else {
                     None
                 };
-                Type::Index(new_struct, new_brand)
+                Type::Index(final_struct, new_brand)
             }
             Type::RawPointer(inner) => {
                 Type::RawPointer(Box::new(self.substitute_generics(inner, map)))
             }
             Type::Slice(inner) => Type::Slice(Box::new(self.substitute_generics(inner, map))),
+            Type::Generic(name, args) => {
+                let new_args: Vec<Type> = args
+                    .iter()
+                    .map(|arg| self.substitute_generics(arg, map))
+                    .collect();
+                Type::Generic(name.clone(), new_args)
+            }
             _ => t.clone(),
         }
     }
