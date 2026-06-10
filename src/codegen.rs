@@ -152,6 +152,7 @@ impl Codegen {
             Type::Slice(inner) => format!("Slice_{}", self.get_type_ident(inner)),
             Type::Struct(name, _) => name.clone(),
             Type::Index(name, _) => format!("Index_{}", name),
+            Type::Generic(name, args) => self.get_monomorphized_name(name, args),
             _ => "unknown".to_string(),
         }
     }
@@ -429,7 +430,7 @@ impl Codegen {
             Type::Index(_, _) => "int".to_string(),
             Type::Struct(name, _) => name.clone(),
             Type::RawPointer(inner) => format!("{}*", self.get_c_type(&inner)),
-            Type::Generic(name, _) => name.clone(),
+            Type::Generic(name, args) => self.get_monomorphized_name(&name, &args),
             Type::Str => "Slice_unsigned_char".to_string(),
         }
     }
