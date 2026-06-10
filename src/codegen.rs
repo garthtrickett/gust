@@ -16,11 +16,10 @@ pub struct Codegen {
 // Brand Erasure Helpers
 fn erase_struct_name_with_registry(name: &str, brand: &Option<String>, registry: &HashMap<String, StructLayout>) -> String {
     let mut actual_brand = brand.clone();
-    if actual_brand.is_none() {
-        if let Some(layout) = registry.get(name) {
+    if actual_brand.is_none()
+        && let Some(layout) = registry.get(name) {
             actual_brand = layout.brand.clone();
         }
-    }
     if let Some(b) = &actual_brand {
         let suffix = format!("_{}", b);
         if name.ends_with(&suffix) {
@@ -57,15 +56,13 @@ fn get_by_value_dependencies(
 ) {
     match t {
         Type::Struct(name, _) => {
-            if struct_registry.contains_key(name) {
-                if deps.insert(name.clone()) {
-                    if let Some(layout) = struct_registry.get(name) {
+            if struct_registry.contains_key(name)
+                && deps.insert(name.clone())
+                    && let Some(layout) = struct_registry.get(name) {
                         for field_type in layout.fields.values() {
                             get_by_value_dependencies(field_type, deps, struct_registry);
                         }
                     }
-                }
-            }
         }
         Type::Generic(_, args) => {
             for arg in args {
@@ -1171,23 +1168,21 @@ impl Codegen {
                     
                     let mut opt_ctx_name = None;
                     let target_pool_type = if let Type::RawPointer(inner) = &pool_type {
-                        (&**inner).clone()
+                        (**inner).clone()
                     } else {
                         pool_type.clone()
                     };
                     
                     match &target_pool_type {
-                        Type::Struct(struct_name, Some(ctx_name)) => {
-                            if struct_name.starts_with("Pool_") || struct_name.starts_with("std_Pool_") {
+                        Type::Struct(struct_name, Some(ctx_name))
+                            if (struct_name.starts_with("Pool_") || struct_name.starts_with("std_Pool_")) => {
                                 opt_ctx_name = Some(ctx_name.clone());
                             }
-                        }
                         Type::Generic(pool_name, pool_args) => {
-                            if (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2 {
-                                if let Type::Struct(ctx_name, _) = &pool_args[1] {
+                            if (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2
+                                && let Type::Struct(ctx_name, _) = &pool_args[1] {
                                     opt_ctx_name = Some(ctx_name.clone());
                                 }
-                            }
                         }
                         _ => {}
                     }

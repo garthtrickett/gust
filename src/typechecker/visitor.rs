@@ -1648,17 +1648,15 @@ impl TypeChecker {
                     let mut opt_ctx_name = None;
                     if let Type::RawPointer(pool_inner) = &pool_type {
                         match &**pool_inner {
-                            Type::Struct(struct_name, Some(ctx_name)) => {
-                                if struct_name.starts_with("Pool_") || struct_name.starts_with("std_Pool_") {
+                            Type::Struct(struct_name, Some(ctx_name))
+                                if (struct_name.starts_with("Pool_") || struct_name.starts_with("std_Pool_")) => {
                                     opt_ctx_name = Some(ctx_name.clone());
                                 }
-                            }
                             Type::Generic(pool_name, pool_args) => {
-                                if (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2 {
-                                    if let Type::Struct(ctx_name, _) = &pool_args[1] {
+                                if (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2
+                                    && let Type::Struct(ctx_name, _) = &pool_args[1] {
                                         opt_ctx_name = Some(ctx_name.clone());
                                     }
-                                }
                             }
                             _ => {}
                         } 

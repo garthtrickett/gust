@@ -262,11 +262,10 @@ impl TypeChecker {
 
         let mut brand = None;
         for (generic_name, arg) in template.generics.iter().zip(args.iter()) {
-            if generic_name == "ctx" || generic_name == "connCtx" {
-                if let Type::Struct(brand_name, _) = arg {
+            if (generic_name == "ctx" || generic_name == "connCtx")
+                && let Type::Struct(brand_name, _) = arg {
                     brand = Some(brand_name.clone());
                 }
-            }
         }
 
         for arg in args {
