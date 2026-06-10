@@ -49,6 +49,35 @@ impl Codegen {
         format!("{}_{}", template_name, arg_names.join("_"))
     }
 
+    pub fn gen_type_aware_initializer(&self, t: &Type) -> String {
+        let erased_t = erase_type(t);
+        match erased_t {
+            Type::Int | Type::Byte => "0".to_string(),
+            Type::Void => "".to_string(),
+            Type::Arena => "{0}".to_string(),
+            Type::RawPointer(_) => "NULL".to_string(),
+            Type::Str | Type::Slice(_) | Type::ByteSlice => "{ NULL, 0 }".to_string(),
+            Type::Index(_, _) => "0xFFFFFFFF".to_string(),
+            Type::Struct(name, _) => {
+                if let Some(layout) = self.struct_registry.get(&name) {
+                    let mut fields_init = Vec::new();
+                    let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
+                    sorted_fields.sort_by(|a, b| a.0.cmp(b.0));
+                    for (field_name, field_type) in sorted_fields {
+                        fields_init.push(format!(".{} = {}", field_name, self.gen_type_aware_initializer(field_type)));
+                    }
+                    format!("(({}){{ {} }})", name, fields_init.join(", "))
+                } else {
+                    "{0}".to_string}
+                }
+            }
+            Type::Generic(name, args) => {
+                let concrete_name = self.get_monomorphized_name(&name, &args);
+                self.gen_type_aware_initializer(&Type::Struct(concrete_name, None))
+            }
+        }
+    }
+
     fn is_linear(&self, t: &Type) -> bool {
         let mut visited = std::collections::HashSet::new();
         self.is_linear_impl(t, &mut visited)

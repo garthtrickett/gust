@@ -1354,3 +1354,36 @@ fn test_monomorphized_take_codegen() {
     assert!(c_code.contains("memset(&l1"));
     assert!(!c_code.contains("memset(&p1"));
 }
+
+#[test]
+fn test_sentinel_null_codegen_structure() {
+    let source = "
+        type Node struct {
+            val: int,
+            ptr: *int,
+            next: Index[Node, ctx]
+        }
+        func main() {
+            mut n: Node;
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    assert!(checker.check_program(&program).is_ok());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+    );
+    let init_str = codegen.gen_type_aware_initializer(&Type::Struct("Node".to_string(), None));
+    
+    // Assert that the generated initializer contains correct field-by-field initializations
+    assert!(init_str.contains(".next = 0xFFFFFFFF"));
+    assert!(init_str.contains(".ptr = NULL"));
+    assert!(init_str.contains(".val = 0"));
+    assert_eq!(init_str, "((Node){ .next = 0xFFFFFFFF, .ptr = NULL, .val = 0 })");
+}
