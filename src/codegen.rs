@@ -1,4 +1,5 @@
 use crate::ast::{BlockStatement, Expression, Program, Statement};
+use crate::codegen_runtime;
 use crate::typechecker::{FunctionSignature, StructLayout, Type, expression_to_string};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -114,9 +115,10 @@ impl Codegen {
             Expression::Selector { left, right } => {
                 let left_type = self.get_expr_type(left)?;
                 if let Type::Struct(struct_name, _) = left_type
-                    && let Some(layout) = self.struct_registry.get(&struct_name) {
-                        return layout.fields.get(right).cloned();
-                    }
+                    && let Some(layout) = self.struct_registry.get(&struct_name)
+                {
+                    return layout.fields.get(right).cloned();
+                }
                 None
             }
             Expression::IndexAccess { allocator, .. } => {
@@ -127,14 +129,16 @@ impl Codegen {
                 if let Type::Struct(struct_name, _) = alloc_type {
                     if struct_name.starts_with("Vector_") {
                         if let Some(layout) = self.struct_registry.get(&struct_name)
-                            && let Some(Type::RawPointer(inner)) = layout.fields.get("data") {
-                                return Some((**inner).clone());
-                            }
+                            && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
+                        {
+                            return Some((**inner).clone());
+                        }
                     } else if struct_name.starts_with("HashMap_")
                         && let Some(layout) = self.struct_registry.get(&struct_name)
-                            && let Some(Type::RawPointer(inner)) = layout.fields.get("values") {
-                                return Some((**inner).clone());
-                            }
+                        && let Some(Type::RawPointer(inner)) = layout.fields.get("values")
+                    {
+                        return Some((**inner).clone());
+                    }
                 }
                 None
             }
@@ -145,57 +149,8 @@ impl Codegen {
     pub fn generate(&self, program: &Program) -> String {
         let mut c_code = String::new();
 
-        c_code.push_str("#include <stdio.h>\n");
-        c_code.push_str("#include <stdlib.h>\n");
-        c_code.push_str("#include <stdint.h>\n");
-        c_code.push_str("#include <string.h>\n\n");
-
-        c_code.push_str("// ====================================================\n");
-        c_code.push_str("// GUST PRODUCTION-GRADE BUMP ALLOCATOR RUNTIME\n");
-        c_code.push_str("// ====================================================\n");
-        c_code.push_str("typedef struct {\n");
-        c_code.push_str("    void* BaseAddress;\n");
-        c_code.push_str("    size_t Offset;\n");
-        c_code.push_str("    size_t Capacity;\n");
-        c_code.push_str("} os_Arena;\n\n");
-
-        c_code.push_str("os_Arena os_Arena_New() {\n");
-        c_code.push_str("    os_Arena arena;\n");
-        c_code.push_str("    arena.Capacity = 1024; // 1KB Initial Arena Capacity\n");
-        c_code.push_str("    arena.BaseAddress = malloc(arena.Capacity);\n");
-        c_code.push_str("    arena.Offset = 0;\n");
-        c_code.push_str("    return arena;\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str("void os_Arena_Free(os_Arena* arena) {\n");
-        c_code.push_str("    if (arena->BaseAddress != NULL) {\n");
-        c_code.push_str("        free(arena->BaseAddress);\n");
-        c_code.push_str("        arena->BaseAddress = NULL;\n");
-        c_code.push_str("    }\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str("// Standard Hardware-aligned Bump Allocation [1]\n");
-        c_code.push_str("int os_ArenaAlloc(os_Arena* arena, size_t size) {\n");
-        c_code.push_str(
-            "    // Round up size to 8-byte boundary to satisfy hardware alignments [1]\n",
-        );
-        c_code.push_str("    size = (size + 7) & ~7;\n");
-        c_code.push_str("    if (arena->Offset + size > arena->Capacity) {\n");
-        c_code.push_str("        arena->Capacity *= 2;\n");
-        c_code.push_str(
-            "        arena->BaseAddress = realloc(arena->BaseAddress, arena->Capacity);\n",
-        );
-        c_code.push_str("    }\n");
-        c_code.push_str("    size_t assigned_offset = arena->Offset;\n");
-        c_code.push_str("    arena->Offset += size;\n");
-        c_code.push_str("    return (int)assigned_offset;\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str("void os_LogInt(int val) {\n");
-        c_code.push_str("    printf(\"%d\\n\", val);\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str("typedef void* map_void_ptr;\n\n");
+        c_code.push_str(codegen_runtime::CORE_HEADERS);
+        c_code.push_str(codegen_runtime::ARENA_RUNTIME);
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// FORWARD DECLARATIONS\n");
@@ -242,205 +197,9 @@ impl Codegen {
             c_code.push_str(&format!("}} Slice_{};\n\n", elem_ident));
         }
 
-        c_code.push_str("Slice_unsigned_char os_MockPayload() {\n");
-        c_code.push_str("    Slice_unsigned_char slice;\n");
-        c_code.push_str("    slice.data = malloc(1024);\n");
-        c_code.push_str("    slice.len = 1024;\n");
-        c_code.push_str("    ((int*)slice.data)[0] = 42;\n");
-        c_code.push_str("    ((int*)slice.data)[1] = 42;\n");
-        c_code.push_str("    ((int*)slice.data)[2] = 42;\n");
-        c_code.push_str("    return slice;\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str("void os_LogStr(Slice_unsigned_char s) {\n");
-        c_code.push_str("    printf(\"%.*s\\n\", s.len, (char*)s.data);\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str("// ====================================================\n");
-        c_code.push_str("// GUST NATIVE FILE I/O RUNTIME\n");
-        c_code.push_str("// ====================================================\n");
-        c_code.push_str(
-            "Slice_unsigned_char os_ReadFile(os_Arena* arena, Slice_unsigned_char path) {\n",
-        );
-        c_code.push_str("    Slice_unsigned_char result;\n");
-        c_code.push_str("    result.data = NULL;\n");
-        c_code.push_str("    result.len = 0;\n\n");
-        c_code.push_str("    char* path_c = malloc(path.len + 1);\n");
-        c_code.push_str("    memcpy(path_c, path.data, path.len);\n");
-        c_code.push_str("    path_c[path.len] = '\\0';\n\n");
-        c_code.push_str("    FILE* f = fopen(path_c, \"rb\");\n");
-        c_code.push_str("    free(path_c);\n");
-        c_code.push_str("    if (f == NULL) {\n");
-        c_code.push_str("        return result;\n");
-        c_code.push_str("    }\n\n");
-        c_code.push_str("    fseek(f, 0, SEEK_END);\n");
-        c_code.push_str("    long size = ftell(f);\n");
-        c_code.push_str("    fseek(f, 0, SEEK_SET);\n");
-        c_code.push_str("    if (size < 0) {\n");
-        c_code.push_str("        fclose(f);\n");
-        c_code.push_str("        return result;\n");
-        c_code.push_str("    }\n\n");
-        c_code.push_str("    int offset = os_ArenaAlloc(arena, size);\n");
-        c_code.push_str("    char* buffer = (char*)arena->BaseAddress + offset;\n");
-        c_code.push_str("    size_t read_bytes = fread(buffer, 1, size, f);\n");
-        c_code.push_str("    fclose(f);\n\n");
-        c_code.push_str("    result.data = (unsigned char*)buffer;\n");
-        c_code.push_str("    result.len = (int)read_bytes;\n");
-        c_code.push_str("    return result;\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str(
-            "int os_WriteFile(Slice_unsigned_char path, Slice_unsigned_char contents) {\n",
-        );
-        c_code.push_str("    char* path_c = malloc(path.len + 1);\n");
-        c_code.push_str("    memcpy(path_c, path.data, path.len);\n");
-        c_code.push_str("    path_c[path.len] = '\\0';\n\n");
-        c_code.push_str("    FILE* f = fopen(path_c, \"wb\");\n");
-        c_code.push_str("    free(path_c);\n");
-        c_code.push_str("    if (f == NULL) {\n");
-        c_code.push_str("        return 0;\n");
-        c_code.push_str("    }\n\n");
-        c_code.push_str("    size_t written = fwrite(contents.data, 1, contents.len, f);\n");
-        c_code.push_str("    fclose(f);\n");
-        c_code.push_str("    return written == (size_t)contents.len ? 1 : 0;\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str("// ====================================================\n");
-        c_code.push_str("// GUST NATIVE COLLECTIONS RUNTIME (VECTOR & HASHMAP)\n");
-        c_code.push_str("// ====================================================\n");
-
-        c_code.push_str("static inline uint32_t os_hash_key(void* key_ptr, int is_str_key) {\n");
-        c_code.push_str("    if (is_str_key) {\n");
-        c_code.push_str("        Slice_unsigned_char s = *(Slice_unsigned_char*)key_ptr;\n");
-        c_code.push_str("        uint32_t hash = 5381;\n");
-        c_code.push_str("        for (int i = 0; i < s.len; i++) {\n");
-        c_code.push_str("            hash = ((hash << 5) + hash) + s.data[i];\n");
-        c_code.push_str("        }\n");
-        c_code.push_str("        return hash;\n");
-        c_code.push_str("    } else {\n");
-        c_code.push_str("        return (uint32_t)(*(int*)key_ptr);\n");
-        c_code.push_str("    }\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str(
-            "static inline int os_key_eq(void* k1_ptr, void* k2_ptr, int is_str_key) {\n",
-        );
-        c_code.push_str("    if (is_str_key) {\n");
-        c_code.push_str("        Slice_unsigned_char s1 = *(Slice_unsigned_char*)k1_ptr;\n");
-        c_code.push_str("        Slice_unsigned_char s2 = *(Slice_unsigned_char*)k2_ptr;\n");
-        c_code.push_str("        if (s1.len != s2.len) return 0;\n");
-        c_code.push_str("        for (int i = 0; i < s1.len; i++) {\n");
-        c_code.push_str("            if (s1.data[i] != s2.data[i]) return 0;\n");
-        c_code.push_str("        }\n");
-        c_code.push_str("        return 1;\n");
-        c_code.push_str("    } else {\n");
-        c_code.push_str("        return *(int*)k1_ptr == *(int*)k2_ptr;\n");
-        c_code.push_str("    }\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str("static inline void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {\n");
-        c_code.push_str("    typedef struct {\n");
-        c_code.push_str("        os_Arena* arena;\n");
-        c_code.push_str("        int capacity;\n");
-        c_code.push_str("        char* keys;\n");
-        c_code.push_str("        int len;\n");
-        c_code.push_str("        int* occupied;\n");
-        c_code.push_str("        char* values;\n");
-        c_code.push_str("    } GenericHashMap;\n\n");
-        c_code.push_str("    GenericHashMap* m = (GenericHashMap*)map_void;\n\n");
-        c_code.push_str("    if (m->capacity == 0) {\n");
-        c_code.push_str("        m->capacity = 16;\n");
-        c_code.push_str(
-            "        int keys_offset = os_ArenaAlloc(m->arena, m->capacity * key_size);\n",
-        );
-        c_code.push_str("        m->keys = (char*)m->arena->BaseAddress + keys_offset;\n\n");
-        c_code.push_str(
-            "        int vals_offset = os_ArenaAlloc(m->arena, m->capacity * val_size);\n",
-        );
-        c_code.push_str("        m->values = (char*)m->arena->BaseAddress + vals_offset;\n\n");
-        c_code.push_str(
-            "        int occupied_offset = os_ArenaAlloc(m->arena, m->capacity * sizeof(int));\n",
-        );
-        c_code.push_str(
-            "        m->occupied = (int*)((char*)m->arena->BaseAddress + occupied_offset);\n",
-        );
-        c_code.push_str("        for (int i = 0; i < m->capacity; i++) m->occupied[i] = 0;\n");
-        c_code.push_str("    }\n\n");
-        c_code.push_str("    if (m->len * 2 >= m->capacity) {\n");
-        c_code.push_str("        int old_cap = m->capacity;\n");
-        c_code.push_str("        m->capacity *= 2;\n");
-        c_code.push_str("        char* old_keys = m->keys;\n");
-        c_code.push_str("        char* old_vals = m->values;\n");
-        c_code.push_str("        int* old_occupied = m->occupied;\n\n");
-        c_code.push_str(
-            "        int keys_offset = os_ArenaAlloc(m->arena, m->capacity * key_size);\n",
-        );
-        c_code.push_str("        m->keys = (char*)m->arena->BaseAddress + keys_offset;\n\n");
-        c_code.push_str(
-            "        int vals_offset = os_ArenaAlloc(m->arena, m->capacity * val_size);\n",
-        );
-        c_code.push_str("        m->values = (char*)m->arena->BaseAddress + vals_offset;\n\n");
-        c_code.push_str(
-            "        int occupied_offset = os_ArenaAlloc(m->arena, m->capacity * sizeof(int));\n",
-        );
-        c_code.push_str(
-            "        m->occupied = (int*)((char*)m->arena->BaseAddress + occupied_offset);\n",
-        );
-        c_code.push_str("        for (int i = 0; i < m->capacity; i++) m->occupied[i] = 0;\n\n");
-        c_code.push_str("        for (int i = 0; i < old_cap; i++) {\n");
-        c_code.push_str("            if (old_occupied[i]) {\n");
-        c_code.push_str("                void* k_ptr = old_keys + i * key_size;\n");
-        c_code.push_str("                uint32_t h = os_hash_key(k_ptr, is_str_key);\n");
-        c_code.push_str("                int idx = h % m->capacity;\n");
-        c_code.push_str("                while (m->occupied[idx]) {\n");
-        c_code.push_str("                    idx = (idx + 1) % m->capacity;\n");
-        c_code.push_str("                }\n");
-        c_code.push_str("                memcpy(m->keys + idx * key_size, k_ptr, key_size);\n");
-        c_code.push_str("                memcpy(m->values + idx * val_size, old_vals + i * val_size, val_size);\n");
-        c_code.push_str("                m->occupied[idx] = 1;\n");
-        c_code.push_str("            }\n");
-        c_code.push_str("        }\n");
-        c_code.push_str("    }\n\n");
-        c_code.push_str("    uint32_t h = os_hash_key(key_ptr, is_str_key);\n");
-        c_code.push_str("    int idx = h % m->capacity;\n");
-        c_code.push_str("    while (m->occupied[idx]) {\n");
-        c_code
-            .push_str("        if (os_key_eq(m->keys + idx * key_size, key_ptr, is_str_key)) {\n");
-        c_code.push_str("            return m->values + idx * val_size;\n");
-        c_code.push_str("        }\n");
-        c_code.push_str("        idx = (idx + 1) % m->capacity;\n");
-        c_code.push_str("    }\n\n");
-        c_code.push_str("    memcpy(m->keys + idx * key_size, key_ptr, key_size);\n");
-        c_code.push_str("    m->occupied[idx] = 1;\n");
-        c_code.push_str("    m->len++;\n");
-        c_code.push_str("    return m->values + idx * val_size;\n");
-        c_code.push_str("}\n\n");
-
-        c_code.push_str("#define os_HashMapRef(map_ptr, key, is_str_key) \\\n");
-        c_code.push_str("    ((__typeof__((map_ptr)->values))os_HashMapRef_impl((map_void_ptr)(map_ptr), &((__typeof__(*(map_ptr)->keys)){key}), (is_str_key), sizeof(*(map_ptr)->keys), sizeof(*(map_ptr)->values)))\n\n");
-
-        c_code.push_str("#define os_VectorPush(vec_ptr, val) do { \\\n");
-        c_code.push_str("    if ((vec_ptr)->len >= (vec_ptr)->capacity) { \\\n");
-        c_code.push_str(
-            "        int new_cap = (vec_ptr)->capacity == 0 ? 8 : (vec_ptr)->capacity * 2; \\\n",
-        );
-        c_code.push_str("        int offset = os_ArenaAlloc((vec_ptr)->arena, new_cap * sizeof(*(vec_ptr)->data)); \\\n");
-        c_code.push_str(
-            "        void* new_data = (void*)((char*)(vec_ptr)->arena->BaseAddress + offset); \\\n",
-        );
-        c_code.push_str("        if ((vec_ptr)->data != NULL) { \\\n");
-        c_code.push_str("            memcpy(new_data, (vec_ptr)->data, (vec_ptr)->len * sizeof(*(vec_ptr)->data)); \\\n");
-        c_code.push_str("        } \\\n");
-        c_code.push_str("        (vec_ptr)->data = new_data; \\\n");
-        c_code.push_str("        (vec_ptr)->capacity = new_cap; \\\n");
-        c_code.push_str("    } \\\n");
-        c_code.push_str("    (vec_ptr)->data[(vec_ptr)->len++] = (val); \\\n");
-        c_code.push_str("} while(0)\n\n");
-
-        c_code.push_str("#define os_VectorNew(arena_ptr) { NULL, 0, 0, (arena_ptr) }\n");
-        c_code.push_str(
-            "#define os_HashMapNew(arena_ptr) { NULL, NULL, NULL, 0, 0, (arena_ptr) }\n\n",
-        );
+        c_code.push_str(codegen_runtime::MOCK_PAYLOAD_RUNTIME);
+        c_code.push_str(codegen_runtime::FILE_IO_RUNTIME);
+        c_code.push_str(codegen_runtime::COLLECTIONS_RUNTIME);
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// DYNAMICALLY TRANSPILED USER STRUCTS\n");
@@ -875,9 +634,10 @@ impl Codegen {
                         is_hashmap = true;
                         if let Some(layout) = self.struct_registry.get(struct_name)
                             && let Some(Type::RawPointer(k_inner)) = layout.fields.get("keys")
-                                && **k_inner == Type::Str {
-                                    is_str_key = true;
-                                }
+                            && **k_inner == Type::Str
+                        {
+                            is_str_key = true;
+                        }
                     }
                 } else {
                     // Fallback to checking the allocator variable name in symbol table directly
@@ -891,9 +651,10 @@ impl Codegen {
                             is_hashmap = true;
                             if let Some(layout) = self.struct_registry.get(struct_name)
                                 && let Some(Type::RawPointer(k_inner)) = layout.fields.get("keys")
-                                    && **k_inner == Type::Str {
-                                        is_str_key = true;
-                                    }
+                                && **k_inner == Type::Str
+                            {
+                                is_str_key = true;
+                            }
                         }
                     }
                 }
@@ -1007,9 +768,9 @@ impl Codegen {
                             self.symbol_table.borrow().get(&arg_ident)
                             && (struct_name.starts_with("Vector_")
                                 || struct_name.starts_with("HashMap_"))
-                            {
-                                is_coll = true;
-                            }
+                        {
+                            is_coll = true;
+                        }
                     }
                     if is_coll {
                         return format!("{}.len", arg_str);
@@ -1039,9 +800,10 @@ impl Codegen {
                     let mut is_ptr = false;
                     if let Expression::Identifier(name) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
-                            && **inner == Type::Arena {
-                                is_ptr = true;
-                            }
+                        && **inner == Type::Arena
+                    {
+                        is_ptr = true;
+                    }
                     let arena_expr = if is_ptr {
                         arg_str
                     } else {
@@ -1064,9 +826,10 @@ impl Codegen {
                     let mut is_ptr = false;
                     if let Expression::Identifier(name) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
-                            && **inner == Type::Arena {
-                                is_ptr = true;
-                            }
+                        && **inner == Type::Arena
+                    {
+                        is_ptr = true;
+                    }
                     let arena_expr = if is_ptr {
                         arg_str
                     } else {
@@ -1086,9 +849,10 @@ impl Codegen {
                     let mut is_ptr = false;
                     if let Expression::Identifier(name) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
-                            && **inner == Type::Arena {
-                                is_ptr = true;
-                            }
+                        && **inner == Type::Arena
+                    {
+                        is_ptr = true;
+                    }
                     let arena_expr = if is_ptr {
                         arg_arena
                     } else {
@@ -1174,9 +938,11 @@ impl Codegen {
 
                     let left_type_str = expression_to_string(left);
                     if let Some(var_type) = self.symbol_table.borrow().get(&left_type_str)
-                        && *var_type == Type::Arena && right == "Free" {
-                            return format!("os_Arena_Free(&{})", left_type_str);
-                        }
+                        && *var_type == Type::Arena
+                        && right == "Free"
+                    {
+                        return format!("os_Arena_Free(&{})", left_type_str);
+                    }
                 }
 
                 let func_c = func_path.replace(".", "_");
