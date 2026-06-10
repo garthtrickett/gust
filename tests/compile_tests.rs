@@ -951,7 +951,7 @@ fn test_pod_struct_propagation_recognized_as_copyable() {
 fn test_linear_struct_propagation_recognized_as_linear() { 
     let source = "
         type MyLinear struct {
-            name: str,
+            ptr: *int,
             id: int
         }
     ";
@@ -994,16 +994,14 @@ fn test_move_pod_type_does_not_invalidate() {
 fn test_move_linear_type_invalidates() {
     let source = "
         type MyLinear struct {
-            name: str
+            ptr: *int
         }
         func main() {
             mut p: MyLinear;
-            p.name = \"Gust\";
-
             mut p2 := move p; // Move Linear struct
 
             // Should fail because p contains a Linear field and is now invalidated
-            os.LogInt(p.name); 
+            mut err := p.ptr; 
         }
     ";
     let res = check_program(source);
@@ -1036,11 +1034,9 @@ fn test_monomorphized_linear_collection_is_linear() {
             val: T
         }
         func main() {
-            mut w1: Wrapper[str];
-            w1.val = \"Hello\";
-
-            mut w2 := move w1; // Wrapper[str] is Linear!
-            os.LogStr(w1.val); // Error: w1 was moved
+            mut w1: Wrapper[*int];
+            mut w2 := move w1; // Wrapper[*int] is Linear!
+            mut err := w1.val; // Error: w1 was moved
         }
     ";
     let res = check_program(source);
@@ -1152,7 +1148,7 @@ fn test_pod_enum_propagation_recognized_as_copyable() {
 fn test_linear_enum_propagation_recognized_as_linear() {
     let source = "
         type MyLinear struct {
-            name: str
+            ptr: *int
         }
         type LinearEnum enum {
             VariantA { val: MyLinear },
@@ -1228,7 +1224,7 @@ fn test_move_propagated_linear_struct_invalidates() {
 fn test_move_propagated_linear_enum_invalidates() {
     let source = "
         type MyLinear struct {
-            name: str
+            ptr: *int
         }
         type LinearEnum enum {
             VariantA { val: MyLinear },
@@ -1237,7 +1233,6 @@ fn test_move_propagated_linear_enum_invalidates() {
         func main() {
             mut e: LinearEnum;
             e.tag = 0;
-            e.VariantA.val.name = \"Gust\";
 
             mut e2 := move e; // e is recursively Linear!
 

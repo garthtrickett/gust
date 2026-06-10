@@ -153,8 +153,8 @@ impl TypeChecker {
                 layout.fields = concrete_fields;
             }
 
-            if brand.is_none() {
-                if let Some(layout) = self.struct_registry.get(&concrete_name) {
+            if brand.is_none()
+                && let Some(layout) = self.struct_registry.get(&concrete_name) {
                     for (field_name, field_type) in &layout.fields {
                         if matches!(field_type, Type::Slice(_))
                             || *field_type == Type::ByteSlice
@@ -170,7 +170,6 @@ impl TypeChecker {
                         }
                     }
                 }
-            }
         }
 
         Ok(Type::Struct(concrete_name, brand))
