@@ -367,10 +367,10 @@ static inline void std_PoolFree_impl(void* pool_void, int index) {
 }
 
 #define std_PoolNew(arena_ptr) { (arena_ptr), 0, NULL, 0, NULL, 0, NULL }
-#define std_PoolAlloc(pool_ptr, val) ({ 
-    int _idx = std_PoolAlloc_impl((void*)(pool_ptr), sizeof(*(pool_ptr)->data)); 
-    (pool_ptr)->data[_idx] = (val); 
-    _idx; 
+#define std_PoolAlloc(pool_ptr, val) ({ \
+    int _idx = std_PoolAlloc_impl((void*)(pool_ptr), sizeof(*(pool_ptr)->data)); \
+    (pool_ptr)->data[_idx] = (val); \
+    _idx; \
 })
 #define std_PoolFree(pool_ptr, index) std_PoolFree_impl((void*)(pool_ptr), (index))
 "#;

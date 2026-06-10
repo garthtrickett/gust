@@ -1727,11 +1727,11 @@ impl TypeChecker {
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
-                    if arg_type != Type::Int && arg_type != Type::Byte {
+                    if arg_type != Type::Int && arg_type != Type::Byte && !matches!(arg_type, Type::Index(_, _)) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
-                            message: format!(
-                                "Semantic Error: os.LogInt expects an Int/Byte argument, but got {:?}",
+                            message: format!( 
+                                "Semantic Error: os.LogInt expects an Int/Byte/Index argument, but got {:?}",
                                 arg_type
                             ),
                         });

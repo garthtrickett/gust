@@ -1044,11 +1044,10 @@ impl Codegen {
                     let src_type = self.get_expr_type(&arguments[1]).unwrap_or(Type::Void);
                     if let Type::Index(struct_name, Some(src_brand)) = src_type {
                         let mut src_is_ptr = false;
-                        if let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(&src_brand) {
-                            if **inner == Type::Arena {
+                        if let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(&src_brand)
+                            && **inner == Type::Arena {
                                 src_is_ptr = true;
                             }
-                        }
                         let src_base = if src_is_ptr {
                             format!("{}->BaseAddress", src_brand)
                         } else {

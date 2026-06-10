@@ -47,14 +47,21 @@ fn run_e2e_test(source: &str, expected_output: &str) {
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
     // 3. Invoke a system C compiler to compile it
-    let compile_status = Command::new("cc")
+    let compile_output = Command::new("cc")
         .arg(&c_path)
         .arg("-o")
         .arg(&bin_path)
-        .status();
+        .output();
 
-    let compile_success = match compile_status {
-        Ok(status) => status.success(),
+    let compile_success = match compile_output {
+        Ok(output) => {
+            if !output.status.success() {
+                println!("--- GCC Compilation Failed ---");
+                println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
+                println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
+            }
+            output.status.success()
+        }
         Err(e) => {
             let _ = fs::remove_file(&c_path);
             panic!(
