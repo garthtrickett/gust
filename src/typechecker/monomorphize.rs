@@ -32,8 +32,8 @@ impl TypeChecker {
                 self.monomorphize(name, &resolved_args?)
             }
             Type::Struct(name, brand) => {
-                if name.starts_with("LookupResult_") {
-                    if !self.struct_registry.contains_key(name) {
+                if name.starts_with("LookupResult_")
+                    && !self.struct_registry.contains_key(name) {
                         let target_struct = name.trim_start_matches("LookupResult_").to_string();
                         let v_type = if target_struct == "int" {
                             Type::Int
@@ -51,7 +51,6 @@ impl TypeChecker {
                             },
                         );
                     }
-                }
                 if let Some(brand_name) = brand {
                     if self.struct_templates.contains_key(name) {
                         let args = vec![Type::Struct(brand_name.clone(), None)];
