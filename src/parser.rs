@@ -663,6 +663,15 @@ impl Parser {
 
     fn parse_primary_expression(&mut self) -> Option<Expression> {
         match self.cur_token.token_type {
+            TokenType::LParen => {
+                self.next_token(); // consume '('
+                let expr = self.parse_expression(1)?;
+                if self.peek_token.token_type != TokenType::RParen {
+                    return None;
+                }
+                self.next_token(); // consume ')'
+                Some(expr)
+            }
             TokenType::Ident => Some(Expression::Identifier(self.cur_token.literal.clone())),
             TokenType::Int => {
                 let val: i64 = self.cur_token.literal.parse().ok()?;

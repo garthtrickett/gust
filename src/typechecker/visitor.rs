@@ -969,7 +969,6 @@ impl TypeChecker {
     }
 
     pub fn check_expression(&mut self, expr: &Expression) -> Result<Type, TypeError> {
-        eprintln!("check_expression: {:?}", expr);
         match expr {
             Expression::Identifier(name) => {
                 if self.moved_vars.contains(name) {
@@ -1011,7 +1010,6 @@ impl TypeChecker {
                     if name == "null" {
                         return Ok(Type::Index("SessionNode".to_string(), None));
                     }
-                    eprintln!("DEBUG: Identifier '{}' not found in symbol table. Active keys: {:?}", name, self.symbol_table.keys().collect::<Vec<&String>>());
                     Err(TypeError {
                         kind: TypeErrorKind::UndefinedVariable,
                         message: format!("Semantic Error: Undefined variable '{}'", name),
