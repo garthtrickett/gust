@@ -1460,3 +1460,35 @@ fn test_branded_struct_containing_slice_accepted() {
     ";
     assert!(check_program(source).is_ok());
 }
+
+#[test]
+fn test_unbranded_generic_instantiated_with_view_rejected() {
+    let source = "
+        type Holder[T] struct {
+            val: T
+        }
+        func main() {
+            mut h: Holder[str]; // Error: unbranded monomorphization with str (view)
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("cannot contain ephemeral slice or view"));
+}
+
+#[test]
+fn test_branded_generic_instantiated_with_view_accepted() {
+    let source = "
+        type Holder[T, ctx] struct {
+            val: T
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut h: Holder[str, ctx]; // Accepted: branded generic
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}

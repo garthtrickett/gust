@@ -152,6 +152,25 @@ impl TypeChecker {
             if let Some(layout) = self.struct_registry.get_mut(&concrete_name) {
                 layout.fields = concrete_fields;
             }
+
+            if brand.is_none() {
+                if let Some(layout) = self.struct_registry.get(&concrete_name) {
+                    for (field_name, field_type) in &layout.fields {
+                        if matches!(field_type, Type::Slice(_))
+                            || *field_type == Type::ByteSlice
+                            || *field_type == Type::Str
+                        {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::BrandLifetimeViolation,
+                                message: format!( 
+                                    "Semantic Error: Unbranded monomorphized struct '{}' cannot contain ephemeral slice or view field '{}' of type '{:?}'",
+                                    concrete_name, field_name, field_type
+                                ),
+                            });
+                        }
+                    }
+                }
+            }
         }
 
         Ok(Type::Struct(concrete_name, brand))
