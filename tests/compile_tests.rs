@@ -1925,7 +1925,11 @@ fn test_rc_and_graph_type_checking_valid() {
             }
         }
     ";
-    assert!(check_program(source).is_ok());
+    let res = check_program(source);
+    if let Err(ref e) = res {
+        eprintln!("test_rc_and_graph_type_checking_valid failed with: {:?}", e);
+    }
+    assert!(res.is_ok());
 }
 
 #[test]
