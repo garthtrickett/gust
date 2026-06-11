@@ -110,7 +110,9 @@ impl TypeChecker {
                 }
                 None
             }
-            Expression::Binary { op, left, right, .. } => {
+            Expression::Binary {
+                op, left, right, ..
+            } => {
                 if op == "==" {
                     // Case: path.Ok == 1
                     if let Expression::Selector {
@@ -157,7 +159,10 @@ impl TypeChecker {
             "std.Clone".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["dest_ctx".to_string(), "src_val".to_string()],
-                params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::Index("Any".to_string(), None)],
+                params: vec![
+                    Type::RawPointer(Box::new(Type::Arena)),
+                    Type::Index("Any".to_string(), None),
+                ],
                 return_type: Type::Index("Any".to_string(), None),
                 return_origins: std::collections::HashSet::new(),
             },
@@ -167,7 +172,10 @@ impl TypeChecker {
             "std_Clone".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["dest_ctx".to_string(), "src_val".to_string()],
-                params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::Index("Any".to_string(), None)],
+                params: vec![
+                    Type::RawPointer(Box::new(Type::Arena)),
+                    Type::Index("Any".to_string(), None),
+                ],
                 return_type: Type::Index("Any".to_string(), None),
                 return_origins: std::collections::HashSet::new(),
             },
@@ -177,7 +185,10 @@ impl TypeChecker {
             "std.GenerationalSwap".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["current_ctx".to_string(), "next_ctx".to_string()],
-                params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::RawPointer(Box::new(Type::Arena))],
+                params: vec![
+                    Type::RawPointer(Box::new(Type::Arena)),
+                    Type::RawPointer(Box::new(Type::Arena)),
+                ],
                 return_type: Type::Void,
                 return_origins: std::collections::HashSet::new(),
             },
@@ -187,7 +198,10 @@ impl TypeChecker {
             "std_GenerationalSwap".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["current_ctx".to_string(), "next_ctx".to_string()],
-                params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::RawPointer(Box::new(Type::Arena))],
+                params: vec![
+                    Type::RawPointer(Box::new(Type::Arena)),
+                    Type::RawPointer(Box::new(Type::Arena)),
+                ],
                 return_type: Type::Void,
                 return_origins: std::collections::HashSet::new(),
             },
@@ -256,6 +270,7 @@ impl TypeChecker {
                                     "Semantic Error: Unbranded struct '{}' cannot contain ephemeral slice or view field '{}' of type '{:?}'",
                                     name, field.name, resolved_field_type
                                 ),
+                                span: None,
                             });
                         }
                         layout_fields.insert(field.name.clone(), field.field_type.clone());
@@ -313,6 +328,7 @@ impl TypeChecker {
                                     layout.fields.len(),
                                     struct_name
                                 ),
+                                span: None,
                             });
                         }
                         variant_fields.insert(field.name.clone(), field.field_type.clone());
@@ -398,7 +414,21 @@ impl TypeChecker {
         Ok(())
     }
 
+    // Tier A: Entry-Point Interception Wrapper
     pub fn check_statement(&mut self, stmt: &Statement) -> Result<(), TypeError> {
+        let res = self.check_statement_internal(stmt);
+        match res {
+            Err(mut err) => {
+                if err.span.is_none() {
+                    err.span = Some(stmt.span());
+                }
+                Err(err)
+            }
+            Ok(()) => Ok(()),
+        }
+    }
+
+    fn check_statement_internal(&mut self, stmt: &Statement) -> Result<(), TypeError> {
         match stmt {
             Statement::StructDecl { .. } => {}
             Statement::EnumDecl { .. } => {}
@@ -454,6 +484,7 @@ impl TypeChecker {
                                     "Semantic Error: Inout reference parameter '{}' was moved but never re-initialized before function exit",
                                     inout_p
                                 ),
+                                span: None,
                             });
                         }
                     }
@@ -513,6 +544,7 @@ impl TypeChecker {
                                 "Semantic Error: Uninitialized variable '{}' must have an explicit type annotation",
                                 name
                             ),
+                            span: None,
                         });
                     }
                 };
@@ -526,6 +558,7 @@ impl TypeChecker {
                                 "Semantic Error: Explicit Type Annotation Mismatch. Declared {:?} but got value {:?}",
                                 resolved_explicit, val_type
                             ),
+                            span: value.as_ref().map(|v| v.span()), // Tier B: Point directly to the offending RHS value
                         });
                     }
                     self.symbol_table
@@ -553,6 +586,7 @@ impl TypeChecker {
                                     "Semantic Error: Undefined variable '{}' in assignment LHS",
                                     name
                                 ),
+                                span: Some(left.span()), // Tier B: Point directly to LHS identifier
                             })
                         }
                     }
@@ -566,6 +600,7 @@ impl TypeChecker {
                             "Semantic Error: Mismatched types in assignment. Cannot assign {:?} to {:?}",
                             val_type, left_type
                         ),
+                        span: Some(value.span()), // Tier B: Point directly to RHS value
                     });
                 }
 
@@ -606,12 +641,15 @@ impl TypeChecker {
                     self.moved_vars.remove(&root_name); // Re-initialized!
                 }
             }
-            Statement::While { condition, body, .. } => {
+            Statement::While {
+                condition, body, ..
+            } => {
                 let cond_type = self.check_expression(condition)?;
                 if cond_type != Type::Int {
                     return Err(TypeError {
                         kind: TypeErrorKind::LoopConditionInvalid,
                         message: "Semantic Error: Loop condition must evaluate to an Int (binary comparison)".to_string(),
+                        span: Some(condition.span()), // Tier B: Point specifically to condition
                     });
                 }
 
@@ -632,6 +670,7 @@ impl TypeChecker {
                     return Err(TypeError {
                         kind: TypeErrorKind::IfConditionInvalid,
                         message: "Semantic Error: If condition must evaluate to an Int (binary comparison)".to_string(),
+                        span: Some(condition.span()), // Tier B: Point specifically to condition
                     });
                 }
 
@@ -737,7 +776,9 @@ impl TypeChecker {
                 // Restore checked_results for the parent scope
                 self.checked_results = pre_checked;
             }
-            Statement::Match { expression, cases, .. } => {
+            Statement::Match {
+                expression, cases, ..
+            } => {
                 let expr_type = self.check_expression(expression)?;
 
                 // Get the enum name from expr_type
@@ -753,6 +794,7 @@ impl TypeChecker {
                                         "Semantic Error: Variant '{}' is not a valid variant of enum '{}'",
                                         case.variant_name, enum_name
                                     ),
+                                    span: Some(case.span), // Tier B: Point to the offending match case
                                 });
                             }
 
@@ -763,6 +805,7 @@ impl TypeChecker {
                                         "Semantic Error: Duplicate match case for variant '{}' of enum '{}'",
                                         case.variant_name, enum_name
                                     ),
+                                    span: Some(case.span), // Tier B: Point to duplicate match case
                                 });
                             }
                             matched_variants.insert(case.variant_name.clone());
@@ -784,6 +827,7 @@ impl TypeChecker {
                                         "Semantic Error: Match on enum '{}' is not exhaustive. Missing variant '{}'",
                                         enum_name, expected
                                     ),
+                                    span: None,
                                 });
                             }
                         }
@@ -794,6 +838,7 @@ impl TypeChecker {
                                 "Semantic Error: Match target type '{:?}' is not a registered enum",
                                 expr_type
                             ),
+                            span: Some(expression.span()), // Tier B: Point directly to target expression
                         });
                     }
                 } else {
@@ -803,6 +848,7 @@ impl TypeChecker {
                             "Semantic Error: Match target type '{:?}' is not an enum struct",
                             expr_type
                         ),
+                        span: Some(expression.span()), // Tier B: Point directly to target expression
                     });
                 }
             }
@@ -831,6 +877,7 @@ impl TypeChecker {
                                     "Semantic Error: Inout reference parameter '{}' was moved but never re-initialized before return",
                                     inout_p
                                 ),
+                                span: None,
                             });
                         }
                     }
@@ -854,6 +901,7 @@ impl TypeChecker {
                                         "Semantic Error: Escape analysis violation. Returning ephemeral view of type {:?} whose origin traces back to local stack variable '{}'",
                                         t, origin
                                     ),
+                                    span: Some(expr.span()), // Tier B: Point to local escape target
                                 });
                             }
                         }
@@ -876,6 +924,7 @@ impl TypeChecker {
                                 "Semantic Error: Return type mismatch. Expected {:?} but got {:?}",
                                 expected_t, actual_return
                             ),
+                            span: maybe_expr.as_ref().map(|e| e.span()), // Tier B: Point to returned expression
                         });
                     }
                 } else {
@@ -883,6 +932,7 @@ impl TypeChecker {
                         kind: TypeErrorKind::ReturnOutsideFunction,
                         message: "Semantic Error: Return statement used outside function body"
                             .to_string(),
+                        span: None,
                     });
                 }
             }
@@ -977,13 +1027,28 @@ impl TypeChecker {
         }
     }
 
+    // Tier A: Entry-Point Interception Wrapper
     pub fn check_expression(&mut self, expr: &Expression) -> Result<Type, TypeError> {
+        let res = self.check_expression_internal(expr);
+        match res {
+            Err(mut err) => {
+                if err.span.is_none() {
+                    err.span = Some(expr.span());
+                }
+                Err(err)
+            }
+            Ok(t) => Ok(t),
+        }
+    }
+
+    fn check_expression_internal(&mut self, expr: &Expression) -> Result<Type, TypeError> {
         match expr {
             Expression::Identifier(name, _) => {
                 if self.moved_vars.contains(name) {
                     return Err(TypeError {
                         kind: TypeErrorKind::UseOfMovedVariable,
                         message: format!("Semantic Error: Use of moved variable '{}'", name),
+                        span: None,
                     });
                 }
 
@@ -997,6 +1062,7 @@ impl TypeChecker {
                                     "Semantic Error: Variable '{}' cannot be used because its backing origin '{}' has been moved or invalidated",
                                     name, origin
                                 ),
+                                span: None,
                             });
                         }
                     }
@@ -1012,6 +1078,7 @@ impl TypeChecker {
                                 "Semantic Error: Variable '{}' cannot be used because its branding allocator '{}' has been moved or freed",
                                 name, brand
                             ),
+                            span: None,
                         });
                     }
                     Ok(t.clone())
@@ -1022,6 +1089,7 @@ impl TypeChecker {
                     Err(TypeError {
                         kind: TypeErrorKind::UndefinedVariable,
                         message: format!("Semantic Error: Undefined variable '{}'", name),
+                        span: None,
                     })
                 }
             }
@@ -1036,6 +1104,7 @@ impl TypeChecker {
                                 "Semantic Error: Variable '{}' has already been moved",
                                 name
                             ),
+                            span: None,
                         });
                     }
                     let Some(var_type) = self.symbol_table.get(name).cloned() else {
@@ -1045,6 +1114,7 @@ impl TypeChecker {
                                 "Semantic Error: Cannot move undefined variable '{}'",
                                 name
                             ),
+                            span: None,
                         });
                     };
 
@@ -1057,6 +1127,7 @@ impl TypeChecker {
                                         "Semantic Error: Variable '{}' cannot be moved because its backing origin '{}' has been moved or invalidated",
                                         name, origin
                                     ),
+                                    span: None,
                                 });
                             }
                         }
@@ -1088,6 +1159,7 @@ impl TypeChecker {
                                                         "Semantic Error: Thread-safety violation. Branded variable '{}' has origin tracing back to thread-local stack variable '{}', preventing safe handoff of arena '{}'",
                                                         v, origin, name
                                                     ),
+                                                    span: None,
                                                 });
                                             }
                                         }
@@ -1116,6 +1188,7 @@ impl TypeChecker {
                     Err(TypeError {
                         kind: TypeErrorKind::InvalidMoveTarget,
                         message: "Semantic Error: Only variables can be moved".to_string(),
+                        span: None,
                     })
                 }
             }
@@ -1125,6 +1198,7 @@ impl TypeChecker {
                     return Err(TypeError {
                         kind: TypeErrorKind::TakePrimitiveBanned,
                         message: "Semantic Error: The 'take' operator is strictly banned on primitive POD types (like Int)".to_string(),
+                        span: None,
                     });
                 }
                 Ok(expr_type)
@@ -1138,6 +1212,7 @@ impl TypeChecker {
                     return Err(TypeError {
                         kind: TypeErrorKind::UnsafeProhibited,
                         message: "Semantic Error: Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks".to_string(),
+                        span: None,
                     });
                 }
 
@@ -1151,6 +1226,7 @@ impl TypeChecker {
                             "Semantic Error: Cannot dereference non-pointer type {:?}",
                             inner_type
                         ),
+                        span: None,
                     })
                 }
             }
@@ -1184,7 +1260,7 @@ impl TypeChecker {
 
                 if let Type::RawPointer(_) = &resolved_target
                     && !self.in_unsafe_block
-                { 
+                {
                     return Err(TypeError {
                             kind: TypeErrorKind::UnsafeProhibited,
                             message: "Semantic Error: Casting to raw pointers is strictly prohibited outside 'unsafe' blocks".to_string(),
@@ -1192,10 +1268,10 @@ impl TypeChecker {
                         });
                 }
 
-                if !matches!(left_type, Type::Slice(_)) && left_type != Type::ByteSlice { 
+                if !matches!(left_type, Type::Slice(_)) && left_type != Type::ByteSlice {
                     return Err(TypeError {
                         kind: TypeErrorKind::InvalidCast,
-                        message: format!( 
+                        message: format!(
                             "Semantic Error: Casting source must be a Slice, but got {:?}",
                             left_type
                         ),
@@ -1211,14 +1287,16 @@ impl TypeChecker {
 
                 Err(TypeError {
                     kind: TypeErrorKind::InvalidCast,
-                    message: format!( 
+                    message: format!(
                         "Semantic Error: Unsupported cast target type {:?}",
                         resolved_target
                     ),
                     span: None,
                 })
             }
-            Expression::IndexAccess { allocator, index, .. } => {
+            Expression::IndexAccess {
+                allocator, index, ..
+            } => {
                 let alloc_type = self.check_expression(allocator)?;
                 let index_type = self.check_expression(index)?;
 
@@ -1228,6 +1306,7 @@ impl TypeChecker {
                             kind: TypeErrorKind::InvalidIndexType,
                             message: "Semantic Error: Slice index must resolve to an Int or Byte"
                                 .to_string(),
+                            span: Some(index.span()), // Tier B: Point directly to index
                         });
                     }
                     let resolved_elem = self.resolve_type(elem_type)?;
@@ -1238,6 +1317,7 @@ impl TypeChecker {
                             kind: TypeErrorKind::InvalidIndexType,
                             message: "Semantic Error: String index must resolve to an Int or Byte"
                                 .to_string(),
+                            span: Some(index.span()), // Tier B: Point directly to index
                         });
                     }
                     Ok(Type::Byte)
@@ -1248,6 +1328,7 @@ impl TypeChecker {
                             return Err(TypeError {
                                 kind: TypeErrorKind::InvalidIndexType,
                                 message: "Vector index must resolve to an Int or Byte".to_string(),
+                                span: Some(index.span()), // Tier B: Point directly to index
                             });
                         }
                         let elem_type =
@@ -1255,6 +1336,7 @@ impl TypeChecker {
                                 .ok_or_else(|| TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: "Invalid Vector struct layout".to_string(),
+                                    span: None,
                                 })?;
                         Ok(elem_type)
                     } else if struct_name.starts_with("HashMap_")
@@ -1263,9 +1345,10 @@ impl TypeChecker {
                         let (k_type, v_type) = self
                             .get_hashmap_key_value_types(struct_name)
                             .ok_or_else(|| TypeError {
-                                    kind: TypeErrorKind::TypeMismatch,
-                                    message: "Invalid HashMap struct layout".to_string(),
-                                })?;
+                                kind: TypeErrorKind::TypeMismatch,
+                                message: "Invalid HashMap struct layout".to_string(),
+                                span: None,
+                            })?;
                         if !types_match(&k_type, &index_type) {
                             return Err(TypeError {
                                 kind: TypeErrorKind::InvalidIndexType,
@@ -1273,16 +1356,22 @@ impl TypeChecker {
                                     "HashMap index type mismatch. Expected {:?} but got {:?}",
                                     k_type, index_type
                                 ),
+                                span: Some(index.span()), // Tier B: Point directly to index
                             });
                         }
                         Ok(v_type)
                     } else if struct_name.starts_with("Pool_")
                         || struct_name.starts_with("std_Pool_")
                     {
-                        if index_type != Type::Int && index_type != Type::Byte && !matches!(index_type, Type::Index(_, _)) {
+                        if index_type != Type::Int
+                            && index_type != Type::Byte
+                            && !matches!(index_type, Type::Index(_, _))
+                        {
                             return Err(TypeError {
                                 kind: TypeErrorKind::InvalidIndexType,
-                                message: "Pool index must resolve to an Int or Byte or Index".to_string(),
+                                message: "Pool index must resolve to an Int or Byte or Index"
+                                    .to_string(),
+                                span: Some(index.span()), // Tier B: Point directly to index
                             });
                         }
                         let elem_type =
@@ -1290,6 +1379,7 @@ impl TypeChecker {
                                 .ok_or_else(|| TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: "Invalid Pool struct layout".to_string(),
+                                    span: None,
                                 })?;
                         Ok(elem_type)
                     } else {
@@ -1299,6 +1389,7 @@ impl TypeChecker {
                                 "Semantic Error: Subscript indexing is only valid on Arenas, Slices, Vectors, HashMaps, or Pools, but got {:?}",
                                 alloc_type
                             ),
+                            span: None,
                         })
                     }
                 } else if alloc_type == Type::Arena
@@ -1315,6 +1406,7 @@ impl TypeChecker {
                                     expression_to_string(index),
                                     brand_name
                                 ),
+                                span: Some(index.span()), // Tier B: Point directly to offending index
                             });
                         }
 
@@ -1331,6 +1423,7 @@ impl TypeChecker {
                                 "Semantic Error: Expected a branded Index offset for subscript indexing, but got {:?}",
                                 index_type
                             ),
+                            span: None,
                         })
                     }
                 } else {
@@ -1340,10 +1433,13 @@ impl TypeChecker {
                             "Semantic Error: Subscript indexing is only valid on Arenas, Slices, Vectors, HashMaps, or Pools, but got {:?}",
                             alloc_type
                         ),
+                        span: None,
                     })
                 }
             }
-            Expression::Binary { op, left, right, .. } => {
+            Expression::Binary {
+                op, left, right, ..
+            } => {
                 let left_type = self.check_expression(left)?;
                 let right_type = self.check_expression(right)?;
 
@@ -1369,6 +1465,7 @@ impl TypeChecker {
                             "Semantic Error: Mismatched types in binary operation '{}'. Left: {:?}, Right: {:?}",
                             op, left_type, right_type
                         ),
+                        span: None,
                     });
                 }
 
@@ -1382,6 +1479,7 @@ impl TypeChecker {
                             "Semantic Error: Math operation '{}' is only allowed on Int or Byte types, but got {:?}",
                             op, left_type
                         ),
+                        span: None,
                     });
                 }
 
@@ -1412,6 +1510,7 @@ impl TypeChecker {
                                         "Semantic Error: Accessing the .Val payload of an unchecked result wrapper '{}'",
                                         left_str
                                     ),
+                                    span: None,
                                 });
                             }
 
@@ -1439,6 +1538,7 @@ impl TypeChecker {
                                 "Semantic Error: Field '{}' not found on struct layout '{}'",
                                 right, struct_name
                             ),
+                            span: None,
                         });
                     }
                 }
@@ -1453,12 +1553,14 @@ impl TypeChecker {
                             "Semantic Error: Method '{}' not found on Arena allocator",
                             right
                         ),
+                        span: None,
                     });
                 }
 
                 Err(TypeError {
                     kind: TypeErrorKind::UnresolvedSelector,
-                    message: format!("Semantic Error: Unresolved namespace selector '{}'", path),
+                    message: format!("Semantic Error: Unresolved namespace selector"),
+                    span: None,
                 })
             }
             Expression::Call {
@@ -1470,13 +1572,14 @@ impl TypeChecker {
                     self.check_expression(arg)?;
                 }
 
-                let func_path = expression_to_string(function);
+                let func_path = self.gen_expression(function); // Using gen_expression to safely resolve namespaces
 
                 if func_path == "len" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: len expects exactly 1 argument".to_string(),
+                            span: None,
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
@@ -1502,6 +1605,7 @@ impl TypeChecker {
                             "Semantic Error: len expects a Slice, Str, Vector, HashMap, or Pool argument, but got {:?}",
                             arg_type
                         ),
+                        span: None,
                     });
                 }
 
@@ -1510,24 +1614,28 @@ impl TypeChecker {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: std.Clone expects exactly 2 arguments (destination_allocator, source_value)".to_string(),
+                            span: None,
                         });
                     }
                     let dest_type = self.check_expression(&arguments[0])?;
                     if dest_type != Type::Arena
                         && !matches!(dest_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
-                    { 
+                    {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: "Semantic Error: std.Clone first argument must be an Arena allocator".to_string(),
+                            span: None,
                         });
                     }
                     let src_type = self.check_expression(&arguments[1])?;
                     let dest_brand = expression_to_string(&arguments[0]);
-                    let src_brand = self.get_type_brand(&src_type).unwrap_or_else(|| "Any".to_string());
-                    
+                    let src_brand = self
+                        .get_type_brand(&src_type)
+                        .unwrap_or_else(|| "Any".to_string());
+
                     let mut brand_map = HashMap::new();
                     brand_map.insert(src_brand, dest_brand);
-                    
+
                     let cloned_type = self.substitute_brand_names(&src_type, &brand_map);
                     return Ok(cloned_type);
                 }
@@ -1537,6 +1645,7 @@ impl TypeChecker {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: std.GenerationalSwap expects exactly 2 arguments (current_ctx, next_ctx)".to_string(),
+                            span: None,
                         });
                     }
                     let current_type = self.check_expression(&arguments[0])?;
@@ -1545,6 +1654,7 @@ impl TypeChecker {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: "Semantic Error: std.GenerationalSwap arguments must be Arena allocators".to_string(),
+                            span: None,
                         });
                     }
 
@@ -1574,7 +1684,8 @@ impl TypeChecker {
                         }
                     }
                     for (var_name, updated_type) in updated_symbols {
-                        self.symbol_table.insert(var_name.clone(), updated_type.clone());
+                        self.symbol_table
+                            .insert(var_name.clone(), updated_type.clone());
                         self.variable_types.insert(var_name.clone(), updated_type);
                     }
 
@@ -1587,6 +1698,7 @@ impl TypeChecker {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: VectorNew expects exactly 1 argument"
                                 .to_string(),
+                            span: None,
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
@@ -1598,6 +1710,7 @@ impl TypeChecker {
                             message:
                                 "Semantic Error: VectorNew argument must be an Arena allocator"
                                     .to_string(),
+                            span: None,
                         });
                     }
                     let brand_name = expression_to_string(&arguments[0]);
@@ -1610,6 +1723,7 @@ impl TypeChecker {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: HashMapNew expects exactly 1 argument"
                                 .to_string(),
+                            span: None,
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
@@ -1621,6 +1735,7 @@ impl TypeChecker {
                             message:
                                 "Semantic Error: HashMapNew argument must be an Arena allocator"
                                     .to_string(),
+                            span: None,
                         });
                     }
                     let brand_name = expression_to_string(&arguments[0]);
@@ -1631,8 +1746,8 @@ impl TypeChecker {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
-                            message: "PoolNew expects exactly 1 argument"
-                                .to_string(),
+                            message: "PoolNew expects exactly 1 argument".to_string(),
+                            span: None,
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
@@ -1641,9 +1756,9 @@ impl TypeChecker {
                     {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
-                            message:
-                                "Semantic Error: PoolNew argument must be an Arena allocator"
-                                    .to_string(),
+                            message: "Semantic Error: PoolNew argument must be an Arena allocator"
+                                .to_string(),
+                            span: None,
                         });
                     }
                     let brand_name = expression_to_string(&arguments[0]);
@@ -1655,6 +1770,7 @@ impl TypeChecker {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "RcNew expects exactly 2 arguments (pool, val)".to_string(),
+                            span: None,
                         });
                     }
                     let pool_type = self.check_expression(&arguments[0])?;
@@ -1664,27 +1780,36 @@ impl TypeChecker {
                     if let Type::RawPointer(pool_inner) = &pool_type {
                         match &**pool_inner {
                             Type::Struct(struct_name, Some(ctx_name))
-                                if (struct_name.starts_with("Pool_") || struct_name.starts_with("std_Pool_")) => {
+                                if (struct_name.starts_with("Pool_")
+                                    || struct_name.starts_with("std_Pool_")) =>
+                            {
+                                opt_ctx_name = Some(ctx_name.clone());
+                            }
+                            Type::Generic(pool_name, pool_args) => {
+                                if (pool_name == "Pool" || pool_name == "std.Pool")
+                                    && pool_args.len() == 2
+                                    && let Type::Struct(ctx_name, _) = &pool_args[1]
+                                {
                                     opt_ctx_name = Some(ctx_name.clone());
                                 }
-                            Type::Generic(pool_name, pool_args) => {
-                                if (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2
-                                    && let Type::Struct(ctx_name, _) = &pool_args[1] {
-                                        opt_ctx_name = Some(ctx_name.clone());
-                                    }
                             }
                             _ => {}
-                        } 
+                        }
                     }
 
                     if let Some(ctx_name) = opt_ctx_name {
-                        let concrete_rc = format!("std_Rc_{}_{}", self.get_type_ident(&val_type), ctx_name);
+                        let concrete_rc =
+                            format!("std_Rc_{}_{}", self.get_type_ident(&val_type), ctx_name);
                         return Ok(Type::Struct(concrete_rc, Some(ctx_name)));
                     }
 
                     return Err(TypeError {
                         kind: TypeErrorKind::TypeMismatch,
-                        message: format!("Semantic Error: Invalid pool argument in RcNew: {:?}", pool_type),
+                        message: format!(
+                            "Semantic Error: Invalid pool argument in RcNew: {:?}",
+                            pool_type
+                        ),
+                        span: None,
                     });
                 }
 
@@ -1693,6 +1818,7 @@ impl TypeChecker {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "GraphNew expects exactly 1 argument (ctx)".to_string(),
+                            span: None,
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
@@ -1701,7 +1827,9 @@ impl TypeChecker {
                     {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
-                            message: "Semantic Error: GraphNew argument must be an Arena allocator".to_string(),
+                            message: "Semantic Error: GraphNew argument must be an Arena allocator"
+                                .to_string(),
+                            span: None,
                         });
                     }
                     let brand_name = expression_to_string(&arguments[0]);
@@ -1713,6 +1841,7 @@ impl TypeChecker {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: os.ReadFile expects exactly 2 arguments (allocator, path)".to_string(),
+                            span: None,
                         });
                     }
                     let alloc_type = self.check_expression(&arguments[0])?;
@@ -1722,6 +1851,7 @@ impl TypeChecker {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: "Semantic Error: os.ReadFile first argument must be an Arena allocator".to_string(),
+                            span: None,
                         });
                     }
                     let path_type = self.check_expression(&arguments[1])?;
@@ -1732,6 +1862,7 @@ impl TypeChecker {
                                 "Semantic Error: os.ReadFile path argument must be Str, but got {:?}",
                                 path_type
                             ),
+                            span: None,
                         });
                     }
                     return Ok(Type::Str);
@@ -1742,6 +1873,7 @@ impl TypeChecker {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: os.WriteFile expects exactly 2 arguments (path, contents)".to_string(),
+                            span: None,
                         });
                     }
                     let path_type = self.check_expression(&arguments[0])?;
@@ -1752,6 +1884,7 @@ impl TypeChecker {
                                 "Semantic Error: os.WriteFile path argument must be Str, but got {:?}",
                                 path_type
                             ),
+                            span: None,
                         });
                     }
                     let contents_type = self.check_expression(&arguments[1])?;
@@ -1762,6 +1895,7 @@ impl TypeChecker {
                                 "Semantic Error: os.WriteFile contents argument must be Str, but got {:?}",
                                 contents_type
                             ),
+                            span: None,
                         });
                     }
                     return Ok(Type::Int);
@@ -1777,6 +1911,7 @@ impl TypeChecker {
                                 sig.params.len(),
                                 arguments.len()
                             ),
+                            span: None,
                         });
                     }
 
@@ -1810,6 +1945,7 @@ impl TypeChecker {
                                     "Semantic Error: Argument type mismatch for function '{}'. Expected {:?} but got {:?}",
                                     func_path, substituted_expected, resolved_arg
                                 ),
+                                span: Some(arg.span()), // Tier B: Point directly to offending argument
                             });
                         }
                     }
@@ -1822,6 +1958,7 @@ impl TypeChecker {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: os.Arena.New() expects 0 arguments"
                                 .to_string(),
+                            span: None,
                         });
                     }
                     return Ok(Type::Arena);
@@ -1833,6 +1970,7 @@ impl TypeChecker {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: os.MockPayload() expects 0 arguments"
                                 .to_string(),
+                            span: None,
                         });
                     }
                     return Ok(Type::Slice(Box::new(Type::Byte)));
@@ -1843,6 +1981,7 @@ impl TypeChecker {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: os.ArenaAlloc expects exactly 1 argument (the allocator variable)".to_string(),
+                            span: None,
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
@@ -1854,6 +1993,7 @@ impl TypeChecker {
                             message:
                                 "Semantic Error: ArenaAlloc argument must be an Arena allocator"
                                     .to_string(),
+                            span: None,
                         });
                     }
                     let brand_name = expression_to_string(&arguments[0]);
@@ -1866,16 +2006,21 @@ impl TypeChecker {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: os.LogInt expects exactly 1 argument"
                                 .to_string(),
+                            span: None,
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
-                    if arg_type != Type::Int && arg_type != Type::Byte && !matches!(arg_type, Type::Index(_, _)) {
+                    if arg_type != Type::Int
+                        && arg_type != Type::Byte
+                        && !matches!(arg_type, Type::Index(_, _))
+                    {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: format!(
                                 "Semantic Error: os.LogInt expects an Int/Byte/Index argument, but got {:?}",
                                 arg_type
                             ),
+                            span: None,
                         });
                     }
                     return Ok(Type::Void);
@@ -1887,6 +2032,7 @@ impl TypeChecker {
                             kind: TypeErrorKind::ArgumentMismatch,
                             message: "Semantic Error: os.LogStr expects exactly 1 argument"
                                 .to_string(),
+                            span: None,
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
@@ -1897,6 +2043,7 @@ impl TypeChecker {
                                 "Semantic Error: os.LogStr expects a Str argument, but got {:?}",
                                 arg_type
                             ),
+                            span: None,
                         });
                     }
                     return Ok(Type::Void);
@@ -1913,6 +2060,7 @@ impl TypeChecker {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
                                     message: "Vector.Push expects exactly 1 argument".to_string(),
+                                    span: None,
                                 });
                             }
                             let arg_type = self.check_expression(&arguments[0])?;
@@ -1921,6 +2069,7 @@ impl TypeChecker {
                                     TypeError {
                                         kind: TypeErrorKind::TypeMismatch,
                                         message: "Invalid Vector struct layout".to_string(),
+                                        span: None,
                                     }
                                 })?;
                             if !types_match(&elem_type, &arg_type) {
@@ -1930,6 +2079,7 @@ impl TypeChecker {
                                         "Argument type mismatch for Vector.Push. Expected {:?} but got {:?}",
                                         elem_type, arg_type
                                     ),
+                                    span: None,
                                 });
                             }
                             return Ok(Type::Void);
@@ -1943,6 +2093,7 @@ impl TypeChecker {
                                     kind: TypeErrorKind::ArgumentMismatch,
                                     message: "HashMap.Insert expects exactly 2 arguments"
                                         .to_string(),
+                                    span: None,
                                 });
                             }
                             let k_arg = self.check_expression(&arguments[0])?;
@@ -1952,6 +2103,7 @@ impl TypeChecker {
                                 .ok_or_else(|| TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: "Invalid HashMap struct layout".to_string(),
+                                    span: None,
                                 })?;
                             if !types_match(&k_type, &k_arg) {
                                 return Err(TypeError {
@@ -1960,6 +2112,7 @@ impl TypeChecker {
                                         "Key type mismatch for HashMap.Insert. Expected {:?} but got {:?}",
                                         k_type, k_arg
                                     ),
+                                    span: None,
                                 });
                             }
                             if !types_match(&v_type, &v_arg) {
@@ -1969,6 +2122,7 @@ impl TypeChecker {
                                         "Value type mismatch for HashMap.Insert. Expected {:?} but got {:?}",
                                         v_type, v_arg
                                     ),
+                                    span: None,
                                 });
                             }
                             return Ok(Type::Void);
@@ -1981,6 +2135,7 @@ impl TypeChecker {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
                                     message: "HashMap.Get expects exactly 1 argument".to_string(),
+                                    span: None,
                                 });
                             }
                             let k_arg = self.check_expression(&arguments[0])?;
@@ -1989,6 +2144,7 @@ impl TypeChecker {
                                 .ok_or_else(|| TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: "Invalid HashMap struct layout".to_string(),
+                                    span: None,
                                 })?;
                             if !types_match(&k_type, &k_arg) {
                                 return Err(TypeError {
@@ -1997,6 +2153,7 @@ impl TypeChecker {
                                         "Key type mismatch for HashMap.Get. Expected {:?} but got {:?}",
                                         k_type, k_arg
                                     ),
+                                    span: None,
                                 });
                             }
                             let lookup_struct_name =
@@ -2023,6 +2180,7 @@ impl TypeChecker {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
                                     message: "Pool.Alloc expects exactly 1 argument".to_string(),
+                                    span: None,
                                 });
                             }
                             let arg_type = self.check_expression(&arguments[0])?;
@@ -2031,6 +2189,7 @@ impl TypeChecker {
                                     TypeError {
                                         kind: TypeErrorKind::TypeMismatch,
                                         message: "Invalid Pool struct layout".to_string(),
+                                        span: None,
                                     }
                                 })?;
                             if !types_match(&elem_type, &arg_type) {
@@ -2040,6 +2199,7 @@ impl TypeChecker {
                                         "Argument type mismatch for Pool.Alloc. Expected {:?} but got {:?}",
                                         elem_type, arg_type
                                     ),
+                                    span: None,
                                 });
                             }
                             let brand_name = match &left_type {
@@ -2060,6 +2220,7 @@ impl TypeChecker {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
                                     message: "Pool.Free expects exactly 1 argument".to_string(),
+                                    span: None,
                                 });
                             }
                             let arg_type = self.check_expression(&arguments[0])?;
@@ -2068,6 +2229,7 @@ impl TypeChecker {
                                     TypeError {
                                         kind: TypeErrorKind::TypeMismatch,
                                         message: "Invalid Pool struct layout".to_string(),
+                                        span: None,
                                     }
                                 })?;
                             let brand_name = match &left_type {
@@ -2086,19 +2248,23 @@ impl TypeChecker {
                                         "Argument type mismatch for Pool.Free. Expected {:?} but got {:?}",
                                         expected_index_type, arg_type
                                     ),
+                                    span: None,
                                 });
                             }
                             return Ok(Type::Void);
                         }
 
-                        let is_rc = struct_name.starts_with("Rc_") || struct_name.starts_with("std_Rc_");
-                        let is_graph = struct_name.starts_with("Graph_") || struct_name.starts_with("std_Graph_");
+                        let is_rc =
+                            struct_name.starts_with("Rc_") || struct_name.starts_with("std_Rc_");
+                        let is_graph = struct_name.starts_with("Graph_")
+                            || struct_name.starts_with("std_Graph_");
 
                         if is_rc && right == "Clone" {
                             if !arguments.is_empty() {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
                                     message: "Rc.Clone expects exactly 0 arguments".to_string(),
+                                    span: None,
                                 });
                             }
                             return Ok(left_type.clone());
@@ -2109,6 +2275,7 @@ impl TypeChecker {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
                                     message: "Rc.Release expects exactly 0 arguments".to_string(),
+                                    span: None,
                                 });
                             }
                             return Ok(Type::Void);
@@ -2119,17 +2286,24 @@ impl TypeChecker {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
                                     message: "Rc.Get expects exactly 0 arguments".to_string(),
+                                    span: None,
                                 });
                             }
                             if let Some(layout) = self.struct_registry.get(struct_name)
-                                && let Some(Type::Index(rcnode_name, _)) = layout.fields.get("node_index")
-                                    && let Some(rcnode_layout) = self.struct_registry.get(rcnode_name)
-                                        && let Some(t_type) = rcnode_layout.fields.get("value") {
-                                            return Ok(Type::RawPointer(Box::new(t_type.clone())));
-                                        }
+                                && let Some(Type::Index(rcnode_name, _)) =
+                                    layout.fields.get("node_index")
+                                && let Some(rcnode_layout) = self.struct_registry.get(rcnode_name)
+                                && let Some(t_type) = rcnode_layout.fields.get("value")
+                            {
+                                return Ok(Type::RawPointer(Box::new(t_type.clone())));
+                            }
                             return Err(TypeError {
                                 kind: TypeErrorKind::TypeMismatch,
-                                message: format!("Rc.Get: cannot find value type for Rc struct {}", struct_name),
+                                message: format!(
+                                    "Rc.Get: cannot find value type for Rc struct {}",
+                                    struct_name
+                                ),
+                                span: None,
                             });
                         }
 
@@ -2137,32 +2311,38 @@ impl TypeChecker {
                             if arguments.len() != 1 {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
-                                    message: "Graph.AddNode expects exactly 1 argument (value)".to_string(),
+                                    message: "Graph.AddNode expects exactly 1 argument (value)"
+                                        .to_string(),
+                                    span: None,
                                 });
                             }
                             let arg_type = self.check_expression(&arguments[0])?;
-                            
+
                             let mut t_type = None;
                             if let Some(layout) = self.struct_registry.get(struct_name)
                                 && let Some(Type::Struct(pool_name, _)) = layout.fields.get("nodes")
-                                    && let Some(pool_layout) = self.struct_registry.get(pool_name)
-                                        && let Some(Type::RawPointer(node_ptr)) = pool_layout.fields.get("data")
-                                            && let Type::Struct(gnode_name, _) = &**node_ptr
-                                                && let Some(gnode_layout) = self.struct_registry.get(gnode_name)
-                                                    && let Some(val_type) = gnode_layout.fields.get("value") {
-                                                        t_type = Some(val_type.clone());
-                                                    }
-                            
+                                && let Some(pool_layout) = self.struct_registry.get(pool_name)
+                                && let Some(Type::RawPointer(node_ptr)) =
+                                    pool_layout.fields.get("data")
+                                && let Type::Struct(gnode_name, _) = &**node_ptr
+                                && let Some(gnode_layout) = self.struct_registry.get(gnode_name)
+                                && let Some(val_type) = gnode_layout.fields.get("value")
+                            {
+                                t_type = Some(val_type.clone());
+                            }
+
                             if let Some(expected_t) = t_type
-                                && !types_match(&expected_t, &arg_type) {
-                                    return Err(TypeError {
-                                        kind: TypeErrorKind::TypeMismatch,
-                                        message: format!(
-                                            "Semantic Error: Graph.AddNode value type mismatch. Expected {:?} but got {:?}",
-                                            expected_t, arg_type
-                                        ),
-                                    });
-                                }
+                                && !types_match(&expected_t, &arg_type)
+                            {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Semantic Error: Graph.AddNode value type mismatch. Expected {:?} but got {:?}",
+                                        expected_t, arg_type
+                                    ),
+                                    span: None,
+                                });
+                            }
                             return Ok(Type::Int);
                         }
 
@@ -2170,18 +2350,20 @@ impl TypeChecker {
                             if arguments.len() != 2 {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
-                                    message: "Graph.AddEdge expects exactly 2 arguments (from, to)".to_string(),
+                                    message: "Graph.AddEdge expects exactly 2 arguments (from, to)"
+                                        .to_string(),
+                                    span: None,
                                 });
                             }
                             let from_type = self.check_expression(&arguments[0])?;
                             let to_type = self.check_expression(&arguments[1])?;
-                            
+
                             let graph_brand = match &left_type {
                                 Type::Struct(_, b) => b.clone(),
                                 _ => None,
                             };
-                            
-                            if let Type::Index(_, Some(from_brand)) = &from_type { 
+
+                            if let Type::Index(_, Some(from_brand)) = &from_type {
                                 if Some(from_brand) != graph_brand.as_ref() {
                                     return Err(TypeError {
                                         kind: TypeErrorKind::BrandLifetimeViolation,
@@ -2189,15 +2371,17 @@ impl TypeChecker {
                                             "Semantic Error: Brand violation in Graph.AddEdge. Node 'from' index brand '{}' does not match graph brand '{:?}'",
                                             from_brand, graph_brand
                                         ),
+                                        span: None,
                                     });
                                 }
                             } else if from_type != Type::Int && from_type != Type::Byte {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: "Graph.AddEdge 'from' argument must be an Int, Byte or branded Index".to_string(),
+                                    span: None,
                                 });
                             }
-                            
+
                             if let Type::Index(_, Some(to_brand)) = &to_type {
                                 if Some(to_brand) != graph_brand.as_ref() {
                                     return Err(TypeError {
@@ -2206,12 +2390,14 @@ impl TypeChecker {
                                             "Semantic Error: Brand violation in Graph.AddEdge. Node 'to' index brand '{}' does not match graph brand '{:?}'",
                                             to_brand, graph_brand
                                         ),
+                                        span: None,
                                     });
                                 }
                             } else if to_type != Type::Int && to_type != Type::Byte {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: "Graph.AddEdge 'to' argument must be an Int, Byte or branded Index".to_string(),
+                                    span: None,
                                 });
                             }
                             return Ok(Type::Void);
@@ -2221,16 +2407,18 @@ impl TypeChecker {
                             if arguments.len() != 1 {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
-                                    message: "Graph.GetNode expects exactly 1 argument (index)".to_string(),
+                                    message: "Graph.GetNode expects exactly 1 argument (index)"
+                                        .to_string(),
+                                    span: None,
                                 });
                             }
                             let index_type = self.check_expression(&arguments[0])?;
-                            
+
                             let graph_brand = match &left_type {
                                 Type::Struct(_, b) => b.clone(),
                                 _ => None,
                             };
-                            
+
                             if let Type::Index(_, Some(index_brand)) = &index_type {
                                 if Some(index_brand) != graph_brand.as_ref() {
                                     return Err(TypeError {
@@ -2239,32 +2427,42 @@ impl TypeChecker {
                                             "Semantic Error: Brand violation in Graph.GetNode. Index brand '{}' does not match graph brand '{:?}'",
                                             index_brand, graph_brand
                                         ),
+                                        span: None,
                                     });
                                 }
                             } else if index_type != Type::Int && index_type != Type::Byte {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
-                                    message: "Graph.GetNode index must be an Int, Byte or branded Index".to_string(),
+                                    message:
+                                        "Graph.GetNode index must be an Int, Byte or branded Index"
+                                            .to_string(),
+                                    span: None,
                                 });
                             }
-                            
+
                             let mut t_type = None;
                             if let Some(layout) = self.struct_registry.get(struct_name)
                                 && let Some(Type::Struct(pool_name, _)) = layout.fields.get("nodes")
-                                    && let Some(pool_layout) = self.struct_registry.get(pool_name)
-                                        && let Some(Type::RawPointer(node_ptr)) = pool_layout.fields.get("data")
-                                            && let Type::Struct(gnode_name, _) = &**node_ptr
-                                                && let Some(gnode_layout) = self.struct_registry.get(gnode_name)
-                                                    && let Some(val_type) = gnode_layout.fields.get("value") {
-                                                        t_type = Some(val_type.clone());
-                                                    }
-                            
+                                && let Some(pool_layout) = self.struct_registry.get(pool_name)
+                                && let Some(Type::RawPointer(node_ptr)) =
+                                    pool_layout.fields.get("data")
+                                && let Type::Struct(gnode_name, _) = &**node_ptr
+                                && let Some(gnode_layout) = self.struct_registry.get(gnode_name)
+                                && let Some(val_type) = gnode_layout.fields.get("value")
+                            {
+                                t_type = Some(val_type.clone());
+                            }
+
                             if let Some(expected_t) = t_type {
                                 return Ok(Type::RawPointer(Box::new(expected_t)));
                             }
                             return Err(TypeError {
                                 kind: TypeErrorKind::TypeMismatch,
-                                message: format!("Graph.GetNode: cannot find value type for Graph struct {}", struct_name),
+                                message: format!(
+                                    "Graph.GetNode: cannot find value type for Graph struct {}",
+                                    struct_name
+                                ),
+                                span: None,
                             });
                         }
                     }
@@ -2273,6 +2471,7 @@ impl TypeChecker {
                             return Err(TypeError {
                                 kind: TypeErrorKind::ArgumentMismatch,
                                 message: "Arena.Free() expects 0 arguments".to_string(),
+                                span: None,
                             });
                         }
                         return Ok(Type::Void);
@@ -2280,11 +2479,9 @@ impl TypeChecker {
                 }
 
                 Err(TypeError {
-                    kind: TypeErrorKind::UndefinedFunction,
-                    message: format!(
-                        "Semantic Error: Call to unresolved function '{}'",
-                        func_path
-                    ),
+                    kind: TypeErrorKind::UnresolvedSelector,
+                    message: format!("Semantic Error: Unresolved namespace selector"),
+                    span: None,
                 })
             }
             Expression::Empty(target_type, _) => {

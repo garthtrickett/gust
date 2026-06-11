@@ -170,7 +170,7 @@ fn test_string_view_type_safety_accepted() {
 }
 
 #[test]
-fn test_string_view_logint_rejected() {
+fn test_string_view_logint_rejected() { 
     let source = "
         func main() {
             mut msg := \"Hello\";
@@ -182,6 +182,9 @@ fn test_string_view_logint_rejected() {
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
     assert!(err.message.contains("os.LogInt expects an Int/Byte"));
+    let span = err.span.expect("Expected a span for logint view error");
+    assert_eq!(span.start.line, 4); 
+    assert_eq!(span.start.column, 13);
 }
 
 // === NEW PRESSURE TESTS FOR PHASE 1 SET-BASED ORIGIN TRACKING ===
