@@ -445,10 +445,10 @@ impl Codegen {
         for elem_type in &slice_element_types {
             let elem_c = self.get_c_type(elem_type);
             let elem_ident = self.get_c_type_ident(elem_type);
-            c_code.push_str(&format!("struct Slice_{} {\n", elem_ident));
+            c_code.push_str(&format!("struct Slice_{} {{\n", elem_ident));
             c_code.push_str(&format!("    {}* data;\n", elem_c));
-            c_code.push_str("    int len;\n"));
-            c_code.push_str("};\n\n"));
+            c_code.push_str("    int len;\n");
+            c_code.push_str("};\n\n");
         }
 
         c_code.push_str("// ====================================================\
@@ -612,11 +612,12 @@ impl Codegen {
                 c_code.push_str("};\n\n");
 
                 c_code.push_str(&format!("struct CastResult_{} {\n", struct_name));
+                c_code.push_str(&format!("struct CastResult_{} {{\n", struct_name));
                 c_code.push_str(&format!("    {}* Val;\n", struct_name));
-                c_code.push_str("    int Ok;\n"));
-                c_code.push_str("};\n\n"));
+                c_code.push_str("    int Ok;\n");
+                c_code.push_str("};\n\n");
             } else {
-                c_code.push_str(&format!("struct {} {\n", struct_name));
+                c_code.push_str(&format!("struct {} {{\n", struct_name));
 
                 // Sort structural fields alphabetically for stable alignments
                 let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
@@ -633,10 +634,10 @@ impl Codegen {
                 c_code.push_str("};\n\n");
 
                 if !struct_name.starts_with("LookupResult_") {
-                    c_code.push_str(&format!("struct CastResult_{} {\n", struct_name));
+                    c_code.push_str(&format!("struct CastResult_{} {{\n", struct_name));
                     c_code.push_str(&format!("    {}* Val;\n", struct_name));
-                    c_code.push_str("    int Ok;\n"));
-                    c_code.push_str("};\n\n"));
+                    c_code.push_str("    int Ok;\n");
+                    c_code.push_str("};\n\n");
                 }
             }
         }
