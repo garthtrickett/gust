@@ -406,12 +406,6 @@ impl Codegen {
         }
         c_code.push('\n');
 
-        c_code.push_str("// ====================================================\
-");
-        c_code.push_str("// DYNAMICALLY GENERATED SLICE STRUCTURES\n");
-        c_code.push_str("// ====================================================\
-");
-
         let mut slice_element_types = std::collections::HashSet::new();
         slice_element_types.insert(Type::Byte);
 
@@ -432,13 +426,29 @@ impl Codegen {
             }
         }
 
+        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// DYNAMICALLY GENERATED SLICE STRUCTURE FORWARD DECLARATIONS\n");
+        c_code.push_str("// ====================================================\n");
+        for elem_type in &slice_element_types {
+            let elem_ident = self.get_c_type_ident(elem_type);
+            c_code.push_str(&format!(
+                "typedef struct Slice_{} Slice_{};\n",
+                elem_ident, elem_ident
+            ));
+        }
+        c_code.push('\n');
+
+        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// DYNAMICALLY GENERATED SLICE STRUCTURES\n");
+        c_code.push_str("// ====================================================\n");
+
         for elem_type in &slice_element_types {
             let elem_c = self.get_c_type(elem_type);
             let elem_ident = self.get_c_type_ident(elem_type);
-            c_code.push_str("typedef struct {\n");
+            c_code.push_str(&format!("struct Slice_{} {\n", elem_ident));
             c_code.push_str(&format!("    {}* data;\n", elem_c));
-            c_code.push_str("    int len;\n");
-            c_code.push_str(&format!("}} Slice_{};\n\n", elem_ident));
+            c_code.push_str("    int len;\n"));
+            c_code.push_str("};\n\n"));
         }
 
         c_code.push_str("// ====================================================\
@@ -559,6 +569,17 @@ impl Codegen {
             );
         }
 
+        // Forward declare all CastResult structures first to prevent any ordering issues
+        for struct_name in &ordered_struct_names {
+            if !struct_name.starts_with("LookupResult_") {
+                c_code.push_str(&format!(
+                    "typedef struct CastResult_{} CastResult_{};\n",
+                    struct_name, struct_name
+                ));
+            }
+        }
+        c_code.push('\n');
+
         for struct_name in &ordered_struct_names {
             let layout = &self.struct_registry[struct_name];
             if let Some(variants) = self.enum_registry.get(struct_name) {
@@ -573,7 +594,7 @@ impl Codegen {
                 c_code.push_str(&format!("}} {}_Tag;\n\n", struct_name));
 
                 // 2. Generate struct with anonymous union
-                c_code.push_str(&format!("struct {} {{\n", struct_name));
+                c_code.push_str(&format!("struct {} {\n", struct_name));
                 c_code.push_str("    int tag; \n");
                 c_code.push_str("    union {\n");
 
@@ -590,12 +611,12 @@ impl Codegen {
                 c_code.push_str("    };\n");
                 c_code.push_str("};\n\n");
 
-                c_code.push_str("typedef struct {\n");
+                c_code.push_str(&format!("struct CastResult_{} {\n", struct_name));
                 c_code.push_str(&format!("    {}* Val;\n", struct_name));
-                c_code.push_str("    int Ok;\n");
-                c_code.push_str(&format!("}} CastResult_{};\n\n", struct_name));
+                c_code.push_str("    int Ok;\n"));
+                c_code.push_str("};\n\n"));
             } else {
-                c_code.push_str(&format!("struct {} {{\n", struct_name));
+                c_code.push_str(&format!("struct {} {\n", struct_name));
 
                 // Sort structural fields alphabetically for stable alignments
                 let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
@@ -612,10 +633,10 @@ impl Codegen {
                 c_code.push_str("};\n\n");
 
                 if !struct_name.starts_with("LookupResult_") {
-                    c_code.push_str("typedef struct {\n");
+                    c_code.push_str(&format!("struct CastResult_{} {\n", struct_name));
                     c_code.push_str(&format!("    {}* Val;\n", struct_name));
-                    c_code.push_str("    int Ok;\n");
-                    c_code.push_str(&format!("}} CastResult_{};\n\n", struct_name));
+                    c_code.push_str("    int Ok;\n"));
+                    c_code.push_str("};\n\n"));
                 }
             }
         }
