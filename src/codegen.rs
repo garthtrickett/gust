@@ -768,7 +768,7 @@ impl Codegen {
                     body_str.push_str("}\n\n");
                 } else {
                     body_str.push_str(&format!( 
-                        "{} {}({}) {\n",
+                        "{} {}({}) {{\n",
                         ret_str, resolved_name, param_list
                     ));
                     body_str.push_str(&self.gen_block_statement(body));
@@ -789,8 +789,8 @@ impl Codegen {
                             format!("({})(uintptr_t)arg", param_type_str)
                         };
 
-                        body_str.push_str(&format!(
-                            "void* {}_pthread_wrapper(void* arg) {\n",
+                        body_str.push_str(&format!( 
+                            "void* {}_pthread_wrapper(void* arg) {{\n",
                             resolved_name
                         ));
                         body_str.push_str(&format!(
