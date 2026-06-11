@@ -218,6 +218,29 @@ int std_parse_int(Slice_unsigned_char s) {
 pub const FILE_IO_RUNTIME: &str = r#"// ====================================================
 // GUST NATIVE FILE I/O RUNTIME
 // ====================================================
+typedef struct os_Dir os_Dir;
+struct os_Dir {
+    unsigned char* handle;
+};
+
+typedef struct os_DirEntry os_DirEntry;
+struct os_DirEntry {
+    Slice_unsigned_char name;
+    int is_dir;
+};
+
+typedef struct LookupResult_os_Dir LookupResult_os_Dir;
+struct LookupResult_os_Dir {
+    int Ok;
+    os_Dir Val;
+};
+
+typedef struct LookupResult_os_DirEntry LookupResult_os_DirEntry;
+struct LookupResult_os_DirEntry {
+    int Ok;
+    os_DirEntry Val;
+};
+
 Slice_unsigned_char os_ReadFile(os_Arena* arena, Slice_unsigned_char path) {
     Slice_unsigned_char result;
     result.data = NULL;

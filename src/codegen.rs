@@ -397,7 +397,12 @@ impl Codegen {
         c_code.push_str("// FORWARD DECLARATIONS\n");
         c_code.push_str("// ====================================================\n");
         for struct_name in self.struct_registry.keys() {
-            if struct_name == "std_Vector_str" {
+            if struct_name == "std_Vector_str"
+                || struct_name == "os_Dir"
+                || struct_name == "os_DirEntry"
+                || struct_name == "LookupResult_os_Dir"
+                || struct_name == "LookupResult_os_DirEntry"
+            {
                 continue;
             }
             c_code.push_str(&format!(
@@ -615,6 +620,9 @@ impl Codegen {
 
         // Forward declare all CastResult structures first to prevent any ordering issues
         for struct_name in &ordered_struct_names {
+            if struct_name == "os_Dir" || struct_name == "os_DirEntry" {
+                continue;
+            }
             if !struct_name.starts_with("LookupResult_") {
                 c_code.push_str(&format!(
                     "typedef struct CastResult_{} CastResult_{};\n",
@@ -625,7 +633,12 @@ impl Codegen {
         c_code.push('\n');
 
         for struct_name in &ordered_struct_names {
-            if struct_name == "std_Vector_str" {
+            if struct_name == "std_Vector_str"
+                || struct_name == "os_Dir"
+                || struct_name == "os_DirEntry"
+                || struct_name == "LookupResult_os_Dir"
+                || struct_name == "LookupResult_os_DirEntry"
+            {
                 continue;
             }
             let layout = &self.struct_registry[struct_name];
@@ -693,6 +706,13 @@ impl Codegen {
         c_code.push_str("// ====================================================\n");
 
         for (struct_name, layout) in &self.struct_registry {
+            if struct_name == "os_Dir"
+                || struct_name == "os_DirEntry"
+                || struct_name == "LookupResult_os_Dir"
+                || struct_name == "LookupResult_os_DirEntry"
+            {
+                continue;
+            }
             if self.has_boolean_fields(&Type::Struct(struct_name.clone(), None)) {
                 c_code.push_str(&format!( 
                     "int {}_IsValid({}* req) {{\n",
