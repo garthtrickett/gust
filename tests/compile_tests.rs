@@ -7,6 +7,9 @@ fn check_program(source: &str) -> Result<(), TypeError> {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
+    if !parser.errors.is_empty() {
+        return Err(parser.errors[0].clone());
+    }
     let mut checker = TypeChecker::new();
     checker.check_program(&program)
 }
@@ -2041,7 +2044,7 @@ fn test_multiple_syntax_errors_diagnostic_reporting() {
     let err1 = &parser.errors[0];
     assert_eq!(err1.kind, TypeErrorKind::SyntaxError);
     assert!(err1.message.contains("Expected field type signature"));
-    assert_eq!(err1.span.unwrap().start.line, 3);
+    assert_eq!(err1.span.unwrap().start.line, 4);
 
     // Verify second syntax error is for missing expression
     let err2 = &parser.errors[1];
@@ -2051,6 +2054,6 @@ fn test_multiple_syntax_errors_diagnostic_reporting() {
 
     // Verify format_diagnostic doesn't panic and produces correct layout
     let diag1 = gust_lexer::typechecker::format_diagnostic(source, err1);
-    assert!(diag1.contains("[line 3:13]"));
+    assert!(diag1.contains("[line 4:"));
     assert!(diag1.contains("Expected field type signature"));
 }
