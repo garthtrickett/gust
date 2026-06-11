@@ -305,7 +305,7 @@ impl TypeChecker {
                     let mut layout_fields = HashMap::new();
                     for field in fields { 
                         let resolved_field_type = self.resolve_type(&field.field_type)?;
-                        let resolved_field_type = self.resolve_type_namespacing(&resolved_field_type);
+                        let resolved_field_type = self.resolve_type_namespacing(&resolved_field_type)?;
                         if matches!(resolved_field_type, Type::Slice(_))
                             || resolved_field_type == Type::ByteSlice
                             || resolved_field_type == Type::Str
@@ -365,7 +365,7 @@ impl TypeChecker {
                     let mut variant_fields = HashMap::new();
                     for field in &variant.fields { 
                         let resolved_t = self.resolve_type(&field.field_type)?;
-                        let resolved_t = self.resolve_type_namespacing(&resolved_t);
+                        let resolved_t = self.resolve_type_namespacing(&resolved_t)?;
                         if let Type::Struct(ref struct_name, _) = resolved_t
                             && let Some(layout) = self.struct_registry.get(struct_name)
                             && layout.fields.len() > 2
@@ -416,7 +416,7 @@ impl TypeChecker {
                 span,
                 ..
             } = stmt
-            {
+            { 
                 let namespaced_name = format!("{}{}", self.current_prefix, name);
                 self.resolved_names.insert(*span, namespaced_name.clone());
 
@@ -424,11 +424,11 @@ impl TypeChecker {
                     .iter()
                     .map(|p| { 
                         let resolved = self.resolve_type(&p.param_type)?;
-                        Ok(self.resolve_type_namespacing(&resolved))
+                        self.resolve_type_namespacing(&resolved)
                     })
                     .collect();
                 let resolved_return = self.resolve_type(return_type)?;
-                let resolved_return = self.resolve_type_namespacing(&resolved_return);
+                let resolved_return = self.resolve_type_namespacing(&resolved_return)?;
                 let param_names = params.iter().map(|p| p.name.clone()).collect();
 
                 self.function_registry.insert(
@@ -574,6 +574,7 @@ impl TypeChecker {
                 self.current_function_local_vars = old_local_vars;
             }
             Statement::VarDecl {
+            Statement::VarDecl { 
                 name,
                 is_mut: _,
                 value,
@@ -581,10 +582,10 @@ impl TypeChecker {
                 span,
                 ..
             } => {
-                let val_type = if let Some(val_expr) = value {
+                let val_type = if let Some(val_expr) = value { 
                     let mut t = self.check_expression(val_expr)?;
                     t = self.resolve_type(&t)?;
-                    t = self.resolve_type_namespacing(&t);
+                    t = self.resolve_type_namespacing(&t)?;
                     let mut origs = if is_ephemeral_view(&t) {
                         self.get_expression_origins(val_expr)
                     } else {

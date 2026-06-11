@@ -37,46 +37,57 @@ impl Default for TypeChecker {
 }
 
 impl TypeChecker {
-    pub(crate) fn resolve_type_namespacing(&self, t: &Type) -> Type { 
+    pub(crate) fn resolve_type_namespacing(&self, t: &Type) -> Result<Type, TypeError> { 
         match t {
             Type::Struct(name, brand) => {
-                let resolved_name = self.resolve_namespaced_ident(name);
-                Type::Struct(resolved_name, brand.clone())
+                let resolved_name = self.resolve_namespaced_ident(name)?;
+                Ok(Type::Struct(resolved_name, brand.clone()))
             }
             Type::Index(name, brand) => {
-                let resolved_name = self.resolve_namespaced_ident(name);
-                Type::Index(resolved_name, brand.clone())
+                let resolved_name = self.resolve_namespaced_ident(name)?;
+                Ok(Type::Index(resolved_name, brand.clone()))
             }
             Type::RawPointer(inner) => {
-                Type::RawPointer(Box::new(self.resolve_type_namespacing(inner)))
+                let resolved = self.resolve_type_namespacing(inner)?;
+                Ok(Type::RawPointer(Box::new(resolved)))
             }
             Type::Slice(inner) => {
-                Type::Slice(Box::new(self.resolve_type_namespacing(inner)))
+                let resolved = self.resolve_type_namespacing(inner)?;
+                Ok(Type::Slice(Box::new(resolved)))
             }
             Type::Generic(name, args) => {
-                let resolved_name = self.resolve_namespaced_ident(name);
-                let resolved_args = args.iter().map(|arg| self.resolve_type_namespacing(arg)).collect();
-                Type::Generic(resolved_name, resolved_args)
+                let resolved_name = self.resolve_namespaced_ident(name)?;
+                let mut resolved_args = Vec::new();
+                for arg in args { 
+                    resolved_args.push(self.resolve_type_namespacing(arg)?);
+                }
+                Ok(Type::Generic(resolved_name, resolved_args))
             }
-            _ => t.clone(),
+            _ => Ok(t.clone()),
         }
     }
 
-    pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> String { 
-        if name == "int" || name == "byte" || name == "bool" || name == "str" || name == "Arena" || name == "os_Arena" || name == "os.Arena" || name == "void" || name == "Any" {
-            return name.to_string();
+    pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> Result<String, TypeError> { 
+        if name == "int" || name == "byte" || name == "bool" || name == "str" || name == "Arena" || name == "os_Arena" || name == "os.Arena" || name == "void" || name == "Any" { 
+            return Ok(name.to_string());
         }
         if let Some(pos) = name.find('.') {
             let alias = &name[..pos];
             let rest = &name[pos+1..];
             if let Some(prefix) = self.imports.get(alias) { 
-                return format!("{}{}", prefix, rest);
+                return Ok(format!("{}{}", prefix, rest));
+            } else {
+                return Err(TypeError { 
+                    kind: TypeErrorKind::TypeMismatch,
+                    message: format!("Semantic Error: Unresolved namespace alias '{}'", alias),
+                    span: None,
+                });
             }
         }
         if name.contains("__") { 
-            return name.to_string();
+            return Ok(name.to_string());
         }
-        format!("{}{}", self.current_prefix, name)
+        Ok(format!("{}{}", self.current_prefix, name))
     } 
 }
 

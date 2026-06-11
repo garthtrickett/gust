@@ -123,7 +123,7 @@ impl TypeChecker {
     }
 
     pub(crate) fn resolve_type(&mut self, t: &Type) -> Result<Type, TypeError> {
-        let t = self.resolve_type_namespacing(t);
+        let t = self.resolve_type_namespacing(t)?;
         match &t {
             Type::Generic(name, args) => {
                 let resolved_args: Result<Vec<Type>, TypeError> = 
