@@ -1583,9 +1583,16 @@ impl TypeChecker {
                 let resolved_target = self.resolve_type_namespacing(&resolved_target)?;
                 self.resolved_types.insert(*span, resolved_target.clone());
 
-                if (left_type == Type::Int || left_type == Type::Byte || left_type == Type::Bool)
-                    && (resolved_target == Type::Int || resolved_target == Type::Byte || resolved_target == Type::Bool)
-                { 
+                if (left_type == Type::Int || left_type == Type::Byte || left_type == Type::Bool || matches!(left_type, Type::Index(_, _)))
+                    && (resolved_target == Type::Int || resolved_target == Type::Byte || resolved_target == Type::Bool || matches!(resolved_target, Type::Index(_, _)))
+                {
+                    if (matches!(left_type, Type::Index(_, _)) || matches!(resolved_target, Type::Index(_, _))) && !self.in_unsafe_block {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::UnsafeProhibited,
+                            message: "Semantic Error: Casting to or from Index types is strictly prohibited outside 'unsafe' blocks".to_string(),
+                            span: None,
+                        });
+                    }
                     return Ok(resolved_target.clone());
                 }
 
