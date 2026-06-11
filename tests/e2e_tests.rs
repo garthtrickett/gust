@@ -1153,3 +1153,89 @@ fn test_e2e_scratchpad_formatting_loop() {
     ";
     run_e2e_test(source, "Num: 0\nNum: 1\nNum: 2\nNum: 3\nNum: 4");
 }
+
+#[test]
+fn test_e2e_mutex_concurrency() {
+    let source = "
+        type Counter struct {
+            count: int
+        }
+        type ThreadArg[ctx] struct {
+            mutex: std.Mutex[Counter, ctx]
+        }
+        func increment_task(arg: *ThreadArg[ctx]) {
+            mut i := 0;
+            while i < 100 {
+                unsafe {
+                    mut val_ptr := (*arg).mutex.Lock();
+                    (*val_ptr).count = (*val_ptr).count + 1;
+                    (*arg).mutex.Unlock();
+                }
+                i = i + 1;
+            }
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            
+            mut m: std.Mutex[Counter, ctx] := std.MutexNew(ctx);
+            unsafe {
+                mut val := m.Lock();
+                (*val).count = 0;
+                m.Unlock();
+            }
+
+            mut arg: ThreadArg[ctx];
+            arg.mutex = m;
+
+            std.Spawn(increment_task, &arg);
+            std.Spawn(increment_task, &arg);
+            std.Spawn(increment_task, &arg);
+
+            mut current_count := 0;
+            while current_count < 300 {
+                unsafe {
+                    mut val := m.Lock();
+                    current_count = (*val).count;
+                    m.Unlock();
+                }
+            }
+
+            os.LogInt(current_count);
+        }
+    ";
+    run_e2e_test(source, "300");
+}
+
+#[test]
+fn test_e2e_channel_ping_pong() {
+    let source = "
+        type ChanArg[ctx] struct {
+            in_chan: std.Channel[int, ctx],
+            out_chan: std.Channel[int, ctx]
+        }
+        func worker_task(arg: *ChanArg[ctx]) {
+            mut val := (*arg).in_chan.Recv();
+            (*arg).out_chan.Send(val + 100);
+        }
+        func main() { 
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut in_c: std.Channel[int, ctx] := std.ChannelNew(ctx);
+            mut out_c: std.Channel[int, ctx] := std.ChannelNew(ctx);
+
+            mut arg: ChanArg[ctx];
+            arg.in_chan = in_c;
+            arg.out_chan = out_c;
+
+            std.Spawn(worker_task, &arg);
+
+            in_c.Send(42);
+            mut result := out_c.Recv();
+
+            os.LogInt(result);
+        }
+    ";
+    run_e2e_test(source, "142");
+}
