@@ -578,11 +578,13 @@ impl TypeChecker {
                 is_mut: _,
                 value,
                 var_type,
+                span,
                 ..
             } => {
                 let val_type = if let Some(val_expr) = value {
                     let mut t = self.check_expression(val_expr)?;
                     t = self.resolve_type(&t)?;
+                    t = self.resolve_type_namespacing(&t)?;
 
                     let mut origs = if is_ephemeral_view(&t) {
                         self.get_expression_origins(val_expr)
@@ -600,12 +602,13 @@ impl TypeChecker {
                         let mut origs = HashSet::new();
                         origs.insert(name.clone());
                         self.variable_origins.insert(name.clone(), origs);
-                        self.resolve_type(explicit_t)?;
-                        self.resolve_type(explicit_t)?
+                        let resolved = self.resolve_type(explicit_t)?;
+                        let resolved = self.resolve_type_namespacing(&resolved);
+                        resolved
                     } else {
                         return Err(TypeError {
                             kind: TypeErrorKind::UninitializedVariable,
-                            message: format!(
+                            message: format!( 
                                 "Semantic Error: Uninitialized variable '{}' must have an explicit type annotation",
                                 name
                             ),
@@ -616,10 +619,13 @@ impl TypeChecker {
 
                 if let Some(explicit_t) = var_type {
                     let resolved_explicit = self.resolve_type(explicit_t)?;
+                    let resolved_explicit = self.resolve_type_namespacing(&resolved_explicit);
+                    self.resolved_types.insert(*span, resolved_explicit.clone());
+
                     if !types_match(&resolved_explicit, &val_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
-                            message: format!(
+                            message: format!( 
                                 "Semantic Error: Explicit Type Annotation Mismatch. Declared {:?} but got value {:?}",
                                 resolved_explicit, val_type
                             ),
@@ -634,6 +640,7 @@ impl TypeChecker {
                     self.symbol_table.insert(name.clone(), val_type.clone());
                     self.variable_types.insert(name.clone(), val_type);
                 }
+            }
 
                 if let Some(ref mut local_vars) = self.current_function_local_vars {
                     local_vars.insert(name.clone());
