@@ -1,9 +1,9 @@
 {
-  "summary": "fix: clear open directories state upon module checking in typechecker visitor",
+  "summary": "fix: resolve resource leak in 'test_os_dir_and_entry_layouts' compile test",
   "files": [
     {
-      "file_path": "src/typechecker/visitor.rs",
-      "code_diff": "<<<<<<< SEARCH\n    pub fn check_module(&mut self, program: &Program, prefix: &str) -> Result<(), TypeError> { \n        self.current_prefix = prefix.to_string();\n        self.symbol_table.clear();\n        self.variable_origins.clear();\n        self.all_variable_origins.clear();\n        self.moved_vars.clear();\n        self.checked_results.clear();\n\n        // 1. Pre-register std library namespaces\n=======\n    pub fn check_module(&mut self, program: &Program, prefix: &str) -> Result<(), TypeError> { \n        self.current_prefix = prefix.to_string();\n        self.symbol_table.clear();\n        self.variable_origins.clear();\n        self.all_variable_origins.clear();\n        self.moved_vars.clear();\n        self.checked_results.clear();\n        self.open_directories.clear();\n\n        // 1. Pre-register std library namespaces\n>>>>>>> REPLACE"
+      "file_path": "tests/compile_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n#[test]\nfn test_os_dir_and_entry_layouts() {\n    let source = \"\n        func main() {\n            mut ctx := os.Arena.New();\n            defer ctx.Free();\n            mut d: os.Dir[ctx];\n            mut entry: os.DirEntry[ctx];\n        }\n    \";\n    assert!(check_program(source).is_ok());\n}\n=======\n#[test]\nfn test_os_dir_and_entry_layouts() {\n    let source = \"\n        func main() {\n            mut ctx := os.Arena.New();\n            defer ctx.Free();\n            mut d: os.Dir[ctx];\n            mut entry: os.DirEntry[ctx];\n            os.CloseDir(d);\n        }\n    \";\n    assert!(check_program(source).is_ok());\n}\n>>>>>>> REPLACE"
     }
   ]
 }

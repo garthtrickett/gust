@@ -2137,6 +2137,7 @@ fn test_os_dir_and_entry_layouts() {
             defer ctx.Free();
             mut d: os.Dir[ctx];
             mut entry: os.DirEntry[ctx];
+            os.CloseDir(d);
         }
     ";
     assert!(check_program(source).is_ok());
