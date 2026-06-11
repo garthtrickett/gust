@@ -137,7 +137,7 @@ fn test_e2e_bool_primitive() {
             os.LogInt(s.ok as int);
         }
     ";
-    run_e2e_test(source, \"1\\n0\\n1\");
+    run_e2e_test(source, "1\n0\n1");
 }
 
 #[test]

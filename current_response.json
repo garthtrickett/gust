@@ -1,9 +1,9 @@
 {
-  "summary": "fix: handle Expression::Bool in format_expr inside parser tests",
+  "summary": "fix: resolve syntax error on e2e test string assertion",
   "files": [
     {
-      "file_path": "src/parser.rs",
-      "code_diff": "<<<<<<< SEARCH\n    fn format_expr(expr: &Expression) -> String {\n        match expr {\n            Expression::Identifier(name, _) => name.clone(),\n            Expression::Integer(val, _) => val.to_string(),\n            Expression::String(val, _) => format!(\"\\\"{}\\\"\", val),\n            Expression::Move(inner, _) => format!(\"(move {})\", format_expr(inner)),\n=======\n    fn format_expr(expr: &Expression) -> String {\n        match expr {\n            Expression::Identifier(name, _) => name.clone(),\n            Expression::Integer(val, _) => val.to_string(),\n            Expression::String(val, _) => format!(\"\\\"{}\\\"\", val),\n            Expression::Bool(val, _) => val.to_string(),\n            Expression::Move(inner, _) => format!(\"(move {})\", format_expr(inner)),\n>>>>>>> REPLACE"
+      "file_path": "tests/e2e_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n#[test]\nfn test_e2e_bool_primitive() {\n    let source = \"\n        type Status struct {\n            ok: bool\n        }\n        func main() {\n            mut b: bool := true;\n            os.LogInt(b as int);\n            \n            b = false;\n            os.LogInt(b as int);\n            \n            mut s: Status;\n            s.ok = true;\n            os.LogInt(s.ok as int);\n        }\n    \";\n    run_e2e_test(source, \\\"1\\\\n0\\\\n1\\\");\n}\n=======\n#[test]\nfn test_e2e_bool_primitive() {\n    let source = \"\n        type Status struct {\n            ok: bool\n        }\n        func main() {\n            mut b: bool := true;\n            os.LogInt(b as int);\n            \n            b = false;\n            os.LogInt(b as int);\n            \n            mut s: Status;\n            s.ok = true;\n            os.LogInt(s.ok as int);\n        }\n    \";\n    run_e2e_test(source, \"1\\n0\\n1\");\n}\n>>>>>>> REPLACE"
     }
   ]
 }
