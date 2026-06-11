@@ -318,6 +318,44 @@ impl TypeChecker {
         );
 
         self.function_registry.insert(
+            "std.MutexNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["ctx".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("Mutex_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_MutexNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["ctx".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("Mutex_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "std.ChannelNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["ctx".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("Channel_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_ChannelNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["ctx".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("Channel_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
             "std.str_slice".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["s".to_string(), "start".to_string(), "end".to_string()],
