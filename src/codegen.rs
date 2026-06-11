@@ -485,6 +485,10 @@ impl Codegen {
                 || func_name == "std_FormatInt"
                 || func_name == "std.Concat"
                 || func_name == "std_Concat"
+                || func_name == "std.MutexNew"
+                || func_name == "std_MutexNew"
+                || func_name == "std.ChannelNew"
+                || func_name == "std_ChannelNew"
             {
                 continue;
             }
