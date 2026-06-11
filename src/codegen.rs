@@ -594,7 +594,7 @@ impl Codegen {
                 c_code.push_str(&format!("}} {}_Tag;\n\n", struct_name));
 
                 // 2. Generate struct with anonymous union
-                c_code.push_str(&format!("struct {} {\n", struct_name));
+                c_code.push_str(&format!("struct {} {{\n", struct_name));
                 c_code.push_str("    int tag; \n");
                 c_code.push_str("    union {\n");
 
@@ -611,7 +611,6 @@ impl Codegen {
                 c_code.push_str("    };\n");
                 c_code.push_str("};\n\n");
 
-                c_code.push_str(&format!("struct CastResult_{} {\n", struct_name));
                 c_code.push_str(&format!("struct CastResult_{} {{\n", struct_name));
                 c_code.push_str(&format!("    {}* Val;\n", struct_name));
                 c_code.push_str("    int Ok;\n");
