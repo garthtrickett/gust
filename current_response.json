@@ -1,9 +1,9 @@
 {
-  "summary": "feat: implement bounds-checked C macros for Vector Pop, Clear, and Back",
+  "summary": "feat: translate vector Pop, Clear, and Back method calls to their C runtime macros",
   "files": [
     {
-      "file_path": "src/codegen_runtime.rs",
-      "code_diff": "<<<<<<< SEARCH\n#define os_VectorNew(arena_ptr) { NULL, 0, 0, (arena_ptr) }\n=======\n#define os_VectorNew(arena_ptr) { NULL, 0, 0, (arena_ptr) }\n\n#define os_VectorPop(vec_ptr) \\\n    ({ \\\n        if ((vec_ptr)->len <= 0) { \\\n            printf(\"Vector underflow on Pop at line %d\\n\", __LINE__); \\\n            exit(1); \\\n        } \\\n        (vec_ptr)->len--; \\\n        __typeof__(*(vec_ptr)->data) _val = (vec_ptr)->data[(vec_ptr)->len]; \\\n        memset(&((vec_ptr)->data[(vec_ptr)->len]), 0, sizeof(*(vec_ptr)->data)); \\\n        _val; \\\n    })\n\n#define os_VectorClear(vec_ptr) do { (vec_ptr)->len = 0; } while(0)\n\n#define os_VectorBack(vec_ptr) \\\n    ({ \\\n        if ((vec_ptr)->len <= 0) { \\\n            printf(\"Vector underflow on Back at line %d\\n\", __LINE__); \\\n            exit(1); \\\n        } \\\n        &((vec_ptr)->data[(vec_ptr)->len - 1]); \\\n    })\n>>>>>>> REPLACE"
+      "file_path": "src/codegen.rs",
+      "code_diff": "<<<<<<< SEARCH\n                    if is_vec && right == \"Push\" {\n                        let arg_str = self.gen_expression(&arguments[0]);\n                        return format!(\"os_VectorPush(&{}, {})\", left_str, arg_str);\n                    }\n                    if is_map && right == \"Insert\" {\n=======\n                    if is_vec && right == \"Push\" {\n                        let arg_str = self.gen_expression(&arguments[0]);\n                        return format!(\"os_VectorPush(&{}, {})\", left_str, arg_str);\n                    }\n                    if is_vec && right == \"Pop\" {\n                        return format!(\"os_VectorPop(&{})\", left_str);\n                    }\n                    if is_vec && right == \"Clear\" {\n                        return format!(\"os_VectorClear(&{})\", left_str);\n                    }\n                    if is_vec && right == \"Back\" {\n                        return format!(\"os_VectorBack(&{})\", left_str);\n                    }\n                    if is_map && right == \"Insert\" {\n>>>>>>> REPLACE"
     }
   ]
 }

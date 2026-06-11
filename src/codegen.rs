@@ -1794,6 +1794,15 @@ impl Codegen {
                         let arg_str = self.gen_expression(&arguments[0]);
                         return format!("os_VectorPush(&{}, {})", left_str, arg_str);
                     }
+                    if is_vec && right == "Pop" {
+                        return format!("os_VectorPop(&{})", left_str);
+                    }
+                    if is_vec && right == "Clear" {
+                        return format!("os_VectorClear(&{})", left_str);
+                    }
+                    if is_vec && right == "Back" {
+                        return format!("os_VectorBack(&{})", left_str);
+                    }
                     if is_map && right == "Insert" {
                         let k_str = self.gen_expression(&arguments[0]);
                         let v_str = self.gen_expression(&arguments[1]);
