@@ -1450,14 +1450,52 @@ impl TypeChecker {
                     }
                     Ok(var_type)
                 } else {
-                    Err(TypeError {
-                        kind: TypeErrorKind::InvalidMoveTarget,
-                        message: "Semantic Error: Only variables can be moved".to_string(),
-                        span: None,
-                    })
+                    let is_place = matches!(
+                        &**inner_expr,
+                        Expression::Selector { .. }
+                            | Expression::Dereference(..)
+                            | Expression::IndexAccess { .. }
+                            | Expression::AsCast { .. }
+                    );
+
+                    if is_place {
+                        let var_type = self.check_expression(inner_expr)?;
+                        if let Some(root_name) = get_root_variable(inner_expr) {
+                            if self.moved_vars.contains(&root_name) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::UseOfMovedVariable,
+                                    message: format!(
+                                        "Semantic Error: Variable '{}' has already been moved",
+                                        root_name
+                                    ),
+                                    span: None,
+                                });
+                            }
+                            if let Some(origins) = self.variable_origins.get(&root_name) {
+                                for origin in origins {
+                                    if self.moved_vars.contains(origin) {
+                                        return Err(TypeError {
+                                            kind: TypeErrorKind::VariableOriginInvalidated,
+                                            message: format!(
+                                                "Semantic Error: Variable '{}' cannot be used because its backing origin '{}' has been moved or invalidated",
+                                                root_name, origin
+                                            ),
+                                            span: None,
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        Ok(var_type)
+                    } else {
+                        Err(TypeError {
+                            kind: TypeErrorKind::InvalidMoveTarget,
+                            message: "Semantic Error: Only variables can be moved".to_string(),
+                            span: None,
+                        })
+                    }
                 }
-            }
-            Expression::Take(inner_expr, _) => {
+            }            Expression::Take(inner_expr, _) => {
                 let expr_type = self.check_expression(inner_expr)?;
                 if expr_type == Type::Int || expr_type == Type::Byte {
                     return Err(TypeError {
