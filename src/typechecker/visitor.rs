@@ -439,6 +439,49 @@ impl TypeChecker {
                 return_origins: std::collections::HashSet::new(),
             },
         );
+
+        self.function_registry.insert(
+            "os.Args".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["ctx".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Generic(
+                    "std.Vector".to_string(),
+                    vec![Type::Str, Type::Struct("ctx".to_string(), None)],
+                ),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os_Args".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["ctx".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Generic(
+                    "std.Vector".to_string(),
+                    vec![Type::Str, Type::Struct("ctx".to_string(), None)],
+                ),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os.Exit".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["code".to_string()],
+                params: vec![Type::Int],
+                return_type: Type::Void,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os_Exit".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["code".to_string()],
+                params: vec![Type::Int],
+                return_type: Type::Void,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
     }
 
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> { 
@@ -2725,8 +2768,8 @@ impl TypeChecker {
                                 });
                             }
 
-                            if self.is_linear(&elem_type) {
-                                if !matches!(arguments[0], Expression::Move(_, _)) {
+                            if self.is_linear(&elem_type)
+                                && !matches!(arguments[0], Expression::Move(_, _)) {
                                     return Err(TypeError {
                                         kind: TypeErrorKind::BrandLifetimeViolation,
                                         message: format!( 
@@ -2735,8 +2778,7 @@ impl TypeChecker {
                                         ),
                                         span: Some(arguments[0].span()),
                                     });
-                                } 
-                            }
+                                }
 
                             return Ok(Type::Void);
                         }

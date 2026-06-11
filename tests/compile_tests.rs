@@ -2114,6 +2114,19 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_compile_os_args_and_exit() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut args: std.Vector[str, ctx] := os.Args(ctx);
+            os.Exit(1);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_concurrency_template_registration_valid() {
     let source = "
         type MyStruct struct {
