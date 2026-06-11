@@ -1300,7 +1300,100 @@ fn test_e2e_parallel_zero_copy_parsing() {
             }
 
             os.LogInt(result);
-        }
+        } 
     ";
     run_e2e_test(source, "250");
+}
+
+#[test]
+fn test_e2e_process_args_and_exit() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut args: std.Vector[str, ctx] := os.Args(ctx);
+            os.LogInt(len(args));
+            os.LogStr(args[1]);
+            os.LogStr(args[2]);
+            os.Exit(42);
+        }
+    ";
+
+    // 1. Compile the input Gust program
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+
+    let mut checker = TypeChecker::new();
+    let check_result = checker.check_program(&program);
+    assert!(
+        check_result.is_ok(),
+        "Typechecking failed: {:?}",
+        check_result.err()
+    );
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&program);
+
+    // 2. Write the transpiled C code to a temporary file
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_test_args_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_test_args_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+
+    // 3. Invoke a system C compiler to compile it
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let compile_output = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-o")
+        .arg(&bin_path)
+        .output();
+
+    let compile_success = match compile_output {
+        Ok(output) => {
+            if !output.status.success() {
+                println!("--- GCC Compilation Failed ---");
+                println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
+                println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
+            }
+            output.status.success()
+        }
+        Err(e) => {
+            let _ = fs::remove_file(&c_path);
+            panic!("CC failed: {:?}", e);
+        }
+    };
+    assert!(compile_success, "C compilation failed");
+
+    // 4. Run the compiled binary with custom arguments
+    let run_output = Command::new(&bin_path)
+        .arg("compile")
+        .arg("file.gst")
+        .output()
+        .expect("Failed to execute binary");
+
+    // Clean up temporary files immediately
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    // 5. Assert the exit code is 42
+    assert_eq!(run_output.status.code(), Some(42));
+
+    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+    assert_eq!(stdout_str.trim(), "3\ncompile\nfile.gst");
 }

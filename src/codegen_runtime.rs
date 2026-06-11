@@ -104,7 +104,41 @@ typedef void* map_void_ptr;
 
 "#;
 
-pub const MOCK_PAYLOAD_RUNTIME: &str = r#"Slice_unsigned_char os_MockPayload() {
+pub const MOCK_PAYLOAD_RUNTIME: &str = r#"int os_argc = 0;
+char** os_argv = NULL;
+
+struct std_Vector_str {
+    Slice_unsigned_char* data;
+    int len;
+    int capacity;
+    os_Arena* arena;
+};
+
+struct std_Vector_str os_Args(os_Arena* ctx) {
+    struct std_Vector_str vec = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    for (int i = 0; i < os_argc; i++) {
+        int len = strlen(os_argv[i]);
+        int offset = os_ArenaAlloc(ctx, len);
+        char* data = (char*)ctx->BaseAddress + offset;
+        memcpy(data, os_argv[i], len);
+        Slice_unsigned_char s = (Slice_unsigned_char){ (unsigned char*)data, len };
+        
+        if (vec.len >= vec.capacity) {
+            int new_cap = vec.capacity == 0 ? 8 : vec.capacity * 2;
+            int alloc_offset = os_ArenaAlloc(ctx, new_cap * sizeof(Slice_unsigned_char));
+            Slice_unsigned_char* new_data = (Slice_unsigned_char*)((char*)ctx->BaseAddress + alloc_offset);
+            if (vec.data != NULL) {
+                memcpy(new_data, vec.data, vec.len * sizeof(Slice_unsigned_char));
+            }
+            vec.data = new_data;
+            vec.capacity = new_cap;
+        }
+        vec.data[vec.len++] = s;
+    }
+    return vec;
+}
+
+Slice_unsigned_char os_MockPayload() {
     Slice_unsigned_char slice;
     slice.data = malloc(1024);
     slice.len = 1024;

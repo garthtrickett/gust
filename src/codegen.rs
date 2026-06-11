@@ -397,6 +397,9 @@ impl Codegen {
         c_code.push_str("// FORWARD DECLARATIONS\n");
         c_code.push_str("// ====================================================\n");
         for struct_name in self.struct_registry.keys() {
+            if struct_name == "std_Vector_str" {
+                continue;
+            }
             c_code.push_str(&format!(
                 "typedef struct {} {};\n",
                 struct_name, struct_name
@@ -592,6 +595,9 @@ impl Codegen {
         c_code.push('\n');
 
         for struct_name in &ordered_struct_names {
+            if struct_name == "std_Vector_str" {
+                continue;
+            }
             let layout = &self.struct_registry[struct_name];
             if let Some(variants) = self.enum_registry.get(struct_name) {
                 // 1. Generate typedef enum for variant tags
@@ -766,7 +772,9 @@ impl Codegen {
 
                 let mut body_str = String::new();
                 if name == "main" {
-                    body_str.push_str("int main() {\n");
+                    body_str.push_str("int main(int argc, char** argv) {\n");
+                    body_str.push_str("    os_argc = argc;\n");
+                    body_str.push_str("    os_argv = argv;\n");
                     body_str.push_str(&self.gen_block_statement(body));
                     body_str.push_str("    return 0;\n");
                     body_str.push_str("}\n\n");
@@ -1583,6 +1591,12 @@ impl Codegen {
                         "(({{\n        pthread_t _thread;\n        pthread_create(&_thread, NULL, {}_pthread_wrapper, {});\n        pthread_detach(_thread);\n    }}))",
                         thread_func_name, cast_expr
                     );
+                }
+
+                // os.Exit / os_Exit
+                if func_path == "os.Exit" || func_path == "os_Exit" {
+                    let code_str = self.gen_expression(&arguments[0]);
+                    return format!("exit({}")", code_str);
                 }
 
                 // os.ReadFile
