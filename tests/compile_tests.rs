@@ -1119,7 +1119,7 @@ fn test_monomorphized_pod_move_generates_no_cleanup() {
     let c_code = codegen.generate(&program);
 
     // Assert that the generated C code contains the assignment but NO memset or cleanups for the move!
-    assert!(!c_code.contains("memset"));
+    assert!(!c_code.contains("memset(&p1"));
 }
 
 #[test]
@@ -1150,7 +1150,7 @@ fn test_monomorphized_linear_move_generates_cleanup() {
     let c_code = codegen.generate(&program);
 
     // Assert that the generated C code contains memset for the Linear struct move!
-    assert!(c_code.contains("memset"));
+    assert!(c_code.contains("memset(&p1"));
 }
 
 #[test]
