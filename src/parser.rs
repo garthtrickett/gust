@@ -875,11 +875,11 @@ mod tests {
     fn test_empty_intrinsic_parsing() {
         let input_int = "empty[int]";
         let expr_int = parse_expr_str(input_int);
-        assert!(matches!(expr_int, Expression::Empty(Type::Int)));
+        assert!(matches!(expr_int, Expression::Empty(Type::Int, _)));
 
         let input_node = "empty[Node]";
         let expr_node = parse_expr_str(input_node);
-        if let Expression::Empty(Type::Struct(name, None)) = expr_node {
+        if let Expression::Empty(Type::Struct(name, None), _) = expr_node {
             assert_eq!(name, "Node");
         } else {
             panic!("Expected empty[Node] to parse into Empty(Type::Struct)");
@@ -887,7 +887,7 @@ mod tests {
 
         let input_node_ctx = "empty[Node[ctx]]";
         let expr_node_ctx = parse_expr_str(input_node_ctx);
-        if let Expression::Empty(Type::Struct(name, Some(brand))) = expr_node_ctx {
+        if let Expression::Empty(Type::Struct(name, Some(brand)), _) = expr_node_ctx {
             assert_eq!(name, "Node");
             assert_eq!(brand, "ctx");
         } else {
@@ -896,13 +896,22 @@ mod tests {
 
         let input_namespaced = "empty[std.Vector[int, ctx]]";
         let expr_namespaced = parse_expr_str(input_namespaced);
-        if let Expression::Empty(Type::Generic(name, args)) = expr_namespaced {
+        if let Expression::Empty(Type::Generic(name, args), _) = expr_namespaced {
             assert_eq!(name, "std.Vector");
             assert_eq!(args.len(), 2);
         } else {
             panic!("Expected empty[std.Vector[int, ctx]] to parse into Empty(Type::Generic)");
         }
     }
+
+    #[test]
+    fn test_parser_span_merging() {
+        let expr = parse_expr_str("a + b * c");
+        let span = expr.span();
+        assert_eq!(span.start.offset, 0);
+        assert_eq!(span.end.offset, 9);
+    }
+}
 
     fn parse_type_str(input: &str) -> Type {
         let lexer = Lexer::new(input);

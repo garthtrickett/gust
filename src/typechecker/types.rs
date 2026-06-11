@@ -177,12 +177,13 @@ pub struct FunctionSignature {
 
 pub fn expression_to_string(expr: &Expression) -> String {
     match expr {
-        Expression::Identifier(name) => name.clone(),
-        Expression::Integer(val) => val.to_string(),
-        Expression::String(val) => format!("\"{}\"", val),
+        Expression::Identifier(name, _) => name.clone(),
+        Expression::Integer(val, _) => val.to_string(),
+        Expression::String(val, _) => format!("\"{}\"", val),
         Expression::Call {
             function,
             arguments,
+            ..
         } => {
             let args_strs: Vec<String> = arguments.iter().map(expression_to_string).collect();
             format!(
@@ -191,19 +192,19 @@ pub fn expression_to_string(expr: &Expression) -> String {
                 args_strs.join(", ")
             )
         }
-        Expression::Selector { left, right } => {
+        Expression::Selector { left, right, .. } => {
             format!("{}.{}", expression_to_string(left), right)
         }
-        Expression::IndexAccess { allocator, index } => {
+        Expression::IndexAccess { allocator, index, .. } => {
             format!(
                 "{}[{}]",
                 expression_to_string(allocator),
                 expression_to_string(index)
             )
         }
-        Expression::Move(inner) => expression_to_string(inner),
-        Expression::Take(inner) => expression_to_string(inner),
-        Expression::Binary { op, left, right } => {
+        Expression::Move(inner, _) => expression_to_string(inner),
+        Expression::Take(inner, _) => expression_to_string(inner),
+        Expression::Binary { op, left, right, .. } => {
             format!(
                 "{} {} {}",
                 expression_to_string(left),
@@ -212,8 +213,8 @@ pub fn expression_to_string(expr: &Expression) -> String {
             )
         }
         Expression::AsCast { left, .. } => expression_to_string(left),
-        Expression::AddressOf(inner) => format!("&{}", expression_to_string(inner)),
-        Expression::Dereference(inner) => format!("*{}", expression_to_string(inner)),
-        Expression::Empty(target_type) => format!("empty[{:?}]", target_type),
+        Expression::AddressOf(inner, _) => format!("&{}", expression_to_string(inner)),
+        Expression::Dereference(inner, _) => format!("*{}", expression_to_string(inner)),
+        Expression::Empty(target_type, _) => format!("empty[{:?}]", target_type),
     }
 }

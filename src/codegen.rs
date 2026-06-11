@@ -799,28 +799,28 @@ impl Codegen {
         result
     }
 
-    fn gen_expression(&self, expr: &Expression) -> String {
+        fn gen_expression(&self, expr: &Expression) -> String {
         match expr {
-            Expression::Identifier(name) => {
+            Expression::Identifier(name, _) => {
                 if name == "null" {
                     "0xFFFFFFFF".to_string()
                 } else {
                     name.clone()
                 }
             }
-            Expression::Integer(val) => val.to_string(),
-            Expression::String(val) => {
+            Expression::Integer(val, _) => val.to_string(),
+            Expression::String(val, _) => {
                 format!( 
                     "((Slice_unsigned_char){{ (unsigned char*)\"{}\", {} }})",
                     val,
                     val.len()
                 )
             }
-            Expression::Dereference(inner) => {
+            Expression::Dereference(inner, _) => {
                 let inner_str = self.gen_expression(inner);
                 format!("(*({}))", inner_str)
             }
-            Expression::Take(inner) => {
+            Expression::Take(inner, _) => {
                 let expr_str = self.gen_expression(inner);
                 let mut is_lin = false;
                 if let Some(t) = self.get_expr_type(inner) {
@@ -835,7 +835,7 @@ impl Codegen {
                     expr_str
                 }
             }
-            Expression::AddressOf(inner) => {
+            Expression::AddressOf(inner, _) => {
                 let inner_str = self.gen_expression(inner);
                 if inner_str.ends_with(".Val") {
                     inner_str
@@ -843,7 +843,7 @@ impl Codegen {
                     format!("&({})", inner_str)
                 }
             }
-            Expression::Move(inner) => {
+            Expression::Move(inner, _) => {
                 let expr_str = self.gen_expression(inner);
                 let mut is_lin = false;
                 if let Some(t) = self.get_expr_type(inner) {
@@ -862,6 +862,7 @@ impl Codegen {
                 left,
                 target_type,
                 is_reference,
+                ..
             } => {
                 let left_str = self.gen_expression(left);
                 let target_str = self.get_c_type(target_type);
@@ -894,7 +895,7 @@ impl Codegen {
                     }
                 }
             }
-            Expression::IndexAccess { allocator, index } => {
+            Expression::IndexAccess { allocator, index, .. } => {
                 let alloc_str = self.gen_expression(allocator);
                 let index_str = self.gen_expression(index);
 
@@ -928,7 +929,7 @@ impl Codegen {
                 } else {
                     // Fallback to checking the allocator variable name in symbol table directly
                     let alloc_ident = expression_to_string(allocator);
-                    if let Some(Type::Struct(struct_name, _)) =
+                    if let Some(Type::Struct(struct_name, _)) = 
                         self.symbol_table.borrow().get(&alloc_ident)
                     {
                         if struct_name.starts_with("Vector_")
@@ -977,8 +978,8 @@ impl Codegen {
                 } else {
                     // Arena indexing (Value-Branded)
                     let mut target_struct = "SessionNode".to_string();
-                    if let Expression::Identifier(idx_name) = &**index
-                        && let Some(Type::Index(struct_name, _)) =
+                    if let Expression::Identifier(idx_name, _) = &**index
+                        && let Some(Type::Index(struct_name, _)) = 
                             self.symbol_table.borrow().get(idx_name)
                         && struct_name != "Any"
                     {
@@ -986,7 +987,7 @@ impl Codegen {
                     }
 
                     let mut use_arrow = false;
-                    if let Expression::Identifier(name) = &**allocator
+                    if let Expression::Identifier(name, _) = &**allocator
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
                         && **inner == Type::Arena
                     {
@@ -1006,18 +1007,18 @@ impl Codegen {
                     }
                 }
             }
-            Expression::Binary { op, left, right } => {
+            Expression::Binary { op, left, right, .. } => {
                 let left_str = self.gen_expression(left);
                 let right_str = self.gen_expression(right);
                 format!("{} {} {}", left_str, op, right_str)
             }
-            Expression::Selector { left, right } => {
+            Expression::Selector { left, right, .. } => {
                 let left_str = self.gen_expression(left);
 
                 let mut use_arrow = false;
                 if matches!(**left, Expression::IndexAccess { .. }) {
                     if let Expression::IndexAccess { allocator, .. } = &**left
-                        && let Expression::Identifier(name) = &**allocator
+                        && let Expression::Identifier(name, _) = &**allocator
                         && let Some(t) = self.symbol_table.borrow().get(name)
                     {
                         let is_arena_ptr = if let Type::RawPointer(inner) = t {
@@ -1032,8 +1033,9 @@ impl Codegen {
                 } else if let Expression::Selector {
                     left: inner_left,
                     right: inner_right,
+                    ..
                 } = &**left
-                    && let Expression::Identifier(name) = &**inner_left
+                    && let Expression::Identifier(name, _) = &**inner_left
                     && name == "result"
                     && inner_right == "Val"
                 {
@@ -1049,6 +1051,7 @@ impl Codegen {
             Expression::Call {
                 function,
                 arguments,
+                ..
             } => {
                 let func_path = self.gen_expression(function);
 
@@ -1066,7 +1069,7 @@ impl Codegen {
                         }
                     } else {
                         let arg_ident = expression_to_string(&arguments[0]);
-                        if let Some(Type::Struct(struct_name, _)) =
+                        if let Some(Type::Struct(struct_name, _)) = 
                             self.symbol_table.borrow().get(&arg_ident)
                             && (struct_name.starts_with("Vector_")
                                 || struct_name.starts_with("std_Vector_")
@@ -1098,7 +1101,7 @@ impl Codegen {
                     let src_arg_str = self.gen_expression(&arguments[1]);
                     
                     let mut dest_is_ptr = false;
-                    if let Expression::Identifier(name) = &arguments[0]
+                    if let Expression::Identifier(name, _) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
                         && **inner == Type::Arena
                     {
@@ -1119,7 +1122,7 @@ impl Codegen {
                     let mut src_brand = "current_ctx".to_string();
                     let mut found = false;
 
-                    if let Expression::Identifier(name) = &arguments[1]
+                    if let Expression::Identifier(name, _) = &arguments[1]
                         && let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name).cloned() {
                             struct_name = erase_struct_name_with_registry(&s_name, &Some(brand.clone()), &self.struct_registry);
                             src_brand = brand;
@@ -1215,7 +1218,7 @@ impl Codegen {
                         "Vector_int".to_string()
                     };
                     let mut is_ptr = false;
-                    if let Expression::Identifier(name) = &arguments[0]
+                    if let Expression::Identifier(name, _) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
                         && **inner == Type::Arena
                     {
@@ -1245,7 +1248,7 @@ impl Codegen {
                         "HashMap_int_int".to_string()
                     };
                     let mut is_ptr = false;
-                    if let Expression::Identifier(name) = &arguments[0]
+                    if let Expression::Identifier(name, _) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
                         && **inner == Type::Arena
                     {
@@ -1275,7 +1278,7 @@ impl Codegen {
                         "Pool_int".to_string()
                     };
                     let mut is_ptr = false;
-                    if let Expression::Identifier(name) = &arguments[0]
+                    if let Expression::Identifier(name, _) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
                         && **inner == Type::Arena
                     {
@@ -1298,7 +1301,7 @@ impl Codegen {
                     let arg_path = self.gen_expression(&arguments[1]);
 
                     let mut is_ptr = false;
-                    if let Expression::Identifier(name) = &arguments[0]
+                    if let Expression::Identifier(name, _) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
                         && **inner == Type::Arena
                     {
@@ -1319,7 +1322,7 @@ impl Codegen {
                     return format!("os_WriteFile({}, {})", arg_path, arg_contents);
                 }
 
-                if let Expression::Selector { left, right } = &**function {
+                if let Expression::Selector { left, right, .. } = &**function {
                     let left_str = self.gen_expression(left);
 
                     let mut is_vec = false;
@@ -1353,7 +1356,7 @@ impl Codegen {
                         }
                     } else {
                         let left_ident = expression_to_string(left);
-                        if let Some(Type::Struct(struct_name, _)) =
+                        if let Some(Type::Struct(struct_name, _)) = 
                             self.symbol_table.borrow().get(&left_ident)
                         {
                             if struct_name.starts_with("Vector_")
@@ -1425,7 +1428,7 @@ impl Codegen {
                             Some(struct_name.clone())
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) =
+                            if let Some(Type::Struct(struct_name, _)) = 
                                 self.symbol_table.borrow().get(&left_ident)
                             {
                                 Some(struct_name.clone())
@@ -1453,7 +1456,7 @@ impl Codegen {
                             Some(struct_name.clone())
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) =
+                            if let Some(Type::Struct(struct_name, _)) = 
                                 self.symbol_table.borrow().get(&left_ident)
                             {
                                 Some(struct_name.clone())
@@ -1467,7 +1470,7 @@ impl Codegen {
                                 lookup_struct = format!("LookupResult_{}", self.get_type_ident(&v));
                             }
                         let is_str_key_str = if is_str_key { "1" } else { "0" };
-                        return format!(
+                        return format!( 
                             "({{ {} res = {{0}}; res.Ok = os_HashMapContains(&{}, {}, {}); if (res.Ok) {{ res.Val = *os_HashMapRef(&{}, {}, {}); }} res; }})",
                             lookup_struct,
                             left_str,
@@ -1501,7 +1504,7 @@ impl Codegen {
                 let func_c = func_path.replace(".", "_");
                 let mut arg_strs = Vec::new();
                 for arg in arguments {
-                    if let Expression::Identifier(name) = arg
+                    if let Expression::Identifier(name, _) = arg
                         && let Some(var_type) = self.symbol_table.borrow().get(name)
                         && *var_type == Type::Arena
                     {
@@ -1512,7 +1515,7 @@ impl Codegen {
                 }
                 format!("{}({})", func_c, arg_strs.join(", "))
             }
-            Expression::Empty(target_type) => self.gen_type_aware_initializer(target_type),
+            Expression::Empty(target_type, _) => self.gen_type_aware_initializer(target_type),
         }
     }
 }
