@@ -1,9 +1,0 @@
-{
-  "summary": "fix: allow parsing TokenType::Bool in type signatures and return types",
-  "files": [
-    {
-      "file_path": "src/parser.rs",
-      "code_diff": "<<<<<<< SEARCH\n        // Parse optional return type\n        let mut return_type = Type::Void;\n        if self.cur_token.token_type == TokenType::Ident\n            || self.cur_token.token_type == TokenType::LBracket\n            || self.cur_token.token_type == TokenType::Asterisk\n            || self.cur_token.token_type == TokenType::Ampersand\n        {\n            return_type = self.parse_type_signature()?;\n        }\n=======\n        // Parse optional return type\n        let mut return_type = Type::Void;\n        if self.cur_token.token_type == TokenType::Ident\n            || self.cur_token.token_type == TokenType::Bool\n            || self.cur_token.token_type == TokenType::LBracket\n            || self.cur_token.token_type == TokenType::Asterisk\n            || self.cur_token.token_type == TokenType::Ampersand\n        {\n            return_type = self.parse_type_signature()?;\n        }\n>>>>>>> REPLACE\n\n<<<<<<< SEARCH\n        if self.cur_token.token_type != TokenType::Ident {\n            return None;\n        }\n        let mut base_name = self.cur_token.literal.clone();\n=======\n        if self.cur_token.token_type != TokenType::Ident && self.cur_token.token_type != TokenType::Bool {\n            return None;\n        }\n        let mut base_name = self.cur_token.literal.clone();\n>>>>>>> REPLACE"
-    }
-  ]
-}
