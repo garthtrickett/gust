@@ -904,6 +904,21 @@ impl TypeChecker {
                 self.current_function_return_origins = old_return_origins;
                 self.current_function_inout_params = old_inout_params;
                 self.current_function_local_vars = old_local_vars;
+
+                if let Some(ref local_vars) = self.current_function_local_vars {
+                    for local_var in local_vars {
+                        if self.open_directories.contains(local_var) {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::BrandLifetimeViolation,
+                                message: format!( 
+                                    "Semantic Error: Resource leak. Directory resource variable '{}' must be cleanly closed with os.CloseDir before leaving local scope",
+                                    local_var
+                                ),
+                                span: None,
+                            });
+                        } 
+                    } 
+                }
             }
             Statement::VarDecl { 
                 name,
@@ -972,6 +987,12 @@ impl TypeChecker {
                 } else {
                     self.symbol_table.insert(name.clone(), val_type.clone());
                     self.variable_types.insert(name.clone(), val_type);
+                }
+
+                if let Type::Struct(ref struct_name, _) = val_type {
+                    if struct_name.starts_with("os_Dir_") {
+                        self.open_directories.insert(name.clone());
+                    }
                 }
 
                 if let Some(ref mut local_vars) = self.current_function_local_vars {
@@ -1066,6 +1087,12 @@ impl TypeChecker {
                         }
                     }
                     self.moved_vars.remove(&root_name); // Re-initialized!
+
+                    if let Type::Struct(ref struct_name, _) = val_type {
+                        if struct_name.starts_with("os_Dir_") {
+                            self.open_directories.insert(root_name.clone());
+                        }
+                    }
                 }
             }
             Statement::While {
@@ -1631,8 +1658,20 @@ impl TypeChecker {
                             }
                         }
                         for v in to_invalidate {
-                            self.moved_vars.insert(v);
+                            self.moved_vars.insert(v.clone());
+                            self.open_directories.remove(&v);
                         }
+                    }
+
+                    if self.open_directories.contains(name) {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::BrandLifetimeViolation,
+                            message: format!(
+                                "Semantic Error: Directory resource variable '{}' cannot be moved while open. Close it first.",
+                                name
+                            ),
+                            span: None,
+                        });
                     }
 
                     if self.is_linear(&var_type) {
@@ -2536,12 +2575,14 @@ impl TypeChecker {
                     let arg_type = self.check_expression(&arguments[0])?;
                     if let Type::Struct(name, _) = &arg_type {
                         if name.starts_with("os_Dir_") {
+                            let arg_name = expression_to_string(&arguments[0]);
+                            self.open_directories.remove(&arg_name);
                             return Ok(Type::Void);
                         }
                     }
                     return Err(TypeError {
                         kind: TypeErrorKind::TypeMismatch,
-                        message: format!(
+                        message: format!( 
                             "Semantic Error: os.CloseDir expects an os.Dir handle, but got {:?}",
                             arg_type
                         ),
@@ -3382,13 +3423,25 @@ impl TypeChecker {
                         }
                     }
                     if left_type == Type::Arena && right == "Free" {
-                        if !arguments.is_empty() {
+                        if !arguments.is_empty() { 
                             return Err(TypeError {
                                 kind: TypeErrorKind::ArgumentMismatch,
                                 message: "Arena.Free() expects 0 arguments".to_string(),
                                 span: None,
                             });
                         }
+
+                        let mut to_invalidate = Vec::new();
+                        for (v, v_type) in &self.symbol_table {
+                            if self.get_type_brand(v_type) == Some(left_str.clone()) {
+                                to_invalidate.push(v.clone());
+                            }
+                        }
+                        for v in to_invalidate {
+                            self.moved_vars.insert(v.clone());
+                            self.open_directories.remove(&v);
+                        }
+
                         return Ok(Type::Void);
                     }
                 }

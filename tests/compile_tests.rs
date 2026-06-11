@@ -2190,6 +2190,58 @@ fn test_os_directory_ffi_type_checking() {
 }
 
 #[test]
+fn test_directory_resource_safety_checks() {
+    let source_use_after_ctx_move = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut opt_dir := os.OpenDir(ctx, \"src\");
+            if opt_dir.Ok {
+                mut d := opt_dir.Val;
+                mut ctx2 := move ctx;
+                os.CloseDir(d);
+            }
+        }
+    ";
+    let res1 = check_program(source_use_after_ctx_move);
+    assert!(res1.is_err());
+    assert_eq!(res1.unwrap_err().kind, TypeErrorKind::UseOfMovedVariable);
+
+    let source_leak_directory = "
+        func leak() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut opt_dir := os.OpenDir(ctx, \"src\");
+            if opt_dir.Ok {
+                mut d := opt_dir.Val;
+            }
+        }
+        func main() {}
+    ";
+    let res2 = check_program(source_leak_directory);
+    assert!(res2.is_err());
+    assert_eq!(res2.unwrap_err().kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(res2.unwrap_err().message.contains("must be cleanly closed"));
+
+    let source_move_open_directory = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut opt_dir := os.OpenDir(ctx, \"src\");
+            if opt_dir.Ok {
+                mut d := opt_dir.Val;
+                mut d2 := move d;
+                os.CloseDir(d2);
+            }
+        }
+    ";
+    let res3 = check_program(source_move_open_directory);
+    assert!(res3.is_err());
+    assert_eq!(res3.unwrap_err().kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(res3.unwrap_err().message.contains("cannot be moved while open"));
+}
+
+#[test]
 fn test_directory_ffi_codegen_verification() {
     let source = "
         func main() {
