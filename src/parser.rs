@@ -909,6 +909,7 @@ mod tests {
             Expression::Identifier(name, _) => name.clone(),
             Expression::Integer(val, _) => val.to_string(),
             Expression::String(val, _) => format!("\"{}\"", val),
+            Expression::Bool(val, _) => val.to_string(),
             Expression::Move(inner, _) => format!("(move {})", format_expr(inner)),
             Expression::Take(inner, _) => format!("(take {})", format_expr(inner)),
             Expression::AddressOf(inner, _) => format!("(& {})", format_expr(inner)),
