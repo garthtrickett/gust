@@ -214,6 +214,13 @@ impl TypeChecker {
             "std.Vector".to_string(),
             StructTemplate {
                 generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: vector_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std_Vector".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
                 fields: vector_fields,
             },
         );
@@ -260,6 +267,13 @@ impl TypeChecker {
         );
         struct_templates.insert(
             "std.HashMap".to_string(),
+            StructTemplate {
+                generics: vec!["K".to_string(), "V".to_string(), "ctx".to_string()],
+                fields: hashmap_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std_HashMap".to_string(),
             StructTemplate {
                 generics: vec!["K".to_string(), "V".to_string(), "ctx".to_string()],
                 fields: hashmap_fields,
@@ -315,6 +329,13 @@ impl TypeChecker {
             "std.Pool".to_string(),
             StructTemplate {
                 generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: pool_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std_Pool".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
                 fields: pool_fields,
             },
         );
@@ -341,6 +362,13 @@ impl TypeChecker {
         );
         struct_templates.insert( 
             "std.RcNode".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string()],
+                fields: rc_node_fields.clone(),
+            },
+        );
+        struct_templates.insert( 
+            "std_RcNode".to_string(),
             StructTemplate {
                 generics: vec!["T".to_string()],
                 fields: rc_node_fields,
@@ -377,6 +405,13 @@ impl TypeChecker {
             "std.Rc".to_string(),
             StructTemplate {
                 generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: rc_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std_Rc".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
                 fields: rc_fields,
             },
         );
@@ -408,6 +443,13 @@ impl TypeChecker {
             "std.GraphNode".to_string(),
             StructTemplate {
                 generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: graph_node_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std_GraphNode".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
                 fields: graph_node_fields,
             },
         );
@@ -435,6 +477,13 @@ impl TypeChecker {
         );
         struct_templates.insert(
             "std.Graph".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: graph_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std_Graph".to_string(),
             StructTemplate {
                 generics: vec!["T".to_string(), "ctx".to_string()],
                 fields: graph_fields,

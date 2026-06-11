@@ -3,7 +3,6 @@ use gust_lexer::lexer::Lexer;
 use gust_lexer::parser::Parser;
 use gust_lexer::typechecker::TypeChecker;
 use std::env;
-use std::fs;
 use std::fs::File;
 use std::io::Write;
 
