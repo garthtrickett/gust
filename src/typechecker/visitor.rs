@@ -2595,7 +2595,7 @@ impl TypeChecker {
                             if !types_match(&elem_type, &arg_type) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
-                                    message: format!(
+                                    message: format!( 
                                         "Argument type mismatch for Vector.Push. Expected {:?} but got {:?}",
                                         elem_type, arg_type
                                     ),
@@ -2603,6 +2603,61 @@ impl TypeChecker {
                                 });
                             }
                             return Ok(Type::Void);
+                        }
+                        if (struct_name.starts_with("Vector_")
+                            || struct_name.starts_with("std_Vector_"))
+                            && right == "Pop"
+                        {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Vector.Pop expects exactly 0 arguments".to_string(),
+                                    span: None,
+                                });
+                            }
+                            let elem_type =
+                                self.get_vector_element_type(struct_name).ok_or_else(|| {
+                                    TypeError {
+                                        kind: TypeErrorKind::TypeMismatch,
+                                        message: "Invalid Vector struct layout".to_string(),
+                                        span: None,
+                                    }
+                                })?;
+                            return Ok(elem_type);
+                        }
+                        if (struct_name.starts_with("Vector_")
+                            || struct_name.starts_with("std_Vector_"))
+                            && right == "Clear"
+                        {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Vector.Clear expects exactly 0 arguments".to_string(),
+                                    span: None,
+                                });
+                            }
+                            return Ok(Type::Void);
+                        }
+                        if (struct_name.starts_with("Vector_")
+                            || struct_name.starts_with("std_Vector_"))
+                            && right == "Back"
+                        {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Vector.Back expects exactly 0 arguments".to_string(),
+                                    span: None,
+                                });
+                            }
+                            let elem_type =
+                                self.get_vector_element_type(struct_name).ok_or_else(|| {
+                                    TypeError {
+                                        kind: TypeErrorKind::TypeMismatch,
+                                        message: "Invalid Vector struct layout".to_string(),
+                                        span: None,
+                                    }
+                                })?;
+                            return Ok(Type::RawPointer(Box::new(elem_type)));
                         }
                         if (struct_name.starts_with("HashMap_")
                             || struct_name.starts_with("std_HashMap_"))
