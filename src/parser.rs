@@ -42,7 +42,7 @@ impl Parser {
                     return;
                 }
                 TokenType::RBrace => {
-                    self.next_token(); // consume the closing brace
+                    // Stop *at* closing brace so the enclosing block parser can see and handle it
                     return;
                 }
                 TokenType::Func
@@ -96,7 +96,11 @@ impl Parser {
                 if self.errors.len() == before_errors {
                     self.error_at_current("Syntax Error: unexpected token or malformed statement".to_string());
                 }
+                let before_sync = self.cur_token.token_type.clone();
                 self.synchronize();
+                if self.cur_token.token_type == before_sync {
+                    self.next_token();
+                }
             }
         }
 
@@ -148,10 +152,11 @@ impl Parser {
         }
     }
 
-    fn parse_struct_decl(&mut self) -> Option<Statement> {
+    fn parse_struct_decl(&mut self) -> Option<Statement> { 
         let start_span = self.cur_token.span;
         self.next_token(); // consume 'type'
         if self.cur_token.token_type != TokenType::Ident {
+            self.error_at_current("Expected identifier after 'type'".to_string());
             return None;
         }
         let name = self.cur_token.literal.clone();
@@ -168,6 +173,7 @@ impl Parser {
                 }
             }
             if self.cur_token.token_type != TokenType::RBracket {
+                self.error_at_current("Expected closing bracket ']' in generic type parameters".to_string());
                 return None;
             }
             self.next_token(); // consume ']'
@@ -177,6 +183,7 @@ impl Parser {
             self.next_token();
 
             if self.cur_token.token_type != TokenType::LBrace {
+                self.error_at_current("Expected opening brace '{' after 'struct'".to_string());
                 return None;
             }
             self.next_token();
@@ -191,11 +198,17 @@ impl Parser {
                     self.next_token();
 
                     if self.cur_token.token_type != TokenType::Colon {
+                        self.error_at_current("Expected ':' after struct field identifier".to_string());
                         return None;
                     }
                     self.next_token();
 
-                    let field_type = self.parse_type_signature()?;
+                    let field_type = if let Some(t) = self.parse_type_signature() {
+                        t
+                    } else {
+                        self.error_at_current("Expected field type signature".to_string());
+                        return None;
+                    };
                     let field_end = self.cur_token.span;
                     fields.push(FieldDef {
                         name: field_name,
@@ -209,11 +222,13 @@ impl Parser {
                         self.next_token();
                     }
                 } else {
-                    self.next_token();
+                    self.error_at_current("Expected struct field identifier or '}'".to_string());
+                    return None;
                 }
             }
 
             if self.cur_token.token_type != TokenType::RBrace {
+                self.error_at_current("Expected closing brace '}' after struct fields".to_string());
                 return None;
             }
             let end_span = self.cur_token.span;
@@ -228,6 +243,7 @@ impl Parser {
             self.next_token(); // consume 'enum'
 
             if self.cur_token.token_type != TokenType::LBrace {
+                self.error_at_current("Expected opening brace '{' after 'enum'".to_string());
                 return None;
             }
             self.next_token(); // consume '{'
@@ -254,11 +270,17 @@ impl Parser {
                                 self.next_token();
 
                                 if self.cur_token.token_type != TokenType::Colon {
+                                    self.error_at_current("Expected ':' after enum variant field identifier".to_string());
                                     return None;
                                 }
                                 self.next_token();
 
-                                let f_type = self.parse_type_signature()?;
+                                let f_type = if let Some(t) = self.parse_type_signature() {
+                                    t
+                                } else {
+                                    self.error_at_current("Expected field type signature".to_string());
+                                    return None;
+                                };
                                 let f_end = self.cur_token.span;
                                 fields.push(FieldDef {
                                     name: f_name,
@@ -272,10 +294,12 @@ impl Parser {
                                     self.next_token();
                                 }
                             } else {
-                                self.next_token();
+                                self.error_at_current("Expected enum variant field identifier or '}'".to_string());
+                                return None;
                             }
                         }
                         if self.cur_token.token_type != TokenType::RBrace {
+                            self.error_at_current("Expected closing brace '}' after enum variant fields".to_string());
                             return None;
                         }
                         self.next_token(); // consume '}'
@@ -294,11 +318,13 @@ impl Parser {
                         self.next_token();
                     }
                 } else {
-                    self.next_token();
+                    self.error_at_current("Expected enum variant identifier or '}'".to_string());
+                    return None;
                 }
             }
 
             if self.cur_token.token_type != TokenType::RBrace {
+                self.error_at_current("Expected closing brace '}' after enum variants".to_string());
                 return None;
             }
             let end_span = self.cur_token.span;
@@ -310,6 +336,7 @@ impl Parser {
                 span: self.merge_spans(start_span, end_span),
             })
         } else {
+            self.error_at_current("Expected 'struct' or 'enum' declaration".to_string());
             None
         }
     }
@@ -318,12 +345,14 @@ impl Parser {
         let start_span = self.cur_token.span;
         self.next_token(); // consume 'func'
         if self.cur_token.token_type != TokenType::Ident {
+            self.error_at_current("Expected identifier after 'func'".to_string());
             return None;
         }
         let name = self.cur_token.literal.clone();
         self.next_token();
 
         if self.cur_token.token_type != TokenType::LParen {
+            self.error_at_current("Expected '(' after function name".to_string());
             return None;
         }
         self.next_token(); // consume '('
@@ -333,6 +362,7 @@ impl Parser {
             && self.cur_token.token_type != TokenType::Eof
         {
             if self.cur_token.token_type != TokenType::Ident {
+                self.error_at_current("Expected parameter name identifier".to_string());
                 return None;
             }
             let param_start = self.cur_token.span;
@@ -340,11 +370,17 @@ impl Parser {
             self.next_token();
 
             if self.cur_token.token_type != TokenType::Colon {
+                self.error_at_current("Expected ':' after parameter name".to_string());
                 return None;
             }
             self.next_token(); // consume ':'
 
-            let param_type = self.parse_type_signature()?;
+            let param_type = if let Some(t) = self.parse_type_signature() {
+                t
+            } else {
+                self.error_at_current("Expected parameter type signature".to_string());
+                return None;
+            };
             let param_end = self.cur_token.span;
             params.push(Parameter {
                 name: param_name,
@@ -358,6 +394,7 @@ impl Parser {
         }
 
         if self.cur_token.token_type != TokenType::RParen {
+            self.error_at_current("Expected closing parenthesis ')'".to_string());
             return None;
         }
         self.next_token(); // consume ')'
@@ -370,10 +407,16 @@ impl Parser {
             || self.cur_token.token_type == TokenType::Asterisk
             || self.cur_token.token_type == TokenType::Ampersand
         {
-            return_type = self.parse_type_signature()?;
+            return_type = if let Some(t) = self.parse_type_signature() { 
+                t
+            } else {
+                self.error_at_current("Expected return type signature".to_string());
+                return None;
+            };
         }
 
         if self.cur_token.token_type != TokenType::LBrace {
+            self.error_at_current("Expected opening brace '{' for function body".to_string());
             return None;
         }
 
@@ -396,16 +439,27 @@ impl Parser {
         while self.cur_token.token_type != TokenType::RBrace
             && self.cur_token.token_type != TokenType::Eof
         {
-            if let Some(stmt) = self.parse_statement() {
+            let before_errors = self.errors.len();
+            if let Some(stmt) = self.parse_statement() { 
                 statements.push(stmt);
-            }
-            if self.peek_token.token_type == TokenType::Semicolon {
+                if self.peek_token.token_type == TokenType::Semicolon {
+                    self.next_token();
+                }
                 self.next_token();
+            } else {
+                if self.errors.len() == before_errors {
+                    self.error_at_current("Expected valid statement inside block".to_string());
+                }
+                self.synchronize();
             }
-            self.next_token();
         }
 
+        if self.cur_token.token_type != TokenType::RBrace {
+            self.error_at_current("Expected closing brace '}'".to_string());
+            return None;
+        }
         let end_span = self.cur_token.span;
+        self.next_token(); // consume '}'
         Some(BlockStatement {
             statements,
             span: self.merge_spans(start_span, end_span),
@@ -419,6 +473,7 @@ impl Parser {
         }
 
         if self.cur_token.token_type != TokenType::Ident {
+            self.error_at_current("Expected variable name identifier".to_string());
             return None;
         }
         let name = self.cur_token.literal.clone();
@@ -427,13 +482,23 @@ impl Parser {
         let mut var_type = None;
         if self.cur_token.token_type == TokenType::Colon {
             self.next_token();
-            var_type = Some(self.parse_type_signature()?);
+            let parsed_type = self.parse_type_signature();
+            if parsed_type.is_none() {
+                self.error_at_current("Expected type signature after ':'".to_string());
+                return None;
+            }
+            var_type = parsed_type;
         }
 
         let mut value = None;
         if self.cur_token.token_type == TokenType::Assign {
             self.next_token();
-            value = Some(self.parse_expression(1)?);
+            let parsed_expr = self.parse_expression(1);
+            if parsed_expr.is_none() {
+                self.error_at_current("Expected expression after ':='".to_string());
+                return None;
+            }
+            value = parsed_expr;
         }
 
         let end_span = if let Some(ref val) = value {
@@ -1149,6 +1214,31 @@ mod tests {
         } else {
             panic!("Expected a variable declaration statement for 'b'");
         }
+    }
+
+    #[test]
+    fn test_detailed_declaration_errors() {
+        let input = "type MyStruct struct { field: }";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let _program = parser.parse_program();
+
+        assert!(parser.errors.len() >= 1);
+        let err = &parser.errors[0];
+        assert_eq!(err.kind, TypeErrorKind::SyntaxError);
+        assert!(err.message.contains("Expected field type signature"));
+    }
+
+    #[test]
+    fn test_unclosed_block_recovery() {
+        let input = "func main() { mut a := 10; ";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let _program = parser.parse_program();
+
+        assert!(parser.errors.len() >= 1);
+        let has_unclosed_error = parser.errors.iter().any(|e| e.message.contains("Expected closing brace '}'"));
+        assert!(has_unclosed_error, "Expected error about missing closing brace '}'");
     }
 }
 
