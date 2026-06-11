@@ -349,10 +349,43 @@ impl Codegen {
         c_code.push_str("// ====================================================\n");
 
         for struct_name in self.struct_registry.keys() {
-            c_code.push_str(&format!(
+            c_code.push_str(&format!( 
                 "typedef struct {} {};\n",
                 struct_name, struct_name
             ));
+        }
+        c_code.push('\n');
+
+        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// FUNCTION FORWARD DECLARATIONS\n");
+        c_code.push_str("// ====================================================\n");
+        for (func_name, sig) in &self.function_registry {
+            if func_name == "main" {
+                continue;
+            }
+            let ret_str = self.get_c_type(&sig.return_type);
+            let mut param_strs = Vec::new();
+            for (i, param_type) in sig.params.iter().enumerate() {
+                let param_type_str = self.get_c_type(param_type);
+                let name = &sig.param_names[i];
+                let is_arena_ptr = if let Type::RawPointer(inner) = param_type {
+                    **inner == Type::Arena
+                } else { 
+                    false
+                };
+                if is_arena_ptr || matches!(param_type, Type::Arena) {
+                    param_strs.push(format!("os_Arena* {}", name));
+                } else { 
+                    param_strs.push(format!("{} {}", param_type_str, name));
+                }
+            }
+            let param_list = if param_strs.is_empty() {
+                "void".to_string()
+            } else { 
+                param_strs.join(", ")
+            };
+            let decl_name = func_name.replace(".", "_");
+            c_code.push_str(&format!("{} {}({});\n", ret_str, decl_name, param_list));
         }
         c_code.push('\n');
 

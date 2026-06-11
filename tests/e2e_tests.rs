@@ -940,3 +940,102 @@ fn test_e2e_lexical_scope_tree() {
     ";
     run_e2e_test(source, "100\n1\n-1\n100\n2\n200\n42");
 }
+
+#[test]
+fn test_e2e_multi_module_compilation() {
+    use std::fs;
+    let temp_dir = env::temp_dir().join("gust_test_e2e_multi");
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let main_path = temp_dir.join("app.gst");
+    let lib_path = temp_dir.join("math_lib.gst");
+
+    // Write app.gst (entry file)
+    fs::write(
+        &main_path,
+        "import \"math_lib.gst\" as math;\nfunc main() {\n    mut res := math.add(10, 20);\n    os.LogInt(res);\n}",
+    )
+    .unwrap();
+
+    // Write math_lib.gst (library file)
+    fs::write(
+        &lib_path,
+        "func add(a: int, b: int) int {\n    return a + b;\n}",
+    )
+    .unwrap();
+
+    // Resolve modules recursively
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = resolver.resolve(&main_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, mut modules) = res.unwrap();
+    assert_eq!(order.len(), 2);
+
+    // Namespaced typechecking
+    let mut checker = TypeChecker::new();
+    for path in &order { 
+        if let Some(module) = modules.get(path) { 
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
+        }
+    }
+
+    // Unified statements for codegen
+    let mut unified_statements = Vec::new();
+    for path in &order { 
+        if let Some(module) = modules.get_mut(path) {
+            unified_statements.append(&mut module.program.statements);
+        }
+    }
+
+    let program = gust_lexer::ast::Program {
+        statements: unified_statements,
+        span: gust_lexer::token::Span::dummy(),
+    };
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&program);
+
+    // Compile and run C code
+    let c_filename = "gust_e2e_multi_output.c";
+    let bin_filename = "gust_e2e_multi_output.bin";
+    let c_path = temp_dir.join(c_filename);
+    let bin_path = temp_dir.join(bin_filename);
+
+    fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let compile_output = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Failed to run compiler command");
+
+    assert!(compile_output.status.success(), "GCC compilation failed: {}", String::from_utf8_lossy(&compile_output.stderr));
+
+    let run_output = Command::new(&bin_path).output().expect("Failed to run output binary");
+
+    // Clean up temporary files
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+    let _ = fs::remove_file(&main_path);
+    let _ = fs::remove_file(&lib_path);
+    let _ = fs::remove_dir(temp_dir);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert_eq!(stdout_str.trim(), "30");
+}
