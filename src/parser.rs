@@ -60,7 +60,7 @@ impl Parser {
                 _ => {
                     self.next_token();
                 }
-            } 
+            }
         }
     }
 
@@ -94,7 +94,9 @@ impl Parser {
                 self.next_token();
             } else {
                 if self.errors.len() == before_errors {
-                    self.error_at_current("Syntax Error: unexpected token or malformed statement".to_string());
+                    self.error_at_current(
+                        "Syntax Error: unexpected token or malformed statement".to_string(),
+                    );
                 }
                 let before_sync = self.cur_token.token_type.clone();
                 self.synchronize();
@@ -152,7 +154,7 @@ impl Parser {
         }
     }
 
-    fn parse_struct_decl(&mut self) -> Option<Statement> { 
+    fn parse_struct_decl(&mut self) -> Option<Statement> {
         let start_span = self.cur_token.span;
         self.next_token(); // consume 'type'
         if self.cur_token.token_type != TokenType::Ident {
@@ -173,7 +175,9 @@ impl Parser {
                 }
             }
             if self.cur_token.token_type != TokenType::RBracket {
-                self.error_at_current("Expected closing bracket ']' in generic type parameters".to_string());
+                self.error_at_current(
+                    "Expected closing bracket ']' in generic type parameters".to_string(),
+                );
                 return None;
             }
             self.next_token(); // consume ']'
@@ -198,7 +202,9 @@ impl Parser {
                     self.next_token();
 
                     if self.cur_token.token_type != TokenType::Colon {
-                        self.error_at_current("Expected ':' after struct field identifier".to_string());
+                        self.error_at_current(
+                            "Expected ':' after struct field identifier".to_string(),
+                        );
                         return None;
                     }
                     self.next_token();
@@ -270,7 +276,10 @@ impl Parser {
                                 self.next_token();
 
                                 if self.cur_token.token_type != TokenType::Colon {
-                                    self.error_at_current("Expected ':' after enum variant field identifier".to_string());
+                                    self.error_at_current(
+                                        "Expected ':' after enum variant field identifier"
+                                            .to_string(),
+                                    );
                                     return None;
                                 }
                                 self.next_token();
@@ -278,7 +287,9 @@ impl Parser {
                                 let f_type = if let Some(t) = self.parse_type_signature() {
                                     t
                                 } else {
-                                    self.error_at_current("Expected field type signature".to_string());
+                                    self.error_at_current(
+                                        "Expected field type signature".to_string(),
+                                    );
                                     return None;
                                 };
                                 let f_end = self.cur_token.span;
@@ -294,12 +305,16 @@ impl Parser {
                                     self.next_token();
                                 }
                             } else {
-                                self.error_at_current("Expected enum variant field identifier or '}'".to_string());
+                                self.error_at_current(
+                                    "Expected enum variant field identifier or '}'".to_string(),
+                                );
                                 return None;
                             }
                         }
                         if self.cur_token.token_type != TokenType::RBrace {
-                            self.error_at_current("Expected closing brace '}' after enum variant fields".to_string());
+                            self.error_at_current(
+                                "Expected closing brace '}' after enum variant fields".to_string(),
+                            );
                             return None;
                         }
                         self.next_token(); // consume '}'
@@ -407,7 +422,7 @@ impl Parser {
             || self.cur_token.token_type == TokenType::Asterisk
             || self.cur_token.token_type == TokenType::Ampersand
         {
-            return_type = if let Some(t) = self.parse_type_signature() { 
+            return_type = if let Some(t) = self.parse_type_signature() {
                 t
             } else {
                 self.error_at_current("Expected return type signature".to_string());
@@ -459,7 +474,6 @@ impl Parser {
             return None;
         }
         let end_span = self.cur_token.span;
-        self.next_token(); // consume '}'
         Some(BlockStatement {
             statements,
             span: self.merge_spans(start_span, end_span),
@@ -535,7 +549,9 @@ impl Parser {
             return Some(Type::Slice(Box::new(element_type)));
         }
 
-        if self.cur_token.token_type != TokenType::Ident && self.cur_token.token_type != TokenType::Bool {
+        if self.cur_token.token_type != TokenType::Ident
+            && self.cur_token.token_type != TokenType::Bool
+        {
             return None;
         }
         let mut base_name = self.cur_token.literal.clone();
@@ -1183,9 +1199,9 @@ mod tests {
         let input = "mut a :=";
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
-        
+
         parser.error_at_current("Unexpected missing expression".to_string());
-        
+
         assert_eq!(parser.errors.len(), 1);
         let err = &parser.errors[0];
         assert_eq!(err.kind, TypeErrorKind::SyntaxError);
@@ -1237,8 +1253,14 @@ mod tests {
         let _program = parser.parse_program();
 
         assert!(parser.errors.len() >= 1);
-        let has_unclosed_error = parser.errors.iter().any(|e| e.message.contains("Expected closing brace '}'"));
-        assert!(has_unclosed_error, "Expected error about missing closing brace '}'");
+        let has_unclosed_error = parser
+            .errors
+            .iter()
+            .any(|e| e.message.contains("Expected closing brace '}'"));
+        assert!(
+            has_unclosed_error,
+            "Expected error about missing closing brace '}}'"
+        );
     }
 }
 
