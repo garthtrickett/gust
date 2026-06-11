@@ -12,6 +12,20 @@ fn check_program(source: &str) -> Result<(), TypeError> {
 }
 
 #[test]
+fn test_bool_primitive_accepted() {
+    let source = "
+        func main() {
+            mut b: bool := true;
+            b = false;
+            if b {
+                os.LogInt(1);
+            }
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_safe_branding_substitution() {
     let source = "
         type Node[ctx] struct { val: int }

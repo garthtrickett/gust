@@ -61,7 +61,7 @@ impl TypeChecker {
 
     fn has_boolean_fields_recursive(&self, t: &Type, visited: &mut HashSet<String>) -> bool {
         match t {
-            Type::Byte => true,
+            Type::Byte | Type::Bool => true,
             Type::Struct(name, _) => {
                 if visited.contains(name) {
                     return false;
@@ -645,10 +645,10 @@ impl TypeChecker {
                 condition, body, ..
             } => {
                 let cond_type = self.check_expression(condition)?;
-                if cond_type != Type::Int {
+                if cond_type != Type::Int && cond_type != Type::Bool {
                     return Err(TypeError {
                         kind: TypeErrorKind::LoopConditionInvalid,
-                        message: "Semantic Error: Loop condition must evaluate to an Int (binary comparison)".to_string(),
+                        message: "Semantic Error: Loop condition must evaluate to an Int or Bool (binary comparison or boolean)".to_string(),
                         span: Some(condition.span()), // Tier B: Point specifically to condition
                     });
                 }
@@ -666,10 +666,10 @@ impl TypeChecker {
                 ..
             } => {
                 let cond_type = self.check_expression(condition)?;
-                if cond_type != Type::Int {
+                if cond_type != Type::Int && cond_type != Type::Bool {
                     return Err(TypeError {
                         kind: TypeErrorKind::IfConditionInvalid,
-                        message: "Semantic Error: If condition must evaluate to an Int (binary comparison)".to_string(),
+                        message: "Semantic Error: If condition must evaluate to an Int or Bool (binary comparison or boolean)".to_string(),
                         span: Some(condition.span()), // Tier B: Point specifically to condition
                     });
                 }
@@ -949,7 +949,7 @@ impl TypeChecker {
             Expression::Identifier(name, _) => {
                 if let Some(t) = self.symbol_table.get(name) {
                     // Value-types do not borrow/carry origins
-                    if matches!(t, Type::Struct(_, None)) || *t == Type::Int || *t == Type::Byte {
+                    if matches!(t, Type::Struct(_, None)) || *t == Type::Int || *t == Type::Byte || *t == Type::Bool {
                         return HashSet::new();
                     }
                 }
@@ -1095,6 +1095,7 @@ impl TypeChecker {
             }
             Expression::Integer(_, _) => Ok(Type::Int),
             Expression::String(_, _) => Ok(Type::Str), // Added for String Views Option 2
+            Expression::Bool(_, _) => Ok(Type::Bool),
             Expression::Move(inner_expr, _) => {
                 if let Expression::Identifier(name, _) = &**inner_expr {
                     if self.moved_vars.contains(name) {
@@ -1239,8 +1240,8 @@ impl TypeChecker {
                 let left_type = self.check_expression(left)?;
                 let resolved_target = self.resolve_type(target_type)?;
 
-                if (left_type == Type::Int || left_type == Type::Byte)
-                    && (resolved_target == Type::Int || resolved_target == Type::Byte)
+                if (left_type == Type::Int || left_type == Type::Byte || left_type == Type::Bool)
+                    && (resolved_target == Type::Int || resolved_target == Type::Byte || resolved_target == Type::Bool)
                 {
                     return Ok(resolved_target.clone());
                 }
@@ -2012,6 +2013,7 @@ impl TypeChecker {
                     let arg_type = self.check_expression(&arguments[0])?;
                     if arg_type != Type::Int
                         && arg_type != Type::Byte
+                        && arg_type != Type::Bool
                         && !matches!(arg_type, Type::Index(_, _))
                     {
                         return Err(TypeError {
