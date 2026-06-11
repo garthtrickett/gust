@@ -3,13 +3,14 @@ use crate::ast::{
 };
 use crate::lexer::Lexer;
 use crate::token::{Span, Token, TokenType};
-use crate::typechecker::Type;
+use crate::typechecker::{Type, TypeError, TypeErrorKind};
 
 pub struct Parser {
     lexer: Lexer,
     cur_token: Token,
     peek_token: Token,
     pushback_tokens: Vec<Token>,
+    pub errors: Vec<TypeError>,
 }
 
 impl Parser {
@@ -21,7 +22,16 @@ impl Parser {
             cur_token,
             peek_token,
             pushback_tokens: Vec::new(),
+            errors: Vec::new(),
         }
+    }
+
+    pub fn error_at_current(&mut self, message: String) {
+        self.errors.push(TypeError {
+            kind: TypeErrorKind::SyntaxError,
+            message,
+            span: Some(self.cur_token.span),
+        });
     }
 
     fn next_token(&mut self) {
@@ -1065,6 +1075,23 @@ mod tests {
         let span = expr.span();
         assert_eq!(span.start.offset, 0);
         assert_eq!(span.end.offset, 9);
+    }
+
+    #[test]
+    fn test_parser_error_recording() {
+        let input = "mut a :=";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        
+        parser.error_at_current("Unexpected missing expression".to_string());
+        
+        assert_eq!(parser.errors.len(), 1);
+        let err = &parser.errors[0];
+        assert_eq!(err.kind, TypeErrorKind::SyntaxError);
+        assert_eq!(err.message, "Unexpected missing expression");
+        let span = err.span.unwrap();
+        assert_eq!(span.start.line, 1);
+        assert_eq!(span.start.column, 1);
     }
 }
 

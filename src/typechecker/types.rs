@@ -117,6 +117,7 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeErrorKind {
+    SyntaxError,
     UninitializedVariable,
     TypeMismatch,
     LoopConditionInvalid,
