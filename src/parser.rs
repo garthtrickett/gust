@@ -2,7 +2,7 @@ use crate::ast::{
     BlockStatement, Expression, FieldDef, MatchCase, Parameter, Program, Statement, VariantDef,
 };
 use crate::lexer::Lexer;
-use crate::token::{Token, TokenType};
+use crate::token::{Span, Token, TokenType};
 use crate::typechecker::Type;
 
 pub struct Parser {
@@ -33,8 +33,16 @@ impl Parser {
         }
     }
 
+    fn merge_spans(&self, start: Span, end: Span) -> Span {
+        Span {
+            start: start.start,
+            end: end.end,
+        }
+    }
+
     pub fn parse_program(&mut self) -> Program {
         let mut statements = Vec::new();
+        let start_pos = self.cur_token.span.start;
 
         while self.cur_token.token_type != TokenType::Eof {
             if let Some(stmt) = self.parse_statement() {
@@ -46,7 +54,14 @@ impl Parser {
             self.next_token();
         }
 
-        Program { statements }
+        let end_pos = self.cur_token.span.end;
+        Program {
+            statements,
+            span: Span {
+                start: start_pos,
+                end: end_pos,
+            },
+        }
     }
 
     fn parse_statement(&mut self) -> Option<Statement> {
@@ -72,15 +87,23 @@ impl Parser {
                     self.next_token();
                     self.next_token();
                     let value = self.parse_expression(1)?;
-                    Some(Statement::Assignment { left: expr, value })
+                    let start_span = expr.span();
+                    let end_span = value.span();
+                    Some(Statement::Assignment {
+                        left: expr,
+                        value,
+                        span: self.merge_spans(start_span, end_span),
+                    })
                 } else {
-                    Some(Statement::Expression(expr))
+                    let span = expr.span();
+                    Some(Statement::Expression(expr, span))
                 }
             }
         }
     }
 
     fn parse_struct_decl(&mut self) -> Option<Statement> {
+        let start_span = self.cur_token.span;
         self.next_token(); // consume 'type'
         if self.cur_token.token_type != TokenType::Ident {
             return None;
@@ -117,6 +140,7 @@ impl Parser {
                 && self.cur_token.token_type != TokenType::Eof
             {
                 if self.cur_token.token_type == TokenType::Ident {
+                    let field_start = self.cur_token.span;
                     let field_name = self.cur_token.literal.clone();
                     self.next_token();
 
@@ -126,9 +150,11 @@ impl Parser {
                     self.next_token();
 
                     let field_type = self.parse_type_signature()?;
+                    let field_end = self.cur_token.span;
                     fields.push(FieldDef {
                         name: field_name,
                         field_type,
+                        span: self.merge_spans(field_start, field_end),
                     });
 
                     if self.cur_token.token_type == TokenType::Comma
@@ -144,11 +170,13 @@ impl Parser {
             if self.cur_token.token_type != TokenType::RBrace {
                 return None;
             }
+            let end_span = self.cur_token.span;
 
             Some(Statement::StructDecl {
                 name,
                 generics,
                 fields,
+                span: self.merge_spans(start_span, end_span),
             })
         } else if self.cur_token.token_type == TokenType::Enum {
             self.next_token(); // consume 'enum'
@@ -163,6 +191,7 @@ impl Parser {
                 && self.cur_token.token_type != TokenType::Eof
             {
                 if self.cur_token.token_type == TokenType::Ident {
+                    let variant_start = self.cur_token.span;
                     let variant_name = self.cur_token.literal.clone();
                     self.next_token();
 
@@ -174,6 +203,7 @@ impl Parser {
                             && self.cur_token.token_type != TokenType::Eof
                         {
                             if self.cur_token.token_type == TokenType::Ident {
+                                let f_start = self.cur_token.span;
                                 let f_name = self.cur_token.literal.clone();
                                 self.next_token();
 
@@ -183,9 +213,11 @@ impl Parser {
                                 self.next_token();
 
                                 let f_type = self.parse_type_signature()?;
+                                let f_end = self.cur_token.span;
                                 fields.push(FieldDef {
                                     name: f_name,
                                     field_type: f_type,
+                                    span: self.merge_spans(f_start, f_end),
                                 });
 
                                 if self.cur_token.token_type == TokenType::Comma
@@ -202,10 +234,12 @@ impl Parser {
                         }
                         self.next_token(); // consume '}'
                     }
+                    let variant_end = self.cur_token.span;
 
                     variants.push(VariantDef {
                         name: variant_name,
                         fields,
+                        span: self.merge_spans(variant_start, variant_end),
                     });
 
                     if self.cur_token.token_type == TokenType::Comma
@@ -221,11 +255,13 @@ impl Parser {
             if self.cur_token.token_type != TokenType::RBrace {
                 return None;
             }
+            let end_span = self.cur_token.span;
 
             Some(Statement::EnumDecl {
                 name,
                 generics,
                 variants,
+                span: self.merge_spans(start_span, end_span),
             })
         } else {
             None
@@ -233,6 +269,7 @@ impl Parser {
     }
 
     fn parse_function_decl(&mut self) -> Option<Statement> {
+        let start_span = self.cur_token.span;
         self.next_token(); // consume 'func'
         if self.cur_token.token_type != TokenType::Ident {
             return None;
@@ -252,6 +289,7 @@ impl Parser {
             if self.cur_token.token_type != TokenType::Ident {
                 return None;
             }
+            let param_start = self.cur_token.span;
             let param_name = self.cur_token.literal.clone();
             self.next_token();
 
@@ -261,9 +299,11 @@ impl Parser {
             self.next_token(); // consume ':'
 
             let param_type = self.parse_type_signature()?;
+            let param_end = self.cur_token.span;
             params.push(Parameter {
                 name: param_name,
                 param_type,
+                span: self.merge_spans(param_start, param_end),
             });
 
             if self.cur_token.token_type == TokenType::Comma {
@@ -291,15 +331,18 @@ impl Parser {
         }
 
         let body = self.parse_block_statement()?;
+        let end_span = body.span;
         Some(Statement::FunctionDecl {
             name,
             params,
             return_type,
             body,
+            span: self.merge_spans(start_span, end_span),
         })
     }
 
     fn parse_block_statement(&mut self) -> Option<BlockStatement> {
+        let start_span = self.cur_token.span;
         let mut statements = Vec::new();
         self.next_token();
 
@@ -315,10 +358,15 @@ impl Parser {
             self.next_token();
         }
 
-        Some(BlockStatement { statements })
+        let end_span = self.cur_token.span;
+        Some(BlockStatement {
+            statements,
+            span: self.merge_spans(start_span, end_span),
+        })
     }
 
     fn parse_var_decl(&mut self, is_mut: bool) -> Option<Statement> {
+        let start_span = self.cur_token.span;
         if is_mut {
             self.next_token();
         }
@@ -341,11 +389,18 @@ impl Parser {
             value = Some(self.parse_expression(1)?);
         }
 
+        let end_span = if let Some(ref val) = value {
+            val.span()
+        } else {
+            self.cur_token.span
+        };
+
         Some(Statement::VarDecl {
             name,
             is_mut,
             value,
             var_type,
+            span: self.merge_spans(start_span, end_span),
         })
     }
 
@@ -428,8 +483,13 @@ impl Parser {
                     Type::Struct(name, _) => Some(name.clone()),
                     _ => None,
                 };
-                if let Some(brand_name) = &brand { 
-                    if brand_name == "int" || brand_name == "byte" || brand_name == "str" || brand_name == "Arena" || brand_name == "os_Arena" {
+                if let Some(brand_name) = &brand {
+                    if brand_name == "int"
+                        || brand_name == "byte"
+                        || brand_name == "str"
+                        || brand_name == "Arena"
+                        || brand_name == "os_Arena"
+                    {
                         return Some(Type::Generic(base_name, args));
                     }
                 } else {
@@ -452,12 +512,18 @@ impl Parser {
     }
 
     fn parse_defer_statement(&mut self) -> Option<Statement> {
+        let start_span = self.cur_token.span;
         self.next_token();
         let expr = self.parse_expression(1)?;
-        Some(Statement::Defer { expr })
+        let end_span = expr.span();
+        Some(Statement::Defer {
+            expr,
+            span: self.merge_spans(start_span, end_span),
+        })
     }
 
     fn parse_while_statement(&mut self) -> Option<Statement> {
+        let start_span = self.cur_token.span;
         self.next_token();
         let condition = self.parse_expression(1)?;
 
@@ -467,10 +533,16 @@ impl Parser {
         }
 
         let body = self.parse_block_statement()?;
-        Some(Statement::While { condition, body })
+        let end_span = body.span;
+        Some(Statement::While {
+            condition,
+            body,
+            span: self.merge_spans(start_span, end_span),
+        })
     }
 
     fn parse_if_statement(&mut self) -> Option<Statement> {
+        let start_span = self.cur_token.span;
         self.next_token();
         let condition = self.parse_expression(1)?;
 
@@ -481,23 +553,28 @@ impl Parser {
         let consequence = self.parse_block_statement()?;
 
         let mut alternative = None;
+        let mut end_span = consequence.span;
         if self.peek_token.token_type == TokenType::Else {
             self.next_token();
             self.next_token();
             if self.cur_token.token_type != TokenType::LBrace {
                 return None;
             }
-            alternative = Some(self.parse_block_statement()?);
+            let alt_body = self.parse_block_statement()?;
+            end_span = alt_body.span;
+            alternative = Some(alt_body);
         }
 
         Some(Statement::If {
             condition,
             consequence,
             alternative,
+            span: self.merge_spans(start_span, end_span),
         })
     }
 
     fn parse_match_statement(&mut self) -> Option<Statement> {
+        let start_span = self.cur_token.span;
         self.next_token(); // consume 'match'
         let expression = self.parse_expression(1)?;
 
@@ -511,6 +588,7 @@ impl Parser {
         while self.cur_token.token_type != TokenType::RBrace
             && self.cur_token.token_type != TokenType::Eof
         {
+            let case_start = self.cur_token.span;
             if self.cur_token.token_type != TokenType::Ident {
                 return None;
             }
@@ -526,10 +604,15 @@ impl Parser {
                 return None;
             }
             let body = self.parse_block_statement()?;
+            let case_end = body.span;
             // parse_block_statement leaves cur_token at '}'
             self.next_token(); // consume '}'
 
-            cases.push(MatchCase { variant_name, body });
+            cases.push(MatchCase {
+                variant_name,
+                body,
+                span: self.merge_spans(case_start, case_end),
+            });
 
             if self.cur_token.token_type == TokenType::Comma {
                 self.next_token();
@@ -539,29 +622,44 @@ impl Parser {
         if self.cur_token.token_type != TokenType::RBrace {
             return None;
         }
+        let end_span = self.cur_token.span;
 
-        Some(Statement::Match { expression, cases })
+        Some(Statement::Match {
+            expression,
+            cases,
+            span: self.merge_spans(start_span, end_span),
+        })
     }
 
     fn parse_unsafe_block(&mut self) -> Option<Statement> {
+        let start_span = self.cur_token.span;
         self.next_token();
         if self.cur_token.token_type != TokenType::LBrace {
             return None;
         }
         let body = self.parse_block_statement()?;
-        Some(Statement::UnsafeBlock { body })
+        let end_span = body.span;
+        Some(Statement::UnsafeBlock {
+            body,
+            span: self.merge_spans(start_span, end_span),
+        })
     }
 
     fn parse_return_statement(&mut self) -> Option<Statement> {
+        let start_span = self.cur_token.span;
         self.next_token(); // consume 'return'
         if self.cur_token.token_type == TokenType::Semicolon
             || self.cur_token.token_type == TokenType::RBrace
         {
-            return Some(Statement::Return(None));
+            return Some(Statement::Return(None, start_span));
         }
 
         let expr = self.parse_expression(1)?;
-        Some(Statement::Return(Some(expr)))
+        let end_span = expr.span();
+        Some(Statement::Return(
+            Some(expr),
+            self.merge_spans(start_span, end_span),
+        ))
     }
 
     pub fn parse_expression(&mut self, precedence: i32) -> Option<Expression> {
@@ -576,36 +674,46 @@ impl Parser {
                     self.next_token();
                     self.next_token();
                     let right = self.cur_token.literal.clone();
+                    let start_span = left.span();
+                    let end_span = self.cur_token.span;
                     left = Expression::Selector {
                         left: Box::new(left),
                         right,
+                        span: self.merge_spans(start_span, end_span),
                     };
                 }
                 TokenType::LParen => {
                     self.next_token();
+                    let start_span = left.span();
                     let args = self.parse_call_arguments()?;
+                    let end_span = self.cur_token.span;
                     left = Expression::Call {
                         function: Box::new(left),
                         arguments: args,
+                        span: self.merge_spans(start_span, end_span),
                     };
                 }
                 TokenType::LBracket => {
                     self.next_token();
                     self.next_token();
+                    let start_span = left.span();
                     let index_expr = self.parse_expression(1)?;
 
                     if self.peek_token.token_type != TokenType::RBracket {
                         return None;
                     }
                     self.next_token();
+                    let end_span = self.cur_token.span;
 
                     left = Expression::IndexAccess {
                         allocator: Box::new(left),
                         index: Box::new(index_expr),
+                        span: self.merge_spans(start_span, end_span),
                     };
                 }
                 TokenType::As => {
                     self.next_token();
+                    let start_span = left.span();
                     let mut is_reference = false;
 
                     if self.peek_token.token_type == TokenType::Ampersand {
@@ -615,11 +723,13 @@ impl Parser {
 
                     self.next_token();
                     let target_type = self.parse_type_signature()?;
+                    let end_span = self.cur_token.span;
 
                     left = Expression::AsCast {
                         left: Box::new(left),
                         target_type,
                         is_reference,
+                        span: self.merge_spans(start_span, end_span),
                     };
 
                     // Realign the token stream state with the Pratt parser loop expectations
@@ -649,10 +759,13 @@ impl Parser {
                     self.next_token();
 
                     let right = self.parse_expression(op_prec)?;
+                    let start_span = left.span();
+                    let end_span = right.span();
                     left = Expression::Binary {
                         op: op_str,
                         left: Box::new(left),
                         right: Box::new(right),
+                        span: self.merge_spans(start_span, end_span),
                     };
                 }
                 _ => break,
@@ -673,33 +786,60 @@ impl Parser {
                 self.next_token(); // consume ')'
                 Some(expr)
             }
-            TokenType::Ident => Some(Expression::Identifier(self.cur_token.literal.clone())),
+            TokenType::Ident => Some(Expression::Identifier(
+                self.cur_token.literal.clone(),
+                self.cur_token.span,
+            )),
             TokenType::Int => {
                 let val: i64 = self.cur_token.literal.parse().ok()?;
-                Some(Expression::Integer(val))
+                Some(Expression::Integer(val, self.cur_token.span))
             }
-            TokenType::String => Some(Expression::String(self.cur_token.literal.clone())),
+            TokenType::String => Some(Expression::String(
+                self.cur_token.literal.clone(),
+                self.cur_token.span,
+            )),
             TokenType::Move => {
+                let start_span = self.cur_token.span;
                 self.next_token();
                 let expr = self.parse_expression(6)?;
-                Some(Expression::Move(Box::new(expr)))
+                let end_span = expr.span();
+                Some(Expression::Move(
+                    Box::new(expr),
+                    self.merge_spans(start_span, end_span),
+                ))
             }
             TokenType::Take => {
+                let start_span = self.cur_token.span;
                 self.next_token();
                 let expr = self.parse_expression(6)?;
-                Some(Expression::Take(Box::new(expr)))
+                let end_span = expr.span();
+                Some(Expression::Take(
+                    Box::new(expr),
+                    self.merge_spans(start_span, end_span),
+                ))
             }
             TokenType::Ampersand => {
+                let start_span = self.cur_token.span;
                 self.next_token();
                 let expr = self.parse_expression(6)?;
-                Some(Expression::AddressOf(Box::new(expr)))
+                let end_span = expr.span();
+                Some(Expression::AddressOf(
+                    Box::new(expr),
+                    self.merge_spans(start_span, end_span),
+                ))
             }
             TokenType::Asterisk => {
+                let start_span = self.cur_token.span;
                 self.next_token();
                 let expr = self.parse_expression(6)?;
-                Some(Expression::Dereference(Box::new(expr)))
+                let end_span = expr.span();
+                Some(Expression::Dereference(
+                    Box::new(expr),
+                    self.merge_spans(start_span, end_span),
+                ))
             }
             TokenType::Empty => {
+                let start_span = self.cur_token.span;
                 self.next_token(); // consume 'empty'
                 if self.cur_token.token_type != TokenType::LBracket {
                     return None;
@@ -709,7 +849,11 @@ impl Parser {
                 if self.cur_token.token_type != TokenType::RBracket {
                     return None;
                 }
-                Some(Expression::Empty(target_type))
+                let end_span = self.cur_token.span;
+                Some(Expression::Empty(
+                    target_type,
+                    self.merge_spans(start_span, end_span),
+                ))
             }
             _ => None,
         }
@@ -759,38 +903,44 @@ mod tests {
 
     fn format_expr(expr: &Expression) -> String {
         match expr {
-            Expression::Identifier(name) => name.clone(),
-            Expression::Integer(val) => val.to_string(),
-            Expression::String(val) => format!("\"{}\"", val),
-            Expression::Move(inner) => format!("(move {})", format_expr(inner)),
-            Expression::Take(inner) => format!("(take {})", format_expr(inner)),
-            Expression::AddressOf(inner) => format!("(& {})", format_expr(inner)),
-            Expression::Dereference(inner) => format!("(* {})", format_expr(inner)),
-            Expression::IndexAccess { allocator, index } => {
+            Expression::Identifier(name, _) => name.clone(),
+            Expression::Integer(val, _) => val.to_string(),
+            Expression::String(val, _) => format!("\"{}\"", val),
+            Expression::Move(inner, _) => format!("(move {})", format_expr(inner)),
+            Expression::Take(inner, _) => format!("(take {})", format_expr(inner)),
+            Expression::AddressOf(inner, _) => format!("(& {})", format_expr(inner)),
+            Expression::Dereference(inner, _) => format!("(* {})", format_expr(inner)),
+            Expression::IndexAccess {
+                allocator, index, ..
+            } => {
                 format!("{}[{}]", format_expr(allocator), format_expr(index))
             }
             Expression::AsCast {
                 left,
                 target_type,
                 is_reference,
+                ..
             } => {
                 let ref_str = if *is_reference { "&" } else { "" };
                 format!("({} as {}{:?})", format_expr(left), ref_str, target_type)
             }
-            Expression::Binary { op, left, right } => {
+            Expression::Binary {
+                op, left, right, ..
+            } => {
                 format!("({} {} {})", format_expr(left), op, format_expr(right))
             }
-            Expression::Selector { left, right } => {
+            Expression::Selector { left, right, .. } => {
                 format!("{}.{}", format_expr(left), right)
             }
             Expression::Call {
                 function,
                 arguments,
+                ..
             } => {
                 let args_strs: Vec<String> = arguments.iter().map(format_expr).collect();
                 format!("{}({})", format_expr(function), args_strs.join(", "))
             }
-            Expression::Empty(target_type) => {
+            Expression::Empty(target_type, _) => {
                 format!("(empty[{:?}])", target_type)
             }
         }
@@ -913,55 +1063,55 @@ mod tests {
     }
 }
 
-    fn parse_type_str(input: &str) -> Type {
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-        parser
-            .parse_type_signature()
-            .expect("Failed to parse type signature")
-    }
+fn parse_type_str(input: &str) -> Type {
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    parser
+        .parse_type_signature()
+        .expect("Failed to parse type signature")
+}
 
-    #[test]
-    fn test_namespaced_type_signature_parsing() {
-        let t1 = parse_type_str("std.Vector[int, ctx]");
-        if let Type::Generic(name, args) = t1 {
-            assert_eq!(name, "std.Vector");
-            assert_eq!(args.len(), 2);
-            assert_eq!(args[0], Type::Int);
-            if let Type::Struct(brand, None) = &args[1] {
-                assert_eq!(brand, "ctx");
-            } else {
-                panic!("Expected brand to be a struct");
-            }
+#[test]
+fn test_namespaced_type_signature_parsing() {
+    let t1 = parse_type_str("std.Vector[int, ctx]");
+    if let Type::Generic(name, args) = t1 {
+        assert_eq!(name, "std.Vector");
+        assert_eq!(args.len(), 2);
+        assert_eq!(args[0], Type::Int);
+        if let Type::Struct(brand, None) = &args[1] {
+            assert_eq!(brand, "ctx");
         } else {
-            panic!("Expected Type::Generic");
+            panic!("Expected brand to be a struct");
         }
+    } else {
+        panic!("Expected Type::Generic");
+    }
 
-        let t2 = parse_type_str("os.Arena");
-        assert_eq!(t2, Type::Arena);
+    let t2 = parse_type_str("os.Arena");
+    assert_eq!(t2, Type::Arena);
 
-        let t3 = parse_type_str("std.HashMap[int, str, ctx]");
-        if let Type::Generic(name, args) = t3 {
-            assert_eq!(name, "std.HashMap");
-            assert_eq!(args.len(), 3);
-            assert_eq!(args[0], Type::Int);
-            assert_eq!(args[1], Type::Str);
-            if let Type::Struct(brand, None) = &args[2] {
-                assert_eq!(brand, "ctx");
-            } else {
-                panic!("Expected brand to be a struct");
-            }
+    let t3 = parse_type_str("std.HashMap[int, str, ctx]");
+    if let Type::Generic(name, args) = t3 {
+        assert_eq!(name, "std.HashMap");
+        assert_eq!(args.len(), 3);
+        assert_eq!(args[0], Type::Int);
+        assert_eq!(args[1], Type::Str);
+        if let Type::Struct(brand, None) = &args[2] {
+            assert_eq!(brand, "ctx");
         } else {
-            panic!("Expected Type::Generic");
+            panic!("Expected brand to be a struct");
         }
+    } else {
+        panic!("Expected Type::Generic");
     }
+}
 
-    #[test]
-    fn test_namespaced_statement_parsing() {
-        let input = "mut v: std.Vector[int, ctx] := os.VectorNew(ctx); mut a: os.Arena := os.Arena.New();";
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-        let program = parser.parse_program();
-        assert_eq!(program.statements.len(), 2);
-    }
+#[test]
+fn test_namespaced_statement_parsing() {
+    let input =
+        "mut v: std.Vector[int, ctx] := os.VectorNew(ctx); mut a: os.Arena := os.Arena.New();";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert_eq!(program.statements.len(), 2);
 }

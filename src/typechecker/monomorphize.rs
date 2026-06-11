@@ -235,21 +235,23 @@ impl TypeChecker {
             .cloned()
             .ok_or_else(|| TypeError {
                 kind: TypeErrorKind::TemplateNotFound,
-                message: format!(
+                message: format!( 
                     "Semantic Error: Generic template '{}' not found",
                     template_name
                 ),
+                span: None,
             })?;
 
         if template.generics.len() != args.len() {
             return Err(TypeError {
                 kind: TypeErrorKind::TemplateArgumentMismatch,
-                message: format!(
+                message: format!( 
                     "Semantic Error: Template '{}' expects {} generic arguments but got {}",
                     template_name,
                     template.generics.len(),
                     args.len()
                 ),
+                span: None,
             });
         }
 

@@ -1174,6 +1174,7 @@ impl TypeChecker {
                         return Err(TypeError {
                             kind: TypeErrorKind::UnsafeProhibited,
                             message: "Semantic Error: Casting pointers is strictly prohibited outside 'unsafe' blocks".to_string(),
+                            span: None,
                         });
                     }
                     if let Type::RawPointer(_) = &resolved_target {
@@ -1183,20 +1184,22 @@ impl TypeChecker {
 
                 if let Type::RawPointer(_) = &resolved_target
                     && !self.in_unsafe_block
-                {
+                { 
                     return Err(TypeError {
                             kind: TypeErrorKind::UnsafeProhibited,
                             message: "Semantic Error: Casting to raw pointers is strictly prohibited outside 'unsafe' blocks".to_string(),
+                            span: None,
                         });
                 }
 
-                if !matches!(left_type, Type::Slice(_)) && left_type != Type::ByteSlice {
+                if !matches!(left_type, Type::Slice(_)) && left_type != Type::ByteSlice { 
                     return Err(TypeError {
                         kind: TypeErrorKind::InvalidCast,
-                        message: format!(
+                        message: format!( 
                             "Semantic Error: Casting source must be a Slice, but got {:?}",
                             left_type
                         ),
+                        span: None,
                     });
                 }
 
@@ -1208,10 +1211,11 @@ impl TypeChecker {
 
                 Err(TypeError {
                     kind: TypeErrorKind::InvalidCast,
-                    message: format!(
+                    message: format!( 
                         "Semantic Error: Unsupported cast target type {:?}",
                         resolved_target
                     ),
+                    span: None,
                 })
             }
             Expression::IndexAccess { allocator, index, .. } => {

@@ -147,6 +147,7 @@ pub enum TypeErrorKind {
 pub struct TypeError {
     pub kind: TypeErrorKind,
     pub message: String,
+    pub span: Option<crate::token::Span>,
 }
 
 impl std::fmt::Display for TypeError {
