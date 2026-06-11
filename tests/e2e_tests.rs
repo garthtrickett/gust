@@ -48,6 +48,12 @@ fn run_e2e_test(source: &str, expected_output: &str) {
 
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
+    // Provide real-time path and logging visibility to assist debugging if a test hangs
+    println!("--- RUNNING E2E TEST WITH TEMP C PATH: {:?} ---", c_path);
+    if env::var("GUST_DUMP_C").is_ok() {
+        println!("--- C CODE START ---\n{}\n--- C CODE END ---", c_code);
+    }
+
     // 3. Invoke a system C compiler to compile it
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let compile_output = Command::new(&cc_compiler)
@@ -1195,9 +1201,9 @@ fn test_e2e_mutex_concurrency() {
             mut current_count := 0;
             while current_count < 300 {
                 unsafe {
-                    mut val := m.Lock();
+                    mut val := arg.mutex.Lock();
                     current_count = (*val).count;
-                    m.Unlock();
+                    arg.mutex.Unlock();
                 }
             }
 
