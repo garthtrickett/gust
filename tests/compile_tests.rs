@@ -2130,6 +2130,65 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_vector_stack_type_checking_valid() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut vec: std.Vector[int, ctx] := std.VectorNew(ctx);
+            vec.Push(10);
+            mut val: int := vec.Pop();
+            vec.Push(20);
+            mut ptr: *int := vec.Back();
+            vec.Clear();
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_vector_back_mutability_accepted() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut vec: std.Vector[int, ctx] := std.VectorNew(ctx);
+            vec.Push(10);
+            unsafe {
+                mut ptr: *int := vec.Back();
+                *ptr = 20;
+            }
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_vector_pop_linear_ownership_enforced() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut vec: std.Vector[*int, ctx] := std.VectorNew(ctx);
+            
+            unsafe {
+                mut val := 10;
+                vec.Push(&val);
+                
+                mut p1 := vec.Pop();
+                mut p2 := move p1;
+                
+                mut err := *p1; // Error: p1 was moved and is linear
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+}
+
+#[test]
 fn test_hashmap_extended_methods_type_checking() {
     let source = "
         func main() {
