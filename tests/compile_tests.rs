@@ -660,17 +660,22 @@ fn test_checked_results_manual_inspection() {
         left: Box::new(gust_lexer::ast::Expression::Selector {
             left: Box::new(gust_lexer::ast::Expression::Identifier(
                 "result".to_string(),
+                gust_lexer::token::Span::dummy(),
             )),
             right: "Ok".to_string(),
+            span: gust_lexer::token::Span::dummy(),
         }),
-        right: Box::new(gust_lexer::ast::Expression::Integer(1)),
+        right: Box::new(gust_lexer::ast::Expression::Integer(1, gust_lexer::token::Span::dummy())),
+        span: gust_lexer::token::Span::dummy(),
     };
 
     // Construct consequence block containing dummy statement
     let consequence = gust_lexer::ast::BlockStatement {
         statements: vec![gust_lexer::ast::Statement::Expression(
-            gust_lexer::ast::Expression::Integer(1),
+            gust_lexer::ast::Expression::Integer(1, gust_lexer::token::Span::dummy()),
+            gust_lexer::token::Span::dummy(),
         )],
+        span: gust_lexer::token::Span::dummy(),
     };
 
     // Construct If statement
@@ -679,9 +684,12 @@ fn test_checked_results_manual_inspection() {
         consequence,
         alternative: Some(gust_lexer::ast::BlockStatement {
             statements: vec![gust_lexer::ast::Statement::Expression(
-                gust_lexer::ast::Expression::Integer(2),
+                gust_lexer::ast::Expression::Integer(2, gust_lexer::token::Span::dummy()),
+                gust_lexer::token::Span::dummy(),
             )],
+            span: gust_lexer::token::Span::dummy(),
         }),
+        span: gust_lexer::token::Span::dummy(),
     };
 
     // Initially empty

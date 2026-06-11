@@ -7,14 +7,14 @@ use std::collections::{HashMap, HashSet};
 
 fn get_root_variable(expr: &Expression) -> Option<String> {
     match expr {
-        Expression::Identifier(name) => Some(name.clone()),
+        Expression::Identifier(name, _) => Some(name.clone()),
         Expression::Selector { left, .. } => get_root_variable(left),
         Expression::IndexAccess { allocator, .. } => get_root_variable(allocator),
-        Expression::Dereference(inner) => get_root_variable(inner),
-        Expression::AddressOf(inner) => get_root_variable(inner),
+        Expression::Dereference(inner, _) => get_root_variable(inner),
+        Expression::AddressOf(inner, _) => get_root_variable(inner),
         Expression::AsCast { left, .. } => get_root_variable(left),
-        Expression::Move(inner) => get_root_variable(inner),
-        Expression::Take(inner) => get_root_variable(inner),
+        Expression::Move(inner, _) => get_root_variable(inner),
+        Expression::Take(inner, _) => get_root_variable(inner),
         _ => None,
     }
 }
@@ -104,21 +104,22 @@ impl TypeChecker {
 
     fn extract_ok_checked_variable(&self, expr: &Expression) -> Option<String> {
         match expr {
-            Expression::Selector { left, right } => {
+            Expression::Selector { left, right, .. } => {
                 if right == "Ok" {
                     return Some(expression_to_string(left));
                 }
                 None
             }
-            Expression::Binary { op, left, right } => {
+            Expression::Binary { op, left, right, .. } => {
                 if op == "==" {
                     // Case: path.Ok == 1
                     if let Expression::Selector {
                         left: sel_left,
                         right: sel_right,
+                        ..
                     } = &**left
                         && sel_right == "Ok"
-                        && let Expression::Integer(1) = &**right
+                        && let Expression::Integer(1, _) = &**right
                     {
                         return Some(expression_to_string(sel_left));
                     }
@@ -126,9 +127,10 @@ impl TypeChecker {
                     if let Expression::Selector {
                         left: sel_left,
                         right: sel_right,
+                        ..
                     } = &**right
                         && sel_right == "Ok"
-                        && let Expression::Integer(1) = &**left
+                        && let Expression::Integer(1, _) = &**left
                     {
                         return Some(expression_to_string(sel_left));
                     }
@@ -237,6 +239,7 @@ impl TypeChecker {
                 name,
                 generics,
                 fields,
+                ..
             } = stmt
             {
                 if generics.is_empty() {
@@ -279,6 +282,7 @@ impl TypeChecker {
                 name,
                 generics: _,
                 variants,
+                ..
             } = stmt
             {
                 // Register the enum in the enum registry
@@ -403,6 +407,7 @@ impl TypeChecker {
                 params,
                 return_type,
                 body,
+                ..
             } => {
                 let parent_scope = self.symbol_table.clone();
                 let parent_origins = self.variable_origins.clone();
@@ -477,6 +482,7 @@ impl TypeChecker {
                 is_mut: _,
                 value,
                 var_type,
+                ..
             } => {
                 let val_type = if let Some(val_expr) = value {
                     let mut t = self.check_expression(val_expr)?;
@@ -498,6 +504,7 @@ impl TypeChecker {
                         let mut origs = HashSet::new();
                         origs.insert(name.clone());
                         self.variable_origins.insert(name.clone(), origs);
+                        self.resolve_type(explicit_t)?;
                         self.resolve_type(explicit_t)?
                     } else {
                         return Err(TypeError {
@@ -534,9 +541,9 @@ impl TypeChecker {
                     local_vars.insert(name.clone());
                 }
             }
-            Statement::Assignment { left, value } => {
+            Statement::Assignment { left, value, .. } => {
                 let left_type = match left {
-                    Expression::Identifier(name) => {
+                    Expression::Identifier(name, _) => {
                         if let Some(t) = self.symbol_table.get(name) {
                             Ok(t.clone())
                         } else {
@@ -582,7 +589,7 @@ impl TypeChecker {
                     } else {
                         HashSet::new()
                     };
-                    if matches!(left, Expression::Identifier(_)) {
+                    if matches!(left, Expression::Identifier(_, _)) {
                         if origs.is_empty() {
                             origs.insert(root_name.clone());
                         }
@@ -599,7 +606,7 @@ impl TypeChecker {
                     self.moved_vars.remove(&root_name); // Re-initialized!
                 }
             }
-            Statement::While { condition, body } => {
+            Statement::While { condition, body, .. } => {
                 let cond_type = self.check_expression(condition)?;
                 if cond_type != Type::Int {
                     return Err(TypeError {
@@ -618,6 +625,7 @@ impl TypeChecker {
                 condition,
                 consequence,
                 alternative,
+                ..
             } => {
                 let cond_type = self.check_expression(condition)?;
                 if cond_type != Type::Int {
@@ -729,7 +737,7 @@ impl TypeChecker {
                 // Restore checked_results for the parent scope
                 self.checked_results = pre_checked;
             }
-            Statement::Match { expression, cases } => {
+            Statement::Match { expression, cases, .. } => {
                 let expr_type = self.check_expression(expression)?;
 
                 // Get the enum name from expr_type
@@ -798,7 +806,7 @@ impl TypeChecker {
                     });
                 }
             }
-            Statement::UnsafeBlock { body } => {
+            Statement::UnsafeBlock { body, .. } => {
                 let was_unsafe = self.in_unsafe_block;
                 self.in_unsafe_block = true;
 
@@ -810,10 +818,10 @@ impl TypeChecker {
 
                 self.in_unsafe_block = was_unsafe;
             }
-            Statement::Defer { expr } => {
+            Statement::Defer { expr, .. } => {
                 self.check_expression(expr)?;
             }
-            Statement::Return(maybe_expr) => {
+            Statement::Return(maybe_expr, _) => {
                 if let Some(ref inout_params) = self.current_function_inout_params {
                     for inout_p in inout_params {
                         if self.moved_vars.contains(inout_p) {
@@ -878,7 +886,7 @@ impl TypeChecker {
                     });
                 }
             }
-            Statement::Expression(expr) => {
+            Statement::Expression(expr, _) => {
                 self.check_expression(expr)?;
             }
         }
@@ -888,7 +896,7 @@ impl TypeChecker {
     // Dynamic, recursive Set-Based memory origin extractor
     pub fn get_expression_origins(&self, expr: &Expression) -> HashSet<String> {
         match expr {
-            Expression::Identifier(name) => {
+            Expression::Identifier(name, _) => {
                 if let Some(t) = self.symbol_table.get(name) {
                     // Value-types do not borrow/carry origins
                     if matches!(t, Type::Struct(_, None)) || *t == Type::Int || *t == Type::Byte {
@@ -906,12 +914,12 @@ impl TypeChecker {
                 }
             }
             Expression::AsCast { left, .. } => self.get_expression_origins(left),
-            Expression::AddressOf(inner) => self.get_expression_origins(inner),
-            Expression::Dereference(inner) => self.get_expression_origins(inner),
+            Expression::AddressOf(inner, _) => self.get_expression_origins(inner),
+            Expression::Dereference(inner, _) => self.get_expression_origins(inner),
             Expression::Selector { left, .. } => self.get_expression_origins(left),
             Expression::IndexAccess { allocator, .. } => self.get_expression_origins(allocator),
-            Expression::Move(inner) => {
-                if let Expression::Identifier(name) = &**inner
+            Expression::Move(inner, _) => {
+                if let Expression::Identifier(name, _) = &**inner
                     && let Some(t) = self.symbol_table.get(name)
                     && !self.is_linear(t)
                 {
@@ -919,8 +927,8 @@ impl TypeChecker {
                 }
                 self.get_expression_origins(inner)
             }
-            Expression::Take(inner) => {
-                if let Expression::Identifier(name) = &**inner
+            Expression::Take(inner, _) => {
+                if let Expression::Identifier(name, _) = &**inner
                     && let Some(t) = self.symbol_table.get(name)
                     && !self.is_linear(t)
                 {
@@ -931,6 +939,7 @@ impl TypeChecker {
             Expression::Call {
                 function,
                 arguments,
+                ..
             } => {
                 let func_path = expression_to_string(function);
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
@@ -970,7 +979,7 @@ impl TypeChecker {
 
     pub fn check_expression(&mut self, expr: &Expression) -> Result<Type, TypeError> {
         match expr {
-            Expression::Identifier(name) => {
+            Expression::Identifier(name, _) => {
                 if self.moved_vars.contains(name) {
                     return Err(TypeError {
                         kind: TypeErrorKind::UseOfMovedVariable,
@@ -999,7 +1008,7 @@ impl TypeChecker {
                     {
                         return Err(TypeError {
                             kind: TypeErrorKind::AllocatorMovedOrFreed,
-                            message: format!( 
+                            message: format!(
                                 "Semantic Error: Variable '{}' cannot be used because its branding allocator '{}' has been moved or freed",
                                 name, brand
                             ),
@@ -1016,10 +1025,10 @@ impl TypeChecker {
                     })
                 }
             }
-            Expression::Integer(_) => Ok(Type::Int),
-            Expression::String(_) => Ok(Type::Str), // Added for String Views Option 2
-            Expression::Move(inner_expr) => {
-                if let Expression::Identifier(name) = &**inner_expr {
+            Expression::Integer(_, _) => Ok(Type::Int),
+            Expression::String(_, _) => Ok(Type::Str), // Added for String Views Option 2
+            Expression::Move(inner_expr, _) => {
+                if let Expression::Identifier(name, _) = &**inner_expr {
                     if self.moved_vars.contains(name) {
                         return Err(TypeError {
                             kind: TypeErrorKind::UseOfMovedVariable,
@@ -1110,7 +1119,7 @@ impl TypeChecker {
                     })
                 }
             }
-            Expression::Take(inner_expr) => {
+            Expression::Take(inner_expr, _) => {
                 let expr_type = self.check_expression(inner_expr)?;
                 if expr_type == Type::Int || expr_type == Type::Byte {
                     return Err(TypeError {
@@ -1120,11 +1129,11 @@ impl TypeChecker {
                 }
                 Ok(expr_type)
             }
-            Expression::AddressOf(inner) => {
+            Expression::AddressOf(inner, _) => {
                 let inner_type = self.check_expression(inner)?;
                 Ok(Type::RawPointer(Box::new(inner_type)))
             }
-            Expression::Dereference(inner) => {
+            Expression::Dereference(inner, _) => {
                 if !self.in_unsafe_block {
                     return Err(TypeError {
                         kind: TypeErrorKind::UnsafeProhibited,
@@ -1148,7 +1157,8 @@ impl TypeChecker {
             Expression::AsCast {
                 left,
                 target_type,
-                is_reference: _,
+                is_reference,
+                ..
             } => {
                 let left_type = self.check_expression(left)?;
                 let resolved_target = self.resolve_type(target_type)?;
@@ -1204,7 +1214,7 @@ impl TypeChecker {
                     ),
                 })
             }
-            Expression::IndexAccess { allocator, index } => {
+            Expression::IndexAccess { allocator, index, .. } => {
                 let alloc_type = self.check_expression(allocator)?;
                 let index_type = self.check_expression(index)?;
 
@@ -1249,9 +1259,9 @@ impl TypeChecker {
                         let (k_type, v_type) = self
                             .get_hashmap_key_value_types(struct_name)
                             .ok_or_else(|| TypeError {
-                                kind: TypeErrorKind::TypeMismatch,
-                                message: "Invalid HashMap struct layout".to_string(),
-                            })?;
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Invalid HashMap struct layout".to_string(),
+                                })?;
                         if !types_match(&k_type, &index_type) {
                             return Err(TypeError {
                                 kind: TypeErrorKind::InvalidIndexType,
@@ -1329,19 +1339,19 @@ impl TypeChecker {
                     })
                 }
             }
-            Expression::Binary { op, left, right } => {
+            Expression::Binary { op, left, right, .. } => {
                 let left_type = self.check_expression(left)?;
                 let right_type = self.check_expression(right)?;
 
                 if op == "==" || op == "!=" {
                     if let Type::Index(_, _) = left_type
-                        && let Expression::Identifier(name) = &**right
+                        && let Expression::Identifier(name, _) = &**right
                         && name == "null"
                     {
                         return Ok(Type::Int);
                     }
                     if let Type::Index(_, _) = right_type
-                        && let Expression::Identifier(name) = &**left
+                        && let Expression::Identifier(name, _) = &**left
                         && name == "null"
                     {
                         return Ok(Type::Int);
@@ -1373,7 +1383,7 @@ impl TypeChecker {
 
                 Ok(Type::Int)
             }
-            Expression::Selector { left, right } => {
+            Expression::Selector { left, right, .. } => {
                 let left_type = self.check_expression(left)?;
                 let left_str = expression_to_string(left);
                 let path = format!("{}.{}", left_str, right);
@@ -1450,6 +1460,7 @@ impl TypeChecker {
             Expression::Call {
                 function,
                 arguments,
+                ..
             } => {
                 for arg in arguments {
                     self.check_expression(arg)?;
@@ -1857,7 +1868,7 @@ impl TypeChecker {
                     if arg_type != Type::Int && arg_type != Type::Byte && !matches!(arg_type, Type::Index(_, _)) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
-                            message: format!( 
+                            message: format!(
                                 "Semantic Error: os.LogInt expects an Int/Byte/Index argument, but got {:?}",
                                 arg_type
                             ),
@@ -1887,7 +1898,7 @@ impl TypeChecker {
                     return Ok(Type::Void);
                 }
 
-                if let Expression::Selector { left, right } = &**function {
+                if let Expression::Selector { left, right, .. } = &**function {
                     let left_type = self.check_expression(left)?;
                     if let Type::Struct(struct_name, _) = &left_type {
                         if (struct_name.starts_with("Vector_")
@@ -2067,7 +2078,7 @@ impl TypeChecker {
                             if !types_match(&expected_index_type, &arg_type) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
-                                    message: format!( 
+                                    message: format!(
                                         "Argument type mismatch for Pool.Free. Expected {:?} but got {:?}",
                                         expected_index_type, arg_type
                                     ),
@@ -2142,7 +2153,7 @@ impl TypeChecker {
                                 && !types_match(&expected_t, &arg_type) {
                                     return Err(TypeError {
                                         kind: TypeErrorKind::TypeMismatch,
-                                        message: format!( 
+                                        message: format!(
                                             "Semantic Error: Graph.AddNode value type mismatch. Expected {:?} but got {:?}",
                                             expected_t, arg_type
                                         ),
@@ -2272,7 +2283,7 @@ impl TypeChecker {
                     ),
                 })
             }
-            Expression::Empty(target_type) => {
+            Expression::Empty(target_type, _) => {
                 let resolved = self.resolve_type(target_type)?;
                 Ok(resolved)
             }
