@@ -2143,6 +2143,65 @@ fn test_concurrency_template_argument_mismatch() {
 }
 
 #[test]
+fn test_mutex_lock_type_safety() {
+    let source = "
+        type MyStruct struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut m: std.Mutex[MyStruct, ctx] := std.MutexNew(ctx);
+            unsafe {
+                mut ptr := m.Lock();
+                (*ptr).val = 42;
+                m.Unlock();
+            }
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_channel_mismatched_send() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut c: std.Channel[str, ctx] := std.ChannelNew(ctx);
+            c.Send(42);
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+}
+
+#[test]
+fn test_spawn_invalid_function() {
+    let source_non_existent = "
+        func main() {
+            std.Spawn(non_existent_func, 42);
+        }
+    ";
+    let res1 = check_program(source_non_existent);
+    assert!(res1.is_err());
+    assert_eq!(res1.unwrap_err().kind, TypeErrorKind::UndefinedFunction);
+
+    let source_multi_param = "
+        func task(a: int, b: int) {
+        }
+        func main() {
+            std.Spawn(task, 42);
+        }
+    ";
+    let res2 = check_program(source_multi_param);
+    assert!(res2.is_err());
+    assert_eq!(res2.unwrap_err().kind, TypeErrorKind::ArgumentMismatch);
+}
+
+#[test]
 fn test_scratchpad_origin_propagation() {
     let source = "
         func main() {
