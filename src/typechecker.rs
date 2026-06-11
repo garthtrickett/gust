@@ -29,6 +29,7 @@ pub struct TypeChecker {
     pub checked_results: HashSet<String>, // Added for Definite Check Rule
     pub(crate) current_function_inout_params: Option<Vec<String>>, // Track inout parameters for return checks
     pub(crate) current_function_local_vars: Option<HashSet<String>>, // Track local variables inside function body
+    pub(crate) open_directories: HashSet<String>,
 }
 
 impl Default for TypeChecker {
@@ -649,6 +650,7 @@ impl TypeChecker {
             checked_results: HashSet::new(),
             current_function_inout_params: None,
             current_function_local_vars: None,
+            open_directories: HashSet::new(),
         }
     }
 }
