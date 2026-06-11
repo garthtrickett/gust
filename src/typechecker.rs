@@ -503,6 +503,76 @@ impl TypeChecker {
             },
         );
 
+        // Mutex[T, ctx]
+        let mutex_fields = vec![
+            crate::ast::FieldDef {
+                name: "value".to_string(),
+                field_type: Type::Struct("T".to_string(), None),
+                span: crate::token::Span::dummy(),
+            },
+            crate::ast::FieldDef {
+                name: "lock_state".to_string(),
+                field_type: Type::Int,
+                span: crate::token::Span::dummy(),
+            },
+        ];
+        struct_templates.insert(
+            "Mutex".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: mutex_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.Mutex".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: mutex_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std_Mutex".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: mutex_fields,
+            },
+        );
+
+        // Channel[T, ctx]
+        let channel_fields = vec![
+            crate::ast::FieldDef {
+                name: "capacity".to_string(),
+                field_type: Type::Int,
+                span: crate::token::Span::dummy(),
+            },
+            crate::ast::FieldDef {
+                name: "len".to_string(),
+                field_type: Type::Int,
+                span: crate::token::Span::dummy(),
+            },
+        ];
+        struct_templates.insert(
+            "Channel".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: channel_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.Channel".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: channel_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std_Channel".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: channel_fields,
+            },
+        );
+
         TypeChecker {
             current_prefix: "".to_string(),
             imports: HashMap::new(),
