@@ -1596,7 +1596,7 @@ impl Codegen {
                 // os.Exit / os_Exit
                 if func_path == "os.Exit" || func_path == "os_Exit" {
                     let code_str = self.gen_expression(&arguments[0]);
-                    return format!("exit({}")", code_str);
+                    return format!("exit({})", code_str);
                 }
 
                 // os.ReadFile
