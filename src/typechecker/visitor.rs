@@ -153,6 +153,43 @@ impl TypeChecker {
 
         pub fn pre_register_std_functions(&mut self) {
         self.function_registry.insert(
+            "os.ScratchAlloc".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["size".to_string()],
+                params: vec![Type::Int],
+                return_type: Type::RawPointer(Box::new(Type::Byte)),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os_ScratchAlloc".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["size".to_string()],
+                params: vec![Type::Int],
+                return_type: Type::RawPointer(Box::new(Type::Byte)),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os.ScratchReset".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec![],
+                params: vec![],
+                return_type: Type::Void,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os_ScratchReset".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec![],
+                params: vec![],
+                return_type: Type::Void,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
             "std_str_eq".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["s1".to_string(), "s2".to_string()],
