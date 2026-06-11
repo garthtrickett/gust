@@ -550,6 +550,11 @@ impl TypeChecker {
                 field_type: Type::Int,
                 span: crate::token::Span::dummy(),
             },
+            crate::ast::FieldDef {
+                name: "_phantom".to_string(),
+                field_type: Type::RawPointer(Box::new(Type::Struct("T".to_string(), None))),
+                span: crate::token::Span::dummy(),
+            },
         ];
         struct_templates.insert(
             "Channel".to_string(),

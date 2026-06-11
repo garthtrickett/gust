@@ -100,7 +100,13 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
                 let is_graph_any = (e_clean.starts_with("Graph_")
                     && a_clean.starts_with("Graph_Any"))
                     || (a_clean.starts_with("Graph_") && e_clean.starts_with("Graph_Any"));
-                if !is_vector_any && !is_hashmap_any && !is_pool_any && !is_rc_any && !is_graph_any {
+                let is_mutex_any = (e_clean.starts_with("Mutex_")
+                    && a_clean.starts_with("Mutex_Any"))
+                    || (a_clean.starts_with("Mutex_") && e_clean.starts_with("Mutex_Any"));
+                let is_channel_any = (e_clean.starts_with("Channel_")
+                    && a_clean.starts_with("Channel_Any"))
+                    || (a_clean.starts_with("Channel_") && e_clean.starts_with("Channel_Any"));
+                if !is_vector_any && !is_hashmap_any && !is_pool_any && !is_rc_any && !is_graph_any && !is_mutex_any && !is_channel_any {
                     return false;
                 }
             }

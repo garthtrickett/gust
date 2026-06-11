@@ -50,7 +50,16 @@ impl TypeChecker {
     fn get_pool_element_type(&self, struct_name: &str) -> Option<Type> {
         if let Some(layout) = self.struct_registry.get(struct_name)
             && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
-        {
+        { 
+            return Some((**inner).clone());
+        }
+        None
+    }
+
+    fn get_channel_element_type(&self, struct_name: &str) -> Option<Type> {
+        if let Some(layout) = self.struct_registry.get(struct_name)
+            && let Some(Type::RawPointer(inner)) = layout.fields.get("_phantom")
+        { 
             return Some((**inner).clone());
         }
         None
@@ -2096,6 +2105,55 @@ impl TypeChecker {
                     return Ok(Type::Struct("std_Graph_Any".to_string(), Some(brand_name)));
                 }
 
+                if func_path == "std.Spawn" || func_path == "std_Spawn" {
+                    if arguments.len() != 2 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: std.Spawn expects exactly 2 arguments (func, arg)".to_string(),
+                            span: None,
+                        });
+                    }
+
+                    let func_name = expression_to_string(&arguments[0]);
+                    let resolved_func_name = self.resolve_namespaced_ident(&func_name).unwrap_or(func_name.clone());
+
+                    if let Some(sig) = self.function_registry.get(&resolved_func_name).cloned() {
+                        if sig.params.len() != 1 {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::ArgumentMismatch,
+                                message: format!(
+                                    "Semantic Error: Spawned function '{}' must accept exactly 1 parameter, but accepts {}",
+                                    func_name,
+                                    sig.params.len()
+                                ),
+                                span: Some(arguments[0].span()),
+                            });
+                        }
+
+                        let arg_type = self.check_expression(&arguments[1])?;
+                        let resolved_arg = self.resolve_type(&arg_type)?;
+
+                        if !types_match(&sig.params[0], &resolved_arg) {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::TypeMismatch,
+                                message: format!(
+                                    "Semantic Error: Thread spawn argument type mismatch. Expected {:?} but got {:?}",
+                                    sig.params[0], resolved_arg
+                                ),
+                                span: Some(arguments[1].span()),
+                            });
+                        }
+
+                        return Ok(Type::Void);
+                    } else {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::UndefinedFunction,
+                            message: format!("Semantic Error: Undefined function '{}' inside std.Spawn", func_name),
+                            span: Some(arguments[0].span()),
+                        });
+                    }
+                }
+
                 if func_path == "os.ReadFile" || func_path == "os_ReadFile" {
                     if arguments.len() != 2 {
                         return Err(TypeError {
@@ -2520,6 +2578,105 @@ impl TypeChecker {
                             struct_name.starts_with("Rc_") || struct_name.starts_with("std_Rc_");
                         let is_graph = struct_name.starts_with("Graph_")
                             || struct_name.starts_with("std_Graph_");
+                        let is_mutex = 
+                            struct_name.starts_with("Mutex_") || struct_name.starts_with("std_Mutex_");
+                        let is_channel = 
+                            struct_name.starts_with("Channel_") || struct_name.starts_with("std_Channel_");
+
+                        if is_mutex && right == "Lock" {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Mutex.Lock expects exactly 0 arguments".to_string(),
+                                    span: None,
+                                });
+                            }
+                            if let Some(layout) = self.struct_registry.get(struct_name)
+                                && let Some(t_type) = layout.fields.get("value")
+                            {
+                                return Ok(Type::RawPointer(Box::new(t_type.clone())));
+                            }
+                            return Err(TypeError {
+                                kind: TypeErrorKind::TypeMismatch,
+                                message: format!(
+                                    "Mutex.Lock: cannot find value type for Mutex struct {}",
+                                    struct_name
+                                ),
+                                span: None,
+                            });
+                        }
+
+                        if is_mutex && right == "Unlock" {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Mutex.Unlock expects exactly 0 arguments".to_string(),
+                                    span: None,
+                                });
+                            }
+                            return Ok(Type::Void);
+                        }
+
+                        if is_channel && right == "Send" {
+                            if arguments.len() != 1 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Channel.Send expects exactly 1 argument".to_string(),
+                                    span: None,
+                                });
+                            }
+                            let arg_type = self.check_expression(&arguments[0])?;
+                            let elem_type = self.get_channel_element_type(struct_name).ok_or_else(|| {
+                                TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Invalid Channel struct layout".to_string(),
+                                    span: None,
+                                }
+                            })?;
+                            if !types_match(&elem_type, &arg_type) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!( 
+                                        "Argument type mismatch for Channel.Send. Expected {:?} but got {:?}",
+                                        elem_type, arg_type
+                                    ),
+                                    span: None,
+                                });
+                            }
+
+                            if self.is_linear(&elem_type) {
+                                if !matches!(arguments[0], Expression::Move(_, _)) {
+                                    return Err(TypeError {
+                                        kind: TypeErrorKind::BrandLifetimeViolation,
+                                        message: format!( 
+                                            "Semantic Error: Channel.Send for linear type {:?} must consume ownership using the 'move' operator",
+                                            elem_type
+                                        ),
+                                        span: Some(arguments[0].span()),
+                                    });
+                                } 
+                            }
+
+                            return Ok(Type::Void);
+                        }
+
+                        if is_channel && right == "Recv" {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "Channel.Recv expects exactly 0 arguments".to_string(),
+                                    span: None,
+                                });
+                            }
+                            let elem_type = self.get_channel_element_type(struct_name).ok_or_else(|| {
+                                TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Invalid Channel struct layout".to_string(),
+                                    span: None,
+                                }
+                            })?;
+                            return Ok(elem_type);
+                        }
 
                         if is_rc && right == "Clone" {
                             if !arguments.is_empty() {
