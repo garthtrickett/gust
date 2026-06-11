@@ -1,9 +1,9 @@
 {
-  "summary": "fix: correct compound literal generation for Channel.Send in C codegen",
+  "summary": "fix: resolve formatting placeholder mismatch in C codegen for Channel.Send",
   "files": [
     {
       "file_path": "src/codegen.rs",
-      "code_diff": "<<<<<<< SEARCH\n                    if is_channel && right == \"Send\" {\n                        let arg_str = self.gen_expression(&arguments[0]);\n                        return format!(\"std_Channel_Send_impl({}.capacity, &(__typeof__({})){{ {} }})\", left_str, arg_str, arg_str);\n                    }\n=======\n                    if is_channel && right == \"Send\" {\n                        let arg_str = self.gen_expression(&arguments[0]);\n                        return format!(\"std_Channel_Send_impl({}.capacity, ({{ __typeof__({0}) _tmp = {0}; &_tmp; }}))\", left_str, arg_str);\n                    }\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n                    if is_channel && right == \"Send\" {\n                        let arg_str = self.gen_expression(&arguments[0]);\n                        return format!(\"std_Channel_Send_impl({}.capacity, ({{ __typeof__({0}) _tmp = {0}; &_tmp; }}))\", left_str, arg_str);\n                    }\n=======\n                    if is_channel && right == \"Send\" {\n                        let arg_str = self.gen_expression(&arguments[0]);\n                        return format!(\"std_Channel_Send_impl({0}.capacity, ({{ __typeof__({1}) _tmp = {1}; &_tmp; }}))\", left_str, arg_str);\n                    }\n>>>>>>> REPLACE"
     }
   ]
 }
