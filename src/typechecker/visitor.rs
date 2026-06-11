@@ -602,8 +602,8 @@ impl TypeChecker {
                         origs.insert(name.clone());
                         self.variable_origins.insert(name.clone(), origs);
                         let resolved = self.resolve_type(explicit_t)?;
-                        let resolved = self.resolve_type_namespacing(&resolved)?;
-                        resolved
+                        
+                        self.resolve_type_namespacing(&resolved)?
                     } else {
                         return Err(TypeError {
                             kind: TypeErrorKind::UninitializedVariable,
@@ -1114,7 +1114,11 @@ impl TypeChecker {
     fn check_expression_internal(&mut self, expr: &Expression) -> Result<Type, TypeError> {
         match expr {
             Expression::Identifier(name, span) => {
-                let resolved_name = self.resolve_namespaced_ident(name)?;
+                let resolved_name = if self.symbol_table.contains_key(name) {
+                    name.clone()
+                } else {
+                    self.resolve_namespaced_ident(name)?
+                };
                 self.resolved_names.insert(*span, resolved_name.clone());
 
                 if self.moved_vars.contains(&resolved_name) {

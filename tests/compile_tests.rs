@@ -629,8 +629,8 @@ fn test_codegen_synthesized_is_valid() {
     let c_output = codegen.generate(&program);
 
     // Verify that both StatusPacket_IsValid and NestedPacket_IsValid are synthesized
-    assert!(c_output.contains("int StatusPacket_IsValid(const StatusPacket* req)"));
-    assert!(c_output.contains("int NestedPacket_IsValid(const NestedPacket* req)"));
+    assert!(c_output.contains("int StatusPacket_IsValid(StatusPacket* req)"));
+    assert!(c_output.contains("int NestedPacket_IsValid(NestedPacket* req)"));
 
     // Verify correct recursive field check in NestedPacket_IsValid
     assert!(c_output.contains("if (!StatusPacket_IsValid(&req->Status)) return 0;"));

@@ -392,12 +392,9 @@ impl Codegen {
         c_code.push_str(codegen_runtime::CORE_HEADERS);
         c_code.push_str(codegen_runtime::ARENA_RUNTIME);
 
-        c_code.push_str("// ====================================================\
-");
+        c_code.push_str("// ====================================================\n");
         c_code.push_str("// FORWARD DECLARATIONS\n");
-        c_code.push_str("// ====================================================\
-");
-
+        c_code.push_str("// ====================================================\n");
         for struct_name in self.struct_registry.keys() {
             c_code.push_str(&format!(
                 "typedef struct {} {};\n",
@@ -451,11 +448,9 @@ impl Codegen {
             c_code.push_str("};\n\n");
         }
 
-        c_code.push_str("// ====================================================\
-");
+        c_code.push_str("// ====================================================\n");
         c_code.push_str("// FUNCTION FORWARD DECLARATIONS\n");
-        c_code.push_str("// ====================================================\
-");
+        c_code.push_str("// ====================================================\n");
         for (func_name, sig) in &self.function_registry {
             if func_name == "main" {
                 continue;
@@ -647,8 +642,8 @@ impl Codegen {
 
         for (struct_name, layout) in &self.struct_registry {
             if self.has_boolean_fields(&Type::Struct(struct_name.clone(), None)) {
-                c_code.push_str(&format!(
-                    "int {}_IsValid(const {}* req) {{\n",
+                c_code.push_str(&format!( 
+                    "int {}_IsValid({}* req) {{\n",
                     struct_name, struct_name
                 ));
                 c_code.push_str("    if (req == NULL) return 0;\n"); // Safety check

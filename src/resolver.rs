@@ -36,6 +36,12 @@ pub struct Dependency {
 
 pub struct ModuleResolver;
 
+impl Default for ModuleResolver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ModuleResolver {
     pub fn new() -> Self {
         ModuleResolver

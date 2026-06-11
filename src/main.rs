@@ -80,11 +80,10 @@ fn run_compile_pass_file(input_filename: &str, output_filename: &str) {
                             break;
                         }
                     }
-                    if source_code.is_empty() {
-                        if let Some(module) = modules.values().next() {
+                    if source_code.is_empty()
+                        && let Some(module) = modules.values().next() {
                             source_code = module.source.clone();
                         }
-                    }
                 }
                 let diagnostic = gust_lexer::typechecker::format_diagnostic(&source_code, &err);
                 eprintln!("{}", diagnostic);
