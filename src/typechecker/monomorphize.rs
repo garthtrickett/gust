@@ -161,6 +161,8 @@ impl TypeChecker {
                             Type::Int
                         } else if inner_t_name == "byte" {
                             Type::Byte
+                        } else if inner_t_name == "bool" {
+                            Type::Bool
                         } else {
                             Type::Struct(inner_t_name.to_string(), None)
                         };
@@ -328,6 +330,7 @@ impl TypeChecker {
         let base = match t {
             Type::Int => "int".to_string(),
             Type::Byte => "byte".to_string(),
+            Type::Bool => "bool".to_string(),
             Type::Arena => "Arena".to_string(),
             Type::Void => "void".to_string(),
             Type::Str => "str".to_string(), // Added for String Views

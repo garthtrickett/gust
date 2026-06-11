@@ -86,7 +86,7 @@ impl Codegen {
     pub fn gen_type_aware_initializer(&self, t: &Type) -> String {
         let erased_t = erase_type_with_registry(t, &self.struct_registry);
         match erased_t {
-            Type::Int | Type::Byte => "0".to_string(),
+            Type::Int | Type::Byte | Type::Bool => "0".to_string(),
             Type::Void => "".to_string(),
             Type::Arena => "{0}".to_string(),
             Type::RawPointer(_) => "NULL".to_string(),
@@ -126,7 +126,7 @@ impl Codegen {
 
     fn is_linear_impl(&self, t: &Type, visited: &mut std::collections::HashSet<String>) -> bool {
         match t {
-            Type::Int | Type::Byte | Type::Void | Type::Index(_, _) => false,
+            Type::Int | Type::Byte | Type::Bool | Type::Void | Type::Index(_, _) => false,
             Type::Arena | Type::RawPointer(_) | Type::Slice(_) | Type::ByteSlice | Type::Str => {
                 true
             }
@@ -224,6 +224,7 @@ impl Codegen {
         let base = match t {
             Type::Int => "int".to_string(),
             Type::Byte => "byte".to_string(),
+            Type::Bool => "bool".to_string(),
             Type::Arena => "Arena".to_string(),
             Type::Void => "void".to_string(),
             Type::Str => "str".to_string(),
@@ -303,7 +304,7 @@ impl Codegen {
         visited: &mut std::collections::HashSet<String>,
     ) -> bool {
         match t {
-            Type::Byte => true,
+            Type::Byte | Type::Bool => true,
             Type::Struct(name, _) => {
                 if visited.contains(name) {
                     return false;
@@ -520,7 +521,7 @@ impl Codegen {
 
                 for (field_name, field_type) in sorted_fields {
                     match field_type {
-                        Type::Byte => {
+                        Type::Byte | Type::Bool => {
                             c_code.push_str(&format!(
                                 "    if (req->{} != 0x00 && req->{} != 0x01) return 0;\n",
                                 field_name, field_name
@@ -556,6 +557,7 @@ impl Codegen {
         match erased_t {
             Type::Int => "int".to_string(),
             Type::Byte => "unsigned char".to_string(),
+            Type::Bool => "unsigned char".to_string(),
             Type::Void => "void".to_string(),
             Type::Arena => "os_Arena".to_string(),
             Type::ByteSlice => "Slice_unsigned_char".to_string(),
@@ -813,6 +815,13 @@ impl Codegen {
                 }
             }
             Expression::Integer(val, _) => val.to_string(),
+            Expression::Bool(val, _) => {
+                if *val { 
+                    "1".to_string()
+                } else {
+                    "0".to_string()
+                }
+            }
             Expression::String(val, _) => {
                 format!( 
                     "((Slice_unsigned_char){{ (unsigned char*)\"{}\", {} }})",
@@ -892,7 +901,7 @@ impl Codegen {
                         )
                     } else if let Type::Struct(_, _) = target_type {
                         format!("(*(({}*){}.data))", target_str, left_str)
-                    } else if *target_type == Type::Int || *target_type == Type::Byte {
+                    } else if *target_type == Type::Int || *target_type == Type::Byte || *target_type == Type::Bool {
                         format!("(({}){})", target_str, left_str)
                     } else {
                         format!("(({}*){})", target_str, left_str)

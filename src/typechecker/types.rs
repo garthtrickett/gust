@@ -5,6 +5,7 @@ use std::collections::{HashMap, HashSet};
 pub enum Type {
     Int,
     Byte,
+    Bool,
     Void,
     Arena,
     ByteSlice, // Kept for legacy definitions
@@ -181,6 +182,7 @@ pub fn expression_to_string(expr: &Expression) -> String {
         Expression::Identifier(name, _) => name.clone(),
         Expression::Integer(val, _) => val.to_string(),
         Expression::String(val, _) => format!("\"{}\"", val),
+        Expression::Bool(val, _) => val.to_string(),
         Expression::Call {
             function,
             arguments,

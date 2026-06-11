@@ -120,6 +120,27 @@ fn run_e2e_test(source: &str, expected_output: &str) {
 }
 
 #[test]
+fn test_e2e_bool_primitive() {
+    let source = "
+        type Status struct {
+            ok: bool
+        }
+        func main() {
+            mut b: bool := true;
+            os.LogInt(b as int);
+            
+            b = false;
+            os.LogInt(b as int);
+            
+            mut s: Status;
+            s.ok = true;
+            os.LogInt(s.ok as int);
+        }
+    ";
+    run_e2e_test(source, \"1\\n0\\n1\");
+}
+
+#[test]
 fn test_e2e_safe_branding() {
     let source = "
         type CustomNode[connCtx] struct {

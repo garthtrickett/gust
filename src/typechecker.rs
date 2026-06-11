@@ -40,7 +40,7 @@ impl TypeChecker {
 
     fn is_linear_impl(&self, t: &Type, visited: &mut HashSet<String>) -> bool {
         match t {
-            Type::Int | Type::Byte | Type::Void | Type::Index(_, _) => false,
+            Type::Int | Type::Byte | Type::Bool | Type::Void | Type::Index(_, _) => false,
             Type::Arena | Type::RawPointer(_) | Type::Slice(_) | Type::ByteSlice | Type::Str => true,
             Type::Generic(_, _) => true,
             Type::Struct(name, _) => {

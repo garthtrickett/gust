@@ -505,6 +505,7 @@ impl Parser {
         match base_name.as_str() {
             "int" => Some(Type::Int),
             "byte" => Some(Type::Byte),
+            "bool" => Some(Type::Bool),
             "Arena" | "os_Arena" | "os.Arena" => Some(Type::Arena),
             "str" => Some(Type::Str),
             _ => Some(Type::Struct(base_name, None)),
@@ -798,6 +799,8 @@ impl Parser {
                 self.cur_token.literal.clone(),
                 self.cur_token.span,
             )),
+            TokenType::True => Some(Expression::Bool(true, self.cur_token.span)),
+            TokenType::False => Some(Expression::Bool(false, self.cur_token.span)),
             TokenType::Move => {
                 let start_span = self.cur_token.span;
                 self.next_token();

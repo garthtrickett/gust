@@ -317,6 +317,9 @@ fn lookup_ident(ident: &str) -> TokenType {
         "match" => TokenType::Match,
         "return" => TokenType::Return,
         "empty" => TokenType::Empty,
+        "bool" => TokenType::Bool,
+        "true" => TokenType::True,
+        "false" => TokenType::False,
         _ => TokenType::Ident,
     }
 }

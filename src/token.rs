@@ -51,6 +51,9 @@ pub enum TokenType {
     Match,  // "match"
     Return, // "return"
     Empty,  // "empty"
+    Bool,   // "bool"
+    True,   // "true"
+    False,  // "false"
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]

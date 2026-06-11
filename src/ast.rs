@@ -107,6 +107,7 @@ pub enum Expression {
     Identifier(String, Span),
     Integer(i64, Span),
     String(String, Span), // Added for String Views
+    Bool(bool, Span),
     Move(Box<Expression>, Span),
     Take(Box<Expression>, Span),
     AddressOf(Box<Expression>, Span),
@@ -166,6 +167,7 @@ impl Expression {
             Expression::Identifier(_, span) => *span,
             Expression::Integer(_, span) => *span,
             Expression::String(_, span) => *span,
+            Expression::Bool(_, span) => *span,
             Expression::Move(_, span) => *span,
             Expression::Take(_, span) => *span,
             Expression::AddressOf(_, span) => *span,
