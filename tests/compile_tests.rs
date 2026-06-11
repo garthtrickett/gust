@@ -2130,6 +2130,19 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_os_dir_and_entry_layouts() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut d: os.Dir[ctx];
+            mut entry: os.DirEntry[ctx];
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_vector_stack_type_checking_valid() {
     let source = "
         func main() {

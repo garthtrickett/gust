@@ -578,6 +578,57 @@ impl TypeChecker {
             },
         );
 
+        // os.Dir[ctx]
+        let os_dir_fields = vec![
+            crate::ast::FieldDef {
+                name: "handle".to_string(),
+                field_type: Type::RawPointer(Box::new(Type::Byte)),
+                span: crate::token::Span::dummy(),
+            },
+        ];
+        struct_templates.insert(
+            "os.Dir".to_string(),
+            StructTemplate {
+                generics: vec!["ctx".to_string()],
+                fields: os_dir_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "os_Dir".to_string(),
+            StructTemplate {
+                generics: vec!["ctx".to_string()],
+                fields: os_dir_fields,
+            },
+        );
+
+        // os.DirEntry[ctx]
+        let os_dir_entry_fields = vec![
+            crate::ast::FieldDef {
+                name: "name".to_string(),
+                field_type: Type::Str,
+                span: crate::token::Span::dummy(),
+            },
+            crate::ast::FieldDef {
+                name: "is_dir".to_string(),
+                field_type: Type::Int,
+                span: crate::token::Span::dummy(),
+            },
+        ];
+        struct_templates.insert(
+            "os.DirEntry".to_string(),
+            StructTemplate {
+                generics: vec!["ctx".to_string()],
+                fields: os_dir_entry_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "os_DirEntry".to_string(),
+            StructTemplate {
+                generics: vec!["ctx".to_string()],
+                fields: os_dir_entry_fields,
+            },
+        );
+
         TypeChecker {
             current_prefix: "".to_string(),
             imports: HashMap::new(),
