@@ -11,15 +11,22 @@ pub struct Codegen {
     function_registry: HashMap<String, FunctionSignature>,
     enum_registry: HashMap<String, Vec<String>>, // Added enum registry to Codegen
     current_alloc_struct: RefCell<Option<String>>,
+    pub resolved_names: HashMap<crate::token::Span, String>,
+    pub resolved_types: HashMap<crate::token::Span, Type>,
 }
 
 // Brand Erasure Helpers
-fn erase_struct_name_with_registry(name: &str, brand: &Option<String>, registry: &HashMap<String, StructLayout>) -> String {
+fn erase_struct_name_with_registry(
+    name: &str,
+    brand: &Option<String>,
+    registry: &HashMap<String, StructLayout>,
+) -> String {
     let mut actual_brand = brand.clone();
     if actual_brand.is_none()
-        && let Some(layout) = registry.get(name) {
-            actual_brand = layout.brand.clone();
-        }
+        && let Some(layout) = registry.get(name)
+    {
+        actual_brand = layout.brand.clone();
+    }
     if let Some(b) = &actual_brand {
         let suffix = format!("_{}", b);
         if name.ends_with(&suffix) {
@@ -29,7 +36,7 @@ fn erase_struct_name_with_registry(name: &str, brand: &Option<String>, registry:
     name.to_string()
 }
 
-fn erase_type_with_registry(t: &Type, registry: &HashMap<String, StructLayout>) -> Type { 
+fn erase_type_with_registry(t: &Type, registry: &HashMap<String, StructLayout>) -> Type {
     match t {
         Type::Struct(name, brand) => {
             let erased_name = erase_struct_name_with_registry(name, brand, registry);
@@ -39,10 +46,15 @@ fn erase_type_with_registry(t: &Type, registry: &HashMap<String, StructLayout>) 
             let erased_struct = erase_struct_name_with_registry(struct_name, brand, registry);
             Type::Index(erased_struct, None)
         }
-        Type::RawPointer(inner) => Type::RawPointer(Box::new(erase_type_with_registry(inner, registry))),
+        Type::RawPointer(inner) => {
+            Type::RawPointer(Box::new(erase_type_with_registry(inner, registry)))
+        }
         Type::Slice(inner) => Type::Slice(Box::new(erase_type_with_registry(inner, registry))),
         Type::Generic(name, args) => {
-            let erased_args: Vec<Type> = args.iter().map(|arg| erase_type_with_registry(arg, registry)).collect();
+            let erased_args: Vec<Type> = args
+                .iter()
+                .map(|arg| erase_type_with_registry(arg, registry))
+                .collect();
             Type::Generic(name.clone(), erased_args)
         }
         _ => t.clone(),
@@ -58,11 +70,12 @@ fn get_by_value_dependencies(
         Type::Struct(name, _) => {
             if struct_registry.contains_key(name)
                 && deps.insert(name.clone())
-                    && let Some(layout) = struct_registry.get(name) {
-                        for field_type in layout.fields.values() {
-                            get_by_value_dependencies(field_type, deps, struct_registry);
-                        }
-                    }
+                && let Some(layout) = struct_registry.get(name)
+            {
+                for field_type in layout.fields.values() {
+                    get_by_value_dependencies(field_type, deps, struct_registry);
+                }
+            }
         }
         Type::Generic(_, args) => {
             for arg in args {
@@ -116,6 +129,7 @@ impl Codegen {
                 let concrete_name = self.get_monomorphized_name(&name, &args);
                 self.gen_type_aware_initializer(&Type::Struct(concrete_name, None))
             }
+            _ => "0".to_string(),
         }
     }
 
@@ -150,6 +164,7 @@ impl Codegen {
                     true // Conservative fallback
                 }
             }
+            _ => false,
         }
     }
 
@@ -158,14 +173,20 @@ impl Codegen {
         struct_registry: HashMap<String, StructLayout>,
         function_registry: HashMap<String, FunctionSignature>,
         enum_registry: HashMap<String, Vec<String>>, // Added enum_registry parameter
+        resolved_names: HashMap<crate::token::Span, String>,
+        resolved_types: HashMap<crate::token::Span, Type>,
     ) -> Self {
         // Step 1: Collapse struct layouts structurally via Brand Erasure
         let mut erased_struct_registry = HashMap::new();
         for (struct_name, layout) in &struct_registry {
-            let erased_name = erase_struct_name_with_registry(struct_name, &layout.brand, &struct_registry);
+            let erased_name =
+                erase_struct_name_with_registry(struct_name, &layout.brand, &struct_registry);
             let mut erased_fields = HashMap::new();
             for (f_name, f_type) in &layout.fields {
-                erased_fields.insert(f_name.clone(), erase_type_with_registry(f_type, &struct_registry));
+                erased_fields.insert(
+                    f_name.clone(),
+                    erase_type_with_registry(f_type, &struct_registry),
+                );
             }
             erased_struct_registry.insert(
                 erased_name,
@@ -180,13 +201,20 @@ impl Codegen {
         let mut erased_symbol_table = HashMap::new();
         let original_symbol_table = symbol_table.clone();
         for (var_name, var_type) in symbol_table {
-            erased_symbol_table.insert(var_name.clone(), erase_type_with_registry(&var_type, &struct_registry));
+            erased_symbol_table.insert(
+                var_name.clone(),
+                erase_type_with_registry(&var_type, &struct_registry),
+            );
         }
 
         // Step 3: Align function boundaries
         let mut erased_function_registry = HashMap::new();
         for (func_name, sig) in &function_registry {
-            let erased_params: Vec<Type> = sig.params.iter().map(|param| erase_type_with_registry(param, &struct_registry)).collect();
+            let erased_params: Vec<Type> = sig
+                .params
+                .iter()
+                .map(|param| erase_type_with_registry(param, &struct_registry))
+                .collect();
             let erased_return = erase_type_with_registry(&sig.return_type, &struct_registry);
             erased_function_registry.insert(
                 func_name.clone(),
@@ -206,6 +234,8 @@ impl Codegen {
             function_registry: erased_function_registry,
             enum_registry, // Saved here
             current_alloc_struct: RefCell::new(None),
+            resolved_names,
+            resolved_types,
         }
     }
 
@@ -253,9 +283,7 @@ impl Codegen {
                 let inner_type = self.get_expr_type(inner)?;
                 Some(Type::RawPointer(Box::new(inner_type)))
             }
-            Expression::AsCast { target_type, .. } => {
-                Some(target_type.clone())
-            }
+            Expression::AsCast { target_type, .. } => Some(target_type.clone()),
             Expression::Selector { left, right, .. } => {
                 let left_type = self.get_expr_type(left)?;
                 if let Type::Struct(struct_name, _) = left_type
@@ -349,7 +377,7 @@ impl Codegen {
         c_code.push_str("// ====================================================\n");
 
         for struct_name in self.struct_registry.keys() {
-            c_code.push_str(&format!( 
+            c_code.push_str(&format!(
                 "typedef struct {} {};\n",
                 struct_name, struct_name
             ));
@@ -370,18 +398,18 @@ impl Codegen {
                 let name = &sig.param_names[i];
                 let is_arena_ptr = if let Type::RawPointer(inner) = param_type {
                     **inner == Type::Arena
-                } else { 
+                } else {
                     false
                 };
                 if is_arena_ptr || matches!(param_type, Type::Arena) {
                     param_strs.push(format!("os_Arena* {}", name));
-                } else { 
+                } else {
                     param_strs.push(format!("{} {}", param_type_str, name));
                 }
             }
             let param_list = if param_strs.is_empty() {
                 "void".to_string()
-            } else { 
+            } else {
                 param_strs.join(", ")
             };
             let decl_name = func_name.replace(".", "_");
@@ -472,7 +500,13 @@ impl Codegen {
         all_structs.sort();
 
         for name in &all_structs {
-            visit(name, &mut visited, &mut temp_visited, &mut ordered_struct_names, &self.struct_registry);
+            visit(
+                name,
+                &mut visited,
+                &mut temp_visited,
+                &mut ordered_struct_names,
+                &self.struct_registry,
+            );
         }
 
         for struct_name in &ordered_struct_names {
@@ -585,28 +619,6 @@ impl Codegen {
         c_code
     }
 
-    fn get_c_type(&self, t: &Type) -> String {
-        let erased_t = erase_type_with_registry(t, &self.struct_registry);
-        match erased_t {
-            Type::Int => "int".to_string(),
-            Type::Byte => "unsigned char".to_string(),
-            Type::Bool => "unsigned char".to_string(),
-            Type::Void => "void".to_string(),
-            Type::Arena => "os_Arena".to_string(),
-            Type::ByteSlice => "Slice_unsigned_char".to_string(),
-            Type::Slice(inner) => format!("Slice_{}", self.get_c_type_ident(&inner)),
-            Type::Index(_, _) => "int".to_string(),
-            Type::Struct(name, _) => name.clone(),
-            Type::RawPointer(inner) => format!("{}*", self.get_c_type(&inner)),
-            Type::Generic(name, args) => self.get_monomorphized_name(&name, &args),
-            Type::Str => "Slice_unsigned_char".to_string(),
-        }
-    }
-
-    fn get_c_type_ident(&self, t: &Type) -> String {
-        self.get_c_type(t).replace(" ", "_").replace("*", "_ptr")
-    }
-
     fn gen_statement(&self, stmt: &Statement) -> String {
         let mut result = String::new();
         match stmt {
@@ -618,6 +630,7 @@ impl Codegen {
                 params,
                 return_type: _,
                 body,
+                span,
                 ..
             } => {
                 let sig = self.function_registry.get(name).cloned();
@@ -664,6 +677,11 @@ impl Codegen {
                     "void".to_string()
                 };
 
+                let resolved_name = self
+                    .resolved_names
+                    .get(span)
+                    .cloned()
+                    .unwrap_or_else(|| name.clone());
                 let mut body_str = String::new();
                 if name == "main" {
                     body_str.push_str("int main() {\n");
@@ -671,7 +689,10 @@ impl Codegen {
                     body_str.push_str("    return 0;\n");
                     body_str.push_str("}\n\n");
                 } else {
-                    body_str.push_str(&format!("{} {}({}) {{\n", ret_str, resolved_name, param_list));
+                    body_str.push_str(&format!(
+                        "{} {}({}) {{\n",
+                        ret_str, resolved_name, param_list
+                    ));
                     body_str.push_str(&self.gen_block_statement(body));
                     body_str.push_str("}\n\n");
                 }
@@ -735,7 +756,9 @@ impl Codegen {
                 *self.current_alloc_struct.borrow_mut() = None;
                 result.push_str(&format!("    {} = {};\n", left_str, val_str));
             }
-            Statement::While { condition, body, .. } => {
+            Statement::While {
+                condition, body, ..
+            } => {
                 let cond_str = self.gen_expression(condition);
                 result.push_str(&format!("    while ({}) {{\n", cond_str));
                 result.push_str(&self.gen_loop_body(body));
@@ -757,7 +780,9 @@ impl Codegen {
                 }
                 result.push_str("    }\n");
             }
-            Statement::Match { expression, cases, .. } => {
+            Statement::Match {
+                expression, cases, ..
+            } => {
                 let expr_str = self.gen_expression(expression);
                 let expr_type = self.get_expr_type(expression).unwrap_or(Type::Void);
 
@@ -778,8 +803,7 @@ impl Codegen {
                         0
                     };
 
-                    result.push_str(&format!("        case {}: {{
-", tag_val));
+                    result.push_str(&format!("        case {}: {{\n", tag_val));
                     result.push_str(&self.gen_loop_body(&case.body));
                     result.push_str("            break;\n");
                     result.push_str("        }\n");
@@ -839,25 +863,28 @@ impl Codegen {
         result
     }
 
-        fn gen_expression(&self, expr: &Expression) -> String {
+    fn gen_expression(&self, expr: &Expression) -> String {
         match expr {
-            Expression::Identifier(name, _) => {
+            Expression::Identifier(name, span) => {
                 if name == "null" {
                     "0xFFFFFFFF".to_string()
                 } else {
-                    name.clone()
+                    self.resolved_names
+                        .get(span)
+                        .cloned()
+                        .unwrap_or_else(|| name.clone())
                 }
             }
             Expression::Integer(val, _) => val.to_string(),
             Expression::Bool(val, _) => {
-                if *val { 
+                if *val {
                     "1".to_string()
                 } else {
                     "0".to_string()
                 }
             }
             Expression::String(val, _) => {
-                format!( 
+                format!(
                     "((Slice_unsigned_char){{ (unsigned char*)\"{}\", {} }})",
                     val,
                     val.len()
@@ -909,14 +936,16 @@ impl Codegen {
                 left,
                 target_type,
                 is_reference,
+                span,
                 ..
             } => {
                 let left_str = self.gen_expression(left);
-                let target_str = self.get_c_type(target_type);
+                let resolved_target = self.resolved_types.get(span).unwrap_or(target_type);
+                let target_str = self.get_c_type(resolved_target);
 
                 if *is_reference {
                     let clean_target = target_str.trim_end_matches('*').trim();
-                    format!( 
+                    format!(
                         "({{ CastResult_{} res; res.Ok = ((((uintptr_t){}.data) & (__alignof__({}) - 1)) == 0) && ({}.len >= sizeof({})); res.Val = ({}*){}.data; res; }})",
                         clean_target,
                         left_str,
@@ -927,22 +956,27 @@ impl Codegen {
                         left_str
                     )
                 } else {
-                    if let Type::RawPointer(inner) = target_type {
+                    if let Type::RawPointer(inner) = resolved_target {
                         format!(
                             "(({}){})",
                             self.get_c_type(&Type::RawPointer(inner.clone())),
                             left_str
                         )
-                    } else if let Type::Struct(_, _) = target_type {
+                    } else if let Type::Struct(_, _) = resolved_target {
                         format!("(*(({}*){}.data))", target_str, left_str)
-                    } else if *target_type == Type::Int || *target_type == Type::Byte || *target_type == Type::Bool {
+                    } else if *resolved_target == Type::Int
+                        || *resolved_target == Type::Byte
+                        || *resolved_target == Type::Bool
+                    {
                         format!("(({}){})", target_str, left_str)
                     } else {
                         format!("(({}*){})", target_str, left_str)
                     }
                 }
             }
-            Expression::IndexAccess { allocator, index, .. } => {
+            Expression::IndexAccess {
+                allocator, index, ..
+            } => {
                 let alloc_str = self.gen_expression(allocator);
                 let index_str = self.gen_expression(index);
 
@@ -976,7 +1010,7 @@ impl Codegen {
                 } else {
                     // Fallback to checking the allocator variable name in symbol table directly
                     let alloc_ident = expression_to_string(allocator);
-                    if let Some(Type::Struct(struct_name, _)) = 
+                    if let Some(Type::Struct(struct_name, _)) =
                         self.symbol_table.borrow().get(&alloc_ident)
                     {
                         if struct_name.starts_with("Vector_")
@@ -1026,7 +1060,7 @@ impl Codegen {
                     // Arena indexing (Value-Branded)
                     let mut target_struct = "SessionNode".to_string();
                     if let Expression::Identifier(idx_name, _) = &**index
-                        && let Some(Type::Index(struct_name, _)) = 
+                        && let Some(Type::Index(struct_name, _)) =
                             self.symbol_table.borrow().get(idx_name)
                         && struct_name != "Any"
                     {
@@ -1054,7 +1088,9 @@ impl Codegen {
                     }
                 }
             }
-            Expression::Binary { op, left, right, .. } => {
+            Expression::Binary {
+                op, left, right, ..
+            } => {
                 let left_str = self.gen_expression(left);
                 let right_str = self.gen_expression(right);
                 format!("{} {} {}", left_str, op, right_str)
@@ -1116,7 +1152,7 @@ impl Codegen {
                         }
                     } else {
                         let arg_ident = expression_to_string(&arguments[0]);
-                        if let Some(Type::Struct(struct_name, _)) = 
+                        if let Some(Type::Struct(struct_name, _)) =
                             self.symbol_table.borrow().get(&arg_ident)
                             && (struct_name.starts_with("Vector_")
                                 || struct_name.starts_with("std_Vector_")
@@ -1146,7 +1182,7 @@ impl Codegen {
                 if func_path == "std.Clone" || func_path == "std_Clone" {
                     let dest_arg_str = self.gen_expression(&arguments[0]);
                     let src_arg_str = self.gen_expression(&arguments[1]);
-                    
+
                     let mut dest_is_ptr = false;
                     if let Expression::Identifier(name, _) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
@@ -1170,24 +1206,32 @@ impl Codegen {
                     let mut found = false;
 
                     if let Expression::Identifier(name, _) = &arguments[1]
-                        && let Some(Type::Index(s_name, Some(brand))) = self.original_symbol_table.get(name).cloned() {
-                            struct_name = erase_struct_name_with_registry(&s_name, &Some(brand.clone()), &self.struct_registry);
-                            src_brand = brand;
-                            found = true;
-                        }
+                        && let Some(Type::Index(s_name, Some(brand))) =
+                            self.original_symbol_table.get(name).cloned()
+                    {
+                        struct_name = erase_struct_name_with_registry(
+                            &s_name,
+                            &Some(brand.clone()),
+                            &self.struct_registry,
+                        );
+                        src_brand = brand;
+                        found = true;
+                    }
 
                     if found {
                         let mut src_is_ptr = false;
-                        if let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(&src_brand)
-                            && **inner == Type::Arena {
-                                src_is_ptr = true;
-                            }
+                        if let Some(Type::RawPointer(inner)) =
+                            self.symbol_table.borrow().get(&src_brand)
+                            && **inner == Type::Arena
+                        {
+                            src_is_ptr = true;
+                        }
                         let src_base = if src_is_ptr {
                             format!("{}->BaseAddress", src_brand)
                         } else {
                             format!("{}.BaseAddress", src_brand)
                         };
-                        
+
                         return format!(
                             "({{ int _src_idx = {}; int _dest_idx = os_ArenaAlloc({}, sizeof({})); *(struct {}*)((char*){} + _dest_idx) = *(struct {}*)((char*){} + _src_idx); _dest_idx; }})",
                             src_arg_str,
@@ -1212,44 +1256,55 @@ impl Codegen {
                 if func_path == "std.RcNew" || func_path == "std_RcNew" {
                     let pool_expr = self.gen_expression(&arguments[0]);
                     let val_expr = self.gen_expression(&arguments[1]);
-                    
+
                     let pool_type = self.get_expr_type(&arguments[0]).unwrap_or(Type::Void);
                     let val_type = self.get_expr_type(&arguments[1]).unwrap_or(Type::Void);
-                    
+
                     let mut opt_ctx_name = None;
                     let target_pool_type = if let Type::RawPointer(inner) = &pool_type {
                         (**inner).clone()
                     } else {
                         pool_type.clone()
                     };
-                    
+
                     match &target_pool_type {
                         Type::Struct(struct_name, Some(ctx_name))
-                            if (struct_name.starts_with("Pool_") || struct_name.starts_with("std_Pool_")) => {
+                            if (struct_name.starts_with("Pool_")
+                                || struct_name.starts_with("std_Pool_")) =>
+                        {
+                            opt_ctx_name = Some(ctx_name.clone());
+                        }
+                        Type::Generic(pool_name, pool_args) => {
+                            if (pool_name == "Pool" || pool_name == "std.Pool")
+                                && pool_args.len() == 2
+                                && let Type::Struct(ctx_name, _) = &pool_args[1]
+                            {
                                 opt_ctx_name = Some(ctx_name.clone());
                             }
-                        Type::Generic(pool_name, pool_args) => {
-                            if (pool_name == "Pool" || pool_name == "std.Pool") && pool_args.len() == 2
-                                && let Type::Struct(ctx_name, _) = &pool_args[1] {
-                                    opt_ctx_name = Some(ctx_name.clone());
-                                }
                         }
                         _ => {}
                     }
-                    
+
                     let ctx_name = opt_ctx_name.unwrap_or_else(|| "ctx".to_string());
                     let rc_type = format!("std_Rc_{}_{}", self.get_type_ident(&val_type), ctx_name);
-                    let erased_rc_type = erase_struct_name_with_registry(&rc_type, &Some(ctx_name.clone()), &self.struct_registry);
-                    
+                    let erased_rc_type = erase_struct_name_with_registry(
+                        &rc_type,
+                        &Some(ctx_name.clone()),
+                        &self.struct_registry,
+                    );
+
                     let is_pool_ptr = matches!(pool_type, Type::RawPointer(_));
-                    
+
                     let pool_ptr_expr = if is_pool_ptr {
                         pool_expr
                     } else {
                         format!("&{}", pool_expr)
                     };
-                    
-                    return format!("std_RcNew({}, {}, {})", pool_ptr_expr, val_expr, erased_rc_type);
+
+                    return format!(
+                        "std_RcNew({}, {}, {})",
+                        pool_ptr_expr, val_expr, erased_rc_type
+                    );
                 }
 
                 // os.VectorNew / std.VectorNew
@@ -1403,7 +1458,7 @@ impl Codegen {
                         }
                     } else {
                         let left_ident = expression_to_string(left);
-                        if let Some(Type::Struct(struct_name, _)) = 
+                        if let Some(Type::Struct(struct_name, _)) =
                             self.symbol_table.borrow().get(&left_ident)
                         {
                             if struct_name.starts_with("Vector_")
@@ -1475,7 +1530,7 @@ impl Codegen {
                             Some(struct_name.clone())
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) = 
+                            if let Some(Type::Struct(struct_name, _)) =
                                 self.symbol_table.borrow().get(&left_ident)
                             {
                                 Some(struct_name.clone())
@@ -1503,7 +1558,7 @@ impl Codegen {
                             Some(struct_name.clone())
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) = 
+                            if let Some(Type::Struct(struct_name, _)) =
                                 self.symbol_table.borrow().get(&left_ident)
                             {
                                 Some(struct_name.clone())
@@ -1512,12 +1567,13 @@ impl Codegen {
                             }
                         };
                         if let Some(struct_name) = opt_struct_name
-                            && let Some((k, v)) = self.get_hashmap_key_value_types(&struct_name) {
-                                is_str_key = k == Type::Str;
-                                lookup_struct = format!("LookupResult_{}", self.get_type_ident(&v));
-                            }
+                            && let Some((k, v)) = self.get_hashmap_key_value_types(&struct_name)
+                        {
+                            is_str_key = k == Type::Str;
+                            lookup_struct = format!("LookupResult_{}", self.get_type_ident(&v));
+                        }
                         let is_str_key_str = if is_str_key { "1" } else { "0" };
-                        return format!( 
+                        return format!(
                             "({{ {} res = {{0}}; res.Ok = os_HashMapContains(&{}, {}, {}); if (res.Ok) {{ res.Val = *os_HashMapRef(&{}, {}, {}); }} res; }})",
                             lookup_struct,
                             left_str,
@@ -1562,7 +1618,10 @@ impl Codegen {
                 }
                 format!("{}({})", func_c, arg_strs.join(", "))
             }
-            Expression::Empty(target_type, _) => self.gen_type_aware_initializer(target_type),
+            Expression::Empty(target_type, span) => {
+                let resolved_target = self.resolved_types.get(span).unwrap_or(target_type);
+                self.gen_type_aware_initializer(resolved_target)
+            }
         }
     }
 }

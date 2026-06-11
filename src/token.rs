@@ -57,14 +57,14 @@ pub enum TokenType {
     False,  // "false"
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Position {
     pub line: usize,
     pub column: usize,
     pub offset: usize,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Span {
     pub start: Position,
     pub end: Position,
