@@ -359,6 +359,62 @@ static inline int os_HashMapContains_impl(void* map_void, void* key_ptr, int is_
     return 0;
 }
 
+static inline void os_HashMapRemove_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {
+    typedef struct {
+        os_Arena* arena;
+        int capacity;
+        char* keys;
+        int len;
+        int* occupied;
+        char* values;
+    } GenericHashMap;
+
+    GenericHashMap* m = (GenericHashMap*)map_void;
+    if (m->capacity == 0) return;
+
+    uint32_t h = os_hash_key(key_ptr, is_str_key);
+    int idx = h % m->capacity;
+    while (m->occupied[idx]) {
+        if (os_key_eq(m->keys + idx * key_size, key_ptr, is_str_key)) {
+            m->occupied[idx] = 0;
+            m->len--;
+            int i = idx;
+            int j = (i + 1) % m->capacity;
+            while (m->occupied[j]) {
+                void* k_ptr = m->keys + j * key_size;
+                int r = os_hash_key(k_ptr, is_str_key) % m->capacity;
+                if ((i < j && (r <= i || r > j)) || (i > j && (r <= i && r > j))) {
+                    memcpy(m->keys + i * key_size, k_ptr, key_size);
+                    memcpy(m->values + i * val_size, m->values + j * val_size, val_size);
+                    m->occupied[i] = 1;
+                    m->occupied[j] = 0;
+                    i = j;
+                }
+                j = (j + 1) % m->capacity;
+            }
+            return;
+        }
+        idx = (idx + 1) % m->capacity;
+    }
+}
+
+static inline void os_HashMapClear_impl(void* map_void, size_t key_size, size_t val_size) {
+    typedef struct {
+        os_Arena* arena;
+        int capacity;
+        char* keys;
+        int len;
+        int* occupied;
+        char* values;
+    } GenericHashMap;
+
+    GenericHashMap* m = (GenericHashMap*)map_void;
+    if (m->capacity == 0) return;
+
+    m->len = 0;
+    memset(m->occupied, 0, m->capacity * sizeof(int));
+}
+
 #define os_HashMapContains(map_ptr, key, is_str_key) \
     ({ \
         __typeof__(*(map_ptr)->keys) _key = (key); \
@@ -370,6 +426,15 @@ static inline int os_HashMapContains_impl(void* map_void, void* key_ptr, int is_
         __typeof__(*(map_ptr)->keys) _key = (key); \
         os_HashMapRef_impl((map_void_ptr)(map_ptr), &_key, (is_str_key), sizeof(*(map_ptr)->keys), sizeof(*(map_ptr)->values)); \
     }))
+
+#define os_HashMapRemove(map_ptr, key, is_str_key) \
+    do { \
+        __typeof__(*(map_ptr)->keys) _key = (key); \
+        os_HashMapRemove_impl((map_void_ptr)(map_ptr), &_key, (is_str_key), sizeof(*(map_ptr)->keys), sizeof(*(map_ptr)->values)); \
+    } while(0)
+
+#define os_HashMapClear(map_ptr) \
+    os_HashMapClear_impl((map_void_ptr)(map_ptr), sizeof(*(map_ptr)->keys), sizeof(*(map_ptr)->values))
 
 #define os_VectorPush(vec_ptr, val) do { \
     if ((vec_ptr)->len >= (vec_ptr)->capacity) { \
