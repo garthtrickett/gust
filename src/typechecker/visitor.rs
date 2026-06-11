@@ -1836,12 +1836,14 @@ impl TypeChecker {
                 arguments,
                 ..
             } => {
-                for arg in arguments {
-                    self.check_expression(arg)?;
-                }
-
                 let raw_func_path = expression_to_string(function);
                 let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or(raw_func_path);
+
+                if func_path != "std.Spawn" && func_path != "std_Spawn" {
+                    for arg in arguments {
+                        self.check_expression(arg)?;
+                    }
+                }
 
                 if func_path == "len" {
                     if arguments.len() != 1 {
@@ -2116,6 +2118,7 @@ impl TypeChecker {
 
                     let func_name = expression_to_string(&arguments[0]);
                     let resolved_func_name = self.resolve_namespaced_ident(&func_name).unwrap_or(func_name.clone());
+                    self.resolved_names.insert(arguments[0].span(), resolved_func_name.clone());
 
                     if let Some(sig) = self.function_registry.get(&resolved_func_name).cloned() {
                         if sig.params.len() != 1 {

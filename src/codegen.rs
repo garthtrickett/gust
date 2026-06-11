@@ -1564,7 +1564,10 @@ impl Codegen {
                 }
 
                 if func_path == "std.Spawn" || func_path == "std_Spawn" {
-                    let thread_func_name = expression_to_string(&arguments[0]).replace(".", "_");
+                    let raw_func_name = expression_to_string(&arguments[0]);
+                    let thread_func_name = self.resolved_names.get(&arguments[0].span()).cloned()
+                        .unwrap_or(raw_func_name)
+                        .replace(".", "_");
                     let arg_str = self.gen_expression(&arguments[1]);
                     let arg_type = self.get_expr_type(&arguments[1]).unwrap_or(Type::Void);
                     let is_ptr = matches!(arg_type, Type::RawPointer(_));
