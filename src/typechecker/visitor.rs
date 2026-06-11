@@ -2462,7 +2462,7 @@ impl TypeChecker {
                         self.struct_registry.insert(
                             lookup_name.clone(),
                             StructLayout {
-                                brand: None,
+                                brand: Some(brand_name.clone()),
                                 fields,
                             },
                         );
@@ -2516,7 +2516,7 @@ impl TypeChecker {
                         self.struct_registry.insert(
                             lookup_name.clone(),
                             StructLayout {
-                                brand: None,
+                                brand: Some(brand_name.clone()),
                                 fields,
                             },
                         );

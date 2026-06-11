@@ -2190,6 +2190,53 @@ fn test_os_directory_ffi_type_checking() {
 }
 
 #[test]
+fn test_directory_ffi_codegen_verification() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut opt_dir := os.OpenDir(ctx, \"src\");
+            if opt_dir.Ok {
+                mut d := opt_dir.Val;
+                mut opt_entry := os.ReadDir(ctx, d);
+                if opt_entry.Ok {
+                    os.LogStr(opt_entry.Val.name);
+                }
+                os.CloseDir(d);
+            }
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&program);
+
+    // Verify critical codegen outputs
+    assert!(c_output.contains("struct LookupResult_os_Dir {"));
+    assert!(c_output.contains("struct LookupResult_os_DirEntry {"));
+    assert!(c_output.contains("os_OpenDir("));
+    assert!(c_output.contains("os_ReadDir("));
+    assert!(c_output.contains("os_CloseDir("));
+    assert!(c_output.contains("opendir("));
+    assert!(c_output.contains("readdir("));
+    assert!(c_output.contains("closedir("));
+}
+
+#[test]
 fn test_vector_stack_type_checking_valid() {
     let source = "
         func main() {

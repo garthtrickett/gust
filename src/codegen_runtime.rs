@@ -4,6 +4,8 @@ pub const CORE_HEADERS: &str = r#"#include <stdio.h>
 #include <string.h>
 #include <pthread.h>
 #include <sched.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 "#;
 
@@ -263,6 +265,64 @@ int os_WriteFile(Slice_unsigned_char path, Slice_unsigned_char contents) {
     size_t written = fwrite(contents.data, 1, contents.len, f);
     fclose(f);
     return written == (size_t)contents.len ? 1 : 0;
+}
+
+LookupResult_os_Dir os_OpenDir(os_Arena* arena, Slice_unsigned_char path) {
+    LookupResult_os_Dir result;
+    result.Ok = 0;
+    result.Val.handle = NULL;
+
+    char* path_c = malloc(path.len + 1);
+    memcpy(path_c, path.data, path.len);
+    path_c[path.len] = '\0';
+
+    DIR* dir = opendir(path_c);
+    free(path_c);
+
+    if (dir != NULL) {
+        result.Ok = 1;
+        result.Val.handle = (unsigned char*)dir;
+    }
+    return result;
+}
+
+LookupResult_os_DirEntry os_ReadDir(os_Arena* arena, os_Dir dir) {
+    LookupResult_os_DirEntry result;
+    result.Ok = 0;
+    result.Val.name.data = NULL;
+    result.Val.name.len = 0;
+    result.Val.is_dir = 0;
+
+    if (dir.handle == NULL) {
+        return result;
+    }
+
+    DIR* d = (DIR*)dir.handle;
+    struct dirent* entry = readdir(d);
+    if (entry != NULL) {
+        result.Ok = 1;
+
+        int name_len = strlen(entry->d_name);
+        int offset = os_ArenaAlloc(arena, name_len);
+        char* dest = (char*)arena->BaseAddress + offset;
+        memcpy(dest, entry->d_name, name_len);
+
+        result.Val.name.data = (unsigned char*)dest;
+        result.Val.name.len = name_len;
+        
+#ifdef DT_DIR
+        result.Val.is_dir = (entry->d_type == DT_DIR) ? 1 : 0;
+#else
+        result.Val.is_dir = 0;
+#endif
+    }
+    return result;
+}
+
+void os_CloseDir(os_Dir dir) {
+    if (dir.handle != NULL) {
+        closedir((DIR*)dir.handle);
+    }
 }
 
 "#;
