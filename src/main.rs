@@ -57,14 +57,33 @@ fn run_compile_pass_file(input_filename: &str, output_filename: &str) {
             };
 
             let mut checker = TypeChecker::new();
-            match checker.check_program(&program) {
-                Ok(_) => {
-                    let codegen = Codegen::new(
-                        checker.variable_types,
-                        checker.struct_registry,
-                        checker.function_registry,
-                        checker.enum_registry,
-                    );
+            let mut check_error = None;
+            for path in &order { 
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+                    if let Err(err) = checker.check_module(&module.program, &prefix) { 
+                        check_error = Some((module.source.clone(), err));
+                        break;
+                    }
+                }
+            }
+
+            if let Some((source_code, err)) = check_error { 
+                let diagnostic = gust_lexer::typechecker::format_diagnostic(&source_code, &err);
+                eprintln!("{}", diagnostic);
+                std::process::exit(1);
+            }
+
+            let codegen = Codegen::new(
+                checker.variable_types,
+                checker.struct_registry,
+                checker.function_registry,
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
+            );
                     let c_output = codegen.generate(&program);
 
                     println!("✅ Type Checking Successful! Program is type-safe.");

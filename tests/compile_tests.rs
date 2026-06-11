@@ -2123,3 +2123,112 @@ fn test_multi_file_compilation_cycle() {
     let _ = fs::remove_file(b_path);
     let _ = fs::remove_dir(temp_dir);
 }
+
+#[test]
+fn test_namespaced_cross_module_typechecking_valid() {
+    use std::fs;
+    let temp_dir = std::env::temp_dir().join("gust_test_namespaced_valid");
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let main_path = temp_dir.join("main.gst");
+    let lib_path = temp_dir.join("lib.gst");
+
+    fs::write(&main_path, "import \"lib.gst\" as b; func main() { mut x: b.MyStruct; x.val = 42; }").unwrap();
+    fs::write(&lib_path, "type MyStruct struct { val: int }").unwrap();
+
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = resolver.resolve(&main_path, &fs_impl);
+    assert!(res.is_ok());
+
+    let (order, modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+
+    for path in &order { 
+        if let Some(module) = modules.get(path) { 
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok(), "Failed on {:?}: {:?}", path, check_res.err());
+        }
+    }
+
+    let _ = fs::remove_file(main_path);
+    let _ = fs::remove_file(lib_path);
+    let _ = fs::remove_dir(temp_dir);
+}
+
+#[test]
+fn test_namespaced_cross_module_typechecking_invalid_alias() {
+    use std::fs;
+    let temp_dir = std::env::temp_dir().join("gust_test_namespaced_invalid");
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let main_path = temp_dir.join("main.gst");
+    let lib_path = temp_dir.join("lib.gst");
+
+    fs::write(&main_path, "import \"lib.gst\" as b; func main() { mut x: wrong_alias.MyStruct; }").unwrap();
+    fs::write(&lib_path, "type MyStruct struct { val: int }").unwrap();
+
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = resolver.resolve(&main_path, &fs_impl);
+    assert!(res.is_ok());
+
+    let (order, modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+
+    let mut had_error = false;
+    for path in &order { 
+        if let Some(module) = modules.get(path) { 
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            if checker.check_module(&module.program, &prefix).is_err() { 
+                had_error = true;
+                break;
+            }
+        }
+    }
+    assert!(had_error, "Expected typechecker to reject invalid alias");
+
+    let _ = fs::remove_file(main_path);
+    let _ = fs::remove_file(lib_path);
+    let _ = fs::remove_dir(temp_dir);
+}
+
+#[test]
+fn test_namespaced_nested_type_resolution() {
+    use std::fs;
+    let temp_dir = std::env::temp_dir().join("gust_test_namespaced_nested");
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let main_path = temp_dir.join("main.gst");
+    let lib_path = temp_dir.join("lib.gst");
+
+    fs::write(&main_path, "import \"lib.gst\" as b; func main() { mut ctx := os.Arena.New(); defer ctx.Free(); mut vec: std.Vector[b.MyStruct, ctx] := std.VectorNew(ctx); }").unwrap();
+    fs::write(&lib_path, "type MyStruct struct { val: int }").unwrap();
+
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = resolver.resolve(&main_path, &fs_impl);
+    assert!(res.is_ok());
+
+    let (order, modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+
+    for path in &order { 
+        if let Some(module) = modules.get(path) { 
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok(), "Failed on {:?}: {:?}", path, check_res.err());
+        }
+    }
+
+    let _ = fs::remove_file(main_path);
+    let _ = fs::remove_file(lib_path);
+    let _ = fs::remove_dir(temp_dir);
+}
