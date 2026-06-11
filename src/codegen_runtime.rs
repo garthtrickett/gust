@@ -3,6 +3,7 @@ pub const CORE_HEADERS: &str = r#"#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <pthread.h>
+#include <sched.h>
 
 "#;
 
@@ -499,6 +500,7 @@ static inline void* std_Mutex_Lock_impl(int lock_state, void* value_ptr) {
 
 static inline void std_Mutex_Unlock_impl(int lock_state) {
     pthread_mutex_unlock(&gust_mutex_pool[lock_state]);
+    sched_yield();
 }
 
 #define MAX_CHANNELS 256

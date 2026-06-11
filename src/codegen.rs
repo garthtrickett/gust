@@ -899,20 +899,15 @@ impl Codegen {
                 if let Type::Struct(name, _) = expr_type {
                     enum_name = name;
                 }
+                // Robustness: Always erase the brand suffix of enum_name to map to enum_registry correctly
+                let erased_enum_name = erase_struct_name_with_registry(&enum_name, &None, &self.struct_registry);
 
                 result.push_str(&format!("    switch ({}.tag) {{\n", expr_str));
                 for case in cases {
-                    // Look up the unique enum tag integer for this variant
-                    let tag_val = if let Some(variants) = self.enum_registry.get(&enum_name) {
-                        variants
-                            .iter()
-                            .position(|v| *v == case.variant_name)
-                            .unwrap_or(0)
-                    } else {
-                        0
-                    };
+                    // Generate the precise enum tag name instead of raw integer positions
+                    let tag_name = format!("{}_Tag__{}", erased_enum_name, case.variant_name);
 
-                    result.push_str(&format!("        case {}: {{\n", tag_val));
+                    result.push_str(&format!("        case {}: {{\n", tag_name));
                     result.push_str(&self.gen_loop_body(&case.body));
                     result.push_str("            break;\n");
                     result.push_str("        }\n");
@@ -1076,6 +1071,7 @@ impl Codegen {
                     } else if *resolved_target == Type::Int
                         || *resolved_target == Type::Byte
                         || *resolved_target == Type::Bool
+                        || matches!(resolved_target, Type::Index(_, _))
                     {
                         format!("(({}){})", target_str, left_str)
                     } else {
