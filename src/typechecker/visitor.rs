@@ -1061,7 +1061,8 @@ impl TypeChecker {
                 arguments,
                 ..
             } => {
-                let func_path = expression_to_string(function);
+                let raw_func_path = expression_to_string(function);
+                let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or(raw_func_path);
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
                     let mut call_origins = HashSet::new();
                     if self.contains_ephemeral_view(&sig.return_type) {
@@ -1653,7 +1654,8 @@ impl TypeChecker {
                     self.check_expression(arg)?;
                 }
 
-                let func_path = expression_to_string(function); // Using expression_to_string to safely resolve namespaces
+                let raw_func_path = expression_to_string(function);
+                let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or(raw_func_path);
 
                 if func_path == "len" {
                     if arguments.len() != 1 {
@@ -1773,7 +1775,7 @@ impl TypeChecker {
                     return Ok(Type::Void);
                 }
 
-                if func_path == "os.VectorNew" || func_path == "std.VectorNew" {
+                if func_path == "os.VectorNew" || func_path == "std.VectorNew" || func_path == "os_VectorNew" || func_path == "std_VectorNew" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -1798,7 +1800,7 @@ impl TypeChecker {
                     return Ok(Type::Struct("Vector_Any".to_string(), Some(brand_name)));
                 }
 
-                if func_path == "os.HashMapNew" || func_path == "std.HashMapNew" {
+                if func_path == "os.HashMapNew" || func_path == "std.HashMapNew" || func_path == "os_HashMapNew" || func_path == "std_HashMapNew" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -1823,7 +1825,7 @@ impl TypeChecker {
                     return Ok(Type::Struct("HashMap_Any".to_string(), Some(brand_name)));
                 }
 
-                if func_path == "os.PoolNew" || func_path == "std.PoolNew" {
+                if func_path == "os.PoolNew" || func_path == "std.PoolNew" || func_path == "os_PoolNew" || func_path == "std_PoolNew" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -1917,7 +1919,7 @@ impl TypeChecker {
                     return Ok(Type::Struct("std_Graph_Any".to_string(), Some(brand_name)));
                 }
 
-                if func_path == "os.ReadFile" {
+                if func_path == "os.ReadFile" || func_path == "os_ReadFile" {
                     if arguments.len() != 2 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -1949,7 +1951,7 @@ impl TypeChecker {
                     return Ok(Type::Str);
                 }
 
-                if func_path == "os.WriteFile" {
+                if func_path == "os.WriteFile" || func_path == "os_WriteFile" {
                     if arguments.len() != 2 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -1983,6 +1985,7 @@ impl TypeChecker {
                 }
 
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
+                    self.resolved_names.insert(function.span(), func_path.clone());
                     if sig.params.len() != arguments.len() {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -2033,7 +2036,7 @@ impl TypeChecker {
                     return Ok(sig.return_type);
                 }
 
-                if func_path == "os.Arena.New" {
+                if func_path == "os.Arena.New" || func_path == "os_Arena_New" || func_path == "os_Arena.New" {
                     if !arguments.is_empty() {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -2045,7 +2048,7 @@ impl TypeChecker {
                     return Ok(Type::Arena);
                 }
 
-                if func_path == "os.MockPayload" {
+                if func_path == "os.MockPayload" || func_path == "os_MockPayload" {
                     if !arguments.is_empty() {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -2057,7 +2060,7 @@ impl TypeChecker {
                     return Ok(Type::Slice(Box::new(Type::Byte)));
                 }
 
-                if func_path == "os.ArenaAlloc" {
+                if func_path == "os.ArenaAlloc" || func_path == "os_ArenaAlloc" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -2081,7 +2084,7 @@ impl TypeChecker {
                     return Ok(Type::Index("Any".to_string(), Some(brand_name)));
                 }
 
-                if func_path == "os.LogInt" {
+                if func_path == "os.LogInt" || func_path == "os_LogInt" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -2108,7 +2111,7 @@ impl TypeChecker {
                     return Ok(Type::Void);
                 }
 
-                if func_path == "os.LogStr" {
+                if func_path == "os.LogStr" || func_path == "os_LogStr" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,

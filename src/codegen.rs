@@ -1202,7 +1202,8 @@ impl Codegen {
                 arguments,
                 ..
             } => {
-                let func_path = self.gen_expression(function);
+                let func_path = self.resolved_names.get(&function.span()).cloned()
+                    .unwrap_or_else(|| self.gen_expression(function));
 
                 if func_path == "len" {
                     let arg_str = self.gen_expression(&arguments[0]);
