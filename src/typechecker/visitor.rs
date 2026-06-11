@@ -2109,7 +2109,7 @@ impl TypeChecker {
                 ..
             } => {
                 let raw_func_path = expression_to_string(function);
-                let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or(raw_func_path);
+                let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or_else(|_| raw_func_path.clone());
 
                 if func_path == "len" {
                     if arguments.len() != 1 {
