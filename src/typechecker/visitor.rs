@@ -897,14 +897,7 @@ impl TypeChecker {
                     sig.return_origins = formal_return_origins;
                 }
 
-                // Clean-up and restore parent scopes [3]
-                self.symbol_table = parent_scope;
-                self.variable_origins = parent_origins;
-                self.expected_return_type = old_expected;
-                self.current_function_return_origins = old_return_origins;
-                self.current_function_inout_params = old_inout_params;
-                self.current_function_local_vars = old_local_vars;
-
+                // Check for resource leaks in local scope before clean-up and restoring parent scopes
                 if let Some(ref local_vars) = self.current_function_local_vars {
                     for local_var in local_vars {
                         if self.open_directories.contains(local_var) {
@@ -919,6 +912,14 @@ impl TypeChecker {
                         } 
                     } 
                 }
+
+                // Clean-up and restore parent scopes [3]
+                self.symbol_table = parent_scope;
+                self.variable_origins = parent_origins;
+                self.expected_return_type = old_expected;
+                self.current_function_return_origins = old_return_origins;
+                self.current_function_inout_params = old_inout_params;
+                self.current_function_local_vars = old_local_vars;
             }
             Statement::VarDecl { 
                 name,
