@@ -2242,6 +2242,35 @@ fn test_directory_resource_safety_checks() {
 }
 
 #[test]
+fn test_directory_invalid_namespace_or_field_access() {
+    let source_invalid_field = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut opt_dir := os.OpenDir(ctx, \"src\");
+            if opt_dir.Ok {
+                mut d := opt_dir.Val;
+                mut err := d.handle_corrupted;
+            }
+        }
+    ";
+    let res1 = check_program(source_invalid_field);
+    assert!(res1.is_err());
+    assert_eq!(res1.unwrap_err().kind, TypeErrorKind::FieldNotFound);
+
+    let source_invalid_func = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut opt_dir := os.OpenDir_Invalid(ctx, \"src\");
+        }
+    ";
+    let res2 = check_program(source_invalid_func);
+    assert!(res2.is_err());
+    assert_eq!(res2.unwrap_err().kind, TypeErrorKind::UndefinedFunction);
+}
+
+#[test]
 fn test_directory_ffi_codegen_verification() {
     let source = "
         func main() {

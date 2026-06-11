@@ -1144,6 +1144,49 @@ fn test_e2e_thread_local_scratchpad() {
 }
 
 #[test]
+fn test_e2e_directory_scanning() {
+    let temp_dir_path = std::path::Path::new("temp_gust_e2e_dir");
+    let _ = std::fs::remove_dir_all(temp_dir_path);
+    std::fs::create_dir_all(temp_dir_path).unwrap();
+
+    std::fs::write(temp_dir_path.join("file1.gst"), "func main() {}").unwrap();
+    std::fs::write(temp_dir_path.join("file2.txt"), "plain text").unwrap();
+
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut opt_dir := os.OpenDir(ctx, \"temp_gust_e2e_dir\");
+            if opt_dir.Ok {
+                mut d := opt_dir.Val;
+                
+                mut loop_active := 1;
+                while loop_active == 1 {
+                    mut opt_entry := os.ReadDir(ctx, d);
+                    if opt_entry.Ok {
+                        mut name := opt_entry.Val.name;
+                        if len(name) > 4 {
+                            mut ext := std.str_slice(name, len(name) - 4, len(name));
+                            if std.str_eq(ext, \".gst\") {
+                                os.LogStr(name);
+                            }
+                        }
+                    } else {
+                        loop_active = 0;
+                    }
+                }
+                os.CloseDir(d);
+            }
+        }
+    ";
+
+    run_e2e_test(source, "file1.gst");
+
+    let _ = std::fs::remove_dir_all(temp_dir_path);
+}
+
+#[test]
 fn test_e2e_scratchpad_formatting_loop() {
     let source = "
         func main() {
