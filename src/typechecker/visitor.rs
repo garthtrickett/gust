@@ -29,6 +29,14 @@ fn is_ephemeral_view(t: &Type) -> bool {
     }
 }
 
+fn get_file_stem(path_str: &str) -> String {
+    let p = std::path::Path::new(path_str);
+    p.file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or(path_str)
+        .to_string()
+}
+
 impl TypeChecker {
     fn get_vector_element_type(&self, struct_name: &str) -> Option<Type> {
         if let Some(layout) = self.struct_registry.get(struct_name)
@@ -143,8 +151,16 @@ impl TypeChecker {
         }
     }
 
-    pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {
-        // Pre-register std.str utilities
+        pub fn pre_register_std_functions(&mut self) {
+        self.function_registry.insert(
+            "std_str_eq".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s1".to_string(), "s2".to_string()],
+                params: vec![Type::Str, Type::Str],
+                return_type: Type::Int,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
         self.function_registry.insert(
             "std.str_eq".to_string(),
             super::types::FunctionSignature {
@@ -246,45 +262,75 @@ impl TypeChecker {
                 return_origins: std::collections::HashSet::new(),
             },
         );
+    }
+
+    pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> { 
+        self.current_prefix = "".to_string();
+        self.check_module(program, "")
+    }
+
+    pub fn check_module(&mut self, program: &Program, prefix: &str) -> Result<(), TypeError> { 
+        self.current_prefix = prefix.to_string();
+        self.symbol_table.clear();
+        self.variable_origins.clear();
+        self.moved_vars.clear();
+        self.checked_results.clear();
+
+        // 1. Pre-register std library namespaces
+        self.imports.insert("os".to_string(), "os_".to_string());
+        self.imports.insert("std".to_string(), "std_".to_string());
+        self.pre_register_std_functions();
 
         // Pre-pass: Dynamically register structs, templates, enums, and functions [3]
-        for stmt in &program.statements {
+        for stmt in &program.statements { 
+            if let Statement::Import { path, alias, .. } = stmt { 
+                let stem = get_file_stem(path);
+                let pfx = format!("{}__", stem);
+                let alias_name = alias.clone().unwrap_or(stem);
+                self.imports.insert(alias_name, pfx);
+            }
+
             if let Statement::StructDecl {
                 name,
                 generics,
                 fields,
+                span,
                 ..
             } = stmt
             {
-                if generics.is_empty() {
+                let namespaced_name = format!("{}{}", self.current_prefix, name);
+                self.resolved_names.insert(*span, namespaced_name.clone());
+
+                if generics.is_empty() { 
                     let mut layout_fields = HashMap::new();
-                    for field in fields {
+                    for field in fields { 
                         let resolved_field_type = self.resolve_type(&field.field_type)?;
+                        let resolved_field_type = self.resolve_type_namespacing(&resolved_field_type);
                         if matches!(resolved_field_type, Type::Slice(_))
                             || resolved_field_type == Type::ByteSlice
                             || resolved_field_type == Type::Str
-                        {
+                        { 
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
                                 message: format!(
                                     "Semantic Error: Unbranded struct '{}' cannot contain ephemeral slice or view field '{}' of type '{:?}'",
-                                    name, field.name, resolved_field_type
+                                    namespaced_name, field.name, resolved_field_type
                                 ),
                                 span: None,
                             });
                         }
-                        layout_fields.insert(field.name.clone(), field.field_type.clone());
+                        layout_fields.insert(field.name.clone(), resolved_field_type);
                     }
                     self.struct_registry.insert(
-                        name.clone(),
+                        namespaced_name.clone(),
                         StructLayout {
                             brand: None,
                             fields: layout_fields,
                         },
                     );
-                } else {
+                } else { 
                     self.struct_templates.insert(
-                        name.clone(),
+                        namespaced_name.clone(),
                         super::types::StructTemplate {
                             generics: generics.clone(),
                             fields: fields.clone(),
@@ -297,28 +343,33 @@ impl TypeChecker {
                 name,
                 generics: _,
                 variants,
+                span,
                 ..
             } = stmt
             {
+                let namespaced_name = format!("{}{}", self.current_prefix, name);
+                self.resolved_names.insert(*span, namespaced_name.clone());
+
                 // Register the enum in the enum registry
                 let variant_names: Vec<String> = variants.iter().map(|v| v.name.clone()).collect();
-                self.enum_registry.insert(name.clone(), variant_names);
+                self.enum_registry.insert(namespaced_name.clone(), variant_names);
 
                 // Register nested variant structs in struct_registry
                 let mut enum_fields = HashMap::new();
                 enum_fields.insert("tag".to_string(), Type::Int);
 
-                for variant in variants {
-                    let concrete_variant_struct_name = format!("{}_{}", name, variant.name);
+                for variant in variants { 
+                    let concrete_variant_struct_name = format!("{}_{}", namespaced_name, variant.name);
 
                     // Register the variant struct fields in struct_registry
                     let mut variant_fields = HashMap::new();
-                    for field in &variant.fields {
+                    for field in &variant.fields { 
                         let resolved_t = self.resolve_type(&field.field_type)?;
+                        let resolved_t = self.resolve_type_namespacing(&resolved_t);
                         if let Type::Struct(ref struct_name, _) = resolved_t
                             && let Some(layout) = self.struct_registry.get(struct_name)
                             && layout.fields.len() > 2
-                        {
+                        { 
                             return Err(TypeError {
                                 kind: TypeErrorKind::LargeEnumVariantPayload,
                                 message: format!(
@@ -331,7 +382,7 @@ impl TypeChecker {
                                 span: None,
                             });
                         }
-                        variant_fields.insert(field.name.clone(), field.field_type.clone());
+                        variant_fields.insert(field.name.clone(), resolved_t);
                     }
                     self.struct_registry.insert(
                         concrete_variant_struct_name.clone(),
@@ -350,7 +401,7 @@ impl TypeChecker {
 
                 // Register the Enum struct itself
                 self.struct_registry.insert(
-                    name.clone(),
+                    namespaced_name.clone(),
                     StructLayout {
                         brand: None,
                         fields: enum_fields,
@@ -362,23 +413,31 @@ impl TypeChecker {
                 name,
                 params,
                 return_type,
+                span,
                 ..
             } = stmt
             {
+                let namespaced_name = format!("{}{}", self.current_prefix, name);
+                self.resolved_names.insert(*span, namespaced_name.clone());
+
                 let resolved_params: Result<Vec<Type>, TypeError> = params
                     .iter()
-                    .map(|p| self.resolve_type(&p.param_type))
+                    .map(|p| { 
+                        let resolved = self.resolve_type(&p.param_type)?;
+                        Ok(self.resolve_type_namespacing(&resolved))
+                    })
                     .collect();
                 let resolved_return = self.resolve_type(return_type)?;
+                let resolved_return = self.resolve_type_namespacing(&resolved_return);
                 let param_names = params.iter().map(|p| p.name.clone()).collect();
 
                 self.function_registry.insert(
-                    name.clone(),
+                    namespaced_name.clone(),
                     super::types::FunctionSignature {
                         param_names,
                         params: resolved_params?,
                         return_type: resolved_return,
-                        return_origins: HashSet::new(), // Populated in the actual pass
+                        return_origins: HashSet::new(),
                     },
                 );
             }
@@ -386,12 +445,12 @@ impl TypeChecker {
 
         // Synthesize IsValid helpers for structs containing boolean (byte) fields
         let mut structs_to_register_is_valid = Vec::new();
-        for struct_name in self.struct_registry.keys() {
-            if self.has_boolean_fields(&Type::Struct(struct_name.clone(), None)) {
+        for struct_name in self.struct_registry.keys() { 
+            if self.has_boolean_fields(&Type::Struct(struct_name.clone(), None)) { 
                 structs_to_register_is_valid.push(struct_name.clone());
             }
         }
-        for struct_name in structs_to_register_is_valid {
+        for struct_name in structs_to_register_is_valid { 
             let func_name = format!("{}_IsValid", struct_name);
             self.function_registry.insert(
                 func_name,
@@ -408,7 +467,7 @@ impl TypeChecker {
         }
 
         // Processing Pass
-        for stmt in &program.statements {
+        for stmt in &program.statements { 
             self.check_statement(stmt)?;
         }
         Ok(())
@@ -430,7 +489,12 @@ impl TypeChecker {
 
     fn check_statement_internal(&mut self, stmt: &Statement) -> Result<(), TypeError> {
         match stmt {
-            Statement::Import { .. } => {}
+            Statement::Import { path, alias, span: _ } => { 
+                let stem = get_file_stem(path);
+                let prefix = format!("{}__", stem);
+                let alias_name = alias.clone().unwrap_or(stem);
+                self.imports.insert(alias_name, prefix);
+            }
             Statement::StructDecl { .. } => {}
             Statement::EnumDecl { .. } => {}
             Statement::FunctionDecl {
@@ -1044,8 +1108,11 @@ impl TypeChecker {
 
     fn check_expression_internal(&mut self, expr: &Expression) -> Result<Type, TypeError> {
         match expr {
-            Expression::Identifier(name, _) => {
-                if self.moved_vars.contains(name) {
+            Expression::Identifier(name, span) => {
+                let resolved_name = self.resolve_namespaced_ident(name);
+                self.resolved_names.insert(*span, resolved_name.clone());
+
+                if self.moved_vars.contains(&resolved_name) {
                     return Err(TypeError {
                         kind: TypeErrorKind::UseOfMovedVariable,
                         message: format!("Semantic Error: Use of moved variable '{}'", name),
@@ -1054,7 +1121,7 @@ impl TypeChecker {
                 }
 
                 // Union evaluation: Reject reading if ANY of the potential origins are moved/invalid
-                if let Some(origins) = self.variable_origins.get(name) {
+                if let Some(origins) = self.variable_origins.get(&resolved_name) {
                     for origin in origins {
                         if self.moved_vars.contains(origin) {
                             return Err(TypeError {
@@ -1065,14 +1132,14 @@ impl TypeChecker {
                                 ),
                                 span: None,
                             });
-                        }
-                    }
+                        } 
+                    } 
                 }
 
-                if let Some(t) = self.symbol_table.get(name) {
+                if let Some(t) = self.symbol_table.get(&resolved_name) { 
                     if let Some(brand) = self.get_type_brand(t)
                         && self.moved_vars.contains(&brand)
-                    {
+                    { 
                         return Err(TypeError {
                             kind: TypeErrorKind::AllocatorMovedOrFreed,
                             message: format!(
@@ -1083,10 +1150,10 @@ impl TypeChecker {
                         });
                     }
                     Ok(t.clone())
-                } else {
+                } else { 
                     if name == "null" {
                         return Ok(Type::Index("Any".to_string(), None));
-                    }
+                    } 
                     Err(TypeError {
                         kind: TypeErrorKind::UndefinedVariable,
                         message: format!("Semantic Error: Undefined variable '{}'", name),
@@ -1236,14 +1303,17 @@ impl TypeChecker {
                 left,
                 target_type,
                 is_reference: _,
+                span,
                 ..
             } => {
                 let left_type = self.check_expression(left)?;
                 let resolved_target = self.resolve_type(target_type)?;
+                let resolved_target = self.resolve_type_namespacing(&resolved_target);
+                self.resolved_types.insert(*span, resolved_target.clone());
 
                 if (left_type == Type::Int || left_type == Type::Byte || left_type == Type::Bool)
                     && (resolved_target == Type::Int || resolved_target == Type::Byte || resolved_target == Type::Bool)
-                {
+                { 
                     return Ok(resolved_target.clone());
                 }
 
@@ -2487,8 +2557,10 @@ impl TypeChecker {
                     span: None,
                 })
             }
-            Expression::Empty(target_type, _) => {
+            Expression::Empty(target_type, span) => {
                 let resolved = self.resolve_type(target_type)?;
+                let resolved = self.resolve_type_namespacing(&resolved);
+                self.resolved_types.insert(*span, resolved.clone());
                 Ok(resolved)
             }
         }

@@ -394,6 +394,10 @@ impl TypeChecker {
         );
 
         TypeChecker {
+            current_prefix: "".to_string(),
+            imports: HashMap::new(),
+            resolved_names: HashMap::new(),
+            resolved_types: HashMap::new(),
             symbol_table: HashMap::new(),
             variable_types: HashMap::new(),
             moved_vars: HashSet::new(),
