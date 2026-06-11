@@ -1272,6 +1272,7 @@ impl Codegen {
             Expression::Call {
                 function,
                 arguments,
+                span,
                 ..
             } => {
                 let func_path = self.resolved_names.get(&function.span()).cloned()
@@ -1821,7 +1822,7 @@ impl Codegen {
                             Some(struct_name.clone())
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) =
+                            if let Some(Type::Struct(struct_name, _)) = 
                                 self.symbol_table.borrow().get(&left_ident)
                             {
                                 Some(struct_name.clone())
@@ -1845,6 +1846,60 @@ impl Codegen {
                             left_str,
                             k_str,
                             is_str_key_str
+                        );
+                    }
+                    if is_map && right == "Remove" {
+                        let k_str = self.gen_expression(&arguments[0]);
+                        let mut is_str_key = false;
+                        let opt_struct_name = if let Type::Struct(struct_name, _) = &left_type {
+                            Some(struct_name.clone())
+                        } else {
+                            let left_ident = expression_to_string(left);
+                            if let Some(Type::Struct(struct_name, _)) = 
+                                self.symbol_table.borrow().get(&left_ident)
+                            {
+                                Some(struct_name.clone())
+                            } else {
+                                None
+                            }
+                        };
+                        if let Some(struct_name) = opt_struct_name {
+                            is_str_key = self
+                                .get_hashmap_key_value_types(&struct_name)
+                                .map(|(k, _)| k == Type::Str)
+                                .unwrap_or(false);
+                        }
+                        let is_str_key_str = if is_str_key { "1" } else { "0" };
+                        return format!(
+                            "os_HashMapRemove(&{}, {}, {})",
+                            left_str, k_str, is_str_key_str
+                        );
+                    }
+                    if is_map && right == "Clear" {
+                        return format!("os_HashMapClear(&{})", left_str);
+                    }
+                    if is_map && right == "Keys" {
+                        let ctx_str = self.gen_expression(&arguments[0]);
+                        let expr_type = self.resolved_types.get(span).cloned().unwrap_or_else(|| {
+                            Type::Struct("std_Vector_int".to_string(), None)
+                        });
+                        let vec_type_str = self.get_c_type(&expr_type);
+                        let is_ctx_ptr = if let Expression::Identifier(name, _) = &arguments[0]
+                            && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
+                            && **inner == Type::Arena
+                        {
+                            true
+                        } else {
+                            false
+                        };
+                        let arena_expr = if is_ctx_ptr {
+                            ctx_str
+                        } else {
+                            format!("&{}", ctx_str)
+                        };
+                        return format!(
+                            "(({{\n        {} _v = ({}){{ .data = NULL, .len = 0, .capacity = 0, .arena = {} }};\n        for (int _i = 0; _i < ({}).capacity; _i++) {{\n            if (({}).occupied[_i] == 1) {{\n                os_VectorPush(&_v, ({}).keys[_i]);\n            }}\n        }}\n        _v;\n    }}))",
+                            vec_type_str, vec_type_str, arena_expr, left_str, left_str, left_str
                         );
                     }
 
