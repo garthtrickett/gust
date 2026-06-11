@@ -1136,3 +1136,20 @@ fn test_e2e_thread_local_scratchpad() {
     let _ = fs::remove_file(&bin_path_ndebug);
     let _ = fs::remove_file(&bin_path_debug);
 }
+
+#[test]
+fn test_e2e_scratchpad_formatting_loop() {
+    let source = "
+        func main() {
+            mut i := 0;
+            while i < 5 {
+                mut s_num := std.FormatInt(i);
+                mut greeting := std.Concat(\"Num: \", s_num);
+                os.LogStr(greeting);
+                os.ScratchReset();
+                i = i + 1;
+            }
+        }
+    ";
+    run_e2e_test(source, "Num: 0\nNum: 1\nNum: 2\nNum: 3\nNum: 4");
+}

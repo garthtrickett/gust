@@ -190,6 +190,43 @@ impl TypeChecker {
         );
 
         self.function_registry.insert(
+            "std.FormatInt".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["val".to_string()],
+                params: vec![Type::Int],
+                return_type: Type::Str,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_FormatInt".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["val".to_string()],
+                params: vec![Type::Int],
+                return_type: Type::Str,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std.Concat".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s1".to_string(), "s2".to_string()],
+                params: vec![Type::Str, Type::Str],
+                return_type: Type::Str,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_Concat".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s1".to_string(), "s2".to_string()],
+                params: vec![Type::Str, Type::Str],
+                return_type: Type::Str,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
             "std_str_eq".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["s1".to_string(), "s2".to_string()],
@@ -1148,7 +1185,10 @@ impl TypeChecker {
             } => {
                 let raw_func_path = expression_to_string(function);
                 let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or(raw_func_path);
-                if func_path == "os.ScratchAlloc" || func_path == "os_ScratchAlloc" {
+                if func_path == "os.ScratchAlloc" || func_path == "os_ScratchAlloc"
+                    || func_path == "std.FormatInt" || func_path == "std_FormatInt"
+                    || func_path == "std.Concat" || func_path == "std_Concat"
+                {
                     let mut call_origins = HashSet::new();
                     call_origins.insert("scratch".to_string());
                     return call_origins;

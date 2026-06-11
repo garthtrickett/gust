@@ -481,6 +481,10 @@ impl Codegen {
                 || func_name == "os_ScratchAlloc"
                 || func_name == "os.ScratchReset"
                 || func_name == "os_ScratchReset"
+                || func_name == "std.FormatInt"
+                || func_name == "std_FormatInt"
+                || func_name == "std.Concat"
+                || func_name == "std_Concat"
             {
                 continue;
             }
@@ -1264,6 +1268,23 @@ impl Codegen {
 
                 if func_path == "os_ScratchReset" || func_path == "os_ScratchReset" {
                     return "os_ScratchReset()".to_string();
+                }
+
+                if func_path == "std.FormatInt" || func_path == "std_FormatInt" {
+                    let val_expr = self.gen_expression(&arguments[0]);
+                    return format!(
+                        "(({{ int _val = {}; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, \"%d\", _val); ((Slice_unsigned_char){{ (unsigned char*)_buf, _len }}); }}))",
+                        val_expr
+                    );
+                }
+
+                if func_path == "std.Concat" || func_path == "std_Concat" {
+                    let s1_expr = self.gen_expression(&arguments[0]);
+                    let s2_expr = self.gen_expression(&arguments[1]);
+                    return format!(
+                        "(({{ Slice_unsigned_char _s1 = {}; Slice_unsigned_char _s2 = {}; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){{ (unsigned char*)_buf, _s1.len + _s2.len }}); }}))",
+                        s1_expr, s2_expr
+                    );
                 }
 
                 if func_path == "std.Clone" || func_path == "std_Clone" {
