@@ -638,7 +638,7 @@ impl Codegen {
                     body_str.push_str("    return 0;\n");
                     body_str.push_str("}\n\n");
                 } else {
-                    body_str.push_str(&format!("{} {}({}) {{\n", ret_str, name, param_list));
+                    body_str.push_str(&format!("{} {}({}) {{\n", ret_str, resolved_name, param_list));
                     body_str.push_str(&self.gen_block_statement(body));
                     body_str.push_str("}\n\n");
                 }
