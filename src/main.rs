@@ -49,6 +49,14 @@ fn run_compile_pass(source_code: &str, output_filename: &str) {
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
 
+    if !parser.errors.is_empty() {
+        for err in &parser.errors {
+            let diagnostic = gust_lexer::typechecker::format_diagnostic(source_code, err);
+            eprintln!("{}", diagnostic);
+        }
+        std::process::exit(1);
+    }
+
     let mut checker = TypeChecker::new();
     match checker.check_program(&program) {
         Ok(_) => {

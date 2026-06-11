@@ -2027,3 +2027,30 @@ fn test_diagnostic_formatting_layout() {
     // Assert error message
     assert!(diag.contains("Error:"));
 }
+
+#[test]
+fn test_multiple_syntax_errors_diagnostic_reporting() {
+    let source = "\n        type MyStruct struct {\n            field1: \n        }\n        func main() {\n            mut a := ;\n        }\n    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let _program = parser.parse_program();
+
+    assert_eq!(parser.errors.len(), 2);
+    
+    // Verify first syntax error is for field type signature
+    let err1 = &parser.errors[0];
+    assert_eq!(err1.kind, TypeErrorKind::SyntaxError);
+    assert!(err1.message.contains("Expected field type signature"));
+    assert_eq!(err1.span.unwrap().start.line, 3);
+
+    // Verify second syntax error is for missing expression
+    let err2 = &parser.errors[1];
+    assert_eq!(err2.kind, TypeErrorKind::SyntaxError);
+    assert!(err2.message.contains("Expected expression after ':='"));
+    assert_eq!(err2.span.unwrap().start.line, 6);
+
+    // Verify format_diagnostic doesn't panic and produces correct layout
+    let diag1 = gust_lexer::typechecker::format_diagnostic(source, err1);
+    assert!(diag1.contains("[line 3:13]"));
+    assert!(diag1.contains("Expected field type signature"));
+}
