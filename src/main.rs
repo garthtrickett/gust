@@ -28,20 +28,86 @@ fn main() {
     };
 
     match fs::read_to_string(input_filename) {
-        Ok(source_code) => {
-            println!("Compiling Gust program '{}'...", input_filename);
-            run_compile_pass(&source_code, output_filename);
-        }
-        Err(err) => {
-            println!("❌ Failed to read input file '{}': {}", input_filename, err);
-        }
-    }
+    println!("Compiling Gust program '{}'...", input_filename);
+    run_compile_pass_file(input_filename, output_filename);
 }
 
 fn print_usage() {
     println!("Usage:");
     println!("  cargo run -- <input_file.gst> [output_file.c]   Compile a Gust file");
     println!("  cargo run -- --test                             Run compiler self-tests");
+}
+
+fn run_compile_pass_file(input_filename: &str, output_filename: &str) {
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    
+    match resolver.resolve(std::path::Path::new(input_filename), &fs_impl) { 
+        Ok((order, mut modules)) => {
+            let mut unified_statements = Vec::new();
+            for path in &order { 
+                if let Some(module) = modules.get_mut(path) {
+                    unified_statements.append(&mut module.program.statements);
+                }
+            }
+
+            let program = gust_lexer::ast::Program {
+                statements: unified_statements,
+                span: gust_lexer::token::Span::dummy(),
+            };
+
+            let mut checker = TypeChecker::new();
+            match checker.check_program(&program) {
+                Ok(_) => {
+                    let codegen = Codegen::new(
+                        checker.variable_types,
+                        checker.struct_registry,
+                        checker.function_registry,
+                        checker.enum_registry,
+                    );
+                    let c_output = codegen.generate(&program);
+
+                    println!("✅ Type Checking Successful! Program is type-safe.");
+                    println!(
+                        "Writing transpiled C source code to '{}'...",
+                        output_filename
+                    );
+
+                    let mut file = File::create(output_filename).expect("Could not create output file");
+                    file.write_all(c_output.as_bytes())
+                        .expect("Could not write code to disk");
+                    println!("✅ Code written successfully to '{}'!", output_filename);
+                }
+                Err(err) => {
+                    let mut source_code = String::new();
+                    if let Some(span) = err.span {
+                        for module in modules.values() {
+                            let found = module.program.statements.iter().any(|s| {
+                                s.span().start.offset == span.start.offset && s.span().end.offset == span.end.offset
+                            });
+                            if found {
+                                source_code = module.source.clone();
+                                break;
+                            }
+                        }
+                        if source_code.is_empty() {
+                            if let Some(module) = modules.values().next() {
+                                source_code = module.source.clone();
+                            }
+                        }
+                    }
+                    let diagnostic = gust_lexer::typechecker::format_diagnostic(&source_code, &err);
+                    eprintln!("{}", diagnostic);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Err(err) => {
+            let diagnostic = gust_lexer::typechecker::format_diagnostic("", &err);
+            eprintln!("{}", diagnostic);
+            std::process::exit(1);
+        }
+    }
 }
 
 fn run_compile_pass(source_code: &str, output_filename: &str) {

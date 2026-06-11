@@ -2057,3 +2057,69 @@ fn test_multiple_syntax_errors_diagnostic_reporting() {
     assert!(diag1.contains("[line 4:"));
     assert!(diag1.contains("Expected field type signature"));
 }
+
+#[test]
+fn test_multi_file_compilation_success() {
+    use std::fs;
+    let temp_dir = std::env::temp_dir().join("gust_test_multi");
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let main_path = temp_dir.join("main.gst");
+    let lib_path = temp_dir.join("lib.gst");
+
+    fs::write(&main_path, "import \"lib.gst\"; func main() { helper(); }").unwrap();
+    fs::write(&lib_path, "func helper() {}").unwrap();
+
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = resolver.resolve(&main_path, &fs_impl);
+    assert!(res.is_ok());
+
+    let (order, mut modules) = res.unwrap();
+    assert_eq!(order.len(), 2);
+
+    let mut unified_statements = Vec::new();
+    for path in &order { 
+        if let Some(module) = modules.get_mut(path) {
+            unified_statements.append(&mut module.program.statements);
+        }
+    }
+
+    let program = gust_lexer::ast::Program {
+        statements: unified_statements,
+        span: gust_lexer::token::Span::dummy(),
+    };
+
+    let mut checker = gust_lexer::typechecker::TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok());
+
+    let _ = fs::remove_file(main_path);
+    let _ = fs::remove_file(lib_path);
+    let _ = fs::remove_dir(temp_dir);
+}
+
+#[test]
+fn test_multi_file_compilation_cycle() {
+    use std::fs;
+    let temp_dir = std::env::temp_dir().join("gust_test_cycle");
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let a_path = temp_dir.join("a.gst");
+    let b_path = temp_dir.join("b.gst");
+
+    fs::write(&a_path, "import \"b.gst\";").unwrap();
+    fs::write(&b_path, "import \"a.gst\";").unwrap();
+
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = resolver.resolve(&a_path, &fs_impl);
+
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert!(err.message.contains("Cyclic dependency detected"));
+
+    let _ = fs::remove_file(a_path);
+    let _ = fs::remove_file(b_path);
+    let _ = fs::remove_dir(temp_dir);
+}
