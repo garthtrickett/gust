@@ -1257,13 +1257,13 @@ impl Codegen {
 
                 if func_path == "os_ScratchAlloc" || func_path == "os.ScratchAlloc" {
                     let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
-                        format!("sizeof({}")", struct_name)
+                        format!("sizeof({})", struct_name)
                     } else if !arguments.is_empty() {
                         self.gen_expression(&arguments[0])
                     } else {
                         "sizeof(SessionNode)".to_string()
                     };
-                    return format!("os_ScratchAlloc({}")", size_str);
+                    return format!("os_ScratchAlloc({})", size_str);
                 }
 
                 if func_path == "os_ScratchReset" || func_path == "os_ScratchReset" {
