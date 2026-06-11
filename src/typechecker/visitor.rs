@@ -1877,12 +1877,6 @@ impl TypeChecker {
                 let raw_func_path = expression_to_string(function);
                 let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or(raw_func_path);
 
-                if func_path != "std.Spawn" && func_path != "std_Spawn" {
-                    for arg in arguments {
-                        self.check_expression(arg)?;
-                    }
-                }
-
                 if func_path == "len" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
