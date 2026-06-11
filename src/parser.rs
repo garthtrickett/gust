@@ -1063,16 +1063,16 @@ mod tests {
     }
 }
 
-fn parse_type_str(input: &str) -> Type {
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-    parser
-        .parse_type_signature()
-        .expect("Failed to parse type signature")
-}
-
 #[test]
 fn test_namespaced_type_signature_parsing() {
+    fn parse_type_str(input: &str) -> Type {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        parser
+            .parse_type_signature()
+            .expect("Failed to parse type signature")
+    }
+
     let t1 = parse_type_str("std.Vector[int, ctx]");
     if let Type::Generic(name, args) = t1 {
         assert_eq!(name, "std.Vector");

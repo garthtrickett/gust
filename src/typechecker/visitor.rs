@@ -1233,7 +1233,7 @@ impl TypeChecker {
             Expression::AsCast {
                 left,
                 target_type,
-                is_reference,
+                is_reference: _,
                 ..
             } => {
                 let left_type = self.check_expression(left)?;
@@ -1559,7 +1559,7 @@ impl TypeChecker {
 
                 Err(TypeError {
                     kind: TypeErrorKind::UnresolvedSelector,
-                    message: format!("Semantic Error: Unresolved namespace selector"),
+                    message: "Semantic Error: Unresolved namespace selector".to_string(),
                     span: None,
                 })
             }
@@ -2480,7 +2480,7 @@ impl TypeChecker {
 
                 Err(TypeError {
                     kind: TypeErrorKind::UnresolvedSelector,
-                    message: format!("Semantic Error: Unresolved namespace selector"),
+                    message: "Semantic Error: Unresolved namespace selector".to_string(),
                     span: None,
                 })
             }

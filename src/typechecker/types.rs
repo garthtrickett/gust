@@ -238,7 +238,7 @@ pub fn format_diagnostic(source: &str, error: &TypeError) -> String {
         };
 
         let width = if end_col > start_col { end_col - start_col } else { 1 };
-        let padding = " ".repeat(if start_col > 1 { start_col - 1 } else { 0 });
+        let padding = " ".repeat(start_col.saturating_sub(1));
         let carets = "^".repeat(width);
 
         let mut out = String::new();
