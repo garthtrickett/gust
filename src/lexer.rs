@@ -425,4 +425,52 @@ mod tests {
             assert_eq!(tok.literal, expected_literal);
         }
     }
+
+    #[test]
+    fn test_token_spans_and_position_tracking() {
+        let input = "mut a := 10;\nmut b := 20;";
+        let mut l = Lexer::new(input);
+
+        // "mut" (line 1, column 1, offset 0 to line 1, column 4, offset 3)
+        let tok1 = l.next_token();
+        assert_eq!(tok1.token_type, TokenType::Mut);
+        assert_eq!(tok1.literal, "mut");
+        assert_eq!(tok1.span.start, Position { line: 1, column: 1, offset: 0 });
+        assert_eq!(tok1.span.end, Position { line: 1, column: 4, offset: 3 });
+
+        // "a" (line 1, column 5, offset 4 to line 1, column 6, offset 5)
+        let tok2 = l.next_token();
+        assert_eq!(tok2.token_type, TokenType::Ident);
+        assert_eq!(tok2.literal, "a");
+        assert_eq!(tok2.span.start, Position { line: 1, column: 5, offset: 4 });
+        assert_eq!(tok2.span.end, Position { line: 1, column: 6, offset: 5 });
+
+        // ":=" (line 1, column 7, offset 6 to line 1, column 9, offset 8)
+        let tok3 = l.next_token();
+        assert_eq!(tok3.token_type, TokenType::Assign);
+        assert_eq!(tok3.literal, ":=");
+        assert_eq!(tok3.span.start, Position { line: 1, column: 7, offset: 6 });
+        assert_eq!(tok3.span.end, Position { line: 1, column: 9, offset: 8 });
+
+        // "10" (line 1, column 10, offset 9 to line 1, column 12, offset 11)
+        let tok4 = l.next_token();
+        assert_eq!(tok4.token_type, TokenType::Int);
+        assert_eq!(tok4.literal, "10");
+        assert_eq!(tok4.span.start, Position { line: 1, column: 10, offset: 9 });
+        assert_eq!(tok4.span.end, Position { line: 1, column: 12, offset: 11 });
+
+        // ";" (line 1, column 12, offset 11 to line 1, column 13, offset 12)
+        let tok5 = l.next_token();
+        assert_eq!(tok5.token_type, TokenType::Semicolon);
+        assert_eq!(tok5.literal, ";");
+        assert_eq!(tok5.span.start, Position { line: 1, column: 12, offset: 11 });
+        assert_eq!(tok5.span.end, Position { line: 1, column: 13, offset: 12 });
+
+        // "mut" (line 2, column 1, offset 13 to line 2, column 4, offset 16)
+        let tok6 = l.next_token();
+        assert_eq!(tok6.token_type, TokenType::Mut);
+        assert_eq!(tok6.literal, "mut");
+        assert_eq!(tok6.span.start, Position { line: 2, column: 1, offset: 13 });
+        assert_eq!(tok6.span.end, Position { line: 2, column: 4, offset: 16 });
+    }
 }

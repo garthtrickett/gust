@@ -53,8 +53,39 @@ pub enum TokenType {
     Empty,  // "empty"
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct Position {
+    pub line: usize,
+    pub column: usize,
+    pub offset: usize,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct Span {
+    pub start: Position,
+    pub end: Position,
+}
+
+impl Span {
+    pub fn dummy() -> Self {
+        Span {
+            start: Position {
+                line: 1,
+                column: 1,
+                offset: 0,
+            },
+            end: Position {
+                line: 1,
+                column: 1,
+                offset: 0,
+            },
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,
+    pub span: Span,
 }

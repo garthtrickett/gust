@@ -631,6 +631,7 @@ impl Parser {
                     self.cur_token = Token {
                         token_type: TokenType::Illegal,
                         literal: "".to_string(),
+                        span: Span::dummy(),
                     };
                 }
                 TokenType::Plus
