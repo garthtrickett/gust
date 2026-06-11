@@ -769,7 +769,7 @@ impl TypeChecker {
                 // Scratchpad storage restriction check
                 if let Expression::Selector { left: selector_left, .. } = left {
                     if let Ok(parent_type) = self.check_expression(selector_left) {
-                        if let Some(brand) = self.get_type_brand(&parent_type) {
+                        if let Some(_) = self.get_type_brand(&parent_type) {
                             let rhs_origins = self.get_expression_origins(value);
                             if rhs_origins.contains("scratch") {
                                 return Err(TypeError {

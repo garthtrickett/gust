@@ -14,14 +14,14 @@ pub struct TypeChecker {
     pub imports: HashMap<String, String>,
     pub resolved_names: HashMap<crate::token::Span, String>,
     pub resolved_types: HashMap<crate::token::Span, Type>,
-    pub(crate) symbol_table: HashMap<String, Type>,
+    pub symbol_table: HashMap<String, Type>,
     pub variable_types: HashMap<String, Type>,
     pub(crate) moved_vars: HashSet<String>,
     pub(crate) in_unsafe_block: bool,
     pub struct_registry: HashMap<String, StructLayout>,
     pub(crate) struct_templates: HashMap<String, StructTemplate>,
     pub enum_registry: HashMap<String, Vec<String>>, // Added Enum Registry
-    pub(crate) variable_origins: HashMap<String, HashSet<String>>, // Upgraded to Set-Based Union Tracker
+    pub variable_origins: HashMap<String, HashSet<String>>, // Upgraded to Set-Based Union Tracker
     pub function_registry: HashMap<String, FunctionSignature>,     // Function Registry
     pub(crate) expected_return_type: Option<Type>,
     pub(crate) current_function_return_origins: Option<HashSet<String>>, // Track return statement origins
