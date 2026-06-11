@@ -2771,6 +2771,25 @@ impl TypeChecker {
                     return Ok(Type::Void);
                 }
 
+                if let Some(pos) = raw_func_path.find('.') {
+                    let alias = &raw_func_path[..pos];
+                    if self.imports.contains_key(alias) {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::UndefinedFunction,
+                            message: format!("Semantic Error: Undefined function '{}'", raw_func_path),
+                            span: Some(function.span()),
+                        });
+                    }
+                }
+
+                if !matches!(**function, Expression::Selector { .. }) {
+                    return Err(TypeError {
+                        kind: TypeErrorKind::UndefinedFunction,
+                        message: format!("Semantic Error: Undefined function '{}'", raw_func_path),
+                        span: Some(function.span()),
+                    });
+                }
+
                 if let Expression::Selector { left, right, .. } = &**function {
                     let left_type = self.check_expression(left)?;
                     let left_str = expression_to_string(left);
