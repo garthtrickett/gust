@@ -319,6 +319,7 @@ impl Parser {
         // Parse optional return type
         let mut return_type = Type::Void;
         if self.cur_token.token_type == TokenType::Ident
+            || self.cur_token.token_type == TokenType::Bool
             || self.cur_token.token_type == TokenType::LBracket
             || self.cur_token.token_type == TokenType::Asterisk
             || self.cur_token.token_type == TokenType::Ampersand
@@ -423,7 +424,7 @@ impl Parser {
             return Some(Type::Slice(Box::new(element_type)));
         }
 
-        if self.cur_token.token_type != TokenType::Ident {
+        if self.cur_token.token_type != TokenType::Ident && self.cur_token.token_type != TokenType::Bool {
             return None;
         }
         let mut base_name = self.cur_token.literal.clone();
