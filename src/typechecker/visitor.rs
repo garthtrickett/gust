@@ -2371,14 +2371,14 @@ impl TypeChecker {
                                             "Semantic Error: Brand violation in Graph.AddEdge. Node 'from' index brand '{}' does not match graph brand '{:?}'",
                                             from_brand, graph_brand
                                         ),
-                                        span: None,
+                                        span: Some(arguments[0].span()),
                                     });
                                 }
                             } else if from_type != Type::Int && from_type != Type::Byte {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: "Graph.AddEdge 'from' argument must be an Int, Byte or branded Index".to_string(),
-                                    span: None,
+                                    span: Some(arguments[0].span()),
                                 });
                             }
 
@@ -2390,14 +2390,14 @@ impl TypeChecker {
                                             "Semantic Error: Brand violation in Graph.AddEdge. Node 'to' index brand '{}' does not match graph brand '{:?}'",
                                             to_brand, graph_brand
                                         ),
-                                        span: None,
+                                        span: Some(arguments[1].span()),
                                     });
                                 }
                             } else if to_type != Type::Int && to_type != Type::Byte {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: "Graph.AddEdge 'to' argument must be an Int, Byte or branded Index".to_string(),
-                                    span: None,
+                                    span: Some(arguments[1].span()),
                                 });
                             }
                             return Ok(Type::Void);

@@ -1969,8 +1969,8 @@ fn test_rc_and_graph_type_checking_invalid() {
     let err1 = res1.unwrap_err();
     assert_eq!(err1.kind, TypeErrorKind::TypeMismatch);
     let span1 = err1.span.expect("Expected a span for Rc brand mismatch");
-    assert_eq!(span1.start.line, 14);
-    assert_eq!(span1.start.column, 43);
+    assert_eq!(span1.start.line, 14, "Rc brand mismatch line: expected 14, got {}, error: {:?}", span1.start.line, err1);
+    assert_eq!(span1.start.column, 43, "Rc brand mismatch column: expected 43, got {}, error: {:?}", span1.start.column, err1);
 
     let source_non_int_graph = "
         type Node struct {
@@ -1992,8 +1992,8 @@ fn test_rc_and_graph_type_checking_invalid() {
     let err3 = res3.unwrap_err();
     assert_eq!(err3.kind, TypeErrorKind::TypeMismatch);
     let span3 = err3.span.expect("Expected a span for non-int graph edge");
-    assert_eq!(span3.start.line, 13);
-    assert_eq!(span3.start.column, 31);
+    assert_eq!(span3.start.line, 13, "Non-int graph edge line: expected 13, got {}, error: {:?}", span3.start.line, err3);
+    assert_eq!(span3.start.column, 31, "Non-int graph edge column: expected 31, got {}, error: {:?}", span3.start.column, err3);
 }
 
 #[test]
