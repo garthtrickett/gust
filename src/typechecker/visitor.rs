@@ -573,7 +573,6 @@ impl TypeChecker {
                 self.current_function_inout_params = old_inout_params;
                 self.current_function_local_vars = old_local_vars;
             }
-            Statement::VarDecl {
             Statement::VarDecl { 
                 name,
                 is_mut: _,
@@ -586,9 +585,9 @@ impl TypeChecker {
                     let mut t = self.check_expression(val_expr)?;
                     t = self.resolve_type(&t)?;
                     t = self.resolve_type_namespacing(&t)?;
-                    let mut origs = if is_ephemeral_view(&t) {
+                    let mut origs = if is_ephemeral_view(&t) { 
                         self.get_expression_origins(val_expr)
-                    } else {
+                    } else { 
                         HashSet::new()
                     };
                     // Fallback to itself as a root origin if expression contains no active origins
@@ -603,7 +602,7 @@ impl TypeChecker {
                         origs.insert(name.clone());
                         self.variable_origins.insert(name.clone(), origs);
                         let resolved = self.resolve_type(explicit_t)?;
-                        let resolved = self.resolve_type_namespacing(&resolved);
+                        let resolved = self.resolve_type_namespacing(&resolved)?;
                         resolved
                     } else {
                         return Err(TypeError {
@@ -619,7 +618,7 @@ impl TypeChecker {
 
                 if let Some(explicit_t) = var_type {
                     let resolved_explicit = self.resolve_type(explicit_t)?;
-                    let resolved_explicit = self.resolve_type_namespacing(&resolved_explicit);
+                    let resolved_explicit = self.resolve_type_namespacing(&resolved_explicit)?;
                     self.resolved_types.insert(*span, resolved_explicit.clone());
 
                     if !types_match(&resolved_explicit, &val_type) {
@@ -1115,7 +1114,7 @@ impl TypeChecker {
     fn check_expression_internal(&mut self, expr: &Expression) -> Result<Type, TypeError> {
         match expr {
             Expression::Identifier(name, span) => {
-                let resolved_name = self.resolve_namespaced_ident(name);
+                let resolved_name = self.resolve_namespaced_ident(name)?;
                 self.resolved_names.insert(*span, resolved_name.clone());
 
                 if self.moved_vars.contains(&resolved_name) {
@@ -1314,7 +1313,7 @@ impl TypeChecker {
             } => {
                 let left_type = self.check_expression(left)?;
                 let resolved_target = self.resolve_type(target_type)?;
-                let resolved_target = self.resolve_type_namespacing(&resolved_target);
+                let resolved_target = self.resolve_type_namespacing(&resolved_target)?;
                 self.resolved_types.insert(*span, resolved_target.clone());
 
                 if (left_type == Type::Int || left_type == Type::Byte || left_type == Type::Bool)
@@ -2565,7 +2564,7 @@ impl TypeChecker {
             }
             Expression::Empty(target_type, span) => {
                 let resolved = self.resolve_type(target_type)?;
-                let resolved = self.resolve_type_namespacing(&resolved);
+                let resolved = self.resolve_type_namespacing(&resolved)?;
                 self.resolved_types.insert(*span, resolved.clone());
                 Ok(resolved)
             }
