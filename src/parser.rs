@@ -34,6 +34,36 @@ impl Parser {
         });
     }
 
+    pub fn synchronize(&mut self) {
+        while self.cur_token.token_type != TokenType::Eof {
+            match self.cur_token.token_type {
+                TokenType::Semicolon => {
+                    self.next_token(); // consume the semicolon
+                    return;
+                }
+                TokenType::RBrace => {
+                    self.next_token(); // consume the closing brace
+                    return;
+                }
+                TokenType::Func
+                | TokenType::Type
+                | TokenType::Mut
+                | TokenType::While
+                | TokenType::If
+                | TokenType::Return
+                | TokenType::Match
+                | TokenType::Defer
+                | TokenType::Unsafe => {
+                    // Stop *at* top-level or statement-starting keywords so they can be parsed as the next statement
+                    return;
+                }
+                _ => {
+                    self.next_token();
+                }
+            } 
+        }
+    }
+
     fn next_token(&mut self) {
         self.cur_token = self.peek_token.clone();
         if let Some(tok) = self.pushback_tokens.pop() {
@@ -55,13 +85,19 @@ impl Parser {
         let start_pos = self.cur_token.span.start;
 
         while self.cur_token.token_type != TokenType::Eof {
+            let before_errors = self.errors.len();
             if let Some(stmt) = self.parse_statement() {
                 statements.push(stmt);
-            }
-            if self.peek_token.token_type == TokenType::Semicolon {
+                if self.peek_token.token_type == TokenType::Semicolon {
+                    self.next_token();
+                }
                 self.next_token();
+            } else {
+                if self.errors.len() == before_errors {
+                    self.error_at_current("Syntax Error: unexpected token or malformed statement".to_string());
+                }
+                self.synchronize();
             }
-            self.next_token();
         }
 
         let end_pos = self.cur_token.span.end;
@@ -1092,6 +1128,27 @@ mod tests {
         let span = err.span.unwrap();
         assert_eq!(span.start.line, 1);
         assert_eq!(span.start.column, 1);
+    }
+
+    #[test]
+    fn test_parser_recovery_on_semicolon() {
+        let input = "mut a := ; mut b := 20;";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+
+        // Verify we registered the error for mut a := ;
+        assert_eq!(parser.errors.len(), 1);
+        assert_eq!(parser.errors[0].kind, TypeErrorKind::SyntaxError);
+
+        // Verify we successfully parsed the subsequent mut b := 20; statement
+        assert_eq!(program.statements.len(), 1);
+        if let Statement::VarDecl { name, value, .. } = &program.statements[0] {
+            assert_eq!(name, "b");
+            assert!(value.is_some());
+        } else {
+            panic!("Expected a variable declaration statement for 'b'");
+        }
     }
 }
 
