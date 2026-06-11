@@ -107,6 +107,7 @@ typedef void* map_void_ptr;
 pub const MOCK_PAYLOAD_RUNTIME: &str = r#"int os_argc = 0;
 char** os_argv = NULL;
 
+typedef struct std_Vector_str std_Vector_str;
 struct std_Vector_str {
     Slice_unsigned_char* data;
     int len;
