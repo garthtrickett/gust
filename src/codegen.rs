@@ -392,9 +392,11 @@ impl Codegen {
         c_code.push_str(codegen_runtime::CORE_HEADERS);
         c_code.push_str(codegen_runtime::ARENA_RUNTIME);
 
-        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// ====================================================\
+");
         c_code.push_str("// FORWARD DECLARATIONS\n");
-        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// ====================================================\
+");
 
         for struct_name in self.struct_registry.keys() {
             c_code.push_str(&format!(
@@ -404,42 +406,11 @@ impl Codegen {
         }
         c_code.push('\n');
 
-        c_code.push_str("// ====================================================\n");
-        c_code.push_str("// FUNCTION FORWARD DECLARATIONS\n");
-        c_code.push_str("// ====================================================\n");
-        for (func_name, sig) in &self.function_registry {
-            if func_name == "main" {
-                continue;
-            }
-            let ret_str = self.get_c_type(&sig.return_type);
-            let mut param_strs = Vec::new();
-            for (i, param_type) in sig.params.iter().enumerate() {
-                let param_type_str = self.get_c_type(param_type);
-                let name = &sig.param_names[i];
-                let is_arena_ptr = if let Type::RawPointer(inner) = param_type {
-                    **inner == Type::Arena
-                } else {
-                    false
-                };
-                if is_arena_ptr || matches!(param_type, Type::Arena) {
-                    param_strs.push(format!("os_Arena* {}", name));
-                } else {
-                    param_strs.push(format!("{} {}", param_type_str, name));
-                }
-            }
-            let param_list = if param_strs.is_empty() {
-                "void".to_string()
-            } else {
-                param_strs.join(", ")
-            };
-            let decl_name = func_name.replace(".", "_");
-            c_code.push_str(&format!("{} {}({});\n", ret_str, decl_name, param_list));
-        }
-        c_code.push('\n');
-
-        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// ====================================================\
+");
         c_code.push_str("// DYNAMICALLY GENERATED SLICE STRUCTURES\n");
-        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// ====================================================\
+");
 
         let mut slice_element_types = std::collections::HashSet::new();
         slice_element_types.insert(Type::Byte);
@@ -469,6 +440,65 @@ impl Codegen {
             c_code.push_str("    int len;\n");
             c_code.push_str(&format!("}} Slice_{};\n\n", elem_ident));
         }
+
+        c_code.push_str("// ====================================================\
+");
+        c_code.push_str("// FUNCTION FORWARD DECLARATIONS\n");
+        c_code.push_str("// ====================================================\
+");
+        for (func_name, sig) in &self.function_registry {
+            if func_name == "main" {
+                continue;
+            }
+            // Skip forward declarations for compiler-intrinsic helper functions that are compiled to macros or inline initializers
+            if func_name == "std.Clone"
+                || func_name == "std_Clone"
+                || func_name == "std.GenerationalSwap"
+                || func_name == "std_GenerationalSwap"
+                || func_name == "std.PoolNew"
+                || func_name == "std_PoolNew"
+                || func_name == "os.PoolNew"
+                || func_name == "os_PoolNew"
+                || func_name == "std.VectorNew"
+                || func_name == "std_VectorNew"
+                || func_name == "os.VectorNew"
+                || func_name == "os_VectorNew"
+                || func_name == "std.HashMapNew"
+                || func_name == "std_HashMapNew"
+                || func_name == "os.HashMapNew"
+                || func_name == "os_HashMapNew"
+                || func_name == "std.GraphNew"
+                || func_name == "std_GraphNew"
+                || func_name == "os.ArenaAlloc"
+                || func_name == "os_ArenaAlloc"
+            {
+                continue;
+            }
+            let ret_str = self.get_c_type(&sig.return_type);
+            let mut param_strs = Vec::new();
+            for (i, param_type) in sig.params.iter().enumerate() {
+                let param_type_str = self.get_c_type(param_type);
+                let name = &sig.param_names[i];
+                let is_arena_ptr = if let Type::RawPointer(inner) = param_type {
+                    **inner == Type::Arena
+                } else {
+                    false
+                };
+                if is_arena_ptr || matches!(param_type, Type::Arena) {
+                    param_strs.push(format!("os_Arena* {}", name));
+                } else {
+                    param_strs.push(format!("{} {}", param_type_str, name));
+                }
+            }
+            let param_list = if param_strs.is_empty() {
+                "void".to_string()
+            } else {
+                param_strs.join(", ")
+            };
+            let decl_name = func_name.replace(".", "_");
+            c_code.push_str(&format!("{} {}({});\n", ret_str, decl_name, param_list));
+        }
+        c_code.push('\n');
 
         c_code.push_str(codegen_runtime::MOCK_PAYLOAD_RUNTIME);
         c_code.push_str(codegen_runtime::FILE_IO_RUNTIME);
