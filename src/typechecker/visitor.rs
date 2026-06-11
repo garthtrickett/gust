@@ -605,6 +605,7 @@ impl TypeChecker {
         self.all_variable_origins.clear();
         self.moved_vars.clear();
         self.checked_results.clear();
+        self.open_directories.clear();
 
         // 1. Pre-register std library namespaces
         self.imports.insert("os".to_string(), "os_".to_string());
