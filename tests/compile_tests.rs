@@ -2114,6 +2114,53 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_hashmap_extended_methods_type_checking() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            map.Insert(1, 10);
+            
+            mut keys: std.Vector[int, ctx] := map.Keys(ctx);
+            map.Remove(1);
+            map.Clear();
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_hashmap_keys_brand_lifetime_violation() {
+    let source_invalid_arg = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            mut keys := map.Keys(42); 
+        }
+    ";
+    let res = check_program(source_invalid_arg);
+    assert!(res.is_err());
+    assert_eq!(res.unwrap_err().kind, TypeErrorKind::TypeMismatch);
+
+    let source_mismatched_assignment = "
+        func main() {
+            mut ctx1 := os.Arena.New();
+            defer ctx1.Free();
+            mut ctx2 := os.Arena.New();
+            defer ctx2.Free();
+            mut map: HashMap[int, int, ctx1] := os.HashMapNew(ctx1);
+            mut keys: std.Vector[int, ctx2] := map.Keys(ctx1); 
+        }
+    ";
+    let res2 = check_program(source_mismatched_assignment);
+    assert!(res2.is_err());
+    assert_eq!(res2.unwrap_err().kind, TypeErrorKind::TypeMismatch);
+}
+
+#[test]
 fn test_compile_os_args_and_exit() {
     let source = "
         func main() {

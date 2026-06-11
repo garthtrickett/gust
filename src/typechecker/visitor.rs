@@ -2593,14 +2593,14 @@ impl TypeChecker {
                             if !types_match(&k_type, &k_arg) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
-                                    message: format!(
+                                    message: format!( 
                                         "Key type mismatch for HashMap.Get. Expected {:?} but got {:?}",
                                         k_type, k_arg
                                     ),
                                     span: None,
                                 });
                             }
-                            let lookup_struct_name =
+                            let lookup_struct_name = 
                                 format!("LookupResult_{}", self.get_type_ident(&v_type));
                             if !self.struct_registry.contains_key(&lookup_struct_name) {
                                 let mut fields = HashMap::new();
@@ -2615,6 +2615,84 @@ impl TypeChecker {
                                 );
                             }
                             return Ok(Type::Struct(lookup_struct_name, None));
+                        }
+                        if (struct_name.starts_with("HashMap_")
+                            || struct_name.starts_with("std_HashMap_"))
+                            && right == "Remove"
+                        {
+                            if arguments.len() != 1 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "HashMap.Remove expects exactly 1 argument".to_string(),
+                                    span: None,
+                                });
+                            }
+                            let k_arg = self.check_expression(&arguments[0])?;
+                            let (k_type, _) = self
+                                .get_hashmap_key_value_types(struct_name)
+                                .ok_or_else(|| TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Invalid HashMap struct layout".to_string(),
+                                    span: None,
+                                })?;
+                            if !types_match(&k_type, &k_arg) {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!( 
+                                        "Key type mismatch for HashMap.Remove. Expected {:?} but got {:?}",
+                                        k_type, k_arg
+                                    ),
+                                    span: None,
+                                });
+                            }
+                            return Ok(Type::Void);
+                        }
+                        if (struct_name.starts_with("HashMap_")
+                            || struct_name.starts_with("std_HashMap_"))
+                            && right == "Clear"
+                        {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "HashMap.Clear expects exactly 0 arguments".to_string(),
+                                    span: None,
+                                });
+                            }
+                            return Ok(Type::Void);
+                        }
+                        if (struct_name.starts_with("HashMap_")
+                            || struct_name.starts_with("std_HashMap_"))
+                            && right == "Keys"
+                        {
+                            if arguments.len() != 1 {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: "HashMap.Keys expects exactly 1 argument (the allocator/brand)".to_string(),
+                                    span: None,
+                                });
+                            }
+                            let arg_type = self.check_expression(&arguments[0])?;
+                            if arg_type != Type::Arena
+                                && !matches!(arg_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                            {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "HashMap.Keys argument must be an Arena allocator".to_string(),
+                                    span: None,
+                                });
+                            }
+                            let (k_type, _) = self
+                                .get_hashmap_key_value_types(struct_name)
+                                .ok_or_else(|| TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: "Invalid HashMap struct layout".to_string(),
+                                    span: None,
+                                })?;
+                            let brand_name = expression_to_string(&arguments[0]);
+                            return Ok(Type::Generic(
+                                "std.Vector".to_string(),
+                                vec![k_type, Type::Struct(brand_name, None)],
+                            ));
                         }
                         if (struct_name.starts_with("Pool_")
                             || struct_name.starts_with("std_Pool_"))
