@@ -1266,7 +1266,7 @@ impl Codegen {
                     return format!("os_ScratchAlloc({})", size_str);
                 }
 
-                if func_path == "os_ScratchReset" || func_path == "os_ScratchReset" {
+                if func_path == "os_ScratchReset" || func_path == "os.ScratchReset" {
                     return "os_ScratchReset()".to_string();
                 }
 

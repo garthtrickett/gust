@@ -772,9 +772,9 @@ impl TypeChecker {
                 }
 
                 // Scratchpad storage restriction check
-                if let Expression::Selector { left: selector_left, .. } = left {
-                    if let Ok(parent_type) = self.check_expression(selector_left) {
-                        if let Some(_) = self.get_type_brand(&parent_type) {
+                if let Expression::Selector { left: selector_left, .. } = left
+                    && let Ok(parent_type) = self.check_expression(selector_left)
+                        && self.get_type_brand(&parent_type).is_some() {
                             let rhs_origins = self.get_expression_origins(value);
                             if rhs_origins.contains("scratch") {
                                 return Err(TypeError {
@@ -787,8 +787,6 @@ impl TypeChecker {
                                 });
                             }
                         }
-                    }
-                }
 
                 // Invalidate any active views that borrow from the root variable being modified
                 if let Some(root_name) = get_root_variable(left) {
