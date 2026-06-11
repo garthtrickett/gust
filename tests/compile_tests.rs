@@ -2141,6 +2141,63 @@ fn test_scratchpad_origin_propagation() {
 }
 
 #[test]
+fn test_scratch_assignment_to_branded_field_rejected() {
+    let source = "
+        type Node[ctx] struct {
+            data: *byte
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut n: Index[Node, ctx] := os.ArenaAlloc(ctx);
+            mut p := os.ScratchAlloc(10);
+            
+            ctx[n].data = p; // Error: Cannot assign scratchpad-allocated view to field of branded struct
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Cannot assign scratchpad-allocated view"));
+}
+
+#[test]
+fn test_scratch_return_rejected() {
+    let source = "
+        func test_leak() *byte {
+            mut p := os.ScratchAlloc(10);
+            return p; // Error: Escape analysis violation
+        } 
+        func main() {}
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Escape analysis violation"));
+}
+
+#[test]
+fn test_scratch_cloned_to_arena_accepted() {
+    let source = "
+        type Node[ctx] struct {
+            data: Index[Any, ctx]
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut n: Index[Node, ctx] := os.ArenaAlloc(ctx);
+            
+            mut p: Index[Any, ctx] := os.ArenaAlloc(ctx);
+            mut cloned := std.Clone(ctx, p);
+            ctx[n].data = cloned;
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_multi_file_compilation_cycle() {
     use std::fs;
     let temp_dir = std::env::temp_dir().join("gust_test_cycle");

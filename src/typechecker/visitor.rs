@@ -729,6 +729,25 @@ impl TypeChecker {
                     });
                 }
 
+                // Scratchpad storage restriction check
+                if let Expression::Selector { left: selector_left, .. } = left {
+                    if let Ok(parent_type) = self.check_expression(selector_left) {
+                        if let Some(brand) = self.get_type_brand(&parent_type) {
+                            let rhs_origins = self.get_expression_origins(value);
+                            if rhs_origins.contains("scratch") {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::BrandLifetimeViolation,
+                                    message: format!(
+                                        "Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct '{:?}'",
+                                        parent_type
+                                    ),
+                                    span: Some(value.span()),
+                                });
+                            }
+                        }
+                    }
+                }
+
                 // Invalidate any active views that borrow from the root variable being modified
                 if let Some(root_name) = get_root_variable(left) {
                     let mut to_invalidate = Vec::new();
@@ -1014,6 +1033,17 @@ impl TypeChecker {
 
                     // Retrieve expression origins immutably first
                     let expr_origins = self.get_expression_origins(expr);
+
+                    if expr_origins.contains("scratch") {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::BrandLifetimeViolation,
+                            message: format!( 
+                                "Semantic Error: Escape analysis violation. Returning scratchpad-allocated view of type {:?}",
+                                t
+                            ),
+                            span: Some(expr.span()),
+                        });
+                    }
 
                     if self.contains_ephemeral_view(&t)
                         && let Some(ref local_vars) = self.current_function_local_vars
