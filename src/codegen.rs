@@ -1699,7 +1699,7 @@ impl Codegen {
                     }
                     if is_channel && right == "Send" {
                         let arg_str = self.gen_expression(&arguments[0]);
-                        return format!("std_Channel_Send_impl({}.capacity, &(__typeof__({})){{ {} }})", left_str, arg_str, arg_str);
+                        return format!("std_Channel_Send_impl({}.capacity, ({{ __typeof__({0}) _tmp = {0}; &_tmp; }}))", left_str, arg_str);
                     }
                     if is_channel && right == "Recv" {
                         let type_str = self.get_c_type(&left_type);
