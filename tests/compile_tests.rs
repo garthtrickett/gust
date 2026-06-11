@@ -2114,6 +2114,33 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_scratchpad_origin_propagation() {
+    let source = "
+        func main() {
+            mut p := os.ScratchAlloc(10);
+            mut view := p;
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+
+    // Verify p and view are of type RawPointer(Byte)
+    let p_type = checker.symbol_table.get("p").cloned().unwrap();
+    assert!(matches!(p_type, Type::RawPointer(ref inner) if **inner == Type::Byte));
+
+    let view_type = checker.symbol_table.get("view").cloned().unwrap();
+    assert!(matches!(view_type, Type::RawPointer(ref inner) if **inner == Type::Byte));
+
+    // Verify origin propagation
+    let view_origins = checker.variable_origins.get("view").cloned().unwrap();
+    assert!(view_origins.contains("scratch"));
+}
+
+#[test]
 fn test_multi_file_compilation_cycle() {
     use std::fs;
     let temp_dir = std::env::temp_dir().join("gust_test_cycle");

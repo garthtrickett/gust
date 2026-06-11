@@ -1118,6 +1118,11 @@ impl TypeChecker {
             } => {
                 let raw_func_path = expression_to_string(function);
                 let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or(raw_func_path);
+                if func_path == "os.ScratchAlloc" || func_path == "os_ScratchAlloc" {
+                    let mut call_origins = HashSet::new();
+                    call_origins.insert("scratch".to_string());
+                    return call_origins;
+                }
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
                     let mut call_origins = HashSet::new();
                     if self.contains_ephemeral_view(&sig.return_type) {
