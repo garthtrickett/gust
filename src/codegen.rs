@@ -787,8 +787,11 @@ impl Codegen {
                         };
                         let param_type_str = self.get_c_type(&resolved_param_type);
                         let is_ptr = matches!(resolved_param_type, Type::RawPointer(_));
+                        let is_struct = matches!(resolved_param_type, Type::Struct(_, _)) || matches!(resolved_param_type, Type::Generic(_, _));
                         let cast_str = if is_ptr {
                             format!("({})arg", param_type_str)
+                        } else if is_struct {
+                            format!("*({}*)arg", param_type_str)
                         } else {
                             format!("({})(uintptr_t)arg", param_type_str)
                         };
