@@ -1215,8 +1215,10 @@ fn test_e2e_channel_ping_pong() {
             out_chan: std.Channel[int, ctx]
         }
         func worker_task(arg: *ChanArg[ctx]) {
-            mut val := (*arg).in_chan.Recv();
-            (*arg).out_chan.Send(val + 100);
+            unsafe {
+                mut val := (*arg).in_chan.Recv();
+                (*arg).out_chan.Send(val + 100);
+            }
         }
         func main() { 
             mut ctx := os.Arena.New();
@@ -1253,14 +1255,16 @@ fn test_e2e_parallel_zero_copy_parsing() {
             out_chan: std.Channel[Arena, ctx]
         }
         func parser_thread(arg: *ThreadArg[ctx]) {
-            mut file_ctx := move (*arg).file_ctx;
-            
-            mut node: Index[ASTNode, file_ctx] := os.ArenaAlloc(file_ctx);
-            file_ctx[node].op = 43;
-            file_ctx[node].left_val = 200;
-            file_ctx[node].right_val = 50;
+            unsafe {
+                mut file_ctx := move (*arg).file_ctx;
+                
+                mut node: Index[ASTNode, file_ctx] := os.ArenaAlloc(file_ctx);
+                file_ctx[node].op = 43;
+                file_ctx[node].left_val = 200;
+                file_ctx[node].right_val = 50;
 
-            (*arg).out_chan.Send(move file_ctx);
+                (*arg).out_chan.Send(move file_ctx);
+            }
         }
         func main() {
             mut main_ctx := os.Arena.New();
