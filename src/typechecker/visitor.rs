@@ -414,7 +414,7 @@ impl TypeChecker {
         Ok(())
     }
 
-    // Tier A: Entry-Point Interception Wrapper
+    // Tier A: Entry-Point Interception Wrapper for Statements
     pub fn check_statement(&mut self, stmt: &Statement) -> Result<(), TypeError> {
         let res = self.check_statement_internal(stmt);
         match res {
@@ -1027,7 +1027,7 @@ impl TypeChecker {
         }
     }
 
-    // Tier A: Entry-Point Interception Wrapper
+    // Tier A: Entry-Point Interception Wrapper for Expressions
     pub fn check_expression(&mut self, expr: &Expression) -> Result<Type, TypeError> {
         let res = self.check_expression_internal(expr);
         match res {
