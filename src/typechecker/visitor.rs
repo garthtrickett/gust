@@ -51,7 +51,7 @@ impl TypeChecker {
                 return name[..name.len() - suffix.len()].to_string();
             }
         }
-        name.to_stringCustomNode
+        name.to_string()
     }
 
     fn types_match_modulo_brand(&self, expected: &Type, actual: &Type) -> bool {
