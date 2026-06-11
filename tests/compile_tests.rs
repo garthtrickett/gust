@@ -2202,6 +2202,34 @@ fn test_spawn_invalid_function() {
 }
 
 #[test]
+fn test_arena_moved_through_channel_invalid() {
+    let source = "
+        type CustomNode[ctx] struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut n: Index[CustomNode, ctx] := os.ArenaAlloc(ctx);
+            ctx[n].val = 42;
+
+            mut chan: std.Channel[Arena, ctx] := std.ChannelNew(ctx);
+            chan.Send(move ctx);
+
+            ctx[n].val = 100;
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert!(
+        err.kind == TypeErrorKind::UseOfMovedVariable
+            || err.kind == TypeErrorKind::AllocatorMovedOrFreed
+    );
+}
+
+#[test]
 fn test_scratchpad_origin_propagation() {
     let source = "
         func main() {
