@@ -63,13 +63,30 @@ fn run_compile_pass_file(input_filename: &str, output_filename: &str) {
                     let is_entry = path == order.last().unwrap();
                     let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
                     if let Err(err) = checker.check_module(&module.program, &prefix) { 
-                        check_error = Some((module.source.clone(), err));
+                        check_error = Some(err);
                         break;
                     }
                 }
             }
 
-            if let Some((source_code, err)) = check_error { 
+            if let Some(err) = check_error { 
+                let mut source_code = String::new();
+                if let Some(span) = err.span {
+                    for module in modules.values() {
+                        let found = module.program.statements.iter().any(|s| {
+                            s.span().start.offset == span.start.offset && s.span().end.offset == span.end.offset
+                        });
+                        if found {
+                            source_code = module.source.clone();
+                            break;
+                        }
+                    }
+                    if source_code.is_empty() {
+                        if let Some(module) = modules.values().next() {
+                            source_code = module.source.clone();
+                        }
+                    }
+                }
                 let diagnostic = gust_lexer::typechecker::format_diagnostic(&source_code, &err);
                 eprintln!("{}", diagnostic);
                 std::process::exit(1);
@@ -83,42 +100,18 @@ fn run_compile_pass_file(input_filename: &str, output_filename: &str) {
                 checker.resolved_names,
                 checker.resolved_types,
             );
-                    let c_output = codegen.generate(&program);
+            let c_output = codegen.generate(&program);
 
-                    println!("✅ Type Checking Successful! Program is type-safe.");
-                    println!(
-                        "Writing transpiled C source code to '{}'...",
-                        output_filename
-                    );
+            println!("✅ Type Checking Successful! Program is type-safe.");
+            println!(
+                "Writing transpiled C source code to '{}'...",
+                output_filename
+            );
 
-                    let mut file = File::create(output_filename).expect("Could not create output file");
-                    file.write_all(c_output.as_bytes())
-                        .expect("Could not write code to disk");
-                    println!("✅ Code written successfully to '{}'!", output_filename);
-                }
-                Err(err) => {
-                    let mut source_code = String::new();
-                    if let Some(span) = err.span {
-                        for module in modules.values() {
-                            let found = module.program.statements.iter().any(|s| {
-                                s.span().start.offset == span.start.offset && s.span().end.offset == span.end.offset
-                            });
-                            if found {
-                                source_code = module.source.clone();
-                                break;
-                            }
-                        }
-                        if source_code.is_empty() {
-                            if let Some(module) = modules.values().next() {
-                                source_code = module.source.clone();
-                            }
-                        }
-                    }
-                    let diagnostic = gust_lexer::typechecker::format_diagnostic(&source_code, &err);
-                    eprintln!("{}", diagnostic);
-                    std::process::exit(1);
-                }
-            }
+            let mut file = File::create(output_filename).expect("Could not create output file");
+            file.write_all(c_output.as_bytes())
+                .expect("Could not write code to disk");
+            println!("✅ Code written successfully to '{}'!", output_filename);
         }
         Err(err) => {
             let diagnostic = gust_lexer::typechecker::format_diagnostic("", &err);
