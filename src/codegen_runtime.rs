@@ -5,6 +5,52 @@ pub const CORE_HEADERS: &str = r#"#include <stdio.h>
 
 "#;
 
+pub const SCRATCH_RUNTIME: &str = r#"// ====================================================
+// GUST THREAD-LOCAL SCRATCHPAD RUNTIME
+// ====================================================
+#ifndef GUST_SCRATCH_SIZE
+#define GUST_SCRATCH_SIZE 16384
+#endif
+
+#if defined(_MSC_VER)
+#define GUST_THREAD_LOCAL __declspec(thread)
+#elif defined(__GNUC__) || defined(__clang__)
+#define GUST_THREAD_LOCAL __thread
+#elif __STDC_VERSION__ >= 201112L
+#define GUST_THREAD_LOCAL _Thread_local
+#else
+#define GUST_THREAD_LOCAL
+#endif
+
+typedef struct {
+    unsigned char buffer[GUST_SCRATCH_SIZE];
+    size_t offset;
+} os_ScratchBuffer;
+
+static GUST_THREAD_LOCAL os_ScratchBuffer os_scratch_buffer = { {0}, 0 };
+
+void* os_ScratchAlloc(size_t size) {
+    // 8-byte alignment
+    size = (size + 7) & ~7;
+    if (os_scratch_buffer.offset + size > GUST_SCRATCH_SIZE) {
+        printf("Out of thread-local scratch memory! Size requested: %zu\n", size);
+        exit(1);
+    }
+    void* ptr = &os_scratch_buffer.buffer[os_scratch_buffer.offset];
+    os_scratch_buffer.offset += size;
+    return ptr;
+}
+
+void os_ScratchReset() {
+#ifdef GUST_DEBUG
+    // Canary poisoning of reset memory
+    memset(os_scratch_buffer.buffer, 0xA5, os_scratch_buffer.offset);
+#endif
+    os_scratch_buffer.offset = 0;
+}
+
+"#;
+
 pub const ARENA_RUNTIME: &str = r#"// ====================================================
 // GUST PRODUCTION-GRADE BUMP ALLOCATOR RUNTIME
 // ====================================================

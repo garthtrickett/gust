@@ -391,6 +391,7 @@ impl Codegen {
 
         c_code.push_str(codegen_runtime::CORE_HEADERS);
         c_code.push_str(codegen_runtime::ARENA_RUNTIME);
+        c_code.push_str(codegen_runtime::SCRATCH_RUNTIME);
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// FORWARD DECLARATIONS\n");
@@ -476,6 +477,10 @@ impl Codegen {
                 || func_name == "std_GraphNew"
                 || func_name == "os.ArenaAlloc"
                 || func_name == "os_ArenaAlloc"
+                || func_name == "os.ScratchAlloc"
+                || func_name == "os_ScratchAlloc"
+                || func_name == "os.ScratchReset"
+                || func_name == "os_ScratchReset"
             {
                 continue;
             }
@@ -1244,6 +1249,21 @@ impl Codegen {
                     };
                     let arg_str = self.gen_expression(&arguments[0]);
                     return format!("os_ArenaAlloc(&{}, sizeof({}))", arg_str, size_str);
+                }
+
+                if func_path == "os_ScratchAlloc" || func_path == "os.ScratchAlloc" {
+                    let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
+                        format!("sizeof({}")", struct_name)
+                    } else if !arguments.is_empty() {
+                        self.gen_expression(&arguments[0])
+                    } else {
+                        "sizeof(SessionNode)".to_string()
+                    };
+                    return format!("os_ScratchAlloc({}")", size_str);
+                }
+
+                if func_path == "os_ScratchReset" || func_path == "os_ScratchReset" {
+                    return "os_ScratchReset()".to_string();
                 }
 
                 if func_path == "std.Clone" || func_path == "std_Clone" {

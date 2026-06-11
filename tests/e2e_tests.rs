@@ -1041,3 +1041,98 @@ fn test_e2e_multi_module_compilation() {
     let stdout_str = String::from_utf8(run_output.stdout).unwrap();
     assert_eq!(stdout_str.trim(), "30");
 }
+
+#[test]
+fn test_e2e_thread_local_scratchpad() {
+    let source = "
+        func main() {
+            mut p1 := os.ScratchAlloc(10);
+            unsafe {
+                *p1 = 42;
+                os.LogInt(*p1 as int);
+            }
+            
+            mut p2 := os.ScratchAlloc(20);
+            unsafe {
+                *p2 = 84;
+                os.LogInt(*p2 as int);
+            }
+            
+            os.ScratchReset();
+            
+            mut p3 := os.ScratchAlloc(10);
+            unsafe {
+                os.LogInt(*p3 as int);
+            }
+        }
+    ";
+
+    // Compile without GUST_DEBUG, so after reset, memory is not poisoned (retains 42)
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+
+    let mut checker = TypeChecker::new();
+    let check_result = checker.check_program(&program);
+    assert!(check_result.is_ok(), "Typechecking failed: {:?}", check_result.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&program);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_scratch_test_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename_ndebug = format!("gust_scratch_test_ndebug_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let bin_filename_debug = format!("gust_scratch_test_debug_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path_ndebug = temp_dir.join(&bin_filename_ndebug);
+    let bin_path_debug = temp_dir.join(&bin_filename_debug);
+
+    fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+
+    // Compile NDEBUG version
+    let compile_ndebug = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-o")
+        .arg(&bin_path_ndebug)
+        .output()
+        .expect("Compile failed");
+    assert!(compile_ndebug.status.success(), "NDEBUG compile failed: {}", String::from_utf8_lossy(&compile_ndebug.stderr));
+
+    // Compile DEBUG version
+    let compile_debug = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-DGUST_DEBUG")
+        .arg("-o")
+        .arg(&bin_path_debug)
+        .output()
+        .expect("Compile failed");
+    assert!(compile_debug.status.success(), "DEBUG compile failed: {}", String::from_utf8_lossy(&compile_debug.stderr));
+
+    // Run NDEBUG version: should output 42, 84, 42
+    let run_ndebug = Command::new(&bin_path_ndebug).output().unwrap();
+    let out_ndebug = String::from_utf8(run_ndebug.stdout).unwrap();
+    assert_eq!(out_ndebug.trim(), "42\n84\n42");
+
+    // Run DEBUG version: should output 42, 84, 165 (0xA5 memory poisoning)
+    let run_debug = Command::new(&bin_path_debug).output().unwrap();
+    let out_debug = String::from_utf8(run_debug.stdout).unwrap();
+    assert_eq!(out_debug.trim(), "42\n84\n165");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path_ndebug);
+    let _ = fs::remove_file(&bin_path_debug);
+}
