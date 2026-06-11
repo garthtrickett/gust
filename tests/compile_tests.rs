@@ -2114,6 +2114,35 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_concurrency_template_registration_valid() {
+    let source = "
+        type MyStruct struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut m: std.Mutex[MyStruct, ctx];
+            mut c: std.Channel[int, ctx];
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_concurrency_template_argument_mismatch() {
+    let source = "
+        func main() {
+            mut m: std.Mutex[int];
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TemplateArgumentMismatch);
+}
+
+#[test]
 fn test_scratchpad_origin_propagation() {
     let source = "
         func main() {
