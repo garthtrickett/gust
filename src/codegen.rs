@@ -699,7 +699,12 @@ impl Codegen {
                 span,
                 ..
             } => {
-                let sig = self.function_registry.get(name).cloned();
+                let resolved_name = self
+                    .resolved_names
+                    .get(span)
+                    .cloned()
+                    .unwrap_or_else(|| name.clone());
+                let sig = self.function_registry.get(&resolved_name).cloned();
 
                 let mut param_strs = Vec::new();
                 let mut old_types = HashMap::new();
@@ -743,11 +748,6 @@ impl Codegen {
                     "void".to_string()
                 };
 
-                let resolved_name = self
-                    .resolved_names
-                    .get(span)
-                    .cloned()
-                    .unwrap_or_else(|| name.clone());
                 let mut body_str = String::new();
                 if name == "main" {
                     body_str.push_str("int main() {\n");

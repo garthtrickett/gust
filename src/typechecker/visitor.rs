@@ -252,9 +252,27 @@ impl TypeChecker {
                 return_origins: std::collections::HashSet::new(),
             },
         );
+        self.function_registry.insert(
+            "std_str_slice".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string(), "start".to_string(), "end".to_string()],
+                params: vec![Type::Str, Type::Int, Type::Int],
+                return_type: Type::Str,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
 
         self.function_registry.insert(
             "std.str_byte_at".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string(), "idx".to_string()],
+                params: vec![Type::Str, Type::Int],
+                return_type: Type::Byte,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_str_byte_at".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["s".to_string(), "idx".to_string()],
                 params: vec![Type::Str, Type::Int],
