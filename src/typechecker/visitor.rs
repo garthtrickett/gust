@@ -2295,7 +2295,7 @@ impl TypeChecker {
                         if !types_match(&substituted_expected, &resolved_arg) {
                             return Err(TypeError {
                                 kind: TypeErrorKind::TypeMismatch,
-                                message: format!(
+                                message: format!( 
                                     "Semantic Error: Argument type mismatch for function '{}'. Expected {:?} but got {:?}",
                                     func_path, substituted_expected, resolved_arg
                                 ),
@@ -2303,7 +2303,8 @@ impl TypeChecker {
                             });
                         }
                     }
-                    return Ok(sig.return_type);
+                    let resolved_return = self.substitute_brand_names(&sig.return_type, &brand_map);
+                    return Ok(resolved_return);
                 }
 
                 if func_path == "os.Arena.New" || func_path == "os_Arena_New" || func_path == "os_Arena.New" {
