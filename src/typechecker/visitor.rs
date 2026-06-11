@@ -441,6 +441,82 @@ impl TypeChecker {
         );
 
         self.function_registry.insert(
+            "std.is_alpha".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["b".to_string()],
+                params: vec![Type::Byte],
+                return_type: Type::Bool,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_is_alpha".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["b".to_string()],
+                params: vec![Type::Byte],
+                return_type: Type::Bool,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "std.is_digit".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["b".to_string()],
+                params: vec![Type::Byte],
+                return_type: Type::Bool,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_is_digit".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["b".to_string()],
+                params: vec![Type::Byte],
+                return_type: Type::Bool,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "std.is_whitespace".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["b".to_string()],
+                params: vec![Type::Byte],
+                return_type: Type::Bool,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_is_whitespace".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["b".to_string()],
+                params: vec![Type::Byte],
+                return_type: Type::Bool,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "std.parse_int".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string()],
+                params: vec![Type::Str],
+                return_type: Type::Int,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_parse_int".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string()],
+                params: vec![Type::Str],
+                return_type: Type::Int,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
             "os.Args".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["ctx".to_string()],

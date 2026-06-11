@@ -29,6 +29,22 @@ fn test_bool_primitive_accepted() {
 }
 
 #[test]
+fn test_character_classification_and_parsing_type_checking() {
+    let source = "
+        func main() {
+            mut b: byte := 48;
+            mut is_digit_val: bool := std.is_digit(b);
+            mut is_alpha_val: bool := std.is_alpha(b);
+            mut is_whitespace_val: bool := std.is_whitespace(b);
+
+            mut num_str := r#\"12345\"#;
+            mut num_val: int := std.parse_int(num_str);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_safe_branding_substitution() {
     let source = "
         type Node[ctx] struct { val: int }
