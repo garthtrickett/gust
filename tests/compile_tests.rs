@@ -2143,6 +2143,53 @@ fn test_os_dir_and_entry_layouts() {
 }
 
 #[test]
+fn test_os_directory_ffi_type_checking() {
+    let source_valid = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut opt_dir := os.OpenDir(ctx, \"src\");
+            if opt_dir.Ok {
+                mut d := opt_dir.Val;
+                mut opt_entry := os.ReadDir(ctx, d);
+                if opt_entry.Ok {
+                    mut is_dir := opt_entry.Val.is_dir;
+                    mut name := opt_entry.Val.name;
+                }
+                os.CloseDir(d);
+            }
+        }
+    ";
+    assert!(check_program(source_valid).is_ok());
+
+    let source_brand_mismatch = "
+        func main() {
+            mut ctx1 := os.Arena.New();
+            defer ctx1.Free();
+            mut ctx2 := os.Arena.New();
+            defer ctx2.Free();
+            mut opt_dir := os.OpenDir(ctx1, \"src\");
+            if opt_dir.Ok {
+                mut opt_entry := os.ReadDir(ctx2, opt_dir.Val);
+            }
+        }
+    ";
+    assert!(check_program(source_brand_mismatch).is_err());
+
+    let source_arg_count = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut opt_dir := os.OpenDir(ctx, \"src\");
+            if opt_dir.Ok {
+                os.CloseDir(opt_dir.Val, 42);
+            }
+        }
+    ";
+    assert!(check_program(source_arg_count).is_err());
+}
+
+#[test]
 fn test_vector_stack_type_checking_valid() {
     let source = "
         func main() {

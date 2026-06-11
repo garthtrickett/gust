@@ -558,6 +558,39 @@ impl TypeChecker {
                 return_origins: std::collections::HashSet::new(),
             },
         );
+
+        // os.OpenDir
+        let open_dir_sig = super::types::FunctionSignature {
+            param_names: vec!["ctx".to_string(), "path".to_string()],
+            params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::Str],
+            return_type: Type::Struct("LookupResult_os_Dir_ctx".to_string(), Some("ctx".to_string())),
+            return_origins: std::collections::HashSet::new(),
+        };
+        self.function_registry.insert("os.OpenDir".to_string(), open_dir_sig.clone());
+        self.function_registry.insert("os_OpenDir".to_string(), open_dir_sig);
+
+        // os.ReadDir
+        let read_dir_sig = super::types::FunctionSignature {
+            param_names: vec!["ctx".to_string(), "dir".to_string()],
+            params: vec![
+                Type::RawPointer(Box::new(Type::Arena)),
+                Type::Struct("os_Dir_ctx".to_string(), Some("ctx".to_string())),
+            ],
+            return_type: Type::Struct("LookupResult_os_DirEntry_ctx".to_string(), Some("ctx".to_string())),
+            return_origins: std::collections::HashSet::new(),
+        };
+        self.function_registry.insert("os.ReadDir".to_string(), read_dir_sig.clone());
+        self.function_registry.insert("os_ReadDir".to_string(), read_dir_sig);
+
+        // os.CloseDir
+        let close_dir_sig = super::types::FunctionSignature {
+            param_names: vec!["dir".to_string()],
+            params: vec![Type::Struct("os_Dir_ctx".to_string(), Some("ctx".to_string()))],
+            return_type: Type::Void,
+            return_origins: std::collections::HashSet::new(),
+        };
+        self.function_registry.insert("os.CloseDir".to_string(), close_dir_sig.clone());
+        self.function_registry.insert("os_CloseDir".to_string(), close_dir_sig);
     }
 
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> { 
@@ -2353,6 +2386,7 @@ impl TypeChecker {
                     }
                 }
 
+                // os.ReadFile
                 if func_path == "os.ReadFile" || func_path == "os_ReadFile" {
                     if arguments.len() != 2 {
                         return Err(TypeError {
@@ -2383,6 +2417,136 @@ impl TypeChecker {
                         });
                     }
                     return Ok(Type::Str);
+                }
+
+                if func_path == "os.OpenDir" || func_path == "os_OpenDir" {
+                    if arguments.len() != 2 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.OpenDir expects exactly 2 arguments (allocator, path)".to_string(),
+                            span: None,
+                        });
+                    }
+                    let alloc_type = self.check_expression(&arguments[0])?;
+                    if alloc_type != Type::Arena
+                        && !matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: "Semantic Error: os.OpenDir first argument must be an Arena allocator".to_string(),
+                            span: None,
+                        });
+                    }
+                    let path_type = self.check_expression(&arguments[1])?;
+                    if path_type != Type::Str {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: os.OpenDir path argument must be Str, but got {:?}",
+                                path_type
+                            ),
+                            span: None,
+                        });
+                    }
+                    let brand_name = expression_to_string(&arguments[0]);
+                    
+                    let concrete_dir_name = format!("os_Dir_{}", brand_name);
+                    let lookup_name = format!("LookupResult_{}", concrete_dir_name);
+                    
+                    let _ = self.monomorphize("os_Dir", &[Type::Struct(brand_name.clone(), None)])?;
+                    
+                    if !self.struct_registry.contains_key(&lookup_name) {
+                        let mut fields = HashMap::new();
+                        fields.insert("Ok".to_string(), Type::Int);
+                        fields.insert("Val".to_string(), Type::Struct(concrete_dir_name, Some(brand_name.clone())));
+                        self.struct_registry.insert(
+                            lookup_name.clone(),
+                            StructLayout {
+                                brand: None,
+                                fields,
+                            },
+                        );
+                    }
+                    
+                    return Ok(Type::Struct(lookup_name, None));
+                }
+
+                if func_path == "os.ReadDir" || func_path == "os_ReadDir" {
+                    if arguments.len() != 2 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.ReadDir expects exactly 2 arguments (allocator, directory_handle)".to_string(),
+                            span: None,
+                        });
+                    }
+                    let alloc_type = self.check_expression(&arguments[0])?;
+                    if alloc_type != Type::Arena
+                        && !matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: "Semantic Error: os.ReadDir first argument must be an Arena allocator".to_string(),
+                            span: None,
+                        });
+                    }
+                    let dir_type = self.check_expression(&arguments[1])?;
+                    let brand_name = expression_to_string(&arguments[0]);
+                    
+                    let expected_dir_type = Type::Struct(format!("os_Dir_{}", brand_name), Some(brand_name.clone()));
+                    if !types_match(&expected_dir_type, &dir_type) {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: os.ReadDir directory handle brand mismatch. Expected {:?} but got {:?}",
+                                expected_dir_type, dir_type
+                            ),
+                            span: None,
+                        });
+                    }
+                    
+                    let _ = self.monomorphize("os_DirEntry", &[Type::Struct(brand_name.clone(), None)])?;
+                    
+                    let concrete_entry_name = format!("os_DirEntry_{}", brand_name);
+                    let lookup_name = format!("LookupResult_{}", concrete_entry_name);
+                    
+                    if !self.struct_registry.contains_key(&lookup_name) {
+                        let mut fields = HashMap::new();
+                        fields.insert("Ok".to_string(), Type::Int);
+                        fields.insert("Val".to_string(), Type::Struct(concrete_entry_name, Some(brand_name.clone())));
+                        self.struct_registry.insert(
+                            lookup_name.clone(),
+                            StructLayout {
+                                brand: None,
+                                fields,
+                            },
+                        );
+                    }
+                    
+                    return Ok(Type::Struct(lookup_name, None));
+                }
+
+                if func_path == "os.CloseDir" || func_path == "os_CloseDir" {
+                    if arguments.len() != 1 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.CloseDir expects exactly 1 argument (the directory handle)".to_string(),
+                            span: None,
+                        });
+                    }
+                    let arg_type = self.check_expression(&arguments[0])?;
+                    if let Type::Struct(name, _) = &arg_type {
+                        if name.starts_with("os_Dir_") {
+                            return Ok(Type::Void);
+                        }
+                    }
+                    return Err(TypeError {
+                        kind: TypeErrorKind::TypeMismatch,
+                        message: format!(
+                            "Semantic Error: os.CloseDir expects an os.Dir handle, but got {:?}",
+                            arg_type
+                        ),
+                        span: None,
+                    });
                 }
 
                 if func_path == "os.WriteFile" || func_path == "os_WriteFile" {
