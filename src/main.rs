@@ -72,10 +72,9 @@ fn run_compile_pass(source_code: &str, output_filename: &str) {
             println!("✅ Code written successfully to '{}'!", output_filename);
         }
         Err(err) => {
-            println!(
-                "❌ Type Checking Failed! Compiler successfully rejected unsafe code:\n{}",
-                err
-            );
+            let diagnostic = gust_lexer::typechecker::format_diagnostic(source_code, &err);
+            eprintln!("{}", diagnostic);
+            std::process::exit(1);
         }
     }
 }

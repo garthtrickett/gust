@@ -239,8 +239,8 @@ impl Codegen {
 
     fn get_expr_type(&self, expr: &Expression) -> Option<Type> {
         match expr {
-            Expression::Identifier(name) => self.symbol_table.borrow().get(name).cloned(),
-            Expression::Dereference(inner) => {
+            Expression::Identifier(name, _) => self.symbol_table.borrow().get(name).cloned(),
+            Expression::Dereference(inner, _) => {
                 let inner_type = self.get_expr_type(inner)?;
                 if let Type::RawPointer(target_type) = inner_type {
                     Some(*target_type)
@@ -248,14 +248,14 @@ impl Codegen {
                     None
                 }
             }
-            Expression::AddressOf(inner) => {
+            Expression::AddressOf(inner, _) => {
                 let inner_type = self.get_expr_type(inner)?;
                 Some(Type::RawPointer(Box::new(inner_type)))
             }
             Expression::AsCast { target_type, .. } => {
                 Some(target_type.clone())
             }
-            Expression::Selector { left, right } => {
+            Expression::Selector { left, right, .. } => {
                 let left_type = self.get_expr_type(left)?;
                 if let Type::Struct(struct_name, _) = left_type
                     && let Some(layout) = self.struct_registry.get(&struct_name)
@@ -582,6 +582,7 @@ impl Codegen {
                 params,
                 return_type: _,
                 body,
+                ..
             } => {
                 let sig = self.function_registry.get(name).cloned();
 
@@ -655,6 +656,7 @@ impl Codegen {
                 is_mut: _,
                 value,
                 var_type: _,
+                ..
             } => {
                 let var_type = self
                     .symbol_table
@@ -681,7 +683,7 @@ impl Codegen {
                 *self.current_alloc_struct.borrow_mut() = None;
                 result.push_str(&format!("    {} {} = {};\n", type_str, name, val_str));
             }
-            Statement::Assignment { left, value } => {
+            Statement::Assignment { left, value, .. } => {
                 let mut target_struct = None;
                 let left_type = self.get_expr_type(left).unwrap_or(Type::Void);
                 if let Type::Index(struct_name, _) = &left_type {
@@ -697,7 +699,7 @@ impl Codegen {
                 *self.current_alloc_struct.borrow_mut() = None;
                 result.push_str(&format!("    {} = {};\n", left_str, val_str));
             }
-            Statement::While { condition, body } => {
+            Statement::While { condition, body, .. } => {
                 let cond_str = self.gen_expression(condition);
                 result.push_str(&format!("    while ({}) {{\n", cond_str));
                 result.push_str(&self.gen_loop_body(body));
@@ -707,6 +709,7 @@ impl Codegen {
                 condition,
                 consequence,
                 alternative,
+                ..
             } => {
                 let cond_str = self.gen_expression(condition);
                 result.push_str(&format!("    if ({}) {{\n", cond_str));
@@ -718,7 +721,7 @@ impl Codegen {
                 }
                 result.push_str("    }\n");
             }
-            Statement::Match { expression, cases } => {
+            Statement::Match { expression, cases, .. } => {
                 let expr_str = self.gen_expression(expression);
                 let expr_type = self.get_expr_type(expression).unwrap_or(Type::Void);
 
@@ -739,20 +742,21 @@ impl Codegen {
                         0
                     };
 
-                    result.push_str(&format!("        case {}: {{\n", tag_val));
+                    result.push_str(&format!("        case {}: {{
+", tag_val));
                     result.push_str(&self.gen_loop_body(&case.body));
                     result.push_str("            break;\n");
                     result.push_str("        }\n");
                 }
                 result.push_str("    }\n");
             }
-            Statement::UnsafeBlock { body } => {
+            Statement::UnsafeBlock { body, .. } => {
                 result.push_str("    {\n");
                 result.push_str(&self.gen_loop_body(body));
                 result.push_str("    }\n");
             }
-            Statement::Defer { expr: _ } => {}
-            Statement::Return(maybe_expr) => {
+            Statement::Defer { expr: _, .. } => {}
+            Statement::Return(maybe_expr, _) => {
                 if let Some(expr) = maybe_expr {
                     let expr_str = self.gen_expression(expr);
                     result.push_str(&format!("    return {};\n", expr_str));
@@ -760,7 +764,7 @@ impl Codegen {
                     result.push_str("    return;\n");
                 }
             }
-            Statement::Expression(expr) => {
+            Statement::Expression(expr, _) => {
                 let expr_str = self.gen_expression(expr);
                 result.push_str(&format!("    {};\n", expr_str));
             }
@@ -773,7 +777,7 @@ impl Codegen {
         let mut defer_stack = Vec::new();
 
         for stmt in &body.statements {
-            if let Statement::Defer { expr } = stmt {
+            if let Statement::Defer { expr, .. } = stmt {
                 let defer_str = self.gen_expression(expr);
                 defer_stack.push(defer_str);
             } else {

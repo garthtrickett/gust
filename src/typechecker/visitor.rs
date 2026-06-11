@@ -1572,7 +1572,7 @@ impl TypeChecker {
                     self.check_expression(arg)?;
                 }
 
-                let func_path = self.gen_expression(function); // Using gen_expression to safely resolve namespaces
+                let func_path = expression_to_string(function); // Using expression_to_string to safely resolve namespaces
 
                 if func_path == "len" {
                     if arguments.len() != 1 {

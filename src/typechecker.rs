@@ -137,18 +137,22 @@ impl TypeChecker {
             crate::ast::FieldDef {
                 name: "data".to_string(),
                 field_type: Type::RawPointer(Box::new(Type::Struct("T".to_string(), None))),
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "len".to_string(),
                 field_type: Type::Int,
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "capacity".to_string(),
                 field_type: Type::Int,
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "arena".to_string(),
                 field_type: Type::RawPointer(Box::new(Type::Arena)),
+                span: crate::token::Span::dummy(),
             },
         ];
         struct_templates.insert(
@@ -171,26 +175,32 @@ impl TypeChecker {
             crate::ast::FieldDef {
                 name: "keys".to_string(),
                 field_type: Type::RawPointer(Box::new(Type::Struct("K".to_string(), None))),
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "values".to_string(),
                 field_type: Type::RawPointer(Box::new(Type::Struct("V".to_string(), None))),
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "occupied".to_string(),
                 field_type: Type::RawPointer(Box::new(Type::Int)),
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "len".to_string(),
                 field_type: Type::Int,
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "capacity".to_string(),
                 field_type: Type::Int,
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "arena".to_string(),
                 field_type: Type::RawPointer(Box::new(Type::Arena)),
+                span: crate::token::Span::dummy(),
             },
         ];
         struct_templates.insert(
@@ -213,30 +223,37 @@ impl TypeChecker {
             crate::ast::FieldDef {
                 name: "data".to_string(),
                 field_type: Type::RawPointer(Box::new(Type::Struct("T".to_string(), None))),
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "occupied".to_string(),
                 field_type: Type::RawPointer(Box::new(Type::Int)),
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "free_list".to_string(),
                 field_type: Type::RawPointer(Box::new(Type::Int)),
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "len".to_string(),
                 field_type: Type::Int,
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "capacity".to_string(),
                 field_type: Type::Int,
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "free_len".to_string(),
                 field_type: Type::Int,
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "arena".to_string(),
                 field_type: Type::RawPointer(Box::new(Type::Arena)),
+                span: crate::token::Span::dummy(),
             },
         ];
         struct_templates.insert(
@@ -259,10 +276,12 @@ impl TypeChecker {
             crate::ast::FieldDef {
                 name: "value".to_string(),
                 field_type: Type::Struct("T".to_string(), None),
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "ref_count".to_string(),
                 field_type: Type::Int,
+                span: crate::token::Span::dummy(),
             },
         ];
         struct_templates.insert(
@@ -272,7 +291,7 @@ impl TypeChecker {
                 fields: rc_node_fields.clone(),
             },
         );
-        struct_templates.insert(
+        struct_templates.insert( 
             "std.RcNode".to_string(),
             StructTemplate {
                 generics: vec!["T".to_string()],
@@ -285,6 +304,7 @@ impl TypeChecker {
             crate::ast::FieldDef {
                 name: "node_index".to_string(),
                 field_type: Type::Index("std_RcNode_T".to_string(), Some("ctx".to_string())),
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "pool".to_string(),
@@ -295,6 +315,7 @@ impl TypeChecker {
                         Type::Struct("ctx".to_string(), None),
                     ],
                 ))),
+                span: crate::token::Span::dummy(),
             },
         ];
         struct_templates.insert(
@@ -317,6 +338,7 @@ impl TypeChecker {
             crate::ast::FieldDef {
                 name: "value".to_string(),
                 field_type: Type::Struct("T".to_string(), None),
+                span: crate::token::Span::dummy(),
             },
             crate::ast::FieldDef {
                 name: "edges".to_string(),
@@ -324,6 +346,7 @@ impl TypeChecker {
                     "std.Vector".to_string(),
                     vec![Type::Int, Type::Struct("ctx".to_string(), None)],
                 ),
+                span: crate::token::Span::dummy(),
             },
         ];
         struct_templates.insert(
@@ -352,6 +375,7 @@ impl TypeChecker {
                         Type::Struct("ctx".to_string(), None),
                     ],
                 ),
+                span: crate::token::Span::dummy(),
             },
         ];
         struct_templates.insert(

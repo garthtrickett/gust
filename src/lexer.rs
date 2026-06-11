@@ -5,6 +5,8 @@ pub struct Lexer {
     position: usize,
     read_position: usize,
     ch: char,
+    line: usize,
+    column: usize,
 }
 
 impl Lexer {
@@ -14,12 +16,21 @@ impl Lexer {
             position: 0,
             read_position: 0,
             ch: '\0',
+            line: 1,
+            column: 1,
         };
         l.read_char();
         l
     }
 
     fn read_char(&mut self) {
+        if self.ch == '\n' {
+            self.line += 1;
+            self.column = 1;
+        } else if self.position > 0 || (self.position == 0 && self.ch != '\0') {
+            self.column += 1;
+        }
+
         if self.read_position >= self.input.len() {
             self.ch = '\0';
         } else {
@@ -27,6 +38,14 @@ impl Lexer {
         }
         self.position = self.read_position;
         self.read_position += 1;
+    }
+
+    fn current_position(&self) -> crate::token::Position {
+        crate::token::Position {
+            line: self.line,
+            column: self.column,
+            offset: self.position,
+        }
     }
 
     fn peek_char(&self) -> char {
@@ -73,21 +92,25 @@ impl Lexer {
         out
     }
 
-    pub fn next_token(&mut self) -> Token {
+        pub fn next_token(&mut self) -> Token { 
         self.skip_whitespace();
 
-        let tok = match self.ch {
+        let start_pos = self.current_position();
+
+        let mut tok = match self.ch {
             ':' => {
                 if self.peek_char() == '=' {
                     self.read_char();
                     Token {
                         token_type: TokenType::Assign,
                         literal: ":=".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
                     }
                 } else {
                     Token {
                         token_type: TokenType::Colon,
                         literal: ":".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
                     }
                 }
             }
@@ -97,17 +120,20 @@ impl Lexer {
                     Token {
                         token_type: TokenType::EqEq,
                         literal: "==".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
                     }
                 } else if self.peek_char() == '>' {
                     self.read_char();
                     Token {
                         token_type: TokenType::FatArrow,
                         literal: "=>".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
                     }
                 } else {
                     Token {
                         token_type: TokenType::Eq,
                         literal: "=".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
                     }
                 }
             }
@@ -117,11 +143,13 @@ impl Lexer {
                     Token {
                         token_type: TokenType::NotEq,
                         literal: "!=".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
                     }
                 } else {
                     Token {
                         token_type: TokenType::Illegal,
                         literal: self.ch.to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
                     }
                 }
             }
@@ -136,103 +164,129 @@ impl Lexer {
                     Token {
                         token_type: TokenType::Slash,
                         literal: "/".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
                     }
                 }
             }
             ';' => Token {
                 token_type: TokenType::Semicolon,
                 literal: ";".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '&' => Token {
                 token_type: TokenType::Ampersand,
                 literal: "&".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '+' => Token {
                 token_type: TokenType::Plus,
                 literal: "+".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '-' => Token {
                 token_type: TokenType::Minus,
                 literal: "-".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '*' => Token {
                 token_type: TokenType::Asterisk,
                 literal: "*".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '<' => Token {
                 token_type: TokenType::Lt,
                 literal: "<".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '>' => Token {
                 token_type: TokenType::Gt,
                 literal: ">".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '.' => Token {
                 token_type: TokenType::Dot,
                 literal: ".".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             ',' => Token {
                 token_type: TokenType::Comma,
                 literal: ",".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '(' => Token {
                 token_type: TokenType::LParen,
                 literal: "(".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             ')' => Token {
                 token_type: TokenType::RParen,
                 literal: ")".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '{' => Token {
                 token_type: TokenType::LBrace,
                 literal: "{".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '}' => Token {
                 token_type: TokenType::RBrace,
                 literal: "}".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '[' => Token {
                 token_type: TokenType::LBracket,
                 literal: "[".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             ']' => Token {
                 token_type: TokenType::RBracket,
                 literal: "]".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '\0' => Token {
                 token_type: TokenType::Eof,
                 literal: "".to_string(),
+                span: crate::token::Span { start: start_pos, end: start_pos },
             },
             '"' => {
+                let literal = self.read_string();
+                let end_pos = self.current_position();
                 return Token {
                     token_type: TokenType::String,
-                    literal: self.read_string(),
+                    literal,
+                    span: crate::token::Span { start: start_pos, end: end_pos },
                 };
             }
             c => {
-                if is_letter(c) {
+                if is_letter(c) { 
                     let literal = self.read_identifier();
                     let token_type = lookup_ident(&literal);
+                    let end_pos = self.current_position();
                     return Token {
                         token_type,
                         literal,
+                        span: crate::token::Span { start: start_pos, end: end_pos },
                     };
                 } else if is_digit(c) {
                     let literal = self.read_number();
+                    let end_pos = self.current_position();
                     return Token {
                         token_type: TokenType::Int,
                         literal,
+                        span: crate::token::Span { start: start_pos, end: end_pos },
                     };
                 } else {
                     Token {
                         token_type: TokenType::Illegal,
                         literal: c.to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
                     }
                 }
             }
         };
 
         self.read_char();
+        tok.span.end = self.current_position();
         tok
     }
 }
@@ -270,6 +324,7 @@ fn lookup_ident(ident: &str) -> TokenType {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::token::Position;
 
     #[test]
     fn test_next_token_basic() {
@@ -435,42 +490,126 @@ mod tests {
         let tok1 = l.next_token();
         assert_eq!(tok1.token_type, TokenType::Mut);
         assert_eq!(tok1.literal, "mut");
-        assert_eq!(tok1.span.start, Position { line: 1, column: 1, offset: 0 });
-        assert_eq!(tok1.span.end, Position { line: 1, column: 4, offset: 3 });
+        assert_eq!(
+            tok1.span.start,
+            Position {
+                line: 1,
+                column: 1,
+                offset: 0
+            }
+        );
+        assert_eq!(
+            tok1.span.end,
+            Position {
+                line: 1,
+                column: 4,
+                offset: 3
+            }
+        );
 
         // "a" (line 1, column 5, offset 4 to line 1, column 6, offset 5)
         let tok2 = l.next_token();
         assert_eq!(tok2.token_type, TokenType::Ident);
         assert_eq!(tok2.literal, "a");
-        assert_eq!(tok2.span.start, Position { line: 1, column: 5, offset: 4 });
-        assert_eq!(tok2.span.end, Position { line: 1, column: 6, offset: 5 });
+        assert_eq!(
+            tok2.span.start,
+            Position {
+                line: 1,
+                column: 5,
+                offset: 4
+            }
+        );
+        assert_eq!(
+            tok2.span.end,
+            Position {
+                line: 1,
+                column: 6,
+                offset: 5
+            }
+        );
 
         // ":=" (line 1, column 7, offset 6 to line 1, column 9, offset 8)
         let tok3 = l.next_token();
         assert_eq!(tok3.token_type, TokenType::Assign);
         assert_eq!(tok3.literal, ":=");
-        assert_eq!(tok3.span.start, Position { line: 1, column: 7, offset: 6 });
-        assert_eq!(tok3.span.end, Position { line: 1, column: 9, offset: 8 });
+        assert_eq!(
+            tok3.span.start,
+            Position {
+                line: 1,
+                column: 7,
+                offset: 6
+            }
+        );
+        assert_eq!(
+            tok3.span.end,
+            Position {
+                line: 1,
+                column: 9,
+                offset: 8
+            }
+        );
 
         // "10" (line 1, column 10, offset 9 to line 1, column 12, offset 11)
         let tok4 = l.next_token();
         assert_eq!(tok4.token_type, TokenType::Int);
         assert_eq!(tok4.literal, "10");
-        assert_eq!(tok4.span.start, Position { line: 1, column: 10, offset: 9 });
-        assert_eq!(tok4.span.end, Position { line: 1, column: 12, offset: 11 });
+        assert_eq!(
+            tok4.span.start,
+            Position {
+                line: 1,
+                column: 10,
+                offset: 9
+            }
+        );
+        assert_eq!(
+            tok4.span.end,
+            Position {
+                line: 1,
+                column: 12,
+                offset: 11
+            }
+        );
 
         // ";" (line 1, column 12, offset 11 to line 1, column 13, offset 12)
         let tok5 = l.next_token();
         assert_eq!(tok5.token_type, TokenType::Semicolon);
         assert_eq!(tok5.literal, ";");
-        assert_eq!(tok5.span.start, Position { line: 1, column: 12, offset: 11 });
-        assert_eq!(tok5.span.end, Position { line: 1, column: 13, offset: 12 });
+        assert_eq!(
+            tok5.span.start,
+            Position {
+                line: 1,
+                column: 12,
+                offset: 11
+            }
+        );
+        assert_eq!(
+            tok5.span.end,
+            Position {
+                line: 1,
+                column: 13,
+                offset: 12
+            }
+        );
 
         // "mut" (line 2, column 1, offset 13 to line 2, column 4, offset 16)
         let tok6 = l.next_token();
         assert_eq!(tok6.token_type, TokenType::Mut);
         assert_eq!(tok6.literal, "mut");
-        assert_eq!(tok6.span.start, Position { line: 2, column: 1, offset: 13 });
-        assert_eq!(tok6.span.end, Position { line: 2, column: 4, offset: 16 });
+        assert_eq!(
+            tok6.span.start,
+            Position {
+                line: 2,
+                column: 1,
+                offset: 13
+            }
+        );
+        assert_eq!(
+            tok6.span.end,
+            Position {
+                line: 2,
+                column: 4,
+                offset: 16
+            }
+        );
     }
 }

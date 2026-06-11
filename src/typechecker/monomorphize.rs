@@ -40,6 +40,7 @@ impl TypeChecker {
                             "Semantic Error: Brand Nesting Restriction violation. Element '{:?}' inside collection branded with '{}' must be copyable POD or branded with identical brand '{}'",
                             t, ob, ob
                         ),
+                        span: None,
                     });
                 }
             if let Type::Index(_, _) = t 
@@ -50,28 +51,30 @@ impl TypeChecker {
                             "Semantic Error: Brand Nesting Restriction violation. Element '{:?}' inside collection branded with '{}' must be copyable POD or branded with identical brand '{}'",
                             t, ob, ob
                         ),
+                        span: None,
                     });
                 }
-        }
+        } 
 
         match t {
             Type::Struct(name, inner_brand) => {
                 if let Some(ib) = inner_brand
                     && let Some(ob) = outer_brand
-                        && ib != ob {
+                        && ib != ob { 
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
                                 message: format!( 
                                     "Semantic Error: Mismatched nested brand. Outer brand is '{}', but nested type '{}' has brand '{}'",
                                     ob, name, ib
                                 ),
+                                span: None,
                             });
                         }
                 if let Some(layout) = self.struct_registry.get(name) {
                     let current_brand = inner_brand.as_ref().or(outer_brand.as_ref()).cloned();
                     for field_type in layout.fields.values() {
                         self.check_brand_hierarchy(field_type, &current_brand)?;
-                    }
+                    } 
                 }
             }
             Type::Index(name, inner_brand) => {
@@ -84,6 +87,7 @@ impl TypeChecker {
                                     "Semantic Error: Mismatched nested brand. Outer brand is '{}', but nested type 'Index[{}]' has brand '{}'",
                                     ob, name, ib
                                 ),
+                                span: None,
                             });
                         }
             }
@@ -303,13 +307,14 @@ impl TypeChecker {
                         if matches!(field_type, Type::Slice(_))
                             || *field_type == Type::ByteSlice
                             || *field_type == Type::Str
-                        {
+                        { 
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
                                 message: format!( 
                                     "Semantic Error: Unbranded monomorphized struct '{}' cannot contain ephemeral slice or view field '{}' of type '{:?}'",
                                     concrete_name, field_name, field_type
                                 ),
+                                span: None,
                             });
                         }
                     }
