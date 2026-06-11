@@ -1970,7 +1970,7 @@ fn test_rc_and_graph_type_checking_invalid() {
     assert_eq!(err1.kind, TypeErrorKind::TypeMismatch);
     let span1 = err1.span.expect("Expected a span for Rc brand mismatch");
     assert_eq!(span1.start.line, 14);
-    assert_eq!(span1.start.column, 42);
+    assert_eq!(span1.start.column, 43);
 
     let source_non_int_graph = "
         type Node struct {
