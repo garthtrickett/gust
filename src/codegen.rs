@@ -511,6 +511,9 @@ impl Codegen {
             };
             let decl_name = func_name.replace(".", "_");
             c_code.push_str(&format!("{} {}({});\n", ret_str, decl_name, param_list));
+            if sig.params.len() == 1 {
+                c_code.push_str(&format!("void* {}_pthread_wrapper(void* arg);\n", decl_name));
+            }
         }
         c_code.push('\n');
 
@@ -764,12 +767,39 @@ impl Codegen {
                     body_str.push_str("    return 0;\n");
                     body_str.push_str("}\n\n");
                 } else {
-                    body_str.push_str(&format!(
-                        "{} {}({}) {{\n",
+                    body_str.push_str(&format!( 
+                        "{} {}({}) {\n",
                         ret_str, resolved_name, param_list
                     ));
                     body_str.push_str(&self.gen_block_statement(body));
                     body_str.push_str("}\n\n");
+
+                    if params.len() == 1 {
+                        let param = &params[0];
+                        let resolved_param_type = if let Some(ref s) = sig {
+                            s.params[0].clone()
+                        } else {
+                            param.param_type.clone()
+                        };
+                        let param_type_str = self.get_c_type(&resolved_param_type);
+                        let is_ptr = matches!(resolved_param_type, Type::RawPointer(_));
+                        let cast_str = if is_ptr {
+                            format!("({})arg", param_type_str)
+                        } else {
+                            format!("({})(uintptr_t)arg", param_type_str)
+                        };
+
+                        body_str.push_str(&format!(
+                            "void* {}_pthread_wrapper(void* arg) {\n",
+                            resolved_name
+                        ));
+                        body_str.push_str(&format!(
+                            "    {}({});\n",
+                            resolved_name, cast_str
+                        ));
+                        body_str.push_str("    return NULL;\n");
+                        body_str.push_str("}\n\n");
+                    }
                 }
 
                 // Restore old symbol table
@@ -1484,14 +1514,14 @@ impl Codegen {
                     let arg_str = self.gen_expression(&arguments[0]);
                     let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
                         struct_name.clone()
-                    } else {
+                    } else { 
                         "Pool_int".to_string()
                     };
                     let mut is_ptr = false;
                     if let Expression::Identifier(name, _) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
                         && **inner == Type::Arena
-                    {
+                    { 
                         is_ptr = true;
                     }
                     let arena_expr = if is_ptr {
@@ -1502,6 +1532,50 @@ impl Codegen {
                     return format!(
                         "(struct {}){{ .arena = {}, .capacity = 0, .data = NULL, .free_len = 0, .free_list = NULL, .len = 0, .occupied = NULL }}",
                         type_str, arena_expr
+                    );
+                }
+
+                if func_path == "std.MutexNew"
+                    || func_path == "std_MutexNew"
+                {
+                    let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
+                        struct_name.clone()
+                    } else {
+                        "Mutex_Any".to_string()
+                    };
+                    return format!(
+                        "(struct {}){{ .lock_state = std_Mutex_Alloc() }}",
+                        type_str
+                    );
+                }
+
+                if func_path == "std.ChannelNew"
+                    || func_path == "std_ChannelNew"
+                {
+                    let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
+                        struct_name.clone()
+                    } else {
+                        "Channel_Any".to_string()
+                    };
+                    return format!(
+                        "(struct {}){{ .capacity = std_Channel_Alloc(16, sizeof(*(((struct {}*)0)->_phantom))), .len = 0 }}",
+                        type_str, type_str
+                    );
+                }
+
+                if func_path == "std.Spawn" || func_path == "std_Spawn" {
+                    let thread_func_name = expression_to_string(&arguments[0]).replace(".", "_");
+                    let arg_str = self.gen_expression(&arguments[1]);
+                    let arg_type = self.get_expr_type(&arguments[1]).unwrap_or(Type::Void);
+                    let is_ptr = matches!(arg_type, Type::RawPointer(_));
+                    let cast_expr = if is_ptr {
+                        format!("(void*){}", arg_str)
+                    } else {
+                        format!("(void*)(uintptr_t){}", arg_str)
+                    };
+                    return format!(
+                        "(({{\n        pthread_t _thread;\n        pthread_create(&_thread, NULL, {}_pthread_wrapper, {});\n        pthread_detach(_thread);\n    }}))",
+                        thread_func_name, cast_expr
                     );
                 }
 
@@ -1542,7 +1616,9 @@ impl Codegen {
                     let mut is_graph = false;
                     let left_type = self.get_expr_type(left).unwrap_or(Type::Void);
 
-                    if let Type::Struct(struct_name, _) = &left_type {
+                    let mut is_mutex = false;
+                    let mut is_channel = false;
+                    if let Type::Struct(struct_name, _) = &left_type { 
                         if struct_name.starts_with("Vector_")
                             || struct_name.starts_with("std_Vector_")
                         {
@@ -1563,8 +1639,16 @@ impl Codegen {
                             || struct_name.starts_with("std_Graph_")
                         {
                             is_graph = true;
+                        } else if struct_name.starts_with("Mutex_")
+                            || struct_name.starts_with("std_Mutex_")
+                        {
+                            is_mutex = true;
+                        } else if struct_name.starts_with("Channel_")
+                            || struct_name.starts_with("std_Channel_")
+                        {
+                            is_channel = true;
                         }
-                    } else {
+                    } else { 
                         let left_ident = expression_to_string(left);
                         if let Some(Type::Struct(struct_name, _)) =
                             self.symbol_table.borrow().get(&left_ident)
@@ -1589,8 +1673,34 @@ impl Codegen {
                                 || struct_name.starts_with("std_Graph_")
                             {
                                 is_graph = true;
+                            } else if struct_name.starts_with("Mutex_")
+                                || struct_name.starts_with("std_Mutex_")
+                            {
+                                is_mutex = true;
+                            } else if struct_name.starts_with("Channel_")
+                                || struct_name.starts_with("std_Channel_")
+                            {
+                                is_channel = true;
                             }
                         }
+                    }
+
+                    if is_mutex && right == "Lock" {
+                        return format!("std_Mutex_Lock_impl({}.lock_state, &({}.value))", left_str, left_str);
+                    }
+                    if is_mutex && right == "Unlock" {
+                        return format!("std_Mutex_Unlock_impl({}.lock_state)", left_str);
+                    }
+                    if is_channel && right == "Send" {
+                        let arg_str = self.gen_expression(&arguments[0]);
+                        return format!("std_Channel_Send_impl({}.capacity, &(__typeof__({})){{ {} }})", left_str, arg_str, arg_str);
+                    }
+                    if is_channel && right == "Recv" {
+                        let type_str = self.get_c_type(&left_type);
+                        return format!(
+                            "(({{\n        __typeof__(*(((struct {}*)0)->_phantom)) _val;\n        std_Channel_Recv_impl({}.capacity, &_val);\n        _val;\n    }}))",
+                            type_str, left_str
+                        );
                     }
 
                     if is_rc && right == "Clone" {
