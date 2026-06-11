@@ -986,7 +986,7 @@ impl TypeChecker {
                         .insert(name.clone(), resolved_explicit.clone());
                 } else {
                     self.symbol_table.insert(name.clone(), val_type.clone());
-                    self.variable_types.insert(name.clone(), val_type);
+                    self.variable_types.insert(name.clone(), val_type.clone());
                 }
 
                 if let Type::Struct(ref struct_name, _) = val_type {
@@ -2776,6 +2776,7 @@ impl TypeChecker {
 
                 if let Expression::Selector { left, right, .. } = &**function {
                     let left_type = self.check_expression(left)?;
+                    let left_str = expression_to_string(left);
                     if let Type::Struct(struct_name, _) = &left_type {
                         if (struct_name.starts_with("Vector_")
                             || struct_name.starts_with("std_Vector_"))
