@@ -125,7 +125,7 @@ fn test_take_primitive_rejected() {
 }
 
 #[test]
-fn test_dereference_outside_unsafe_rejected() {
+fn test_dereference_outside_unsafe_rejected() { 
     let source = "
         func main() {
             mut val := 42;
@@ -136,11 +136,14 @@ fn test_dereference_outside_unsafe_rejected() {
     let res = check_program(source);
     assert!(res.is_err());
     let err = res.unwrap_err();
-    assert_eq!(err.kind, TypeErrorKind::UnsafeProhibited);
+    assert_eq!(err.kind, TypeErrorKind::UnsafeProhibited); 
     assert!(
         err.message
             .contains("strictly prohibited outside 'unsafe' blocks")
     );
+    let span = err.span.expect("Expected a span for unsafe dereference");
+    assert_eq!(span.start.line, 5); 
+    assert_eq!(span.start.column, 26);
 }
 
 #[test]
