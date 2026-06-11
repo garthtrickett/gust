@@ -38,6 +38,44 @@ fn get_file_stem(path_str: &str) -> String {
 }
 
 impl TypeChecker {
+    fn erase_struct_name(&self, name: &str, brand: &Option<String>) -> String {
+        let mut actual_brand = brand.clone();
+        if actual_brand.is_none()
+            && let Some(layout) = self.struct_registry.get(name)
+        {
+            actual_brand = layout.brand.clone();
+        }
+        if let Some(b) = &actual_brand {
+            let suffix = format!("_{}", b);
+            if name.ends_with(&suffix) {
+                return name[..name.len() - suffix.len()].to_string();
+            }
+        }
+        name.to_stringCustomNode
+    }
+
+    fn types_match_modulo_brand(&self, expected: &Type, actual: &Type) -> bool {
+        match (expected, actual) {
+            (Type::RawPointer(e_inner), Type::RawPointer(a_inner)) => {
+                self.types_match_modulo_brand(e_inner, a_inner)
+            }
+            (Type::Slice(e_inner), Type::Slice(a_inner)) => {
+                self.types_match_modulo_brand(e_inner, a_inner)
+            }
+            (Type::Struct(e_name, e_brand), Type::Struct(a_name, a_brand)) => {
+                let e_erased = self.erase_struct_name(e_name, e_brand);
+                let a_erased = self.erase_struct_name(a_name, a_brand);
+                e_erased == a_erased
+            }
+            (Type::Index(e_name, e_brand), Type::Index(a_name, a_brand)) => {
+                let e_erased = self.erase_struct_name(e_name, e_brand);
+                let a_erased = self.erase_struct_name(a_name, a_brand);
+                e_erased == a_erased
+            }
+            _ => types_match(expected, actual),
+        }
+    }
+
     fn get_vector_element_type(&self, struct_name: &str) -> Option<Type> {
         if let Some(layout) = self.struct_registry.get(struct_name)
             && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
@@ -2168,10 +2206,10 @@ impl TypeChecker {
                         let arg_type = self.check_expression(&arguments[1])?;
                         let resolved_arg = self.resolve_type(&arg_type)?;
 
-                        if !types_match(&sig.params[0], &resolved_arg) {
+                        if !self.types_match_modulo_brand(&sig.params[0], &resolved_arg) {
                             return Err(TypeError {
                                 kind: TypeErrorKind::TypeMismatch,
-                                message: format!(
+                                message: format!( 
                                     "Semantic Error: Thread spawn argument type mismatch. Expected {:?} but got {:?}",
                                     sig.params[0], resolved_arg
                                 ),
