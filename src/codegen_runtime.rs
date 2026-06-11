@@ -177,6 +177,40 @@ unsigned char std_str_byte_at(Slice_unsigned_char s, int idx) {
     return s.data[idx];
 }
 
+unsigned char std_is_alpha(unsigned char b) {
+    return ((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || b == '_') ? 1 : 0;
+}
+
+unsigned char std_is_digit(unsigned char b) {
+    return (b >= '0' && b <= '9') ? 1 : 0;
+}
+
+unsigned char std_is_whitespace(unsigned char b) {
+    return (b == ' ' || b == '\t' || b == '\n' || b == '\r') ? 1 : 0;
+}
+
+int std_parse_int(Slice_unsigned_char s) {
+    if (s.len <= 0) return 0;
+    int index = 0;
+    int sign = 1;
+    if (s.data[0] == '-') {
+        sign = -1;
+        index = 1;
+    } else if (s.data[0] == '+') {
+        index = 1;
+    }
+    int result = 0;
+    for (; index < s.len; index++) {
+        unsigned char c = s.data[index];
+        if (c >= '0' && c <= '9') {
+            result = result * 10 + (c - '0');
+        } else {
+            break;
+        }
+    }
+    return result * sign;
+}
+
 "#;
 
 pub const FILE_IO_RUNTIME: &str = r#"// ====================================================

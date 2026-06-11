@@ -514,6 +514,14 @@ impl Codegen {
                 || func_name == "std_str_byte_at"
                 || func_name == "std.Spawn"
                 || func_name == "std_Spawn"
+                || func_name == "std.is_alpha"
+                || func_name == "std_is_alpha"
+                || func_name == "std.is_digit"
+                || func_name == "std_is_digit"
+                || func_name == "std.is_whitespace"
+                || func_name == "std_is_whitespace"
+                || func_name == "std.parse_int"
+                || func_name == "std_parse_int"
             {
                 continue;
             }
