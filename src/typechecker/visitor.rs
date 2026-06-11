@@ -584,8 +584,7 @@ impl TypeChecker {
                 let val_type = if let Some(val_expr) = value {
                     let mut t = self.check_expression(val_expr)?;
                     t = self.resolve_type(&t)?;
-                    t = self.resolve_type_namespacing(&t)?;
-
+                    t = self.resolve_type_namespacing(&t);
                     let mut origs = if is_ephemeral_view(&t) {
                         self.get_expression_origins(val_expr)
                     } else {

@@ -19,6 +19,7 @@ impl FileSystem for RealFileSystem {
     }
 }
 
+#[derive(Debug)]
 pub struct Module {
     pub path: PathBuf,
     pub program: Program,
@@ -26,6 +27,7 @@ pub struct Module {
     pub dependencies: Vec<Dependency>,
 }
 
+#[derive(Debug)]
 pub struct Dependency {
     pub path: PathBuf,
     pub alias: Option<String>,

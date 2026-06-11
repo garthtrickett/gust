@@ -90,6 +90,28 @@ fn get_by_value_dependencies(
 }
 
 impl Codegen {
+    pub fn get_c_type(&self, t: &Type) -> String {
+        let erased_t = erase_type_with_registry(t, &self.struct_registry);
+        match erased_t {
+            Type::Int => "int".to_string(),
+            Type::Byte => "unsigned char".to_string(),
+            Type::Bool => "unsigned char".to_string(),
+            Type::Void => "void".to_string(),
+            Type::Arena => "os_Arena".to_string(),
+            Type::ByteSlice => "Slice_unsigned_char".to_string(),
+            Type::Slice(inner) => format!("Slice_{}", self.get_c_type_ident(&inner)),
+            Type::Index(_, _) => "int".to_string(),
+            Type::Struct(name, _) => name.clone(),
+            Type::RawPointer(inner) => format!("{}*", self.get_c_type(&inner)),
+            Type::Generic(name, args) => self.get_monomorphized_name(&name, &args),
+            Type::Str => "Slice_unsigned_char".to_string(),
+        }
+    }
+
+    pub fn get_c_type_ident(&self, t: &Type) -> String {
+        self.get_c_type(t).replace(" ", "_").replace("*", "_ptr")
+    }
+
     pub(crate) fn get_monomorphized_name(&self, template_name: &str, args: &[Type]) -> String {
         let arg_names: Vec<String> = args.iter().map(|arg| self.get_type_ident(arg)).collect();
         let name = format!("{}_{}", template_name, arg_names.join("_"));
@@ -129,7 +151,6 @@ impl Codegen {
                 let concrete_name = self.get_monomorphized_name(&name, &args);
                 self.gen_type_aware_initializer(&Type::Struct(concrete_name, None))
             }
-            _ => "0".to_string(),
         }
     }
 
@@ -164,7 +185,6 @@ impl Codegen {
                     true // Conservative fallback
                 }
             }
-            _ => false,
         }
     }
 
