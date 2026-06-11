@@ -27,7 +27,6 @@ fn main() {
         "gust_output.c"
     };
 
-    match fs::read_to_string(input_filename) {
     println!("Compiling Gust program '{}'...", input_filename);
     run_compile_pass_file(input_filename, output_filename);
 }
@@ -149,7 +148,9 @@ fn run_compile_pass(source_code: &str, output_filename: &str) {
                 checker.variable_types,
                 checker.struct_registry,
                 checker.function_registry,
-                checker.enum_registry, // Passed enum registry
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
             );
             let c_output = codegen.generate(&program);
 

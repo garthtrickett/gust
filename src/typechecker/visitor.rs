@@ -640,7 +640,6 @@ impl TypeChecker {
                     self.symbol_table.insert(name.clone(), val_type.clone());
                     self.variable_types.insert(name.clone(), val_type);
                 }
-            }
 
                 if let Some(ref mut local_vars) = self.current_function_local_vars {
                     local_vars.insert(name.clone());

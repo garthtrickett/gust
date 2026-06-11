@@ -494,6 +494,8 @@ fn test_lookup_result_c_codegen_emission() {
         checker.struct_registry,
         checker.function_registry,
         checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
     );
     let c_output = codegen.generate(&program);
 
@@ -621,6 +623,8 @@ fn test_codegen_synthesized_is_valid() {
         checker.struct_registry,
         checker.function_registry,
         checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
     );
     let c_output = codegen.generate(&program);
 
@@ -1109,6 +1113,8 @@ fn test_monomorphized_pod_move_generates_no_cleanup() {
         checker.struct_registry,
         checker.function_registry,
         checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
     );
     let c_code = codegen.generate(&program);
 
@@ -1138,6 +1144,8 @@ fn test_monomorphized_linear_move_generates_cleanup() {
         checker.struct_registry,
         checker.function_registry,
         checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
     );
     let c_code = codegen.generate(&program);
 
@@ -1365,6 +1373,8 @@ fn test_monomorphized_take_codegen() {
         checker.struct_registry,
         checker.function_registry,
         checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
     );
     let c_code = codegen.generate(&program);
 
@@ -1396,6 +1406,8 @@ fn test_sentinel_null_codegen_structure() {
         checker.struct_registry,
         checker.function_registry,
         checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
     );
     let init_str = codegen.gen_type_aware_initializer(&Type::Struct("Node".to_string(), None));
     
@@ -1429,6 +1441,8 @@ fn test_type_aware_vardecl_codegen_structure() {
         checker.struct_registry,
         checker.function_registry,
         checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
     );
     let c_code = codegen.generate(&program);
 

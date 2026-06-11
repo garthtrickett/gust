@@ -29,6 +29,8 @@ fn run_e2e_test(source: &str, expected_output: &str) {
         checker.struct_registry,
         checker.function_registry,
         checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
     );
     let c_code = codegen.generate(&program);
 

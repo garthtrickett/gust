@@ -10,6 +10,10 @@ pub use types::{
 use std::collections::{HashMap, HashSet};
 
 pub struct TypeChecker {
+    pub current_prefix: String,
+    pub imports: HashMap<String, String>,
+    pub resolved_names: HashMap<crate::token::Span, String>,
+    pub resolved_types: HashMap<crate::token::Span, Type>,
     pub(crate) symbol_table: HashMap<String, Type>,
     pub variable_types: HashMap<String, Type>,
     pub(crate) moved_vars: HashSet<String>,
@@ -30,6 +34,50 @@ impl Default for TypeChecker {
     fn default() -> Self {
         Self::new()
     }
+}
+
+impl TypeChecker {
+    pub(crate) fn resolve_type_namespacing(&self, t: &Type) -> Type { 
+        match t {
+            Type::Struct(name, brand) => {
+                let resolved_name = self.resolve_namespaced_ident(name);
+                Type::Struct(resolved_name, brand.clone())
+            }
+            Type::Index(name, brand) => {
+                let resolved_name = self.resolve_namespaced_ident(name);
+                Type::Index(resolved_name, brand.clone())
+            }
+            Type::RawPointer(inner) => {
+                Type::RawPointer(Box::new(self.resolve_type_namespacing(inner)))
+            }
+            Type::Slice(inner) => {
+                Type::Slice(Box::new(self.resolve_type_namespacing(inner)))
+            }
+            Type::Generic(name, args) => {
+                let resolved_name = self.resolve_namespaced_ident(name);
+                let resolved_args = args.iter().map(|arg| self.resolve_type_namespacing(arg)).collect();
+                Type::Generic(resolved_name, resolved_args)
+            }
+            _ => t.clone(),
+        }
+    }
+
+    pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> String { 
+        if name == "int" || name == "byte" || name == "bool" || name == "str" || name == "Arena" || name == "os_Arena" || name == "os.Arena" || name == "void" || name == "Any" {
+            return name.to_string();
+        }
+        if let Some(pos) = name.find('.') {
+            let alias = &name[..pos];
+            let rest = &name[pos+1..];
+            if let Some(prefix) = self.imports.get(alias) { 
+                return format!("{}{}", prefix, rest);
+            }
+        }
+        if name.contains("__") { 
+            return name.to_string();
+        }
+        format!("{}{}", self.current_prefix, name)
+    } 
 }
 
 impl TypeChecker {
@@ -394,8 +442,6 @@ impl TypeChecker {
         );
 
         TypeChecker {
-            current_prefix: "".to_string(),
-            imports: HashMap::new(),
             current_prefix: "".to_string(),
             imports: HashMap::new(),
             resolved_names: HashMap::new(),
