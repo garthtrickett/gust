@@ -365,6 +365,7 @@ impl TypeChecker {
         self.current_prefix = prefix.to_string();
         self.symbol_table.clear();
         self.variable_origins.clear();
+        self.all_variable_origins.clear();
         self.moved_vars.clear();
         self.checked_results.clear();
 
@@ -613,6 +614,8 @@ impl TypeChecker {
                     let mut param_origins = HashSet::new();
                     param_origins.insert(param.name.clone());
                     self.variable_origins
+                        .insert(param.name.clone(), param_origins.clone());
+                    self.all_variable_origins
                         .insert(param.name.clone(), param_origins);
                 }
 
@@ -686,13 +689,15 @@ impl TypeChecker {
                     if origs.is_empty() {
                         origs.insert(name.clone());
                     }
-                    self.variable_origins.insert(name.clone(), origs);
+                    self.variable_origins.insert(name.clone(), origs.clone());
+                    self.all_variable_origins.insert(name.clone(), origs);
                     t
                 } else {
-                    if let Some(explicit_t) = var_type {
+                    if let Some(explicit_t) = var_type { 
                         let mut origs = HashSet::new();
                         origs.insert(name.clone());
-                        self.variable_origins.insert(name.clone(), origs);
+                        self.variable_origins.insert(name.clone(), origs.clone());
+                        self.all_variable_origins.insert(name.clone(), origs);
                         let resolved = self.resolve_type(explicit_t)?;
                         
                         self.resolve_type_namespacing(&resolved)?
@@ -809,13 +814,19 @@ impl TypeChecker {
                         if origs.is_empty() {
                             origs.insert(root_name.clone());
                         }
-                        self.variable_origins.insert(root_name.clone(), origs);
+                        self.variable_origins.insert(root_name.clone(), origs.clone());
+                        self.all_variable_origins.insert(root_name.clone(), origs);
                     } else {
                         if !origs.is_empty() {
                             if let Some(existing) = self.variable_origins.get_mut(&root_name) {
-                                existing.extend(origs);
+                                existing.extend(origs.clone());
                             } else {
-                                self.variable_origins.insert(root_name.clone(), origs);
+                                self.variable_origins.insert(root_name.clone(), origs.clone());
+                            }
+                            if let Some(existing) = self.all_variable_origins.get_mut(&root_name) {
+                                existing.extend(origs.clone());
+                            } else {
+                                self.all_variable_origins.insert(root_name.clone(), origs);
                             }
                         }
                     }

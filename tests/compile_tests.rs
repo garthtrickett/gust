@@ -2129,14 +2129,15 @@ fn test_scratchpad_origin_propagation() {
     assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
 
     // Verify p and view are of type RawPointer(Byte)
-    let p_type = checker.symbol_table.get("p").cloned().unwrap();
+    let p_type = checker.variable_types.get("p").cloned().unwrap();
     assert!(matches!(p_type, Type::RawPointer(ref inner) if **inner == Type::Byte));
 
-    let view_type = checker.symbol_table.get("view").cloned().unwrap();
+    // Verify p and view are of type RawPointer(Byte)
+    let view_type = checker.variable_types.get("view").cloned().unwrap();
     assert!(matches!(view_type, Type::RawPointer(ref inner) if **inner == Type::Byte));
 
     // Verify origin propagation
-    let view_origins = checker.variable_origins.get("view").cloned().unwrap();
+    let view_origins = checker.all_variable_origins.get("view").cloned().unwrap();
     assert!(view_origins.contains("scratch"));
 }
 

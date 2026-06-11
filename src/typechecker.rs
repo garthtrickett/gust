@@ -22,6 +22,7 @@ pub struct TypeChecker {
     pub(crate) struct_templates: HashMap<String, StructTemplate>,
     pub enum_registry: HashMap<String, Vec<String>>, // Added Enum Registry
     pub variable_origins: HashMap<String, HashSet<String>>, // Upgraded to Set-Based Union Tracker
+    pub all_variable_origins: HashMap<String, HashSet<String>>,
     pub function_registry: HashMap<String, FunctionSignature>,     // Function Registry
     pub(crate) expected_return_type: Option<Type>,
     pub(crate) current_function_return_origins: Option<HashSet<String>>, // Track return statement origins
@@ -155,7 +156,8 @@ impl TypeChecker {
         self.symbol_table.insert(name.clone(), t.clone());
         let mut origins = HashSet::new();
         origins.insert(name.clone());
-        self.variable_origins.insert(name, origins);
+        self.variable_origins.insert(name.clone(), origins.clone());
+        self.all_variable_origins.insert(name, origins);
     }
 
     pub fn new() -> Self {
@@ -514,6 +516,7 @@ impl TypeChecker {
             struct_templates,
             enum_registry: HashMap::new(),
             variable_origins: HashMap::new(),
+            all_variable_origins: HashMap::new(),
             function_registry: HashMap::new(),
             expected_return_type: None,
             current_function_return_origins: None,
