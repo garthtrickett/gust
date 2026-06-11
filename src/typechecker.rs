@@ -4,7 +4,7 @@ pub mod visitor;
 
 pub use types::{
     FunctionSignature, StructLayout, StructTemplate, Type, TypeError, TypeErrorKind,
-    expression_to_string, types_match,
+    expression_to_string, types_match, format_diagnostic,
 };
 
 use std::collections::{HashMap, HashSet};

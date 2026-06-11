@@ -219,3 +219,38 @@ pub fn expression_to_string(expr: &Expression) -> String {
         Expression::Empty(target_type, _) => format!("empty[{:?}]", target_type),
     }
 }
+
+pub fn format_diagnostic(source: &str, error: &TypeError) -> String {
+    if let Some(span) = error.span {
+        let lines: Vec<&str> = source.lines().collect();
+        let line_idx = if span.start.line > 0 { span.start.line - 1 } else { 0 };
+        let line_content = if line_idx < lines.len() {
+            lines[line_idx]
+        } else {
+            ""
+        };
+
+        let start_col = span.start.column;
+        let end_col = if span.start.line == span.end.line {
+            span.end.column
+        } else {
+            line_content.len() + 1
+        };
+
+        let width = if end_col > start_col { end_col - start_col } else { 1 };
+        let padding = " ".repeat(if start_col > 1 { start_col - 1 } else { 0 });
+        let carets = "^".repeat(width);
+
+        let mut out = String::new();
+        out.push_str(&format!(
+            "[line {}:{}] input.gst: {:?}\n",
+            span.start.line, span.start.column, error.kind
+        ));
+        out.push_str(&format!("{:4} | {}\n", span.start.line, line_content));
+        out.push_str(&format!("     | {}{}\n", padding, carets));
+        out.push_str(&format!("Error: {}\n", error.message));
+        out
+    } else {
+        format!("Error [{:?}]: {}\n", error.kind, error.message)
+    }
+}

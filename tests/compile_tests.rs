@@ -1995,3 +1995,21 @@ fn test_rc_and_graph_type_checking_invalid() {
     assert_eq!(span3.start.line, 13);
     assert_eq!(span3.start.column, 31);
 }
+
+#[test]
+fn test_diagnostic_formatting_layout() {
+    let source = "func main() {\n    mut val := 42;\n    mut taken := take val;\n}";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    let diag = gust_lexer::typechecker::format_diagnostic(source, &err);
+    
+    // Assert diagnostic layout contains coordinate header
+    assert!(diag.contains("[line 3:18]"));
+    // Assert line number prefix
+    assert!(diag.contains("3 |     mut taken := take val;"));
+    // Assert caret line aligned to take val
+    assert!(diag.contains("     |                  ^^^^^^^^"));
+    // Assert error message
+    assert!(diag.contains("Error:"));
+}
