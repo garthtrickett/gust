@@ -2205,7 +2205,8 @@ fn test_directory_resource_safety_checks() {
     ";
     let res1 = check_program(source_use_after_ctx_move);
     assert!(res1.is_err());
-    assert_eq!(res1.unwrap_err().kind, TypeErrorKind::UseOfMovedVariable);
+    let err1 = res1.unwrap_err();
+    assert_eq!(err1.kind, TypeErrorKind::UseOfMovedVariable);
 
     let source_leak_directory = "
         func leak() {
@@ -2220,8 +2221,9 @@ fn test_directory_resource_safety_checks() {
     ";
     let res2 = check_program(source_leak_directory);
     assert!(res2.is_err());
-    assert_eq!(res2.unwrap_err().kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(res2.unwrap_err().message.contains("must be cleanly closed"));
+    let err2 = res2.unwrap_err();
+    assert_eq!(err2.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err2.message.contains("must be cleanly closed"));
 
     let source_move_open_directory = "
         func main() {
@@ -2237,8 +2239,9 @@ fn test_directory_resource_safety_checks() {
     ";
     let res3 = check_program(source_move_open_directory);
     assert!(res3.is_err());
-    assert_eq!(res3.unwrap_err().kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(res3.unwrap_err().message.contains("cannot be moved while open"));
+    let err3 = res3.unwrap_err();
+    assert_eq!(err3.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err3.message.contains("cannot be moved while open"));
 }
 
 #[test]
@@ -2256,7 +2259,8 @@ fn test_directory_invalid_namespace_or_field_access() {
     ";
     let res1 = check_program(source_invalid_field);
     assert!(res1.is_err());
-    assert_eq!(res1.unwrap_err().kind, TypeErrorKind::FieldNotFound);
+    let err1 = res1.unwrap_err();
+    assert_eq!(err1.kind, TypeErrorKind::FieldNotFound);
 
     let source_invalid_func = "
         func main() {
@@ -2267,7 +2271,8 @@ fn test_directory_invalid_namespace_or_field_access() {
     ";
     let res2 = check_program(source_invalid_func);
     assert!(res2.is_err());
-    assert_eq!(res2.unwrap_err().kind, TypeErrorKind::UndefinedFunction);
+    let err2 = res2.unwrap_err();
+    assert_eq!(err2.kind, TypeErrorKind::UndefinedFunction);
 }
 
 #[test]

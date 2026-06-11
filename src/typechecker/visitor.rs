@@ -989,11 +989,10 @@ impl TypeChecker {
                     self.variable_types.insert(name.clone(), val_type.clone());
                 }
 
-                if let Type::Struct(ref struct_name, _) = val_type {
-                    if struct_name.starts_with("os_Dir_") {
+                if let Type::Struct(ref struct_name, _) = val_type
+                    && struct_name.starts_with("os_Dir_") {
                         self.open_directories.insert(name.clone());
                     }
-                }
 
                 if let Some(ref mut local_vars) = self.current_function_local_vars {
                     local_vars.insert(name.clone());
@@ -1088,11 +1087,10 @@ impl TypeChecker {
                     }
                     self.moved_vars.remove(&root_name); // Re-initialized!
 
-                    if let Type::Struct(ref struct_name, _) = val_type {
-                        if struct_name.starts_with("os_Dir_") {
+                    if let Type::Struct(ref struct_name, _) = val_type
+                        && struct_name.starts_with("os_Dir_") {
                             self.open_directories.insert(root_name.clone());
                         }
-                    }
                 }
             }
             Statement::While {
@@ -2573,13 +2571,12 @@ impl TypeChecker {
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
-                    if let Type::Struct(name, _) = &arg_type {
-                        if name.starts_with("os_Dir_") {
+                    if let Type::Struct(name, _) = &arg_type
+                        && name.starts_with("os_Dir_") {
                             let arg_name = expression_to_string(&arguments[0]);
                             self.open_directories.remove(&arg_name);
                             return Ok(Type::Void);
                         }
-                    }
                     return Err(TypeError {
                         kind: TypeErrorKind::TypeMismatch,
                         message: format!( 
