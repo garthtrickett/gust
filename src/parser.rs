@@ -11,6 +11,7 @@ pub struct Parser {
     peek_token: Token,
     pushback_tokens: Vec<Token>,
     pub errors: Vec<TypeError>,
+    has_non_import_statement: bool,
 }
 
 impl Parser {
@@ -23,6 +24,7 @@ impl Parser {
             peek_token,
             pushback_tokens: Vec::new(),
             errors: Vec::new(),
+            has_non_import_statement: false,
         }
     }
 
@@ -118,24 +120,55 @@ impl Parser {
 
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.cur_token.token_type {
-            TokenType::Type => self.parse_struct_decl(),
-            TokenType::Func => self.parse_function_decl(),
-            TokenType::Mut => self.parse_var_decl(true),
-            TokenType::Defer => self.parse_defer_statement(),
-            TokenType::While => self.parse_while_statement(),
-            TokenType::If => self.parse_if_statement(),
-            TokenType::Unsafe => self.parse_unsafe_block(),
-            TokenType::Return => self.parse_return_statement(),
-            TokenType::Match => self.parse_match_statement(),
+            TokenType::Import => self.parse_import_statement(),
+            TokenType::Type => {
+                self.has_non_import_statement = true;
+                self.parse_struct_decl()
+            }
+            TokenType::Func => {
+                self.has_non_import_statement = true;
+                self.parse_function_decl()
+            }
+            TokenType::Mut => {
+                self.has_non_import_statement = true;
+                self.parse_var_decl(true)
+            }
+            TokenType::Defer => {
+                self.has_non_import_statement = true;
+                self.parse_defer_statement()
+            }
+            TokenType::While => {
+                self.has_non_import_statement = true;
+                self.parse_while_statement()
+            }
+            TokenType::If => {
+                self.has_non_import_statement = true;
+                self.parse_if_statement()
+            }
+            TokenType::Unsafe => {
+                self.has_non_import_statement = true;
+                self.parse_unsafe_block()
+            }
+            TokenType::Return => {
+                self.has_non_import_statement = true;
+                self.parse_return_statement()
+            }
+            TokenType::Match => {
+                self.has_non_import_statement = true;
+                self.parse_match_statement()
+            }
             TokenType::Ident if self.peek_token.token_type == TokenType::Assign => {
+                self.has_non_import_statement = true;
                 self.parse_var_decl(false)
             }
             TokenType::Ident if self.peek_token.token_type == TokenType::Colon => {
+                self.has_non_import_statement = true;
                 self.parse_var_decl(false)
             }
             _ => {
+                self.has_non_import_statement = true;
                 let expr = self.parse_expression(1)?;
-                if self.peek_token.token_type == TokenType::Eq {
+                if self.peek_token.token_type == TokenType::Eq { 
                     self.next_token();
                     self.next_token();
                     let value = self.parse_expression(1)?;
@@ -146,12 +179,47 @@ impl Parser {
                         value,
                         span: self.merge_spans(start_span, end_span),
                     })
-                } else {
+                } else { 
                     let span = expr.span();
                     Some(Statement::Expression(expr, span))
                 }
             }
         }
+    }
+
+    fn parse_import_statement(&mut self) -> Option<Statement> {
+        let start_span = self.cur_token.span;
+        
+        if self.has_non_import_statement {
+            self.error_at_current("Syntax Error: Imports must be at the beginning of the program".to_string());
+        }
+        
+        self.next_token(); // consume 'import'
+        
+        if self.cur_token.token_type != TokenType::String {
+            self.error_at_current("Expected string literal specifying the import path".to_string());
+            return None;
+        }
+        let path = self.cur_token.literal.clone();
+        self.next_token(); // consume path string
+        
+        let mut alias = None;
+        if self.cur_token.token_type == TokenType::As {
+            self.next_token(); // consume 'as'
+            if self.cur_token.token_type != TokenType::Ident {
+                self.error_at_current("Expected identifier alias after 'as'".to_string());
+                return None;
+            }
+            alias = Some(self.cur_token.literal.clone());
+            self.next_token(); // consume alias identifier
+        }
+        
+        let end_span = self.cur_token.span;
+        Some(Statement::Import {
+            path,
+            alias,
+            span: self.merge_spans(start_span, end_span),
+        })
     }
 
     fn parse_struct_decl(&mut self) -> Option<Statement> {
@@ -1261,6 +1329,42 @@ mod tests {
             has_unclosed_error,
             "Expected error about missing closing brace '}}'"
         );
+    }
+
+    #[test]
+    fn test_parse_imports_valid() {
+        let input = "import \"std\" as standard; import \"os\"; func main() {}";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+
+        assert_eq!(parser.errors.len(), 0);
+        assert_eq!(program.statements.len(), 3);
+
+        if let Statement::Import { path, alias, .. } = &program.statements[0] {
+            assert_eq!(path, "std");
+            assert_eq!(alias.as_deref(), Some("standard"));
+        } else { 
+            panic!("Expected first statement to be import");
+        }
+
+        if let Statement::Import { path, alias, .. } = &program.statements[1] {
+            assert_eq!(path, "os");
+            assert_eq!(alias, &None);
+        } else { 
+            panic!("Expected second statement to be import");
+        }
+    }
+
+    #[test]
+    fn test_parse_imports_misplaced() {
+        let input = "func main() {} import \"std\";";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let _program = parser.parse_program();
+
+        assert_eq!(parser.errors.len(), 1);
+        assert!(parser.errors[0].message.contains("Imports must be at the beginning of the program"));
     }
 }
 

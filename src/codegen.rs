@@ -577,6 +577,7 @@ impl Codegen {
     fn gen_statement(&self, stmt: &Statement) -> String {
         let mut result = String::new();
         match stmt {
+            Statement::Import { .. } => {}
             Statement::StructDecl { .. } => {}
             Statement::EnumDecl { .. } => {}
             Statement::FunctionDecl {

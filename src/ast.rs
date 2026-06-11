@@ -37,6 +37,11 @@ pub struct MatchCase {
 
 #[derive(Debug, Clone)]
 pub enum Statement {
+    Import {
+        path: String,
+        alias: Option<String>,
+        span: Span,
+    },
     StructDecl {
         name: String,
         generics: Vec<String>,
@@ -145,6 +150,7 @@ pub enum Expression {
 impl Statement {
     pub fn span(&self) -> Span {
         match self {
+            Statement::Import { span, .. } => *span,
             Statement::StructDecl { span, .. } => *span,
             Statement::EnumDecl { span, .. } => *span,
             Statement::FunctionDecl { span, .. } => *span,

@@ -301,6 +301,7 @@ fn is_digit(ch: char) -> bool {
 
 fn lookup_ident(ident: &str) -> TokenType {
     match ident {
+        "import" => TokenType::Import,
         "mut" => TokenType::Mut,
         "func" => TokenType::Func,
         "defer" => TokenType::Defer,
@@ -429,6 +430,25 @@ mod tests {
 
         let tok_eof = l.next_token();
         assert_eq!(tok_eof.token_type, TokenType::Eof);
+    }
+
+    #[test]
+    fn test_import_lexing() {
+        let input = "import \"std\" as standard;";
+        let mut l = Lexer::new(input);
+        let expected = vec![
+            (TokenType::Import, "import"),
+            (TokenType::String, "std"),
+            (TokenType::As, "as"),
+            (TokenType::Ident, "standard"),
+            (TokenType::Semicolon, ";"),
+            (TokenType::Eof, ""),
+        ];
+        for (expected_type, expected_literal) in expected {
+            let tok = l.next_token();
+            assert_eq!(tok.token_type, expected_type);
+            assert_eq!(tok.literal, expected_literal);
+        }
     }
 
     #[test]

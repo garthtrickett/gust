@@ -430,6 +430,7 @@ impl TypeChecker {
 
     fn check_statement_internal(&mut self, stmt: &Statement) -> Result<(), TypeError> {
         match stmt {
+            Statement::Import { .. } => {}
             Statement::StructDecl { .. } => {}
             Statement::EnumDecl { .. } => {}
             Statement::FunctionDecl {
