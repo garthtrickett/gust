@@ -2,6 +2,7 @@ pub const CORE_HEADERS: &str = r#"#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <pthread.h>
 
 "#;
 
@@ -470,4 +471,97 @@ static inline void std_PoolFree_impl(void* pool_void, int index) {
 
 #define std_GraphGetNode(graph_ptr, index) \
     (&(graph_ptr)->nodes.data[index].value)
+
+// ====================================================
+// GUST POSIX THREAD CONCURRENCY RUNTIME (MUTEX & CHANNEL)
+// ====================================================
+#define MAX_MUTEXES 1024
+static pthread_mutex_t gust_mutex_pool[MAX_MUTEXES];
+static int gust_mutex_count = 0;
+static pthread_mutex_t gust_mutex_pool_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static inline int std_Mutex_Alloc() {
+    pthread_mutex_lock(&gust_mutex_pool_lock);
+    if (gust_mutex_count >= MAX_MUTEXES) {
+        printf("Out of system mutexes!\n");
+        exit(1);
+    }
+    int idx = gust_mutex_count++;
+    pthread_mutex_init(&gust_mutex_pool[idx], NULL);
+    pthread_mutex_unlock(&gust_mutex_pool_lock);
+    return idx;
+}
+
+static inline void* std_Mutex_Lock_impl(int lock_state, void* value_ptr) {
+    pthread_mutex_lock(&gust_mutex_pool[lock_state]);
+    return value_ptr;
+}
+
+static inline void std_Mutex_Unlock_impl(int lock_state) {
+    pthread_mutex_unlock(&gust_mutex_pool[lock_state]);
+}
+
+#define MAX_CHANNELS 256
+typedef struct {
+    pthread_mutex_t mutex;
+    pthread_cond_t cond_recv;
+    pthread_cond_t cond_send;
+    char* data;
+    int head;
+    int tail;
+    int count;
+    int capacity;
+    size_t elem_size;
+} gust_Channel_Internal;
+
+static gust_Channel_Internal gust_channel_pool[MAX_CHANNELS];
+static int gust_channel_count = 0;
+static pthread_mutex_t gust_channel_pool_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static inline int std_Channel_Alloc(int capacity, size_t elem_size) {
+    pthread_mutex_lock(&gust_channel_pool_lock);
+    if (gust_channel_count >= MAX_CHANNELS) {
+        printf("Out of system channels!\n");
+        exit(1);
+    }
+    int idx = gust_channel_count++;
+    gust_Channel_Internal* chan = &gust_channel_pool[idx];
+    pthread_mutex_init(&chan->mutex, NULL);
+    pthread_cond_init(&chan->cond_recv, NULL);
+    pthread_cond_init(&chan->cond_send, NULL);
+    chan->capacity = capacity > 0 ? capacity : 16;
+    chan->elem_size = elem_size;
+    chan->data = (char*)malloc(chan->capacity * elem_size);
+    chan->head = 0;
+    chan->tail = 0;
+    chan->count = 0;
+    pthread_mutex_unlock(&gust_channel_pool_lock);
+    return idx;
+}
+
+static inline void std_Channel_Send_impl(int chan_idx, void* val_ptr) {
+    gust_Channel_Internal* chan = &gust_channel_pool[chan_idx];
+    pthread_mutex_lock(&chan->mutex);
+    while (chan->count >= chan->capacity) {
+        pthread_cond_wait(&chan->cond_send, &chan->mutex);
+    }
+    memcpy(chan->data + chan->tail * chan->elem_size, val_ptr, chan->elem_size);
+    chan->tail = (chan->tail + 1) % chan->capacity;
+    chan->count++;
+    pthread_cond_signal(&chan->cond_recv);
+    pthread_mutex_unlock(&chan->mutex);
+}
+
+static inline void std_Channel_Recv_impl(int chan_idx, void* out_ptr) {
+    gust_Channel_Internal* chan = &gust_channel_pool[chan_idx];
+    pthread_mutex_lock(&chan->mutex);
+    while (chan->count <= 0) {
+        pthread_cond_wait(&chan->cond_recv, &chan->mutex);
+    }
+    memcpy(out_ptr, chan->data + chan->head * chan->elem_size, chan->elem_size);
+    chan->head = (chan->head + 1) % chan->capacity;
+    chan->count--;
+    pthread_cond_signal(&chan->cond_send);
+    pthread_mutex_unlock(&chan->mutex);
+}
 "#;
