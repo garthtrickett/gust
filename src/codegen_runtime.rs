@@ -485,6 +485,29 @@ static inline void os_HashMapClear_impl(void* map_void, size_t key_size, size_t 
 } while(0)
 
 #define os_VectorNew(arena_ptr) { NULL, 0, 0, (arena_ptr) }
+
+#define os_VectorPop(vec_ptr) \
+    ({ \
+        if ((vec_ptr)->len <= 0) { \
+            printf("Vector underflow on Pop at line %d\n", __LINE__); \
+            exit(1); \
+        } \
+        (vec_ptr)->len--; \
+        __typeof__(*(vec_ptr)->data) _val = (vec_ptr)->data[(vec_ptr)->len]; \
+        memset(&((vec_ptr)->data[(vec_ptr)->len]), 0, sizeof(*(vec_ptr)->data)); \
+        _val; \
+    })
+
+#define os_VectorClear(vec_ptr) do { (vec_ptr)->len = 0; } while(0)
+
+#define os_VectorBack(vec_ptr) \
+    ({ \
+        if ((vec_ptr)->len <= 0) { \
+            printf("Vector underflow on Back at line %d\n", __LINE__); \
+            exit(1); \
+        } \
+        &((vec_ptr)->data[(vec_ptr)->len - 1]); \
+    })
 #define os_HashMapNew(arena_ptr) { NULL, NULL, NULL, 0, 0, (arena_ptr) }
 
 typedef struct {
