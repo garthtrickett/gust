@@ -442,6 +442,21 @@ impl Codegen {
 
         c_code.push_str("    return dest_idx;\n");
         c_code.push_str("}\n\n");
+
+        c_code.push_str(&format!(
+            "void std_GenerationalArena_Step_{}(void* arena_ptr) {{\n",
+            struct_name
+        ));
+        c_code.push_str("    struct std_GenerationalArena_Generic* arena = (struct std_GenerationalArena_Generic*)arena_ptr;\n");
+        c_code.push_str("    if (arena->survivor != 0xFFFFFFFF) {\n");
+        c_code.push_str(&format!(
+            "        arena->survivor = std_GenerationalArena_Clone_{}(&arena->next_ctx, &arena->current_ctx, arena->survivor);\n",
+            struct_name
+        ));
+        c_code.push_str("    }\n");
+        c_code.push_str("    std_GenerationalSwap(&arena->current_ctx, &arena->next_ctx);\n");
+        c_code.push_str("}\n\n");
+
         c_code
     }
 
@@ -861,9 +876,18 @@ impl Codegen {
             c_code.push_str("// ====================================================\n");
             c_code.push_str("// GENERATIONAL ARENA CLONE HELPER FORWARD DECLARATIONS\n");
             c_code.push_str("// ====================================================\n");
+            c_code.push_str("struct std_GenerationalArena_Generic {\n");
+            c_code.push_str("    os_Arena current_ctx;\n");
+            c_code.push_str("    os_Arena next_ctx;\n");
+            c_code.push_str("    int survivor;\n");
+            c_code.push_str("};\n\n");
             for name in &ordered_helpers {
                 c_code.push_str(&format!(
                     "int std_GenerationalArena_Clone_{}(os_Arena* dest, os_Arena* src, int src_idx);\n",
+                    name
+                ));
+                c_code.push_str(&format!(
+                    "void std_GenerationalArena_Step_{}(void* arena_ptr);\n",
                     name
                 ));
             }
@@ -1967,6 +1991,7 @@ impl Codegen {
                     let mut is_pool = false;
                     let mut is_rc = false;
                     let mut is_graph = false;
+                    let mut is_gen_arena = false;
                     let left_type = self.get_expr_type(left).unwrap_or(Type::Void);
 
                     let mut is_mutex = false;
@@ -2000,6 +2025,10 @@ impl Codegen {
                             || struct_name.starts_with("std_Channel_")
                         {
                             is_channel = true;
+                        } else if struct_name.starts_with("std_GenerationalArena_")
+                            || struct_name.starts_with("GenerationalArena_")
+                        {
+                            is_gen_arena = true;
                         }
                     } else { 
                         let left_ident = expression_to_string(left);
@@ -2034,8 +2063,42 @@ impl Codegen {
                                 || struct_name.starts_with("std_Channel_")
                             {
                                 is_channel = true;
+                            } else if struct_name.starts_with("std_GenerationalArena_")
+                                || struct_name.starts_with("GenerationalArena_")
+                            {
+                                is_gen_arena = true;
                             }
                         }
+                    }
+
+                    if is_gen_arena && (right == "Step" || right == "step" || right == "Swap" || right == "swap") {
+                        let mut t_name = "Node".to_string();
+                        let opt_struct_name = if let Type::Struct(struct_name, _) = &left_type {
+                            Some(struct_name.clone())
+                        } else {
+                            let left_ident = expression_to_string(left);
+                            if let Some(Type::Struct(struct_name, _)) = 
+                                self.symbol_table.borrow().get(&left_ident)
+                            {
+                                Some(struct_name.clone())
+                            } else {
+                                None
+                            }
+                        };
+                        if let Some(struct_name) = opt_struct_name {
+                            if struct_name.starts_with("std_GenerationalArena_") {
+                                let suffix = &struct_name["std_GenerationalArena_".len()..];
+                                if let Some(pos) = suffix.rfind('_') {
+                                    t_name = suffix[..pos].to_string();
+                                } 
+                            } else if struct_name.starts_with("GenerationalArena_") {
+                                let suffix = &struct_name["GenerationalArena_".len()..];
+                                if let Some(pos) = suffix.rfind('_') {
+                                    t_name = suffix[..pos].to_string();
+                                } 
+                            }
+                        }
+                        return format!("std_GenerationalArena_Step_{}(&{})", t_name, left_str);
                     }
 
                     if is_mutex && right == "Lock" {
