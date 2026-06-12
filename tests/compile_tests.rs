@@ -2779,6 +2779,54 @@ fn test_namespaced_cross_module_typechecking_valid() {
 }
 
 #[test]
+fn test_format_typecheck_valid() {
+    let source = "
+        func main() {
+            mut name := \"world\";
+            mut s := std.Format(\"Hello %s, your id is %d\", name, 42);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_format_non_literal_rejected() {
+    let source = "
+        func main() {
+            mut template := \"Hello %d\";
+            mut s := std.Format(template, 42); 
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    assert_eq!(res.unwrap_err().kind, TypeErrorKind::TypeMismatch);
+}
+
+#[test]
+fn test_format_argument_count_mismatch() {
+    let source = "
+        func main() {
+            mut s := std.Format(\"Hello %d %s\", 42); 
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    assert_eq!(res.unwrap_err().kind, TypeErrorKind::ArgumentMismatch);
+}
+
+#[test]
+fn test_format_argument_type_mismatch() {
+    let source = "
+        func main() {
+            mut s := std.Format(\"Hello %s\", 42); 
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    assert_eq!(res.unwrap_err().kind, TypeErrorKind::TypeMismatch);
+}
+
+#[test]
 fn test_namespaced_cross_module_typechecking_invalid_alias() {
     use std::fs;
     let temp_dir = std::env::temp_dir().join("gust_test_namespaced_invalid");

@@ -434,6 +434,33 @@ impl TypeChecker {
         );
 
         self.function_registry.insert(
+            "std.Format".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["template".to_string()],
+                params: vec![Type::Str],
+                return_type: Type::Str,
+                return_origins: {
+                    let mut s = std::collections::HashSet::new();
+                    s.insert("scratch".to_string());
+                    s
+                },
+            },
+        );
+        self.function_registry.insert(
+            "std_Format".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["template".to_string()],
+                params: vec![Type::Str],
+                return_type: Type::Str,
+                return_origins: {
+                    let mut s = std::collections::HashSet::new();
+                    s.insert("scratch".to_string());
+                    s
+                },
+            },
+        );
+
+        self.function_registry.insert(
             "std.str_slice".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["s".to_string(), "start".to_string(), "end".to_string()],
@@ -1577,6 +1604,7 @@ impl TypeChecker {
                 if func_path == "os.ScratchAlloc" || func_path == "os_ScratchAlloc"
                     || func_path == "std.FormatInt" || func_path == "std_FormatInt"
                     || func_path == "std.Concat" || func_path == "std_Concat"
+                    || func_path == "std.Format" || func_path == "std_Format"
                 {
                     let mut call_origins = HashSet::new();
                     call_origins.insert("scratch".to_string());
@@ -2231,6 +2259,100 @@ impl TypeChecker {
             } => {
                 let raw_func_path = expression_to_string(function);
                 let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or_else(|_| raw_func_path.clone());
+
+                if func_path == "std.Format" || func_path == "std_Format" {
+                    self.resolved_names.insert(function.span(), func_path.clone());
+                    if arguments.is_empty() {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: std.Format expects at least 1 argument (the format string literal)".to_string(),
+                            span: Some(function.span()),
+                        });
+                    }
+
+                    let format_str = match &arguments[0] {
+                        Expression::String(s, _) => s.clone(),
+                        _ => {
+                            return Err(TypeError {
+                                kind: TypeErrorKind::TypeMismatch,
+                                message: "Semantic Error: First argument to std.Format must be a string literal".to_string(),
+                                span: Some(arguments[0].span()),
+                            });
+                        }
+                    };
+
+                    let mut specifier_types = Vec::new();
+                    let chars: Vec<char> = format_str.chars().collect();
+                    let mut i = 0;
+                    while i < chars.len() {
+                        if chars[i] == '%' && i + 1 < chars.len() {
+                            let next_char = chars[i + 1];
+                            if next_char == '%' {
+                                i += 2;
+                                continue;
+                            } else if next_char == 's' {
+                                specifier_types.push(Type::Str);
+                                i += 2;
+                            } else if next_char == 'd' {
+                                specifier_types.push(Type::Int);
+                                i += 2;
+                            } else {
+                                i += 1;
+                            }
+                        } else {
+                            i += 1;
+                        }
+                    }
+
+                    let expected_count = specifier_types.len();
+                    let trailing_args_count = arguments.len() - 1;
+                    if trailing_args_count != expected_count {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: format!(
+                                "Semantic Error: std.Format template expected {} arguments, but got {}",
+                                expected_count, trailing_args_count
+                            ),
+                            span: Some(function.span()),
+                        });
+                    }
+
+                    for (idx, expected_t) in specifier_types.iter().enumerate() {
+                        let arg_idx = idx + 1;
+                        let arg_type = self.check_expression(&arguments[arg_idx])?;
+                        let resolved_arg = self.resolve_type(&arg_type)?;
+
+                        if *expected_t == Type::Str { 
+                            if resolved_arg != Type::Str {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Semantic Error: std.Format argument {} expected Str, but got {:?}",
+                                        arg_idx, resolved_arg
+                                    ),
+                                    span: Some(arguments[arg_idx].span()),
+                                });
+                            }
+                        } else if *expected_t == Type::Int {
+                            let is_compatible = resolved_arg == Type::Int
+                                || resolved_arg == Type::Byte
+                                || resolved_arg == Type::Bool
+                                || matches!(resolved_arg, Type::Index(_, _));
+                            if !is_compatible {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::TypeMismatch,
+                                    message: format!(
+                                        "Semantic Error: std.Format argument {} expected Int, Byte, Bool, or Index, but got {:?}",
+                                        arg_idx, resolved_arg
+                                    ),
+                                    span: Some(arguments[arg_idx].span()),
+                                });
+                            }
+                        }
+                    }
+
+                    return Ok(Type::Str);
+                }
 
                 if func_path == "len" {
                     if arguments.len() != 1 {
