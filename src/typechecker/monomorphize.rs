@@ -433,6 +433,22 @@ impl TypeChecker {
                             && let Some(layout) = self.struct_registry.get(struct_name)
                             && layout.fields.len() > 2
                         { 
+                            eprintln!("====================================================");
+                            eprintln!("❌ LARGE ENUM VARIANT PAYLOAD DIAGNOSTIC DETECTED");
+                            eprintln!("====================================================");
+                            eprintln!("Concrete Enum Name:  {}", concrete_name);
+                            eprintln!("Variant Name:       {}", variant.name);
+                            eprintln!("Payload Struct:     {}", struct_name);
+                            eprintln!("Total Fields Count: {}", layout.fields.len());
+                            eprintln!("----------------------------------------------------");
+                            eprintln!("Registered Fields:");
+                            let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
+                            sorted_fields.sort_by(|a, b| a.0.cmp(b.0));
+                            for (f_name, f_type) in sorted_fields {
+                                eprintln!("  - {}: {:?}", f_name, f_type);
+                            }
+                            eprintln!("====================================================");
+
                             self.current_prefix = old_prefix;
                             return Err(TypeError {
                                 kind: TypeErrorKind::LargeEnumVariantPayload,
