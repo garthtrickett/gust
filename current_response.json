@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve variable collision by renaming main wrapper parameter to _gust_arg",
+  "summary": "fix: resolve C compiler warning/error on early return inside main by returning void",
   "files": [
     {
       "file_path": "src/codegen.rs",
-      "code_diff": "<<<<<<< SEARCH\n                if name == \"main\" {\n                    *self.current_function.borrow_mut() = Some(\"main\".to_string());\n                    body_str.push_str(\"void gust_user_main(void* arg) {\\n\");\n                    body_str.push_str(&self.gen_block_statement(body));\n                    body_str.push_str(\"}\\n\\n\");\n                    body_str.push_str(\"int main(int argc, char** argv) {\\n\");\n=======\n                if name == \"main\" {\n                    *self.current_function.borrow_mut() = Some(\"main\".to_string());\n                    body_str.push_str(\"void gust_user_main(void* _gust_arg) {\\n\");\n                    body_str.push_str(&self.gen_block_statement(body));\n                    body_str.push_str(\"}\\n\\n\");\n                    body_str.push_str(\"int main(int argc, char** argv) {\\n\");\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n            Statement::Return(maybe_expr, _) => {\n                if let Some(expr) = maybe_expr {\n                    let expr_str = self.gen_expression(expr);\n                    result.push_str(&format!(\"    return {};\\n\", expr_str));\n                } else {\n                    let is_main = self.current_function.borrow().as_deref() == Some(\"main\");\n                    if is_main {\n                        result.push_str(\"    return 0;\\n\");\n                    } else {\n                        result.push_str(\"    return;\\n\");\n                    }\n                }\n            }\n=======\n            Statement::Return(maybe_expr, _) => {\n                if let Some(expr) = maybe_expr {\n                    let expr_str = self.gen_expression(expr);\n                    result.push_str(&format!(\"    return {};\\n\", expr_str));\n                } else {\n                    result.push_str(\"    return;\\n\");\n                }\n            }\n>>>>>>> REPLACE"
     }
   ]
 }

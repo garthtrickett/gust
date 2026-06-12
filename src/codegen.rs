@@ -1068,12 +1068,7 @@ impl Codegen {
                     let expr_str = self.gen_expression(expr);
                     result.push_str(&format!("    return {};\n", expr_str));
                 } else {
-                    let is_main = self.current_function.borrow().as_deref() == Some("main");
-                    if is_main {
-                        result.push_str("    return 0;\n");
-                    } else {
-                        result.push_str("    return;\n");
-                    }
+                    result.push_str("    return;\n");
                 }
             }
             Statement::Expression(expr, _) => {
