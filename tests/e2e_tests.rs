@@ -2945,3 +2945,86 @@ fn test_e2e_generational_arena_wrapper_migration() {
     ";
     run_e2e_test(source, "499500\n1998");
 }
+
+#[test]
+fn test_e2e_sanitizer_detection_of_corrupt_memory() {
+    if env::var("GUST_NO_SANITIZERS").is_ok() {
+        println!("Skipping test_e2e_sanitizer_detection_of_corrupt_memory because GUST_NO_SANITIZERS is set");
+        return;
+    }
+
+    let source = "
+        func main() {
+            mut val := 42;
+            mut ptr := &val;
+            unsafe {
+                *(ptr + 8) = 99; // Stack buffer overflow!
+            }
+        }
+    ";
+
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_result = checker.check_program(&program);
+    assert!(check_result.is_ok(), "Typechecking failed: {:?}", check_result.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&program);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_sanitizer_corrupt_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_sanitizer_corrupt_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+
+    let compile_res = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-fsanitize=address,undefined")
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile failed");
+    
+    if !compile_res.status.success() {
+        let _ = fs::remove_file(&c_path);
+        println!("Skipping test because compiler does not support sanitizers: {}", String::from_utf8_lossy(&compile_res.stderr));
+        return;
+    }
+
+    let run_res = Command::new(&bin_path).output().expect("Execution failed");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(!run_res.status.success(), "Expected sanitizer violation to cause crash, but binary exited successfully!");
+    
+    let stderr_str = String::from_utf8_lossy(&run_res.stderr);
+    let stdout_str = String::from_utf8_lossy(&run_res.stdout);
+    let combined = format!("{}\n{}", stdout_str, stderr_str);
+
+    assert!(
+        combined.contains("AddressSanitizer") || combined.contains("stack-buffer-overflow") || combined.contains("UndefinedBehaviorSanitizer"),
+        "Expected sanitizer error message, but got:\n{}",
+        combined
+    );
+}
