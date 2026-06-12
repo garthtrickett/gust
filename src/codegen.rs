@@ -1438,6 +1438,7 @@ impl Codegen {
                 }
 
                 if func_path == "std.Format" || func_path == "std_Format" {
+                    // Allocates from the dynamically registered active thread-local arena (via os_ScratchAlloc)
                     let format_str = match &arguments[0] {
                         Expression::String(s, _) => s.clone(),
                         _ => "".to_string(),
@@ -1518,6 +1519,7 @@ impl Codegen {
                 }
 
                 if func_path == "std.FormatInt" || func_path == "std_FormatInt" {
+                    // Allocates from the dynamically registered active thread-local arena (via os_ScratchAlloc)
                     let val_expr = self.gen_expression(&arguments[0]);
                     return format!(
                         "(({{ int _val = {}; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, \"%d\", _val); ((Slice_unsigned_char){{ (unsigned char*)_buf, _len }}); }}))",
@@ -1526,6 +1528,7 @@ impl Codegen {
                 }
 
                 if func_path == "std.Concat" || func_path == "std_Concat" {
+                    // Allocates from the dynamically registered active thread-local arena (via os_ScratchAlloc)
                     let s1_expr = self.gen_expression(&arguments[0]);
                     let s2_expr = self.gen_expression(&arguments[1]);
                     return format!(
