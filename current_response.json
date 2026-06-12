@@ -1,9 +1,0 @@
-{
-  "summary": "fix: escape curly brace in codegen function signature format string",
-  "files": [
-    {
-      "file_path": "src/codegen.rs",
-      "code_diff": "<<<<<<< SEARCH\n                } else {\n                    *self.current_function.borrow_mut() = Some(resolved_name.clone());\n                    body_str.push_str(&format!( \n                        \"{} {}({}) {\\n\",\n                        ret_str, resolved_name, param_list\n                    ));\n                    body_str.push_str(&self.gen_block_statement(body));\n                    body_str.push_str(\"}\\n\\n\");\n=======\n                } else {\n                    *self.current_function.borrow_mut() = Some(resolved_name.clone());\n                    body_str.push_str(&format!( \n                        \"{} {}({}) {{\\n\",\n                        ret_str, resolved_name, param_list\n                    ));\n                    body_str.push_str(&self.gen_block_statement(body));\n                    body_str.push_str(\"}\\n\\n\");\n>>>>>>> REPLACE"
-    }
-  ]
-}

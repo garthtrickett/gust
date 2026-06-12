@@ -1314,11 +1314,10 @@ impl Codegen {
                 let left_str = self.gen_expression(left);
 
                 let mut use_arrow = false;
-                if let Some(left_type) = self.get_expr_type(left) {
-                    if matches!(left_type, Type::RawPointer(_)) {
+                if let Some(left_type) = self.get_expr_type(left)
+                    && matches!(left_type, Type::RawPointer(_)) {
                         use_arrow = true;
                     }
-                }
                 if !use_arrow && matches!(**left, Expression::IndexAccess { .. }) {
                     if let Expression::IndexAccess { allocator, .. } = &**left
                         && let Expression::Identifier(name, _) = &**allocator
