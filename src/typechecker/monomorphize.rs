@@ -144,14 +144,50 @@ impl TypeChecker {
 
     pub(crate) fn get_type_brand(&self, t: &Type) -> Option<String> {
         match t {
-            Type::Index(_, Some(brand)) => Some(brand.clone()),
+            Type::Index(name, brand) => {
+                if let Some(b) = brand {
+                    Some(b.clone())
+                } else if name.ends_with("_ctx") {
+                    Some("ctx".to_string())
+                } else if name.ends_with("_connCtx") {
+                    Some("connCtx".to_string())
+                } else if name.ends_with("_arena") {
+                    Some("arena".to_string())
+                } else if name.ends_with("_a") {
+                    Some("a".to_string())
+                } else {
+                    None
+                }
+            }
             Type::Struct(name, brand) => {
                 if let Some(b) = brand {
                     Some(b.clone())
                 } else if let Some(layout) = self.struct_registry.get(name) {
-                    layout.brand.clone()
+                    if let Some(b) = &layout.brand {
+                        Some(b.clone())
+                    } else if name.ends_with("_ctx") {
+                        Some("ctx".to_string())
+                    } else if name.ends_with("_connCtx") {
+                        Some("connCtx".to_string())
+                    } else if name.ends_with("_arena") {
+                        Some("arena".to_string())
+                    } else if name.ends_with("_a") {
+                        Some("a".to_string())
+                    } else {
+                        None
+                    }
                 } else {
-                    None
+                    if name.ends_with("_ctx") {
+                        Some("ctx".to_string())
+                    } else if name.ends_with("_connCtx") {
+                        Some("connCtx".to_string())
+                    } else if name.ends_with("_arena") {
+                        Some("arena".to_string())
+                    } else if name.ends_with("_a") {
+                        Some("a".to_string())
+                    } else {
+                        None
+                    }
                 }
             }
             Type::RawPointer(inner) => self.get_type_brand(inner),
@@ -280,7 +316,7 @@ impl TypeChecker {
                 }
             }
             Type::Index(struct_name, Some(brand)) => {
-                if self.struct_templates.contains_key(struct_name) {
+                if self.struct_templates.contains_key(struct_name) || self.enum_templates.contains_key(struct_name) {
                     let args = vec![Type::Struct(brand.clone(), None)];
                     let monomorphized_struct = self.monomorphize(struct_name, &args)?;
                     if let Type::Struct(concrete_name, _) = monomorphized_struct {
@@ -338,7 +374,7 @@ impl TypeChecker {
 
             let mut brand = None;
             for (generic_name, arg) in template.generics.iter().zip(args.iter()) {
-                if (generic_name == "ctx" || generic_name == "connCtx")
+                if (generic_name == "ctx" || generic_name == "connCtx" || generic_name == "arena" || generic_name == "a")
                     && let Type::Struct(brand_name, _) = arg {
                         brand = Some(brand_name.clone());
                     }
@@ -473,7 +509,7 @@ impl TypeChecker {
 
         let mut brand = None;
         for (generic_name, arg) in template.generics.iter().zip(args.iter()) {
-            if (generic_name == "ctx" || generic_name == "connCtx")
+            if (generic_name == "ctx" || generic_name == "connCtx" || generic_name == "arena" || generic_name == "a")
                 && let Type::Struct(brand_name, _) = arg {
                     brand = Some(brand_name.clone());
                 }
