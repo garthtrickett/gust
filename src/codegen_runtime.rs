@@ -26,7 +26,33 @@ struct gust_Fiber {
     size_t stack_size;
     gust_FiberState state;
     gust_Fiber* parent;
+    gust_Fiber* next;
 };
+
+typedef struct {
+    int id;
+    pthread_t thread;
+    gust_Fiber* run_queue_head;
+    gust_Fiber* run_queue_tail;
+    pthread_mutex_t lock;
+    gust_Fiber* active_fiber;
+    gust_Fiber shard_fiber;
+} gust_SchedulerShard;
+
+#if defined(_MSC_VER)
+#define GUST_THREAD_LOCAL __declspec(thread)
+#elif defined(__GNUC__) || defined(__clang__)
+#define GUST_THREAD_LOCAL __thread
+#elif __STDC_VERSION__ >= 201112L
+#define GUST_THREAD_LOCAL _Thread_local
+#else
+#define GUST_THREAD_LOCAL
+#endif
+
+static GUST_THREAD_LOCAL gust_SchedulerShard* active_shard = NULL;
+static int gust_num_shards = 0;
+static gust_SchedulerShard* gust_shards = NULL;
+static volatile int gust_scheduler_running = 1;
 
 #if defined(__x86_64__)
 __attribute__((naked, noinline))
@@ -142,6 +168,7 @@ gust_Fiber* gust_fiber_create(size_t stack_size, void (*entry_fn)(void*), void* 
     }
     fiber->state = GUST_FIBER_READY;
     fiber->parent = NULL;
+    fiber->next = NULL;
     void* sp = (void*)(((uintptr_t)fiber->stack_base + stack_size) & ~15UL);
 
     #if defined(__x86_64__)
@@ -183,6 +210,149 @@ void gust_fiber_free(gust_Fiber* fiber) {
         }
         free(fiber);
     }
+}
+
+#include <poll.h>
+#include <unistd.h>
+
+void* gust_shard_loop(void* arg) {
+    gust_SchedulerShard* shard = (gust_SchedulerShard*)arg;
+    active_shard = shard;
+
+    int core_id = shard->id;
+#if defined(__linux__)
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_id, &cpuset);
+    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+#elif defined(__APPLE__)
+    #include <mach/thread_policy.h>
+    #include <mach/thread_act.h>
+    #include <mach/mach_init.h>
+    thread_affinity_policy_data_t policy = { core_id + 1 };
+    thread_policy_set(pthread_mach_thread_np(pthread_self()), THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, THREAD_AFFINITY_POLICY_COUNT);
+#endif
+
+    while (gust_scheduler_running) {
+        pthread_mutex_lock(&shard->lock);
+        gust_Fiber* next = shard->run_queue_head;
+        if (next) {
+            shard->run_queue_head = next->next;
+            if (!shard->run_queue_head) {
+                shard->run_queue_tail = NULL;
+            }
+            next->next = NULL;
+        }
+        pthread_mutex_unlock(&shard->lock);
+
+        if (next) {
+            next->parent = &shard->shard_fiber;
+            shard->active_fiber = next;
+            next->state = GUST_FIBER_RUNNING;
+
+            gust_fiber_switch(&shard->shard_fiber, next);
+
+            shard->active_fiber = NULL;
+            if (next->state == GUST_FIBER_DEAD) {
+                gust_fiber_free(next);
+            }
+        } else {
+            poll(NULL, 0, 1);
+        }
+    }
+    return NULL;
+}
+
+void gust_yield() {
+    gust_SchedulerShard* shard = active_shard;
+    if (!shard || !shard->active_fiber) {
+        sched_yield();
+        return;
+    }
+
+    gust_Fiber* current = shard->active_fiber;
+    current->state = GUST_FIBER_READY;
+
+    pthread_mutex_lock(&shard->lock);
+    if (shard->run_queue_tail) {
+        shard->run_queue_tail->next = current;
+        shard->run_queue_tail = current;
+    } else {
+        shard->run_queue_head = current;
+        shard->run_queue_tail = current;
+    }
+    pthread_mutex_unlock(&shard->lock);
+
+    gust_fiber_switch(current, &shard->shard_fiber);
+}
+
+void gust_scheduler_spawn(size_t stack_size, void (*entry_fn)(void*), void* arg) {
+    gust_Fiber* fiber = gust_fiber_create(stack_size, entry_fn, arg);
+    if (!fiber) return;
+
+    gust_SchedulerShard* target = NULL;
+    if (active_shard) {
+        target = active_shard;
+    } else if (gust_num_shards > 0 && gust_shards) {
+        target = &gust_shards[0];
+    }
+
+    if (target) {
+        pthread_mutex_lock(&target->lock);
+        fiber->state = GUST_FIBER_READY;
+        if (target->run_queue_tail) {
+            target->run_queue_tail->next = fiber;
+            target->run_queue_tail = fiber;
+        } else {
+            target->run_queue_head = fiber;
+            target->run_queue_tail = fiber;
+        }
+        pthread_mutex_unlock(&target->lock);
+    } else {
+        printf("Error: Scheduler not initialized before spawn!\n");
+        exit(1);
+    }
+}
+
+void gust_scheduler_init(int num_shards) {
+    if (num_shards <= 0) num_shards = 1;
+    gust_num_shards = num_shards;
+    gust_scheduler_running = 1;
+    gust_shards = (gust_SchedulerShard*)malloc(num_shards * sizeof(gust_SchedulerShard));
+
+    for (int i = 0; i < num_shards; i++) {
+        gust_shards[i].id = i;
+        gust_shards[i].run_queue_head = NULL;
+        gust_shards[i].run_queue_tail = NULL;
+        pthread_mutex_init(&gust_shards[i].lock, NULL);
+        gust_shards[i].active_fiber = NULL;
+        
+        gust_shards[i].shard_fiber.state = GUST_FIBER_RUNNING;
+        gust_shards[i].shard_fiber.stack_base = NULL;
+        gust_shards[i].shard_fiber.stack_size = 0;
+        gust_shards[i].shard_fiber.sp = NULL;
+        gust_shards[i].shard_fiber.parent = NULL;
+        gust_shards[i].shard_fiber.next = NULL;
+
+        pthread_create(&gust_shards[i].thread, NULL, gust_shard_loop, &gust_shards[i]);
+    }
+}
+
+void gust_scheduler_destroy() {
+    gust_scheduler_running = 0;
+    for (int i = 0; i < gust_num_shards; i++) {
+        pthread_join(gust_shards[i].thread, NULL);
+        pthread_mutex_destroy(&gust_shards[i].lock);
+        gust_Fiber* curr = gust_shards[i].run_queue_head;
+        while (curr) {
+            gust_Fiber* next = curr->next;
+            gust_fiber_free(curr);
+            curr = next;
+        }
+    }
+    free(gust_shards);
+    gust_shards = NULL;
+    gust_num_shards = 0;
 }
 
 #define GUST_FIBER_RUNTIME_DEFINED 1

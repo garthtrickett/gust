@@ -2189,7 +2189,7 @@ fn test_e2e_fiber_low_level_context_switch() {
 }
 
 #[test]
-fn test_e2e_fiber_register_preservation() {
+fn test_e2e_fiber_register_preservation() { 
     let mut c_program = String::new();
     c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
     c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
@@ -2197,6 +2197,7 @@ fn test_e2e_fiber_register_preservation() {
     c_program.push_str(r#"
         gust_Fiber* main_fiber = NULL;
         gust_Fiber* fiber1 = NULL;
+        pthread_t main_thread_id;
 
         void fiber1_entry(void* arg) {
             // Modifying callee-saved registers within fiber1 should not affect main_fiber's values
@@ -2231,6 +2232,7 @@ fn test_e2e_fiber_register_preservation() {
             main_fiber->stack_size = 0;
             main_fiber->sp = NULL;
             main_fiber->parent = NULL;
+            main_fiber->next = NULL;
 
             fiber1 = gust_fiber_create(16384, fiber1_entry, NULL);
             fiber1->parent = main_fiber;
@@ -2266,14 +2268,12 @@ fn test_e2e_fiber_register_preservation() {
             __asm__ volatile (
                 "movq %%rbx, %0\n\t"
                 "movq %%r12, %1\n\t"
-                :
                 : "=r"(out1), "=r"(out2)
             );
             #elif defined(__aarch64__)
             __asm__ volatile (
                 "mov %0, x19\n\t"
                 "mov %1, x20\n\t"
-                :
                 : "=r"(out1), "=r"(out2)
             );
             #endif
@@ -2328,4 +2328,186 @@ fn test_e2e_fiber_register_preservation() {
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).unwrap();
     assert!(stdout_str.contains("GUST_FIBER_REG_OK"), "Unexpected output: {}", stdout_str);
+}
+
+#[test]
+fn test_e2e_scheduler_affinity_binding() {
+    let mut c_program = String::new();
+    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+    
+    c_program.push_str(r#"
+        #include <assert.h>
+
+        void dummy_task(void* arg) {
+            // No-op
+        }
+
+        int main() {
+            gust_scheduler_init(2);
+            
+            usleep(20000);
+
+            #if defined(__linux__)
+            cpu_set_t cpuset;
+            for (int i = 0; i < 2; i++) {
+                CPU_ZERO(&cpuset);
+                int rc = pthread_getaffinity_np(gust_shards[i].thread, sizeof(cpu_set_t), &cpuset);
+                assert(rc == 0);
+                assert(CPU_ISSET(i, &cpuset));
+            }
+            #endif
+
+            gust_scheduler_spawn(16384, dummy_task, NULL);
+            
+            usleep(10000);
+
+            gust_scheduler_destroy();
+            printf("GUST_AFFINITY_OK\n");
+            return 0;
+        }
+    "#);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_affinity_test_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_affinity_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let compile_output = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = Command::new(&bin_path).output().expect("Execution failed");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert!(stdout_str.contains("GUST_AFFINITY_OK"), "Unexpected output: {}", stdout_str);
+}
+
+#[test]
+fn test_e2e_scheduler_yield() {
+    let mut c_program = String::new();
+    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+    
+    c_program.push_str(r#"
+        #include <assert.h>
+
+        int f1_step = 0;
+        int f2_step = 0;
+        int execution_order[4] = {0};
+        int order_idx = 0;
+        pthread_mutex_t order_lock = PTHREAD_MUTEX_INITIALIZER;
+
+        void f1_entry(void* arg) {
+            pthread_mutex_lock(&order_lock);
+            execution_order[order_idx++] = 1;
+            pthread_mutex_unlock(&order_lock);
+            f1_step++;
+
+            gust_yield();
+
+            pthread_mutex_lock(&order_lock);
+            execution_order[order_idx++] = 3;
+            pthread_mutex_unlock(&order_lock);
+            f1_step++;
+        }
+
+        void f2_entry(void* arg) {
+            pthread_mutex_lock(&order_lock);
+            execution_order[order_idx++] = 2;
+            pthread_mutex_unlock(&order_lock);
+            f2_step++;
+
+            gust_yield();
+
+            pthread_mutex_lock(&order_lock);
+            execution_order[order_idx++] = 4;
+            pthread_mutex_unlock(&order_lock);
+            f2_step++;
+        }
+
+        int main() {
+            gust_scheduler_init(1);
+
+            gust_scheduler_spawn(16384, f1_entry, NULL);
+            gust_scheduler_spawn(16384, f2_entry, NULL);
+
+            usleep(20000);
+
+            gust_scheduler_destroy();
+
+            if (f1_step != 2 || f2_step != 2) {
+                printf("Error: Expected steps (2, 2), got (%d, %d)\n", f1_step, f2_step);
+                return 1;
+            }
+
+            if (execution_order[0] != 1 || execution_order[1] != 2 ||
+                execution_order[2] != 3 || execution_order[3] != 4) {
+                printf("Error: Out of order interleaving: %d, %d, %d, %d\n",
+                       execution_order[0], execution_order[1], execution_order[2], execution_order[3]);
+                return 1;
+            }
+
+            printf("GUST_YIELD_OK\n");
+            return 0;
+        }
+    "#);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_yield_test_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_yield_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let compile_output = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = Command::new(&bin_path).output().expect("Execution failed");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert!(stdout_str.contains("GUST_YIELD_OK"), "Unexpected output: {}", stdout_str);
 }
