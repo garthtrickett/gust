@@ -2185,6 +2185,76 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_self_hosted_token_compilation() {
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/token_test_entry.gst");
+    
+    // Create compiler directory if it doesn't exist
+    std::fs::create_dir_all("compiler").unwrap();
+    
+    // Write a dummy entry file that imports the token.gst
+    let entry_source = "
+        import \"token.gst\" as token;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut t: token.Token[ctx];
+            t.token_type = token.TokenType.Ident;
+            t.literal = \"hello\";
+        }
+    ";
+    std::fs::write(&entry_path, entry_source).unwrap();
+    
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+    
+    let (order, mut modules) = res.unwrap();
+    
+    let mut checker = gust_lexer::typechecker::TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
+        }
+    }
+    
+    let mut unified_statements = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            unified_statements.append(&mut module.program.statements);
+        } 
+    }
+    
+    let program = gust_lexer::ast::Program {
+        statements: unified_statements,
+        span: gust_lexer::token::Span::dummy(),
+    };
+    
+    let codegen = gust_lexer::codegen::Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&program);
+    
+    // Verify TokenType is transpiled to a C enum/tags
+    assert!(c_output.contains("token__TokenType_Tag__Ident = 2"));
+    // Verify Token is transpiled to a C struct utilizing C-level string view components
+    assert!(c_output.contains("struct token__Token {"));
+    assert!(c_output.contains("Slice_unsigned_char literal;"));
+    
+    // Clean up temporary entry file
+    let _ = std::fs::remove_file(entry_path);
+}
+
+#[test]
 fn test_generational_arena_template_typechecking() {
     let source = "
         type Node struct {
