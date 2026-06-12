@@ -90,6 +90,19 @@ fn get_by_value_dependencies(
 }
 
 impl Codegen {
+    fn find_wrapper_type(&self, val_type: &Type) -> String {
+        for (struct_name, layout) in &self.struct_registry {
+            if let Some(ok_t) = layout.fields.get("Ok") {
+                if let Some(val_t) = layout.fields.get("Val") {
+                    if (*ok_t == Type::Int || *ok_t == Type::Bool) && self.get_c_type(val_t) == self.get_c_type(val_type) {
+                        return struct_name.clone();
+                    }
+                }
+            }
+        }
+        "LookupResult_int".to_string()
+    }
+
     pub fn get_c_type(&self, t: &Type) -> String {
         let erased_t = erase_type_with_registry(t, &self.struct_registry);
         match erased_t {
@@ -948,6 +961,31 @@ impl Codegen {
                     result.push_str(&self.gen_loop_body(alt_body));
                 }
                 result.push_str("    }\n");
+            }
+            Statement::Guard {
+                name,
+                is_mut: _,
+                value,
+                else_body,
+                span,
+            } => {
+                let val_type = self.symbol_table.borrow().get(name).cloned().unwrap_or(Type::Void);
+                let val_type_c = self.get_c_type(&val_type);
+                let wrapper_name = self.find_wrapper_type(&val_type);
+
+                let line = span.start.line;
+                let column = span.start.column;
+                let guard_res_name = format!("_guard_res_{}_{}_{}", name, line, column);
+
+                let val_expr_str = self.gen_expression(value);
+
+                result.push_str(&format!("    const {} {} = {};\n", wrapper_name, guard_res_name, val_expr_str));
+                result.push_str(&format!("    if (!{}.Ok) {{\n", guard_res_name));
+                for stmt in &else_body.statements {
+                    result.push_str(&format!("    {}", self.gen_statement(stmt).trim_start()));
+                }
+                result.push_str("    }\n");
+                result.push_str(&format!("    {} {} = {}.Val;\n", val_type_c, name, guard_res_name));
             }
             Statement::Match {
                 expression, cases, ..
