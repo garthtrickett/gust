@@ -57,8 +57,12 @@ fn run_e2e_test(source: &str, expected_output: &str) {
 
     // 3. Invoke a system C compiler to compile it
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let compile_output = Command::new(&cc_compiler)
-        .arg(&c_path)
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
         .output();
@@ -1696,8 +1700,12 @@ fn test_e2e_process_args_and_exit() {
 
     // 3. Invoke a system C compiler to compile it
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let compile_output = Command::new(&cc_compiler)
-        .arg(&c_path)
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
         .output();
