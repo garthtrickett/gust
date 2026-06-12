@@ -1,9 +1,9 @@
 {
-  "summary": "fix: prevent wildcard brand 'Any' from being treated as a variant suffix during brand erasure",
+  "summary": "refactor: simplify identical branches in monomorphize to resolve clippy warning",
   "files": [
     {
-      "file_path": "src/codegen.rs",
-      "code_diff": "<<<<<<< SEARCH\n    let mut erased = name.to_string();\n    let mut suffix = String::new();\n    if let Some(pos) = erased.rfind('_') {\n        let last_part = &erased[pos + 1..];\n        if !last_part.is_empty() && last_part.chars().next().unwrap().is_uppercase() {\n            suffix = erased[pos..].to_string();\n            erased = erased[..pos].to_string();\n        }\n    }\n=======\n    let mut erased = name.to_string();\n    let mut suffix = String::new();\n    if let Some(pos) = erased.rfind('_') {\n        let last_part = &erased[pos + 1..];\n        if !last_part.is_empty() \n            && last_part.chars().next().unwrap().is_uppercase() \n            && last_part != \"Any\" \n        {\n            suffix = erased[pos..].to_string();\n            erased = erased[..pos].to_string();\n        }\n    }\n>>>>>>> REPLACE"
+      "file_path": "src/typechecker/monomorphize.rs",
+      "code_diff": "<<<<<<< SEARCH\n                if let Some(brand_name) = brand {\n                    if self.struct_templates.contains_key(name) {\n                        let args = vec![Type::Struct(brand_name.clone(), None)];\n                        self.monomorphize(name, &args)\n                    } else if self.enum_templates.contains_key(name) {\n                        let args = vec![Type::Struct(brand_name.clone(), None)];\n                        self.monomorphize(name, &args)\n                    } else {\n                        Ok(t.clone())\n                    }\n                } else {\n                    Ok(t.clone())\n                }\n=======\n                if let Some(brand_name) = brand {\n                    if self.struct_templates.contains_key(name) || self.enum_templates.contains_key(name) {\n                        let args = vec![Type::Struct(brand_name.clone(), None)];\n                        self.monomorphize(name, &args)\n                    } else {\n                        Ok(t.clone())\n                    }\n                } else {\n                    Ok(t.clone())\n                }\n>>>>>>> REPLACE"
     }
   ]
 }

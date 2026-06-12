@@ -38,11 +38,10 @@ fn erase_struct_name_with_registry(
     registry: &HashMap<String, StructLayout>,
 ) -> String {
     let mut actual_brand = brand.clone();
-    if actual_brand.is_none() {
-        if let Some(layout) = registry.get(name) {
+    if actual_brand.is_none()
+        && let Some(layout) = registry.get(name) {
             actual_brand = layout.brand.clone();
         }
-    }
     if actual_brand.is_none() {
         actual_brand = extract_brand_from_name(name);
     }
@@ -846,7 +845,7 @@ impl Codegen {
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// INVARIANT VALIDATION HELPER FORWARD DECLARATIONS\n");
         c_code.push_str("// ====================================================\n");
-        for (struct_name, _) in &self.struct_registry {
+        for struct_name in self.struct_registry.keys() {
             if struct_name == "os_Dir"
                 || struct_name == "os_DirEntry"
                 || struct_name.starts_with("CastResult_")

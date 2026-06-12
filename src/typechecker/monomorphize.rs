@@ -302,10 +302,7 @@ impl TypeChecker {
                     }
 
                 if let Some(brand_name) = brand {
-                    if self.struct_templates.contains_key(name) {
-                        let args = vec![Type::Struct(brand_name.clone(), None)];
-                        self.monomorphize(name, &args)
-                    } else if self.enum_templates.contains_key(name) {
+                    if self.struct_templates.contains_key(name) || self.enum_templates.contains_key(name) {
                         let args = vec![Type::Struct(brand_name.clone(), None)];
                         self.monomorphize(name, &args)
                     } else {
