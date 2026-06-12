@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve C compiler warning/error on early return inside main by returning void",
+  "summary": "fix: allow move operator on function call results in typechecker",
   "files": [
     {
-      "file_path": "src/codegen.rs",
-      "code_diff": "<<<<<<< SEARCH\n            Statement::Return(maybe_expr, _) => {\n                if let Some(expr) = maybe_expr {\n                    let expr_str = self.gen_expression(expr);\n                    result.push_str(&format!(\"    return {};\\n\", expr_str));\n                } else {\n                    let is_main = self.current_function.borrow().as_deref() == Some(\"main\");\n                    if is_main {\n                        result.push_str(\"    return 0;\\n\");\n                    } else {\n                        result.push_str(\"    return;\\n\");\n                    }\n                }\n            }\n=======\n            Statement::Return(maybe_expr, _) => {\n                if let Some(expr) = maybe_expr {\n                    let expr_str = self.gen_expression(expr);\n                    result.push_str(&format!(\"    return {};\\n\", expr_str));\n                } else {\n                    result.push_str(\"    return;\\n\");\n                }\n            }\n>>>>>>> REPLACE"
+      "file_path": "src/typechecker/visitor.rs",
+      "code_diff": "<<<<<<< SEARCH\n                    let is_place = matches!(\n                        &**inner_expr,\n                        Expression::Selector { .. }\n                            | Expression::Dereference(..)\n                            | Expression::IndexAccess { .. }\n                            | Expression::AsCast { .. }\n                    );\n=======\n                    let is_place = matches!(\n                        &**inner_expr,\n                        Expression::Selector { .. }\n                            | Expression::Dereference(..)\n                            | Expression::IndexAccess { .. }\n                            | Expression::AsCast { .. }\n                            | Expression::Call { .. }\n                    );\n>>>>>>> REPLACE"
     }
   ]
 }

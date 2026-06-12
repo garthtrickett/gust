@@ -1994,6 +1994,7 @@ impl TypeChecker {
                             | Expression::Dereference(..)
                             | Expression::IndexAccess { .. }
                             | Expression::AsCast { .. }
+                            | Expression::Call { .. }
                     );
 
                     if is_place {
