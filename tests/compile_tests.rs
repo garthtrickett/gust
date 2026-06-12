@@ -2260,8 +2260,14 @@ fn test_self_hosted_token_compilation() {
             let stem = path.file_stem().unwrap().to_str().unwrap();
             let is_entry = path == order.last().unwrap();
             let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
-            let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
+            match checker.check_module(&module.program, &prefix) {
+                Ok(_) => {}
+                Err(err) => {
+                    let formatted = gust_lexer::typechecker::format_diagnostic(&module.source, &err);
+                    eprintln!("{}", formatted);
+                    panic!("Typechecking failed on {:?}", path);
+                }
+            }
         }
     }
     
