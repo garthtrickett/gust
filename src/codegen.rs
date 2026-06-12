@@ -50,7 +50,10 @@ fn erase_struct_name_with_registry(
     let mut suffix = String::new();
     if let Some(pos) = erased.rfind('_') {
         let last_part = &erased[pos + 1..];
-        if !last_part.is_empty() && last_part.chars().next().unwrap().is_uppercase() {
+        if !last_part.is_empty() 
+            && last_part.chars().next().unwrap().is_uppercase() 
+            && last_part != "Any" 
+        {
             suffix = erased[pos..].to_string();
             erased = erased[..pos].to_string();
         }
