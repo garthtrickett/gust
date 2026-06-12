@@ -403,6 +403,7 @@ impl Codegen {
         let mut c_code = String::new();
 
         c_code.push_str(codegen_runtime::CORE_HEADERS);
+        c_code.push_str(codegen_runtime::FIBER_RUNTIME);
         c_code.push_str(codegen_runtime::ARENA_RUNTIME);
         c_code.push_str(codegen_runtime::SCRATCH_RUNTIME);
 
