@@ -1677,8 +1677,13 @@ impl TypeChecker {
         match expr {
             Expression::Identifier(name, _) => {
                 if let Some(t) = self.symbol_table.get(name) {
-                    // Value-types do not borrow/carry origins
-                    if matches!(t, Type::Struct(_, None)) || *t == Type::Int || *t == Type::Byte || *t == Type::Bool {
+                    // Value-types (POD structs, primitive types) do not borrow/carry origins
+                    let is_pod_struct = if let Type::Struct(_, None) = t {
+                        !self.is_linear(t) && !self.contains_ephemeral_view(t)
+                    } else {
+                        false
+                    };
+                    if is_pod_struct || *t == Type::Int || *t == Type::Byte || *t == Type::Bool {
                         return HashSet::new();
                     }
                 }
