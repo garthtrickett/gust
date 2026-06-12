@@ -435,6 +435,50 @@ fn test_e2e_adt_match_evaluation() {
     run_e2e_test(source, "42\n30\n123");
 }
 
+#[test]
+fn test_e2e_adt_match_destructuring_evaluation() {
+    let source = "
+        type Shape enum {
+            Circle { radius: int },
+            Rectangle { width: int, height: int },
+            Point
+        }
+
+        func process(shape: Shape) int {
+            match shape {
+                Circle { radius } => {
+                    return radius;
+                }
+                Rectangle { width, height } => {
+                    return width + height;
+                }
+                Point => {
+                    return 123;
+                }
+            }
+        }
+
+        func main() {
+            mut s1: Shape;
+            s1.tag = 0;
+            s1.Circle.radius = 42;
+
+            mut s2: Shape;
+            s2.tag = 1;
+            s2.Rectangle.width = 10;
+            s2.Rectangle.height = 20;
+
+            mut s3: Shape;
+            s3.tag = 2;
+
+            os.LogInt(process(s1));
+            os.LogInt(process(s2));
+            os.LogInt(process(s3));
+        }
+    ";
+    run_e2e_test(source, "42\n30\n123");
+}
+
 // === NEW E2E TESTS FOR THE NATIVE FILE I/O IMPLEMENTATION ===
 
 #[test]
