@@ -3668,6 +3668,19 @@ impl TypeChecker {
                             struct_name.starts_with("Mutex_") || struct_name.starts_with("std_Mutex_");
                         let is_channel = 
                             struct_name.starts_with("Channel_") || struct_name.starts_with("std_Channel_");
+                        let is_gen_arena =
+                            struct_name.starts_with("std_GenerationalArena_") || struct_name.starts_with("GenerationalArena_");
+
+                        if is_gen_arena && (right == "Step" || right == "step" || right == "Swap" || right == "swap") {
+                            if !arguments.is_empty() {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::ArgumentMismatch,
+                                    message: format!("GenerationalArena.{} expects exactly 0 arguments", right),
+                                    span: None,
+                                });
+                            }
+                            return Ok(Type::Void);
+                        }
 
                         if is_mutex && right == "Lock" {
                             if !arguments.is_empty() {
