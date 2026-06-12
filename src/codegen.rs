@@ -848,7 +848,7 @@ impl Codegen {
                 } else {
                     *self.current_function.borrow_mut() = Some(resolved_name.clone());
                     body_str.push_str(&format!( 
-                        "{} {}({}) {\n",
+                        "{} {}({}) {{\n",
                         ret_str, resolved_name, param_list
                     ));
                     body_str.push_str(&self.gen_block_statement(body));

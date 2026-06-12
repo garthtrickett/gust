@@ -1,5 +1,6 @@
 # Rust build artifacts
 /target/
+/temp_gust_e2e_dir/
 
 # Transpiled C files
 /gust_output.c
