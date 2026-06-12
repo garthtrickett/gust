@@ -2044,3 +2044,288 @@ fn test_e2e_arena_canary_corruption_detection() {
     let combined = format!("{}\n{}", stdout_str, stderr_str);
     assert!(combined.contains("Assertion Failure") || combined.contains("corruption detected"), "Unexpected output: {}", combined);
 }
+
+#[test]
+fn test_e2e_fiber_low_level_context_switch() {
+    let mut c_program = String::new();
+    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+    
+    c_program.push_str(r#"
+        gust_Fiber* main_fiber = NULL;
+        gust_Fiber* fiber1 = NULL;
+        gust_Fiber* fiber2 = NULL;
+
+        int fiber1_run_count = 0;
+        int fiber2_run_count = 0;
+        uintptr_t fiber1_sp_val = 0;
+        uintptr_t fiber2_sp_val = 0;
+        pthread_t main_thread_id;
+        int thread_mismatch_detected = 0;
+
+        void fiber1_entry(void* arg) {
+            int local_var = 42;
+            fiber1_sp_val = (uintptr_t)&local_var;
+            fiber1_run_count++;
+
+            pthread_t curr_thread = pthread_self();
+            if (!pthread_equal(main_thread_id, curr_thread)) {
+                thread_mismatch_detected = 1;
+            }
+
+            // Switch to fiber2
+            gust_fiber_switch(fiber1, fiber2);
+
+            // Resume after fiber2 switches back
+            fiber1_run_count++;
+            gust_fiber_switch(fiber1, main_fiber);
+        }
+
+        void fiber2_entry(void* arg) {
+            int local_var = 84;
+            fiber2_sp_val = (uintptr_t)&local_var;
+            fiber2_run_count++;
+
+            pthread_t curr_thread = pthread_self();
+            if (!pthread_equal(main_thread_id, curr_thread)) {
+                thread_mismatch_detected = 1;
+            }
+
+            // Switch back to fiber1
+            gust_fiber_switch(fiber2, fiber1);
+        }
+
+        int main() {
+            #if !defined(__x86_64__) && !defined(__aarch64__)
+            // Skip actual execution if CPU is unsupported
+            printf("GUST_FIBER_TEST_OK\n");
+            return 0;
+            #endif
+
+            main_thread_id = pthread_self();
+
+            main_fiber = (gust_Fiber*)malloc(sizeof(gust_Fiber));
+            main_fiber->state = GUST_FIBER_RUNNING;
+            main_fiber->stack_base = NULL;
+            main_fiber->stack_size = 0;
+            main_fiber->sp = NULL;
+            main_fiber->parent = NULL;
+
+            fiber1 = gust_fiber_create(16384, fiber1_entry, NULL);
+            fiber2 = gust_fiber_create(16384, fiber2_entry, NULL);
+
+            fiber1->parent = main_fiber;
+            fiber2->parent = fiber1;
+
+            // Switch to fiber1
+            gust_fiber_switch(main_fiber, fiber1);
+
+            // Verification assertions
+            if (fiber1_run_count != 2) {
+                printf("Error: fiber1_run_count is %d, expected 2\n", fiber1_run_count);
+                return 1;
+            }
+            if (fiber2_run_count != 1) {
+                printf("Error: fiber2_run_count is %d, expected 1\n", fiber2_run_count);
+                return 1;
+            }
+            if (thread_mismatch_detected) {
+                printf("Error: Thread mismatch detected across fiber execution\n");
+                return 1;
+            }
+
+            // Verify separate stacks
+            uintptr_t stack_diff = (fiber1_sp_val > fiber2_sp_val) ? 
+                (fiber1_sp_val - fiber2_sp_val) : (fiber2_sp_val - fiber1_sp_val);
+            if (stack_diff < 4096) {
+                printf("Error: Stacks are not sufficiently separated (diff: %zu bytes)\n", (size_t)stack_diff);
+                return 1;
+            }
+
+            gust_fiber_free(fiber1);
+            gust_fiber_free(fiber2);
+            free(main_fiber);
+
+            printf("GUST_FIBER_TEST_OK\n");
+            return 0;
+        }
+    "#);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_fiber_switch_test_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_fiber_switch_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let compile_output = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = Command::new(&bin_path).output().expect("Execution failed");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert!(stdout_str.contains("GUST_FIBER_TEST_OK"), "Unexpected output: {}", stdout_str);
+}
+
+#[test]
+fn test_e2e_fiber_register_preservation() {
+    let mut c_program = String::new();
+    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+    
+    c_program.push_str(r#"
+        gust_Fiber* main_fiber = NULL;
+        gust_Fiber* fiber1 = NULL;
+
+        void fiber1_entry(void* arg) {
+            // Modifying callee-saved registers within fiber1 should not affect main_fiber's values
+            #if defined(__x86_64__)
+            __asm__ volatile (
+                "movq $0xDEADBEEF, %rbx\n\t"
+                "movq $0xCAFEbabe, %r12\n\t"
+            );
+            #elif defined(__aarch64__)
+            __asm__ volatile (
+                "mov x19, #0xDEAD\n\t"
+                "mov x20, #0xCAFE\n\t"
+            );
+            #endif
+
+            // Switch back to main_fiber
+            gust_fiber_switch(fiber1, main_fiber);
+        }
+
+        int main() {
+            #if !defined(__x86_64__) && !defined(__aarch64__)
+            // Skip actual execution if CPU is unsupported
+            printf("GUST_FIBER_REG_OK\n");
+            return 0;
+            #endif
+
+            main_thread_id = pthread_self();
+
+            main_fiber = (gust_Fiber*)malloc(sizeof(gust_Fiber));
+            main_fiber->state = GUST_FIBER_RUNNING;
+            main_fiber->stack_base = NULL;
+            main_fiber->stack_size = 0;
+            main_fiber->sp = NULL;
+            main_fiber->parent = NULL;
+
+            fiber1 = gust_fiber_create(16384, fiber1_entry, NULL);
+            fiber1->parent = main_fiber;
+
+            // Load distinct canary values into callee-saved registers in main thread
+            volatile uint64_t canary1 = 0x1111222233334444ULL;
+            volatile uint64_t canary2 = 0x5555666677778888ULL;
+
+            #if defined(__x86_64__)
+            __asm__ volatile (
+                "movq %0, %%rbx\n\t"
+                "movq %1, %%r12\n\t"
+                :
+                : "r"(canary1), "r"(canary2)
+                : "rbx", "r12"
+            );
+            #elif defined(__aarch64__)
+            __asm__ volatile (
+                "mov x19, %0\n\t"
+                "mov x20, %1\n\t"
+                :
+                : "r"(canary1), "r"(canary2)
+                : "x19", "x20"
+            );
+            #endif
+
+            // Switch to fiber1, which will alter its own callee registers and return
+            gust_fiber_switch(main_fiber, fiber1);
+
+            // Read the callee-saved registers back
+            uint64_t out1 = 0, out2 = 0;
+            #if defined(__x86_64__)
+            __asm__ volatile (
+                "movq %%rbx, %0\n\t"
+                "movq %%r12, %1\n\t"
+                :
+                : "=r"(out1), "=r"(out2)
+            );
+            #elif defined(__aarch64__)
+            __asm__ volatile (
+                "mov %0, x19\n\t"
+                "mov %1, x20\n\t"
+                :
+                : "=r"(out1), "=r"(out2)
+            );
+            #endif
+
+            if (out1 != canary1 || out2 != canary2) {
+                printf("Error: Register corruption detected! Expected %llx and %llx, got %llx and %llx\n",
+                       (unsigned long long)canary1, (unsigned long long)canary2,
+                       (unsigned long long)out1, (unsigned long long)out2);
+                return 1;
+            }
+
+            gust_fiber_free(fiber1);
+            free(main_fiber);
+
+            printf("GUST_FIBER_REG_OK\n");
+            return 0;
+        }
+    "#);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_fiber_reg_test_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_fiber_reg_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let compile_output = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = Command::new(&bin_path).output().expect("Execution failed");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert!(stdout_str.contains("GUST_FIBER_REG_OK"), "Unexpected output: {}", stdout_str);
+}
