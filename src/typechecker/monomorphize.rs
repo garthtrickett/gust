@@ -352,6 +352,11 @@ impl TypeChecker {
         }
 
         if !self.struct_registry.contains_key(&concrete_name) {
+            let old_prefix = self.current_prefix.clone();
+            if let Some(pos) = template_name.rfind("__") {
+                self.current_prefix = template_name[..pos + 2].to_string();
+            }
+
             // First insert a placeholder to short-circuit recursive structural self-references [1]
             self.struct_registry.insert(
                 concrete_name.clone(),
@@ -365,9 +370,17 @@ impl TypeChecker {
             for field in &template.fields {
                 let substituted_type =
                     self.substitute_generics(&field.field_type, &substitution_map);
-                let resolved_field_type = self.resolve_type(&substituted_type)?;
+                let resolved_field_type = match self.resolve_type(&substituted_type) {
+                    Ok(t) => t,
+                    Err(e) => {
+                        self.current_prefix = old_prefix;
+                        return Err(e);
+                    }
+                };
                 concrete_fields.insert(field.name.clone(), resolved_field_type);
             }
+
+            self.current_prefix = old_prefix;
 
             // Populate resolved layout fields [3]
             if let Some(layout) = self.struct_registry.get_mut(&concrete_name) {
