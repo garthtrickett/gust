@@ -27,6 +27,49 @@ fn test_thread_local_context_registration_valid() {
 }
 
 #[test]
+fn test_thread_local_context_brand_mismatch_rejected() {
+    let source = "
+        func accept_context(ctx: &Arena, tl: std.ThreadLocalContext[ctx]) {
+        }
+        func main() {
+            mut ctx1 := os.Arena.New();
+            defer ctx1.Free();
+            mut ctx2 := os.Arena.New();
+            defer ctx2.Free();
+            
+            mut tl: std.ThreadLocalContext[ctx1] := os.GetThreadScratch();
+            accept_context(ctx2, tl);
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+}
+
+#[test]
+fn test_thread_local_context_escape_rejected() {
+    let source = "
+        func leak() str {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut tl: std.ThreadLocalContext[ctx] := os.GetThreadScratch();
+            unsafe {
+                mut ptr := tl.arena as []byte;
+                mut s := ptr as str;
+                return s;
+            }
+        }
+        func main() {}
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Escape analysis violation"));
+}
+
+#[test]
 fn test_bool_primitive_accepted() {
     let source = "
         func main() {
