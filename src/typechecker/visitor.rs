@@ -2323,6 +2323,20 @@ impl TypeChecker {
                     }
                 }
 
+                if (op == "+" || op == "-")
+                    && matches!(left_type, Type::RawPointer(_))
+                    && (right_type == Type::Int || right_type == Type::Byte)
+                {
+                    if !self.in_unsafe_block {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::UnsafeProhibited,
+                            message: "Semantic Error: Pointer arithmetic is strictly prohibited outside 'unsafe' blocks".to_string(),
+                            span: None,
+                        });
+                    }
+                    return Ok(left_type);
+                }
+
                 if !types_match(&left_type, &right_type) {
                     return Err(TypeError {
                         kind: TypeErrorKind::TypeMismatch,

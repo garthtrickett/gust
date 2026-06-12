@@ -96,11 +96,11 @@ void os_Arena_Validate(os_Arena* arena) {
         uint64_t pre_canary = *(uint64_t*)((char*)arena->BaseAddress + curr + 8);
         uint64_t post_canary = *(uint64_t*)((char*)arena->BaseAddress + curr + 8 + 8 + size);
         if (pre_canary != 0xDEADBEEFDEADBEEFULL) {
-            printf(\"GUST_DEBUG Assertion Failure: Pre-canary boundary corruption detected at offset %zu!\\n\", curr);
+            printf("GUST_DEBUG Assertion Failure: Pre-canary boundary corruption detected at offset %zu!\n", curr);
             abort();
         }
         if (post_canary != 0xDEADBEEFDEADBEEFULL) {
-            printf(\"GUST_DEBUG Assertion Failure: Post-canary boundary corruption detected at offset %zu!\\n\", curr);
+            printf("GUST_DEBUG Assertion Failure: Post-canary boundary corruption detected at offset %zu!\n", curr);
             abort();
         }
         curr += 8 + 8 + size + 8;
