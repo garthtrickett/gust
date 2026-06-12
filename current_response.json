@@ -1,9 +1,9 @@
 {
-  "summary": "fix: correct module namespace assertions in self-hosted domain model e2e test",
+  "summary": "fix: correct Result struct name assertion in self-hosted domain model e2e test",
   "files": [
     {
       "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    // Verify transpiled C contents for the entire multi-module compiler domain model\n    assert!(c_output.contains(\"struct ast__Program\"));\n    assert!(c_output.contains(\"struct errs__CompilerError\"));\n    assert!(c_output.contains(\"struct errs__Result_ast__Expression_ctx_ctx\"));\n=======\n    // Verify transpiled C contents for the entire multi-module compiler domain model\n    assert!(c_output.contains(\"struct ast__Program\"));\n    assert!(c_output.contains(\"struct errors__CompilerError\"));\n    assert!(c_output.contains(\"struct errors__Result_ast__Expression_ctx_ctx\"));\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    // Verify transpiled C contents for the entire multi-module compiler domain model\n    assert!(c_output.contains(\"struct ast__Program\"));\n    assert!(c_output.contains(\"struct errors__CompilerError\"));\n    assert!(c_output.contains(\"struct errors__Result_ast__Expression_ctx_ctx\"));\n=======\n    // Verify transpiled C contents for the entire multi-module compiler domain model\n    assert!(c_output.contains(\"struct ast__Program\"));\n    assert!(c_output.contains(\"struct errors__CompilerError\"));\n    assert!(c_output.contains(\"struct errors__Result_Index_ast__Expression\"));\n>>>>>>> REPLACE"
     }
   ]
 }

@@ -2487,7 +2487,7 @@ fn test_self_hosted_domain_model_e2e() {
     // Verify transpiled C contents for the entire multi-module compiler domain model
     assert!(c_output.contains("struct ast__Program"));
     assert!(c_output.contains("struct errors__CompilerError"));
-    assert!(c_output.contains("struct errors__Result_ast__Expression_ctx_ctx"));
+    assert!(c_output.contains("struct errors__Result_Index_ast__Expression"));
     
     // Invoke GCC/Clang to compile the output and run it as an E2E test!
     let temp_dir = std::env::temp_dir();
