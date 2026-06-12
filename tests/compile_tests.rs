@@ -2201,6 +2201,44 @@ fn test_generational_arena_template_typechecking() {
 }
 
 #[test]
+fn test_generational_arena_deep_copy_codegen() {
+    let source = "
+        type Node struct {
+            val: int,
+            next: Index[Node, ctx]
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut arena: std.GenerationalArena[Node, ctx];
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+
+    let codegen = Codegen::new( 
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&program);
+
+    // Verify correct recursive clone generation
+    assert!(c_output.contains("int std_GenerationalArena_Clone_Node(os_Arena* dest, os_Arena* src, int src_idx);"));
+    assert!(c_output.contains("int std_GenerationalArena_Clone_Node(os_Arena* dest, os_Arena* src, int src_idx) {"));
+    assert!(c_output.contains("dest_ptr->next = std_GenerationalArena_Clone_Node(dest, src, src_ptr->next);"));
+}
+
+#[test]
 fn test_fiber_scratchpad_escape_across_yield_boundary() {
     let source = "
         type Packet[ctx] struct {
