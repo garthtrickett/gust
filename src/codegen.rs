@@ -320,40 +320,57 @@ impl Codegen {
             }
             Expression::AsCast { target_type, .. } => Some(target_type.clone()),
             Expression::Selector { left, right, .. } => {
-                let left_type = self.get_expr_type(left)?;
+                let mut left_type = self.get_expr_type(left)?;
+                if let Type::RawPointer(inner) = left_type {
+                    left_type = *inner;
+                }
                 if let Type::Struct(struct_name, _) = left_type
                     && let Some(layout) = self.struct_registry.get(&struct_name)
-                {
+                { 
                     return layout.fields.get(right).cloned();
                 }
                 None
             }
-            Expression::IndexAccess { allocator, .. } => {
+            Expression::IndexAccess { allocator, index, .. } => {
                 let alloc_type = self.get_expr_type(allocator)?;
-                if let Type::Slice(elem_type) = alloc_type {
-                    return Some(*elem_type);
+                if let Type::Slice(elem_type) = &alloc_type {
+                    return Some((**elem_type).clone());
                 }
-                if let Type::Struct(struct_name, _) = alloc_type {
+                if alloc_type == Type::Str {
+                    return Some(Type::Byte);
+                }
+                if let Type::Struct(struct_name, _) = &alloc_type {
                     if struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_")
                     {
-                        if let Some(layout) = self.struct_registry.get(&struct_name)
+                        if let Some(layout) = self.struct_registry.get(struct_name)
                             && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
                         {
                             return Some((**inner).clone());
                         }
                     } else if (struct_name.starts_with("HashMap_")
                         || struct_name.starts_with("std_HashMap_"))
-                        && let Some(layout) = self.struct_registry.get(&struct_name)
+                        && let Some(layout) = self.struct_registry.get(struct_name)
                         && let Some(Type::RawPointer(inner)) = layout.fields.get("values")
                     {
                         return Some((**inner).clone());
                     } else if (struct_name.starts_with("Pool_")
                         || struct_name.starts_with("std_Pool_"))
-                        && let Some(layout) = self.struct_registry.get(&struct_name)
+                        && let Some(layout) = self.struct_registry.get(struct_name)
                         && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
                     {
                         return Some((**inner).clone());
                     }
+                }
+                // Check if this is Arena indexing
+                let is_arena = alloc_type == Type::Arena || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
+                if is_arena {
+                    let mut target_struct = "SessionNode".to_string();
+                    if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index) {
+                        if struct_name != "Any" {
+                            target_struct = struct_name;
+                        }
+                    }
+                    return Some(Type::RawPointer(Box::new(Type::Struct(target_struct, None))));
                 }
                 None
             }
@@ -1434,12 +1451,10 @@ impl Codegen {
                 } else {
                     // Arena indexing (Value-Branded)
                     let mut target_struct = "SessionNode".to_string();
-                    if let Expression::Identifier(idx_name, _) = &**index
-                        && let Some(Type::Index(struct_name, _)) =
-                            self.symbol_table.borrow().get(idx_name)
-                        && struct_name != "Any"
-                    {
-                        target_struct = struct_name.clone();
+                    if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index) {
+                        if struct_name != "Any" {
+                            target_struct = struct_name;
+                        }
                     }
 
                     let mut use_arrow = false;
@@ -2298,12 +2313,13 @@ impl Codegen {
                         return format!("std_PoolFree(&{}, {})", left_str, arg_str);
                     }
 
-                    let left_type_str = expression_to_string(left);
-                    if let Some(var_type) = self.symbol_table.borrow().get(&left_type_str)
-                        && *var_type == Type::Arena
-                        && right == "Free"
-                    {
-                        return format!("os_Arena_Free(&{})", left_type_str);
+                    let is_arena_alloc = left_type == Type::Arena || matches!(left_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
+                    if is_arena_alloc && right == "Free" {
+                        if matches!(left_type, Type::RawPointer(_)) {
+                            return format!("os_Arena_Free({}", left_str);
+                        } else {
+                            return format!("os_Arena_Free(&{})", left_str);
+                        }
                     }
                 }
 
