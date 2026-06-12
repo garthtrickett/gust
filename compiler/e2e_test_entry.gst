@@ -24,7 +24,7 @@
             ctx[error_ptr].message = "Type mismatch!";
             ctx[error_ptr].span = s.Expression.span;
             
-            mut res: errs.Result[ast.Expression[ctx], ctx];
+            mut res: errs.Result[Index[ast.Expression[ctx], ctx], ctx];
             res.tag = 1;
             res.Err.error = error_ptr;
             

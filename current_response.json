@@ -1,9 +1,9 @@
 {
-  "summary": "test: use Index for Expression in Result to avoid LargeEnumVariantPayload in self-hosted E2E test",
+  "summary": "fix: correct module namespace assertions in self-hosted domain model e2e test",
   "files": [
     {
       "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n            mut error_ptr: Index[errs.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);\n            ctx[error_ptr].kind.tag = 2;\n            ctx[error_ptr].message = \\\"Type mismatch!\\\";\n            ctx[error_ptr].span = s.Expression.span;\n            \n            mut res: errs.Result[ast.Expression[ctx], ctx];\n            res.tag = 1;\n            res.Err.error = error_ptr;\n=======\n            mut error_ptr: Index[errs.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);\n            ctx[error_ptr].kind.tag = 2;\n            ctx[error_ptr].message = \\\"Type mismatch!\\\";\n            ctx[error_ptr].span = s.Expression.span;\n            \n            mut res: errs.Result[Index[ast.Expression[ctx], ctx], ctx];\n            res.tag = 1;\n            res.Err.error = error_ptr;\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    // Verify transpiled C contents for the entire multi-module compiler domain model\n    assert!(c_output.contains(\"struct ast__Program\"));\n    assert!(c_output.contains(\"struct errs__CompilerError\"));\n    assert!(c_output.contains(\"struct errs__Result_ast__Expression_ctx_ctx\"));\n=======\n    // Verify transpiled C contents for the entire multi-module compiler domain model\n    assert!(c_output.contains(\"struct ast__Program\"));\n    assert!(c_output.contains(\"struct errors__CompilerError\"));\n    assert!(c_output.contains(\"struct errors__Result_ast__Expression_ctx_ctx\"));\n>>>>>>> REPLACE"
     }
   ]
 }
