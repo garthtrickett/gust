@@ -76,6 +76,37 @@ impl TypeChecker {
         }
     }
 
+    fn is_diverging_block(&self, body: &crate::ast::BlockStatement) -> bool {
+        for stmt in &body.statements {
+            if self.is_diverging_statement(stmt) {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn is_diverging_statement(&self, stmt: &Statement) -> bool {
+        match stmt {
+            Statement::Return(_, _) => true,
+            Statement::Expression(Expression::Call { function, .. }, _) => {
+                let raw_func_path = expression_to_string(function);
+                let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or(raw_func_path);
+                func_path == "os.Exit" || func_path == "os_Exit"
+            }
+            Statement::UnsafeBlock { body, .. } => self.is_diverging_block(body),
+            Statement::If { consequence, alternative, .. } => {
+                let cons_div = self.is_diverging_block(consequence);
+                let alt_div = if let Some(alt) = alternative {
+                    self.is_diverging_block(alt)
+                } else {
+                    false
+                };
+                cons_div && alt_div
+            }
+            _ => false,
+        }
+    }
+
     fn get_vector_element_type(&self, struct_name: &str) -> Option<Type> {
         if let Some(layout) = self.struct_registry.get(struct_name)
             && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
@@ -922,7 +953,92 @@ impl TypeChecker {
                 self.current_function_inout_params = old_inout_params;
                 self.current_function_local_vars = old_local_vars;
             }
-            Statement::VarDecl { 
+            Statement::Guard {
+                name,
+                is_mut,
+                value,
+                else_body,
+                span,
+            } => {
+                // 1. Typecheck the RHS expression 'value'
+                let val_type = self.check_expression(value)?;
+                let resolved_val_type = self.resolve_type(&val_type)?;
+
+                // Confirm it is a fallible wrapper type containing both Ok and Val fields
+                let mut bound_type = None;
+                if let Type::Struct(ref struct_name, ref _brand) = resolved_val_type {
+                    if let Some(layout) = self.struct_registry.get(struct_name) {
+                        let ok_field = layout.fields.get("Ok");
+                        let val_field = layout.fields.get("Val");
+                        match (ok_field, val_field) { 
+                            (Some(ok_t), Some(val_t)) => {
+                                if *ok_t == Type::Int || *ok_t == Type::Bool {
+                                    bound_type = Some(val_t.clone());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                let Some(payload_type) = bound_type else {
+                    return Err(TypeError {
+                        kind: TypeErrorKind::TypeMismatch,
+                        message: format!(
+                            "Semantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got {:?}",
+                            resolved_val_type
+                        ),
+                        span: Some(value.span()),
+                    });
+                };
+
+                // 2. Evaluate the diverging else_body block statement in an isolated scope
+                let parent_scope = self.symbol_table.clone();
+                let parent_origins = self.variable_origins.clone();
+                let parent_moved = self.moved_vars.clone();
+
+                for s in &else_body.statements {
+                    self.check_statement(s)?;
+                }
+
+                // 3. Verify block divergence
+                if !self.is_diverging_block(else_body) {
+                    return Err(TypeError {
+                        kind: TypeErrorKind::TypeMismatch,
+                        message: "Semantic Error: Guard 'else' block must diverge (i.e. end with a return statement or an exit call)".to_string(),
+                        span: Some(else_body.span),
+                    });
+                }
+
+                // Restore parent scope after checks inside else_body
+                self.symbol_table = parent_scope;
+                self.variable_origins = parent_origins;
+                self.moved_vars = parent_moved;
+
+                // 4. Bind the <identifier> to the active symbol table using the type of the .Val field
+                self.symbol_table.insert(name.clone(), payload_type.clone());
+                self.variable_types.insert(name.clone(), payload_type.clone());
+
+                // 5. Track memory origins
+                let origins = self.get_expression_origins(value);
+                let mut final_origins = if is_ephemeral_view(&payload_type) {
+                    origins
+                } else {
+                    HashSet::new()
+                };
+                if final_origins.is_empty() {
+                    final_origins.insert(name.clone());
+                }
+                self.variable_origins.insert(name.clone(), final_origins.clone());
+                self.all_variable_origins.insert(name.clone(), final_origins);
+
+                self.moved_vars.remove(name);
+
+                if let Some(ref mut local_vars) = self.current_function_local_vars {
+                    local_vars.insert(name.clone());
+                }
+            }
+            Statement::VarDecl {
                 name,
                 is_mut: _,
                 value,
