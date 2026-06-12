@@ -27,6 +27,7 @@ struct gust_Fiber {
     gust_FiberState state;
     gust_Fiber* parent;
     gust_Fiber* next;
+    void* shard;
 };
 
 typedef struct {
@@ -248,6 +249,7 @@ void* gust_shard_loop(void* arg) {
         if (next) {
             next->parent = &shard->shard_fiber;
             shard->active_fiber = next;
+            next->shard = shard;
             next->state = GUST_FIBER_RUNNING;
 
             gust_fiber_switch(&shard->shard_fiber, next);
@@ -298,12 +300,13 @@ void gust_scheduler_spawn(size_t stack_size, void (*entry_fn)(void*), void* arg)
     }
 
     if (target) {
+        fiber->shard = target;
         pthread_mutex_lock(&target->lock);
         fiber->state = GUST_FIBER_READY;
         if (target->run_queue_tail) {
             target->run_queue_tail->next = fiber;
             target->run_queue_tail = fiber;
-        } else {
+        } else { 
             target->run_queue_head = fiber;
             target->run_queue_tail = fiber;
         }
@@ -1475,10 +1478,17 @@ static inline void std_PoolFree_impl(void* pool_void, int index) {
     (&(graph_ptr)->nodes.data[index].value)
 
 // ====================================================
-// GUST POSIX THREAD CONCURRENCY RUNTIME (MUTEX & CHANNEL)
+// GUST COOPERATIVE CONCURRENCY RUNTIME (MUTEX & CHANNEL)
 // ====================================================
+typedef struct {
+    pthread_mutex_t mutex;
+    int locked;
+    gust_Fiber* wait_head;
+    gust_Fiber* wait_tail;
+} gust_Mutex_Internal;
+
 #define MAX_MUTEXES 1024
-static pthread_mutex_t gust_mutex_pool[MAX_MUTEXES];
+static gust_Mutex_Internal gust_mutex_pool[MAX_MUTEXES];
 static int gust_mutex_count = 0;
 static pthread_mutex_t gust_mutex_pool_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -1489,32 +1499,95 @@ static inline int std_Mutex_Alloc() {
         exit(1);
     }
     int idx = gust_mutex_count++;
-    pthread_mutex_init(&gust_mutex_pool[idx], NULL);
+    gust_Mutex_Internal* m = &gust_mutex_pool[idx];
+    pthread_mutex_init(&m->mutex, NULL);
+    m->locked = 0;
+    m->wait_head = NULL;
+    m->wait_tail = NULL;
     pthread_mutex_unlock(&gust_mutex_pool_lock);
     return idx;
 }
 
 static inline void* std_Mutex_Lock_impl(int lock_state, void* value_ptr) {
-    pthread_mutex_lock(&gust_mutex_pool[lock_state]);
+    gust_Mutex_Internal* m = &gust_mutex_pool[lock_state];
+    pthread_mutex_lock(&m->mutex);
+
+    while (m->locked) {
+        gust_SchedulerShard* shard = active_shard;
+        if (!shard || !shard->active_fiber) {
+            pthread_mutex_unlock(&m->mutex);
+            sched_yield();
+            pthread_mutex_lock(&m->mutex);
+            continue;
+        }
+
+        gust_Fiber* current = shard->active_fiber;
+        current->state = GUST_FIBER_SUSPENDED;
+        current->next = NULL;
+
+        if (m->wait_tail) {
+            m->wait_tail->next = current;
+            m->wait_tail = current;
+        } else {
+            m->wait_head = current;
+            m->wait_tail = current;
+        }
+
+        pthread_mutex_unlock(&m->mutex);
+        gust_fiber_switch(current, &shard->shard_fiber);
+        pthread_mutex_lock(&m->mutex);
+    }
+
+    m->locked = 1;
+    pthread_mutex_unlock(&m->mutex);
     return value_ptr;
 }
 
 static inline void std_Mutex_Unlock_impl(int lock_state) {
-    pthread_mutex_unlock(&gust_mutex_pool[lock_state]);
-    sched_yield();
+    gust_Mutex_Internal* m = &gust_mutex_pool[lock_state];
+    pthread_mutex_lock(&m->mutex);
+
+    m->locked = 0;
+
+    if (m->wait_head) {
+        gust_Fiber* waiter = m->wait_head;
+        m->wait_head = waiter->next;
+        if (!m->wait_head) {
+            m->wait_tail = NULL;
+        }
+        waiter->next = NULL;
+
+        gust_SchedulerShard* target_shard = (gust_SchedulerShard*)waiter->shard;
+        if (!target_shard) target_shard = &gust_shards[0];
+
+        pthread_mutex_lock(&target_shard->lock);
+        waiter->state = GUST_FIBER_READY;
+        if (target_shard->run_queue_tail) {
+            target_shard->run_queue_tail->next = waiter;
+            target_shard->run_queue_tail = waiter;
+        } else {
+            target_shard->run_queue_head = waiter;
+            target_shard->run_queue_tail = waiter;
+        }
+        pthread_mutex_unlock(&target_shard->lock);
+    }
+
+    pthread_mutex_unlock(&m->mutex);
 }
 
 #define MAX_CHANNELS 256
 typedef struct {
     pthread_mutex_t mutex;
-    pthread_cond_t cond_recv;
-    pthread_cond_t cond_send;
     char* data;
     int head;
     int tail;
     int count;
     int capacity;
     size_t elem_size;
+    gust_Fiber* recv_wait_head;
+    gust_Fiber* recv_wait_tail;
+    gust_Fiber* send_wait_head;
+    gust_Fiber* send_wait_tail;
 } gust_Channel_Internal;
 
 static gust_Channel_Internal gust_channel_pool[MAX_CHANNELS];
@@ -1530,14 +1603,16 @@ static inline int std_Channel_Alloc(int capacity, size_t elem_size) {
     int idx = gust_channel_count++;
     gust_Channel_Internal* chan = &gust_channel_pool[idx];
     pthread_mutex_init(&chan->mutex, NULL);
-    pthread_cond_init(&chan->cond_recv, NULL);
-    pthread_cond_init(&chan->cond_send, NULL);
     chan->capacity = capacity > 0 ? capacity : 16;
     chan->elem_size = elem_size;
     chan->data = (char*)malloc(chan->capacity * elem_size);
     chan->head = 0;
     chan->tail = 0;
     chan->count = 0;
+    chan->recv_wait_head = NULL;
+    chan->recv_wait_tail = NULL;
+    chan->send_wait_head = NULL;
+    chan->send_wait_tail = NULL;
     pthread_mutex_unlock(&gust_channel_pool_lock);
     return idx;
 }
@@ -1546,12 +1621,58 @@ static inline void std_Channel_Send_impl(int chan_idx, void* val_ptr) {
     gust_Channel_Internal* chan = &gust_channel_pool[chan_idx];
     pthread_mutex_lock(&chan->mutex);
     while (chan->count >= chan->capacity) {
-        pthread_cond_wait(&chan->cond_send, &chan->mutex);
+        gust_SchedulerShard* shard = active_shard;
+        if (!shard || !shard->active_fiber) {
+            pthread_mutex_unlock(&chan->mutex);
+            sched_yield();
+            pthread_mutex_lock(&chan->mutex);
+            continue;
+        }
+
+        gust_Fiber* current = shard->active_fiber;
+        current->state = GUST_FIBER_SUSPENDED;
+        current->next = NULL;
+
+        if (chan->send_wait_tail) {
+            chan->send_wait_tail->next = current;
+            chan->send_wait_tail = current;
+        } else {
+            chan->send_wait_head = current;
+            chan->send_wait_tail = current;
+        }
+
+        pthread_mutex_unlock(&chan->mutex);
+        gust_fiber_switch(current, &shard->shard_fiber);
+        pthread_mutex_lock(&chan->mutex);
     }
+
     memcpy(chan->data + chan->tail * chan->elem_size, val_ptr, chan->elem_size);
     chan->tail = (chan->tail + 1) % chan->capacity;
     chan->count++;
-    pthread_cond_signal(&chan->cond_recv);
+
+    if (chan->recv_wait_head) {
+        gust_Fiber* recv_fiber = chan->recv_wait_head;
+        chan->recv_wait_head = recv_fiber->next;
+        if (!chan->recv_wait_head) {
+            chan->recv_wait_tail = NULL;
+        }
+        recv_fiber->next = NULL;
+
+        gust_SchedulerShard* target_shard = (gust_SchedulerShard*)recv_fiber->shard;
+        if (!target_shard) target_shard = &gust_shards[0];
+
+        pthread_mutex_lock(&target_shard->lock);
+        recv_fiber->state = GUST_FIBER_READY;
+        if (target_shard->run_queue_tail) {
+            target_shard->run_queue_tail->next = recv_fiber;
+            target_shard->run_queue_tail = recv_fiber;
+        } else {
+            target_shard->run_queue_head = recv_fiber;
+            target_shard->run_queue_tail = recv_fiber;
+        }
+        pthread_mutex_unlock(&target_shard->lock);
+    }
+
     pthread_mutex_unlock(&chan->mutex);
 }
 
@@ -1559,12 +1680,58 @@ static inline void std_Channel_Recv_impl(int chan_idx, void* out_ptr) {
     gust_Channel_Internal* chan = &gust_channel_pool[chan_idx];
     pthread_mutex_lock(&chan->mutex);
     while (chan->count <= 0) {
-        pthread_cond_wait(&chan->cond_recv, &chan->mutex);
+        gust_SchedulerShard* shard = active_shard;
+        if (!shard || !shard->active_fiber) {
+            pthread_mutex_unlock(&chan->mutex);
+            sched_yield();
+            pthread_mutex_lock(&chan->mutex);
+            continue;
+        }
+
+        gust_Fiber* current = shard->active_fiber;
+        current->state = GUST_FIBER_SUSPENDED;
+        current->next = NULL;
+
+        if (chan->recv_wait_tail) {
+            chan->recv_wait_tail->next = current;
+            chan->recv_wait_tail = current;
+        } else {
+            chan->recv_wait_head = current;
+            chan->recv_wait_tail = current;
+        }
+
+        pthread_mutex_unlock(&chan->mutex);
+        gust_fiber_switch(current, &shard->shard_fiber);
+        pthread_mutex_lock(&chan->mutex);
     }
+
     memcpy(out_ptr, chan->data + chan->head * chan->elem_size, chan->elem_size);
     chan->head = (chan->head + 1) % chan->capacity;
     chan->count--;
-    pthread_cond_signal(&chan->cond_send);
+
+    if (chan->send_wait_head) {
+        gust_Fiber* send_fiber = chan->send_wait_head;
+        chan->send_wait_head = send_fiber->next;
+        if (!chan->send_wait_head) {
+            chan->send_wait_tail = NULL;
+        }
+        send_fiber->next = NULL;
+
+        gust_SchedulerShard* target_shard = (gust_SchedulerShard*)send_fiber->shard;
+        if (!target_shard) target_shard = &gust_shards[0];
+
+        pthread_mutex_lock(&target_shard->lock);
+        send_fiber->state = GUST_FIBER_READY;
+        if (target_shard->run_queue_tail) { 
+            target_shard->run_queue_tail->next = send_fiber;
+            target_shard->run_queue_tail = send_fiber;
+        } else {
+            target_shard->run_queue_head = send_fiber;
+            target_shard->run_queue_tail = send_fiber;
+        }
+        pthread_mutex_unlock(&target_shard->lock);
+    }
+
     pthread_mutex_unlock(&chan->mutex);
 }
 "#;

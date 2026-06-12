@@ -1813,7 +1813,7 @@ impl Codegen {
                         format!("(void*)(uintptr_t){}", arg_str)
                     };
                     return format!(
-                        "(({{\n        pthread_t _thread;\n        pthread_create(&_thread, NULL, {}_pthread_wrapper, {});\n        pthread_detach(_thread);\n    }}))",
+                        "gust_scheduler_spawn(16384, (void (*)(void*)){}, {})",
                         thread_func_name, cast_expr
                     );
                 }
