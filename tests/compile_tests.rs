@@ -2185,6 +2185,48 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_codegen_thread_local_redirection() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            os.SetThreadScratch(ctx);
+            mut tl := os.GetThreadScratch();
+            mut s := std.FormatInt(123);
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&program);
+
+    // Assert the forward declaration FFI headers exist in generated code
+    assert!(c_output.contains("void os_SetThreadScratch(os_Arena* ctx);"));
+    assert!(c_output.contains("std_ThreadLocalContext os_GetThreadScratch(void);"));
+
+    // Assert the calls compile to the correct C-level identifiers and pointer parameters
+    assert!(c_output.contains("os_SetThreadScratch(&ctx);"));
+    assert!(c_output.contains("std_ThreadLocalContext_ctx tl = os_GetThreadScratch();"));
+
+    // Assert that dynamic allocation via os_ScratchAlloc is incorporated for standard formatting
+    assert!(c_output.contains("os_ScratchAlloc(16)"));
+}
+
+#[test]
 fn test_match_pattern_destructuring_compile_pass() {
     let source = "
         type MyEnum enum {
