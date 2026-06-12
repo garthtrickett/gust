@@ -147,13 +147,13 @@ impl TypeChecker {
             Type::Index(name, brand) => {
                 if let Some(b) = brand {
                     Some(b.clone())
-                } else if name.ends_with("_ctx") {
+                } else if name.ends_with("_ctx") || name.contains("_ctx_") {
                     Some("ctx".to_string())
-                } else if name.ends_with("_connCtx") {
+                } else if name.ends_with("_connCtx") || name.contains("_connCtx_") {
                     Some("connCtx".to_string())
-                } else if name.ends_with("_arena") {
+                } else if name.ends_with("_arena") || name.contains("_arena_") {
                     Some("arena".to_string())
-                } else if name.ends_with("_a") {
+                } else if name.ends_with("_a") || name.contains("_a_") {
                     Some("a".to_string())
                 } else {
                     None
@@ -165,25 +165,25 @@ impl TypeChecker {
                 } else if let Some(layout) = self.struct_registry.get(name) {
                     if let Some(b) = &layout.brand {
                         Some(b.clone())
-                    } else if name.ends_with("_ctx") {
+                    } else if name.ends_with("_ctx") || name.contains("_ctx_") {
                         Some("ctx".to_string())
-                    } else if name.ends_with("_connCtx") {
+                    } else if name.ends_with("_connCtx") || name.contains("_connCtx_") {
                         Some("connCtx".to_string())
-                    } else if name.ends_with("_arena") {
+                    } else if name.ends_with("_arena") || name.contains("_arena_") {
                         Some("arena".to_string())
-                    } else if name.ends_with("_a") {
+                    } else if name.ends_with("_a") || name.contains("_a_") {
                         Some("a".to_string())
                     } else {
                         None
                     }
                 } else {
-                    if name.ends_with("_ctx") {
+                    if name.ends_with("_ctx") || name.contains("_ctx_") {
                         Some("ctx".to_string())
-                    } else if name.ends_with("_connCtx") {
+                    } else if name.ends_with("_connCtx") || name.contains("_connCtx_") {
                         Some("connCtx".to_string())
-                    } else if name.ends_with("_arena") {
+                    } else if name.ends_with("_arena") || name.contains("_arena_") {
                         Some("arena".to_string())
-                    } else if name.ends_with("_a") {
+                    } else if name.ends_with("_a") || name.contains("_a_") {
                         Some("a".to_string())
                     } else {
                         None

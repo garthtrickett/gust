@@ -18,24 +18,46 @@ pub struct Codegen {
 }
 
 // Brand Erasure Helpers
+fn extract_brand_from_name(name: &str) -> Option<String> {
+    if name.ends_with("_ctx") || name.contains("_ctx_") {
+        Some("ctx".to_string())
+    } else if name.ends_with("_connCtx") || name.contains("_connCtx_") {
+        Some("connCtx".to_string())
+    } else if name.ends_with("_arena") || name.contains("_arena_") {
+        Some("arena".to_string())
+    } else if name.ends_with("_a") || name.contains("_a_") {
+        Some("a".to_string())
+    } else {
+        None
+    }
+}
+
 fn erase_struct_name_with_registry(
     name: &str,
     brand: &Option<String>,
     registry: &HashMap<String, StructLayout>,
 ) -> String {
     let mut actual_brand = brand.clone();
-    if actual_brand.is_none()
-        && let Some(layout) = registry.get(name)
-    {
-        actual_brand = layout.brand.clone();
-    }
-    if let Some(b) = &actual_brand {
-        let suffix = format!("_{}", b);
-        if name.ends_with(&suffix) {
-            return name[..name.len() - suffix.len()].to_string();
+    if actual_brand.is_none() {
+        if let Some(layout) = registry.get(name) {
+            actual_brand = layout.brand.clone();
         }
     }
-    name.to_string()
+    if actual_brand.is_none() {
+        actual_brand = extract_brand_from_name(name);
+    }
+    let mut erased = name.to_string();
+    if let Some(b) = &actual_brand {
+        let pattern_mid = format!("_{}_", b);
+        let pattern_end = format!("_{}", b);
+        if erased.contains(&pattern_mid) {
+            erased = erased.replace(&pattern_mid, "_");
+        }
+        if erased.ends_with(&pattern_end) {
+            erased = erased[..erased.len() - pattern_end.len()].to_string();
+        }
+    }
+    erased
 }
 
 fn erase_type_with_registry(t: &Type, registry: &HashMap<String, StructLayout>) -> Type {
@@ -260,12 +282,18 @@ impl Codegen {
             );
         }
 
+        let mut erased_enum_registry = HashMap::new();
+        for (enum_name, variants) in enum_registry {
+            let erased_name = erase_struct_name_with_registry(&enum_name, &None, &struct_registry);
+            erased_enum_registry.insert(erased_name, variants);
+        }
+
         Codegen {
             symbol_table: RefCell::new(erased_symbol_table),
             original_symbol_table,
             struct_registry: erased_struct_registry,
             function_registry: erased_function_registry,
-            enum_registry, // Saved here
+            enum_registry: erased_enum_registry,
             current_alloc_struct: RefCell::new(None),
             current_function: RefCell::new(None),
             resolved_names,
