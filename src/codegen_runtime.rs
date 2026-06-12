@@ -343,6 +343,21 @@ void gust_scheduler_init(int num_shards) {
 }
 
 void gust_scheduler_destroy() {
+    int work_remaining = 1;
+    while (work_remaining) {
+        work_remaining = 0;
+        for (int i = 0; i < gust_num_shards; i++) {
+            pthread_mutex_lock(&gust_shards[i].lock);
+            if (gust_shards[i].run_queue_head != NULL || gust_shards[i].active_fiber != NULL) {
+                work_remaining = 1;
+            }
+            pthread_mutex_unlock(&gust_shards[i].lock);
+        }
+        if (work_remaining) {
+            usleep(1000);
+        }
+    }
+
     gust_scheduler_running = 0;
     for (int i = 0; i < gust_num_shards; i++) {
         pthread_join(gust_shards[i].thread, NULL);
