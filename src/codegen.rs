@@ -876,11 +876,6 @@ impl Codegen {
             c_code.push_str("// ====================================================\n");
             c_code.push_str("// GENERATIONAL ARENA CLONE HELPER FORWARD DECLARATIONS\n");
             c_code.push_str("// ====================================================\n");
-            c_code.push_str("struct std_GenerationalArena_Generic {\n");
-            c_code.push_str("    os_Arena current_ctx;\n");
-            c_code.push_str("    os_Arena next_ctx;\n");
-            c_code.push_str("    int survivor;\n");
-            c_code.push_str("};\n\n");
             for name in &ordered_helpers {
                 c_code.push_str(&format!(
                     "int std_GenerationalArena_Clone_{}(os_Arena* dest, os_Arena* src, int src_idx);\n",

@@ -554,6 +554,12 @@ void std_GenerationalSwap(os_Arena* current, os_Arena* next) {
     *next = os_Arena_New();
 }
 
+struct std_GenerationalArena_Generic {
+    os_Arena current_ctx;
+    os_Arena next_ctx;
+    int survivor;
+};
+
 // Standard Hardware-aligned Bump Allocation [1]
 int os_ArenaAlloc(os_Arena* arena, size_t size) {
     // Round up size to 8-byte boundary to satisfy hardware alignments [1]
