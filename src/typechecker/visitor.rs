@@ -3120,12 +3120,11 @@ impl TypeChecker {
                 }
 
                 if func_path == "os.ArenaAlloc" || func_path == "os_ArenaAlloc" {
-                // Compile-time resolution of os_ArenaAlloc [3]
-                if func_path == "os_ArenaAlloc" || func_path == "os.ArenaAlloc" {
+                    // Compile-time resolution of os_ArenaAlloc [3]
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
-                            message: "Semantic Error: os.ArenaAlloc expects exactly 1 argument (the allocator variable)".to_string(),
+                            message: "Semantic Error: os_ArenaAlloc expects exactly 1 argument (the allocator variable)".to_string(),
                             span: None,
                         });
                     }
