@@ -157,7 +157,7 @@ impl TypeChecker {
                         let v_type = if target_struct == "int" {
                             Type::Int
                         } else {
-                            Type::Struct(target_struct, None)
+                            Type::RawPointer(Box::new(Type::Struct(target_struct, None)))
                         };
                         let mut fields = HashMap::new();
                         fields.insert("Ok".to_string(), Type::Int);

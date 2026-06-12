@@ -11,6 +11,7 @@ pub struct Codegen {
     function_registry: HashMap<String, FunctionSignature>,
     enum_registry: HashMap<String, Vec<String>>, // Added enum registry to Codegen
     current_alloc_struct: RefCell<Option<String>>,
+    current_function: RefCell<Option<String>>,
     pub resolved_names: HashMap<crate::token::Span, String>,
     pub resolved_types: HashMap<crate::token::Span, Type>,
 }
@@ -265,6 +266,7 @@ impl Codegen {
             function_registry: erased_function_registry,
             enum_registry, // Saved here
             current_alloc_struct: RefCell::new(None),
+            current_function: RefCell::new(None),
             resolved_names,
             resolved_types,
         }
@@ -633,8 +635,8 @@ impl Codegen {
             if struct_name == "os_Dir" || struct_name == "os_DirEntry" {
                 continue;
             }
-            if !struct_name.starts_with("LookupResult_") {
-                c_code.push_str(&format!(
+            if !struct_name.starts_with("LookupResult_") && !struct_name.starts_with("CastResult_") {
+                c_code.push_str(&format!( 
                     "typedef struct CastResult_{} CastResult_{};\n",
                     struct_name, struct_name
                 ));
@@ -648,6 +650,7 @@ impl Codegen {
                 || struct_name == "os_DirEntry"
                 || struct_name == "LookupResult_os_Dir"
                 || struct_name == "LookupResult_os_DirEntry"
+                || struct_name.starts_with("CastResult_")
             {
                 continue;
             }
@@ -702,7 +705,7 @@ impl Codegen {
                 }
                 c_code.push_str("};\n\n");
 
-                if !struct_name.starts_with("LookupResult_") {
+                if !struct_name.starts_with("LookupResult_") && !struct_name.starts_with("CastResult_") {
                     c_code.push_str(&format!("struct CastResult_{} {{\n", struct_name));
                     c_code.push_str(&format!("    {}* Val;\n", struct_name));
                     c_code.push_str("    int Ok;\n");
@@ -720,6 +723,8 @@ impl Codegen {
                 || struct_name == "os_DirEntry"
                 || struct_name == "LookupResult_os_Dir"
                 || struct_name == "LookupResult_os_DirEntry"
+                || struct_name.starts_with("CastResult_")
+                || struct_name.starts_with("LookupResult_")
             {
                 continue;
             }
@@ -832,19 +837,23 @@ impl Codegen {
 
                 let mut body_str = String::new();
                 if name == "main" {
+                    *self.current_function.borrow_mut() = Some("main".to_string());
                     body_str.push_str("int main(int argc, char** argv) {\n");
                     body_str.push_str("    os_argc = argc;\n");
                     body_str.push_str("    os_argv = argv;\n");
                     body_str.push_str(&self.gen_block_statement(body));
                     body_str.push_str("    return 0;\n");
                     body_str.push_str("}\n\n");
+                    *self.current_function.borrow_mut() = None;
                 } else {
+                    *self.current_function.borrow_mut() = Some(resolved_name.clone());
                     body_str.push_str(&format!( 
-                        "{} {}({}) {{\n",
+                        "{} {}({}) {\n",
                         ret_str, resolved_name, param_list
                     ));
                     body_str.push_str(&self.gen_block_statement(body));
                     body_str.push_str("}\n\n");
+                    *self.current_function.borrow_mut() = None;
 
                     if params.len() == 1 {
                         let param = &params[0];
@@ -1021,7 +1030,12 @@ impl Codegen {
                     let expr_str = self.gen_expression(expr);
                     result.push_str(&format!("    return {};\n", expr_str));
                 } else {
-                    result.push_str("    return;\n");
+                    let is_main = self.current_function.borrow().as_deref() == Some("main");
+                    if is_main {
+                        result.push_str("    return 0;\n");
+                    } else {
+                        result.push_str("    return;\n");
+                    }
                 }
             }
             Statement::Expression(expr, _) => {
@@ -1300,7 +1314,12 @@ impl Codegen {
                 let left_str = self.gen_expression(left);
 
                 let mut use_arrow = false;
-                if matches!(**left, Expression::IndexAccess { .. }) {
+                if let Some(left_type) = self.get_expr_type(left) {
+                    if matches!(left_type, Type::RawPointer(_)) {
+                        use_arrow = true;
+                    }
+                }
+                if !use_arrow && matches!(**left, Expression::IndexAccess { .. }) {
                     if let Expression::IndexAccess { allocator, .. } = &**left
                         && let Expression::Identifier(name, _) = &**allocator
                         && let Some(t) = self.symbol_table.borrow().get(name)

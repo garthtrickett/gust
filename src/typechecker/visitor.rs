@@ -2144,7 +2144,10 @@ impl TypeChecker {
                 Ok(Type::Int)
             }
             Expression::Selector { left, right, .. } => {
-                let left_type = self.check_expression(left)?;
+                let mut left_type = self.check_expression(left)?;
+                if let Type::RawPointer(inner) = &left_type {
+                    left_type = *inner.clone();
+                }
                 let left_str = expression_to_string(left);
                 let path = format!("{}.{}", left_str, right);
 
