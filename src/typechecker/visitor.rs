@@ -3176,7 +3176,7 @@ impl TypeChecker {
                     }
                     let mut active_arena_name = "ctx".to_string();
                     for (name, ty) in &self.symbol_table {
-                        if *ty == Type::Arena || matches!(ty, Type::RawPointer(ref inner) if **inner == Type::Arena) {
+                        if *ty == Type::Arena || matches!(ty, Type::RawPointer(inner) if **inner == Type::Arena) {
                             active_arena_name = name.clone();
                             break;
                         }

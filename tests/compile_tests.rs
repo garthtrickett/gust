@@ -2858,16 +2858,15 @@ fn test_scratchpad_origin_propagation() {
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
     let mut checker = TypeChecker::new();
-    let check_res = checker.check_program(&program);
-    assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+    assert!(checker.check_program(&program).is_ok(), "Typechecking failed: {:?}", checker.check_program(&program).err());
 
     // Verify p and view are of type RawPointer(Byte)
     let p_type = checker.variable_types.get("p").cloned().unwrap();
-    assert!(matches!(p_type, Type::RawPointer(ref inner) if **inner == Type::Byte));
+    assert!(matches!(&p_type, Type::RawPointer(inner) if **inner == Type::Byte));
 
     // Verify p and view are of type RawPointer(Byte)
     let view_type = checker.variable_types.get("view").cloned().unwrap();
-    assert!(matches!(view_type, Type::RawPointer(ref inner) if **inner == Type::Byte));
+    assert!(matches!(&view_type, Type::RawPointer(inner) if **inner == Type::Byte));
 
     // Verify origin propagation
     let view_origins = checker.all_variable_origins.get("view").cloned().unwrap();
