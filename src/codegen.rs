@@ -840,12 +840,16 @@ impl Codegen {
                 if let Some(pos) = suffix.rfind('_') {
                     let t_name = &suffix[..pos];
                     self.clone_helpers_needed.borrow_mut().insert(t_name.to_string());
+                } else {
+                    self.clone_helpers_needed.borrow_mut().insert(suffix.to_string());
                 }
             } else if struct_name.starts_with("GenerationalArena_") {
                 let suffix = &struct_name["GenerationalArena_".len()..];
                 if let Some(pos) = suffix.rfind('_') {
                     let t_name = &suffix[..pos];
                     self.clone_helpers_needed.borrow_mut().insert(t_name.to_string());
+                } else {
+                    self.clone_helpers_needed.borrow_mut().insert(suffix.to_string());
                 }
             }
         }
@@ -2085,12 +2089,16 @@ impl Codegen {
                                 let suffix = &struct_name["std_GenerationalArena_".len()..];
                                 if let Some(pos) = suffix.rfind('_') {
                                     t_name = suffix[..pos].to_string();
-                                } 
+                                } else { 
+                                    t_name = suffix.to_string();
+                                }
                             } else if struct_name.starts_with("GenerationalArena_") {
                                 let suffix = &struct_name["GenerationalArena_".len()..];
                                 if let Some(pos) = suffix.rfind('_') {
                                     t_name = suffix[..pos].to_string();
-                                } 
+                                } else { 
+                                    t_name = suffix.to_string();
+                                }
                             }
                         }
                         return format!("std_GenerationalArena_Step_{}(&{})", t_name, left_str);
