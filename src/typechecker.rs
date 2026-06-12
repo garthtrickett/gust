@@ -630,6 +630,41 @@ impl TypeChecker {
             },
         );
 
+        // std.ThreadLocalContext[ctx]
+        let tl_fields = vec![
+            crate::ast::FieldDef {
+                name: "arena".to_string(),
+                field_type: Type::RawPointer(Box::new(Type::Arena)),
+                span: crate::token::Span::dummy(),
+            },
+            crate::ast::FieldDef {
+                name: "_phantom".to_string(),
+                field_type: Type::RawPointer(Box::new(Type::Struct("ctx".to_string(), None))),
+                span: crate::token::Span::dummy(),
+            },
+        ];
+        struct_templates.insert(
+            "ThreadLocalContext".to_string(),
+            StructTemplate {
+                generics: vec!["ctx".to_string()],
+                fields: tl_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.ThreadLocalContext".to_string(),
+            StructTemplate {
+                generics: vec!["ctx".to_string()],
+                fields: tl_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std_ThreadLocalContext".to_string(),
+            StructTemplate {
+                generics: vec!["ctx".to_string()],
+                fields: tl_fields,
+            },
+        );
+
         TypeChecker {
             current_prefix: "".to_string(),
             imports: HashMap::new(),
