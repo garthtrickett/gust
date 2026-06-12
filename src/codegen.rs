@@ -522,6 +522,8 @@ impl Codegen {
                 || func_name == "os_ReadFile"
                 || func_name == "os.WriteFile"
                 || func_name == "os_WriteFile"
+                || func_name == "os.path_join"
+                || func_name == "os_path_join"
                 || func_name == "os.LogInt"
                 || func_name == "os_LogInt"
                 || func_name == "os.LogStr"

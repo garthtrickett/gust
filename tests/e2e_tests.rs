@@ -1749,3 +1749,29 @@ fn test_e2e_str_split() {
     "#;
     run_e2e_test(source, "4\na\nb\nc\nd\n3\nx\ny\nz\n1\na,b,c,d");
 }
+
+#[test]
+fn test_e2e_path_join() {
+    let source = r#"
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut p1 := os.path_join("a/b", "c", ctx);
+            os.LogStr(p1);
+
+            mut p2 := os.path_join("a/b", "../c", ctx);
+            os.LogStr(p2);
+
+            mut p3 := os.path_join("a/./b", "c/../d", ctx);
+            os.LogStr(p3);
+
+            mut p4 := os.path_join("/a/b/", "/c", ctx);
+            os.LogStr(p4);
+
+            mut p5 := os.path_join("a/b", "../../c", ctx);
+            os.LogStr(p5);
+        }
+    "#;
+    run_e2e_test(source, "a/b/c\na/c\na/b/d\n/a/b/c\n../c");
+}

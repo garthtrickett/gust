@@ -2834,6 +2834,21 @@ fn test_str_split_brand_mismatch_rejected() {
 }
 
 #[test]
+fn test_path_join_arena_moved_rejected() {
+    let source = r#"
+        func main() {
+            mut ctx := os.Arena.New();
+            mut moved_ctx := move ctx;
+            mut path := os.path_join("a", "b", ctx);
+        }
+    "#;
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
+}
+
+#[test]
 fn test_format_typecheck_valid() {
     let source = "
         func main() {

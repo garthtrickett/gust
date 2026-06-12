@@ -401,6 +401,110 @@ void os_CloseDir(os_Dir dir) {
     }
 }
 
+Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char file, os_Arena* ctx) {
+    int is_absolute = 0;
+    if (dir.len > 0 && dir.data[0] == '/') {
+        is_absolute = 1;
+    } else if (dir.len == 0 && file.len > 0 && file.data[0] == '/') {
+        is_absolute = 1;
+    }
+
+    int total_joined_len = dir.len + file.len + 2;
+    char* temp_buf = malloc(total_joined_len);
+    int temp_len = 0;
+
+    if (dir.len > 0) {
+        memcpy(temp_buf + temp_len, dir.data, dir.len);
+        temp_len += dir.len;
+    }
+    temp_buf[temp_len++] = '/';
+    if (file.len > 0) {
+        memcpy(temp_buf + temp_len, file.data, file.len);
+        temp_len += file.len;
+    }
+    temp_buf[temp_len] = '\0';
+
+    char** stack = malloc(temp_len * sizeof(char*));
+    int* stack_lens = malloc(temp_len * sizeof(int));
+    int stack_size = 0;
+
+    int p = 0;
+    while (p < temp_len) {
+        while (p < temp_len && temp_buf[p] == '/') {
+            p++;
+        }
+        if (p >= temp_len) break;
+
+        int start = p;
+        while (p < temp_len && temp_buf[p] != '/') {
+            p++;
+        }
+        int comp_len = p - start;
+
+        if (comp_len == 1 && temp_buf[start] == '.') {
+            // Ignore "."
+        } else if (comp_len == 2 && temp_buf[start] == '.' && temp_buf[start + 1] == '.') {
+            if (stack_size > 0 && !(stack_lens[stack_size - 1] == 2 && stack[stack_size - 1][0] == '.' && stack[stack_size - 1][1] == '.')) {
+                stack_size--;
+            } else {
+                if (!is_absolute) {
+                    stack[stack_size] = temp_buf + start;
+                    stack_lens[stack_size] = comp_len;
+                    stack_size++;
+                }
+            }
+        } else if (comp_len > 0) {
+            stack[stack_size] = temp_buf + start;
+            stack_lens[stack_size] = comp_len;
+            stack_size++;
+        }
+    }
+
+    int final_len = 0;
+    if (is_absolute) {
+        final_len += 1;
+    }
+    for (int i = 0; i < stack_size; i++) {
+        final_len += stack_lens[i];
+        if (i < stack_size - 1) {
+            final_len += 1;
+        }
+    }
+
+    if (final_len == 0) {
+        final_len = 1;
+    }
+
+    int offset = os_ArenaAlloc(ctx, final_len);
+    char* dest = (char*)ctx->BaseAddress + offset;
+    int dest_p = 0;
+
+    if (is_absolute) {
+        dest[dest_p++] = '/';
+    }
+
+    if (stack_size == 0 && !is_absolute) {
+        dest[dest_p++] = '.';
+    } else {
+        for (int i = 0; i < stack_size; i++) {
+            memcpy(dest + dest_p, stack[i], stack_lens[i]);
+            dest_p += stack_lens[i];
+            if (i < stack_size - 1) {
+                dest[dest_p++] = '/';
+            }
+        }
+    }
+
+    free(temp_buf);
+    free(stack);
+    free(stack_lens);
+
+    Slice_unsigned_char result;
+    result.data = (unsigned char*)dest;
+    result.len = final_len;
+    return result;
+}
+
 "#;
 
 pub const COLLECTIONS_RUNTIME: &str = r#"// ====================================================
