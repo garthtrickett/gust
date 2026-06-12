@@ -2239,6 +2239,43 @@ fn test_generational_arena_deep_copy_codegen() {
 }
 
 #[test]
+fn test_generational_arena_method_calls() {
+    let source = "
+        type Node struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut arena: std.GenerationalArena[Node, ctx];
+            arena.Step();
+            arena.Swap();
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&program);
+
+    // Verify correct transpilation of Step and Swap calls to the FFI function
+    assert!(c_output.contains("std_GenerationalArena_Step_Node(&arena);"));
+}
+
+#[test]
 fn test_fiber_scratchpad_escape_across_yield_boundary() {
     let source = "
         type Packet[ctx] struct {
