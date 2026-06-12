@@ -1848,7 +1848,11 @@ fn test_e2e_multithreaded_scratch_isolation() {
             defer t_ctx.Free();
             os.SetThreadScratch(t_ctx);
             
-            mut s := std.FormatInt((*arg).val);
+            mut val := 0;
+            unsafe {
+                val = (*arg).val;
+            }
+            mut s := std.FormatInt(val);
             
             mut i := 0;
             while i < 20000 {
