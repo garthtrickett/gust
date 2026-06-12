@@ -1,9 +1,9 @@
 {
-"summary": "feat: add Guard variant to TokenType enum",
-"files": [
-{
-"file_path": "src/token.rs",
-"code_diff": "<<<<<<< SEARCH\n // Keywords\n Import,\n Mut,\n=======\n // Keywords\n Guard,\n Import,\n Mut,\n>>>>>>> REPLACE"
-}
-]
+  "summary": "feat: map the 'guard' keyword in the lexer and add test coverage",
+  "files": [
+    {
+      "file_path": "src/lexer.rs",
+      "code_diff": "<<<<<<< SEARCH\nfn lookup_ident(ident: &str) -> TokenType {\n    match ident {\n        \"import\" => TokenType::Import,\n        \"mut\" => TokenType::Mut,\n=======\nfn lookup_ident(ident: &str) -> TokenType {\n    match ident {\n        \"guard\" => TokenType::Guard,\n        \"import\" => TokenType::Import,\n        \"mut\" => TokenType::Mut,\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n    #[test]\n    fn test_empty_intrinsic_tokenizing() {\n        let input = \"empty[int]\";\n=======\n    #[test]\n    fn test_guard_lexing() {\n        let input = \"guard mut x := 5 else {}\";\n        let mut l = Lexer::new(input);\n        let expected = vec![\n            (TokenType::Guard, \"guard\"),\n            (TokenType::Mut, \"mut\"),\n            (TokenType::Ident, \"x\"),\n            (TokenType::Assign, \":=\"),\n            (TokenType::Int, \"5\"),\n            (TokenType::Else, \"else\"),\n            (TokenType::LBrace, \"{\"),\n            (TokenType::RBrace, \"}\"),\n            (TokenType::Eof, \"\"),\n        ];\n        for (expected_type, expected_literal) in expected {\n            let tok = l.next_token();\n            assert_eq!(tok.token_type, expected_type);\n            assert_eq!(tok.literal, expected_literal);\n        }\n    }\n\n    #[test]\n    fn test_empty_intrinsic_tokenizing() {\n        let input = \"empty[int]\";\n>>>>>>> REPLACE"
+    }
+  ]
 }

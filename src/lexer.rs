@@ -301,6 +301,7 @@ fn is_digit(ch: char) -> bool {
 
 fn lookup_ident(ident: &str) -> TokenType {
     match ident {
+        "guard" => TokenType::Guard,
         "import" => TokenType::Import,
         "mut" => TokenType::Mut,
         "func" => TokenType::Func,
@@ -479,6 +480,28 @@ mod tests {
             (TokenType::Eof, ""),
         ];
 
+        for (expected_type, expected_literal) in expected {
+            let tok = l.next_token();
+            assert_eq!(tok.token_type, expected_type);
+            assert_eq!(tok.literal, expected_literal);
+        }
+    }
+
+    #[test]
+    fn test_guard_lexing() {
+        let input = "guard mut x := 5 else {}";
+        let mut l = Lexer::new(input);
+        let expected = vec![
+            (TokenType::Guard, "guard"),
+            (TokenType::Mut, "mut"),
+            (TokenType::Ident, "x"),
+            (TokenType::Assign, ":="),
+            (TokenType::Int, "5"),
+            (TokenType::Else, "else"),
+            (TokenType::LBrace, "{"),
+            (TokenType::RBrace, "}"),
+            (TokenType::Eof, ""),
+        ];
         for (expected_type, expected_literal) in expected {
             let tok = l.next_token();
             assert_eq!(tok.token_type, expected_type);
