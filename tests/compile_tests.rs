@@ -15,6 +15,18 @@ fn check_program(source: &str) -> Result<(), TypeError> {
 }
 
 #[test]
+fn test_thread_local_context_registration_valid() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut tl: std.ThreadLocalContext[ctx];
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_bool_primitive_accepted() {
     let source = "
         func main() {
