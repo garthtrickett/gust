@@ -2244,6 +2244,22 @@ fn test_self_hosted_token_compilation() {
     assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
     
     let (order, mut modules) = res.unwrap();
+
+    eprintln!("====================================================");
+    eprintln!("🔍 E2E SELF-HOSTED RESOLUTION ORDER:");
+    for (idx, path) in order.iter().enumerate() {
+        eprintln!("  [{}] {:?}", idx + 1, path);
+    }
+    eprintln!("====================================================");
+
+    if let Some(entry_module) = modules.get(order.last().unwrap()) {
+        eprintln!("📄 ENTRY FILE SOURCE (e2e_test_entry.gst):");
+        eprintln!("----------------------------------------------------");
+        for (idx, line) in entry_module.source.lines().enumerate() {
+            eprintln!("{:4} | {}", idx + 1, line);
+        }
+        eprintln!("----------------------------------------------------");
+    }
     
     let mut checker = gust_lexer::typechecker::TypeChecker::new();
     for path in &order {
