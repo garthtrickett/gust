@@ -76,7 +76,7 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             if e_clean != a_clean && e_clean != "Any" && a_clean != "Any" {
                 return false;
             }
-            if e_brand.is_none() || a_brand.is_none() {
+            if e_brand.is_none() || a_brand.is_none() || e_brand.as_deref() == Some("Any") || a_brand.as_deref() == Some("Any") {
                 return true;
             }
             e_brand == a_brand
@@ -106,11 +106,14 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
                 let is_channel_any = (e_clean.starts_with("Channel_")
                     && a_clean.starts_with("Channel_Any"))
                     || (a_clean.starts_with("Channel_") && e_clean.starts_with("Channel_Any"));
-                if !is_vector_any && !is_hashmap_any && !is_pool_any && !is_rc_any && !is_graph_any && !is_mutex_any && !is_channel_any {
+                let is_tl_any = (e_clean.starts_with("ThreadLocalContext_")
+                    && a_clean.starts_with("ThreadLocalContext_Any"))
+                    || (a_clean.starts_with("ThreadLocalContext_") && e_clean.starts_with("ThreadLocalContext_Any"));
+                if !is_vector_any && !is_hashmap_any && !is_pool_any && !is_rc_any && !is_graph_any && !is_mutex_any && !is_channel_any && !is_tl_any {
                     return false;
                 }
             }
-            if e_brand.is_none() || a_brand.is_none() {
+            if e_brand.is_none() || a_brand.is_none() || e_brand.as_deref() == Some("Any") || a_brand.as_deref() == Some("Any") {
                 return true;
             }
             e_brand == a_brand

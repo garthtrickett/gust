@@ -2088,6 +2088,15 @@ impl TypeChecker {
                     if let Type::RawPointer(_) = &resolved_target {
                         return Ok(resolved_target.clone());
                     }
+                    if let Type::Slice(_) = &resolved_target {
+                        return Ok(resolved_target.clone());
+                    }
+                    if resolved_target == Type::ByteSlice {
+                        return Ok(resolved_target.clone());
+                    }
+                    if resolved_target == Type::Str {
+                        return Ok(resolved_target.clone());
+                    }
                 }
 
                 if let Type::RawPointer(_) = &resolved_target
