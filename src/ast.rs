@@ -89,6 +89,13 @@ pub enum Statement {
         cases: Vec<MatchCase>,
         span: Span,
     },
+    Guard {
+        name: String,
+        is_mut: bool,
+        value: Expression,
+        else_body: BlockStatement,
+        span: Span,
+    },
     UnsafeBlock {
         body: BlockStatement,
         span: Span,
@@ -159,6 +166,7 @@ impl Statement {
             Statement::While { span, .. } => *span,
             Statement::If { span, .. } => *span,
             Statement::Match { span, .. } => *span,
+            Statement::Guard { span, .. } => *span,
             Statement::UnsafeBlock { span, .. } => *span,
             Statement::Defer { span, .. } => *span,
             Statement::Return(_, span) => *span,
