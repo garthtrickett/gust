@@ -1016,7 +1016,12 @@ impl TypeChecker {
 
                 // 5. Track memory origins
                 let origins = self.get_expression_origins(value);
-                let mut final_origins = if is_ephemeral_view(&payload_type) {
+                let is_cast_result = if let Type::Struct(ref struct_name, _) = resolved_val_type {
+                    struct_name.starts_with("CastResult_")
+                } else {
+                    false
+                };
+                let mut final_origins = if is_ephemeral_view(&payload_type) || is_cast_result {
                     origins
                 } else {
                     HashSet::new()
