@@ -955,10 +955,10 @@ impl TypeChecker {
             }
             Statement::Guard {
                 name,
-                is_mut,
+                is_mut: _,
                 value,
                 else_body,
-                span,
+                span: _,
             } => {
                 // 1. Typecheck the RHS expression 'value'
                 let val_type = self.check_expression(value)?;
@@ -966,20 +966,15 @@ impl TypeChecker {
 
                 // Confirm it is a fallible wrapper type containing both Ok and Val fields
                 let mut bound_type = None;
-                if let Type::Struct(ref struct_name, ref _brand) = resolved_val_type {
-                    if let Some(layout) = self.struct_registry.get(struct_name) {
+                if let Type::Struct(ref struct_name, ref _brand) = resolved_val_type
+                    && let Some(layout) = self.struct_registry.get(struct_name) {
                         let ok_field = layout.fields.get("Ok");
                         let val_field = layout.fields.get("Val");
-                        match (ok_field, val_field) { 
-                            (Some(ok_t), Some(val_t)) => {
-                                if *ok_t == Type::Int || *ok_t == Type::Bool {
-                                    bound_type = Some(val_t.clone());
-                                }
+                        if let (Some(ok_t), Some(val_t)) = (ok_field, val_field)
+                            && (*ok_t == Type::Int || *ok_t == Type::Bool) {
+                                bound_type = Some(val_t.clone());
                             }
-                            _ => {}
-                        }
                     }
-                }
 
                 let Some(payload_type) = bound_type else {
                     return Err(TypeError {

@@ -92,13 +92,11 @@ fn get_by_value_dependencies(
 impl Codegen {
     fn find_wrapper_type(&self, val_type: &Type) -> String {
         for (struct_name, layout) in &self.struct_registry {
-            if let Some(ok_t) = layout.fields.get("Ok") {
-                if let Some(val_t) = layout.fields.get("Val") {
-                    if (*ok_t == Type::Int || *ok_t == Type::Bool) && self.get_c_type(val_t) == self.get_c_type(val_type) {
+            if let Some(ok_t) = layout.fields.get("Ok")
+                && let Some(val_t) = layout.fields.get("Val")
+                    && (*ok_t == Type::Int || *ok_t == Type::Bool) && self.get_c_type(val_t) == self.get_c_type(val_type) {
                         return struct_name.clone();
                     }
-                }
-            }
         }
         "LookupResult_int".to_string()
     }

@@ -151,6 +151,26 @@ impl TypeChecker {
                         );
                     }
 
+                if name.starts_with("CastResult_")
+                    && !self.struct_registry.contains_key(name) {
+                        let target_struct = name.strip_prefix("CastResult_").unwrap_or(name).to_string();
+                        let v_type = if target_struct == "int" {
+                            Type::Int
+                        } else {
+                            Type::Struct(target_struct, None)
+                        };
+                        let mut fields = HashMap::new();
+                        fields.insert("Ok".to_string(), Type::Int);
+                        fields.insert("Val".to_string(), v_type);
+                        self.struct_registry.insert(
+                            name.clone(),
+                            StructLayout {
+                                brand: None,
+                                fields,
+                            },
+                        );
+                    }
+
                 if (name.starts_with("RcNode_") || name.starts_with("std_RcNode_"))
                     && !self.struct_registry.contains_key(name) {
                         let inner_t_name = if let Some(stripped) = name.strip_prefix("RcNode_") {
