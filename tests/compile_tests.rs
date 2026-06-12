@@ -2534,7 +2534,7 @@ fn test_self_hosted_domain_model_e2e() {
     
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
-    assert_eq!(stdout_str.trim(), "2\\nType mismatch!");
+    assert_eq!(stdout_str.trim(), "2\nType mismatch!");
 }
 
 #[test]
