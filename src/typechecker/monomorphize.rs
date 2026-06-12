@@ -16,6 +16,44 @@ impl TypeChecker {
         }
     }
 
+    pub(crate) fn substitute_field_brand(
+        &self,
+        t: &Type,
+        struct_brand: &Option<String>,
+        parent_path: &str,
+        layout: &StructLayout,
+    ) -> Type {
+        match t {
+            Type::Index(struct_name, Some(original_brand)) => {
+                if layout.fields.contains_key(original_brand) {
+                    let mut res = parent_path.to_string();
+                    res.push('.');
+                    res.push_str(original_brand);
+                    Type::Index(struct_name.clone(), Some(res))
+                } else {
+                    Type::Index(struct_name.clone(), struct_brand.clone())
+                }
+            }
+            Type::Struct(struct_name, Some(original_brand)) => {
+                if layout.fields.contains_key(original_brand) {
+                    let mut res = parent_path.to_string();
+                    res.push('.');
+                    res.push_str(original_brand);
+                    Type::Struct(struct_name.clone(), Some(res))
+                } else {
+                    Type::Struct(struct_name.clone(), struct_brand.clone())
+                }
+            }
+            Type::RawPointer(inner) => {
+                Type::RawPointer(Box::new(self.substitute_field_brand(inner, struct_brand, parent_path, layout)))
+            }
+            Type::Slice(inner) => {
+                Type::Slice(Box::new(self.substitute_field_brand(inner, struct_brand, parent_path, layout)))
+            }
+            _ => self.substitute_brand(t, struct_brand),
+        }
+    }
+
     pub(crate) fn is_element_allowed_in_brand(&self, element: &Type, ob: &str) -> bool {
         if !self.is_linear(element) {
             return true;

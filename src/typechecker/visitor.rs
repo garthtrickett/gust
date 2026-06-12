@@ -2430,7 +2430,7 @@ impl TypeChecker {
                     }
                     if let Some(layout) = self.struct_registry.get(struct_name) {
                         if let Some(field_type) = layout.fields.get(right) {
-                            let returned_type = self.substitute_brand(field_type, _brand);
+                            let returned_type = self.substitute_field_brand(field_type, _brand, &left_str, layout);
                             let resolved_returned = self.resolve_type(&returned_type)?;
                             return Ok(resolved_returned);
                         }
