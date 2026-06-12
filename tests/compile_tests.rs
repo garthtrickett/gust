@@ -2335,6 +2335,143 @@ fn test_self_hosted_ast_compilation() {
 }
 
 #[test]
+fn test_self_hosted_domain_model_e2e() {
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/e2e_test_entry.gst");
+    
+    // Create compiler directory if it doesn't exist
+    std::fs::create_dir_all("compiler").unwrap();
+    
+    // Write a dummy entry file that imports token.gst, ast.gst, and errors.gst
+    let entry_source = "
+        import \"token.gst\" as token;
+        import \"ast.gst\" as ast;
+        import \"errors.gst\" as errs;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            
+            mut p: ast.Program[ctx];
+            p.statements = os.ArenaAlloc(ctx);
+            
+            mut s: ast.Statement[ctx];
+            s.tag = 13;
+            s.Expression.expr = os.ArenaAlloc(ctx);
+            s.Expression.span.start.line = 1;
+            s.Expression.span.start.column = 5;
+            
+            mut e: ast.Expression[ctx];
+            e.tag = 1;
+            e.Integer.val = 100;
+            
+            mut error_ptr: Index[errs.CompilerError, ctx] := os.ArenaAlloc(ctx);
+            ctx[error_ptr].kind.tag = 2;
+            ctx[error_ptr].message = \"Type mismatch!\";
+            ctx[error_ptr].span = s.Expression.span;
+            
+            mut res: errs.Result[ast.Expression[ctx], ctx];
+            res.tag = 1;
+            res.Err.error = error_ptr;
+            
+            os.LogInt(ctx[res.Err.error].kind.tag);
+            os.LogStr(ctx[res.Err.error].message);
+        }
+    ";
+    std::fs::write(&entry_path, entry_source).unwrap();
+    
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+    
+    let (order, mut modules) = res.unwrap();
+    
+    let mut checker = gust_lexer::typechecker::TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
+        }
+    }
+    
+    let mut unified_statements = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            unified_statements.append(&mut module.program.statements);
+        } 
+    }
+    
+    let program = gust_lexer::ast::Program {
+        statements: unified_statements,
+        span: gust_lexer::token::Span::dummy(),
+    };
+    
+    let codegen = gust_lexer::codegen::Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&program);
+    
+    // Verify transpiled C contents for the entire multi-module compiler domain model
+    assert!(c_output.contains("struct ast__Program"));
+    assert!(c_output.contains("struct errs__CompilerError"));
+    assert!(c_output.contains("struct errs__Result_ast__Expression_ctx_ctx"));
+    
+    // Invoke GCC/Clang to compile the output and run it as an E2E test!
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let count = 42069;
+    
+    let c_filename = format!("gust_self_hosted_e2e_{:?}_{}.c", thread_id, count);
+    let bin_filename = format!("gust_self_hosted_e2e_{:?}_{}.bin", thread_id, count);
+    
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+    
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+    
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let compile_output = std::process::Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-o")
+        .arg(&bin_path)
+        .output();
+        
+    let compile_success = match compile_output {
+        Ok(output) => {
+            if !output.status.success() {
+                println!("--- GCC Compilation Failed ---");
+                println!("STDOUT:\\n{}", String::from_utf8_lossy(&output.stdout));
+                println!("STDERR:\\n{}", String::from_utf8_lossy(&output.stderr));
+            }
+            output.status.success()
+        }
+        Err(e) => {
+            let _ = std::fs::remove_file(&c_path);
+            panic!("CC failed: {:?}", e);
+        }
+    };
+    assert!(compile_success, "C compilation of multi-module self-hosted AST & Error model failed!");
+    
+    let run_output = std::process::Command::new(&bin_path).output().expect("Failed to execute binary");
+    
+    // Clean up temporary files
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_file(entry_path);
+    
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+    assert_eq!(stdout_str.trim(), "2\\nType mismatch!");
+}
+
+#[test]
 fn test_generational_arena_template_typechecking() {
     let source = "
         type Node struct {
