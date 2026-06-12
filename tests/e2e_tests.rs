@@ -1335,10 +1335,11 @@ fn test_e2e_mutex_concurrency() {
                     current_count = (*val).count;
                     arg.mutex.Unlock();
                 }
+                std.Yield();
             }
 
             os.LogInt(current_count);
-        }
+        } 
     ";
     run_e2e_test(source, "300");
 }

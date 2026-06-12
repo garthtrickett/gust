@@ -857,13 +857,19 @@ impl Codegen {
                 let mut body_str = String::new();
                 if name == "main" {
                     *self.current_function.borrow_mut() = Some("main".to_string());
+                    body_str.push_str("void gust_user_main(void* arg) {\n");
+                    body_str.push_str(&self.gen_block_statement(body));
+                    body_str.push_str("}\n\n");
                     body_str.push_str("int main(int argc, char** argv) {\n");
                     body_str.push_str("    os_argc = argc;\n");
                     body_str.push_str("    os_argv = argv;\n");
-                    body_str.push_str(&self.gen_block_statement(body));
+                    body_str.push_str("    gust_scheduler_init(4);\n");
+                    body_str.push_str("    gust_scheduler_spawn(16384, gust_user_main, NULL);\n");
+                    body_str.push_str("    gust_scheduler_destroy();\n");
                     body_str.push_str("    return 0;\n");
                     body_str.push_str("}\n\n");
                     *self.current_function.borrow_mut() = None;
+                }
                 } else {
                     *self.current_function.borrow_mut() = Some(resolved_name.clone());
                     body_str.push_str(&format!( 
@@ -1816,6 +1822,10 @@ impl Codegen {
                         "gust_scheduler_spawn(16384, (void (*)(void*)){}, {})",
                         thread_func_name, cast_expr
                     );
+                }
+
+                if func_path == "std.Yield" || func_path == "std_Yield" {
+                    return "gust_yield()".to_string();
                 }
 
                 // os.Exit / os_Exit
