@@ -14,6 +14,7 @@ pub struct Codegen {
     current_function: RefCell<Option<String>>,
     pub resolved_names: HashMap<crate::token::Span, String>,
     pub resolved_types: HashMap<crate::token::Span, Type>,
+    clone_helpers_needed: RefCell<std::collections::HashSet<String>>,
 }
 
 // Brand Erasure Helpers
@@ -269,6 +270,7 @@ impl Codegen {
             current_function: RefCell::new(None),
             resolved_names,
             resolved_types,
+            clone_helpers_needed: RefCell::new(std::collections::HashSet::new()),
         }
     }
 
@@ -397,6 +399,50 @@ impl Codegen {
     fn has_boolean_fields(&self, t: &Type) -> bool {
         let mut visited = std::collections::HashSet::new();
         self.has_boolean_fields_recursive(t, &mut visited)
+    }
+
+    fn generate_clone_helper(&self, struct_name: &str) -> String {
+        let mut c_code = String::new();
+        c_code.push_str(&format!(
+            "int std_GenerationalArena_Clone_{}(os_Arena* dest, os_Arena* src, int src_idx) {{\n",
+            struct_name
+        ));
+        c_code.push_str("    if (src_idx == 0xFFFFFFFF) return 0xFFFFFFFF;\n");
+        c_code.push_str(&format!(
+            "    int dest_idx = os_ArenaAlloc(dest, sizeof(struct {}));\n",
+            struct_name
+        ));
+        c_code.push_str(&format!(
+            "    struct {}* src_ptr = (struct {}*)((char*)src->BaseAddress + src_idx);\n",
+            struct_name, struct_name
+        ));
+        c_code.push_str(&format!(
+            "    struct {}* dest_ptr = (struct {}*)((char*)dest->BaseAddress + dest_idx);\n",
+            struct_name, struct_name
+        ));
+        c_code.push_str("    *dest_ptr = *src_ptr;\n");
+
+        if let Some(layout) = self.struct_registry.get(struct_name) {
+            let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
+            sorted_fields.sort_by(|a, b| a.0.cmp(b.0));
+            for (field_name, field_type) in sorted_fields {
+                if let Type::Index(nested_struct, _) = field_type {
+                    let clean_nested = if nested_struct == "Any" {
+                        "SessionNode".to_string()
+                    } else {
+                        nested_struct.clone()
+                    };
+                    c_code.push_str(&format!(
+                        "    dest_ptr->{} = std_GenerationalArena_Clone_{}(dest, src, src_ptr->{});\n",
+                        field_name, clean_nested, field_name
+                    ));
+                }
+            }
+        }
+
+        c_code.push_str("    return dest_idx;\n");
+        c_code.push_str("}\n\n");
+        c_code
     }
 
     pub fn generate(&self, program: &Program) -> String {
@@ -770,6 +816,64 @@ impl Codegen {
                 }
                 c_code.push_str("    return 1;\n");
                 c_code.push_str("}\n\n");
+            }
+        }
+
+        for struct_name in self.struct_registry.keys() {
+            if struct_name.starts_with("std_GenerationalArena_") {
+                let suffix = &struct_name["std_GenerationalArena_".len()..];
+                if let Some(pos) = suffix.rfind('_') {
+                    let t_name = &suffix[..pos];
+                    self.clone_helpers_needed.borrow_mut().insert(t_name.to_string());
+                }
+            } else if struct_name.starts_with("GenerationalArena_") {
+                let suffix = &struct_name["GenerationalArena_".len()..];
+                if let Some(pos) = suffix.rfind('_') {
+                    let t_name = &suffix[..pos];
+                    self.clone_helpers_needed.borrow_mut().insert(t_name.to_string());
+                }
+            }
+        }
+
+        let mut work_list: Vec<String> = self.clone_helpers_needed.borrow().iter().cloned().collect();
+        while let Some(current) = work_list.pop() {
+            if let Some(layout) = self.struct_registry.get(&current) {
+                for field_type in layout.fields.values() {
+                    if let Type::Index(nested_struct, _) = field_type {
+                        let clean_nested = if nested_struct == "Any" {
+                            "SessionNode".to_string()
+                        } else {
+                            nested_struct.clone()
+                        };
+                        let inserted = self.clone_helpers_needed.borrow_mut().insert(clean_nested.clone());
+                        if inserted { 
+                            work_list.push(clean_nested);
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut ordered_helpers: Vec<String> = self.clone_helpers_needed.borrow().iter().cloned().collect();
+        ordered_helpers.sort();
+
+        if !ordered_helpers.is_empty() {
+            c_code.push_str("// ====================================================\n");
+            c_code.push_str("// GENERATIONAL ARENA CLONE HELPER FORWARD DECLARATIONS\n");
+            c_code.push_str("// ====================================================\n");
+            for name in &ordered_helpers {
+                c_code.push_str(&format!(
+                    "int std_GenerationalArena_Clone_{}(os_Arena* dest, os_Arena* src, int src_idx);\n",
+                    name
+                ));
+            }
+            c_code.push('\n');
+
+            c_code.push_str("// ====================================================\n");
+            c_code.push_str("// GENERATIONAL ARENA CLONE HELPER DEFINITIONS\n");
+            c_code.push_str("// ====================================================\n");
+            for name in &ordered_helpers {
+                c_code.push_str(&self.generate_clone_helper(name));
             }
         }
 
