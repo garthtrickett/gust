@@ -869,7 +869,6 @@ impl Codegen {
                     body_str.push_str("    return 0;\n");
                     body_str.push_str("}\n\n");
                     *self.current_function.borrow_mut() = None;
-                }
                 } else {
                     *self.current_function.borrow_mut() = Some(resolved_name.clone());
                     body_str.push_str(&format!( 
