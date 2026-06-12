@@ -352,6 +352,9 @@ impl TypeChecker {
         }
 
         if !self.struct_registry.contains_key(&concrete_name) {
+            // Temporarily override the current_prefix to the template's defining namespace.
+            // This ensures that nested field types (such as module-local enum types) resolve
+            // within the context where the template was defined, rather than the caller's context.
             let old_prefix = self.current_prefix.clone();
             if let Some(pos) = template_name.rfind("__") {
                 self.current_prefix = template_name[..pos + 2].to_string();
