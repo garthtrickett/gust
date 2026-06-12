@@ -528,6 +528,23 @@ mod tests {
     }
 
     #[test]
+    fn test_guard_specific_cases() {
+        let input1 = "guard a := 5;";
+        let mut l1 = Lexer::new(input1);
+        assert_eq!(l1.next_token().token_type, TokenType::Guard);
+        assert_eq!(l1.next_token().token_type, TokenType::Ident);
+        assert_eq!(l1.next_token().token_type, TokenType::Assign);
+        assert_eq!(l1.next_token().token_type, TokenType::Int);
+        assert_eq!(l1.next_token().token_type, TokenType::Semicolon);
+
+        let input2 = "guard_name";
+        let mut l2 = Lexer::new(input2);
+        let tok = l2.next_token();
+        assert_eq!(tok.token_type, TokenType::Ident);
+        assert_eq!(tok.literal, "guard_name");
+    }
+
+    #[test]
     fn test_token_spans_and_position_tracking() {
         let input = "mut a := 10;\nmut b := 20;";
         let mut l = Lexer::new(input);
