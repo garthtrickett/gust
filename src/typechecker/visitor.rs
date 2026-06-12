@@ -716,6 +716,26 @@ impl TypeChecker {
         };
         self.function_registry.insert("os.path_join".to_string(), path_join_sig.clone());
         self.function_registry.insert("os_path_join".to_string(), path_join_sig);
+
+        // os.SetThreadScratch
+        let set_thread_scratch_sig = super::types::FunctionSignature {
+            param_names: vec!["ctx".to_string()],
+            params: vec![Type::RawPointer(Box::new(Type::Arena))],
+            return_type: Type::Void,
+            return_origins: std::collections::HashSet::new(),
+        };
+        self.function_registry.insert("os.SetThreadScratch".to_string(), set_thread_scratch_sig.clone());
+        self.function_registry.insert("os_SetThreadScratch".to_string(), set_thread_scratch_sig);
+
+        // os.GetThreadScratch
+        let get_thread_scratch_sig = super::types::FunctionSignature {
+            param_names: vec![],
+            params: vec![],
+            return_type: Type::Struct("std_ThreadLocalContext_Any".to_string(), Some("ctx".to_string())),
+            return_origins: std::collections::HashSet::new(),
+        };
+        self.function_registry.insert("os.GetThreadScratch".to_string(), get_thread_scratch_sig.clone());
+        self.function_registry.insert("os_GetThreadScratch".to_string(), get_thread_scratch_sig);
     }
 
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> { 
