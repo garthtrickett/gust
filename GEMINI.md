@@ -79,6 +79,7 @@ The patching tool uses Tree-sitter to validate the syntax of JavaScript, TypeScr
 
 
 COMMANDS
+cargo run -- --test
 cargo test -- --nocapture --test-threads=1
 cc gust_output.c -o gust_program && ./gust_program
 cargo clippy --fix --allow-dirty
