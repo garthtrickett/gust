@@ -736,6 +736,16 @@ impl TypeChecker {
         };
         self.function_registry.insert("os.GetThreadScratch".to_string(), get_thread_scratch_sig.clone());
         self.function_registry.insert("os_GetThreadScratch".to_string(), get_thread_scratch_sig);
+
+        // os.ArenaValidate
+        let arena_validate_sig = super::types::FunctionSignature {
+            param_names: vec!["arena".to_string()],
+            params: vec![Type::RawPointer(Box::new(Type::Arena))],
+            return_type: Type::Void,
+            return_origins: std::collections::HashSet::new(),
+        };
+        self.function_registry.insert("os.ArenaValidate".to_string(), arena_validate_sig.clone());
+        self.function_registry.insert("os_ArenaValidate".to_string(), arena_validate_sig);
     }
 
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> { 
