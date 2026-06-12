@@ -1001,6 +1001,13 @@ impl TypeChecker {
             } => {
                 let parent_scope = self.symbol_table.clone();
                 let parent_origins = self.variable_origins.clone();
+                let parent_moved = self.moved_vars.clone();
+                let parent_checked = self.checked_results.clone();
+                let parent_open_dirs = self.open_directories.clone();
+
+                self.moved_vars.clear();
+                self.checked_results.clear();
+                self.open_directories.clear();
 
                 let mut inout_params = Vec::new();
 
@@ -1081,6 +1088,9 @@ impl TypeChecker {
                 // Clean-up and restore parent scopes [3]
                 self.symbol_table = parent_scope;
                 self.variable_origins = parent_origins;
+                self.moved_vars = parent_moved;
+                self.checked_results = parent_checked;
+                self.open_directories = parent_open_dirs;
                 self.expected_return_type = old_expected;
                 self.current_function_return_origins = old_return_origins;
                 self.current_function_inout_params = old_inout_params;
