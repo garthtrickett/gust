@@ -552,6 +552,7 @@ impl Codegen {
                 || func_name == "std_is_whitespace"
                 || func_name == "std.parse_int"
                 || func_name == "std_parse_int"
+                || ((func_name == "os.GetThreadScratch" || func_name == "os_GetThreadScratch") && !self.struct_registry.contains_key("std_ThreadLocalContext"))
             {
                 continue;
             }
@@ -777,8 +778,16 @@ impl Codegen {
             c_code.push_str(&self.gen_statement(stmt));
         }
 
+        if self.struct_registry.contains_key("std_ThreadLocalContext") {
+            c_code.push_str("std_ThreadLocalContext os_GetThreadScratch(void) {\n");
+            c_code.push_str("    std_ThreadLocalContext tl = { .arena = os_GetThreadScratch_raw(), ._phantom = NULL };\n");
+            c_code.push_str("    return tl;\n");
+            c_code.push_str("}\n\n");
+        }
+
         c_code
     }
+}
 
     fn gen_statement(&self, stmt: &Statement) -> String {
         let mut result = String::new();

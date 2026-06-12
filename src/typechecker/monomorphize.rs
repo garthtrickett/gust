@@ -215,6 +215,18 @@ impl TypeChecker {
                         }
                     }
 
+                if (name.starts_with("ThreadLocalContext_") || name.starts_with("std_ThreadLocalContext_"))
+                    && !self.struct_registry.contains_key(name) {
+                        let suffix = if let Some(stripped) = name.strip_prefix("ThreadLocalContext_") {
+                            stripped
+                        } else {
+                            name.strip_prefix("std_ThreadLocalContext_").unwrap_or(name)
+                        };
+                        let ctx_t = Type::Struct(suffix.to_string(), None);
+                        let template = if name.starts_with("ThreadLocalContext_") { "ThreadLocalContext" } else { "std.ThreadLocalContext" };
+                        let _ = self.monomorphize(template, &[ctx_t]);
+                    }
+
                 if let Some(brand_name) = brand {
                     if self.struct_templates.contains_key(name) {
                         let args = vec![Type::Struct(brand_name.clone(), None)];

@@ -38,7 +38,7 @@ void os_SetThreadScratch(os_Arena* arena) {
     active_thread_arena = arena;
 }
 
-os_Arena* os_GetThreadScratch() {
+os_Arena* os_GetThreadScratch_raw() {
     return active_thread_arena;
 }
 
