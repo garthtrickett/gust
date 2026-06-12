@@ -1594,3 +1594,67 @@ fn test_e2e_vector_stack_lifo_parser() {
     ";
     run_e2e_test(source, "30\n35\n20\n2\n0");
 }
+
+#[test]
+fn test_e2e_guard_hashmap_lookup() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut map: std.HashMap[int, int, ctx] := std.HashMapNew(ctx);
+            map.Insert(42, 100);
+
+            guard val := map.Get(42) else {
+                os.LogInt(0);
+                return;
+            }
+
+            os.LogInt(val);
+        }
+    ";
+    run_e2e_test(source, "100");
+}
+
+#[test]
+fn test_e2e_guard_mutability() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut map: std.HashMap[int, int, ctx] := std.HashMapNew(ctx);
+            map.Insert(10, 50);
+
+            guard mut val := map.Get(10) else {
+                return;
+            }
+
+            val = val + 50;
+            os.LogInt(val);
+        }
+    ";
+    run_e2e_test(source, "100");
+}
+
+#[test]
+fn test_e2e_guard_cast() {
+    let source = "
+        type Packet struct {
+            ProtocolID: int,
+            Length: int
+        }
+
+        func main() {
+            mut payload := os.MockPayload();
+            
+            guard p := payload as &Packet else {
+                os.LogInt(0);
+                return;
+            }
+
+            os.LogInt(p.ProtocolID);
+        }
+    ";
+    run_e2e_test(source, "42");
+}
