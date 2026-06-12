@@ -502,6 +502,8 @@ impl Codegen {
                 || func_name == "std_GraphNew"
                 || func_name == "os.ArenaAlloc"
                 || func_name == "os_ArenaAlloc"
+                || func_name == "os.ArenaValidate"
+                || func_name == "os_ArenaValidate"
                 || func_name == "os.ScratchAlloc"
                 || func_name == "os_ScratchAlloc"
                 || func_name == "os.ScratchReset"
@@ -1430,6 +1432,12 @@ impl Codegen {
                     return format!("os_ArenaAlloc(&{}, sizeof({}))", arg_str, size_str);
                 }
 
+                if func_path == "os_ArenaValidate" || func_path == "os.ArenaValidate" {
+                    let arg_str = self.gen_expression(&arguments[0]);
+                    return format!("os_Arena_Validate(&{})", arg_str);
+                }
+
+                if func_path == "os_ScratchAlloc" || func_path == "os_ScratchAlloc" {
                 if func_path == "os_ScratchAlloc" || func_path == "os.ScratchAlloc" {
                     let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
                         format!("sizeof({})", struct_name)

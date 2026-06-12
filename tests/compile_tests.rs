@@ -2185,6 +2185,32 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_arena_validate_type_checking_valid() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            os.ArenaValidate(ctx);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_arena_validate_type_checking_invalid() {
+    let source = "
+        func main() {
+            mut x := 42;
+            os.ArenaValidate(x);
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+}
+
+#[test]
 fn test_codegen_thread_local_redirection() {
     let source = "
         func main() {
