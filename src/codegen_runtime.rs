@@ -205,6 +205,33 @@ Slice_unsigned_char std_str_trim(Slice_unsigned_char s) {
     return res;
 }
 
+struct std_Vector_str std_str_split(Slice_unsigned_char s, Slice_unsigned_char delim, os_Arena* ctx) {
+    struct std_Vector_str vec = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    if (delim.len == 0) {
+        for (int i = 0; i < s.len; i++) {
+            Slice_unsigned_char element = (Slice_unsigned_char){ s.data + i, 1 };
+            os_VectorPush(&vec, element);
+        }
+        return vec;
+    }
+    int start = 0;
+    for (int i = 0; i <= s.len - delim.len; ) {
+        if (memcmp(s.data + i, delim.data, delim.len) == 0) {
+            Slice_unsigned_char part = (Slice_unsigned_char){ s.data + start, i - start };
+            os_VectorPush(&vec, part);
+            i += delim.len;
+            start = i;
+        } else {
+            i++;
+        }
+    }
+    if (start <= s.len) {
+        Slice_unsigned_char part = (Slice_unsigned_char){ s.data + start, s.len - start };
+        os_VectorPush(&vec, part);
+    }
+    return vec;
+}
+
 unsigned char std_is_alpha(unsigned char b) {
     return ((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || b == '_') ? 1 : 0;
 }

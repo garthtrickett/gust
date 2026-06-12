@@ -2816,6 +2816,24 @@ fn test_str_split_typechecker_valid() {
 }
 
 #[test]
+fn test_str_split_brand_mismatch_rejected() {
+    let source = r#"
+        func main() {
+            mut ctx1 := os.Arena.New();
+            defer ctx1.Free();
+            mut ctx2 := os.Arena.New();
+            defer ctx2.Free();
+            mut s := "a,b,c";
+            mut parts: std.Vector[str, ctx2] := std.str_split(s, ",", ctx1);
+        }
+    "#;
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+}
+
+#[test]
 fn test_format_typecheck_valid() {
     let source = "
         func main() {
