@@ -787,7 +787,6 @@ impl Codegen {
 
         c_code
     }
-}
 
     fn gen_statement(&self, stmt: &Statement) -> String {
         let mut result = String::new();
