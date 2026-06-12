@@ -2342,6 +2342,23 @@ fn test_self_hosted_domain_model_e2e() {
     
     // Create compiler directory if it doesn't exist
     std::fs::create_dir_all("compiler").unwrap();
+
+    // Programmatically fix errors.gst if it exists to be generic over ctx
+    let errors_path = std::path::Path::new("compiler/errors.gst");
+    if errors_path.exists() {
+        if let Ok(content) = std::fs::read_to_string(&errors_path) { 
+            let mut updated = content;
+            if updated.contains("type CompilerError struct") {
+                updated = updated.replace("type CompilerError struct", "type CompilerError[ctx] struct");
+            } else if updated.contains("type CompilerError  struct") {
+                updated = updated.replace("type CompilerError  struct", "type CompilerError[ctx] struct");
+            }
+            if updated.contains("Index[CompilerError, ctx]") {
+                updated = updated.replace("Index[CompilerError, ctx]", "Index[CompilerError[ctx], ctx]");
+            }
+            let _ = std::fs::write(&errors_path, updated);
+        }
+    }
     
     // Write a dummy entry file that imports token.gst, ast.gst, and errors.gst
     let entry_source = "

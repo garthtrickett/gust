@@ -19,7 +19,7 @@
             e.tag = 1;
             e.Integer.val = 100;
             
-            mut error_ptr: Index[errs.CompilerError, ctx] := os.ArenaAlloc(ctx);
+            mut error_ptr: Index[errs.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx[error_ptr].kind.tag = 2;
             ctx[error_ptr].message = "Type mismatch!";
             ctx[error_ptr].span = s.Expression.span;

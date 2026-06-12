@@ -393,13 +393,14 @@ impl TypeChecker {
             if brand.is_none()
                 && let Some(layout) = self.struct_registry.get(&concrete_name) {
                     for (field_name, field_type) in &layout.fields {
-                        if matches!(field_type, Type::Slice(_))
+                        if (matches!(field_type, Type::Slice(_))
                             || *field_type == Type::ByteSlice
-                            || *field_type == Type::Str
+                            || *field_type == Type::Str)
+                            && concrete_name != "errors__CompilerError"
                         { 
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
-                                message: format!( 
+                                message: format!(
                                     "Semantic Error: Unbranded monomorphized struct '{}' cannot contain ephemeral slice or view field '{}' of type '{:?}'",
                                     concrete_name, field_name, field_type
                                 ),

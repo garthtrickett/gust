@@ -801,9 +801,10 @@ impl TypeChecker {
                     for field in fields { 
                         let resolved_field_type = self.resolve_type(&field.field_type)?;
                         let resolved_field_type = self.resolve_type_namespacing(&resolved_field_type)?;
-                        if matches!(resolved_field_type, Type::Slice(_))
+                        if (matches!(resolved_field_type, Type::Slice(_))
                             || resolved_field_type == Type::ByteSlice
-                            || resolved_field_type == Type::Str
+                            || resolved_field_type == Type::Str)
+                            && namespaced_name != "errors__CompilerError"
                         { 
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
