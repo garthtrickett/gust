@@ -499,6 +499,44 @@ impl TypeChecker {
         );
 
         self.function_registry.insert(
+            "std.str_find".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string(), "target".to_string()],
+                params: vec![Type::Str, Type::Str],
+                return_type: Type::Int,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_str_find".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string(), "target".to_string()],
+                params: vec![Type::Str, Type::Str],
+                return_type: Type::Int,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "std.str_trim".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string()],
+                params: vec![Type::Str],
+                return_type: Type::Str,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_str_trim".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string()],
+                params: vec![Type::Str],
+                return_type: Type::Str,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
             "std.is_alpha".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["b".to_string()],

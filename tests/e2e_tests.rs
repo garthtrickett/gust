@@ -1701,3 +1701,21 @@ fn test_e2e_guard_cast() {
     ";
     run_e2e_test(source, "42");
 }
+
+#[test]
+fn test_e2e_str_find_and_trim() {
+    let source = r#"
+        func main() {
+            mut s := "  hello  ";
+            mut trimmed := std.str_trim(s);
+            os.LogStr(trimmed);
+
+            mut idx1 := std.str_find(trimmed, "ll");
+            os.LogInt(idx1);
+
+            mut idx2 := std.str_find(trimmed, "xx");
+            os.LogInt(idx2);
+        }
+    "#;
+    run_e2e_test(source, "hello\n2\n-1");
+}

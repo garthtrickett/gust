@@ -179,6 +179,32 @@ unsigned char std_str_byte_at(Slice_unsigned_char s, int idx) {
     return s.data[idx];
 }
 
+int std_str_find(Slice_unsigned_char s, Slice_unsigned_char target) {
+    if (target.len == 0) return 0;
+    if (s.len < target.len) return -1;
+    for (int i = 0; i <= s.len - target.len; i++) {
+        if (memcmp(s.data + i, target.data, target.len) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+Slice_unsigned_char std_str_trim(Slice_unsigned_char s) {
+    int start = 0;
+    while (start < s.len && (s.data[start] == ' ' || s.data[start] == '\t' || s.data[start] == '\n' || s.data[start] == '\r')) {
+        start++;
+    }
+    int end = s.len;
+    while (end > start && (s.data[end - 1] == ' ' || s.data[end - 1] == '\t' || s.data[end - 1] == '\n' || s.data[end - 1] == '\r')) {
+        end--;
+    }
+    Slice_unsigned_char res;
+    res.data = s.data + start;
+    res.len = end - start;
+    return res;
+}
+
 unsigned char std_is_alpha(unsigned char b) {
     return ((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || b == '_') ? 1 : 0;
 }

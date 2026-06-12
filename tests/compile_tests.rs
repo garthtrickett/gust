@@ -2791,6 +2791,18 @@ fn test_path_join_typechecker_valid() {
 }
 
 #[test]
+fn test_str_find_and_trim_typechecker_valid() {
+    let source = r#"
+        func main() {
+            mut s := "  hello  ";
+            mut trimmed := std.str_trim(s);
+            mut idx := std.str_find(trimmed, "ll");
+        }
+    "#;
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_format_typecheck_valid() {
     let source = "
         func main() {
