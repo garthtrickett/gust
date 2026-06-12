@@ -665,6 +665,46 @@ impl TypeChecker {
             },
         );
 
+        // std.GenerationalArena[T, ctx]
+        let gen_arena_fields = vec![
+            crate::ast::FieldDef {
+                name: "current_ctx".to_string(),
+                field_type: Type::Arena,
+                span: crate::token::Span::dummy(),
+            },
+            crate::ast::FieldDef {
+                name: "next_ctx".to_string(),
+                field_type: Type::Arena,
+                span: crate::token::Span::dummy(),
+            },
+            crate::ast::FieldDef {
+                name: "survivor".to_string(),
+                field_type: Type::Index("T".to_string(), Some("current_ctx".to_string())),
+                span: crate::token::Span::dummy(),
+            },
+        ];
+        struct_templates.insert(
+            "GenerationalArena".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: gen_arena_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std.GenerationalArena".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: gen_arena_fields.clone(),
+            },
+        );
+        struct_templates.insert(
+            "std_GenerationalArena".to_string(),
+            StructTemplate {
+                generics: vec!["T".to_string(), "ctx".to_string()],
+                fields: gen_arena_fields,
+            },
+        );
+
         TypeChecker {
             current_prefix: "".to_string(),
             imports: HashMap::new(),
