@@ -2130,6 +2130,81 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_guard_typechecks_valid_hashmap_get() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            guard val := map.Get(42) else {
+                return;
+            }
+            mut double_val := val * 2;
+            os.LogInt(double_val);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_guard_non_diverging_else_rejected() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);
+            mut dummy := 0;
+            guard val := map.Get(42) else {
+                dummy = 100;
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(err.message.contains("must diverge"));
+}
+
+#[test]
+fn test_guard_non_wrapper_rhs_rejected() {
+    let source = "
+        func main() {
+            guard val := 42 else {
+                return;
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(err.message.contains("must evaluate to a fallible wrapper type"));
+}
+
+#[test]
+fn test_guard_escape_analysis_and_borrow_invalidation() {
+    let source = "
+        type Packet struct {
+            val: int
+        }
+        func main() {
+            mut payload := os.MockPayload();
+            guard result := payload as &Packet else {
+                return;
+            }
+            mut moved_payload := move payload;
+            os.LogInt(result.val);
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::VariableOriginInvalidated);
+    assert!(err.message.contains("backing origin"));
+}
+
+#[test]
 fn test_os_dir_and_entry_layouts() {
     let source = "
         func main() {
