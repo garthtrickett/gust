@@ -35,6 +35,7 @@ pub enum TokenType {
     Gt,
 
     // Keywords
+    Guard,
     Import,
     Mut,
     Func,

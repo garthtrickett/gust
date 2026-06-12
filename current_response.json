@@ -1,9 +1,9 @@
 {
-  "summary": "fix: reorder codegen runtimes to declare os_Dir before function forward declarations",
-  "files": [
-    {
-      "file_path": "src/codegen.rs",
-      "code_diff": "<<<<<<< SEARCH\n        for elem_type in &slice_element_types {\n            let elem_c = self.get_c_type(elem_type);\n            let elem_ident = self.get_c_type_ident(elem_type);\n            c_code.push_str(&format!(\"struct Slice_{} {{\\n\", elem_ident));\n            c_code.push_str(&format!(\"    {}* data;\\n\", elem_c));\n            c_code.push_str(\"    int len;\\n\");\n            c_code.push_str(\"};\\n\\n\");\n        }\n\n        c_code.push_str(\"// ====================================================\\n\");\n        c_code.push_str(\"// FUNCTION FORWARD DECLARATIONS\\n\");\n        c_code.push_str(\"// ====================================================\\n\");\n        for (func_name, sig) in &self.function_registry {\n            if func_name == \"main\" {\n                continue;\n            }\n            ...\n            if sig.params.len() == 1 {\n                c_code.push_str(&format!(\"void* {}_pthread_wrapper(void* arg);\\n\", decl_name));\n            }\n        }\n        c_code.push('\\n');\n\n        c_code.push_str(codegen_runtime::MOCK_PAYLOAD_RUNTIME);\n        c_code.push_str(codegen_runtime::FILE_IO_RUNTIME);\n        c_code.push_str(codegen_runtime::COLLECTIONS_RUNTIME);\n=======\n        for elem_type in &slice_element_types {\n            let elem_c = self.get_c_type(elem_type);\n            let elem_ident = self.get_c_type_ident(elem_type);\n            c_code.push_str(&format!(\"struct Slice_{} {{\\n\", elem_ident));\n            c_code.push_str(&format!(\"    {}* data;\\n\", elem_c));\n            c_code.push_str(\"    int len;\\n\");\n            c_code.push_str(\"};\\n\\n\");\n        }\n\n        c_code.push_str(codegen_runtime::MOCK_PAYLOAD_RUNTIME);\n        c_code.push_str(codegen_runtime::FILE_IO_RUNTIME);\n        c_code.push_str(codegen_runtime::COLLECTIONS_RUNTIME);\n\n        c_code.push_str(\"// ====================================================\\n\");\n        c_code.push_str(\"// FUNCTION FORWARD DECLARATIONS\\n\");\n        c_code.push_str(\"// ====================================================\\n\");\n        for (func_name, sig) in &self.function_registry {\n            if func_name == \"main\" {\n                continue;\n            }\n            ...\n            if sig.params.len() == 1 {\n                c_code.push_str(&format!(\"void* {}_pthread_wrapper(void* arg);\\n\", decl_name));\n            }\n        }\n        c_code.push('\\n');\n>>>>>>> REPLACE"
-    }
-  ]
+"summary": "feat: add Guard variant to TokenType enum",
+"files": [
+{
+"file_path": "src/token.rs",
+"code_diff": "<<<<<<< SEARCH\n // Keywords\n Import,\n Mut,\n=======\n // Keywords\n Guard,\n Import,\n Mut,\n>>>>>>> REPLACE"
+}
+]
 }
