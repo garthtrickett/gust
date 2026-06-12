@@ -2185,6 +2185,24 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_generic_enum_typechecking() {
+    let source = "
+        type MyResult[T, ctx] enum {
+            Ok { val: T },
+            Err { val: int }
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut res: MyResult[int, ctx];
+            res.tag = 0;
+            res.Ok.val = 42;
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_self_hosted_token_compilation() {
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;

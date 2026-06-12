@@ -7,7 +7,7 @@ type ErrorKind enum {
     CodegenError
 }
 
-type CompilerError struct {
+type CompilerError[ctx] struct {
     kind: ErrorKind,
     message: str,
     span: token.Span
@@ -15,5 +15,5 @@ type CompilerError struct {
 
 type Result[T, ctx] enum {
     Ok { val: T },
-    Err { error: Index[CompilerError, ctx] }
+    Err { error: Index[CompilerError[ctx], ctx] }
 }

@@ -180,6 +180,12 @@ pub struct StructTemplate {
 }
 
 #[derive(Debug, Clone)]
+pub struct EnumTemplate {
+    pub generics: Vec<String>,
+    pub variants: Vec<crate::ast::VariantDef>,
+}
+
+#[derive(Debug, Clone)]
 pub struct FunctionSignature {
     pub param_names: Vec<String>,
     pub params: Vec<Type>,

@@ -837,7 +837,7 @@ impl TypeChecker {
 
             if let Statement::EnumDecl {
                 name,
-                generics: _,
+                generics,
                 variants,
                 span,
                 ..
@@ -846,63 +846,73 @@ impl TypeChecker {
                 let namespaced_name = format!("{}{}", self.current_prefix, name);
                 self.resolved_names.insert(*span, namespaced_name.clone());
 
-                // Register the enum in the enum registry
-                let variant_names: Vec<String> = variants.iter().map(|v| v.name.clone()).collect();
-                self.enum_registry.insert(namespaced_name.clone(), variant_names);
+                if generics.is_empty() {
+                    // Register the enum in the enum registry
+                    let variant_names: Vec<String> = variants.iter().map(|v| v.name.clone()).collect();
+                    self.enum_registry.insert(namespaced_name.clone(), variant_names);
 
-                // Register nested variant structs in struct_registry
-                let mut enum_fields = HashMap::new();
-                enum_fields.insert("tag".to_string(), Type::Int);
+                    // Register nested variant structs in struct_registry
+                    let mut enum_fields = HashMap::new();
+                    enum_fields.insert("tag".to_string(), Type::Int);
 
-                for variant in variants { 
-                    let concrete_variant_struct_name = format!("{}_{}", namespaced_name, variant.name);
+                    for variant in variants { 
+                        let concrete_variant_struct_name = format!("{}_{}", namespaced_name, variant.name);
 
-                    // Register the variant struct fields in struct_registry
-                    let mut variant_fields = HashMap::new();
-                    for field in &variant.fields { 
-                        let resolved_t = self.resolve_type(&field.field_type)?;
-                        let resolved_t = self.resolve_type_namespacing(&resolved_t)?;
-                        if let Type::Struct(ref struct_name, _) = resolved_t
-                            && let Some(layout) = self.struct_registry.get(struct_name)
-                            && layout.fields.len() > 2
-                        { 
-                            return Err(TypeError {
-                                kind: TypeErrorKind::LargeEnumVariantPayload,
-                                message: format!(
-                                    "Semantic Error: Variant '{}' contains a large enum variant payload struct '{}' ({} fields). Use Index[{}] or pointer indirection to avoid memory bloat.",
-                                    variant.name,
-                                    struct_name,
-                                    layout.fields.len(),
-                                    struct_name
-                                ),
-                                span: None,
-                            });
+                        // Register the variant struct fields in struct_registry
+                        let mut variant_fields = HashMap::new();
+                        for field in &variant.fields { 
+                            let resolved_t = self.resolve_type(&field.field_type)?;
+                            let resolved_t = self.resolve_type_namespacing(&resolved_t)?;
+                            if let Type::Struct(ref struct_name, _) = resolved_t
+                                && let Some(layout) = self.struct_registry.get(struct_name)
+                                && layout.fields.len() > 2
+                            { 
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::LargeEnumVariantPayload,
+                                    message: format!(
+                                        "Semantic Error: Variant '{}' contains a large enum variant payload struct '{}' ({} fields). Use Index[{}], or pointer indirection to avoid memory bloat.",
+                                        variant.name,
+                                        struct_name,
+                                        layout.fields.len(),
+                                        struct_name
+                                    ),
+                                    span: None,
+                                });
+                            }
+                            variant_fields.insert(field.name.clone(), resolved_t);
                         }
-                        variant_fields.insert(field.name.clone(), resolved_t);
+                        self.struct_registry.insert(
+                            concrete_variant_struct_name.clone(),
+                            StructLayout {
+                                brand: None,
+                                fields: variant_fields,
+                            },
+                        );
+
+                        // Add the variant as a field of the Enum struct
+                        enum_fields.insert(
+                            variant.name.clone(),
+                            Type::Struct(concrete_variant_struct_name, None),
+                        );
                     }
+
+                    // Register the Enum struct itself
                     self.struct_registry.insert(
-                        concrete_variant_struct_name.clone(),
+                        namespaced_name.clone(),
                         StructLayout {
                             brand: None,
-                            fields: variant_fields,
+                            fields: enum_fields,
                         },
                     );
-
-                    // Add the variant as a field of the Enum struct
-                    enum_fields.insert(
-                        variant.name.clone(),
-                        Type::Struct(concrete_variant_struct_name, None),
+                } else {
+                    self.enum_templates.insert(
+                        namespaced_name.clone(),
+                        super::types::EnumTemplate {
+                            generics: generics.clone(),
+                            variants: variants.clone(),
+                        },
                     );
                 }
-
-                // Register the Enum struct itself
-                self.struct_registry.insert(
-                    namespaced_name.clone(),
-                    StructLayout {
-                        brand: None,
-                        fields: enum_fields,
-                    },
-                );
             }
 
             if let Statement::FunctionDecl {

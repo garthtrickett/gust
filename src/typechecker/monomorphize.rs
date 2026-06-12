@@ -269,6 +269,9 @@ impl TypeChecker {
                     if self.struct_templates.contains_key(name) {
                         let args = vec![Type::Struct(brand_name.clone(), None)];
                         self.monomorphize(name, &args)
+                    } else if self.enum_templates.contains_key(name) {
+                        let args = vec![Type::Struct(brand_name.clone(), None)];
+                        self.monomorphize(name, &args)
                     } else {
                         Ok(t.clone())
                     }
@@ -306,6 +309,135 @@ impl TypeChecker {
         template_name: &str,
         args: &[Type],
     ) -> Result<Type, TypeError> {
+        if self.enum_templates.contains_key(template_name) {
+            let template = self
+                .enum_templates
+                .get(template_name)
+                .cloned()
+                .unwrap();
+
+            if template.generics.len() != args.len() {
+                return Err(TypeError {
+                    kind: TypeErrorKind::TemplateArgumentMismatch,
+                    message: format!( 
+                        "Semantic Error: Template '{}' expects {} generic arguments but got {}",
+                        template_name,
+                        template.generics.len(),
+                        args.len()
+                    ),
+                    span: None,
+                });
+            }
+
+            let mut substitution_map = HashMap::new();
+            for (generic, arg) in template.generics.iter().zip(args.iter()) {
+                substitution_map.insert(generic.clone(), arg.clone());
+            }
+
+            let concrete_name = self.get_monomorphized_name(template_name, args);
+
+            let mut brand = None;
+            for (generic_name, arg) in template.generics.iter().zip(args.iter()) {
+                if (generic_name == "ctx" || generic_name == "connCtx")
+                    && let Type::Struct(brand_name, _) = arg {
+                        brand = Some(brand_name.clone());
+                    }
+            }
+
+            for arg in args {
+                self.check_brand_hierarchy(arg, &brand)?;
+            }
+
+            if !self.struct_registry.contains_key(&concrete_name) {
+                let old_prefix = self.current_prefix.clone();
+                if let Some(pos) = template_name.rfind("__") {
+                    self.current_prefix = template_name[..pos + 2].to_string();
+                }
+
+                // Place empty/placeholder structural layout for cyclic definitions
+                self.struct_registry.insert(
+                    concrete_name.clone(),
+                    StructLayout {
+                        brand: brand.clone(),
+                        fields: HashMap::new(),
+                    },
+                );
+
+                let mut concrete_variants = Vec::new();
+                for variant in &template.variants {
+                    concrete_variants.push(variant.name.clone());
+                }
+                self.enum_registry.insert(concrete_name.clone(), concrete_variants);
+
+                let mut enum_fields = HashMap::new();
+                enum_fields.insert("tag".to_string(), Type::Int);
+
+                for variant in &template.variants {
+                    let concrete_variant_struct_name = format!("{}_{}", concrete_name, variant.name);
+                    let mut variant_fields = HashMap::new();
+                    for field in &variant.fields {
+                        let substituted_type =
+                            self.substitute_generics(&field.field_type, &substitution_map);
+                        let resolved_field_type = match self.resolve_type(&substituted_type) {
+                            Ok(t) => t,
+                            Err(e) => {
+                                self.current_prefix = old_prefix;
+                                return Err(e);
+                            }
+                        };
+                        let resolved_field_type = match self.resolve_type_namespacing(&resolved_field_type) {
+                            Ok(t) => t,
+                            Err(e) => {
+                                self.current_prefix = old_prefix;
+                                return Err(e);
+                            }
+                        };
+
+                        if let Type::Struct(ref struct_name, _) = resolved_field_type
+                            && let Some(layout) = self.struct_registry.get(struct_name)
+                            && layout.fields.len() > 2
+                        { 
+                            self.current_prefix = old_prefix;
+                            return Err(TypeError {
+                                kind: TypeErrorKind::LargeEnumVariantPayload,
+                                message: format!( 
+                                    "Semantic Error: Variant '{}' contains a large enum variant payload struct '{}' ({} fields). Use Index[{}], or pointer indirection to avoid memory bloat.",
+                                    variant.name,
+                                    struct_name,
+                                    layout.fields.len(),
+                                    struct_name
+                                ),
+                                span: None,
+                            });
+                        }
+
+                        variant_fields.insert(field.name.clone(), resolved_field_type);
+                    }
+
+                    self.struct_registry.insert(
+                        concrete_variant_struct_name.clone(),
+                        StructLayout {
+                            brand: None,
+                            fields: variant_fields,
+                        },
+                    );
+
+                    enum_fields.insert(
+                        variant.name.clone(),
+                        Type::Struct(concrete_variant_struct_name, None),
+                    );
+                }
+
+                self.current_prefix = old_prefix;
+
+                if let Some(layout) = self.struct_registry.get_mut(&concrete_name) {
+                    layout.fields = enum_fields;
+                }
+            }
+
+            return Ok(Type::Struct(concrete_name, brand));
+        }
+
         let template = self
             .struct_templates
             .get(template_name)

@@ -20,6 +20,7 @@ pub struct TypeChecker {
     pub(crate) in_unsafe_block: bool,
     pub struct_registry: HashMap<String, StructLayout>,
     pub(crate) struct_templates: HashMap<String, StructTemplate>,
+    pub(crate) enum_templates: HashMap<String, super::types::EnumTemplate>,
     pub enum_registry: HashMap<String, Vec<String>>, // Added Enum Registry
     pub variable_origins: HashMap<String, HashSet<String>>, // Upgraded to Set-Based Union Tracker
     pub all_variable_origins: HashMap<String, HashSet<String>>,
@@ -716,6 +717,7 @@ impl TypeChecker {
             in_unsafe_block: false,
             struct_registry,
             struct_templates,
+            enum_templates: HashMap::new(),
             enum_registry: HashMap::new(),
             variable_origins: HashMap::new(),
             all_variable_origins: HashMap::new(),
