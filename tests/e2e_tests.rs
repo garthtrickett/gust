@@ -1632,7 +1632,10 @@ fn test_e2e_fiber_channel_pipeline() {
             mut final_ctx := chan3.Recv();
             defer final_ctx.Free();
 
-            mut final_node: Index[Packet, final_ctx] := 0 as Index[Packet, final_ctx];
+            mut final_node: Index[Packet, final_ctx] := empty[Index[Packet, final_ctx]];
+            unsafe {
+                final_node = 0 as Index[Packet, final_ctx];
+            }
             os.LogInt(final_ctx[final_node].val);
         }
     ";
