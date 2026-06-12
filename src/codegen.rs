@@ -40,9 +40,10 @@ fn erase_struct_name_with_registry(
 ) -> String {
     let mut actual_brand = brand.clone();
     if actual_brand.is_none()
-        && let Some(layout) = registry.get(name) {
-            actual_brand = layout.brand.clone();
-        }
+        && let Some(layout) = registry.get(name)
+    {
+        actual_brand = layout.brand.clone();
+    }
     if actual_brand.is_none() {
         actual_brand = extract_brand_from_name(name);
     }
@@ -50,9 +51,9 @@ fn erase_struct_name_with_registry(
     let mut suffix = String::new();
     if let Some(pos) = erased.rfind('_') {
         let last_part = &erased[pos + 1..];
-        if !last_part.is_empty() 
-            && last_part.chars().next().unwrap().is_uppercase() 
-            && last_part != "Any" 
+        if !last_part.is_empty()
+            && last_part.chars().next().unwrap().is_uppercase()
+            && last_part != "Any"
         {
             suffix = erased[pos..].to_string();
             erased = erased[..pos].to_string();
@@ -126,13 +127,29 @@ fn get_by_value_dependencies(
 }
 
 impl Codegen {
+    fn escape_c_path(&self, path: &std::path::Path) -> String {
+        let path_str = path.to_string_lossy();
+        path_str.replace('\\', "\\\\").replace('"', "\\\"")
+    }
+
+    fn gen_line_directive(&self, span: &crate::token::Span) -> String {
+        if let Some(path) = &*self.current_file_path.borrow() {
+            let escaped_path = self.escape_c_path(path);
+            format!("#line {} \"{}\"\n", span.start.line, escaped_path)
+        } else {
+            String::new()
+        }
+    }
+
     fn find_wrapper_type(&self, val_type: &Type) -> String {
         for (struct_name, layout) in &self.struct_registry {
             if let Some(ok_t) = layout.fields.get("Ok")
                 && let Some(val_t) = layout.fields.get("Val")
-                    && (*ok_t == Type::Int || *ok_t == Type::Bool) && self.get_c_type(val_t) == self.get_c_type(val_type) {
-                        return struct_name.clone();
-                    }
+                && (*ok_t == Type::Int || *ok_t == Type::Bool)
+                && self.get_c_type(val_t) == self.get_c_type(val_type)
+            {
+                return struct_name.clone();
+            }
         }
         "LookupResult_int".to_string()
     }
@@ -363,16 +380,18 @@ impl Codegen {
             Expression::Selector { left, right, .. } => {
                 let mut left_type = self.get_expr_type(left)?;
                 if let Type::RawPointer(inner) = left_type {
-                    left_type = *inner;
+                    left_type = *inner.clone();
                 }
                 if let Type::Struct(struct_name, _) = left_type
                     && let Some(layout) = self.struct_registry.get(&struct_name)
-                { 
+                {
                     return layout.fields.get(right).cloned();
                 }
                 None
             }
-            Expression::IndexAccess { allocator, index, .. } => {
+            Expression::IndexAccess {
+                allocator, index, ..
+            } => {
                 let alloc_type = self.get_expr_type(allocator)?;
                 if let Type::Slice(elem_type) = &alloc_type {
                     return Some((**elem_type).clone());
@@ -403,14 +422,19 @@ impl Codegen {
                     }
                 }
                 // Check if this is Arena indexing
-                let is_arena = alloc_type == Type::Arena || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
+                let is_arena = alloc_type == Type::Arena
+                    || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
                 if is_arena {
                     let mut target_struct = "SessionNode".to_string();
                     if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index)
-                        && struct_name != "Any" {
-                            target_struct = struct_name;
-                        }
-                    return Some(Type::RawPointer(Box::new(Type::Struct(target_struct, None))));
+                        && struct_name != "Any"
+                    {
+                        target_struct = struct_name;
+                    }
+                    return Some(Type::RawPointer(Box::new(Type::Struct(
+                        target_struct,
+                        None,
+                    ))));
                 }
                 None
             }
@@ -441,7 +465,7 @@ impl Codegen {
             }
             Type::RawPointer(inner) => self.has_boolean_fields_recursive(inner, visited),
             Type::Slice(inner) => self.has_boolean_fields_recursive(inner, visited),
-            Type::Generic(_, args) => {
+            Type::Generic(_name, args) => {
                 for arg in args {
                     if self.has_boolean_fields_recursive(arg, visited) {
                         return true;
@@ -673,7 +697,8 @@ impl Codegen {
                 || func_name == "std_is_whitespace"
                 || func_name == "std.parse_int"
                 || func_name == "std_parse_int"
-                || ((func_name == "os.GetThreadScratch" || func_name == "os_GetThreadScratch") && !self.struct_registry.contains_key("std_ThreadLocalContext"))
+                || ((func_name == "os.GetThreadScratch" || func_name == "os_GetThreadScratch")
+                    && !self.struct_registry.contains_key("std_ThreadLocalContext"))
             {
                 continue;
             }
@@ -701,7 +726,10 @@ impl Codegen {
             let decl_name = func_name.replace(".", "_");
             c_code.push_str(&format!("{} {}({});\n", ret_str, decl_name, param_list));
             if sig.params.len() == 1 {
-                c_code.push_str(&format!("void* {}_pthread_wrapper(void* arg);\n", decl_name));
+                c_code.push_str(&format!(
+                    "void* {}_pthread_wrapper(void* arg);\n",
+                    decl_name
+                ));
             }
         }
         c_code.push('\n');
@@ -765,8 +793,9 @@ impl Codegen {
             if struct_name == "os_Dir" || struct_name == "os_DirEntry" {
                 continue;
             }
-            if !struct_name.starts_with("LookupResult_") && !struct_name.starts_with("CastResult_") {
-                c_code.push_str(&format!( 
+            if !struct_name.starts_with("LookupResult_") && !struct_name.starts_with("CastResult_")
+            {
+                c_code.push_str(&format!(
                     "typedef struct CastResult_{} CastResult_{};\n",
                     struct_name, struct_name
                 ));
@@ -835,7 +864,9 @@ impl Codegen {
                 }
                 c_code.push_str("};\n\n");
 
-                if !struct_name.starts_with("LookupResult_") && !struct_name.starts_with("CastResult_") {
+                if !struct_name.starts_with("LookupResult_")
+                    && !struct_name.starts_with("CastResult_")
+                {
                     c_code.push_str(&format!("struct CastResult_{} {{\n", struct_name));
                     c_code.push_str(&format!("    {}* Val;\n", struct_name));
                     c_code.push_str("    int Ok;\n");
@@ -879,7 +910,7 @@ impl Codegen {
                 continue;
             }
             if self.has_boolean_fields(&Type::Struct(struct_name.clone(), None)) {
-                c_code.push_str(&format!( 
+                c_code.push_str(&format!(
                     "int {}_IsValid({}* req) {{\n",
                     struct_name, struct_name
                 ));
@@ -915,21 +946,30 @@ impl Codegen {
             if let Some(suffix) = struct_name.strip_prefix("std_GenerationalArena_") {
                 if let Some(pos) = suffix.rfind('_') {
                     let t_name = &suffix[..pos];
-                    self.clone_helpers_needed.borrow_mut().insert(t_name.to_string());
+                    self.clone_helpers_needed
+                        .borrow_mut()
+                        .insert(t_name.to_string());
                 } else {
-                    self.clone_helpers_needed.borrow_mut().insert(suffix.to_string());
+                    self.clone_helpers_needed
+                        .borrow_mut()
+                        .insert(suffix.to_string());
                 }
             } else if let Some(suffix) = struct_name.strip_prefix("GenerationalArena_") {
                 if let Some(pos) = suffix.rfind('_') {
                     let t_name = &suffix[..pos];
-                    self.clone_helpers_needed.borrow_mut().insert(t_name.to_string());
+                    self.clone_helpers_needed
+                        .borrow_mut()
+                        .insert(t_name.to_string());
                 } else {
-                    self.clone_helpers_needed.borrow_mut().insert(suffix.to_string());
+                    self.clone_helpers_needed
+                        .borrow_mut()
+                        .insert(suffix.to_string());
                 }
             }
         }
 
-        let mut work_list: Vec<String> = self.clone_helpers_needed.borrow().iter().cloned().collect();
+        let mut work_list: Vec<String> =
+            self.clone_helpers_needed.borrow().iter().cloned().collect();
         while let Some(current) = work_list.pop() {
             if let Some(layout) = self.struct_registry.get(&current) {
                 for field_type in layout.fields.values() {
@@ -939,8 +979,11 @@ impl Codegen {
                         } else {
                             nested_struct.clone()
                         };
-                        let inserted = self.clone_helpers_needed.borrow_mut().insert(clean_nested.clone());
-                        if inserted { 
+                        let inserted = self
+                            .clone_helpers_needed
+                            .borrow_mut()
+                            .insert(clean_nested.clone());
+                        if inserted {
                             work_list.push(clean_nested);
                         }
                     }
@@ -948,7 +991,8 @@ impl Codegen {
             }
         }
 
-        let mut ordered_helpers: Vec<String> = self.clone_helpers_needed.borrow().iter().cloned().collect();
+        let mut ordered_helpers: Vec<String> =
+            self.clone_helpers_needed.borrow().iter().cloned().collect();
         ordered_helpers.sort();
 
         if !ordered_helpers.is_empty() {
@@ -977,8 +1021,7 @@ impl Codegen {
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// TRANSPILED PROGRAM CODES\n");
-        c_code.push_str("// ====================================================
-");
+        c_code.push_str("// ====================================================\n");
 
         for (path, program) in modules {
             *self.current_file_path.borrow_mut() = Some(path.clone());
@@ -1000,6 +1043,14 @@ impl Codegen {
 
     fn gen_statement(&self, stmt: &Statement) -> String {
         let mut result = String::new();
+        match stmt {
+            Statement::Import { .. }
+            | Statement::StructDecl { .. }
+            | Statement::EnumDecl { .. } => {}
+            _ => {
+                result.push_str(&self.gen_line_directive(&stmt.span()));
+            }
+        }
         match stmt {
             Statement::Import { .. } => {}
             Statement::StructDecl { .. } => {}
@@ -1078,7 +1129,7 @@ impl Codegen {
                     *self.current_function.borrow_mut() = None;
                 } else {
                     *self.current_function.borrow_mut() = Some(resolved_name.clone());
-                    body_str.push_str(&format!( 
+                    body_str.push_str(&format!(
                         "{} {}({}) {{\n",
                         ret_str, resolved_name, param_list
                     ));
@@ -1095,7 +1146,8 @@ impl Codegen {
                         };
                         let param_type_str = self.get_c_type(&resolved_param_type);
                         let is_ptr = matches!(resolved_param_type, Type::RawPointer(_));
-                        let is_struct = matches!(resolved_param_type, Type::Struct(_, _)) || matches!(resolved_param_type, Type::Generic(_, _));
+                        let is_struct = matches!(resolved_param_type, Type::Struct(_, _))
+                            || matches!(resolved_param_type, Type::Generic(_, _));
                         let cast_str = if is_ptr {
                             format!("({})arg", param_type_str)
                         } else if is_struct {
@@ -1104,14 +1156,11 @@ impl Codegen {
                             format!("({})(uintptr_t)arg", param_type_str)
                         };
 
-                        body_str.push_str(&format!( 
+                        body_str.push_str(&format!(
                             "void* {}_pthread_wrapper(void* arg) {{\n",
                             resolved_name
                         ));
-                        body_str.push_str(&format!(
-                            "    {}({});\n",
-                            resolved_name, cast_str
-                        ));
+                        body_str.push_str(&format!("    {}({});\n", resolved_name, cast_str));
                         body_str.push_str("    return NULL;\n");
                         body_str.push_str("}\n\n");
                     }
@@ -1207,7 +1256,12 @@ impl Codegen {
                 else_body,
                 span,
             } => {
-                let val_type = self.symbol_table.borrow().get(name).cloned().unwrap_or(Type::Void);
+                let val_type = self
+                    .symbol_table
+                    .borrow()
+                    .get(name)
+                    .cloned()
+                    .unwrap_or(Type::Void);
                 let val_type_c = self.get_c_type(&val_type);
                 let wrapper_name = self.find_wrapper_type(&val_type);
 
@@ -1217,13 +1271,19 @@ impl Codegen {
 
                 let val_expr_str = self.gen_expression(value);
 
-                result.push_str(&format!("    const {} {} = {};\n", wrapper_name, guard_res_name, val_expr_str));
+                result.push_str(&format!(
+                    "    const {} {} = {};\n",
+                    wrapper_name, guard_res_name, val_expr_str
+                ));
                 result.push_str(&format!("    if (!{}.Ok) {{\n", guard_res_name));
                 for stmt in &else_body.statements {
                     result.push_str(&format!("    {}", self.gen_statement(stmt).trim_start()));
                 }
                 result.push_str("    }\n");
-                result.push_str(&format!("    {} {} = {}.Val;\n", val_type_c, name, guard_res_name));
+                result.push_str(&format!(
+                    "    {} {} = {}.Val;\n",
+                    val_type_c, name, guard_res_name
+                ));
             }
             Statement::Match {
                 expression, cases, ..
@@ -1236,7 +1296,8 @@ impl Codegen {
                     enum_name = name;
                 }
                 // Robustness: Always erase the brand suffix of enum_name to map to enum_registry correctly
-                let erased_enum_name = erase_struct_name_with_registry(&enum_name, &None, &self.struct_registry);
+                let erased_enum_name =
+                    erase_struct_name_with_registry(&enum_name, &None, &self.struct_registry);
 
                 result.push_str(&format!("    switch ({}.tag) {{\n", expr_str));
                 for case in cases {
@@ -1250,9 +1311,13 @@ impl Codegen {
                         for field_name in &case.fields {
                             if let Some(field_type) = layout.fields.get(field_name) {
                                 let field_c_type = self.get_c_type(field_type);
-                                result.push_str(&format!( 
+                                result.push_str(&format!(
                                     "            {} {} = {}.{}.{};\n",
-                                    field_c_type, field_name, expr_str, case.variant_name, field_name
+                                    field_c_type,
+                                    field_name,
+                                    expr_str,
+                                    case.variant_name,
+                                    field_name
                                 ));
                             }
                         }
@@ -1293,7 +1358,7 @@ impl Codegen {
         for stmt in &body.statements {
             if let Statement::Defer { expr, .. } = stmt {
                 let defer_str = self.gen_expression(expr);
-                defer_stack.push(defer_str);
+                defer_stack.push((defer_str, stmt.span()));
             } else {
                 result.push_str(&self.gen_statement(stmt));
             }
@@ -1301,7 +1366,8 @@ impl Codegen {
 
         if !defer_stack.is_empty() {
             result.push_str("    // === DEFERRED CLEANUP CODES ===\n");
-            while let Some(defer_str) = defer_stack.pop() {
+            while let Some((defer_str, span)) = defer_stack.pop() {
+                result.push_str(&self.gen_line_directive(&span));
                 result.push_str(&format!("    {};\n", defer_str));
             }
         }
@@ -1416,8 +1482,8 @@ impl Codegen {
                             self.get_c_type(&Type::RawPointer(inner.clone())),
                             left_str
                         )
-                    } else if let Type::Struct(_, _) = resolved_target {
-                        format!("(*(({}*){}.data))", target_str, left_str)
+                    } else if let Type::Struct(name, _) = resolved_target {
+                        format!("(*(({}*){}.data))", name, left_str)
                     } else if *resolved_target == Type::Int
                         || *resolved_target == Type::Byte
                         || *resolved_target == Type::Bool
@@ -1515,9 +1581,10 @@ impl Codegen {
                     // Arena indexing (Value-Branded)
                     let mut target_struct = "SessionNode".to_string();
                     if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index)
-                        && struct_name != "Any" {
-                            target_struct = struct_name;
-                        }
+                        && struct_name != "Any"
+                    {
+                        target_struct = struct_name;
+                    }
 
                     let mut use_arrow = false;
                     if let Expression::Identifier(name, _) = &**allocator
@@ -1552,9 +1619,10 @@ impl Codegen {
 
                 let mut use_arrow = false;
                 if let Some(left_type) = self.get_expr_type(left)
-                    && matches!(left_type, Type::RawPointer(_)) {
-                        use_arrow = true;
-                    }
+                    && matches!(left_type, Type::RawPointer(_))
+                {
+                    use_arrow = true;
+                }
                 if !use_arrow && matches!(**left, Expression::IndexAccess { .. }) {
                     if let Expression::IndexAccess { allocator, .. } = &**left
                         && let Expression::Identifier(name, _) = &**allocator
@@ -1593,7 +1661,10 @@ impl Codegen {
                 span,
                 ..
             } => {
-                let func_path = self.resolved_names.get(&function.span()).cloned()
+                let func_path = self
+                    .resolved_names
+                    .get(&function.span())
+                    .cloned()
                     .unwrap_or_else(|| self.gen_expression(function));
 
                 if func_path == "len" {
@@ -1700,11 +1771,18 @@ impl Codegen {
                         let arg_idx = idx + 1;
                         let arg_c = self.gen_expression(&arguments[arg_idx]);
                         if *spec == 's' {
-                            eval_statements.push(format!("        Slice_unsigned_char _arg{} = {};", arg_idx, arg_c));
+                            eval_statements.push(format!(
+                                "        Slice_unsigned_char _arg{} = {};",
+                                arg_idx, arg_c
+                            ));
                             size_expr.push_str(&format!(" + _arg{}.len", arg_idx));
-                            snprintf_args.push(format!("_arg{}.len, (char*)_arg{}.data", arg_idx, arg_idx));
+                            snprintf_args
+                                .push(format!("_arg{}.len, (char*)_arg{}.data", arg_idx, arg_idx));
                         } else {
-                            eval_statements.push(format!("        __typeof__({0}) _arg{1} = {0};", arg_c, arg_idx));
+                            eval_statements.push(format!(
+                                "        __typeof__({0}) _arg{1} = {0};",
+                                arg_c, arg_idx
+                            ));
                             size_expr.push_str(" + 20");
                             snprintf_args.push(format!("_arg{}", arg_idx));
                         }
@@ -1732,7 +1810,9 @@ impl Codegen {
                         "        int _len = snprintf(_buf, _alloc_size, \"{}\"{});\n",
                         c_format_string, snprintf_args_str
                     ));
-                    block.push_str("        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });\n");
+                    block.push_str(
+                        "        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });\n",
+                    );
                     block.push_str("    }))");
 
                     return block;
@@ -1839,8 +1919,8 @@ impl Codegen {
                     let val_type = self.get_expr_type(&arguments[1]).unwrap_or(Type::Void);
 
                     let mut opt_ctx_name = None;
-                    let target_pool_type = if let Type::RawPointer(inner) = &pool_type {
-                        (**inner).clone()
+                    let target_pool_type = if let Type::RawPointer(pool_inner) = &pool_type {
+                        (**pool_inner).clone()
                     } else {
                         pool_type.clone()
                     };
@@ -1954,14 +2034,14 @@ impl Codegen {
                     let arg_str = self.gen_expression(&arguments[0]);
                     let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
                         struct_name.clone()
-                    } else { 
+                    } else {
                         "Pool_int".to_string()
                     };
                     let mut is_ptr = false;
                     if let Expression::Identifier(name, _) = &arguments[0]
                         && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
                         && **inner == Type::Arena
-                    { 
+                    {
                         is_ptr = true;
                     }
                     let arena_expr = if is_ptr {
@@ -1975,23 +2055,16 @@ impl Codegen {
                     );
                 }
 
-                if func_path == "std.MutexNew"
-                    || func_path == "std_MutexNew"
-                {
+                if func_path == "std.MutexNew" || func_path == "std_MutexNew" {
                     let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
                         struct_name.clone()
                     } else {
                         "Mutex_Any".to_string()
                     };
-                    return format!(
-                        "(struct {}){{ .lock_state = std_Mutex_Alloc() }}",
-                        type_str
-                    );
+                    return format!("(struct {}){{ .lock_state = std_Mutex_Alloc() }}", type_str);
                 }
 
-                if func_path == "std.ChannelNew"
-                    || func_path == "std_ChannelNew"
-                {
+                if func_path == "std.ChannelNew" || func_path == "std_ChannelNew" {
                     let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
                         struct_name.clone()
                     } else {
@@ -2005,7 +2078,10 @@ impl Codegen {
 
                 if func_path == "std.Spawn" || func_path == "std_Spawn" {
                     let raw_func_name = expression_to_string(&arguments[0]);
-                    let thread_func_name = self.resolved_names.get(&arguments[0].span()).cloned()
+                    let thread_func_name = self
+                        .resolved_names
+                        .get(&arguments[0].span())
+                        .cloned()
                         .unwrap_or(raw_func_name)
                         .replace(".", "_");
                     let arg_str = self.gen_expression(&arguments[1]);
@@ -2072,7 +2148,7 @@ impl Codegen {
 
                     let mut is_mutex = false;
                     let mut is_channel = false;
-                    if let Type::Struct(struct_name, _) = &left_type { 
+                    if let Type::Struct(struct_name, _) = &left_type {
                         if struct_name.starts_with("Vector_")
                             || struct_name.starts_with("std_Vector_")
                         {
@@ -2106,7 +2182,7 @@ impl Codegen {
                         {
                             is_gen_arena = true;
                         }
-                    } else { 
+                    } else {
                         let left_ident = expression_to_string(left);
                         if let Some(Type::Struct(struct_name, _)) =
                             self.symbol_table.borrow().get(&left_ident)
@@ -2147,13 +2223,18 @@ impl Codegen {
                         }
                     }
 
-                    if is_gen_arena && (right == "Step" || right == "step" || right == "Swap" || right == "swap") {
+                    if is_gen_arena
+                        && (right == "Step"
+                            || right == "step"
+                            || right == "Swap"
+                            || right == "swap")
+                    {
                         let mut t_name = "Node".to_string();
                         let opt_struct_name = if let Type::Struct(struct_name, _) = &left_type {
                             Some(struct_name.clone())
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) = 
+                            if let Some(Type::Struct(struct_name, _)) =
                                 self.symbol_table.borrow().get(&left_ident)
                             {
                                 Some(struct_name.clone())
@@ -2162,16 +2243,19 @@ impl Codegen {
                             }
                         };
                         if let Some(struct_name) = opt_struct_name {
-                            if let Some(suffix) = struct_name.strip_prefix("std_GenerationalArena_") {
+                            if let Some(suffix) = struct_name.strip_prefix("std_GenerationalArena_")
+                            {
                                 if let Some(pos) = suffix.rfind('_') {
                                     t_name = suffix[..pos].to_string();
-                                } else { 
+                                } else {
                                     t_name = suffix.to_string();
                                 }
-                            } else if let Some(suffix) = struct_name.strip_prefix("GenerationalArena_") {
+                            } else if let Some(suffix) =
+                                struct_name.strip_prefix("GenerationalArena_")
+                            {
                                 if let Some(pos) = suffix.rfind('_') {
                                     t_name = suffix[..pos].to_string();
-                                } else { 
+                                } else {
                                     t_name = suffix.to_string();
                                 }
                             }
@@ -2180,7 +2264,10 @@ impl Codegen {
                     }
 
                     if is_mutex && right == "Lock" {
-                        return format!("std_Mutex_Lock_impl({}.lock_state, &({}.value))", left_str, left_str);
+                        return format!(
+                            "std_Mutex_Lock_impl({}.lock_state, &({}.value))",
+                            left_str, left_str
+                        );
                     }
                     if is_mutex && right == "Unlock" {
                         return format!("std_Mutex_Unlock_impl({}.lock_state)", left_str);
@@ -2282,7 +2369,7 @@ impl Codegen {
                             Some(struct_name.clone())
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) = 
+                            if let Some(Type::Struct(struct_name, _)) =
                                 self.symbol_table.borrow().get(&left_ident)
                             {
                                 Some(struct_name.clone())
@@ -2315,7 +2402,7 @@ impl Codegen {
                             Some(struct_name.clone())
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) = 
+                            if let Some(Type::Struct(struct_name, _)) =
                                 self.symbol_table.borrow().get(&left_ident)
                             {
                                 Some(struct_name.clone())
@@ -2340,12 +2427,14 @@ impl Codegen {
                     }
                     if is_map && right == "Keys" {
                         let ctx_str = self.gen_expression(&arguments[0]);
-                        let expr_type = self.resolved_types.get(span).cloned().unwrap_or_else(|| {
-                            Type::Struct("std_Vector_int".to_string(), None)
-                        });
+                        let expr_type =
+                            self.resolved_types.get(span).cloned().unwrap_or_else(|| {
+                                Type::Struct("std_Vector_int".to_string(), None)
+                            });
                         let vec_type_str = self.get_c_type(&expr_type);
                         let is_ctx_ptr = if let Expression::Identifier(name, _) = &arguments[0]
-                            && let Some(Type::RawPointer(inner)) = self.symbol_table.borrow().get(name)
+                            && let Some(Type::RawPointer(inner)) =
+                                self.symbol_table.borrow().get(name)
                             && **inner == Type::Arena
                         {
                             true
@@ -2373,7 +2462,8 @@ impl Codegen {
                         return format!("std_PoolFree(&{}, {})", left_str, arg_str);
                     }
 
-                    let is_arena_alloc = left_type == Type::Arena || matches!(left_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
+                    let is_arena_alloc = left_type == Type::Arena
+                        || matches!(left_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
                     if is_arena_alloc && right == "Free" {
                         if matches!(left_type, Type::RawPointer(_)) {
                             return format!("os_Arena_Free({}", left_str);
@@ -2398,8 +2488,8 @@ impl Codegen {
                 format!("{}({})", func_c, arg_strs.join(", "))
             }
             Expression::Empty(target_type, span) => {
-                let resolved_target = self.resolved_types.get(span).unwrap_or(target_type);
-                self.gen_type_aware_initializer(resolved_target)
+                let resolved = self.resolved_types.get(span).unwrap_or(target_type);
+                self.gen_type_aware_initializer(resolved)
             }
         }
     }

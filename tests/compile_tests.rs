@@ -1,7 +1,7 @@
 use gust_lexer::codegen::Codegen;
 use gust_lexer::lexer::Lexer;
 use gust_lexer::parser::Parser;
-use gust_lexer::typechecker::{TypeChecker, TypeError, TypeErrorKind, Type};
+use gust_lexer::typechecker::{Type, TypeChecker, TypeError, TypeErrorKind};
 
 fn check_program(source: &str) -> Result<(), TypeError> {
     gust_lexer::init_logging();
@@ -214,7 +214,7 @@ fn test_take_primitive_rejected() {
 }
 
 #[test]
-fn test_dereference_outside_unsafe_rejected() { 
+fn test_dereference_outside_unsafe_rejected() {
     let source = "
         func main() {
             mut val := 42;
@@ -225,13 +225,13 @@ fn test_dereference_outside_unsafe_rejected() {
     let res = check_program(source);
     assert!(res.is_err());
     let err = res.unwrap_err();
-    assert_eq!(err.kind, TypeErrorKind::UnsafeProhibited); 
+    assert_eq!(err.kind, TypeErrorKind::UnsafeProhibited);
     assert!(
         err.message
             .contains("strictly prohibited outside 'unsafe' blocks")
     );
     let span = err.span.expect("Expected a span for unsafe dereference");
-    assert_eq!(span.start.line, 5); 
+    assert_eq!(span.start.line, 5);
     assert_eq!(span.start.column, 26);
 }
 
@@ -262,7 +262,7 @@ fn test_string_view_type_safety_accepted() {
 }
 
 #[test]
-fn test_string_view_logint_rejected() { 
+fn test_string_view_logint_rejected() {
     let source = "
         func main() {
             mut msg := \"Hello\";
@@ -275,7 +275,7 @@ fn test_string_view_logint_rejected() {
     assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
     assert!(err.message.contains("os.LogInt expects an Int/Byte"));
     let span = err.span.expect("Expected a span for logint view error");
-    assert_eq!(span.start.line, 4); 
+    assert_eq!(span.start.line, 4);
     assert_eq!(span.start.column, 13);
 }
 
@@ -569,7 +569,8 @@ fn test_lookup_result_c_codegen_emission() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_output = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify that LookupResult_int is defined as a struct
     assert!(c_output.contains("struct LookupResult_int"));
@@ -698,7 +699,8 @@ fn test_codegen_synthesized_is_valid() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_output = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify that both StatusPacket_IsValid and NestedPacket_IsValid are synthesized
     assert!(c_output.contains("int StatusPacket_IsValid(StatusPacket* req)"));
@@ -764,7 +766,10 @@ fn test_checked_results_manual_inspection() {
             right: "Ok".to_string(),
             span: gust_lexer::token::Span::dummy(),
         }),
-        right: Box::new(gust_lexer::ast::Expression::Integer(1, gust_lexer::token::Span::dummy())),
+        right: Box::new(gust_lexer::ast::Expression::Integer(
+            1,
+            gust_lexer::token::Span::dummy(),
+        )),
         span: gust_lexer::token::Span::dummy(),
     };
 
@@ -1004,7 +1009,7 @@ fn test_large_enum_variant_payload_rejected() {
     let res = check_program(source);
     assert!(res.is_err());
     let err = res.unwrap_err();
-    
+
     // Output the full captured diagnostic error string to guarantee visibility
     eprintln!("\\n--- CAPTURED ERROR MESSAGE ---");
     eprintln!("{}", err.message);
@@ -1056,7 +1061,7 @@ fn test_pod_struct_propagation_recognized_as_copyable() {
 }
 
 #[test]
-fn test_linear_struct_propagation_recognized_as_linear() { 
+fn test_linear_struct_propagation_recognized_as_linear() {
     let source = "
         type MyLinear struct {
             ptr: *int,
@@ -1197,7 +1202,8 @@ fn test_monomorphized_pod_move_generates_no_cleanup() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_code = codegen.generate(&modules_for_codegen);
 
     // Assert that the generated C code contains the assignment but NO memset or cleanups for the move!
     assert!(!c_code.contains("memset(&p1"));
@@ -1228,7 +1234,8 @@ fn test_monomorphized_linear_move_generates_cleanup() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_code = codegen.generate(&modules_for_codegen);
 
     // Assert that the generated C code contains memset for the Linear struct move!
     assert!(c_code.contains("memset(&p1"));
@@ -1457,7 +1464,8 @@ fn test_monomorphized_take_codegen() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_code = codegen.generate(&modules_for_codegen);
 
     // Assert that C code contains memset for l1 but not for p1
     assert!(c_code.contains("memset(&l1"));
@@ -1491,12 +1499,15 @@ fn test_sentinel_null_codegen_structure() {
         checker.resolved_types,
     );
     let init_str = codegen.gen_type_aware_initializer(&Type::Struct("Node".to_string(), None));
-    
+
     // Assert that the generated initializer contains correct field-by-field initializations
     assert!(init_str.contains(".next = 0xFFFFFFFF"));
     assert!(init_str.contains(".ptr = NULL"));
     assert!(init_str.contains(".val = 0"));
-    assert_eq!(init_str, "((Node){ .next = 0xFFFFFFFF, .ptr = NULL, .val = 0 })");
+    assert_eq!(
+        init_str,
+        "((Node){ .next = 0xFFFFFFFF, .ptr = NULL, .val = 0 })"
+    );
 }
 
 #[test]
@@ -1525,10 +1536,11 @@ fn test_type_aware_vardecl_codegen_structure() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify that Node n is initialized using gen_type_aware_initializer, not blind {0}
-    assert!(c_code.contains("Node n = ((Node){ .next = 0xFFFFFFFF, .ptr = NULL, .val = 0 });"));
+    assert!(c_output.contains("Node n = ((Node){ .next = 0xFFFFFFFF, .ptr = NULL, .val = 0 });"));
 }
 
 #[test]
@@ -1544,7 +1556,10 @@ fn test_unbranded_struct_containing_slice_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(err.message.contains("cannot contain ephemeral slice or view"));
+    assert!(
+        err.message
+            .contains("cannot contain ephemeral slice or view")
+    );
 }
 
 #[test]
@@ -1559,7 +1574,10 @@ fn test_unbranded_struct_containing_str_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(err.message.contains("cannot contain ephemeral slice or view"));
+    assert!(
+        err.message
+            .contains("cannot contain ephemeral slice or view")
+    );
 }
 
 #[test]
@@ -1588,7 +1606,10 @@ fn test_unbranded_generic_instantiated_with_view_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(err.message.contains("cannot contain ephemeral slice or view"));
+    assert!(
+        err.message
+            .contains("cannot contain ephemeral slice or view")
+    );
 }
 
 #[test]
@@ -1623,7 +1644,10 @@ fn test_nested_different_brands_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(err.message.contains("Mismatched nested brand") || err.message.contains("Brand Nesting Restriction violation"));
+    assert!(
+        err.message.contains("Mismatched nested brand")
+            || err.message.contains("Brand Nesting Restriction violation")
+    );
 }
 
 #[test]
@@ -1692,7 +1716,10 @@ fn test_nested_mismatched_branded_collection_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(err.message.contains("Mismatched nested brand") || err.message.contains("Brand Nesting Restriction violation"));
+    assert!(
+        err.message.contains("Mismatched nested brand")
+            || err.message.contains("Brand Nesting Restriction violation")
+    );
 }
 
 #[test]
@@ -1741,7 +1768,7 @@ fn test_handoff_use_after_move_rejected() {
 }
 
 #[test]
-fn test_handoff_safe_accepted() { 
+fn test_handoff_safe_accepted() {
     let source = "
         type Packet[ctx] struct {
             val: int
@@ -1872,10 +1899,7 @@ fn test_function_call_union_origins_invalidation() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
-    assert!(
-        err.message
-            .contains("Use of moved variable")
-    );
+    assert!(err.message.contains("Use of moved variable"));
 }
 
 #[test]
@@ -2081,8 +2105,16 @@ fn test_rc_and_graph_type_checking_invalid() {
     let err1 = res1.unwrap_err();
     assert_eq!(err1.kind, TypeErrorKind::TypeMismatch);
     let span1 = err1.span.expect("Expected a span for Rc brand mismatch");
-    assert_eq!(span1.start.line, 14, "Rc brand mismatch line: expected 14, got {}, error: {:?}", span1.start.line, err1);
-    assert_eq!(span1.start.column, 43, "Rc brand mismatch column: expected 43, got {}, error: {:?}", span1.start.column, err1);
+    assert_eq!(
+        span1.start.line, 14,
+        "Rc brand mismatch line: expected 14, got {}, error: {:?}",
+        span1.start.line, err1
+    );
+    assert_eq!(
+        span1.start.column, 43,
+        "Rc brand mismatch column: expected 43, got {}, error: {:?}",
+        span1.start.column, err1
+    );
 
     let source_non_int_graph = "
         type Node struct {
@@ -2104,8 +2136,16 @@ fn test_rc_and_graph_type_checking_invalid() {
     let err3 = res3.unwrap_err();
     assert_eq!(err3.kind, TypeErrorKind::TypeMismatch);
     let span3 = err3.span.expect("Expected a span for non-int graph edge");
-    assert_eq!(span3.start.line, 13, "Non-int graph edge line: expected 13, got {}, error: {:?}", span3.start.line, err3);
-    assert_eq!(span3.start.column, 31, "Non-int graph edge column: expected 31, got {}, error: {:?}", span3.start.column, err3);
+    assert_eq!(
+        span3.start.line, 13,
+        "Non-int graph edge line: expected 13, got {}, error: {:?}",
+        span3.start.line, err3
+    );
+    assert_eq!(
+        span3.start.column, 31,
+        "Non-int graph edge column: expected 31, got {}, error: {:?}",
+        span3.start.column, err3
+    );
 }
 
 #[test]
@@ -2115,7 +2155,7 @@ fn test_diagnostic_formatting_layout() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     let diag = gust_lexer::typechecker::format_diagnostic(source, &err);
-    
+
     // Assert diagnostic layout contains coordinate header
     assert!(diag.contains("[line 3:18]"));
     // Assert line number prefix
@@ -2134,7 +2174,7 @@ fn test_multiple_syntax_errors_diagnostic_reporting() {
     let _program = parser.parse_program();
 
     assert_eq!(parser.errors.len(), 2);
-    
+
     // Verify first syntax error is for field type signature
     let err1 = &parser.errors[0];
     assert_eq!(err1.kind, TypeErrorKind::SyntaxError);
@@ -2174,7 +2214,7 @@ fn test_multi_file_compilation_success() {
     assert_eq!(order.len(), 2);
 
     let mut unified_statements = Vec::new();
-    for path in &order { 
+    for path in &order {
         if let Some(module) = modules.get_mut(path) {
             unified_statements.append(&mut module.program.statements);
         }
@@ -2217,10 +2257,10 @@ fn test_self_hosted_token_compilation() {
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/token_test_entry.gst");
-    
+
     // Create compiler directory if it doesn't exist
     std::fs::create_dir_all("compiler").unwrap();
-    
+
     // Write a dummy entry file that imports the token.gst
     let entry_source = "
         import \"token.gst\" as token;
@@ -2233,11 +2273,11 @@ fn test_self_hosted_token_compilation() {
         }
     ";
     std::fs::write(&entry_path, entry_source).unwrap();
-    
+
     let res = resolver.resolve(&entry_path, &fs_impl);
     assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
-    
-    let (order, mut modules) = res.unwrap();
+
+    let (order, modules) = res.unwrap();
 
     eprintln!("====================================================");
     eprintln!("🔍 E2E SELF-HOSTED RESOLUTION ORDER:");
@@ -2254,36 +2294,36 @@ fn test_self_hosted_token_compilation() {
         }
         eprintln!("----------------------------------------------------");
     }
-    
+
     let mut checker = gust_lexer::typechecker::TypeChecker::new();
     for path in &order {
         if let Some(module) = modules.get(path) {
             let stem = path.file_stem().unwrap().to_str().unwrap();
             let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
             match checker.check_module(&module.program, &prefix) {
                 Ok(_) => {}
                 Err(err) => {
-                    let formatted = gust_lexer::typechecker::format_diagnostic(&module.source, &err);
+                    let formatted =
+                        gust_lexer::typechecker::format_diagnostic(&module.source, &err);
                     eprintln!("{}", formatted);
                     panic!("Typechecking failed on {:?}", path);
                 }
             }
         }
     }
-    
-    let mut unified_statements = Vec::new();
+
+    let mut modules_for_codegen = Vec::new();
     for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            unified_statements.append(&mut module.program.statements);
-        } 
+        if let Some(module) = modules.get(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
     }
-    
-    let program = gust_lexer::ast::Program {
-        statements: unified_statements,
-        span: gust_lexer::token::Span::dummy(),
-    };
-    
+
     let codegen = gust_lexer::codegen::Codegen::new(
         checker.variable_types,
         checker.struct_registry,
@@ -2292,27 +2332,27 @@ fn test_self_hosted_token_compilation() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_output = codegen.generate(&program);
-    
+    let c_output = codegen.generate(&modules_for_codegen);
+
     // Verify TokenType is transpiled to a C enum/tags
     assert!(c_output.contains("token__TokenType_Tag__Ident = 2"));
     // Verify Token is transpiled to a C struct utilizing C-level string view components
     assert!(c_output.contains("struct token__Token {"));
     assert!(c_output.contains("Slice_unsigned_char literal;"));
-    
+
     // Clean up temporary entry file
     let _ = std::fs::remove_file(entry_path);
 }
 
 #[test]
-fn test_self_hosted_ast_compilation() { 
+fn test_self_hosted_ast_compilation() {
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/ast_test_entry.gst");
-    
+
     // Create compiler directory if it doesn't exist
     std::fs::create_dir_all("compiler").unwrap();
-    
+
     // Write a dummy entry file that imports token.gst and ast.gst
     let entry_source = "
         import \"token.gst\" as token;
@@ -2334,35 +2374,39 @@ fn test_self_hosted_ast_compilation() {
         }
     ";
     std::fs::write(&entry_path, entry_source).unwrap();
-    
+
     let res = resolver.resolve(&entry_path, &fs_impl);
     assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
-    
+
     let (order, mut modules) = res.unwrap();
-    
+
     let mut checker = gust_lexer::typechecker::TypeChecker::new();
     for path in &order {
         if let Some(module) = modules.get(path) {
             let stem = path.file_stem().unwrap().to_str().unwrap();
             let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
         }
     }
-    
-    let mut unified_statements = Vec::new();
+
+    let mut modules_for_codegen = Vec::new();
     for path in &order {
         if let Some(module) = modules.get_mut(path) {
-            unified_statements.append(&mut module.program.statements);
-        } 
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
     }
-    
-    let program = gust_lexer::ast::Program {
-        statements: unified_statements,
-        span: gust_lexer::token::Span::dummy(),
-    };
-    
+
     let codegen = gust_lexer::codegen::Codegen::new(
         checker.variable_types,
         checker.struct_registry,
@@ -2371,15 +2415,15 @@ fn test_self_hosted_ast_compilation() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_output = codegen.generate(&program);
-    
+    let c_output = codegen.generate(&modules_for_codegen);
+
     // Verify AST structs and enums are transpiled correctly
     assert!(c_output.contains("struct ast__Program"));
     assert!(c_output.contains("struct ast__Statement {"));
     assert!(c_output.contains("struct ast__Expression {"));
     assert!(c_output.contains("ast__Statement_Tag__Expression = 13"));
     assert!(c_output.contains("ast__Expression_Tag__Integer = 1"));
-    
+
     // Clean up temporary entry file
     let _ = std::fs::remove_file(entry_path);
 }
@@ -2389,27 +2433,36 @@ fn test_self_hosted_domain_model_e2e() {
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/e2e_test_entry.gst");
-    
+
     // Create compiler directory if it doesn't exist
     std::fs::create_dir_all("compiler").unwrap();
 
     // Programmatically fix errors.gst if it exists to be generic over ctx
     let errors_path = std::path::Path::new("compiler/errors.gst");
     if errors_path.exists() {
-        if let Ok(content) = std::fs::read_to_string(&errors_path) { 
+        if let Ok(content) = std::fs::read_to_string(&errors_path) {
             let mut updated = content;
             if updated.contains("type CompilerError struct") {
-                updated = updated.replace("type CompilerError struct", "type CompilerError[ctx] struct");
+                updated = updated.replace(
+                    "type CompilerError struct",
+                    "type CompilerError[ctx] struct",
+                );
             } else if updated.contains("type CompilerError  struct") {
-                updated = updated.replace("type CompilerError  struct", "type CompilerError[ctx] struct");
+                updated = updated.replace(
+                    "type CompilerError  struct",
+                    "type CompilerError[ctx] struct",
+                );
             }
             if updated.contains("Index[CompilerError, ctx]") {
-                updated = updated.replace("Index[CompilerError, ctx]", "Index[CompilerError[ctx], ctx]");
+                updated = updated.replace(
+                    "Index[CompilerError, ctx]",
+                    "Index[CompilerError[ctx], ctx]",
+                );
             }
             let _ = std::fs::write(&errors_path, updated);
         }
     }
-    
+
     // Write a dummy entry file that imports token.gst, ast.gst, and errors.gst
     let entry_source = "
         import \"token.gst\" as token;
@@ -2446,35 +2499,44 @@ fn test_self_hosted_domain_model_e2e() {
         }
     ";
     std::fs::write(&entry_path, entry_source).unwrap();
-    
+
     let res = resolver.resolve(&entry_path, &fs_impl);
     assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
-    
+
     let (order, mut modules) = res.unwrap();
-    
+
     let mut checker = gust_lexer::typechecker::TypeChecker::new();
     for path in &order {
         if let Some(module) = modules.get(path) {
             let stem = path.file_stem().unwrap().to_str().unwrap();
             let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
         }
     }
-    
-    let mut unified_statements = Vec::new();
+
+    let mut modules_for_codegen = Vec::new();
     for path in &order {
         if let Some(module) = modules.get_mut(path) {
-            unified_statements.append(&mut module.program.statements);
-        } 
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
     }
-    
-    let program = gust_lexer::ast::Program {
-        statements: unified_statements,
+
+    let _program = gust_lexer::ast::Program {
+        statements: Vec::new(), // Pass layout through modular mapping, not global unified statements
         span: gust_lexer::token::Span::dummy(),
     };
-    
+
     let codegen = gust_lexer::codegen::Codegen::new(
         checker.variable_types,
         checker.struct_registry,
@@ -2483,37 +2545,34 @@ fn test_self_hosted_domain_model_e2e() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_output = codegen.generate(&program);
-    
+    let c_output = codegen.generate(&modules_for_codegen);
+
     // Verify transpiled C contents for the entire multi-module compiler domain model
     assert!(c_output.contains("struct ast__Program"));
     assert!(c_output.contains("struct errors__CompilerError"));
     assert!(c_output.contains("struct errors__Result_Index_ast__Expression"));
-    
+
     // Invoke GCC/Clang to compile the output and run it as an E2E test!
     let temp_dir = std::env::temp_dir();
     let thread_id = std::thread::current().id();
     let count = 42069;
-    
+
     let c_filename = format!("gust_self_hosted_e2e_{:?}_{}.c", thread_id, count);
     let bin_filename = format!("gust_self_hosted_e2e_{:?}_{}.bin", thread_id, count);
-    
+
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
-    
+
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
-    
+
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
     cmd.arg(&c_path);
     if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output();
-        
+    let compile_output = cmd.arg("-o").arg(&bin_path).output();
+
     let compile_success = match compile_output {
         Ok(output) => {
             if !output.status.success() {
@@ -2528,15 +2587,20 @@ fn test_self_hosted_domain_model_e2e() {
             panic!("CC failed: {:?}", e);
         }
     };
-    assert!(compile_success, "C compilation of multi-module self-hosted AST & Error model failed!");
-    
-    let run_output = std::process::Command::new(&bin_path).output().expect("Failed to execute binary");
-    
+    assert!(
+        compile_success,
+        "C compilation of multi-module self-hosted AST & Error model failed!"
+    );
+
+    let run_output = std::process::Command::new(&bin_path)
+        .output()
+        .expect("Failed to execute binary");
+
     // Clean up temporary files
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
     let _ = std::fs::remove_file(entry_path);
-    
+
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
     assert_eq!(stdout_str.trim(), "2\nType mismatch!");
@@ -2574,13 +2638,21 @@ fn test_generational_arena_deep_copy_codegen() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_res = checker.check_program(&program);
-    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+    assert!(
+        check_res.is_ok(),
+        "Typechecker error: {:?}",
+        check_res.err()
+    );
 
-    let codegen = Codegen::new( 
+    let codegen = Codegen::new(
         checker.variable_types,
         checker.struct_registry,
         checker.function_registry,
@@ -2588,12 +2660,21 @@ fn test_generational_arena_deep_copy_codegen() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_output = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify correct recursive clone generation
-    assert!(c_output.contains("int std_GenerationalArena_Clone_Node(os_Arena* dest, os_Arena* src, int src_idx);"));
-    assert!(c_output.contains("int std_GenerationalArena_Clone_Node(os_Arena* dest, os_Arena* src, int src_idx) {"));
-    assert!(c_output.contains("dest_ptr->next = std_GenerationalArena_Clone_Node(dest, src, src_ptr->next);"));
+    assert!(c_output.contains(
+        "int std_GenerationalArena_Clone_Node(os_Arena* dest, os_Arena* src, int src_idx);"
+    ));
+    assert!(c_output.contains(
+        "int std_GenerationalArena_Clone_Node(os_Arena* dest, os_Arena* src, int src_idx) {"
+    ));
+    assert!(
+        c_output.contains(
+            "dest_ptr->next = std_GenerationalArena_Clone_Node(dest, src, src_ptr->next);"
+        )
+    );
 }
 
 #[test]
@@ -2613,11 +2694,19 @@ fn test_generational_arena_method_calls() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_res = checker.check_program(&program);
-    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+    assert!(
+        check_res.is_ok(),
+        "Typechecker error: {:?}",
+        check_res.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -2627,7 +2716,8 @@ fn test_generational_arena_method_calls() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_output = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify correct transpilation of Step and Swap calls to the FFI function
     assert!(c_output.contains("std_GenerationalArena_Step_Node(&arena);"));
@@ -2653,7 +2743,10 @@ fn test_fiber_scratchpad_escape_across_yield_boundary() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(err.message.contains("Cannot assign scratchpad-allocated view"));
+    assert!(
+        err.message
+            .contains("Cannot assign scratchpad-allocated view")
+    );
 }
 
 #[test]
@@ -2696,11 +2789,19 @@ fn test_codegen_thread_local_redirection() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_res = checker.check_program(&program);
-    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+    assert!(
+        check_res.is_ok(),
+        "Typechecker error: {:?}",
+        check_res.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -2710,7 +2811,8 @@ fn test_codegen_thread_local_redirection() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_output = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
 
     // Assert the forward declaration FFI headers exist in generated code
     assert!(c_output.contains("void os_SetThreadScratch(os_Arena* ctx);"));
@@ -2766,7 +2868,10 @@ fn test_match_pattern_destructuring_field_not_found() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::FieldNotFound);
-    assert!(err.message.contains("Field 'nonexistent' not found on variant 'VariantA'"));
+    assert!(
+        err.message
+            .contains("Field 'nonexistent' not found on variant 'VariantA'")
+    );
 }
 
 #[test]
@@ -2832,7 +2937,8 @@ fn test_match_pattern_destructuring_codegen() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_output = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify correct local variables declaration and assignment
     assert!(c_output.contains("int val = e.VariantA.val;"));
@@ -2890,7 +2996,10 @@ fn test_guard_non_wrapper_rhs_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
-    assert!(err.message.contains("must evaluate to a fallible wrapper type"));
+    assert!(
+        err.message
+            .contains("must evaluate to a fallible wrapper type")
+    );
 }
 
 #[test]
@@ -3082,11 +3191,19 @@ fn test_directory_ffi_codegen_verification() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_res = checker.check_program(&program);
-    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+    assert!(
+        check_res.is_ok(),
+        "Typechecker error: {:?}",
+        check_res.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -3096,7 +3213,8 @@ fn test_directory_ffi_codegen_verification() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_output = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify critical codegen outputs
     assert!(c_output.contains("struct LookupResult_os_Dir {"));
@@ -3356,7 +3474,11 @@ fn test_scratchpad_origin_propagation() {
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
     let mut checker = TypeChecker::new();
-    assert!(checker.check_program(&program).is_ok(), "Typechecking failed: {:?}", checker.check_program(&program).err());
+    assert!(
+        checker.check_program(&program).is_ok(),
+        "Typechecking failed: {:?}",
+        checker.check_program(&program).err()
+    );
 
     // Verify p and view are of type RawPointer(Byte)
     let p_type = checker.variable_types.get("p").cloned().unwrap();
@@ -3390,7 +3512,10 @@ fn test_scratch_assignment_to_branded_field_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(err.message.contains("Cannot assign scratchpad-allocated view"));
+    assert!(
+        err.message
+            .contains("Cannot assign scratchpad-allocated view")
+    );
 }
 
 #[test]
@@ -3462,7 +3587,11 @@ fn test_namespaced_cross_module_typechecking_valid() {
     let main_path = temp_dir.join("main.gst");
     let lib_path = temp_dir.join("lib.gst");
 
-    fs::write(&main_path, "import \"lib.gst\" as b; func main() { mut x: b.MyStruct; x.val = 42; }").unwrap();
+    fs::write(
+        &main_path,
+        "import \"lib.gst\" as b; func main() { mut x: b.MyStruct; x.val = 42; }",
+    )
+    .unwrap();
     fs::write(&lib_path, "type MyStruct struct { val: int }").unwrap();
 
     let resolver = gust_lexer::resolver::ModuleResolver::new();
@@ -3473,13 +3602,22 @@ fn test_namespaced_cross_module_typechecking_valid() {
     let (order, modules) = res.unwrap();
     let mut checker = TypeChecker::new();
 
-    for path in &order { 
-        if let Some(module) = modules.get(path) { 
+    for path in &order {
+        if let Some(module) = modules.get(path) {
             let stem = path.file_stem().unwrap().to_str().unwrap();
             let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Failed on {:?}: {:?}", path, check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
         }
     }
 
@@ -3638,7 +3776,10 @@ fn test_format_assignment_to_branded_field_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
-    assert!(err.message.contains("Cannot assign scratchpad-allocated view"));
+    assert!(
+        err.message
+            .contains("Cannot assign scratchpad-allocated view")
+    );
 }
 
 #[test]
@@ -3668,7 +3809,11 @@ fn test_namespaced_cross_module_typechecking_invalid_alias() {
     let main_path = temp_dir.join("main.gst");
     let lib_path = temp_dir.join("lib.gst");
 
-    fs::write(&main_path, "import \"lib.gst\" as b; func main() { mut x: wrong_alias.MyStruct; }").unwrap();
+    fs::write(
+        &main_path,
+        "import \"lib.gst\" as b; func main() { mut x: wrong_alias.MyStruct; }",
+    )
+    .unwrap();
     fs::write(&lib_path, "type MyStruct struct { val: int }").unwrap();
 
     let resolver = gust_lexer::resolver::ModuleResolver::new();
@@ -3680,12 +3825,16 @@ fn test_namespaced_cross_module_typechecking_invalid_alias() {
     let mut checker = TypeChecker::new();
 
     let mut had_error = false;
-    for path in &order { 
-        if let Some(module) = modules.get(path) { 
+    for path in &order {
+        if let Some(module) = modules.get(path) {
             let stem = path.file_stem().unwrap().to_str().unwrap();
             let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
-            if checker.check_module(&module.program, &prefix).is_err() { 
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            if checker.check_module(&module.program, &prefix).is_err() {
                 had_error = true;
                 break;
             }
@@ -3718,15 +3867,130 @@ fn test_namespaced_nested_type_resolution() {
     let (order, modules) = res.unwrap();
     let mut checker = TypeChecker::new();
 
-    for path in &order { 
-        if let Some(module) = modules.get(path) { 
+    for path in &order {
+        if let Some(module) = modules.get(path) {
             let stem = path.file_stem().unwrap().to_str().unwrap();
             let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Failed on {:?}: {:?}", path, check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
         }
     }
+
+    let _ = fs::remove_file(main_path);
+    let _ = fs::remove_file(lib_path);
+    let _ = fs::remove_dir(temp_dir);
+}
+
+#[test]
+fn test_codegen_emits_line_directives() {
+    let source = "
+        func main() {
+            mut x := 42;
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let modules_for_codegen = vec![(std::path::PathBuf::from("my_test_module.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    // Verify that the transpiled C contains expected #line preprocessor directives
+    assert!(c_output.contains("#line 2 \"my_test_module.gst\""));
+    assert!(c_output.contains("#line 3 \"my_test_module.gst\""));
+}
+
+#[test]
+fn test_codegen_emits_multi_file_line_directives() {
+    use std::fs;
+    let temp_dir = std::env::temp_dir().join("gust_test_codegen_lines");
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let main_path = temp_dir.join("main.gst");
+    let lib_path = temp_dir.join("lib.gst");
+
+    // Fix: access helper() via the implicit "lib" namespace
+    fs::write(
+        &main_path,
+        "import \"lib.gst\";\nfunc main() {\n    lib.helper();\n}",
+    )
+    .unwrap();
+    fs::write(&lib_path, "\nfunc helper() {\n    mut y := 10;\n}").unwrap();
+
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = resolver.resolve(&main_path, &fs_impl);
+    assert!(res.is_ok());
+
+    let (order, modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok());
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    let main_escaped = main_path
+        .to_string_lossy()
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"");
+    let lib_escaped = lib_path
+        .to_string_lossy()
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"");
+
+    // Verify that #line preprocessor directives map back to distinct module paths
+    assert!(c_output.contains(&format!("#line 2 \"{}\"", lib_escaped)));
+    assert!(c_output.contains(&format!("#line 3 \"{}\"", lib_escaped)));
+    assert!(c_output.contains(&format!("#line 2 \"{}\"", main_escaped)));
+    assert!(c_output.contains(&format!("#line 3 \"{}\"", main_escaped)));
 
     let _ = fs::remove_file(main_path);
     let _ = fs::remove_file(lib_path);

@@ -33,7 +33,8 @@ fn run_e2e_test(source: &str, expected_output: &str) {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_code = codegen.generate(&modules_for_codegen);
 
     // 2. Write the transpiled C code to a temporary file
     let temp_dir = env::temp_dir();
@@ -1099,18 +1100,13 @@ fn test_e2e_multi_module_compilation() {
         }
     }
 
-    // Unified statements for codegen
-    let mut unified_statements = Vec::new();
+    // Group statements for codegen
+    let mut modules_for_codegen = Vec::new();
     for path in &order {
         if let Some(module) = modules.get_mut(path) {
-            unified_statements.append(&mut module.program.statements);
+            modules_for_codegen.push((path.clone(), module.program.clone()));
         }
     }
-
-    let program = gust_lexer::ast::Program {
-        statements: unified_statements,
-        span: gust_lexer::token::Span::dummy(),
-    };
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -1120,7 +1116,7 @@ fn test_e2e_multi_module_compilation() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let c_code = codegen.generate(&modules_for_codegen);
 
     // Compile and run C code
     let c_filename = "gust_e2e_multi_output.c";
@@ -1210,7 +1206,8 @@ fn test_e2e_thread_local_scratchpad() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_code = codegen.generate(&modules_for_codegen);
 
     let temp_dir = env::temp_dir();
     let thread_id = std::thread::current().id();
@@ -1766,7 +1763,8 @@ fn test_e2e_process_args_and_exit() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_code = codegen.generate(&modules_for_codegen);
 
     // 2. Write the transpiled C code to a temporary file
     let temp_dir = env::temp_dir();
@@ -2238,7 +2236,8 @@ fn test_e2e_arena_canary_normal_debug() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_code = codegen.generate(&modules_for_codegen);
 
     let temp_dir = env::temp_dir();
     let thread_id = std::thread::current().id();
@@ -2331,7 +2330,8 @@ fn test_e2e_arena_canary_corruption_detection() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_code = codegen.generate(&modules_for_codegen);
 
     let temp_dir = env::temp_dir();
     let thread_id = std::thread::current().id();
@@ -2949,7 +2949,9 @@ fn test_e2e_generational_arena_wrapper_migration() {
 #[test]
 fn test_e2e_sanitizer_detection_of_corrupt_memory() {
     if env::var("GUST_NO_SANITIZERS").is_ok() {
-        println!("Skipping test_e2e_sanitizer_detection_of_corrupt_memory because GUST_NO_SANITIZERS is set");
+        println!(
+            "Skipping test_e2e_sanitizer_detection_of_corrupt_memory because GUST_NO_SANITIZERS is set"
+        );
         return;
     }
 
@@ -2968,11 +2970,19 @@ fn test_e2e_sanitizer_detection_of_corrupt_memory() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_result = checker.check_program(&program);
-    assert!(check_result.is_ok(), "Typechecking failed: {:?}", check_result.err());
+    assert!(
+        check_result.is_ok(),
+        "Typechecking failed: {:?}",
+        check_result.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -2982,15 +2992,22 @@ fn test_e2e_sanitizer_detection_of_corrupt_memory() {
         checker.resolved_names,
         checker.resolved_types,
     );
-    let c_code = codegen.generate(&program);
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_code = codegen.generate(&modules_for_codegen);
 
     let temp_dir = env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
-    let c_filename = format!("gust_sanitizer_corrupt_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_sanitizer_corrupt_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_sanitizer_corrupt_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_sanitizer_corrupt_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -3006,10 +3023,13 @@ fn test_e2e_sanitizer_detection_of_corrupt_memory() {
         .arg(&bin_path)
         .output()
         .expect("Compile failed");
-    
+
     if !compile_res.status.success() {
         let _ = fs::remove_file(&c_path);
-        println!("Skipping test because compiler does not support sanitizers: {}", String::from_utf8_lossy(&compile_res.stderr));
+        println!(
+            "Skipping test because compiler does not support sanitizers: {}",
+            String::from_utf8_lossy(&compile_res.stderr)
+        );
         return;
     }
 
@@ -3018,15 +3038,32 @@ fn test_e2e_sanitizer_detection_of_corrupt_memory() {
     let _ = fs::remove_file(&c_path);
     let _ = fs::remove_file(&bin_path);
 
-    assert!(!run_res.status.success(), "Expected sanitizer violation to cause crash, but binary exited successfully!");
-    
+    assert!(
+        !run_res.status.success(),
+        "Expected sanitizer violation to cause crash, but binary exited successfully!"
+    );
+
     let stderr_str = String::from_utf8_lossy(&run_res.stderr);
     let stdout_str = String::from_utf8_lossy(&run_res.stdout);
     let combined = format!("{}\n{}", stdout_str, stderr_str);
 
     assert!(
-        combined.contains("AddressSanitizer") || combined.contains("stack-buffer-overflow") || combined.contains("UndefinedBehaviorSanitizer"),
+        combined.contains("AddressSanitizer")
+            || combined.contains("stack-buffer-overflow")
+            || combined.contains("UndefinedBehaviorSanitizer"),
         "Expected sanitizer error message, but got:\n{}",
         combined
     );
+}
+
+#[test]
+fn test_e2e_line_preprocessor_validation() {
+    // This program transpiles to C containing #line directives and is compiled under ASan and UBSan
+    let source = "
+        func main() {
+            mut x := 10;
+            os.LogInt(x);
+        }
+    ";
+    run_e2e_test(source, "10");
 }
