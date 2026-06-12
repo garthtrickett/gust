@@ -1437,7 +1437,6 @@ impl Codegen {
                     return format!("os_Arena_Validate(&{})", arg_str);
                 }
 
-                if func_path == "os_ScratchAlloc" || func_path == "os_ScratchAlloc" {
                 if func_path == "os_ScratchAlloc" || func_path == "os.ScratchAlloc" {
                     let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
                         format!("sizeof({})", struct_name)
