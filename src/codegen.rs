@@ -538,6 +538,8 @@ impl Codegen {
                 || func_name == "std_str_find"
                 || func_name == "std.str_trim"
                 || func_name == "std_str_trim"
+                || func_name == "std.str_split"
+                || func_name == "std_str_split"
                 || func_name == "std.Spawn"
                 || func_name == "std_Spawn"
                 || func_name == "std.is_alpha"

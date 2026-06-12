@@ -2803,6 +2803,19 @@ fn test_str_find_and_trim_typechecker_valid() {
 }
 
 #[test]
+fn test_str_split_typechecker_valid() {
+    let source = r#"
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut s := "a,b,c";
+            mut parts: std.Vector[str, ctx] := std.str_split(s, ",", ctx);
+        }
+    "#;
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_format_typecheck_valid() {
     let source = "
         func main() {

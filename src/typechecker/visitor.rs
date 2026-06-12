@@ -537,6 +537,27 @@ impl TypeChecker {
         );
 
         self.function_registry.insert(
+            "std.str_split".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string(), "delim".to_string(), "ctx".to_string()],
+                params: vec![Type::Str, Type::Str, Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Generic("std.Vector".to_string(), vec![Type::Str, Type::Struct("ctx".to_string(), None)]),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_str_split".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["s".to_string(), "delim".to_string(), "ctx".to_string()],
+                params: vec![Type::Str, Type::Str, Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Generic("std.Vector".to_string(), vec![Type::Str, Type::Struct("ctx".to_string(), None)]),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+    }
+
+    pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> { 
+        self.function_registry.insert(
             "std.is_alpha".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["b".to_string()],
