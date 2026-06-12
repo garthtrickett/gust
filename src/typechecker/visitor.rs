@@ -2791,7 +2791,40 @@ impl TypeChecker {
                         let arg_type = self.check_expression(&arguments[1])?;
                         let resolved_arg = self.resolve_type(&arg_type)?;
 
-                        if !self.types_match_modulo_brand(&sig.params[0], &resolved_arg) {
+                        // Handoff isolation check for branded contexts
+                        if let Type::Struct(ref name, Some(ref brand)) = resolved_arg {
+                            if name.starts_with("std_ThreadLocalContext") || name.starts_with("ThreadLocalContext") {
+                                if let Some(ref local_vars) = self.current_function_local_vars {
+                                    let arg_origins = self.get_expression_origins(&arguments[1]);
+                                    for origin in &arg_origins {
+                                        if local_vars.contains(origin) && origin != brand {
+                                            return Err(TypeError {
+                                                kind: TypeErrorKind::BrandLifetimeViolation,
+                                                message: format!(
+                                                    "Semantic Error: Thread-safety violation. Branded context has origin tracing back to thread-local stack variable '{}', preventing safe handoff across thread-spawning boundaries",
+                                                    origin
+                                                ),
+                                                span: Some(arguments[1].span()),
+                                            });
+                                        } 
+                                    } 
+                                }
+                            }
+                        }
+
+                        let is_tl_context = if let Type::Struct(ref n, _) = resolved_arg {
+                            n.starts_with("std_ThreadLocalContext") || n.starts_with("ThreadLocalContext")
+                        } else {
+                            false
+                        };
+
+                        let match_ok = if is_tl_context {
+                            types_match(&sig.params[0], &resolved_arg)
+                        } else {
+                            self.types_match_modulo_brand(&sig.params[0], &resolved_arg)
+                        };
+
+                        if !match_ok {
                             return Err(TypeError {
                                 kind: TypeErrorKind::TypeMismatch,
                                 message: format!( 
@@ -3087,6 +3120,8 @@ impl TypeChecker {
                 }
 
                 if func_path == "os.ArenaAlloc" || func_path == "os_ArenaAlloc" {
+                // Compile-time resolution of os_ArenaAlloc [3]
+                if func_path == "os_ArenaAlloc" || func_path == "os.ArenaAlloc" {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -3100,14 +3135,54 @@ impl TypeChecker {
                     {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
-                            message:
-                                "Semantic Error: ArenaAlloc argument must be an Arena allocator"
-                                    .to_string(),
+                            message: "Semantic Error: ArenaAlloc argument must be an Arena allocator".to_string(),
                             span: None,
                         });
                     }
                     let brand_name = expression_to_string(&arguments[0]);
                     return Ok(Type::Index("Any".to_string(), Some(brand_name)));
+                }
+
+                if func_path == "os.SetThreadScratch" || func_path == "os_SetThreadScratch" {
+                    if arguments.len() != 1 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.SetThreadScratch expects exactly 1 argument (the allocator variable)".to_string(),
+                            span: Some(expr.span()),
+                        });
+                    }
+                    let arg_type = self.check_expression(&arguments[0])?;
+                    if arg_type != Type::Arena
+                        && !matches!(arg_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: os.SetThreadScratch argument must be an Arena allocator, but got {:?}",
+                                arg_type
+                            ),
+                            span: Some(arguments[0].span()),
+                        });
+                    }
+                    return Ok(Type::Void);
+                }
+
+                if func_path == "os.GetThreadScratch" || func_path == "os_GetThreadScratch" {
+                    if !arguments.is_empty() {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "Semantic Error: os.GetThreadScratch expects 0 arguments".to_string(),
+                            span: Some(expr.span()),
+                        });
+                    }
+                    let mut active_arena_name = "ctx".to_string();
+                    for (name, ty) in &self.symbol_table {
+                        if *ty == Type::Arena || matches!(ty, Type::RawPointer(ref inner) if **inner == Type::Arena) {
+                            active_arena_name = name.clone();
+                            break;
+                        }
+                    }
+                    return Ok(Type::Struct("std_ThreadLocalContext".to_string(), Some(active_arena_name)));
                 }
 
                 if func_path == "os.LogInt" || func_path == "os_LogInt" {
