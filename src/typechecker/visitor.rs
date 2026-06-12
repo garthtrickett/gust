@@ -2109,6 +2109,20 @@ impl TypeChecker {
                         });
                 }
 
+                let is_left_slice_like = matches!(left_type, Type::Slice(_)) || left_type == Type::ByteSlice || left_type == Type::Str;
+                let is_target_slice_like = matches!(resolved_target, Type::Slice(_)) || resolved_target == Type::ByteSlice || resolved_target == Type::Str;
+
+                if is_left_slice_like && is_target_slice_like {
+                    if !self.in_unsafe_block {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::UnsafeProhibited,
+                            message: "Semantic Error: Casting slice-like types is strictly prohibited outside 'unsafe' blocks".to_string(),
+                            span: None,
+                        });
+                    }
+                    return Ok(resolved_target.clone());
+                }
+
                 if !matches!(left_type, Type::Slice(_)) && left_type != Type::ByteSlice {
                     return Err(TypeError {
                         kind: TypeErrorKind::InvalidCast,
