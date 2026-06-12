@@ -1892,3 +1892,155 @@ fn test_e2e_multithreaded_scratch_isolation() {
     ";
     run_e2e_test(source, "42\n100");
 }
+
+#[test]
+fn test_e2e_arena_canary_normal_debug() {
+    let source = "
+        type MyNode[ctx] struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut n1: Index[MyNode, ctx] := os.ArenaAlloc(ctx);
+            mut n2: Index[MyNode, ctx] := os.ArenaAlloc(ctx);
+            ctx[n1].val = 42;
+            ctx[n2].val = 84;
+            
+            os.ArenaValidate(ctx);
+            os.LogInt(ctx[n1].val);
+            os.LogInt(ctx[n2].val);
+        }
+    ";
+
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_result = checker.check_program(&program);
+    assert!(check_result.is_ok(), "Typechecking failed: {:?}", check_result.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&program);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_canary_normal_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_canary_normal_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+
+    let compile_res = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-DGUST_DEBUG")
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile failed");
+    assert!(compile_res.status.success(), "Compile failed: {}", String::from_utf8_lossy(&compile_res.stderr));
+
+    let run_res = Command::new(&bin_path).output().expect("Execution failed");
+    
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(run_res.status.success());
+    let stdout_str = String::from_utf8(run_res.stdout).unwrap();
+    assert_eq!(stdout_str.trim(), "42\n84");
+}
+
+#[test]
+fn test_e2e_arena_canary_corruption_detection() {
+    let source = "
+        type MyNode[ctx] struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut n1: Index[MyNode, ctx] := os.ArenaAlloc(ctx);
+            ctx[n1].val = 42;
+            
+            unsafe {
+                mut val_ptr := &ctx[n1].val;
+                mut byte_ptr := val_ptr as *byte;
+                *(byte_ptr + 8) = 0; // Corrupt post-canary of n1
+            }
+            
+            os.ArenaValidate(ctx);
+        }
+    ";
+
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_result = checker.check_program(&program);
+    assert!(check_result.is_ok(), "Typechecking failed: {:?}", check_result.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&program);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_canary_corrupt_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_canary_corrupt_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+
+    let compile_res = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-DGUST_DEBUG")
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile failed");
+    assert!(compile_res.status.success(), "Compile failed: {}", String::from_utf8_lossy(&compile_res.stderr));
+
+    let run_res = Command::new(&bin_path).output().expect("Execution failed");
+    
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    // It must crash because of abort()
+    assert!(!run_res.status.success());
+    let stderr_str = String::from_utf8_lossy(&run_res.stderr);
+    let stdout_str = String::from_utf8_lossy(&run_res.stdout);
+    
+    let combined = format!("{}\n{}", stdout_str, stderr_str);
+    assert!(combined.contains("Assertion Failure") || combined.contains("corruption detected"), "Unexpected output: {}", combined);
+}
