@@ -2130,6 +2130,81 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_match_pattern_destructuring_compile_pass() {
+    let source = "
+        type MyEnum enum {
+            VariantA { val: int },
+            VariantB { x: int, y: int }
+        }
+        func process(e: MyEnum) int {
+            match e {                VariantA { val } => {
+                    return val;
+                }
+                VariantB { x, y } => {
+                    return x + y;
+                }
+            }
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_match_pattern_destructuring_field_not_found() {
+    let source = "
+        type MyEnum enum {
+            VariantA { val: int },
+            VariantB
+        }
+        func process(e: MyEnum) int {
+            match e {
+                VariantA { nonexistent } => {
+                    return 1;
+                }
+                VariantB => {
+                    return 0;
+                }
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::FieldNotFound);
+    assert!(err.message.contains("Field 'nonexistent' not found on variant 'VariantA'"));
+}
+
+#[test]
+fn test_match_pattern_destructuring_origin_invalidated() {
+    let source = "
+        type MyEnum enum {
+            VariantA { val: str },
+            VariantB
+        }
+        func main() {
+            mut e: MyEnum;
+            e.tag = 0;
+            e.VariantA.val = \"hello\";
+            
+            match e {
+                VariantA { val } => {
+                    mut moved_e := move e;
+                    os.LogStr(val); // Error: backing origin 'e' is invalidated!
+                }
+                VariantB => {}
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert!(
+        err.kind == TypeErrorKind::VariableOriginInvalidated
+            || err.kind == TypeErrorKind::UseOfMovedVariable
+    );
+}
+
+#[test]
 fn test_guard_typechecks_valid_hashmap_get() {
     let source = "
         func main() {

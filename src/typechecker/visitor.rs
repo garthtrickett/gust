@@ -1476,10 +1476,63 @@ impl TypeChecker {
 
                             // Typecheck the case body in its own scope
                             let parent_scope = self.symbol_table.clone();
+                            let parent_origins = self.variable_origins.clone();
+                            let parent_all_origins = self.all_variable_origins.clone();
+
+                            // Look up variant layout and inject destructured fields
+                            if !case.fields.is_empty() {
+                                let variant_struct_name = format!("{}_{}", enum_name, case.variant_name);
+                                if let Some(layout) = self.struct_registry.get(&variant_struct_name) {
+                                    for field_name in &case.fields {
+                                        if let Some(field_type) = layout.fields.get(field_name) {
+                                            self.symbol_table.insert(field_name.clone(), field_type.clone());
+                                            self.variable_types.insert(field_name.clone(), field_type.clone());
+
+                                            // Flow the memory origin
+                                            let parent_origins_set = self.get_expression_origins(expression);
+                                            let mut final_origins = if is_ephemeral_view(field_type) {
+                                                parent_origins_set
+                                            } else {
+                                                HashSet::new()
+                                            };
+                                            if final_origins.is_empty() {
+                                                final_origins.insert(field_name.clone());
+                                            }
+                                            self.variable_origins.insert(field_name.clone(), final_origins.clone());
+                                            self.all_variable_origins.insert(field_name.clone(), final_origins);
+
+                                            if let Some(ref mut local_vars) = self.current_function_local_vars {
+                                                local_vars.insert(field_name.clone());
+                                            }
+                                        } else {
+                                            return Err(TypeError {
+                                                kind: TypeErrorKind::FieldNotFound,
+                                                message: format!(
+                                                    "Semantic Error: Field '{}' not found on variant '{}' of enum '{}'",
+                                                    field_name, case.variant_name, enum_name
+                                                ),
+                                                span: Some(case.span),
+                                            });
+                                        }
+                                    }
+                                } else {
+                                    return Err(TypeError {
+                                        kind: TypeErrorKind::TypeMismatch,
+                                        message: format!(
+                                            "Semantic Error: Struct layout for variant '{}' of enum '{}' not found",
+                                            case.variant_name, enum_name
+                                        ),
+                                        span: Some(case.span),
+                                    });
+                                }
+                            }
+
                             for s in &case.body.statements {
                                 self.check_statement(s)?;
                             }
                             self.symbol_table = parent_scope;
+                            self.variable_origins = parent_origins;
+                            self.all_variable_origins = parent_all_origins;
                         }
 
                         // Exhaustiveness check: Ensure all variants are matched
