@@ -2282,7 +2282,7 @@ impl TypeChecker {
                 {
                     let alloc_name = expression_to_string(allocator);
                     if let Type::Index(struct_name, Some(brand_name)) = index_type {
-                        if brand_name != alloc_name {
+                        if brand_name != alloc_name && !alloc_name.ends_with(&format!(".{}", brand_name)) {
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
                                 message: format!(
