@@ -731,7 +731,7 @@ impl TypeChecker {
         let get_thread_scratch_sig = super::types::FunctionSignature {
             param_names: vec![],
             params: vec![],
-            return_type: Type::Struct("std_ThreadLocalContext_Any".to_string(), Some("ctx".to_string())),
+            return_type: Type::Struct("std_ThreadLocalContext_Any".to_string(), Some("Any".to_string())),
             return_origins: std::collections::HashSet::new(),
         };
         self.function_registry.insert("os.GetThreadScratch".to_string(), get_thread_scratch_sig.clone());
