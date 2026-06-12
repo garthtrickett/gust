@@ -554,9 +554,7 @@ impl TypeChecker {
                 return_origins: std::collections::HashSet::new(),
             },
         );
-    }
 
-    pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> { 
         self.function_registry.insert(
             "std.is_alpha".to_string(),
             super::types::FunctionSignature {
