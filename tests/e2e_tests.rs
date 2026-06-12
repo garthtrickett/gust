@@ -62,10 +62,7 @@ fn run_e2e_test(source: &str, expected_output: &str) {
     if env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output();
+    let compile_output = cmd.arg("-o").arg(&bin_path).output();
 
     let compile_success = match compile_output {
         Ok(output) => {
@@ -78,10 +75,9 @@ fn run_e2e_test(source: &str, expected_output: &str) {
         }
         Err(e) => {
             let _ = fs::remove_file(&c_path);
-            panic!( 
+            panic!(
                 "Failed to invoke system C compiler '{}'. Is gcc/clang/cc installed? Error: {:?}",
-                cc_compiler,
-                e
+                cc_compiler, e
             );
         }
     };
@@ -90,7 +86,10 @@ fn run_e2e_test(source: &str, expected_output: &str) {
         let stderr_str = String::from_utf8_lossy(&compile_success.1.stderr);
         let _ = fs::remove_file(&c_path);
         let _ = fs::remove_file(&bin_path);
-        panic!("Compilation of the transpiled C code failed. STDERR:\n{}", stderr_str);
+        panic!(
+            "Compilation of the transpiled C code failed. STDERR:\n{}",
+            stderr_str
+        );
     }
 
     // 4. Run the compiled binary and capture its standard output
@@ -146,7 +145,7 @@ fn test_e2e_rich_formatting_basic() {
 }
 
 #[test]
-fn test_e2e_rich_formatting_bounds() { 
+fn test_e2e_rich_formatting_bounds() {
     let source = "
         func main() {
             mut large_str := \"ThisIsALargeStringWithManyCharactersToTestThatOurCalculationsAreExtremelyRobustAndPreventAnyPotentialBufferOverflowInTranspiledC\";
@@ -156,7 +155,10 @@ fn test_e2e_rich_formatting_bounds() {
             os.LogStr(s);
         }
     ";
-    run_e2e_test(source, "String: ThisIsALargeStringWithManyCharactersToTestThatOurCalculationsAreExtremelyRobustAndPreventAnyPotentialBufferOverflowInTranspiledC, Neg: -2147483648, Max: 2147483647");
+    run_e2e_test(
+        source,
+        "String: ThisIsALargeStringWithManyCharactersToTestThatOurCalculationsAreExtremelyRobustAndPreventAnyPotentialBufferOverflowInTranspiledC, Neg: -2147483648, Max: 2147483647",
+    );
 }
 
 #[test]
@@ -172,7 +174,10 @@ fn test_e2e_rich_formatting_in_loop() {
             } 
         }
     ";
-    run_e2e_test(source, "Index: 0\nIndex: 1\nIndex: 2\nIndex: 3\nIndex: 4\nIndex: 5\nIndex: 6\nIndex: 7\nIndex: 8\nIndex: 9");
+    run_e2e_test(
+        source,
+        "Index: 0\nIndex: 1\nIndex: 2\nIndex: 3\nIndex: 4\nIndex: 5\nIndex: 6\nIndex: 7\nIndex: 8\nIndex: 9",
+    );
 }
 
 #[test]
@@ -1075,19 +1080,28 @@ fn test_e2e_multi_module_compilation() {
 
     // Namespaced typechecking
     let mut checker = TypeChecker::new();
-    for path in &order { 
-        if let Some(module) = modules.get(path) { 
+    for path in &order {
+        if let Some(module) = modules.get(path) {
             let stem = path.file_stem().unwrap().to_str().unwrap();
             let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
         }
     }
 
     // Unified statements for codegen
     let mut unified_statements = Vec::new();
-    for path in &order { 
+    for path in &order {
         if let Some(module) = modules.get_mut(path) {
             unified_statements.append(&mut module.program.statements);
         }
@@ -1117,16 +1131,26 @@ fn test_e2e_multi_module_compilation() {
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let compile_output = Command::new(&cc_compiler)
-        .arg(&c_path)
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
         .output()
         .expect("Failed to run compiler command");
 
-    assert!(compile_output.status.success(), "GCC compilation failed: {}", String::from_utf8_lossy(&compile_output.stderr));
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
 
-    let run_output = Command::new(&bin_path).output().expect("Failed to run output binary");
+    let run_output = Command::new(&bin_path)
+        .output()
+        .expect("Failed to run output binary");
 
     // Clean up temporary files
     let _ = fs::remove_file(&c_path);
@@ -1172,7 +1196,11 @@ fn test_e2e_thread_local_scratchpad() {
 
     let mut checker = TypeChecker::new();
     let check_result = checker.check_program(&program);
-    assert!(check_result.is_ok(), "Typechecking failed: {:?}", check_result.err());
+    assert!(
+        check_result.is_ok(),
+        "Typechecking failed: {:?}",
+        check_result.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -1189,9 +1217,18 @@ fn test_e2e_thread_local_scratchpad() {
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
-    let c_filename = format!("gust_scratch_test_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename_ndebug = format!("gust_scratch_test_ndebug_{:?}_{}_{}.bin", thread_id, process_id, count);
-    let bin_filename_debug = format!("gust_scratch_test_debug_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_scratch_test_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename_ndebug = format!(
+        "gust_scratch_test_ndebug_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
+    let bin_filename_debug = format!(
+        "gust_scratch_test_debug_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path_ndebug = temp_dir.join(&bin_filename_ndebug);
@@ -1202,23 +1239,38 @@ fn test_e2e_thread_local_scratchpad() {
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
 
     // Compile NDEBUG version
-    let compile_ndebug = Command::new(&cc_compiler)
-        .arg(&c_path)
+    let mut cmd_ndebug = Command::new(&cc_compiler);
+    cmd_ndebug.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd_ndebug.arg("-fsanitize=address,undefined");
+    }
+    let compile_ndebug = cmd_ndebug
         .arg("-o")
         .arg(&bin_path_ndebug)
         .output()
         .expect("Compile failed");
-    assert!(compile_ndebug.status.success(), "NDEBUG compile failed: {}", String::from_utf8_lossy(&compile_ndebug.stderr));
+    assert!(
+        compile_ndebug.status.success(),
+        "NDEBUG compile failed: {}",
+        String::from_utf8_lossy(&compile_ndebug.stderr)
+    );
 
     // Compile DEBUG version
-    let compile_debug = Command::new(&cc_compiler)
-        .arg(&c_path)
-        .arg("-DGUST_DEBUG")
+    let mut cmd_debug = Command::new(&cc_compiler);
+    cmd_debug.arg(&c_path).arg("-DGUST_DEBUG");
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd_debug.arg("-fsanitize=address,undefined");
+    }
+    let compile_debug = cmd_debug
         .arg("-o")
         .arg(&bin_path_debug)
         .output()
         .expect("Compile failed");
-    assert!(compile_debug.status.success(), "DEBUG compile failed: {}", String::from_utf8_lossy(&compile_debug.stderr));
+    assert!(
+        compile_debug.status.success(),
+        "DEBUG compile failed: {}",
+        String::from_utf8_lossy(&compile_debug.stderr)
+    );
 
     // Run NDEBUG version: should output 42, 84, 42
     let run_ndebug = Command::new(&bin_path_ndebug).output().unwrap();
@@ -1446,8 +1498,9 @@ fn test_e2e_high_density_fiber_stress() {
     let mut c_program = String::new();
     c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
     c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
-    
-    c_program.push_str(r#"
+
+    c_program.push_str(
+        r#"
         #include <assert.h>
 
         volatile int completed_count = 0;
@@ -1474,15 +1527,22 @@ fn test_e2e_high_density_fiber_stress() {
             printf("GUST_HIGH_DENSITY_OK\n");
             return 0;
         }
-    "#);
+    "#,
+    );
 
     let temp_dir = env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
-    let c_filename = format!("gust_stress_test_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_stress_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_stress_test_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_stress_test_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -1490,8 +1550,12 @@ fn test_e2e_high_density_fiber_stress() {
     fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
 
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let compile_output = Command::new(&cc_compiler)
-        .arg(&c_path)
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
         .output()
@@ -1510,7 +1574,11 @@ fn test_e2e_high_density_fiber_stress() {
 
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).unwrap();
-    assert!(stdout_str.contains("GUST_HIGH_DENSITY_OK"), "Unexpected output: {}", stdout_str);
+    assert!(
+        stdout_str.contains("GUST_HIGH_DENSITY_OK"),
+        "Unexpected output: {}",
+        stdout_str
+    );
 }
 
 #[test]
@@ -1518,8 +1586,9 @@ fn test_e2e_cooperative_deadlock_and_starvation() {
     let mut c_program = String::new();
     c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
     c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
-    
-    c_program.push_str(r#"
+
+    c_program.push_str(
+        r#"
         #include <assert.h>
 
         volatile int heavy_completed = 0;
@@ -1552,15 +1621,22 @@ fn test_e2e_cooperative_deadlock_and_starvation() {
             printf("GUST_STARVATION_OK\n");
             return 0;
         }
-    "#);
+    "#,
+    );
 
     let temp_dir = env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
-    let c_filename = format!("gust_starvation_test_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_starvation_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_starvation_test_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_starvation_test_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -1568,8 +1644,12 @@ fn test_e2e_cooperative_deadlock_and_starvation() {
     fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
 
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let compile_output = Command::new(&cc_compiler)
-        .arg(&c_path)
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
         .output()
@@ -1588,7 +1668,11 @@ fn test_e2e_cooperative_deadlock_and_starvation() {
 
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).unwrap();
-    assert!(stdout_str.contains("GUST_STARVATION_OK"), "Unexpected output: {}", stdout_str);
+    assert!(
+        stdout_str.contains("GUST_STARVATION_OK"),
+        "Unexpected output: {}",
+        stdout_str
+    );
 }
 
 #[test]
@@ -1691,7 +1775,10 @@ fn test_e2e_process_args_and_exit() {
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
     let c_filename = format!("gust_test_args_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_test_args_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let bin_filename = format!(
+        "gust_test_args_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -1705,10 +1792,7 @@ fn test_e2e_process_args_and_exit() {
     if env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output();
+    let compile_output = cmd.arg("-o").arg(&bin_path).output();
 
     let compile_success = match compile_output {
         Ok(output) => {
@@ -2132,11 +2216,19 @@ fn test_e2e_arena_canary_normal_debug() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_result = checker.check_program(&program);
-    assert!(check_result.is_ok(), "Typechecking failed: {:?}", check_result.err());
+    assert!(
+        check_result.is_ok(),
+        "Typechecking failed: {:?}",
+        check_result.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -2153,8 +2245,14 @@ fn test_e2e_arena_canary_normal_debug() {
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
-    let c_filename = format!("gust_canary_normal_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_canary_normal_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_canary_normal_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_canary_normal_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -2170,10 +2268,14 @@ fn test_e2e_arena_canary_normal_debug() {
         .arg(&bin_path)
         .output()
         .expect("Compile failed");
-    assert!(compile_res.status.success(), "Compile failed: {}", String::from_utf8_lossy(&compile_res.stderr));
+    assert!(
+        compile_res.status.success(),
+        "Compile failed: {}",
+        String::from_utf8_lossy(&compile_res.stderr)
+    );
 
     let run_res = Command::new(&bin_path).output().expect("Execution failed");
-    
+
     let _ = fs::remove_file(&c_path);
     let _ = fs::remove_file(&bin_path);
 
@@ -2207,11 +2309,19 @@ fn test_e2e_arena_canary_corruption_detection() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_result = checker.check_program(&program);
-    assert!(check_result.is_ok(), "Typechecking failed: {:?}", check_result.err());
+    assert!(
+        check_result.is_ok(),
+        "Typechecking failed: {:?}",
+        check_result.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -2228,8 +2338,14 @@ fn test_e2e_arena_canary_corruption_detection() {
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
-    let c_filename = format!("gust_canary_corrupt_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_canary_corrupt_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_canary_corrupt_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_canary_corrupt_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -2245,10 +2361,14 @@ fn test_e2e_arena_canary_corruption_detection() {
         .arg(&bin_path)
         .output()
         .expect("Compile failed");
-    assert!(compile_res.status.success(), "Compile failed: {}", String::from_utf8_lossy(&compile_res.stderr));
+    assert!(
+        compile_res.status.success(),
+        "Compile failed: {}",
+        String::from_utf8_lossy(&compile_res.stderr)
+    );
 
     let run_res = Command::new(&bin_path).output().expect("Execution failed");
-    
+
     let _ = fs::remove_file(&c_path);
     let _ = fs::remove_file(&bin_path);
 
@@ -2256,9 +2376,13 @@ fn test_e2e_arena_canary_corruption_detection() {
     assert!(!run_res.status.success());
     let stderr_str = String::from_utf8_lossy(&run_res.stderr);
     let stdout_str = String::from_utf8_lossy(&run_res.stdout);
-    
+
     let combined = format!("{}\n{}", stdout_str, stderr_str);
-    assert!(combined.contains("Assertion Failure") || combined.contains("corruption detected"), "Unexpected output: {}", combined);
+    assert!(
+        combined.contains("Assertion Failure") || combined.contains("corruption detected"),
+        "Unexpected output: {}",
+        combined
+    );
 }
 
 #[test]
@@ -2266,7 +2390,7 @@ fn test_e2e_fiber_low_level_context_switch() {
     let mut c_program = String::new();
     c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
     c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
-    
+
     c_program.push_str(r#"
         gust_Fiber* main_fiber = NULL;
         gust_Fiber* fiber1 = NULL;
@@ -2372,8 +2496,14 @@ fn test_e2e_fiber_low_level_context_switch() {
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
-    let c_filename = format!("gust_fiber_switch_test_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_fiber_switch_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_fiber_switch_test_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_fiber_switch_test_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -2401,15 +2531,19 @@ fn test_e2e_fiber_low_level_context_switch() {
 
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).unwrap();
-    assert!(stdout_str.contains("GUST_FIBER_TEST_OK"), "Unexpected output: {}", stdout_str);
+    assert!(
+        stdout_str.contains("GUST_FIBER_TEST_OK"),
+        "Unexpected output: {}",
+        stdout_str
+    );
 }
 
 #[test]
-fn test_e2e_fiber_register_preservation() { 
+fn test_e2e_fiber_register_preservation() {
     let mut c_program = String::new();
     c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
     c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
-    
+
     c_program.push_str(r#"
         gust_Fiber* main_fiber = NULL;
         gust_Fiber* fiber1 = NULL;
@@ -2514,8 +2648,14 @@ fn test_e2e_fiber_register_preservation() {
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
-    let c_filename = format!("gust_fiber_reg_test_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_fiber_reg_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_fiber_reg_test_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_fiber_reg_test_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -2543,7 +2683,11 @@ fn test_e2e_fiber_register_preservation() {
 
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).unwrap();
-    assert!(stdout_str.contains("GUST_FIBER_REG_OK"), "Unexpected output: {}", stdout_str);
+    assert!(
+        stdout_str.contains("GUST_FIBER_REG_OK"),
+        "Unexpected output: {}",
+        stdout_str
+    );
 }
 
 #[test]
@@ -2551,8 +2695,9 @@ fn test_e2e_scheduler_affinity_binding() {
     let mut c_program = String::new();
     c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
     c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
-    
-    c_program.push_str(r#"
+
+    c_program.push_str(
+        r#"
         #include <assert.h>
 
         void dummy_task(void* arg) {
@@ -2582,15 +2727,22 @@ fn test_e2e_scheduler_affinity_binding() {
             printf("GUST_AFFINITY_OK\n");
             return 0;
         }
-    "#);
+    "#,
+    );
 
     let temp_dir = env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
-    let c_filename = format!("gust_affinity_test_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_affinity_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_affinity_test_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_affinity_test_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -2598,8 +2750,12 @@ fn test_e2e_scheduler_affinity_binding() {
     fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
 
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let compile_output = Command::new(&cc_compiler)
-        .arg(&c_path)
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
         .output()
@@ -2618,7 +2774,11 @@ fn test_e2e_scheduler_affinity_binding() {
 
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).unwrap();
-    assert!(stdout_str.contains("GUST_AFFINITY_OK"), "Unexpected output: {}", stdout_str);
+    assert!(
+        stdout_str.contains("GUST_AFFINITY_OK"),
+        "Unexpected output: {}",
+        stdout_str
+    );
 }
 
 #[test]
@@ -2626,7 +2786,7 @@ fn test_e2e_scheduler_yield() {
     let mut c_program = String::new();
     c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
     c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
-    
+
     c_program.push_str(r#"
         #include <assert.h>
 
@@ -2697,7 +2857,10 @@ fn test_e2e_scheduler_yield() {
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
     let c_filename = format!("gust_yield_test_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_yield_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let bin_filename = format!(
+        "gust_yield_test_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -2705,8 +2868,12 @@ fn test_e2e_scheduler_yield() {
     fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
 
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let compile_output = Command::new(&cc_compiler)
-        .arg(&c_path)
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
         .output()
@@ -2725,7 +2892,11 @@ fn test_e2e_scheduler_yield() {
 
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).unwrap();
-    assert!(stdout_str.contains("GUST_YIELD_OK"), "Unexpected output: {}", stdout_str);
+    assert!(
+        stdout_str.contains("GUST_YIELD_OK"),
+        "Unexpected output: {}",
+        stdout_str
+    );
 }
 
 #[test]

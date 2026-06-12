@@ -2504,8 +2504,12 @@ fn test_self_hosted_domain_model_e2e() {
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
     
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let compile_output = std::process::Command::new(&cc_compiler)
-        .arg(&c_path)
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
         .output();
