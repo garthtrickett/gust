@@ -470,9 +470,9 @@ impl Codegen {
             c_code.push_str("};\n\n");
         }
 
+        c_code.push_str(codegen_runtime::COLLECTIONS_RUNTIME);
         c_code.push_str(codegen_runtime::MOCK_PAYLOAD_RUNTIME);
         c_code.push_str(codegen_runtime::FILE_IO_RUNTIME);
-        c_code.push_str(codegen_runtime::COLLECTIONS_RUNTIME);
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// FUNCTION FORWARD DECLARATIONS\n");
