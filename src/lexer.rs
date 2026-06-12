@@ -454,7 +454,7 @@ mod tests {
 
     #[test]
     fn test_enum_and_match_lexing() {
-        let input = "type Shape enum { Circle, Rectangle } match s { Circle => { return 1; } }";
+        let input = "type Shape enum { Circle, Rectangle } match s { Circle { radius } => { return 1; } }";
         let mut l = Lexer::new(input);
 
         let expected = vec![
@@ -470,6 +470,9 @@ mod tests {
             (TokenType::Ident, "s"),
             (TokenType::LBrace, "{"),
             (TokenType::Ident, "Circle"),
+            (TokenType::LBrace, "{"),
+            (TokenType::Ident, "radius"),
+            (TokenType::RBrace, "}"),
             (TokenType::FatArrow, "=>"),
             (TokenType::LBrace, "{"),
             (TokenType::Return, "return"),

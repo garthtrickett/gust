@@ -31,6 +31,7 @@ pub struct VariantDef {
 #[derive(Debug, Clone)]
 pub struct MatchCase {
     pub variant_name: String,
+    pub fields: Vec<String>,
     pub body: BlockStatement,
     pub span: Span,
 }

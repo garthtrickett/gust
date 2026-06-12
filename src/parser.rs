@@ -846,7 +846,36 @@ impl Parser {
             let variant_name = self.cur_token.literal.clone();
             self.next_token();
 
+            let mut fields = Vec::new();
+            if self.cur_token.token_type == TokenType::LBrace {
+                self.next_token(); // consume '{'
+                while self.cur_token.token_type != TokenType::RBrace
+                    && self.cur_token.token_type != TokenType::Eof
+                {
+                    if self.cur_token.token_type == TokenType::Ident {
+                        fields.push(self.cur_token.literal.clone());
+                        self.next_token();
+                    } else {
+                        self.error_at_current("Expected identifier in match pattern destructuring".to_string());
+                        return None;
+                    }
+
+                    if self.cur_token.token_type == TokenType::Comma {
+                        self.next_token();
+                    } else if self.cur_token.token_type != TokenType::RBrace {
+                        self.error_at_current("Expected ',' or '}' in match pattern destructuring".to_string());
+                        return None;
+                    }
+                }
+                if self.cur_token.token_type != TokenType::RBrace {
+                    self.error_at_current("Expected closing brace '}' in match pattern destructuring".to_string());
+                    return None;
+                }
+                self.next_token(); // consume '}'
+            }
+
             if self.cur_token.token_type != TokenType::FatArrow {
+                self.error_at_current("Expected '=>' after match pattern".to_string());
                 return None;
             }
             self.next_token(); // consume '=>'
@@ -861,6 +890,7 @@ impl Parser {
 
             cases.push(MatchCase {
                 variant_name,
+                fields,
                 body,
                 span: self.merge_spans(case_start, case_end),
             });
@@ -1257,10 +1287,10 @@ mod tests {
 
             func process(shape: Shape) {
                 match shape {
-                    Circle => {
+                    Circle { radius } => {
                         return 1;
                     }
-                    Rectangle => {
+                    Rectangle { width, height } => {
                         return 2;
                     }
                     Point => {
@@ -1273,6 +1303,43 @@ mod tests {
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program();
         assert_eq!(program.statements.len(), 2);
+    }
+
+    #[test]
+    fn test_match_pattern_destructuring_parsing() {
+        let input = "
+            match shape {
+                Circle { radius } => {
+                    return 1;
+                }
+                Rectangle { width, height } => {
+                    return 2;
+                }
+                Point => {
+                    return 3;
+                }
+            }
+        ";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(parser.errors.len(), 0);
+        assert_eq!(program.statements.len(), 1);
+
+        if let Statement::Match { cases, .. } = &program.statements[0] {
+            assert_eq!(cases.len(), 3);
+            
+            assert_eq!(cases[0].variant_name, "Circle");
+            assert_eq!(cases[0].fields, vec!["radius".to_string()]);
+
+            assert_eq!(cases[1].variant_name, "Rectangle");
+            assert_eq!(cases[1].fields, vec!["width".to_string(), "height".to_string()]);
+
+            assert_eq!(cases[2].variant_name, "Point");
+            assert!(cases[2].fields.is_empty());
+        } else {
+            panic!("Expected Statement::Match");
+        }
     }
 
     #[test]
