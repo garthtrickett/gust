@@ -2405,6 +2405,9 @@ impl TypeChecker {
                     if right == "Free" {
                         return Ok(Type::Void);
                     }
+                    if right == "Offset" || right == "Capacity" {
+                        return Ok(Type::Int);
+                    }
                     return Err(TypeError {
                         kind: TypeErrorKind::MethodNotFound,
                         message: format!(
