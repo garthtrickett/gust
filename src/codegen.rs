@@ -365,11 +365,10 @@ impl Codegen {
                 let is_arena = alloc_type == Type::Arena || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
                 if is_arena {
                     let mut target_struct = "SessionNode".to_string();
-                    if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index) {
-                        if struct_name != "Any" {
+                    if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index)
+                        && struct_name != "Any" {
                             target_struct = struct_name;
                         }
-                    }
                     return Some(Type::RawPointer(Box::new(Type::Struct(target_struct, None))));
                 }
                 None
@@ -852,16 +851,14 @@ impl Codegen {
         }
 
         for struct_name in self.struct_registry.keys() {
-            if struct_name.starts_with("std_GenerationalArena_") {
-                let suffix = &struct_name["std_GenerationalArena_".len()..];
+            if let Some(suffix) = struct_name.strip_prefix("std_GenerationalArena_") {
                 if let Some(pos) = suffix.rfind('_') {
                     let t_name = &suffix[..pos];
                     self.clone_helpers_needed.borrow_mut().insert(t_name.to_string());
                 } else {
                     self.clone_helpers_needed.borrow_mut().insert(suffix.to_string());
                 }
-            } else if struct_name.starts_with("GenerationalArena_") {
-                let suffix = &struct_name["GenerationalArena_".len()..];
+            } else if let Some(suffix) = struct_name.strip_prefix("GenerationalArena_") {
                 if let Some(pos) = suffix.rfind('_') {
                     let t_name = &suffix[..pos];
                     self.clone_helpers_needed.borrow_mut().insert(t_name.to_string());
@@ -1451,11 +1448,10 @@ impl Codegen {
                 } else {
                     // Arena indexing (Value-Branded)
                     let mut target_struct = "SessionNode".to_string();
-                    if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index) {
-                        if struct_name != "Any" {
+                    if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index)
+                        && struct_name != "Any" {
                             target_struct = struct_name;
                         }
-                    }
 
                     let mut use_arrow = false;
                     if let Expression::Identifier(name, _) = &**allocator
@@ -2100,15 +2096,13 @@ impl Codegen {
                             }
                         };
                         if let Some(struct_name) = opt_struct_name {
-                            if struct_name.starts_with("std_GenerationalArena_") {
-                                let suffix = &struct_name["std_GenerationalArena_".len()..];
+                            if let Some(suffix) = struct_name.strip_prefix("std_GenerationalArena_") {
                                 if let Some(pos) = suffix.rfind('_') {
                                     t_name = suffix[..pos].to_string();
                                 } else { 
                                     t_name = suffix.to_string();
                                 }
-                            } else if struct_name.starts_with("GenerationalArena_") {
-                                let suffix = &struct_name["GenerationalArena_".len()..];
+                            } else if let Some(suffix) = struct_name.strip_prefix("GenerationalArena_") {
                                 if let Some(pos) = suffix.rfind('_') {
                                     t_name = suffix[..pos].to_string();
                                 } else { 
