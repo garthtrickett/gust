@@ -56,55 +56,97 @@ static int gust_num_shards = 0;
 static gust_SchedulerShard* gust_shards = NULL;
 static volatile int gust_scheduler_running = 1;
 
+void gust_context_switch(void** from_rsp, void* to_rsp);
+void gust_fiber_entry_wrapper(void);
+
 #if defined(__x86_64__)
-__attribute__((naked, noinline))
-void gust_context_switch(void** from_rsp, void* to_rsp) {
-    __asm__ volatile (
-        "pushq %%rbp\n\t"
-        "pushq %%rbx\n\t"
-        "pushq %%r12\n\t"
-        "pushq %%r13\n\t"
-        "pushq %%r14\n\t"
-        "pushq %%r15\n\t"
-        "movq %%rsp, (%%rdi)\n\t"
-        "movq %%rsi, %%rsp\n\t"
-        "popq %%r15\n\t"
-        "popq %%r14\n\t"
-        "popq %%r13\n\t"
-        "popq %%r12\n\t"
-        "popq %%rbx\n\t"
-        "popq %%rbp\n\t"
-        "ret\n\t"
-        :
-        :
-        : "memory"
-    );
-}
+#if defined(__APPLE__)
+__asm__(
+".global _gust_context_switch\n"
+"_gust_context_switch:\n"
+"    pushq %rbp\n"
+"    pushq %rbx\n"
+"    pushq %r12\n"
+"    pushq %r13\n"
+"    pushq %r14\n"
+"    pushq %r15\n"
+"    movq %rsp, (%rdi)\n"
+"    movq %rsi, %rsp\n"
+"    popq %r15\n"
+"    popq %r14\n"
+"    popq %r13\n"
+"    popq %r12\n"
+"    popq %rbx\n"
+"    popq %rbp\n"
+"    ret\n"
+);
+#else
+__asm__(
+".global gust_context_switch\n"
+"gust_context_switch:\n"
+"    pushq %rbp\n"
+"    pushq %rbx\n"
+"    pushq %r12\n"
+"    pushq %r13\n"
+"    pushq %r14\n"
+"    pushq %r15\n"
+"    movq %rsp, (%rdi)\n"
+"    movq %rsi, %rsp\n"
+"    popq %r15\n"
+"    popq %r14\n"
+"    popq %r13\n"
+"    popq %r12\n"
+"    popq %rbx\n"
+"    popq %rbp\n"
+"    ret\n"
+);
+#endif
+
 #elif defined(__aarch64__)
-__attribute__((naked, noinline))
-void gust_context_switch(void** from_rsp, void* to_rsp) {
-    __asm__ volatile (
-        "stp x29, x30, [sp, #-16]!\n\t"
-        "stp x27, x28, [sp, #-16]!\n\t"
-        "stp x25, x26, [sp, #-16]!\n\t"
-        "stp x23, x24, [sp, #-16]!\n\t"
-        "stp x21, x22, [sp, #-16]!\n\t"
-        "stp x19, x20, [sp, #-16]!\n\t"
-        "mov x2, sp\n\t"
-        "str x2, [x0]\n\t"
-        "mov sp, x1\n\t"
-        "ldp x19, x20, [sp], #16\n\t"
-        "ldp x21, x22, [sp], #16\n\t"
-        "ldp x23, x24, [sp], #16\n\t"
-        "ldp x25, x26, [sp], #16\n\t"
-        "ldp x27, x28, [sp], #16\n\t"
-        "ldp x29, x30, [sp], #16\n\t"
-        "ret\n\t"
-        :
-        :
-        : "memory"
-    );
-}
+#if defined(__APPLE__)
+__asm__(
+".global _gust_context_switch\n"
+"_gust_context_switch:\n"
+"    stp x29, x30, [sp, #-16]!\n"
+"    stp x27, x28, [sp, #-16]!\n"
+"    stp x25, x26, [sp, #-16]!\n"
+"    stp x23, x24, [sp, #-16]!\n"
+"    stp x21, x22, [sp, #-16]!\n"
+"    stp x19, x20, [sp, #-16]!\n"
+"    mov x2, sp\n"
+"    str x2, [x0]\n"
+"    mov sp, x1\n"
+"    ldp x19, x20, [sp], #16\n"
+"    ldp x21, x22, [sp], #16\n"
+"    ldp x23, x24, [sp], #16\n"
+"    ldp x25, x26, [sp], #16\n"
+"    ldp x27, x28, [sp], #16\n"
+"    ldp x29, x30, [sp], #16\n"
+"    ret\n"
+);
+#else
+__asm__(
+".global gust_context_switch\n"
+"gust_context_switch:\n"
+"    stp x29, x30, [sp, #-16]!\n"
+"    stp x27, x28, [sp, #-16]!\n"
+"    stp x25, x26, [sp, #-16]!\n"
+"    stp x23, x24, [sp, #-16]!\n"
+"    stp x21, x22, [sp, #-16]!\n"
+"    stp x19, x20, [sp, #-16]!\n"
+"    mov x2, sp\n"
+"    str x2, [x0]\n"
+"    mov sp, x1\n"
+"    ldp x19, x20, [sp], #16\n"
+"    ldp x21, x22, [sp], #16\n"
+"    ldp x23, x24, [sp], #16\n"
+"    ldp x25, x26, [sp], #16\n"
+"    ldp x27, x28, [sp], #16\n"
+"    ldp x29, x30, [sp], #16\n"
+"    ret\n"
+);
+#endif
+
 #else
 void gust_context_switch(void** from_rsp, void* to_rsp) {
     // Fallback for unsupported CPU configurations
@@ -115,29 +157,47 @@ void gust_fiber_exit(gust_Fiber* fiber);
 void gust_fiber_switch(gust_Fiber* from, gust_Fiber* to);
 
 #if defined(__x86_64__)
-__attribute__((naked)) void gust_fiber_entry_wrapper(void) {
-    __asm__ volatile (
-        "movq %%r13, %%rdi\n\t"
-        "callq *%%r12\n\t"
-        "movq %%r14, %%rdi\n\t"
-        "callq gust_fiber_exit\n\t"
-        :
-        :
-        : "memory"
-    );
-}
+#if defined(__APPLE__)
+__asm__(
+".global _gust_fiber_entry_wrapper\n"
+"_gust_fiber_entry_wrapper:\n"
+"    movq %r13, %rdi\n"
+"    callq *%r12\n"
+"    movq %r14, %rdi\n"
+"    callq _gust_fiber_exit\n"
+);
+#else
+__asm__(
+".global gust_fiber_entry_wrapper\n"
+"gust_fiber_entry_wrapper:\n"
+"    movq %r13, %rdi\n"
+"    callq *%r12\n"
+"    movq %r14, %rdi\n"
+"    callq gust_fiber_exit\n"
+);
+#endif
+
 #elif defined(__aarch64__)
-__attribute__((naked)) void gust_fiber_entry_wrapper(void) {
-    __asm__ volatile (
-        "mov x0, x20\n\t"
-        "blr x19\n\t"
-        "mov x0, x21\n\t"
-        "bl gust_fiber_exit\n\t"
-        :
-        :
-        : "memory"
-    );
-}
+#if defined(__APPLE__)
+__asm__(
+".global _gust_fiber_entry_wrapper\n"
+"_gust_fiber_entry_wrapper:\n"
+"    mov x0, x20\n"
+"    blr x19\n"
+"    mov x0, x21\n"
+"    bl _gust_fiber_exit\n"
+);
+#else
+__asm__(
+".global gust_fiber_entry_wrapper\n"
+"gust_fiber_entry_wrapper:\n"
+"    mov x0, x20\n"
+"    blr x19\n"
+"    mov x0, x21\n"
+"    bl gust_fiber_exit\n"
+);
+#endif
+
 #else
 void gust_fiber_entry_wrapper(void) {
     // Fallback
