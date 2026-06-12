@@ -2818,9 +2818,9 @@ impl TypeChecker {
                         let resolved_arg = self.resolve_type(&arg_type)?;
 
                         // Handoff isolation check for branded contexts
-                        if let Type::Struct(ref name, Some(ref brand)) = resolved_arg {
-                            if name.starts_with("std_ThreadLocalContext") || name.starts_with("ThreadLocalContext") {
-                                if let Some(ref local_vars) = self.current_function_local_vars {
+                        if let Type::Struct(ref name, Some(ref brand)) = resolved_arg
+                            && (name.starts_with("std_ThreadLocalContext") || name.starts_with("ThreadLocalContext"))
+                                && let Some(ref local_vars) = self.current_function_local_vars {
                                     let arg_origins = self.get_expression_origins(&arguments[1]);
                                     for origin in &arg_origins {
                                         if local_vars.contains(origin) && origin != brand {
@@ -2835,8 +2835,6 @@ impl TypeChecker {
                                         } 
                                     } 
                                 }
-                            }
-                        }
 
                         let is_tl_context = if let Type::Struct(ref n, _) = resolved_arg {
                             n.starts_with("std_ThreadLocalContext") || n.starts_with("ThreadLocalContext")
