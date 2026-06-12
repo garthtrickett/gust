@@ -2779,6 +2779,18 @@ fn test_namespaced_cross_module_typechecking_valid() {
 }
 
 #[test]
+fn test_path_join_typechecker_valid() {
+    let source = r#"
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut path: str := os.path_join("a", "b", ctx);
+        }
+    "#;
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_format_typecheck_valid() {
     let source = "
         func main() {
