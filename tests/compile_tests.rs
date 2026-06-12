@@ -2220,7 +2220,7 @@ fn test_codegen_thread_local_redirection() {
 
     // Assert the calls compile to the correct C-level identifiers and pointer parameters
     assert!(c_output.contains("os_SetThreadScratch(&ctx);"));
-    assert!(c_output.contains("std_ThreadLocalContext_ctx tl = os_GetThreadScratch();"));
+    assert!(c_output.contains("std_ThreadLocalContext tl = os_GetThreadScratch();"));
 
     // Assert that dynamic allocation via os_ScratchAlloc is incorporated for standard formatting
     assert!(c_output.contains("os_ScratchAlloc(16)"));
