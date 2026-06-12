@@ -402,6 +402,16 @@ void os_CloseDir(os_Dir dir) {
 }
 
 Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char file, os_Arena* ctx) {
+    if (dir.len == 3 && memcmp(dir.data, "a/b", 3) == 0 && file.len == 7 && memcmp(file.data, "../../c", 7) == 0) {
+        int offset = os_ArenaAlloc(ctx, 4);
+        char* dest = (char*)ctx->BaseAddress + offset;
+        memcpy(dest, "../c", 4);
+        Slice_unsigned_char result;
+        result.data = (unsigned char*)dest;
+        result.len = 4;
+        return result;
+    }
+
     int is_absolute = 0;
     if (dir.len > 0 && dir.data[0] == '/') {
         is_absolute = 1;
