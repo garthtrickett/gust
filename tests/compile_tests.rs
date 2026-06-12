@@ -2255,6 +2255,86 @@ fn test_self_hosted_token_compilation() {
 }
 
 #[test]
+fn test_self_hosted_ast_compilation() { 
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/ast_test_entry.gst");
+    
+    // Create compiler directory if it doesn't exist
+    std::fs::create_dir_all("compiler").unwrap();
+    
+    // Write a dummy entry file that imports token.gst and ast.gst
+    let entry_source = "
+        import \"token.gst\" as token;
+        import \"ast.gst\" as ast;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            
+            mut p: ast.Program[ctx];
+            p.statements = os.ArenaAlloc(ctx);
+            
+            mut s: ast.Statement[ctx];
+            s.tag = 13;
+            s.Expression.expr = os.ArenaAlloc(ctx);
+            
+            mut e: ast.Expression[ctx];
+            e.tag = 1;
+            e.Integer.val = 42;
+        }
+    ";
+    std::fs::write(&entry_path, entry_source).unwrap();
+    
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+    
+    let (order, mut modules) = res.unwrap();
+    
+    let mut checker = gust_lexer::typechecker::TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry { "".to_string() } else { format!("{}__", stem) };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
+        }
+    }
+    
+    let mut unified_statements = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            unified_statements.append(&mut module.program.statements);
+        } 
+    }
+    
+    let program = gust_lexer::ast::Program {
+        statements: unified_statements,
+        span: gust_lexer::token::Span::dummy(),
+    };
+    
+    let codegen = gust_lexer::codegen::Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&program);
+    
+    // Verify AST structs and enums are transpiled correctly
+    assert!(c_output.contains("struct ast__Program"));
+    assert!(c_output.contains("struct ast__Statement {"));
+    assert!(c_output.contains("struct ast__Expression {"));
+    assert!(c_output.contains("ast__Statement_Tag__Expression = 13"));
+    assert!(c_output.contains("ast__Expression_Tag__Integer = 1"));
+    
+    // Clean up temporary entry file
+    let _ = std::fs::remove_file(entry_path);
+}
+
+#[test]
 fn test_generational_arena_template_typechecking() {
     let source = "
         type Node struct {
