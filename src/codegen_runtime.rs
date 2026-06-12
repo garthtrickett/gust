@@ -32,10 +32,23 @@ typedef struct {
 } os_ScratchBuffer;
 
 static GUST_THREAD_LOCAL os_ScratchBuffer os_scratch_buffer = { {0}, 0 };
+static GUST_THREAD_LOCAL os_Arena* active_thread_arena = NULL;
+
+void os_SetThreadScratch(os_Arena* arena) {
+    active_thread_arena = arena;
+}
+
+os_Arena* os_GetThreadScratch() {
+    return active_thread_arena;
+}
 
 void* os_ScratchAlloc(size_t size) {
     // 8-byte alignment
     size = (size + 7) & ~7;
+    if (active_thread_arena != NULL) {
+        int offset = os_ArenaAlloc(active_thread_arena, size);
+        return (char*)active_thread_arena->BaseAddress + offset;
+    }
     if (os_scratch_buffer.offset + size > GUST_SCRATCH_SIZE) {
         printf("Out of thread-local scratch memory! Size requested: %zu\n", size);
         exit(1);
