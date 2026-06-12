@@ -989,6 +989,13 @@ fn test_large_enum_variant_payload_rejected() {
             x: int,
             y: int,
             z: int
+#[test]
+fn test_large_enum_variant_payload_rejected() {
+    let source = "
+        type Large struct {
+            x: int,
+            y: int,
+            z: int
         }
         type MyEnum enum {
             VariantA { val: Large },
@@ -1003,8 +1010,17 @@ fn test_large_enum_variant_payload_rejected() {
     let res = check_program(source);
     assert!(res.is_err());
     let err = res.unwrap_err();
+    
+    // Output the full captured diagnostic error string to guarantee visibility
+    eprintln!("\\n--- CAPTURED ERROR MESSAGE ---");
+    eprintln!("{}", err.message);
+    eprintln!("------------------------------\\n");
+
     assert_eq!(err.kind, TypeErrorKind::LargeEnumVariantPayload);
     assert!(err.message.contains("large enum variant payload"));
+    assert!(err.message.contains("VariantA"));
+    assert!(err.message.contains("Large"));
+    assert!(err.message.contains("3 fields"));
 }
 
 #[test]
