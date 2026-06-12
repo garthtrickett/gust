@@ -1401,7 +1401,7 @@ fn test_e2e_parallel_zero_copy_parsing() {
                 file_ctx[node].right_val = 50;
 
                 (*arg).out_chan.Send(move file_ctx);
-            }
+            } 
         }
         func main() {
             mut main_ctx := os.Arena.New();
@@ -1434,6 +1434,209 @@ fn test_e2e_parallel_zero_copy_parsing() {
         } 
     ";
     run_e2e_test(source, "250");
+}
+
+#[test]
+fn test_e2e_high_density_fiber_stress() {
+    let mut c_program = String::new();
+    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+    
+    c_program.push_str(r#"
+        #include <assert.h>
+
+        volatile int completed_count = 0;
+        pthread_mutex_t count_lock = PTHREAD_MUTEX_INITIALIZER;
+
+        void fiber_task(void* arg) {
+            pthread_mutex_lock(&count_lock);
+            completed_count++;
+            pthread_mutex_unlock(&count_lock);
+        }
+
+        int main() {
+            #if !defined(__x86_64__) && !defined(__aarch64__)
+            printf("GUST_HIGH_DENSITY_OK\n");
+            return 0;
+            #endif
+
+            gust_scheduler_init(1);
+            for (int i = 0; i < 100000; i++) {
+                gust_scheduler_spawn(16384, fiber_task, NULL);
+            }
+            gust_scheduler_destroy();
+            assert(completed_count == 100000);
+            printf("GUST_HIGH_DENSITY_OK\n");
+            return 0;
+        }
+    "#);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_stress_test_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_stress_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let compile_output = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = Command::new(&bin_path).output().expect("Execution failed");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert!(stdout_str.contains("GUST_HIGH_DENSITY_OK"), "Unexpected output: {}", stdout_str);
+}
+
+#[test]
+fn test_e2e_cooperative_deadlock_and_starvation() {
+    let mut c_program = String::new();
+    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+    
+    c_program.push_str(r#"
+        #include <assert.h>
+
+        volatile int heavy_completed = 0;
+        volatile int light_completed = 0;
+
+        void heavy_task(void* arg) {
+            for (int i = 0; i < 1000; i++) {
+                gust_yield();
+            }
+            heavy_completed = 1;
+        }
+
+        void light_task(void* arg) {
+            assert(heavy_completed == 0);
+            light_completed = 1;
+        }
+
+        int main() {
+            #if !defined(__x86_64__) && !defined(__aarch64__)
+            printf("GUST_STARVATION_OK\n");
+            return 0;
+            #endif
+
+            gust_scheduler_init(1);
+            gust_scheduler_spawn(16384, heavy_task, NULL);
+            gust_scheduler_spawn(16384, light_task, NULL);
+            gust_scheduler_destroy();
+            assert(heavy_completed == 1);
+            assert(light_completed == 1);
+            printf("GUST_STARVATION_OK\n");
+            return 0;
+        }
+    "#);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_starvation_test_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_starvation_test_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let compile_output = Command::new(&cc_compiler)
+        .arg(&c_path)
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = Command::new(&bin_path).output().expect("Execution failed");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert!(stdout_str.contains("GUST_STARVATION_OK"), "Unexpected output: {}", stdout_str);
+}
+
+#[test]
+fn test_e2e_fiber_channel_pipeline() {
+    let source = "
+        type Packet struct {
+            val: int
+        }
+        type StageArg[ctx] struct {
+            in_chan: std.Channel[Arena, ctx],
+            out_chan: std.Channel[Arena, ctx]
+        }
+        func stage_task(arg: *StageArg[ctx]) {
+            unsafe {
+                mut file_ctx := move (*arg).in_chan.Recv();
+                mut node: Index[Packet, file_ctx] := 0 as Index[Packet, file_ctx];
+                file_ctx[node].val = file_ctx[node].val + 100;
+                (*arg).out_chan.Send(move file_ctx);
+            }
+        }
+        func main() {
+            mut main_ctx := os.Arena.New();
+            defer main_ctx.Free();
+
+            mut chan1: std.Channel[Arena, main_ctx] := std.ChannelNew(main_ctx);
+            mut chan2: std.Channel[Arena, main_ctx] := std.ChannelNew(main_ctx);
+            mut chan3: std.Channel[Arena, main_ctx] := std.ChannelNew(main_ctx);
+
+            mut bg_ctx := os.Arena.New();
+            mut node: Index[Packet, bg_ctx] := os.ArenaAlloc(bg_ctx);
+            bg_ctx[node].val = 42;
+
+            mut arg1: StageArg[main_ctx];
+            arg1.in_chan = chan1;
+            arg1.out_chan = chan2;
+
+            mut arg2: StageArg[main_ctx];
+            arg2.in_chan = chan2;
+            arg2.out_chan = chan3;
+
+            std.Spawn(stage_task, &arg1);
+            std.Spawn(stage_task, &arg2);
+
+            chan1.Send(move bg_ctx);
+
+            mut final_ctx := chan3.Recv();
+            defer final_ctx.Free();
+
+            mut final_node: Index[Packet, final_ctx] := 0 as Index[Packet, final_ctx];
+            os.LogInt(final_ctx[final_node].val);
+        }
+    ";
+    run_e2e_test(source, "242");
 }
 
 #[test]

@@ -2185,6 +2185,29 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_fiber_scratchpad_escape_across_yield_boundary() {
+    let source = "
+        type Packet[ctx] struct {
+            data: str
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            
+            mut p: Packet[ctx];
+            p.data = std.Format(\"Item %d\", 1);
+            
+            std.Yield();
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Cannot assign scratchpad-allocated view"));
+}
+
+#[test]
 fn test_arena_validate_type_checking_valid() {
     let source = "
         func main() {
