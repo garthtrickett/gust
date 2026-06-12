@@ -79,10 +79,10 @@ The patching tool uses Tree-sitter to validate the syntax of JavaScript, TypeScr
 
 
 COMMANDS
-cargo run -- --test
 RUST_LOG=debug cargo test -- --nocapture --test-threads=1
-cc gust_output.c -o gust_program && ./gust_program
 cargo clippy --fix --allow-dirty
+cc gust_output.c -o gust_program && ./gust_program
+cargo run -- --test
 
 
 42069
@@ -266,6 +266,9 @@ let resolved_args: Result<Vec<Type>, TypeError> = args
 ## 7. Logging & Debugging Standards
 
 We use structured logging with high visibility. All major logical branch transitions (especially inside core calculations) should be logged. We employ an emoji-guided schema to enable rapid parsing of terminal traces.
+
+Instead of trying to guess why a complex monomorphization failed, we can write localized, diagnostic-heavy tracing::debug! calls that dump the entire local variable table, the expected vs. actual type layouts, and active memory origin sets at the precise boundary of failure.
+By executing the tests with RUST_LOG=debug cargo test -- --nocapture, we will get a complete step-by-step diagnostic trace leading right up to the panic or failure.
 
 ### How to Enable Tracing
 The `tracing` and `tracing-subscriber` frameworks are fully integrated. To view structured logs during compilation or testing:
