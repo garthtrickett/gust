@@ -2827,6 +2827,59 @@ fn test_format_argument_type_mismatch() {
 }
 
 #[test]
+fn test_format_escape_via_return_rejected() {
+    let source = "
+        func leak() str {
+            return std.Format(\"Hello %d\", 42); // Error: returning scratchpad-allocated view
+        }
+        func main() {}
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Returning scratchpad-allocated view"));
+}
+
+#[test]
+fn test_format_assignment_to_branded_field_rejected() {
+    let source = "
+        type Node[ctx] struct {
+            name: str
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut n: Index[Node, ctx] := os.ArenaAlloc(ctx);
+            ctx[n].name = std.Format(\"Item %d\", 1); // Error: cannot assign scratchpad-allocated view to branded field
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+    assert!(err.message.contains("Cannot assign scratchpad-allocated view"));
+}
+
+#[test]
+fn test_format_clone_to_arena_accepted() {
+    let source = "
+        type Node[ctx] struct {
+            name: str
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut n: Index[Node, ctx] := os.ArenaAlloc(ctx);
+            
+            // Cloning with std.Clone strips the volatile 'scratch' origin
+            ctx[n].name = std.Clone(ctx, std.Format(\"Item %d\", 1)); 
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_namespaced_cross_module_typechecking_invalid_alias() {
     use std::fs;
     let temp_dir = std::env::temp_dir().join("gust_test_namespaced_invalid");

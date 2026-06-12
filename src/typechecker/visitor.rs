@@ -1173,7 +1173,7 @@ impl TypeChecker {
                     });
                 }
 
-                // Scratchpad storage restriction check
+                // Scratchpad storage restriction check (Step 3 verification)
                 if let Expression::Selector { left: selector_left, .. } = left
                     && let Ok(parent_type) = self.check_expression(selector_left)
                         && self.get_type_brand(&parent_type).is_some() {
@@ -1181,7 +1181,7 @@ impl TypeChecker {
                             if rhs_origins.contains("scratch") {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::BrandLifetimeViolation,
-                                    message: format!(
+                                    message: format!( 
                                         "Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct '{:?}'",
                                         parent_type
                                     ),
@@ -1488,6 +1488,7 @@ impl TypeChecker {
                     let expr_origins = self.get_expression_origins(expr);
 
                     if expr_origins.contains("scratch") {
+                        // Safe Scratchpad-allocated view check (Step 3 verification)
                         return Err(TypeError {
                             kind: TypeErrorKind::BrandLifetimeViolation,
                             message: format!( 
