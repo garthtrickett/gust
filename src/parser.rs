@@ -55,7 +55,8 @@ impl Parser {
                 | TokenType::Return
                 | TokenType::Match
                 | TokenType::Defer
-                | TokenType::Unsafe => {
+                | TokenType::Unsafe
+                | TokenType::Guard => {
                     // Stop *at* top-level or statement-starting keywords so they can be parsed as the next statement
                     return;
                 }
@@ -136,6 +137,10 @@ impl Parser {
             TokenType::Defer => {
                 self.has_non_import_statement = true;
                 self.parse_defer_statement()
+            }
+            TokenType::Guard => {
+                self.has_non_import_statement = true;
+                self.parse_guard_statement()
             }
             TokenType::While => {
                 self.has_non_import_statement = true;
@@ -715,6 +720,55 @@ impl Parser {
         let end_span = expr.span();
         Some(Statement::Defer {
             expr,
+            span: self.merge_spans(start_span, end_span),
+        })
+    }
+
+    fn parse_guard_statement(&mut self) -> Option<Statement> {
+        let start_span = self.cur_token.span;
+        self.next_token(); // consume 'guard'
+
+        let mut is_mut = false;
+        if self.cur_token.token_type == TokenType::Mut {
+            is_mut = true;
+            self.next_token(); // consume 'mut'
+        }
+
+        if self.cur_token.token_type != TokenType::Ident {
+            self.error_at_current("Expected bound variable identifier after 'guard'".to_string());
+            return None;
+        }
+        let name = self.cur_token.literal.clone();
+        self.next_token(); // consume identifier
+
+        if self.cur_token.token_type != TokenType::Assign {
+            self.error_at_current("Expected ':=' after bound variable name".to_string());
+            return None;
+        }
+        self.next_token(); // consume ':='
+
+        let value = self.parse_expression(1)?;
+
+        self.next_token(); // move to 'else'
+        if self.cur_token.token_type != TokenType::Else {
+            self.error_at_current("Expected 'else' keyword in guard statement".to_string());
+            return None;
+        }
+
+        self.next_token(); // move to '{'
+        if self.cur_token.token_type != TokenType::LBrace {
+            self.error_at_current("Expected '{' for guard else body".to_string());
+            return None;
+        }
+
+        let else_body = self.parse_block_statement()?;
+        let end_span = else_body.span;
+
+        Some(Statement::Guard {
+            name,
+            is_mut,
+            value,
+            else_body,
             span: self.merge_spans(start_span, end_span),
         })
     }
