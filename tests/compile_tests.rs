@@ -2185,6 +2185,22 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_generational_arena_template_typechecking() {
+    let source = "
+        type Node struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut arena: std.GenerationalArena[Node, ctx];
+            arena.current_ctx[arena.survivor].val = 42;
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_fiber_scratchpad_escape_across_yield_boundary() {
     let source = "
         type Packet[ctx] struct {
