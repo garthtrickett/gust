@@ -2205,6 +2205,47 @@ fn test_match_pattern_destructuring_origin_invalidated() {
 }
 
 #[test]
+fn test_match_pattern_destructuring_codegen() {
+    let source = "
+        type MyEnum enum {
+            VariantA { val: int },
+            VariantB { x: int, y: int }
+        }
+        func process(e: MyEnum) int {
+            match e {
+                VariantA { val } => {
+                    return val;
+                }
+                VariantB { x, y } => {
+                    return x + y;
+                }
+            }
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&program);
+
+    // Verify correct local variables declaration and assignment
+    assert!(c_output.contains("int val = e.VariantA.val;"));
+    assert!(c_output.contains("int x = e.VariantB.x;"));
+    assert!(c_output.contains("int y = e.VariantB.y;"));
+}
+
+#[test]
 fn test_guard_typechecks_valid_hashmap_get() {
     let source = "
         func main() {

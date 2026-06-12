@@ -1021,6 +1021,20 @@ impl Codegen {
                     let tag_name = format!("{}_Tag__{}", erased_enum_name, case.variant_name);
 
                     result.push_str(&format!("        case {}: {{\n", tag_name));
+
+                    let variant_struct_name = format!("{}_{}", erased_enum_name, case.variant_name);
+                    if let Some(layout) = self.struct_registry.get(&variant_struct_name) {
+                        for field_name in &case.fields {
+                            if let Some(field_type) = layout.fields.get(field_name) {
+                                let field_c_type = self.get_c_type(field_type);
+                                result.push_str(&format!( 
+                                    "            {} {} = {}.{}.{};\n",
+                                    field_c_type, field_name, expr_str, case.variant_name, field_name
+                                ));
+                            }
+                        }
+                    }
+
                     result.push_str(&self.gen_loop_body(&case.body));
                     result.push_str("            break;\n");
                     result.push_str("        }\n");
