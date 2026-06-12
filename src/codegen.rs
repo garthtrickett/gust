@@ -12,6 +12,7 @@ pub struct Codegen {
     enum_registry: HashMap<String, Vec<String>>, // Added enum registry to Codegen
     current_alloc_struct: RefCell<Option<String>>,
     current_function: RefCell<Option<String>>,
+    current_file_path: RefCell<Option<std::path::PathBuf>>,
     pub resolved_names: HashMap<crate::token::Span, String>,
     pub resolved_types: HashMap<crate::token::Span, Type>,
     clone_helpers_needed: RefCell<std::collections::HashSet<String>>,
@@ -307,6 +308,7 @@ impl Codegen {
             enum_registry: erased_enum_registry,
             current_alloc_struct: RefCell::new(None),
             current_function: RefCell::new(None),
+            current_file_path: RefCell::new(None),
             resolved_names,
             resolved_types,
             clone_helpers_needed: RefCell::new(std::collections::HashSet::new()),
@@ -515,7 +517,7 @@ impl Codegen {
         c_code
     }
 
-    pub fn generate(&self, program: &Program) -> String {
+    pub fn generate(&self, modules: &[(std::path::PathBuf, Program)]) -> String {
         let mut c_code = String::new();
 
         c_code.push_str(codegen_runtime::CORE_HEADERS);
@@ -975,11 +977,16 @@ impl Codegen {
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// TRANSPILED PROGRAM CODES\n");
-        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// ====================================================
+");
 
-        for stmt in &program.statements {
-            c_code.push_str(&self.gen_statement(stmt));
+        for (path, program) in modules {
+            *self.current_file_path.borrow_mut() = Some(path.clone());
+            for stmt in &program.statements {
+                c_code.push_str(&self.gen_statement(stmt));
+            }
         }
+        *self.current_file_path.borrow_mut() = None;
 
         if self.struct_registry.contains_key("std_ThreadLocalContext") {
             c_code.push_str("std_ThreadLocalContext os_GetThreadScratch(void) {\n");
