@@ -267,6 +267,16 @@ let resolved_args: Result<Vec<Type>, TypeError> = args
 
 We use structured logging with high visibility. All major logical branch transitions (especially inside core calculations) should be logged. We employ an emoji-guided schema to enable rapid parsing of terminal traces.
 
+### How to Enable Tracing
+The `tracing` and `tracing-subscriber` frameworks are fully integrated. To view structured logs during compilation or testing:
+1. Set the `RUST_LOG` environment variable (e.g. `export RUST_LOG=debug` or `export RUST_LOG=info`).
+2. Run your cargo commands:
+   * **Run tests with logs**: `RUST_LOG=debug cargo test -- --nocapture`
+   * **Run compiler with logs**: `RUST_LOG=debug cargo run -- input.gst`
+
+### Logging Initialization
+Logging is initialized globally via `gust_lexer::init_logging()`. In test suites and binary entry-points, this is called safely (preventing multiple registrations via `try_init()`).
+
 ### Emoji Legend
 * `📥` **Action Dispatched:** Event incoming to Worker/Engine boundary.
 * `🔄` **State Changed:** State transitions or monomorphization resolutions.

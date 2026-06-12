@@ -11,6 +11,7 @@ use gust_lexer::typechecker::TypeChecker;
 static TEST_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 fn run_e2e_test(source: &str, expected_output: &str) {
+    gust_lexer::init_logging();
     // 1. Compile the input Gust program
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);

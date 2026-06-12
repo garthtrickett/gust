@@ -7,6 +7,7 @@ use std::fs::File;
 use std::io::Write;
 
 fn main() {
+    gust_lexer::init_logging();
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {

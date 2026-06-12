@@ -4,6 +4,7 @@ use gust_lexer::parser::Parser;
 use gust_lexer::typechecker::{TypeChecker, TypeError, TypeErrorKind, Type};
 
 fn check_program(source: &str) -> Result<(), TypeError> {
+    gust_lexer::init_logging();
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();

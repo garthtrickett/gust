@@ -1,9 +1,29 @@
 {
-  "summary": "refactor: simplify identical branches in monomorphize to resolve clippy warning",
+  "summary": "feat: set up Priority 3 structured tracing framework and document usage in GEMINI.md",
   "files": [
     {
-      "file_path": "src/typechecker/monomorphize.rs",
-      "code_diff": "<<<<<<< SEARCH\n                if let Some(brand_name) = brand {\n                    if self.struct_templates.contains_key(name) {\n                        let args = vec![Type::Struct(brand_name.clone(), None)];\n                        self.monomorphize(name, &args)\n                    } else if self.enum_templates.contains_key(name) {\n                        let args = vec![Type::Struct(brand_name.clone(), None)];\n                        self.monomorphize(name, &args)\n                    } else {\n                        Ok(t.clone())\n                    }\n                } else {\n                    Ok(t.clone())\n                }\n=======\n                if let Some(brand_name) = brand {\n                    if self.struct_templates.contains_key(name) || self.enum_templates.contains_key(name) {\n                        let args = vec![Type::Struct(brand_name.clone(), None)];\n                        self.monomorphize(name, &args)\n                    } else {\n                        Ok(t.clone())\n                    }\n                } else {\n                    Ok(t.clone())\n                }\n>>>>>>> REPLACE"
+      "file_path": "Cargo.toml",
+      "code_diff": "<<<<<<< SEARCH\n[dependencies]\n=======\n[dependencies]\ntracing = \"0.1\"\ntracing-subscriber = { version = \"0.3\", features = [\"env-filter\"] }\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "src/lib.rs",
+      "code_diff": "<<<<<<< SEARCH\npub mod token;\npub mod typechecker;\n=======\npub mod token;\npub mod typechecker;\n\npub fn init_logging() {\n    let _ = tracing_subscriber::fmt()\n        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())\n        .try_init();\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "src/main.rs",
+      "code_diff": "<<<<<<< SEARCH\nfn main() {\n    let args: Vec<String> = env::args().collect();\n=======\nfn main() {\n    gust_lexer::init_logging();\n    let args: Vec<String> = env::args().collect();\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/compile_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\nfn check_program(source: &str) -> Result<(), TypeError> {\n    let lexer = Lexer::new(source);\n=======\nfn check_program(source: &str) -> Result<(), TypeError> {\n    gust_lexer::init_logging();\n    let lexer = Lexer::new(source);\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/e2e_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\nfn run_e2e_test(source: &str, expected_output: &str) {\n    // 1. Compile the input Gust program\n    let lexer = Lexer::new(source);\n=======\nfn run_e2e_test(source: &str, expected_output: &str) {\n    gust_lexer::init_logging();\n    // 1. Compile the input Gust program\n    let lexer = Lexer::new(source);\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "GEMINI.md",
+      "code_diff": "<<<<<<< SEARCH\n## 7. Logging & Debugging Standards\n\nWe use structured logging with high visibility. All major logical branch transitions (especially inside core calculations) should be logged. We employ an emoji-guided schema to enable rapid parsing of terminal traces.\n\n### Emoji Legend\n* `📥` **Action Dispatched:** Event incoming to Worker/Engine boundary.\n* `🔄` **State Changed:** State transitions or monomorphization resolutions.\n* `⚙️` **Execution:** Side effects (file writes, arena growth allocations).\n* `🗄️` **Memory / Registry:** Type additions to registry tables or variable scoping modifications.\n* `✅` **Verification:** Successful verification, parser compliance, or compile completion.\n* `❌` **Error:** Caught compile validation or runtime issues.\n* `👁️` **Tracing:** Localized diagnostics.\n\n**Example Implementation Pattern:**\n```rust\npub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {\n    tracing::debug!(\"📥 Starting validation pass for program structure.\");\n    for stmt in &program.statements {\n        self.check_statement(stmt).map_err(|e| {\n            tracing::error!(\"❌ Validation failed: {}\", e.message);\n            e\n        })?;\n    }\n    tracing::info!(\"✅ Program validation complete. System is safe.\");\n    Ok(())\n}\n```\n=======\n## 7. Logging & Debugging Standards\n\nWe use structured logging with high visibility. All major logical branch transitions (especially inside core calculations) should be logged. We employ an emoji-guided schema to enable rapid parsing of terminal traces.\n\n### How to Enable Tracing\nThe `tracing` and `tracing-subscriber` frameworks are fully integrated. To view structured logs during compilation or testing:\n1. Set the `RUST_LOG` environment variable (e.g. `export RUST_LOG=debug` or `export RUST_LOG=info`).\n2. Run your cargo commands:\n   * **Run tests with logs**: `RUST_LOG=debug cargo test -- --nocapture`\n   * **Run compiler with logs**: `RUST_LOG=debug cargo run -- input.gst`\n\n### Logging Initialization\nLogging is initialized globally via `gust_lexer::init_logging()`. In test suites and binary entry-points, this is called safely (preventing multiple registrations via `try_init()`).\n\n### Emoji Legend\n* `📥` **Action Dispatched:** Event incoming to Worker/Engine boundary.\n* `🔄` **State Changed:** State transitions or monomorphization resolutions.\n* `⚙️` **Execution:** Side effects (file writes, arena growth allocations).\n* `🗄️` **Memory / Registry:** Type additions to registry tables or variable scoping modifications.\n* `✅` **Verification:** Successful verification, parser compliance, or compile completion.\n* `❌` **Error:** Caught compile validation or runtime issues.\n* `👁️` **Tracing:** Localized diagnostics.\n\n**Example Implementation Pattern:**\n```rust\npub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {\n    tracing::debug!(\"📥 Starting validation pass for program structure.\");\n    for stmt in &program.statements {\n        self.check_statement(stmt).map_err(|e| {\n            tracing::error!(\"❌ Validation failed: {}\", e.message);\n            e\n        })?;\n    }\n    tracing::info!(\"✅ Program validation complete. System is safe.\");\n    Ok(())\n}\n```\n>>>>>>> REPLACE"
     }
   ]
 }
