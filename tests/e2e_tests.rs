@@ -2955,10 +2955,12 @@ fn test_e2e_sanitizer_detection_of_corrupt_memory() {
 
     let source = "
         func main() {
-            mut val := 42;
-            mut ptr := &val;
+            mut ctx := os.Arena.New();
+            mut idx := os.ArenaAlloc(ctx);
             unsafe {
-                *(ptr + 8) = 99; // Stack buffer overflow!
+                mut ptr := &ctx[idx].SessionID;
+                ctx.Free();
+                os.LogInt(*ptr); // Heap use-after-free!
             }
         }
     ";
