@@ -128,6 +128,49 @@ fn run_e2e_test(source: &str, expected_output: &str) {
 }
 
 #[test]
+fn test_e2e_rich_formatting_basic() {
+    let source = "
+        func main() {
+            mut name := \"Gust\";
+            mut version := 1;
+            mut s := std.Format(\"Welcome to %s version %d!\", name, version);
+            os.LogStr(s);
+        }
+    ";
+    run_e2e_test(source, "Welcome to Gust version 1!");
+}
+
+#[test]
+fn test_e2e_rich_formatting_bounds() { 
+    let source = "
+        func main() {
+            mut large_str := \"ThisIsALargeStringWithManyCharactersToTestThatOurCalculationsAreExtremelyRobustAndPreventAnyPotentialBufferOverflowInTranspiledC\";
+            mut neg_num := 0 - 2147483648;
+            mut max_num := 2147483647;
+            mut s := std.Format(\"String: %s, Neg: %d, Max: %d\", large_str, neg_num, max_num);
+            os.LogStr(s);
+        }
+    ";
+    run_e2e_test(source, "String: ThisIsALargeStringWithManyCharactersToTestThatOurCalculationsAreExtremelyRobustAndPreventAnyPotentialBufferOverflowInTranspiledC, Neg: -2147483648, Max: 2147483647");
+}
+
+#[test]
+fn test_e2e_rich_formatting_in_loop() {
+    let source = "
+        func main() {
+            mut i := 0;
+            while i < 10 {
+                mut s := std.Format(\"Index: %d\", i);
+                os.LogStr(s);
+                os.ScratchReset();
+                i = i + 1;
+            } 
+        }
+    ";
+    run_e2e_test(source, "Index: 0\nIndex: 1\nIndex: 2\nIndex: 3\nIndex: 4\nIndex: 5\nIndex: 6\nIndex: 7\nIndex: 8\nIndex: 9");
+}
+
+#[test]
 fn test_e2e_bool_primitive() {
     let source = "
         type Status struct {

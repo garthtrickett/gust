@@ -1415,6 +1415,86 @@ impl Codegen {
                     return "os_ScratchReset()".to_string();
                 }
 
+                if func_path == "std.Format" || func_path == "std_Format" {
+                    let format_str = match &arguments[0] {
+                        Expression::String(s, _) => s.clone(),
+                        _ => "".to_string(),
+                    };
+
+                    let mut specifiers = Vec::new();
+                    let mut c_format_string = String::new();
+                    let chars: Vec<char> = format_str.chars().collect();
+                    let mut i = 0;
+                    while i < chars.len() {
+                        if chars[i] == '%' && i + 1 < chars.len() {
+                            let next_char = chars[i + 1];
+                            if next_char == '%' {
+                                c_format_string.push_str("%%");
+                                i += 2;
+                            } else if next_char == 's' {
+                                specifiers.push('s');
+                                c_format_string.push_str("%.*s");
+                                i += 2;
+                            } else if next_char == 'd' {
+                                specifiers.push('d');
+                                c_format_string.push_str("%d");
+                                i += 2;
+                            } else {
+                                c_format_string.push('%');
+                                i += 1;
+                            }
+                        } else {
+                            c_format_string.push(chars[i]);
+                            i += 1;
+                        }
+                    }
+
+                    let mut size_expr = format!("{}", format_str.len());
+                    let mut eval_statements = Vec::new();
+                    let mut snprintf_args = Vec::new();
+
+                    for (idx, spec) in specifiers.iter().enumerate() {
+                        let arg_idx = idx + 1;
+                        let arg_c = self.gen_expression(&arguments[arg_idx]);
+                        if *spec == 's' {
+                            eval_statements.push(format!("        Slice_unsigned_char _arg{} = {};", arg_idx, arg_c));
+                            size_expr.push_str(&format!(" + _arg{}.len", arg_idx));
+                            snprintf_args.push(format!("_arg{}.len, (char*)_arg{}.data", arg_idx, arg_idx));
+                        } else {
+                            eval_statements.push(format!("        __typeof__({0}) _arg{1} = {0};", arg_c, arg_idx));
+                            size_expr.push_str(" + 20");
+                            snprintf_args.push(format!("_arg{}", arg_idx));
+                        }
+                    }
+
+                    let mut block = String::new();
+                    block.push_str("(({");
+                    if !eval_statements.is_empty() {
+                        block.push('\n');
+                        for stmt in &eval_statements {
+                            block.push_str(stmt);
+                            block.push('\n');
+                        }
+                    }
+                    block.push_str(&format!("        int _alloc_size = {} + 1;\n", size_expr));
+                    block.push_str("        char* _buf = (char*)os_ScratchAlloc(_alloc_size);\n");
+
+                    let snprintf_args_str = if snprintf_args.is_empty() {
+                        "".to_string()
+                    } else {
+                        format!(", {}", snprintf_args.join(", "))
+                    };
+
+                    block.push_str(&format!(
+                        "        int _len = snprintf(_buf, _alloc_size, \"{}\"{});\n",
+                        c_format_string, snprintf_args_str
+                    ));
+                    block.push_str("        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });\n");
+                    block.push_str("    }))");
+
+                    return block;
+                }
+
                 if func_path == "std.FormatInt" || func_path == "std_FormatInt" {
                     let val_expr = self.gen_expression(&arguments[0]);
                     return format!(
