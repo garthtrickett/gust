@@ -989,13 +989,6 @@ fn test_large_enum_variant_payload_rejected() {
             x: int,
             y: int,
             z: int
-#[test]
-fn test_large_enum_variant_payload_rejected() {
-    let source = "
-        type Large struct {
-            x: int,
-            y: int,
-            z: int
         }
         type MyEnum enum {
             VariantA { val: Large },
