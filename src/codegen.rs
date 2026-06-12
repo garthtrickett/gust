@@ -47,6 +47,14 @@ fn erase_struct_name_with_registry(
         actual_brand = extract_brand_from_name(name);
     }
     let mut erased = name.to_string();
+    let mut suffix = String::new();
+    if let Some(pos) = erased.rfind('_') {
+        let last_part = &erased[pos + 1..];
+        if !last_part.is_empty() && last_part.chars().next().unwrap().is_uppercase() {
+            suffix = erased[pos..].to_string();
+            erased = erased[..pos].to_string();
+        }
+    }
     if let Some(b) = &actual_brand {
         let pattern_mid = format!("_{}_", b);
         let pattern_end = format!("_{}", b);
@@ -57,6 +65,7 @@ fn erase_struct_name_with_registry(
             erased = erased[..erased.len() - pattern_end.len()].to_string();
         }
     }
+    erased.push_str(&suffix);
     erased
 }
 
@@ -830,6 +839,26 @@ impl Codegen {
                 }
             }
         }
+
+        c_code.push_str("// ====================================================\n");
+        c_code.push_str("// INVARIANT VALIDATION HELPER FORWARD DECLARATIONS\n");
+        c_code.push_str("// ====================================================\n");
+        for (struct_name, _) in &self.struct_registry {
+            if struct_name == "os_Dir"
+                || struct_name == "os_DirEntry"
+                || struct_name.starts_with("CastResult_")
+                || struct_name.starts_with("LookupResult_")
+            {
+                continue;
+            }
+            if self.has_boolean_fields(&Type::Struct(struct_name.clone(), None)) {
+                c_code.push_str(&format!(
+                    "int {}_IsValid({}* req);\n",
+                    struct_name, struct_name
+                ));
+            }
+        }
+        c_code.push('\n');
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// INVARIANT VALIDATION HELPERS\n");
