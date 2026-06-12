@@ -649,6 +649,16 @@ impl TypeChecker {
         };
         self.function_registry.insert("os.CloseDir".to_string(), close_dir_sig.clone());
         self.function_registry.insert("os_CloseDir".to_string(), close_dir_sig);
+
+        // os.path_join
+        let path_join_sig = super::types::FunctionSignature {
+            param_names: vec!["dir".to_string(), "file".to_string(), "ctx".to_string()],
+            params: vec![Type::Str, Type::Str, Type::RawPointer(Box::new(Type::Arena))],
+            return_type: Type::Str,
+            return_origins: std::collections::HashSet::new(),
+        };
+        self.function_registry.insert("os.path_join".to_string(), path_join_sig.clone());
+        self.function_registry.insert("os_path_join".to_string(), path_join_sig);
     }
 
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> { 
