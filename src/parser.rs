@@ -1420,6 +1420,61 @@ mod tests {
         assert_eq!(parser.errors.len(), 1);
         assert!(parser.errors[0].message.contains("Imports must be at the beginning of the program"));
     }
+
+    #[test]
+    fn test_parse_guard_statement() {
+        // 1. Immutable guard
+        let input1 = "guard a := expr else { return; }";
+        let lexer1 = Lexer::new(input1);
+        let mut parser1 = Parser::new(lexer1);
+        let program1 = parser1.parse_program();
+        assert_eq!(parser1.errors.len(), 0);
+        assert_eq!(program1.statements.len(), 1);
+        if let Statement::Guard { name, is_mut, .. } = &program1.statements[0] {
+            assert_eq!(name, "a");
+            assert_eq!(*is_mut, false);
+        } else {
+            panic!("Expected Statement::Guard");
+        }
+
+        // 2. Mutable guard
+        let input2 = "guard mut a := expr else { os.Exit(1); }";
+        let lexer2 = Lexer::new(input2);
+        let mut parser2 = Parser::new(lexer2);
+        let program2 = parser2.parse_program();
+        assert_eq!(parser2.errors.len(), 0);
+        assert_eq!(program2.statements.len(), 1);
+        if let Statement::Guard { name, is_mut, .. } = &program2.statements[0] {
+            assert_eq!(name, "a");
+            assert_eq!(*is_mut, true);
+        } else {
+            panic!("Expected Statement::Guard with mut");
+        }
+
+        // 3. Error: missing :=
+        let input3 = "guard a expr else { return; }";
+        let lexer3 = Lexer::new(input3);
+        let mut parser3 = Parser::new(lexer3);
+        let _ = parser3.parse_program();
+        assert!(parser3.errors.len() >= 1);
+        assert!(parser3.errors[0].message.contains("Expected ':='"));
+
+        // 4. Error: missing else
+        let input4 = "guard a := expr { return; }";
+        let lexer4 = Lexer::new(input4);
+        let mut parser4 = Parser::new(lexer4);
+        let _ = parser4.parse_program();
+        assert!(parser4.errors.len() >= 1);
+        assert!(parser4.errors[0].message.contains("Expected 'else'"));
+
+        // 5. Error: missing braces on else block
+        let input5 = "guard a := expr else return;";
+        let lexer5 = Lexer::new(input5);
+        let mut parser5 = Parser::new(lexer5);
+        let _ = parser5.parse_program();
+        assert!(parser5.errors.len() >= 1);
+        assert!(parser5.errors[0].message.contains("Expected '{'"));
+    }
 }
 
 #[test]
