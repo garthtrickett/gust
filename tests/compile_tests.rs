@@ -2236,6 +2236,7 @@ fn test_multi_file_compilation_success() {
 
 #[test]
 fn test_self_hosted_import_scanner() { 
+    gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/resolver_test_entry.gst");
@@ -2346,6 +2347,7 @@ fn test_self_hosted_import_scanner() {
 
 #[test]
 fn test_self_hosted_graph_construction() {
+    gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/graph_test_entry.gst");
@@ -2996,6 +2998,7 @@ fn test_generic_enum_typechecking() {
 
 #[test]
 fn test_self_hosted_token_compilation() {
+    gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/token_test_entry.gst");
@@ -3088,6 +3091,7 @@ fn test_self_hosted_token_compilation() {
 
 #[test]
 fn test_self_hosted_ast_compilation() {
+    gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/ast_test_entry.gst");
@@ -3172,6 +3176,7 @@ fn test_self_hosted_ast_compilation() {
 
 #[test]
 fn test_self_hosted_domain_model_e2e() {
+    gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/e2e_test_entry.gst");
