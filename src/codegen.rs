@@ -1484,7 +1484,14 @@ impl Codegen {
                 if let Some(t) = self.get_expr_type(inner) {
                     is_lin = self.is_linear(&t);
                 }
-                if is_lin {
+                let can_memset = is_lin && matches!(
+                    &**inner,
+                    Expression::Identifier(_, _)
+                        | Expression::Selector { .. }
+                        | Expression::IndexAccess { .. }
+                        | Expression::Dereference(_, _)
+                );
+                if can_memset {
                     format!(
                         "(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))",
                         expr_str
@@ -1507,7 +1514,14 @@ impl Codegen {
                 if let Some(t) = self.get_expr_type(inner) {
                     is_lin = self.is_linear(&t);
                 }
-                if is_lin {
+                let can_memset = is_lin && matches!(
+                    &**inner,
+                    Expression::Identifier(_, _)
+                        | Expression::Selector { .. }
+                        | Expression::IndexAccess { .. }
+                        | Expression::Dereference(_, _)
+                );
+                if can_memset {
                     format!(
                         "(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))",
                         expr_str
