@@ -67,7 +67,7 @@ func scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {
 
 func get_directory(path: str, ctx: &Arena) str {
     mut i := len(path) - 1;
-    while i >= 0 {
+    while i > 0 - 1 {
         mut b := std.str_byte_at(path, i);
         if b == 47 { // '/' is 47
             return std.str_slice(path, 0, i);
