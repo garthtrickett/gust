@@ -1,9 +1,9 @@
 {
-  "summary": "fix: update test_self_hosted_graph_construction to use guards and satisfy the Definite Check Rule",
+  "summary": "fix: resolve string literal syntax error in test_self_hosted_graph_construction",
   "files": [
     {
       "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n            mut lookup_main := path_to_node.Get({:?});\n            mut lookup_lib := path_to_node.Get({:?});\n            mut lookup_deep := path_to_node.Get({:?});\n            \n            if lookup_main.Ok {{\n                os.LogStr(\"main ok\");\n            }}\n            if lookup_lib.Ok {{\n                os.LogStr(\"lib ok\");\n            }}\n            if lookup_deep.Ok {{\n                os.LogStr(\"deep ok\");\n            }}\n            \n            os.LogInt(graph.nodes.len);\n            \n            unsafe {{\n                mut main_node := &graph.nodes.data[lookup_main.Val];\n                os.LogInt(len(main_node.edges));\n                \n                mut target_idx := main_node.edges[0];\n                mut name_ptr := graph.GetNode(target_idx);\n                os.LogStr(*name_ptr);\n            }}\n=======\n            guard main_idx := path_to_node.Get({:?}) else {{\n                return;\n            }}\n            guard lib_idx := path_to_node.Get({:?}) else {{                return;\n            }}\n            guard deep_idx := path_to_node.Get({:?}) else {{\n                return;\n            }}\n            \n            os.LogStr(\"main ok\");\n            os.LogStr(\"lib ok\");\n            os.LogStr(\"deep ok\");\n            \n            os.LogInt(graph.nodes.len);\n            \n            unsafe {{\n                mut main_node := &graph.nodes.data[main_idx];\n                os.LogInt(len(main_node.edges));\n                \n                mut target_idx := main_node.edges[0];\n                mut name_ptr := graph.GetNode(target_idx);\n                os.LogStr(*name_ptr);\n            }}\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n            os.LogStr('main ok');\n            os.LogStr('lib ok');\n            os.LogStr('deep ok;);\n=======\n            os.LogStr(\\\"main ok\\\");\n            os.LogStr(\\\"lib ok\\\");\n            os.LogStr(\\\"deep ok\\\");\n>>>>>>> REPLACE"
     }
   ]
 }

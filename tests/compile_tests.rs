@@ -2235,7 +2235,7 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
-fn test_self_hosted_import_scanner() { 
+fn test_self_hosted_import_scanner() {
     gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
@@ -2353,16 +2353,20 @@ fn test_self_hosted_graph_construction() {
     let entry_path = std::path::Path::new("compiler/graph_test_entry.gst");
 
     std::fs::create_dir_all("compiler").unwrap();
-    
+
     // Create nested mock files
     let temp_dir = std::env::temp_dir().join("gust_graph_test");
     std::fs::create_dir_all(temp_dir.join("nested")).unwrap();
-    
+
     let main_gst = temp_dir.join("main.gst");
     let lib_gst = temp_dir.join("lib.gst");
     let deep_gst = temp_dir.join("nested/deep.gst");
-    
-    std::fs::write(&main_gst, "import \"lib.gst\";\nimport \"nested/deep.gst\";\nfunc main() {}").unwrap();
+
+    std::fs::write(
+        &main_gst,
+        "import \"lib.gst\";\nimport \"nested/deep.gst\";\nfunc main() {}",
+    )
+    .unwrap();
     std::fs::write(&lib_gst, "import \"nested/deep.gst\";\nfunc helper() {}").unwrap();
     std::fs::write(&deep_gst, "func deep_helper() {}").unwrap();
 
@@ -2388,9 +2392,9 @@ fn test_self_hosted_graph_construction() {
                 return;
             }}
             
-            os.LogStr("main ok");
-            os.LogStr("lib ok");
-            os.LogStr("deep ok");
+            os.LogStr(\"main ok\");
+            os.LogStr(\"lib ok\");
+            os.LogStr(\"deep ok\");
             
             os.LogInt(graph.nodes.len);
             
@@ -2493,7 +2497,13 @@ fn test_self_hosted_graph_construction() {
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
-    assert_eq!(stdout_str.trim(), format!("main ok\nlib ok\ndeep ok\n3\n2\n{}", lib_gst.to_string_lossy()));
+    assert_eq!(
+        stdout_str.trim(),
+        format!(
+            "main ok\nlib ok\ndeep ok\n3\n2\n{}",
+            lib_gst.to_string_lossy()
+        )
+    );
 }
 
 #[test]
