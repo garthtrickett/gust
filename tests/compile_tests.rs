@@ -2329,6 +2329,70 @@ fn test_self_hosted_token_definitions() {
 }
 
 #[test]
+fn test_self_hosted_lexer_scaffold() {
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/lexer_scaffold_entry.gst");
+
+    std::fs::create_dir_all("compiler").unwrap();
+
+    let entry_source = "
+        import \"lexer.gst\" as lexer;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            
+            mut l := lexer.new_lexer(\"   a\", ctx);
+            os.LogInt(l.ch as int);
+            
+            lexer.skip_whitespace(&l);
+            os.LogInt(l.ch as int);
+        }
+    ";
+    std::fs::write(&entry_path, entry_source).unwrap();
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+    let c_output = codegen.generate(&modules_for_codegen);
+    assert!(c_output.contains("struct lexer__Lexer {"));
+    assert!(c_output.contains("lexer__read_char("));
+    assert!(c_output.contains("lexer__skip_whitespace("));
+
+    let _ = std::fs::remove_file(entry_path);
+}
+
+#[test]
 fn test_cli_dump_ast_integration() {
     use std::fs as std_fs;
     use std::process::Command;
