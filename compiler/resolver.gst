@@ -12,105 +12,128 @@ func scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {
         lexer.next_token(&l, &t);
 
         if t.token_type.tag == 28 { // TokenType::Import = 28
-            lexer.next_token(&l, &t);
-            
-            mut has_path := 0;
-            mut path_str := "";
-            
-            if t.token_type.tag == 4 { // TokenType::String = 4 (e.g. "std")
-                path_str = t.literal;
-                has_path = 1;
-            } else {
-                if t.token_type.tag == 1 { // TokenType::Illegal = 1 (e.g. ')
-                    lexer.next_token(&l, &t);
-                    if t.token_type.tag == 2 { // TokenType::Ident = 2
-                        path_str = t.literal;
-                        has_path = 1;
-                        lexer.next_token(&l, &t); // Consume closing '
-                    }
-                }
+            mut path_tok: token.Token[ctx];
+            lexer.next_token(&l, &path_tok);
+            if path_tok.token_type.tag == 4 { // TokenType::String = 4
+                paths.Push(std.Clone(ctx, path_tok.literal));
             }
-            
-            if has_path == 1 {
-                paths.Push(path_str);
 
-                lexer.next_token(&l, &t);
-                if t.token_type.tag == 37 { // TokenType::As = 37
-                    lexer.next_token(&l, &t);
-                    if t.token_type.tag == 2 { // TokenType::Ident = 2
-                        lexer.next_token(&l, &t);
-                        if t.token_type.tag == 10 { // TokenType::Semicolon = 10
-                            // Semicolon consumed, continue
-                        } else {
-                            loop_active = 0;
-                        }
-                    } else {
-                        loop_active = 0;
-                    }
-                } else {
-                    if t.token_type.tag == 10 { // TokenType::Semicolon = 10
-                        // Semicolon consumed, continue
-                    } else {
-                        loop_active = 0;
-                    }
-                }
-            } else {
-                loop_active = 0;
+            // Consume optional "as <alias>" handling
+            mut next_tok: token.Token[ctx];
+            lexer.next_token(&l, &next_tok);
+            if next_tok.token_type.tag == 37 { // TokenType::As = 37
+                mut alias_tok: token.Token[ctx];
+                lexer.next_token(&l, &alias_tok);
             }
         } else {
             loop_active = 0;
         }
     }
-
     return paths;
 }
 
-func get_directory(path: str, ctx: &Arena) str {
-    mut i := len(path) - 1;
-    while i > 0 - 1 {
-        mut b := std.str_byte_at(path, i);
-        if b == 47 { // '/' is 47
-            return std.str_slice(path, 0, i);
-        }
-        i = i - 1;
-    }
-    return ".";
-}
-
-func resolve_imports_recursive(
-    file_path: str,
-    graph: *std.Graph[str, resolveCtx],
-    path_to_node: *std.HashMap[str, int, resolveCtx],
-    resolveCtx: &Arena
-) {
-    mut lookup := path_to_node.Get(file_path);
-    if lookup.Ok {
-        return;
-    }
-
-    mut node_idx := graph.AddNode(file_path);
-    path_to_node.Insert(file_path, node_idx);
-
-    mut source := os.ReadFile(resolveCtx, file_path);
-    if len(source) == 0 {
-        return;
-    }
-
-    mut imports := scan_imports(source, resolveCtx);
-    mut current_dir := get_directory(file_path, resolveCtx);
-
+func get_dirname(path: str, ctx: &Arena) str {
+    mut last_slash := 0 - 1;
     mut i := 0;
-    while i < len(imports) {
-        mut imp := imports[i];
-        mut joined_path := os_path_join(current_dir, imp, resolveCtx);
-
-        resolve_imports_recursive(joined_path, graph, path_to_node, resolveCtx);
-
-        mut imported_lookup := path_to_node.Get(joined_path);
-        if imported_lookup.Ok {
-            graph.AddEdge(node_idx, imported_lookup.Val);
+    while i < len(path) {
+        mut b := std.str_byte_at(path, i);
+        if b == 47 { // '/' = 47
+            last_slash = i;
         }
-
+        if b == 92 { // '\\' = 92
+            last_slash = i;
+        }
         i = i + 1;
     }
+    if last_slash == 0 - 1 {
+        return ".";
+    }
+    return std.str_slice(path, 0, last_slash);
+}
+
+func resolve_imports_recursive(entry_path: str, graph: *std.Graph[str, ctx], path_to_node: *std.HashMap[str, int, ctx], ctx: &Arena) {
+    unsafe {
+        mut lookup := (*path_to_node).Get(entry_path);
+        if lookup.Ok {
+            return;
+        }
+
+        // Add file as a node in the dependency graph
+        mut node_idx := (*graph).AddNode(std.Clone(ctx, entry_path));
+        (*path_to_node).Insert(std.Clone(ctx, entry_path), node_idx);
+
+        // Load file contents from host file system
+        mut content := os.ReadFile(ctx, entry_path);
+        if len(content) == 0 {
+            return;
+        }
+
+        // Parse relative paths from import headers
+        mut imports := scan_imports(content, ctx);
+        mut dir := get_dirname(entry_path, ctx);
+
+        mut i := 0;
+        while i < len(imports) {
+            mut imp := imports[i];
+            mut canonical_path := os.path_join(dir, imp, ctx);
+
+            // Recurse to build transitively imported dependencies
+            resolve_imports_recursive(canonical_path, graph, path_to_node, ctx);
+
+            // Add directed edge representing dependency flow
+            guard dep_idx := (*path_to_node).Get(canonical_path) else {
+                return;
+            }
+            (*graph).AddEdge(node_idx, dep_idx.Val);
+
+            i = i + 1;
+        }
+    }
+}
+
+func dfs(node_idx: int, graph: *std.Graph[str, ctx], visiting: *std.HashMap[str, int, ctx], visited: *std.HashMap[str, int, ctx], order: *std.Vector[str, ctx], ctx: &Arena) {
+    unsafe {
+        mut name_ptr := (*graph).GetNode(node_idx);
+        mut name := *name_ptr;
+        
+        mut lookup_visiting := (*visiting).Get(name);
+        if lookup_visiting.Ok {
+            os.LogStr("Cyclic dependency detected: ");
+            os.LogStr(name);
+            os.Exit(1);
+        }
+        
+        mut lookup_visited := (*visited).Get(name);
+        if lookup_visited.Ok {
+            return;
+        }
+        
+        (*visiting).Insert(name, 1);
+        
+        mut node_data := &(*graph).nodes.data[node_idx];
+        mut i := 0;
+        while i < len(node_data.edges) {
+            mut dep_idx := node_data.edges[i];
+            dfs(dep_idx, graph, visiting, visited, order, ctx);
+            i = i + 1;
+        }
+        
+        (*visiting).Remove(name);
+        (*visited).Insert(name, 1);
+        (*order).Push(name);
+    }
+}
+
+func resolve_topological_sort(entry_path: str, graph: *std.Graph[str, ctx], path_to_node: *std.HashMap[str, int, ctx], ctx: &Arena) std.Vector[str, ctx] {
+    mut visiting: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+    mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+    mut order: std.Vector[str, ctx] := std.VectorNew(ctx);
+    
+    guard entry_idx := (*path_to_node).Get(entry_path) else {
+        return order;
+    }
+    
+    dfs(entry_idx.Val, graph, &visiting, &visited, &order, ctx);
+    
+    return order;
 }
