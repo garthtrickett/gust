@@ -1,5 +1,5 @@
 use super::TypeChecker;
-use super::types::{StructLayout, Type, TypeError, TypeErrorKind};
+use super::types::{StructLayout, Type, TypeError, TypeErrorKind, strip_brand_prefix};
 use std::collections::HashMap;
 
 impl TypeChecker {
@@ -62,7 +62,7 @@ impl TypeChecker {
             return true;
         }
         if let Some(ib) = self.get_type_brand(element)
-            && ib == ob {
+            && strip_brand_prefix(&ib) == strip_brand_prefix(ob) {
                 return true;
             }
         false
@@ -71,7 +71,7 @@ impl TypeChecker {
     pub(crate) fn check_brand_hierarchy(&self, t: &Type, outer_brand: &Option<String>) -> Result<(), TypeError> {
         if let Some(ob) = outer_brand {
             if let Type::Struct(name, _) = t
-                && name != ob && !self.is_element_allowed_in_brand(t, ob) {
+                && strip_brand_prefix(name) != strip_brand_prefix(ob) && !self.is_element_allowed_in_brand(t, ob) {
                     return Err(TypeError {
                         kind: TypeErrorKind::BrandLifetimeViolation,
                         message: format!( 
@@ -98,6 +98,7 @@ impl TypeChecker {
             Type::Struct(name, inner_brand) => {
                 if let Some(ib) = inner_brand
                     && let Some(ob) = outer_brand
+                        && strip_brand_prefix(ib) != strip_brand_prefix(ob) {
                         && ib != ob { 
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,

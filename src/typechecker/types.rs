@@ -27,6 +27,14 @@ fn strip_std_prefix(s: &str) -> &str {
     }
 }
 
+pub fn strip_brand_prefix(brand: &str) -> &str {
+    if let Some(pos) = brand.rfind("__") {
+        &brand[pos + 2..]
+    } else {
+        brand
+    }
+}
+
 // Brand crossing rule helper: checks if two types are structurally identical
 // but differ only by their value-brands.
 pub fn types_match_except_brand(expected: &Type, actual: &Type) -> bool {
@@ -79,7 +87,9 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             if e_brand.is_none() || a_brand.is_none() || e_brand.as_deref() == Some("Any") || a_brand.as_deref() == Some("Any") {
                 return true;
             }
-            e_brand == a_brand
+            let e_b = e_brand.as_ref().map(|b| strip_brand_prefix(b));
+            let a_b = a_brand.as_ref().map(|b| strip_brand_prefix(b));
+            e_b == a_b
         }
         (Type::Struct(e_struct, e_brand), Type::Struct(a_struct, a_brand)) => {
             let e_clean = strip_std_prefix(e_struct);
@@ -116,7 +126,9 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             if e_brand.is_none() || a_brand.is_none() || e_brand.as_deref() == Some("Any") || a_brand.as_deref() == Some("Any") {
                 return true;
             }
-            e_brand == a_brand
+            let e_b = e_brand.as_ref().map(|b| strip_brand_prefix(b));
+            let a_b = a_brand.as_ref().map(|b| strip_brand_prefix(b));
+            e_b == a_b
         }
         (Type::Slice(e_inner), Type::Slice(a_inner)) => types_match(e_inner, a_inner),
         (Type::RawPointer(e_inner), Type::RawPointer(a_inner)) => types_match(e_inner, a_inner),
