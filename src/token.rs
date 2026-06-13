@@ -33,6 +33,8 @@ pub enum TokenType {
     NotEq,
     Lt,
     Gt,
+    LtEq,
+    GtEq,
 
     // Keywords
     Guard,

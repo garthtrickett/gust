@@ -193,16 +193,38 @@ impl Lexer {
                 literal: "*".to_string(),
                 span: crate::token::Span { start: start_pos, end: start_pos },
             },
-            '<' => Token {
-                token_type: TokenType::Lt,
-                literal: "<".to_string(),
-                span: crate::token::Span { start: start_pos, end: start_pos },
-            },
-            '>' => Token {
-                token_type: TokenType::Gt,
-                literal: ">".to_string(),
-                span: crate::token::Span { start: start_pos, end: start_pos },
-            },
+            '<' => {
+                if self.peek_char() == '=' {
+                    self.read_char();
+                    Token {
+                        token_type: TokenType::LtEq,
+                        literal: "<=".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
+                    }
+                } else {
+                    Token {
+                        token_type: TokenType::Lt,
+                        literal: "<".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
+                    }
+                }
+            }
+            '>' => {
+                if self.peek_char() == '=' {
+                    self.read_char();
+                    Token {
+                        token_type: TokenType::GtEq,
+                        literal: ">=".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
+                    }
+                } else {
+                    Token {
+                        token_type: TokenType::Gt,
+                        literal: ">".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
+                    }
+                }
+            }
             '.' => Token {
                 token_type: TokenType::Dot,
                 literal: ".".to_string(),

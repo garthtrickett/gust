@@ -813,12 +813,22 @@ impl Parser {
         if self.peek_token.token_type == TokenType::Else {
             self.next_token();
             self.next_token();
-            if self.cur_token.token_type != TokenType::LBrace {
+            if self.cur_token.token_type == TokenType::If {
+                let if_stmt = self.parse_if_statement()?;
+                let if_span = if_stmt.span();
+                let alt_body = BlockStatement {
+                    statements: vec![if_stmt],
+                    span: if_span,
+                };
+                end_span = if_span;
+                alternative = Some(alt_body);
+            } else if self.cur_token.token_type == TokenType::LBrace {
+                let alt_body = self.parse_block_statement()?;
+                end_span = alt_body.span;
+                alternative = Some(alt_body);
+            } else {
                 return None;
             }
-            let alt_body = self.parse_block_statement()?;
-            end_span = alt_body.span;
-            alternative = Some(alt_body);
         }
 
         Some(Statement::If {
@@ -1037,7 +1047,9 @@ impl Parser {
                 | TokenType::EqEq
                 | TokenType::NotEq
                 | TokenType::Lt
-                | TokenType::Gt => {
+                | TokenType::Gt
+                | TokenType::LtEq
+                | TokenType::GtEq => {
                     let op_str = self.peek_token.literal.clone();
                     let op_prec = self.peek_token_precedence();
 
@@ -1150,13 +1162,14 @@ impl Parser {
     fn peek_token_precedence(&self) -> i32 {
         match self.peek_token.token_type {
             TokenType::EqEq | TokenType::NotEq => 2,
-            TokenType::Lt | TokenType::Gt => 3,
+            TokenType::Lt | TokenType::Gt | TokenType::LtEq | TokenType::GtEq => 3,
             TokenType::Plus | TokenType::Minus => 4,
             TokenType::Asterisk | TokenType::Slash => 5,
             TokenType::As => 6,
             TokenType::Dot | TokenType::LParen | TokenType::LBracket => 7,
             _ => 1,
         }
+    } 
     }
 
     fn parse_call_arguments(&mut self) -> Option<Vec<Expression>> {
