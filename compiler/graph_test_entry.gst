@@ -19,9 +19,9 @@
                 return;
             }
             
-            os.LogStr('main ok');
-            os.LogStr('lib ok');
-            os.LogStr('deep ok;);
+            os.LogStr("main ok");
+            os.LogStr("lib ok");
+            os.LogStr("deep ok");
             
             os.LogInt(graph.nodes.len);
             

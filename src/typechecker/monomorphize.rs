@@ -764,12 +764,8 @@ impl TypeChecker {
                 for (old_b, new_b) in map {
                     let suffix = format!("_{}", old_b);
                     let new_suffix = format!("_{}", new_b);
-                    if new_struct_name.ends_with(&suffix) {
-                        new_struct_name = format!(
-                            "{}{}",
-                            new_struct_name.trim_end_matches(&suffix),
-                            new_suffix
-                        );
+                    if let Some(stripped) = new_struct_name.strip_suffix(&suffix) {
+                        new_struct_name = format!("{}{}", stripped, new_suffix);
                     }
                 }
                 Type::Index(new_struct_name, Some(new_brand))
@@ -780,9 +776,8 @@ impl TypeChecker {
                 for (old_b, new_b) in map {
                     let suffix = format!("_{}", old_b);
                     let suffix_2 = format!("_{}", new_b);
-                    if new_struct_name.ends_with(&suffix) {
-                        new_struct_name =
-                            format!("{}{}", new_struct_name.trim_end_matches(&suffix), suffix_2);
+                    if let Some(stripped) = new_struct_name.strip_suffix(&suffix) {
+                        new_struct_name = format!("{}{}", stripped, suffix_2);
                     }
                 }
                 Type::Struct(new_struct_name, Some(new_brand))
