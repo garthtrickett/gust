@@ -1,6 +1,7 @@
 import "token.gst" as token;
 import "lexer.gst" as lexer;
 import "errors.gst" as errors;
+import "ast.gst" as ast;
 
 type ParseResult struct {
     Ok: int,
@@ -87,19 +88,6 @@ func merge_spans(start: token.Span, end: token.Span) token.Span {
     return s;
 }
 
-func is_at_end(p: *Parser[ctx]) int {
-    unsafe {
-        if cur_token_is(p, 14) { // RBrace = 14
-            return 1;
-        }
-        if cur_token_is(p, 0) { // Eof = 0
-            return 1;
-        }
-        return 0;
-    }
-}
-
-func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx] {
 func is_at_end(p: *Parser[ctx]) int {
     unsafe {
         if cur_token_is(p, 14) { // RBrace = 14
@@ -251,7 +239,8 @@ func parse_block_statement(p: *Parser[ctx], ctx: &Arena) ast.BlockStatement[ctx]
     mut block: ast.BlockStatement[ctx];
     unsafe {
         block.statements = os.ArenaAlloc(ctx);
-        ctx[block.statements] = std.VectorNew(ctx);
+        mut dest_ptr := &ctx[block.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        *dest_ptr = std.VectorNew(ctx);
         block.span = (*p).cur_token.span;
         
         next_token(p); // consume '{'
