@@ -1265,6 +1265,7 @@ mod tests {
             "((a == b) != c)"
         );
         assert_eq!(format_expr(&parse_expr_str("a < b > c")), "((a < b) > c)");
+        assert_eq!(format_expr(&parse_expr_str("a <= b >= c")), "((a <= b) >= c)");
     }
 
     #[test]
@@ -1612,4 +1613,38 @@ fn test_namespaced_statement_parsing() {
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
     assert_eq!(program.statements.len(), 2);
+}
+
+#[test]
+fn test_parser_else_if_desugaring() {
+    let input = "
+        if a {
+            x = 1;
+        } else if b {
+            x = 2;
+        } else {
+            x = 3;
+        }
+    ";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert_eq!(parser.errors.len(), 0);
+    assert_eq!(program.statements.len(), 1);
+
+    if let Statement::If { alternative, .. } = &program.statements[0] {
+        assert!(alternative.is_some());
+        let alt = alternative.as_ref().unwrap();
+        assert_eq!(alt.statements.len(), 1);
+        if let Statement::If { consequence, alternative: nested_alt, .. } = &alt.statements[0] {
+            assert_eq!(consequence.statements.len(), 1);
+            assert!(nested_alt.is_some());
+            let nested_alt_block = nested_alt.as_ref().unwrap();
+            assert_eq!(nested_alt_block.statements.len(), 1);
+        } else {
+            panic!("Expected nested If statement inside desugared else block");
+        }
+    } else {
+        panic!("Expected Statement::If");
+    }
 }

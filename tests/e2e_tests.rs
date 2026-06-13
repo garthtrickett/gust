@@ -133,6 +133,27 @@ fn run_e2e_test(source: &str, expected_output: &str) {
 }
 
 #[test]
+fn test_e2e_else_if_and_comparison_operators() {
+    let source = "
+        func check_value(x: int) int {
+            if x <= 10 {
+                return 1;
+            } else if x >= 20 {
+                return 2;
+            } else {
+                return 3;
+            }
+        }
+        func main() {
+            os.LogInt(check_value(5));
+            os.LogInt(check_value(25));
+            os.LogInt(check_value(15));
+        }
+    ";
+    run_e2e_test(source, "1\n2\n3");
+}
+
+#[test]
 fn test_e2e_rich_formatting_basic() {
     let source = "
         func main() {
