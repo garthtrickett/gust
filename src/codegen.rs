@@ -444,8 +444,8 @@ impl Codegen {
                         {
                             return Some((**inner).clone());
                         }
-                    } else if (erased_name.starts_with("HashMap_")
-                        || erased_name.starts_with("std_HashMap_"))
+                    } else if erased_name.starts_with("HashMap_")
+                        || erased_name.starts_with("std_HashMap_") 
                     {
                         if let Some(layout) = self.struct_registry.get(&erased_name)
                             && let Some(Type::RawPointer(inner)) = layout.fields.get("values")
@@ -453,14 +453,12 @@ impl Codegen {
                             return Some((**inner).clone());
                         }
                     } else if (erased_name.starts_with("Pool_")
-                        || erased_name.starts_with("std_Pool_"))
-                    {
-                        if let Some(layout) = self.struct_registry.get(&erased_name)
+                        || erased_name.starts_with("std_Pool_") )
+                        && let Some(layout) = self.struct_registry.get(&erased_name)
                             && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
                         {
                             return Some((**inner).clone());
                         }
-                    }
                 }
                 // Check if this is Arena indexing
                 let is_arena = alloc_type == Type::Arena
@@ -1539,11 +1537,10 @@ impl Codegen {
             } => {
                 let left_str = self.gen_expression(left);
                 let mut resolved_target_owned = self.resolved_types.get(span).unwrap_or(target_type).clone();
-                if let Type::Struct(ref name, ref brand) = resolved_target_owned {
-                    if let Some(stripped) = name.strip_prefix("CastResult_") {
+                if let Type::Struct(ref name, ref brand) = resolved_target_owned
+                    && let Some(stripped) = name.strip_prefix("CastResult_") {
                         resolved_target_owned = Type::Struct(stripped.to_string(), brand.clone());
                     }
-                }
                 let resolved_target = &resolved_target_owned;
                 let target_str = self.get_c_type(resolved_target);
 
@@ -2357,8 +2354,8 @@ impl Codegen {
                             || right == "Swap"
                             || right == "swap")
                     {
-                        let mut t_name = "Node".to_string();
-                        let opt_struct_name = if let Type::Struct(struct_name, brand) = &left_type {
+                        let t_name = "Node".to_string();
+                        let _opt_struct_name = if let Type::Struct(struct_name, brand) = &left_type {
                             Some(erase_struct_name_with_registry(
                                 struct_name,
                                 brand,
