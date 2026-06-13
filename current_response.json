@@ -1,9 +1,13 @@
 {
-  "summary": "fix: exempt global intrinsic 'len' from namespaced prefixing in typechecker",
+  "summary": "fix: change Lexer initialization from returning new_lexer to in-place init_lexer to prevent escape analysis violation",
   "files": [
     {
-      "file_path": "src/typechecker.rs",
-      "code_diff": "<<<<<<< SEARCH\n    pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> Result<String, TypeError> { \n        if name == \"int\" || name == \"byte\" || name == \"bool\" || name == \"str\" || name == \"Arena\" || name == \"os_Arena\" || name == \"os.Arena\" || name == \"void\" || name == \"Any\" || name == \"SessionNode\" || name == \"APIRequest\" { \n            return Ok(name.to_string());\n        }\n=======\n    pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> Result<String, TypeError> { \n        if name == \"len\" || name == \"int\" || name == \"byte\" || name == \"bool\" || name == \"str\" || name == \"Arena\" || name == \"os_Arena\" || name == \"os.Arena\" || name == \"void\" || name == \"Any\" || name == \"SessionNode\" || name == \"APIRequest\" { \n            return Ok(name.to_string());\n        }\n>>>>>>> REPLACE"
+      "file_path": "compiler/lexer.gst",
+      "code_diff": "<<<<<<< SEARCH\nfunc new_lexer(input: str, ctx: &Arena) Lexer[ctx] {\n    mut l: Lexer[ctx];\n    l.input = input;\n    l.position = 0;\n    l.read_position = 0;\n    l.ch = 0;\n    l.line = 1;\n    l.column = 1;\n    read_char(&l);\n    return l;\n}\n=======\nfunc init_lexer(l: *Lexer[ctx], input: str) {\n    l.input = input;\n    l.position = 0;\n    l.read_position = 0;\n    l.ch = 0;\n    l.line = 1;\n    l.column = 1;\n    read_char(l);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/compile_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n    let entry_source = \"\n        import \\\"lexer.gst\\\" as lexer;\n        func main() {\n            mut ctx := os.Arena.New();\n            defer ctx.Free();\n            \n            mut l := lexer.new_lexer(\\\"   a\\\", ctx);\n            os.LogInt(l.ch as int);\n            \n            lexer.skip_whitespace(&l);\n            os.LogInt(l.ch as int);\n        }\n    \";\n=======\n    let entry_source = \"\n        import \\\"lexer.gst\\\" as lexer;\n        func main() {\n            mut ctx := os.Arena.New();\n            defer ctx.Free();\n            \n            mut l: lexer.Lexer[ctx];\n            lexer.init_lexer(&l, \\\"   a\\\");\n            os.LogInt(l.ch as int);\n            \n            lexer.skip_whitespace(&l);\n            os.LogInt(l.ch as int);\n        }\n    \";\n>>>>>>> REPLACE"
     }
   ]
 }

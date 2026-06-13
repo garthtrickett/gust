@@ -2342,7 +2342,8 @@ fn test_self_hosted_lexer_scaffold() {
             mut ctx := os.Arena.New();
             defer ctx.Free();
             
-            mut l := lexer.new_lexer(\"   a\", ctx);
+            mut l: lexer.Lexer[ctx];
+            lexer.init_lexer(&l, \"   a\");
             os.LogInt(l.ch as int);
             
             lexer.skip_whitespace(&l);

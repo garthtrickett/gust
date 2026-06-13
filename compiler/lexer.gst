@@ -54,14 +54,12 @@ func skip_whitespace(l: *Lexer[ctx]) {
     }
 }
 
-func new_lexer(input: str, ctx: &Arena) Lexer[ctx] {
-    mut l: Lexer[ctx];
+func init_lexer(l: *Lexer[ctx], input: str) {
     l.input = input;
     l.position = 0;
     l.read_position = 0;
     l.ch = 0;
     l.line = 1;
     l.column = 1;
-    read_char(&l);
-    return l;
+    read_char(l);
 }
