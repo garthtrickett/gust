@@ -2335,11 +2335,20 @@ fn test_self_hosted_import_scanner() {
         .output()
         .expect("Execution failed");
 
+    let stdout_lossy = String::from_utf8_lossy(&run_output.stdout).to_string();
+    let stderr_lossy = String::from_utf8_lossy(&run_output.stderr).to_string();
+
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
     let _ = std::fs::remove_file(entry_path);
 
-    assert!(run_output.status.success());
+    if !run_output.status.success() {
+        panic!(
+            "Execution failed!\nSTDOUT:\n{}\nSTDERR:\n{}",
+            stdout_lossy,
+            stderr_lossy
+        );
+    }
     let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
     assert_eq!(stdout_str.trim(), "2\nstd\nos");

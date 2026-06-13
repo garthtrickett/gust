@@ -7,10 +7,10 @@ func scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {
     lexer.init_lexer(&l, source);
 
     mut loop_active := 1;
-    while loop_active == 1 {
-        mut t: token.Token[ctx];
-        lexer.next_token(&l, &t);
+    mut t: token.Token[ctx];
+    lexer.next_token(&l, &t);
 
+    while loop_active == 1 {
         if t.token_type.tag == 28 { // TokenType::Import = 28
             mut path_tok: token.Token[ctx];
             lexer.next_token(&l, &path_tok);
@@ -18,15 +18,24 @@ func scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {
                 paths.Push(std.Clone(ctx, path_tok.literal));
             }
 
-            // Consume optional "as <alias>" handling
             mut next_tok: token.Token[ctx];
             lexer.next_token(&l, &next_tok);
             if next_tok.token_type.tag == 37 { // TokenType::As = 37
                 mut alias_tok: token.Token[ctx];
                 lexer.next_token(&l, &alias_tok);
+                
+                // Move past the alias to the next token
+                lexer.next_token(&l, &t);
+            } else {
+                // The token following the path is not "as", so it might be a semicolon or the next import
+                t = next_tok;
             }
         } else {
-            loop_active = 0;
+            if t.token_type.tag == 10 { // TokenType::Semicolon = 10
+                lexer.next_token(&l, &t);
+            } else {
+                loop_active = 0;
+            }
         }
     }
     return paths;
@@ -84,7 +93,7 @@ func resolve_imports_recursive(entry_path: str, graph: *std.Graph[str, ctx], pat
             guard dep_idx := (*path_to_node).Get(canonical_path) else {
                 return;
             }
-            (*graph).AddEdge(node_idx, dep_idx.Val);
+            (*graph).AddEdge(node_idx, dep_idx);
 
             i = i + 1;
         }
@@ -129,11 +138,13 @@ func resolve_topological_sort(entry_path: str, graph: *std.Graph[str, ctx], path
     mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
     mut order: std.Vector[str, ctx] := std.VectorNew(ctx);
     
-    guard entry_idx := (*path_to_node).Get(entry_path) else {
-        return order;
+    unsafe {
+        guard entry_idx := (*path_to_node).Get(entry_path) else {
+            return order;
+        }
+        
+        dfs(entry_idx, graph, &visiting, &visited, &order, ctx);
     }
-    
-    dfs(entry_idx.Val, graph, &visiting, &visited, &order, ctx);
     
     return order;
 }
