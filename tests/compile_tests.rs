@@ -2291,7 +2291,12 @@ fn test_self_hosted_import_scanner() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
         }
     }
 
@@ -2330,7 +2335,11 @@ fn test_self_hosted_import_scanner() {
     if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
-    let compile_output = cmd.arg("-o").arg(&bin_path).output().expect("GCC command failed");
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC command failed");
 
     assert!(
         compile_output.status.success(),
@@ -2338,7 +2347,9 @@ fn test_self_hosted_import_scanner() {
         String::from_utf8_lossy(&compile_output.stderr)
     );
 
-    let run_output = std::process::Command::new(&bin_path).output().expect("Execution failed");
+    let run_output = std::process::Command::new(&bin_path)
+        .output()
+        .expect("Execution failed");
 
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
@@ -2400,7 +2411,11 @@ fn test_self_hosted_token_definitions() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed: {:?}",
+                check_res.err()
+            );
         }
     }
 
@@ -2436,10 +2451,13 @@ fn test_self_hosted_token_definitions() {
             if checker.check_module(&module.program, &prefix).is_err() {
                 had_error = true;
                 break;
-            } 
+            }
         }
     }
-    assert!(had_error, "Expected lifetime brand mismatch to be rejected by typechecker");
+    assert!(
+        had_error,
+        "Expected lifetime brand mismatch to be rejected by typechecker"
+    );
 
     let _ = std::fs::remove_file(entry_path);
 }
@@ -2483,7 +2501,11 @@ fn test_self_hosted_lexer_scaffold() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed: {:?}",
+                check_res.err()
+            );
         }
     }
 
@@ -2554,7 +2576,11 @@ fn test_lexer_view_extraction() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed: {:?}",
+                check_res.err()
+            );
         }
     }
 
@@ -2642,7 +2668,11 @@ fn test_lexer_token_generation() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed: {:?}",
+                check_res.err()
+            );
         }
     }
 
@@ -2703,7 +2733,12 @@ fn test_self_hosted_lexer_compilation() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
         }
     }
 
@@ -2773,7 +2808,11 @@ fn test_cli_dump_types_integration() {
     let temp_dir = std::env::temp_dir().join("gust_cli_test_types");
     std_fs::create_dir_all(&temp_dir).unwrap();
     let file_path = temp_dir.join("test.gst");
-    std_fs::write(&file_path, "type Point struct { x: int, y: int } func main() {}").unwrap();
+    std_fs::write(
+        &file_path,
+        "type Point struct { x: int, y: int } func main() {}",
+    )
+    .unwrap();
 
     // Robustness: clean up any pre-existing gust_output.c so we can verify early termination
     let c_file = std::path::Path::new("gust_output.c");

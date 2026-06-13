@@ -71,7 +71,9 @@ impl TypeChecker {
     }
 
         pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> Result<String, TypeError> {
-        let resolved = if name == "len" || name == "int" || name == "byte" || name == "bool" || name == "str" || name == "Arena" || name == "os_Arena" || name == "os.Arena" || name == "void" || name == "Any" || name == "SessionNode" || name == "APIRequest" {
+        let resolved = if name == "len" || name == "int" || name == "byte" || name == "bool" || name == "str" || name == "Arena" || name == "os_Arena" || name == "os.Arena" || name == "void" || name == "Any" || name == "SessionNode" || name == "APIRequest"
+            || name == "Vector_Any" || name == "HashMap_Any" || name == "Pool_Any" || name == "Mutex_Any" || name == "Channel_Any" || name == "ThreadLocalContext_Any" || name == "std_ThreadLocalContext_Any"
+        {
             name.to_string()
         } else if let Some(pos) = name.find('.') {
             let alias = &name[..pos];
