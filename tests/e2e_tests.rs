@@ -499,7 +499,7 @@ fn test_e2e_file_io_evaluation() {
             mut ctx := os.Arena.New();
             defer ctx.Free();
 
-            mut path := \"test_output_file.txt\";
+            mut path := \"test_e2e_file_io_evaluation_output.txt\";
             mut contents := \"Hello from Gust Compiler File I/O!\";
             
             mut success := os.WriteFile(path, contents);
@@ -3073,19 +3073,21 @@ fn test_e2e_self_hosted_lexer() {
     gust_lexer::init_logging();
     let temp_dir = std::env::temp_dir().join("gust_e2e_self_hosted_lexer");
     std::fs::create_dir_all(&temp_dir).unwrap();
-    
-    let token_src = std::fs::read_to_string("compiler/token.gst").expect("compiler/token.gst missing");
-    let lexer_src = std::fs::read_to_string("compiler/lexer.gst").expect("compiler/lexer.gst missing");
-    
+
+    let token_src =
+        std::fs::read_to_string("compiler/token.gst").expect("compiler/token.gst missing");
+    let lexer_src =
+        std::fs::read_to_string("compiler/lexer.gst").expect("compiler/lexer.gst missing");
+
     let token_path = temp_dir.join("token.gst");
     let lexer_path = temp_dir.join("lexer.gst");
     let entry_path = temp_dir.join("lexer_e2e_entry.gst");
-    
+
     std::fs::write(&token_path, &token_src).unwrap();
     std::fs::write(&lexer_path, &lexer_src).unwrap();
-    
+
     let input_source = "func add(x: int, y: int) int {\n    return x + y;\n}";
-    
+
     let entry_source = format!(
         "
         import \"token.gst\" as token;
@@ -3111,16 +3113,16 @@ fn test_e2e_self_hosted_lexer() {
         ",
         input_source
     );
-    
+
     std::fs::write(&entry_path, &entry_source).unwrap();
-    
+
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let res = resolver.resolve(&entry_path, &fs_impl);
     assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
-    
+
     let (order, mut modules) = res.unwrap();
-    
+
     let mut checker = gust_lexer::typechecker::TypeChecker::new();
     for path in &order {
         if let Some(module) = modules.get(path) {
@@ -3140,14 +3142,14 @@ fn test_e2e_self_hosted_lexer() {
             );
         }
     }
-    
+
     let mut modules_for_codegen = Vec::new();
     for path in &order {
         if let Some(module) = modules.get_mut(path) {
             modules_for_codegen.push((path.clone(), module.program.clone()));
         }
     }
-    
+
     let codegen = gust_lexer::codegen::Codegen::new(
         checker.variable_types,
         checker.struct_registry,
@@ -3157,46 +3159,55 @@ fn test_e2e_self_hosted_lexer() {
         checker.resolved_types,
     );
     let c_code = codegen.generate(&modules_for_codegen);
-    
+
     let count = 9999;
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
     let c_filename = format!("gust_e2e_lexer_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_e2e_lexer_{:?}_{}_{}.bin", thread_id, process_id, count);
-    
+    let bin_filename = format!(
+        "gust_e2e_lexer_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
+
     let c_path = std::env::temp_dir().join(&c_filename);
     let bin_path = std::env::temp_dir().join(&bin_filename);
-    
+
     std::fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
-    
+
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
     cmd.arg(&c_path);
     if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
-    let compile_output = cmd.arg("-o").arg(&bin_path).output().expect("GCC command failed");
-    
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC command failed");
+
     assert!(
         compile_output.status.success(),
         "Compilation failed: {}",
         String::from_utf8_lossy(&compile_output.stderr)
     );
-    
-    let run_output = std::process::Command::new(&bin_path).output().expect("Execution failed");
-    
+
+    let run_output = std::process::Command::new(&bin_path)
+        .output()
+        .expect("Execution failed");
+
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
     let _ = std::fs::remove_file(entry_path);
     let _ = std::fs::remove_file(token_path);
     let _ = std::fs::remove_file(lexer_path);
     let _ = std::fs::remove_dir(temp_dir);
-    
+
     assert!(run_output.status.success());
     let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
-    
+
     let expected_output = get_expected_lexer_output(input_source);
-    
+
     assert_eq!(stdout_str.trim(), expected_output.trim());
 }
 
@@ -3255,10 +3266,10 @@ fn get_expected_lexer_output(source: &str) -> String {
             gust_lexer::token::TokenType::True => 46,
             gust_lexer::token::TokenType::False => 47,
         };
-        
+
         out.push_str(&format!("{}\n", tag));
         out.push_str(&format!("{}\n", tok.literal));
-        
+
         if tok.token_type == gust_lexer::token::TokenType::Eof {
             break;
         }

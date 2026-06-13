@@ -1,6 +1,7 @@
 # Rust build artifacts
 /target/
 /temp_gust_e2e_dir/
+/test_e2e_file_io_evaluation_output.txt
 
 # Transpiled C files
 /gust_output.c
@@ -13,4 +14,4 @@
 # Aggregator output
 /a.txt
 
-/test_results.log
+/to.log

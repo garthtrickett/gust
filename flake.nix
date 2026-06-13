@@ -40,6 +40,25 @@
             
             # Export CC to point directly to the Nix-provided linker
             export CC="${pkgs.stdenv.cc}/bin/cc"
+
+            # Custom test runners
+            gtl() {
+              RUST_LOG=debug cargo test test -- --nocapture --test-threads=1 > to.log 2>&1
+              echo "📝 All tests run. Output written to to.log"
+            }
+
+            gt-one() {
+              if [ -z "$1" ]; then
+                echo "❌ Error: Please provide a test name (e.g., gt-one test_self_hosted_import_scanner)"
+                return 1
+              fi
+              RUST_LOG=debug cargo test "$1" -- --nocapture > to.log 2>&1
+              echo "📝 Test '$1' run. Output written to to.log"
+            }
+
+            echo "💡 Available Commands:"
+            echo "  gtl             - Run all tests with debug logging directed to to.log"
+            echo "  gt-one <test_name> - Run a specific test with debug logging directed to to.log"
           '';
         };
       });

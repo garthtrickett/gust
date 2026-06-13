@@ -2379,24 +2379,23 @@ fn test_self_hosted_graph_construction() {
             
             resolver.resolve_imports_recursive({:?}, &graph, &path_to_node, ctx);
             
-            mut lookup_main := path_to_node.Get({:?});
-            mut lookup_lib := path_to_node.Get({:?});
-            mut lookup_deep := path_to_node.Get({:?});
+            guard main_idx := path_to_node.Get({:?}) else {{
+                return;
+            }}
+            guard lib_idx := path_to_node.Get({:?}) else {{                return;
+            }}
+            guard deep_idx := path_to_node.Get({:?}) else {{
+                return;
+            }}
             
-            if lookup_main.Ok {{
-                os.LogStr(\"main ok\");
-            }}
-            if lookup_lib.Ok {{
-                os.LogStr(\"lib ok\");
-            }}
-            if lookup_deep.Ok {{
-                os.LogStr(\"deep ok\");
-            }}
+            os.LogStr("main ok");
+            os.LogStr("lib ok");
+            os.LogStr("deep ok");
             
             os.LogInt(graph.nodes.len);
             
             unsafe {{
-                mut main_node := &graph.nodes.data[lookup_main.Val];
+                mut main_node := &graph.nodes.data[main_idx];
                 os.LogInt(len(main_node.edges));
                 
                 mut target_idx := main_node.edges[0];
