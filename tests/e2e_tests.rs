@@ -3276,3 +3276,175 @@ fn get_expected_lexer_output(source: &str) -> String {
     }
     out
 }
+
+#[test]
+fn test_e2e_self_hosted_module_resolver() {
+    gust_lexer::init_logging();
+    let temp_dir = std::env::temp_dir().join("gust_e2e_self_hosted_resolver");
+    let _ = std::fs::remove_dir_all(&temp_dir);
+    std::fs::create_dir_all(&temp_dir).unwrap();
+
+    let token_src =
+        std::fs::read_to_string("compiler/token.gst").expect("compiler/token.gst missing");
+    let lexer_src =
+        std::fs::read_to_string("compiler/lexer.gst").expect("compiler/lexer.gst missing");
+    let ast_src =
+        std::fs::read_to_string("compiler/ast.gst").expect("compiler/ast.gst missing");
+    let mut errors_src =
+        std::fs::read_to_string("compiler/errors.gst").expect("compiler/errors.gst missing");
+    let resolver_src =
+        std::fs::read_to_string("compiler/resolver.gst").expect("compiler/resolver.gst missing");
+
+    if errors_src.contains("type CompilerError struct") {
+        errors_src = errors_src.replace(
+            "type CompilerError struct",
+            "type CompilerError[ctx] struct",
+        );
+    } else if errors_src.contains("type CompilerError  struct") {
+        errors_src = errors_src.replace(
+            "type CompilerError  struct",
+            "type CompilerError[ctx] struct",
+        );
+    }
+    if errors_src.contains("Index[CompilerError, ctx]") {
+        errors_src = errors_src.replace(
+            "Index[CompilerError, ctx]",
+            "Index[CompilerError[ctx], ctx]",
+        );
+    }
+
+    let token_path = temp_dir.join("token.gst");
+    let lexer_path = temp_dir.join("lexer.gst");
+    let ast_path = temp_dir.join("ast.gst");
+    let errors_path = temp_dir.join("errors.gst");
+    let resolver_path = temp_dir.join("resolver.gst");
+    let entry_path = temp_dir.join("resolver_e2e_entry.gst");
+
+    std::fs::write(&token_path, &token_src).unwrap();
+    std::fs::write(&lexer_path, &lexer_src).unwrap();
+    std::fs::write(&ast_path, &ast_src).unwrap();
+    std::fs::write(&errors_path, &errors_src).unwrap();
+    std::fs::write(&resolver_path, &resolver_src).unwrap();
+
+    // Create target codebase inside temp_dir
+    let target_dir = temp_dir.join("target_codebase");
+    std::fs::create_dir_all(target_dir.join("nested")).unwrap();
+
+    let main_gst = target_dir.join("main.gst");
+    let lib_gst = target_dir.join("lib.gst");
+    let deep_gst = target_dir.join("nested/deep.gst");
+
+    std::fs::write(
+        &main_gst,
+        "import \"lib.gst\";\nimport \"nested/deep.gst\";\nfunc main() {}",
+    )
+    .unwrap();
+    std::fs::write(&lib_gst, "import \"nested/deep.gst\";\nfunc helper() {}").unwrap();
+    std::fs::write(&deep_gst, "func deep_helper() {}").unwrap();
+
+    // entry file that uses our self-hosted resolver to resolve target_codebase/main.gst
+    let entry_source = format!(
+        "\n        import \"resolver.gst\" as resolver;\n        func main() {{\n            mut ctx := os.Arena.New();\n            defer ctx.Free();\n            os.SetThreadScratch(ctx);\n            \n            mut graph: std.Graph[str, ctx] := std.GraphNew(ctx);\n            mut path_to_node: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);\n            \n            resolver.resolve_imports_recursive({:?}, &graph, &path_to_node, ctx);\n            \n            mut order := resolver.resolve_topological_sort({:?}, &graph, &path_to_node, ctx);\n            \n            os.LogInt(len(order));\n            mut i := 0;\n            while i < len(order) {{\n                os.LogStr(order[i]);\n                i = i + 1;\n            }}\n        }}\n        ",
+        main_gst.to_string_lossy(),
+        main_gst.to_string_lossy()
+    );
+
+    std::fs::write(&entry_path, &entry_source).unwrap();
+
+    // Compile using Rust prototype resolver and typechecker
+    let rust_resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = rust_resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, mut modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&modules_for_codegen);
+
+    let count = 8888;
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let c_filename = format!("gust_e2e_resolver_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!(
+        "gust_e2e_resolver_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
+
+    let c_path = std::env::temp_dir().join(&c_filename);
+    let bin_path = std::env::temp_dir().join(&bin_filename);
+
+    std::fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "Compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = std::process::Command::new(&bin_path)
+        .output()
+        .expect("Execution failed");
+
+    // Clean up temporary files
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_dir_all(temp_dir);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+
+    let expected_output = format!(
+        "3\n{}\n{}\n{}",
+        deep_gst.to_string_lossy(),
+        lib_gst.to_string_lossy(),
+        main_gst.to_string_lossy()
+    );
+
+    assert_eq!(stdout_str.trim(), expected_output.trim());
+}
