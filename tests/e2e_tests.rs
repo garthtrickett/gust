@@ -3067,3 +3067,201 @@ fn test_e2e_line_preprocessor_validation() {
     ";
     run_e2e_test(source, "10");
 }
+
+#[test]
+fn test_e2e_self_hosted_lexer() {
+    gust_lexer::init_logging();
+    let temp_dir = std::env::temp_dir().join("gust_e2e_self_hosted_lexer");
+    std::fs::create_dir_all(&temp_dir).unwrap();
+    
+    let token_src = std::fs::read_to_string("compiler/token.gst").expect("compiler/token.gst missing");
+    let lexer_src = std::fs::read_to_string("compiler/lexer.gst").expect("compiler/lexer.gst missing");
+    
+    let token_path = temp_dir.join("token.gst");
+    let lexer_path = temp_dir.join("lexer.gst");
+    let entry_path = temp_dir.join("lexer_e2e_entry.gst");
+    
+    std::fs::write(&token_path, &token_src).unwrap();
+    std::fs::write(&lexer_path, &lexer_src).unwrap();
+    
+    let input_source = "func add(x: int, y: int) int {\n    return x + y;\n}";
+    
+    let entry_source = format!(
+        "
+        import \"token.gst\" as token;
+        import \"lexer.gst\" as lexer;
+        func main() {{
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            
+            mut l: lexer.Lexer[ctx];
+            lexer.init_lexer(&l, {:?});
+            
+            mut loop_active := 1;
+            while loop_active == 1 {{
+                mut t: token.Token[ctx];
+                lexer.next_token(&l, &t);
+                os.LogInt(t.token_type.tag);
+                os.LogStr(t.literal);
+                if t.token_type.tag == 0 {{
+                    loop_active = 0;
+                }}
+            }}
+        }}
+        ",
+        input_source
+    );
+    
+    std::fs::write(&entry_path, &entry_source).unwrap();
+    
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+    
+    let (order, mut modules) = res.unwrap();
+    
+    let mut checker = gust_lexer::typechecker::TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        }
+    }
+    
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+    
+    let codegen = gust_lexer::codegen::Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&modules_for_codegen);
+    
+    let count = 9999;
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let c_filename = format!("gust_e2e_lexer_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_e2e_lexer_{:?}_{}_{}.bin", thread_id, process_id, count);
+    
+    let c_path = std::env::temp_dir().join(&c_filename);
+    let bin_path = std::env::temp_dir().join(&bin_filename);
+    
+    std::fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+    
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd.arg("-o").arg(&bin_path).output().expect("GCC command failed");
+    
+    assert!(
+        compile_output.status.success(),
+        "Compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+    
+    let run_output = std::process::Command::new(&bin_path).output().expect("Execution failed");
+    
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_file(entry_path);
+    let _ = std::fs::remove_file(token_path);
+    let _ = std::fs::remove_file(lexer_path);
+    let _ = std::fs::remove_dir(temp_dir);
+    
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+    
+    let expected_output = get_expected_lexer_output(input_source);
+    
+    assert_eq!(stdout_str.trim(), expected_output.trim());
+}
+
+fn get_expected_lexer_output(source: &str) -> String {
+    let mut lexer = crate::lexer::Lexer::new(source);
+    let mut out = String::new();
+    loop {
+        let tok = lexer.next_token();
+        let tag = match tok.token_type {
+            crate::token::TokenType::Eof => 0,
+            crate::token::TokenType::Illegal => 1,
+            crate::token::TokenType::Ident => 2,
+            crate::token::TokenType::Int => 3,
+            crate::token::TokenType::String => 4,
+            crate::token::TokenType::Assign => 5,
+            crate::token::TokenType::Eq => 6,
+            crate::token::TokenType::Dot => 7,
+            crate::token::TokenType::Comma => 8,
+            crate::token::TokenType::Colon => 9,
+            crate::token::TokenType::Semicolon => 10,
+            crate::token::TokenType::LParen => 11,
+            crate::token::TokenType::RParen => 12,
+            crate::token::TokenType::LBrace => 13,
+            crate::token::TokenType::RBrace => 14,
+            crate::token::TokenType::LBracket => 15,
+            crate::token::TokenType::RBracket => 16,
+            crate::token::TokenType::Ampersand => 17,
+            crate::token::TokenType::FatArrow => 18,
+            crate::token::TokenType::Plus => 19,
+            crate::token::TokenType::Minus => 20,
+            crate::token::TokenType::Asterisk => 21,
+            crate::token::TokenType::Slash => 22,
+            crate::token::TokenType::EqEq => 23,
+            crate::token::TokenType::NotEq => 24,
+            crate::token::TokenType::Lt => 25,
+            crate::token::TokenType::Gt => 26,
+            crate::token::TokenType::Guard => 27,
+            crate::token::TokenType::Import => 28,
+            crate::token::TokenType::Mut => 29,
+            crate::token::TokenType::Func => 30,
+            crate::token::TokenType::Defer => 31,
+            crate::token::TokenType::Move => 32,
+            crate::token::TokenType::Take => 33,
+            crate::token::TokenType::While => 34,
+            crate::token::TokenType::If => 35,
+            crate::token::TokenType::Else => 36,
+            crate::token::TokenType::As => 37,
+            crate::token::TokenType::Unsafe => 38,
+            crate::token::TokenType::Type => 39,
+            crate::token::TokenType::Struct => 40,
+            crate::token::TokenType::Enum => 41,
+            crate::token::TokenType::Match => 42,
+            crate::token::TokenType::Return => 43,
+            crate::token::TokenType::Empty => 44,
+            crate::token::TokenType::Bool => 45,
+            crate::token::TokenType::True => 46,
+            crate::token::TokenType::False => 47,
+        };
+        
+        out.push_str(&format!("{}\n", tag));
+        out.push_str(&format!("{}\n", tok.literal));
+        
+        if tok.token_type == crate::token::TokenType::Eof {
+            break;
+        }
+    }
+    out
+}
