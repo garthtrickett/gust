@@ -1810,7 +1810,23 @@ impl Codegen {
                         "sizeof(SessionNode)".to_string()
                     };
                     let arg_str = self.gen_expression(&arguments[0]);
-                    return format!("os_ArenaAlloc(&{}, sizeof({}))", arg_str, size_str);
+                    let mut is_ptr = false;
+                    if let Expression::Identifier(name, span) = &arguments[0]
+                        && let Some(Type::RawPointer(inner)) = self
+                            .resolved_types
+                            .get(span)
+                            .cloned()
+                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
+                        && *inner == Type::Arena
+                    {                    
+                        is_ptr = true;
+                    }
+                    let arena_expr = if is_ptr {
+                        arg_str
+                    } else {
+                        format!("&{}", arg_str)
+                    };
+                    return format!("os_ArenaAlloc({}, sizeof({}))", arena_expr, size_str);
                 }
 
                 if func_path == "os_ArenaValidate" || func_path == "os.ArenaValidate" {

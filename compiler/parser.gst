@@ -99,9 +99,8 @@ func is_at_end(p: *Parser[ctx]) int {
 }
 
 func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx] {
-    mut t_idx: Index[ast.Type[ctx], ctx] := empty[Index[ast.Type[ctx], ctx]];
+    mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        t_idx = os.ArenaAlloc(*ctx);
         if cur_token_is(p, 2) { // Ident = 2
             mut literal := (*p).cur_token.literal;
             if std.str_eq(literal, "int") {
@@ -176,9 +175,8 @@ func peek_token_precedence(p: *Parser[ctx]) int {
 }
 
 func parse_prefix_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[ctx], ctx] {
-    mut e_idx: Index[ast.Expression[ctx], ctx] := empty[Index[ast.Expression[ctx], ctx]];
+    mut e_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        e_idx = os.ArenaAlloc(*ctx);
         mut tag := (*p).cur_token.token_type.tag;
         mut start_span := (*p).cur_token.span;
 
@@ -315,9 +313,9 @@ func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx
         mut left_expr := parse_expression(p, 1, ctx);
         
         if cur_token_is(p, 6) { // Eq = 6 ("=")
-            next_token(p); // consume '='
+            next_token(p); // consume '=' 
             mut right_expr := parse_expression(p, 1, ctx);
-            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(*ctx);
+            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx[stmt_idx].tag = 5; // Assignment = 5
             ctx[stmt_idx].Assignment.left = left_expr;
             ctx[stmt_idx].Assignment.value = right_expr;
@@ -325,7 +323,7 @@ func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx
             return stmt_idx;
         }
         
-        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(*ctx);
+        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
         ctx[stmt_idx].tag = 13; // Expression = 13
         ctx[stmt_idx].Expression.expr = left_expr;
         ctx[stmt_idx].Expression.span = merge_spans(start_span, (*p).cur_token.span);
@@ -369,7 +367,7 @@ func parse_var_decl(p: *Parser[ctx], is_mut: int, ctx: &Arena) Index[ast.Stateme
         }
     }
     
-    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(*ctx);
+    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
         ctx[stmt_idx].tag = 4; // VarDecl = 4
         ctx[stmt_idx].VarDecl.name = name;
@@ -384,7 +382,7 @@ func parse_var_decl(p: *Parser[ctx], is_mut: int, ctx: &Arena) Index[ast.Stateme
 func parse_block_statement(p: *Parser[ctx], ctx: &Arena) ast.BlockStatement[ctx] {
     mut block: ast.BlockStatement[ctx];
     unsafe {
-        block.statements = os.ArenaAlloc(*ctx);
+        block.statements = os.ArenaAlloc(ctx);
         mut dest_ptr := &ctx[block.statements] as *std.Vector[ast.Statement[ctx], ctx];
         *dest_ptr = std.VectorNew(ctx);
         block.span = (*p).cur_token.span;
@@ -423,7 +421,7 @@ func parse_while_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
     
     mut body := parse_block_statement(p, ctx);
     
-    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(*ctx);
+    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
         ctx[stmt_idx].tag = 6; // While = 6
         ctx[stmt_idx].While.condition = condition;
@@ -461,7 +459,7 @@ func parse_if_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], 
         }
     }
     
-    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(*ctx);
+    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx); 
     unsafe {
         ctx[stmt_idx].tag = 7; // If = 7
         ctx[stmt_idx].If.condition = condition;
@@ -522,7 +520,7 @@ func parse_guard_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
     
     mut else_body := parse_block_statement(p, ctx);
     
-    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(*ctx);
+    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
         ctx[stmt_idx].tag = 9; // Guard = 9
         ctx[stmt_idx].Guard.name = name;
