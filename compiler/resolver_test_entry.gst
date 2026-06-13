@@ -5,12 +5,7 @@
             defer ctx.Free();
             os.SetThreadScratch(ctx);
             
-            mut temp := "
-                // comments can be here
-                import 'std' as standard;
-                import 'os';
-                func main() {}
-            ";
+            mut temp := "import 'std' as standard;|import 'os';|func main() {}";
             mut source := std.Concat("", temp);
             
             unsafe {
@@ -19,6 +14,9 @@
                 while i < len(bytes) {
                     if bytes[i] == 39 {
                         bytes[i] = 34;
+                    }
+                    if bytes[i] == 124 {
+                        bytes[i] = 10;
                     }
                     i = i + 1;
                 }

@@ -13,8 +13,26 @@ func scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {
 
         if t.token_type.tag == 28 { // TokenType::Import = 28
             lexer.next_token(&l, &t);
-            if t.token_type.tag == 4 { // TokenType::String = 4
-                paths.Push(t.literal);
+            
+            mut has_path := 0;
+            mut path_str := "";
+            
+            if t.token_type.tag == 4 { // TokenType::String = 4 (e.g. "std")
+                path_str = t.literal;
+                has_path = 1;
+            } else {
+                if t.token_type.tag == 1 { // TokenType::Illegal = 1 (e.g. ')
+                    lexer.next_token(&l, &t);
+                    if t.token_type.tag == 2 { // TokenType::Ident = 2
+                        path_str = t.literal;
+                        has_path = 1;
+                        lexer.next_token(&l, &t); // Consume closing '
+                    }
+                }
+            }
+            
+            if has_path == 1 {
+                paths.Push(path_str);
 
                 lexer.next_token(&l, &t);
                 if t.token_type.tag == 37 { // TokenType::As = 37
