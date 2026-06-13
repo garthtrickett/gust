@@ -2423,6 +2423,25 @@ impl TypeChecker {
                 let alloc_type = self.check_expression(allocator)?;
                 let index_type = self.check_expression(index)?;
 
+                if let Type::RawPointer(inner) = &alloc_type {
+                    if !self.in_unsafe_block {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::UnsafeProhibited,
+                            message: "Semantic Error: Indexing raw pointers is strictly prohibited outside 'unsafe' blocks".to_string(),
+                            span: None,
+                        });
+                    }
+                    if index_type != Type::Int && index_type != Type::Byte {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::InvalidIndexType,
+                            message: "Semantic Error: Pointer index must resolve to an Int or Byte".to_string(),
+                            span: Some(index.span()),
+                        });
+                    }
+                    let resolved_elem = self.resolve_type(inner)?;
+                    return Ok(resolved_elem);
+                }
+
                 if let Type::Slice(elem_type) = &alloc_type {
                     if index_type != Type::Int && index_type != Type::Byte {
                         return Err(TypeError {
