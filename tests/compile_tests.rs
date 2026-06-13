@@ -5238,7 +5238,7 @@ fn test_self_hosted_prefix_parsing() {
             defer ctx.Free();
 
             mut l: lexer.Lexer[ctx];
-            lexer.init_lexer(&l, "mut a := 10;");
+            lexer.init_lexer(&l, "*&move x");
 
             mut p: parser.Parser[ctx];
             parser.init_parser(&p, &l, ctx);
