@@ -98,8 +98,7 @@ impl TypeChecker {
             Type::Struct(name, inner_brand) => {
                 if let Some(ib) = inner_brand
                     && let Some(ob) = outer_brand
-                        && strip_brand_prefix(ib) != strip_brand_prefix(ob) {
-                        && ib != ob { 
+                        && strip_brand_prefix(ib) != strip_brand_prefix(ob) { 
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
                                 message: format!( 
