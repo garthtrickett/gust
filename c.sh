@@ -23,7 +23,7 @@ for config in "${CONFIG_FILES[@]}"; do
 done
 
 # Dynamically find and append all Rust files inside src/ and tests/
-if [ -d "$PROJECT_ROOT/src" ] || [ -d "$PROJECT_ROOT/tests" ]; then
+if [ -d "$PROJECT_ROOT/src" ] || [ -d "$PROJECT_ROOT/tests" ] || [ -d "$PROJECT_ROOT/compiler" ]; then
     # find targets both directories, filtering for files ending in .rs, sorted for consistency
     while IFS= read -r file; do
         # Clean up the output boundary path representation
@@ -32,7 +32,7 @@ if [ -d "$PROJECT_ROOT/src" ] || [ -d "$PROJECT_ROOT/tests" ]; then
         echo "--- START OF FILE $display_path ---" >>"$OUTPUT_FILE"
         cat "$file" >>"$OUTPUT_FILE"
         echo -e "\n--- END OF FILE $display_path ---\n" >>"$OUTPUT_FILE"
-    done < <(find "$PROJECT_ROOT/src" "$PROJECT_ROOT/tests" -type f -name "*.rs" 2>/dev/null | sort)
+    done < <(find "$PROJECT_ROOT/src" "$PROJECT_ROOT/tests" "$PROJECT_ROOT/compiler" -type f \( -name "*.rs" -o -name "*.gst" \) 2>/dev/null | sort)
 fi
 
 echo "✅ Aggregated all project configuration and Rust files into $OUTPUT_FILE"
