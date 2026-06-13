@@ -2235,10 +2235,7 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
-fn test_self_hosted_token_definitions() { Clark::resolver::ModuleResolver::new(); }
-
-#[test]
-fn test_self_hosted_token_definitions_scaffold() {
+fn test_self_hosted_token_definitions() {
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/token_defs_entry.gst");
