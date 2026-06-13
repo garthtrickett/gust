@@ -32,7 +32,10 @@ impl TypeChecker {
         match t {
             Type::Str | Type::Slice(_) | Type::ByteSlice | Type::RawPointer(_) => true,
             Type::Struct(name, _) => {
-                if name.starts_with("CastResult_") || name.starts_with("LookupResult_") || name.ends_with("_Any") {
+                if name.starts_with("CastResult_")
+                    || name.starts_with("LookupResult_")
+                    || name.ends_with("_Any")
+                {
                     return true;
                 }
                 self.contains_ephemeral_view(t)
@@ -93,11 +96,17 @@ impl TypeChecker {
             Statement::Return(_, _) => true,
             Statement::Expression(Expression::Call { function, .. }, _) => {
                 let raw_func_path = expression_to_string(function);
-                let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or(raw_func_path);
+                let func_path = self
+                    .resolve_namespaced_ident(&raw_func_path)
+                    .unwrap_or(raw_func_path);
                 func_path == "os.Exit" || func_path == "os_Exit"
             }
             Statement::UnsafeBlock { body, .. } => self.is_diverging_block(body),
-            Statement::If { consequence, alternative, .. } => {
+            Statement::If {
+                consequence,
+                alternative,
+                ..
+            } => {
                 let cons_div = self.is_diverging_block(consequence);
                 let alt_div = if let Some(alt) = alternative {
                     self.is_diverging_block(alt)
@@ -122,7 +131,7 @@ impl TypeChecker {
     fn get_pool_element_type(&self, struct_name: &str) -> Option<Type> {
         if let Some(layout) = self.struct_registry.get(struct_name)
             && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
-        { 
+        {
             return Some((**inner).clone());
         }
         None
@@ -131,7 +140,7 @@ impl TypeChecker {
     fn get_channel_element_type(&self, struct_name: &str) -> Option<Type> {
         if let Some(layout) = self.struct_registry.get(struct_name)
             && let Some(Type::RawPointer(inner)) = layout.fields.get("_phantom")
-        { 
+        {
             return Some((**inner).clone());
         }
         None
@@ -232,7 +241,7 @@ impl TypeChecker {
         }
     }
 
-        pub fn pre_register_std_functions(&mut self) {
+    pub fn pre_register_std_functions(&mut self) {
         self.function_registry.insert(
             "os.ScratchAlloc".to_string(),
             super::types::FunctionSignature {
@@ -543,8 +552,15 @@ impl TypeChecker {
             "std.str_split".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["s".to_string(), "delim".to_string(), "ctx".to_string()],
-                params: vec![Type::Str, Type::Str, Type::RawPointer(Box::new(Type::Arena))],
-                return_type: Type::Generic("std.Vector".to_string(), vec![Type::Str, Type::Struct("ctx".to_string(), None)]),
+                params: vec![
+                    Type::Str,
+                    Type::Str,
+                    Type::RawPointer(Box::new(Type::Arena)),
+                ],
+                return_type: Type::Generic(
+                    "std.Vector".to_string(),
+                    vec![Type::Str, Type::Struct("ctx".to_string(), None)],
+                ),
                 return_origins: std::collections::HashSet::new(),
             },
         );
@@ -552,8 +568,15 @@ impl TypeChecker {
             "std_str_split".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["s".to_string(), "delim".to_string(), "ctx".to_string()],
-                params: vec![Type::Str, Type::Str, Type::RawPointer(Box::new(Type::Arena))],
-                return_type: Type::Generic("std.Vector".to_string(), vec![Type::Str, Type::Struct("ctx".to_string(), None)]),
+                params: vec![
+                    Type::Str,
+                    Type::Str,
+                    Type::RawPointer(Box::new(Type::Arena)),
+                ],
+                return_type: Type::Generic(
+                    "std.Vector".to_string(),
+                    vec![Type::Str, Type::Struct("ctx".to_string(), None)],
+                ),
                 return_origins: std::collections::HashSet::new(),
             },
         );
@@ -681,11 +704,16 @@ impl TypeChecker {
         let open_dir_sig = super::types::FunctionSignature {
             param_names: vec!["ctx".to_string(), "path".to_string()],
             params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::Str],
-            return_type: Type::Struct("LookupResult_os_Dir_ctx".to_string(), Some("ctx".to_string())),
+            return_type: Type::Struct(
+                "LookupResult_os_Dir_ctx".to_string(),
+                Some("ctx".to_string()),
+            ),
             return_origins: std::collections::HashSet::new(),
         };
-        self.function_registry.insert("os.OpenDir".to_string(), open_dir_sig.clone());
-        self.function_registry.insert("os_OpenDir".to_string(), open_dir_sig);
+        self.function_registry
+            .insert("os.OpenDir".to_string(), open_dir_sig.clone());
+        self.function_registry
+            .insert("os_OpenDir".to_string(), open_dir_sig);
 
         // os.ReadDir
         let read_dir_sig = super::types::FunctionSignature {
@@ -694,31 +722,47 @@ impl TypeChecker {
                 Type::RawPointer(Box::new(Type::Arena)),
                 Type::Struct("os_Dir_ctx".to_string(), Some("ctx".to_string())),
             ],
-            return_type: Type::Struct("LookupResult_os_DirEntry_ctx".to_string(), Some("ctx".to_string())),
+            return_type: Type::Struct(
+                "LookupResult_os_DirEntry_ctx".to_string(),
+                Some("ctx".to_string()),
+            ),
             return_origins: std::collections::HashSet::new(),
         };
-        self.function_registry.insert("os.ReadDir".to_string(), read_dir_sig.clone());
-        self.function_registry.insert("os_ReadDir".to_string(), read_dir_sig);
+        self.function_registry
+            .insert("os.ReadDir".to_string(), read_dir_sig.clone());
+        self.function_registry
+            .insert("os_ReadDir".to_string(), read_dir_sig);
 
         // os.CloseDir
         let close_dir_sig = super::types::FunctionSignature {
             param_names: vec!["dir".to_string()],
-            params: vec![Type::Struct("os_Dir_ctx".to_string(), Some("ctx".to_string()))],
+            params: vec![Type::Struct(
+                "os_Dir_ctx".to_string(),
+                Some("ctx".to_string()),
+            )],
             return_type: Type::Void,
             return_origins: std::collections::HashSet::new(),
         };
-        self.function_registry.insert("os.CloseDir".to_string(), close_dir_sig.clone());
-        self.function_registry.insert("os_CloseDir".to_string(), close_dir_sig);
+        self.function_registry
+            .insert("os.CloseDir".to_string(), close_dir_sig.clone());
+        self.function_registry
+            .insert("os_CloseDir".to_string(), close_dir_sig);
 
         // os.path_join
         let path_join_sig = super::types::FunctionSignature {
             param_names: vec!["dir".to_string(), "file".to_string(), "ctx".to_string()],
-            params: vec![Type::Str, Type::Str, Type::RawPointer(Box::new(Type::Arena))],
+            params: vec![
+                Type::Str,
+                Type::Str,
+                Type::RawPointer(Box::new(Type::Arena)),
+            ],
             return_type: Type::Str,
             return_origins: std::collections::HashSet::new(),
         };
-        self.function_registry.insert("os.path_join".to_string(), path_join_sig.clone());
-        self.function_registry.insert("os_path_join".to_string(), path_join_sig);
+        self.function_registry
+            .insert("os.path_join".to_string(), path_join_sig.clone());
+        self.function_registry
+            .insert("os_path_join".to_string(), path_join_sig);
 
         // os.SetThreadScratch
         let set_thread_scratch_sig = super::types::FunctionSignature {
@@ -727,18 +771,29 @@ impl TypeChecker {
             return_type: Type::Void,
             return_origins: std::collections::HashSet::new(),
         };
-        self.function_registry.insert("os.SetThreadScratch".to_string(), set_thread_scratch_sig.clone());
-        self.function_registry.insert("os_SetThreadScratch".to_string(), set_thread_scratch_sig);
+        self.function_registry.insert(
+            "os.SetThreadScratch".to_string(),
+            set_thread_scratch_sig.clone(),
+        );
+        self.function_registry
+            .insert("os_SetThreadScratch".to_string(), set_thread_scratch_sig);
 
         // os.GetThreadScratch
         let get_thread_scratch_sig = super::types::FunctionSignature {
             param_names: vec![],
             params: vec![],
-            return_type: Type::Struct("std_ThreadLocalContext_Any".to_string(), Some("Any".to_string())),
+            return_type: Type::Struct(
+                "std_ThreadLocalContext_Any".to_string(),
+                Some("Any".to_string()),
+            ),
             return_origins: std::collections::HashSet::new(),
         };
-        self.function_registry.insert("os.GetThreadScratch".to_string(), get_thread_scratch_sig.clone());
-        self.function_registry.insert("os_GetThreadScratch".to_string(), get_thread_scratch_sig);
+        self.function_registry.insert(
+            "os.GetThreadScratch".to_string(),
+            get_thread_scratch_sig.clone(),
+        );
+        self.function_registry
+            .insert("os_GetThreadScratch".to_string(), get_thread_scratch_sig);
 
         // os.ArenaValidate
         let arena_validate_sig = super::types::FunctionSignature {
@@ -747,8 +802,10 @@ impl TypeChecker {
             return_type: Type::Void,
             return_origins: std::collections::HashSet::new(),
         };
-        self.function_registry.insert("os.ArenaValidate".to_string(), arena_validate_sig.clone());
-        self.function_registry.insert("os_ArenaValidate".to_string(), arena_validate_sig);
+        self.function_registry
+            .insert("os.ArenaValidate".to_string(), arena_validate_sig.clone());
+        self.function_registry
+            .insert("os_ArenaValidate".to_string(), arena_validate_sig);
 
         let yield_sig = super::types::FunctionSignature {
             param_names: vec![],
@@ -756,16 +813,18 @@ impl TypeChecker {
             return_type: Type::Void,
             return_origins: std::collections::HashSet::new(),
         };
-        self.function_registry.insert("std.Yield".to_string(), yield_sig.clone());
-        self.function_registry.insert("std_Yield".to_string(), yield_sig);
+        self.function_registry
+            .insert("std.Yield".to_string(), yield_sig.clone());
+        self.function_registry
+            .insert("std_Yield".to_string(), yield_sig);
     }
 
-    pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> { 
+    pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {
         self.current_prefix = "".to_string();
         self.check_module(program, "")
     }
 
-    pub fn check_module(&mut self, program: &Program, prefix: &str) -> Result<(), TypeError> { 
+    pub fn check_module(&mut self, program: &Program, prefix: &str) -> Result<(), TypeError> {
         self.current_prefix = prefix.to_string();
         self.symbol_table.clear();
         self.variable_origins.clear();
@@ -782,7 +841,7 @@ impl TypeChecker {
         self.pre_register_std_functions();
 
         // Pre-pass: Dynamically register structs, templates, enums, and functions [3]
-        for stmt in &program.statements { 
+        for stmt in &program.statements {
             if let Statement::Import { path, alias, .. } = stmt {
                 let stem = get_file_stem(path);
                 let pfx = format!("{}__", stem);
@@ -807,16 +866,17 @@ impl TypeChecker {
                 let namespaced_name = format!("{}{}", self.current_prefix, name);
                 self.resolved_names.insert(*span, namespaced_name.clone());
 
-                if generics.is_empty() { 
+                if generics.is_empty() {
                     let mut layout_fields = HashMap::new();
-                    for field in fields { 
+                    for field in fields {
                         let resolved_field_type = self.resolve_type(&field.field_type)?;
-                        let resolved_field_type = self.resolve_type_namespacing(&resolved_field_type)?;
+                        let resolved_field_type =
+                            self.resolve_type_namespacing(&resolved_field_type)?;
                         if (matches!(resolved_field_type, Type::Slice(_))
                             || resolved_field_type == Type::ByteSlice
                             || resolved_field_type == Type::Str)
                             && namespaced_name != "errors__CompilerError"
-                        { 
+                        {
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
                                 message: format!(
@@ -835,7 +895,7 @@ impl TypeChecker {
                             fields: layout_fields,
                         },
                     );
-                } else { 
+                } else {
                     self.struct_templates.insert(
                         namespaced_name.clone(),
                         super::types::StructTemplate {
@@ -859,25 +919,28 @@ impl TypeChecker {
 
                 if generics.is_empty() {
                     // Register the enum in the enum registry
-                    let variant_names: Vec<String> = variants.iter().map(|v| v.name.clone()).collect();
-                    self.enum_registry.insert(namespaced_name.clone(), variant_names);
+                    let variant_names: Vec<String> =
+                        variants.iter().map(|v| v.name.clone()).collect();
+                    self.enum_registry
+                        .insert(namespaced_name.clone(), variant_names);
 
                     // Register nested variant structs in struct_registry
                     let mut enum_fields = HashMap::new();
                     enum_fields.insert("tag".to_string(), Type::Int);
 
-                    for variant in variants { 
-                        let concrete_variant_struct_name = format!("{}_{}", namespaced_name, variant.name);
+                    for variant in variants {
+                        let concrete_variant_struct_name =
+                            format!("{}_{}", namespaced_name, variant.name);
 
                         // Register the variant struct fields in struct_registry
                         let mut variant_fields = HashMap::new();
-                        for field in &variant.fields { 
+                        for field in &variant.fields {
                             let resolved_t = self.resolve_type(&field.field_type)?;
                             let resolved_t = self.resolve_type_namespacing(&resolved_t)?;
                             if let Type::Struct(ref struct_name, _) = resolved_t
                                 && let Some(layout) = self.struct_registry.get(struct_name)
                                 && layout.fields.len() > 2
-                            { 
+                            {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::LargeEnumVariantPayload,
                                     message: format!(
@@ -955,7 +1018,11 @@ impl TypeChecker {
                     name,
                     namespaced_name,
                     params_ok.len(),
-                    param_names.iter().zip(params_ok.iter()).map(|(p_name, p_type)| format!("{}: {:?}", p_name, p_type)).collect::<Vec<_>>()
+                    param_names
+                        .iter()
+                        .zip(params_ok.iter())
+                        .map(|(p_name, p_type)| format!("{}: {:?}", p_name, p_type))
+                        .collect::<Vec<_>>()
                 );
 
                 let existing_sig = self.function_registry.get(&namespaced_name);
@@ -999,12 +1066,12 @@ impl TypeChecker {
 
         // Synthesize IsValid helpers for structs containing boolean (byte) fields
         let mut structs_to_register_is_valid = Vec::new();
-        for struct_name in self.struct_registry.keys() { 
-            if self.has_boolean_fields(&Type::Struct(struct_name.clone(), None)) { 
+        for struct_name in self.struct_registry.keys() {
+            if self.has_boolean_fields(&Type::Struct(struct_name.clone(), None)) {
                 structs_to_register_is_valid.push(struct_name.clone());
             }
         }
-        for struct_name in structs_to_register_is_valid { 
+        for struct_name in structs_to_register_is_valid {
             let func_name = format!("{}_IsValid", struct_name);
             self.function_registry.insert(
                 func_name,
@@ -1021,7 +1088,7 @@ impl TypeChecker {
         }
 
         // Processing Pass
-        for stmt in &program.statements { 
+        for stmt in &program.statements {
             self.check_statement(stmt)?;
         }
         Ok(())
@@ -1043,7 +1110,11 @@ impl TypeChecker {
 
     fn check_statement_internal(&mut self, stmt: &Statement) -> Result<(), TypeError> {
         match stmt {
-            Statement::Import { path, alias, span: _ } => { 
+            Statement::Import {
+                path,
+                alias,
+                span: _,
+            } => {
                 let stem = get_file_stem(path);
                 let prefix = format!("{}__", stem);
                 let alias_name = alias.clone().unwrap_or_else(|| stem.clone());
@@ -1146,14 +1217,14 @@ impl TypeChecker {
                         if self.open_directories.contains(local_var) {
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
-                                message: format!( 
+                                message: format!(
                                     "Semantic Error: Resource leak. Directory resource variable '{}' must be cleanly closed with os.CloseDir before leaving local scope",
                                     local_var
                                 ),
                                 span: None,
                             });
-                        } 
-                    } 
+                        }
+                    }
                 }
 
                 // Clean-up and restore parent scopes [3]
@@ -1181,14 +1252,16 @@ impl TypeChecker {
                 // Confirm it is a fallible wrapper type containing both Ok and Val fields
                 let mut bound_type = None;
                 if let Type::Struct(ref struct_name, ref _brand) = resolved_val_type
-                    && let Some(layout) = self.struct_registry.get(struct_name) {
-                        let ok_field = layout.fields.get("Ok");
-                        let val_field = layout.fields.get("Val");
-                        if let (Some(ok_t), Some(val_t)) = (ok_field, val_field)
-                            && (*ok_t == Type::Int || *ok_t == Type::Bool) {
-                                bound_type = Some(val_t.clone());
-                            }
+                    && let Some(layout) = self.struct_registry.get(struct_name)
+                {
+                    let ok_field = layout.fields.get("Ok");
+                    let val_field = layout.fields.get("Val");
+                    if let (Some(ok_t), Some(val_t)) = (ok_field, val_field)
+                        && (*ok_t == Type::Int || *ok_t == Type::Bool)
+                    {
+                        bound_type = Some(val_t.clone());
                     }
+                }
 
                 let Some(payload_type) = bound_type else {
                     return Err(TypeError {
@@ -1226,7 +1299,8 @@ impl TypeChecker {
 
                 // 4. Bind the <identifier> to the active symbol table using the type of the .Val field
                 self.symbol_table.insert(name.clone(), payload_type.clone());
-                self.variable_types.insert(name.clone(), payload_type.clone());
+                self.variable_types
+                    .insert(name.clone(), payload_type.clone());
                 self.resolved_types.insert(*span, payload_type.clone());
 
                 // 5. Track memory origins
@@ -1244,8 +1318,10 @@ impl TypeChecker {
                 if final_origins.is_empty() {
                     final_origins.insert(name.clone());
                 }
-                self.variable_origins.insert(name.clone(), final_origins.clone());
-                self.all_variable_origins.insert(name.clone(), final_origins);
+                self.variable_origins
+                    .insert(name.clone(), final_origins.clone());
+                self.all_variable_origins
+                    .insert(name.clone(), final_origins);
 
                 self.moved_vars.remove(name);
 
@@ -1261,13 +1337,13 @@ impl TypeChecker {
                 span,
                 ..
             } => {
-                let val_type = if let Some(val_expr) = value { 
+                let val_type = if let Some(val_expr) = value {
                     let mut t = self.check_expression(val_expr)?;
                     t = self.resolve_type(&t)?;
                     t = self.resolve_type_namespacing(&t)?;
-                    let mut origs = if self.is_ephemeral_view(&t) { 
+                    let mut origs = if self.is_ephemeral_view(&t) {
                         self.get_expression_origins(val_expr)
-                    } else { 
+                    } else {
                         HashSet::new()
                     };
                     // Fallback to itself as a root origin if expression contains no active origins
@@ -1278,18 +1354,18 @@ impl TypeChecker {
                     self.all_variable_origins.insert(name.clone(), origs);
                     t
                 } else {
-                    if let Some(explicit_t) = var_type { 
+                    if let Some(explicit_t) = var_type {
                         let mut origs = HashSet::new();
                         origs.insert(name.clone());
                         self.variable_origins.insert(name.clone(), origs.clone());
                         self.all_variable_origins.insert(name.clone(), origs);
                         let resolved = self.resolve_type(explicit_t)?;
-                        
+
                         self.resolve_type_namespacing(&resolved)?
                     } else {
                         return Err(TypeError {
                             kind: TypeErrorKind::UninitializedVariable,
-                            message: format!( 
+                            message: format!(
                                 "Semantic Error: Uninitialized variable '{}' must have an explicit type annotation",
                                 name
                             ),
@@ -1306,7 +1382,7 @@ impl TypeChecker {
                     if !types_match(&resolved_explicit, &val_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
-                            message: format!( 
+                            message: format!(
                                 "Semantic Error: Explicit Type Annotation Mismatch. Declared {:?} but got value {:?}",
                                 resolved_explicit, val_type
                             ),
@@ -1324,9 +1400,10 @@ impl TypeChecker {
                 }
 
                 if let Type::Struct(ref struct_name, _) = val_type
-                    && struct_name.starts_with("os_Dir_") {
-                        self.open_directories.insert(name.clone());
-                    }
+                    && struct_name.starts_with("os_Dir_")
+                {
+                    self.open_directories.insert(name.clone());
+                }
 
                 if let Some(ref mut local_vars) = self.current_function_local_vars {
                     local_vars.insert(name.clone());
@@ -1363,21 +1440,25 @@ impl TypeChecker {
                 }
 
                 // Scratchpad storage restriction check (Step 3 verification)
-                if let Expression::Selector { left: selector_left, .. } = left
+                if let Expression::Selector {
+                    left: selector_left,
+                    ..
+                } = left
                     && let Ok(parent_type) = self.check_expression(selector_left)
-                        && self.get_type_brand(&parent_type).is_some() {
-                            let rhs_origins = self.get_expression_origins(value);
-                            if rhs_origins.contains("scratch") {
-                                return Err(TypeError {
-                                    kind: TypeErrorKind::BrandLifetimeViolation,
-                                    message: format!( 
-                                        "Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct '{:?}'",
-                                        parent_type
-                                    ),
-                                    span: Some(value.span()),
-                                });
-                            }
-                        }
+                    && self.get_type_brand(&parent_type).is_some()
+                {
+                    let rhs_origins = self.get_expression_origins(value);
+                    if rhs_origins.contains("scratch") {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::BrandLifetimeViolation,
+                            message: format!(
+                                "Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct '{:?}'",
+                                parent_type
+                            ),
+                            span: Some(value.span()),
+                        });
+                    }
+                }
 
                 let is_ptr_write = self.is_pointer_write(left);
 
@@ -1389,7 +1470,7 @@ impl TypeChecker {
                             if var_name != &root_name && origins.contains(&root_name) {
                                 to_invalidate.push(var_name.clone());
                             }
-                        } 
+                        }
                         for var in to_invalidate {
                             self.moved_vars.insert(var);
                         }
@@ -1406,16 +1487,20 @@ impl TypeChecker {
                             if origs.is_empty() {
                                 origs.insert(root_name.clone());
                             }
-                            self.variable_origins.insert(root_name.clone(), origs.clone());
+                            self.variable_origins
+                                .insert(root_name.clone(), origs.clone());
                             self.all_variable_origins.insert(root_name.clone(), origs);
                         } else {
                             if !origs.is_empty() {
                                 if let Some(existing) = self.variable_origins.get_mut(&root_name) {
                                     existing.extend(origs.clone());
                                 } else {
-                                    self.variable_origins.insert(root_name.clone(), origs.clone());
+                                    self.variable_origins
+                                        .insert(root_name.clone(), origs.clone());
                                 }
-                                if let Some(existing) = self.all_variable_origins.get_mut(&root_name) {
+                                if let Some(existing) =
+                                    self.all_variable_origins.get_mut(&root_name)
+                                {
                                     existing.extend(origs.clone());
                                 } else {
                                     self.all_variable_origins.insert(root_name.clone(), origs);
@@ -1425,9 +1510,10 @@ impl TypeChecker {
                         self.moved_vars.remove(&root_name); // Re-initialized!
 
                         if let Type::Struct(ref struct_name, _) = val_type
-                            && struct_name.starts_with("os_Dir_") {
-                                self.open_directories.insert(root_name.clone());
-                            }
+                            && struct_name.starts_with("os_Dir_")
+                        {
+                            self.open_directories.insert(root_name.clone());
+                        }
                     }
                 }
             }
@@ -1607,27 +1693,37 @@ impl TypeChecker {
 
                             // Look up variant layout and inject destructured fields
                             if !case.fields.is_empty() {
-                                let variant_struct_name = format!("{}_{}", enum_name, case.variant_name);
-                                if let Some(layout) = self.struct_registry.get(&variant_struct_name) {
+                                let variant_struct_name =
+                                    format!("{}_{}", enum_name, case.variant_name);
+                                if let Some(layout) = self.struct_registry.get(&variant_struct_name)
+                                {
                                     for field_name in &case.fields {
                                         if let Some(field_type) = layout.fields.get(field_name) {
-                                            self.symbol_table.insert(field_name.clone(), field_type.clone());
-                                            self.variable_types.insert(field_name.clone(), field_type.clone());
+                                            self.symbol_table
+                                                .insert(field_name.clone(), field_type.clone());
+                                            self.variable_types
+                                                .insert(field_name.clone(), field_type.clone());
 
                                             // Flow the memory origin
-                                            let parent_origins_set = self.get_expression_origins(expression);
-                                            let mut final_origins = if self.is_ephemeral_view(field_type) {
-                                                parent_origins_set
-                                            } else {
-                                                HashSet::new()
-                                            };
+                                            let parent_origins_set =
+                                                self.get_expression_origins(expression);
+                                            let mut final_origins =
+                                                if self.is_ephemeral_view(field_type) {
+                                                    parent_origins_set
+                                                } else {
+                                                    HashSet::new()
+                                                };
                                             if final_origins.is_empty() {
                                                 final_origins.insert(field_name.clone());
                                             }
-                                            self.variable_origins.insert(field_name.clone(), final_origins.clone());
-                                            self.all_variable_origins.insert(field_name.clone(), final_origins);
+                                            self.variable_origins
+                                                .insert(field_name.clone(), final_origins.clone());
+                                            self.all_variable_origins
+                                                .insert(field_name.clone(), final_origins);
 
-                                            if let Some(ref mut local_vars) = self.current_function_local_vars {
+                                            if let Some(ref mut local_vars) =
+                                                self.current_function_local_vars
+                                            {
                                                 local_vars.insert(field_name.clone());
                                             }
                                         } else {
@@ -1737,7 +1833,7 @@ impl TypeChecker {
                         // Safe Scratchpad-allocated view check (Step 3 verification)
                         return Err(TypeError {
                             kind: TypeErrorKind::BrandLifetimeViolation,
-                            message: format!( 
+                            message: format!(
                                 "Semantic Error: Escape analysis violation. Returning scratchpad-allocated view of type {:?}",
                                 t
                             ),
@@ -1870,28 +1966,44 @@ impl TypeChecker {
                 ..
             } => {
                 let raw_func_path = expression_to_string(function);
-                let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or(raw_func_path);
-                if func_path == "os.ScratchAlloc" || func_path == "os_ScratchAlloc"
-                    || func_path == "std.FormatInt" || func_path == "std_FormatInt"
-                    || func_path == "std.Concat" || func_path == "std_Concat"
-                    || func_path == "std.Format" || func_path == "std_Format"
+                let func_path = self
+                    .resolve_namespaced_ident(&raw_func_path)
+                    .unwrap_or(raw_func_path);
+                if func_path == "os.ScratchAlloc"
+                    || func_path == "os_ScratchAlloc"
+                    || func_path == "std.FormatInt"
+                    || func_path == "std_FormatInt"
+                    || func_path == "std.Concat"
+                    || func_path == "std_Concat"
+                    || func_path == "std.Format"
+                    || func_path == "std_Format"
                 {
                     let mut call_origins = HashSet::new();
                     call_origins.insert("scratch".to_string());
                     return call_origins;
                 }
-                if (func_path == "std.VectorNew" || func_path == "os.VectorNew"
-                    || func_path == "std_VectorNew" || func_path == "os_VectorNew"
-                    || func_path == "std.HashMapNew" || func_path == "os.HashMapNew"
-                    || func_path == "std_HashMapNew" || func_path == "os_HashMapNew"
-                    || func_path == "std.PoolNew" || func_path == "os.PoolNew"
-                    || func_path == "std_PoolNew" || func_path == "os_PoolNew"
-                    || func_path == "std.GraphNew" || func_path == "std_GraphNew"
-                    || func_path == "std.MutexNew" || func_path == "std_MutexNew"
-                    || func_path == "std.ChannelNew" || func_path == "std_ChannelNew")
-                    && !arguments.is_empty() {
-                        return self.get_expression_origins(&arguments[0]);
-                    }
+                if (func_path == "std.VectorNew"
+                    || func_path == "os.VectorNew"
+                    || func_path == "std_VectorNew"
+                    || func_path == "os_VectorNew"
+                    || func_path == "std.HashMapNew"
+                    || func_path == "os.HashMapNew"
+                    || func_path == "std_HashMapNew"
+                    || func_path == "os_HashMapNew"
+                    || func_path == "std.PoolNew"
+                    || func_path == "os.PoolNew"
+                    || func_path == "std_PoolNew"
+                    || func_path == "os_PoolNew"
+                    || func_path == "std.GraphNew"
+                    || func_path == "std_GraphNew"
+                    || func_path == "std.MutexNew"
+                    || func_path == "std_MutexNew"
+                    || func_path == "std.ChannelNew"
+                    || func_path == "std_ChannelNew")
+                    && !arguments.is_empty()
+                {
+                    return self.get_expression_origins(&arguments[0]);
+                }
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
                     let mut call_origins = HashSet::new();
                     if self.contains_ephemeral_view(&sig.return_type) {
@@ -1974,14 +2086,14 @@ impl TypeChecker {
                                 ),
                                 span: None,
                             });
-                        } 
-                    } 
+                        }
+                    }
                 }
 
-                if let Some(t) = self.symbol_table.get(&resolved_name) { 
+                if let Some(t) = self.symbol_table.get(&resolved_name) {
                     if let Some(brand) = self.get_type_brand(t)
                         && self.moved_vars.contains(&brand)
-                    { 
+                    {
                         return Err(TypeError {
                             kind: TypeErrorKind::AllocatorMovedOrFreed,
                             message: format!(
@@ -1992,10 +2104,10 @@ impl TypeChecker {
                         });
                     }
                     Ok(t.clone())
-                } else { 
+                } else {
                     if name == "null" {
                         return Ok(Type::Index("Any".to_string(), None));
-                    } 
+                    }
                     Err(TypeError {
                         kind: TypeErrorKind::UndefinedVariable,
                         message: format!("Semantic Error: Undefined variable '{}'", name),
@@ -2154,7 +2266,8 @@ impl TypeChecker {
                         })
                     }
                 }
-            }            Expression::Take(inner_expr, _) => {
+            }
+            Expression::Take(inner_expr, _) => {
                 let expr_type = self.check_expression(inner_expr)?;
                 if expr_type == Type::Int || expr_type == Type::Byte {
                     return Err(TypeError {
@@ -2204,10 +2317,19 @@ impl TypeChecker {
                 let resolved_target = self.resolve_type_namespacing(&resolved_target)?;
                 self.resolved_types.insert(*span, resolved_target.clone());
 
-                if (left_type == Type::Int || left_type == Type::Byte || left_type == Type::Bool || matches!(left_type, Type::Index(_, _)))
-                    && (resolved_target == Type::Int || resolved_target == Type::Byte || resolved_target == Type::Bool || matches!(resolved_target, Type::Index(_, _)))
+                if (left_type == Type::Int
+                    || left_type == Type::Byte
+                    || left_type == Type::Bool
+                    || matches!(left_type, Type::Index(_, _)))
+                    && (resolved_target == Type::Int
+                        || resolved_target == Type::Byte
+                        || resolved_target == Type::Bool
+                        || matches!(resolved_target, Type::Index(_, _)))
                 {
-                    if (matches!(left_type, Type::Index(_, _)) || matches!(resolved_target, Type::Index(_, _))) && !self.in_unsafe_block {
+                    if (matches!(left_type, Type::Index(_, _))
+                        || matches!(resolved_target, Type::Index(_, _)))
+                        && !self.in_unsafe_block
+                    {
                         return Err(TypeError {
                             kind: TypeErrorKind::UnsafeProhibited,
                             message: "Semantic Error: Casting to or from Index types is strictly prohibited outside 'unsafe' blocks".to_string(),
@@ -2249,8 +2371,12 @@ impl TypeChecker {
                         });
                 }
 
-                let is_left_slice_like = matches!(left_type, Type::Slice(_)) || left_type == Type::ByteSlice || left_type == Type::Str;
-                let is_target_slice_like = matches!(resolved_target, Type::Slice(_)) || resolved_target == Type::ByteSlice || resolved_target == Type::Str;
+                let is_left_slice_like = matches!(left_type, Type::Slice(_))
+                    || left_type == Type::ByteSlice
+                    || left_type == Type::Str;
+                let is_target_slice_like = matches!(resolved_target, Type::Slice(_))
+                    || resolved_target == Type::ByteSlice
+                    || resolved_target == Type::Str;
 
                 if is_left_slice_like && is_target_slice_like {
                     if !self.in_unsafe_block {
@@ -2392,7 +2518,9 @@ impl TypeChecker {
                 {
                     let alloc_name = expression_to_string(allocator);
                     if let Type::Index(struct_name, Some(brand_name)) = index_type {
-                        if brand_name != alloc_name && !alloc_name.ends_with(&format!(".{}", brand_name)) {
+                        if brand_name != alloc_name
+                            && !alloc_name.ends_with(&format!(".{}", brand_name))
+                        {
                             return Err(TypeError {
                                 kind: TypeErrorKind::BrandLifetimeViolation,
                                 message: format!(
@@ -2540,7 +2668,8 @@ impl TypeChecker {
                     }
                     if let Some(layout) = self.struct_registry.get(struct_name) {
                         if let Some(field_type) = layout.fields.get(right) {
-                            let returned_type = self.substitute_field_brand(field_type, _brand, &left_str, layout);
+                            let returned_type =
+                                self.substitute_field_brand(field_type, _brand, &left_str, layout);
                             let resolved_returned = self.resolve_type(&returned_type)?;
                             return Ok(resolved_returned);
                         }
@@ -2584,7 +2713,9 @@ impl TypeChecker {
                 ..
             } => {
                 let raw_func_path = expression_to_string(function);
-                let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or_else(|_| raw_func_path.clone());
+                let func_path = self
+                    .resolve_namespaced_ident(&raw_func_path)
+                    .unwrap_or_else(|_| raw_func_path.clone());
 
                 tracing::debug!(
                     "👁️ Expression::Call Evaluation Start: Raw Function: '{}', Resolved: '{}', Registry Has Key: {}",
@@ -2594,7 +2725,8 @@ impl TypeChecker {
                 );
 
                 if func_path == "std.Format" || func_path == "std_Format" {
-                    self.resolved_names.insert(function.span(), func_path.clone());
+                    self.resolved_names
+                        .insert(function.span(), func_path.clone());
                     if arguments.is_empty() {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -2655,7 +2787,7 @@ impl TypeChecker {
                         let arg_type = self.check_expression(&arguments[arg_idx])?;
                         let resolved_arg = self.resolve_type(&arg_type)?;
 
-                        if *expected_t == Type::Str { 
+                        if *expected_t == Type::Str {
                             if resolved_arg != Type::Str {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
@@ -2805,7 +2937,11 @@ impl TypeChecker {
                     return Ok(Type::Void);
                 }
 
-                if func_path == "os.VectorNew" || func_path == "std.VectorNew" || func_path == "os_VectorNew" || func_path == "std_VectorNew" {
+                if func_path == "os.VectorNew"
+                    || func_path == "std.VectorNew"
+                    || func_path == "os_VectorNew"
+                    || func_path == "std_VectorNew"
+                {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -2830,7 +2966,11 @@ impl TypeChecker {
                     return Ok(Type::Struct("Vector_Any".to_string(), Some(brand_name)));
                 }
 
-                if func_path == "os.HashMapNew" || func_path == "std.HashMapNew" || func_path == "os_HashMapNew" || func_path == "std_HashMapNew" {
+                if func_path == "os.HashMapNew"
+                    || func_path == "std.HashMapNew"
+                    || func_path == "os_HashMapNew"
+                    || func_path == "std_HashMapNew"
+                {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -2855,7 +2995,11 @@ impl TypeChecker {
                     return Ok(Type::Struct("HashMap_Any".to_string(), Some(brand_name)));
                 }
 
-                if func_path == "os.PoolNew" || func_path == "std.PoolNew" || func_path == "os_PoolNew" || func_path == "std_PoolNew" {
+                if func_path == "os.PoolNew"
+                    || func_path == "std.PoolNew"
+                    || func_path == "os_PoolNew"
+                    || func_path == "std_PoolNew"
+                {
                     if arguments.len() != 1 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -2953,14 +3097,19 @@ impl TypeChecker {
                     if arguments.len() != 2 {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
-                            message: "Semantic Error: std.Spawn expects exactly 2 arguments (func, arg)".to_string(),
+                            message:
+                                "Semantic Error: std.Spawn expects exactly 2 arguments (func, arg)"
+                                    .to_string(),
                             span: None,
                         });
                     }
 
                     let func_name = expression_to_string(&arguments[0]);
-                    let resolved_func_name = self.resolve_namespaced_ident(&func_name).unwrap_or(func_name.clone());
-                    self.resolved_names.insert(arguments[0].span(), resolved_func_name.clone());
+                    let resolved_func_name = self
+                        .resolve_namespaced_ident(&func_name)
+                        .unwrap_or(func_name.clone());
+                    self.resolved_names
+                        .insert(arguments[0].span(), resolved_func_name.clone());
 
                     if let Some(sig) = self.function_registry.get(&resolved_func_name).cloned() {
                         if sig.params.len() != 1 {
@@ -2980,25 +3129,28 @@ impl TypeChecker {
 
                         // Handoff isolation check for branded contexts
                         if let Type::Struct(ref name, Some(ref brand)) = resolved_arg
-                            && (name.starts_with("std_ThreadLocalContext") || name.starts_with("ThreadLocalContext"))
-                                && let Some(ref local_vars) = self.current_function_local_vars {
-                                    let arg_origins = self.get_expression_origins(&arguments[1]);
-                                    for origin in &arg_origins {
-                                        if local_vars.contains(origin) && origin != brand {
-                                            return Err(TypeError {
-                                                kind: TypeErrorKind::BrandLifetimeViolation,
-                                                message: format!(
-                                                    "Semantic Error: Thread-safety violation. Branded context has origin tracing back to thread-local stack variable '{}', preventing safe handoff across thread-spawning boundaries",
-                                                    origin
-                                                ),
-                                                span: Some(arguments[1].span()),
-                                            });
-                                        } 
-                                    } 
+                            && (name.starts_with("std_ThreadLocalContext")
+                                || name.starts_with("ThreadLocalContext"))
+                            && let Some(ref local_vars) = self.current_function_local_vars
+                        {
+                            let arg_origins = self.get_expression_origins(&arguments[1]);
+                            for origin in &arg_origins {
+                                if local_vars.contains(origin) && origin != brand {
+                                    return Err(TypeError {
+                                        kind: TypeErrorKind::BrandLifetimeViolation,
+                                        message: format!(
+                                            "Semantic Error: Thread-safety violation. Branded context has origin tracing back to thread-local stack variable '{}', preventing safe handoff across thread-spawning boundaries",
+                                            origin
+                                        ),
+                                        span: Some(arguments[1].span()),
+                                    });
                                 }
+                            }
+                        }
 
                         let is_tl_context = if let Type::Struct(ref n, _) = resolved_arg {
-                            n.starts_with("std_ThreadLocalContext") || n.starts_with("ThreadLocalContext")
+                            n.starts_with("std_ThreadLocalContext")
+                                || n.starts_with("ThreadLocalContext")
                         } else {
                             false
                         };
@@ -3012,7 +3164,7 @@ impl TypeChecker {
                         if !match_ok {
                             return Err(TypeError {
                                 kind: TypeErrorKind::TypeMismatch,
-                                message: format!( 
+                                message: format!(
                                     "Semantic Error: Thread spawn argument type mismatch. Expected {:?} but got {:?}",
                                     sig.params[0], resolved_arg
                                 ),
@@ -3024,7 +3176,10 @@ impl TypeChecker {
                     } else {
                         return Err(TypeError {
                             kind: TypeErrorKind::UndefinedFunction,
-                            message: format!("Semantic Error: Undefined function '{}' inside std.Spawn", func_name),
+                            message: format!(
+                                "Semantic Error: Undefined function '{}' inside std.Spawn",
+                                func_name
+                            ),
                             span: Some(arguments[0].span()),
                         });
                     }
@@ -3093,16 +3248,20 @@ impl TypeChecker {
                         });
                     }
                     let brand_name = expression_to_string(&arguments[0]);
-                    
+
                     let concrete_dir_name = format!("os_Dir_{}", brand_name);
                     let lookup_name = format!("LookupResult_{}", concrete_dir_name);
-                    
-                    let _ = self.monomorphize("os_Dir", &[Type::Struct(brand_name.clone(), None)])?;
-                    
+
+                    let _ =
+                        self.monomorphize("os_Dir", &[Type::Struct(brand_name.clone(), None)])?;
+
                     if !self.struct_registry.contains_key(&lookup_name) {
                         let mut fields = HashMap::new();
                         fields.insert("Ok".to_string(), Type::Int);
-                        fields.insert("Val".to_string(), Type::Struct(concrete_dir_name, Some(brand_name.clone())));
+                        fields.insert(
+                            "Val".to_string(),
+                            Type::Struct(concrete_dir_name, Some(brand_name.clone())),
+                        );
                         self.struct_registry.insert(
                             lookup_name.clone(),
                             StructLayout {
@@ -3111,7 +3270,7 @@ impl TypeChecker {
                             },
                         );
                     }
-                    
+
                     return Ok(Type::Struct(lookup_name, None));
                 }
 
@@ -3135,8 +3294,9 @@ impl TypeChecker {
                     }
                     let dir_type = self.check_expression(&arguments[1])?;
                     let brand_name = expression_to_string(&arguments[0]);
-                    
-                    let expected_dir_type = Type::Struct(format!("os_Dir_{}", brand_name), Some(brand_name.clone()));
+
+                    let expected_dir_type =
+                        Type::Struct(format!("os_Dir_{}", brand_name), Some(brand_name.clone()));
                     if !types_match(&expected_dir_type, &dir_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
@@ -3147,16 +3307,20 @@ impl TypeChecker {
                             span: None,
                         });
                     }
-                    
-                    let _ = self.monomorphize("os_DirEntry", &[Type::Struct(brand_name.clone(), None)])?;
-                    
+
+                    let _ = self
+                        .monomorphize("os_DirEntry", &[Type::Struct(brand_name.clone(), None)])?;
+
                     let concrete_entry_name = format!("os_DirEntry_{}", brand_name);
                     let lookup_name = format!("LookupResult_{}", concrete_entry_name);
-                    
+
                     if !self.struct_registry.contains_key(&lookup_name) {
                         let mut fields = HashMap::new();
                         fields.insert("Ok".to_string(), Type::Int);
-                        fields.insert("Val".to_string(), Type::Struct(concrete_entry_name, Some(brand_name.clone())));
+                        fields.insert(
+                            "Val".to_string(),
+                            Type::Struct(concrete_entry_name, Some(brand_name.clone())),
+                        );
                         self.struct_registry.insert(
                             lookup_name.clone(),
                             StructLayout {
@@ -3165,7 +3329,7 @@ impl TypeChecker {
                             },
                         );
                     }
-                    
+
                     return Ok(Type::Struct(lookup_name, None));
                 }
 
@@ -3179,14 +3343,15 @@ impl TypeChecker {
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
                     if let Type::Struct(name, _) = &arg_type
-                        && name.starts_with("os_Dir_") {
-                            let arg_name = expression_to_string(&arguments[0]);
-                            self.open_directories.remove(&arg_name);
-                            return Ok(Type::Void);
-                        }
+                        && name.starts_with("os_Dir_")
+                    {
+                        let arg_name = expression_to_string(&arguments[0]);
+                        self.open_directories.remove(&arg_name);
+                        return Ok(Type::Void);
+                    }
                     return Err(TypeError {
                         kind: TypeErrorKind::TypeMismatch,
-                        message: format!( 
+                        message: format!(
                             "Semantic Error: os.CloseDir expects an os.Dir handle, but got {:?}",
                             arg_type
                         ),
@@ -3228,7 +3393,8 @@ impl TypeChecker {
                 }
 
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
-                    self.resolved_names.insert(function.span(), func_path.clone());
+                    self.resolved_names
+                        .insert(function.span(), func_path.clone());
 
                     // Evaluate arguments first for complete visibility and rich logging
                     let mut evaluated_args = Vec::new();
@@ -3247,10 +3413,10 @@ impl TypeChecker {
                         evaluated_args
                     );
 
-                    if sig.params.len() != arguments.len() { 
+                    if sig.params.len() != arguments.len() {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
-                            message: format!( 
+                            message: format!(
                                 "Semantic Error: Function '{}' expects {} arguments but got {}",
                                 func_path,
                                 sig.params.len(),
@@ -3283,7 +3449,7 @@ impl TypeChecker {
                         if !types_match(&substituted_expected, resolved_arg) {
                             return Err(TypeError {
                                 kind: TypeErrorKind::TypeMismatch,
-                                message: format!( 
+                                message: format!(
                                     "Semantic Error: Argument type mismatch for function '{}'. Expected {:?} but got {:?}",
                                     func_path, substituted_expected, resolved_arg
                                 ),
@@ -3295,7 +3461,10 @@ impl TypeChecker {
                     return Ok(resolved_return);
                 }
 
-                if func_path == "os.Arena.New" || func_path == "os_Arena_New" || func_path == "os_Arena.New" {
+                if func_path == "os.Arena.New"
+                    || func_path == "os_Arena_New"
+                    || func_path == "os_Arena.New"
+                {
                     if !arguments.is_empty() {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
@@ -3334,7 +3503,9 @@ impl TypeChecker {
                     {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
-                            message: "Semantic Error: ArenaAlloc argument must be an Arena allocator".to_string(),
+                            message:
+                                "Semantic Error: ArenaAlloc argument must be an Arena allocator"
+                                    .to_string(),
                             span: None,
                         });
                     }
@@ -3370,18 +3541,24 @@ impl TypeChecker {
                     if !arguments.is_empty() {
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
-                            message: "Semantic Error: os.GetThreadScratch expects 0 arguments".to_string(),
+                            message: "Semantic Error: os.GetThreadScratch expects 0 arguments"
+                                .to_string(),
                             span: Some(expr.span()),
                         });
                     }
                     let mut active_arena_name = "ctx".to_string();
                     for (name, ty) in &self.symbol_table {
-                        if *ty == Type::Arena || matches!(ty, Type::RawPointer(inner) if **inner == Type::Arena) {
+                        if *ty == Type::Arena
+                            || matches!(ty, Type::RawPointer(inner) if **inner == Type::Arena)
+                        {
                             active_arena_name = name.clone();
                             break;
                         }
                     }
-                    return Ok(Type::Struct("std_ThreadLocalContext".to_string(), Some(active_arena_name)));
+                    return Ok(Type::Struct(
+                        "std_ThreadLocalContext".to_string(),
+                        Some(active_arena_name),
+                    ));
                 }
 
                 if func_path == "os.LogInt" || func_path == "os_LogInt" {
@@ -3439,7 +3616,10 @@ impl TypeChecker {
                     if self.imports.contains_key(alias) {
                         return Err(TypeError {
                             kind: TypeErrorKind::UndefinedFunction,
-                            message: format!("Semantic Error: Undefined function '{}'", raw_func_path),
+                            message: format!(
+                                "Semantic Error: Undefined function '{}'",
+                                raw_func_path
+                            ),
                             span: Some(function.span()),
                         });
                     }
@@ -3454,7 +3634,10 @@ impl TypeChecker {
                 }
 
                 if let Expression::Selector { left, right, .. } = &**function {
-                    let left_type = self.check_expression(left)?;
+                    let mut left_type = self.check_expression(left)?;
+                    if let Type::RawPointer(inner) = &left_type {
+                        left_type = *inner.clone();
+                    }
                     let left_str = expression_to_string(left);
                     if let Type::Struct(struct_name, _) = &left_type {
                         if (struct_name.starts_with("Vector_")
@@ -3480,7 +3663,7 @@ impl TypeChecker {
                             if !types_match(&elem_type, &arg_type) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
-                                    message: format!( 
+                                    message: format!(
                                         "Argument type mismatch for Vector.Push. Expected {:?} but got {:?}",
                                         elem_type, arg_type
                                     ),
@@ -3609,14 +3792,14 @@ impl TypeChecker {
                             if !types_match(&k_type, &k_arg) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
-                                    message: format!( 
+                                    message: format!(
                                         "Key type mismatch for HashMap.Get. Expected {:?} but got {:?}",
                                         k_type, k_arg
                                     ),
                                     span: None,
                                 });
                             }
-                            let lookup_struct_name = 
+                            let lookup_struct_name =
                                 format!("LookupResult_{}", self.get_type_ident(&v_type));
                             if !self.struct_registry.contains_key(&lookup_struct_name) {
                                 let mut fields = HashMap::new();
@@ -3639,7 +3822,8 @@ impl TypeChecker {
                             if arguments.len() != 1 {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
-                                    message: "HashMap.Remove expects exactly 1 argument".to_string(),
+                                    message: "HashMap.Remove expects exactly 1 argument"
+                                        .to_string(),
                                     span: None,
                                 });
                             }
@@ -3654,7 +3838,7 @@ impl TypeChecker {
                             if !types_match(&k_type, &k_arg) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
-                                    message: format!( 
+                                    message: format!(
                                         "Key type mismatch for HashMap.Remove. Expected {:?} but got {:?}",
                                         k_type, k_arg
                                     ),
@@ -3670,7 +3854,8 @@ impl TypeChecker {
                             if !arguments.is_empty() {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
-                                    message: "HashMap.Clear expects exactly 0 arguments".to_string(),
+                                    message: "HashMap.Clear expects exactly 0 arguments"
+                                        .to_string(),
                                     span: None,
                                 });
                             }
@@ -3693,7 +3878,8 @@ impl TypeChecker {
                             {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
-                                    message: "HashMap.Keys argument must be an Arena allocator".to_string(),
+                                    message: "HashMap.Keys argument must be an Arena allocator"
+                                        .to_string(),
                                     span: None,
                                 });
                             }
@@ -3796,18 +3982,26 @@ impl TypeChecker {
                             struct_name.starts_with("Rc_") || struct_name.starts_with("std_Rc_");
                         let is_graph = struct_name.starts_with("Graph_")
                             || struct_name.starts_with("std_Graph_");
-                        let is_mutex = 
-                            struct_name.starts_with("Mutex_") || struct_name.starts_with("std_Mutex_");
-                        let is_channel = 
-                            struct_name.starts_with("Channel_") || struct_name.starts_with("std_Channel_");
-                        let is_gen_arena =
-                            struct_name.starts_with("std_GenerationalArena_") || struct_name.starts_with("GenerationalArena_");
+                        let is_mutex = struct_name.starts_with("Mutex_")
+                            || struct_name.starts_with("std_Mutex_");
+                        let is_channel = struct_name.starts_with("Channel_")
+                            || struct_name.starts_with("std_Channel_");
+                        let is_gen_arena = struct_name.starts_with("std_GenerationalArena_")
+                            || struct_name.starts_with("GenerationalArena_");
 
-                        if is_gen_arena && (right == "Step" || right == "step" || right == "Swap" || right == "swap") {
+                        if is_gen_arena
+                            && (right == "Step"
+                                || right == "step"
+                                || right == "Swap"
+                                || right == "swap")
+                        {
                             if !arguments.is_empty() {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::ArgumentMismatch,
-                                    message: format!("GenerationalArena.{} expects exactly 0 arguments", right),
+                                    message: format!(
+                                        "GenerationalArena.{} expects exactly 0 arguments",
+                                        right
+                                    ),
                                     span: None,
                                 });
                             }
@@ -3857,17 +4051,18 @@ impl TypeChecker {
                                 });
                             }
                             let arg_type = self.check_expression(&arguments[0])?;
-                            let elem_type = self.get_channel_element_type(struct_name).ok_or_else(|| {
-                                TypeError {
-                                    kind: TypeErrorKind::TypeMismatch,
-                                    message: "Invalid Channel struct layout".to_string(),
-                                    span: None,
-                                }
-                            })?;
+                            let elem_type =
+                                self.get_channel_element_type(struct_name).ok_or_else(|| {
+                                    TypeError {
+                                        kind: TypeErrorKind::TypeMismatch,
+                                        message: "Invalid Channel struct layout".to_string(),
+                                        span: None,
+                                    }
+                                })?;
                             if !types_match(&elem_type, &arg_type) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
-                                    message: format!( 
+                                    message: format!(
                                         "Argument type mismatch for Channel.Send. Expected {:?} but got {:?}",
                                         elem_type, arg_type
                                     ),
@@ -3876,16 +4071,17 @@ impl TypeChecker {
                             }
 
                             if self.is_linear(&elem_type)
-                                && !matches!(arguments[0], Expression::Move(_, _)) {
-                                    return Err(TypeError {
-                                        kind: TypeErrorKind::BrandLifetimeViolation,
-                                        message: format!( 
-                                            "Semantic Error: Channel.Send for linear type {:?} must consume ownership using the 'move' operator",
-                                            elem_type
-                                        ),
-                                        span: Some(arguments[0].span()),
-                                    });
-                                }
+                                && !matches!(arguments[0], Expression::Move(_, _))
+                            {
+                                return Err(TypeError {
+                                    kind: TypeErrorKind::BrandLifetimeViolation,
+                                    message: format!(
+                                        "Semantic Error: Channel.Send for linear type {:?} must consume ownership using the 'move' operator",
+                                        elem_type
+                                    ),
+                                    span: Some(arguments[0].span()),
+                                });
+                            }
 
                             return Ok(Type::Void);
                         }
@@ -3898,13 +4094,14 @@ impl TypeChecker {
                                     span: None,
                                 });
                             }
-                            let elem_type = self.get_channel_element_type(struct_name).ok_or_else(|| {
-                                TypeError {
-                                    kind: TypeErrorKind::TypeMismatch,
-                                    message: "Invalid Channel struct layout".to_string(),
-                                    span: None,
-                                }
-                            })?;
+                            let elem_type =
+                                self.get_channel_element_type(struct_name).ok_or_else(|| {
+                                    TypeError {
+                                        kind: TypeErrorKind::TypeMismatch,
+                                        message: "Invalid Channel struct layout".to_string(),
+                                        span: None,
+                                    }
+                                })?;
                             return Ok(elem_type);
                         }
 
@@ -4116,7 +4313,7 @@ impl TypeChecker {
                         }
                     }
                     if left_type == Type::Arena && right == "Free" {
-                        if !arguments.is_empty() { 
+                        if !arguments.is_empty() {
                             return Err(TypeError {
                                 kind: TypeErrorKind::ArgumentMismatch,
                                 message: "Arena.Free() expects 0 arguments".to_string(),

@@ -205,9 +205,10 @@ impl TypeChecker {
                 self.monomorphize(name, &resolved_args?)
             }
             Type::Struct(name, brand) => {
-                if name.starts_with("LookupResult_")
+                let clean_name = strip_brand_prefix(name);
+                if clean_name.starts_with("LookupResult_")
                     && !self.struct_registry.contains_key(name) {
-                        let target_struct = name.strip_prefix("LookupResult_").unwrap_or(name).to_string();
+                        let target_struct = clean_name.strip_prefix("LookupResult_").unwrap_or(clean_name).to_string();
                         let v_type = if target_struct == "int" {
                             Type::Int
                         } else {
@@ -225,9 +226,9 @@ impl TypeChecker {
                         );
                     }
 
-                if name.starts_with("CastResult_")
+                if clean_name.starts_with("CastResult_")
                     && !self.struct_registry.contains_key(name) {
-                        let target_struct = name.strip_prefix("CastResult_").unwrap_or(name).to_string();
+                        let target_struct = clean_name.strip_prefix("CastResult_").unwrap_or(clean_name).to_string();
                         let v_type = if target_struct == "int" {
                             Type::Int
                         } else {
