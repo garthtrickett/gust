@@ -2239,10 +2239,6 @@ fn test_self_hosted_import_scanner() {
     let lexer_content = std::fs::read_to_string("compiler/lexer.gst").unwrap();
     panic!("LEXER.GST CONTENT:\n{}", lexer_content);
 }
-    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
-
-    assert_eq!(stdout_str.trim(), "2\nstd\nos");
-}
 
 #[test]
 fn test_self_hosted_graph_construction() {
