@@ -1260,12 +1260,7 @@ impl Codegen {
                 };
 
                 *self.current_alloc_struct.borrow_mut() = None;
-                if value.is_some() {
-                    result.push_str(&format!("    {} {};\n", type_str, name));
-                    result.push_str(&format!("    {} = {};\n", name, val_str));
-                } else {
-                    result.push_str(&format!("    {} {} = {};\n", type_str, name, val_str));
-                }
+                result.push_str(&format!("    {} {} = {};\n", type_str, name, val_str));
             }
             Statement::Assignment { left, value, .. } => {
                 let mut target_struct = None;
