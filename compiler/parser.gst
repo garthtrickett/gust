@@ -2,9 +2,9 @@ import "token.gst" as token;
 import "lexer.gst" as lexer;
 import "errors.gst" as errors;
 
-type ParseResult[T, ctx] struct {
+type ParseResult struct {
     Ok: int,
-    Val: T
+    Val: token.Token[Any]
 }
 
 type Parser[ctx] struct {
@@ -55,15 +55,15 @@ func peek_token_is(p: *Parser[ctx], tag: int) bool {
     }
 }
 
-func expect_peek(p: *Parser[ctx], tag: int, ctx: &Arena) ParseResult[token.Token[ctx], ctx] {
+func expect_peek(p: *Parser[ctx], tag: int, ctx: &Arena) ParseResult {
     unsafe {
-        mut res_ptr := p as *ParseResult[token.Token[ctx], ctx];
+        mut res_ptr := p as *ParseResult;
         mut res := *res_ptr;
         if (*p).peek_token.token_type.tag == tag {
             res.Ok = 1;
             res.Val = (*p).peek_token;
             next_token(p);
-        } else {
+        } else { 
             res.Ok = 0;
             res.Val = (*p).peek_token;
             
