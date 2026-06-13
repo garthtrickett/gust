@@ -69,6 +69,32 @@ func get_dirname(path: str, ctx: &Arena) str {
     return std.str_slice(path, 0, last_slash);
 }
 
+func discover_source_files(dir_path: str, ctx: &Arena) std.Vector[str, ctx] {
+    guard d := os.OpenDir(ctx, dir_path) else {
+        mut empty_vec: std.Vector[str, ctx] := std.VectorNew(ctx);
+        return empty_vec;
+    }
+
+    mut files: std.Vector[str, ctx] := std.VectorNew(ctx);
+    mut loop_active := 1;
+    while loop_active == 1 {
+        mut opt_entry := os.ReadDir(ctx, d);
+        if opt_entry.Ok {
+            mut name := opt_entry.Val.name;
+            if len(name) > 4 {
+                mut ext := std.str_slice(name, len(name) - 4, len(name));
+                if std.str_eq(ext, ".gst") {
+                    files.Push(os.path_join(dir_path, name, ctx));
+                }
+            }
+        } else {
+            loop_active = 0;
+        }
+    }
+    os.CloseDir(d);
+    return files;
+}
+
 func resolve_imports_recursive(entry_path: str, graph: *std.Graph[str, ctx], path_to_node: *std.HashMap[str, int, ctx], ctx: &Arena) {
     unsafe {
         mut lookup := (*path_to_node).Get(entry_path);
