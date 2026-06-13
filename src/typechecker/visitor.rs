@@ -922,26 +922,36 @@ impl TypeChecker {
                 span,
                 ..
             } = stmt
-            { 
+            {
                 let namespaced_name = format!("{}{}", self.current_prefix, name);
                 self.resolved_names.insert(*span, namespaced_name.clone());
 
                 let resolved_params: Result<Vec<Type>, TypeError> = params
                     .iter()
-                    .map(|p| { 
+                    .map(|p| {
                         let resolved = self.resolve_type(&p.param_type)?;
                         self.resolve_type_namespacing(&resolved)
                     })
                     .collect();
                 let resolved_return = self.resolve_type(return_type)?;
                 let resolved_return = self.resolve_type_namespacing(&resolved_return)?;
-                let param_names = params.iter().map(|p| p.name.clone()).collect();
+                let param_names: Vec<String> = params.iter().map(|p| p.name.clone()).collect();
+
+                let params_ok = resolved_params?;
+
+                tracing::debug!(
+                    "🗄️ Function Pre-Registration: Raw name: '{}', Namespaced: '{}', Parameter Count: {}, Params: {:?}",
+                    name,
+                    namespaced_name,
+                    params_ok.len(),
+                    param_names.iter().zip(params_ok.iter()).map(|(p_name, p_type)| format!("{}: {:?}", p_name, p_type)).collect::<Vec<_>>()
+                );
 
                 self.function_registry.insert(
                     namespaced_name.clone(),
                     super::types::FunctionSignature {
                         param_names,
-                        params: resolved_params?,
+                        params: params_ok,
                         return_type: resolved_return,
                         return_origins: HashSet::new(),
                     },
