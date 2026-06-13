@@ -56,9 +56,14 @@
               echo "📝 Test '$1' run. Output written to to.log"
             }
 
+            gcf() {
+              cargo clippy --fix --allow-dirty
+            }
+
             echo "💡 Available Commands:"
             echo "  gtl             - Run all tests with debug logging directed to to.log"
             echo "  gt-one <test_name> - Run a specific test with debug logging directed to to.log"
+            echo "  gcf             - Run 'cargo clippy --fix --allow-dirty'"
           '';
         };
       });
