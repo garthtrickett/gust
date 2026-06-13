@@ -11,18 +11,25 @@ func scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {
     lexer.next_token(&l, &t);
 
     while loop_active == 1 {
-        if t.token_type.tag == 28 { // TokenType::Import = 28
+        if t.token_type.tag != 28 { // TokenType::Import = 28
+            if t.token_type.tag == 10 { // TokenType::Semicolon = 10
+                lexer.next_token(&l, &t);
+            } else {
+                loop_active = 0;
+            }
+        } else {
             mut path_tok: token.Token[ctx];
             lexer.next_token(&l, &path_tok);
             
-            mut is_valid_path := 0;
-            if path_tok.token_type.tag == 4 {
-                is_valid_path = 1;
+            mut is_valid := 0;
+            if path_tok.token_type.tag == 4 { // TokenType::String = 4
+                is_valid = 1;
             }
-            if path_tok.token_type.tag == 2 {
-                is_valid_path = 1;
+            if path_tok.token_type.tag == 2 { // TokenType::Ident = 2
+                is_valid = 1;
             }
-            if is_valid_path == 1 {
+            
+            if is_valid == 1 {
                 paths.Push(std.Clone(ctx, path_tok.literal));
             }
 
@@ -37,12 +44,6 @@ func scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {
             } else {
                 // The token following the path is not "as", so it might be a semicolon or the next import
                 t = next_tok;
-            }
-        } else {
-            if t.token_type.tag == 10 { // TokenType::Semicolon = 10
-                lexer.next_token(&l, &t);
-            } else {
-                loop_active = 0;
             }
         }
     }

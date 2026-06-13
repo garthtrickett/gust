@@ -1,114 +1,141 @@
 import "token.gst" as token;
 
-type FieldDef[astCtx] struct {
+type FieldDef[ctx] struct {
     name: str,
-    field_type: str,
+    field_type: Type[ctx],
     span: token.Span
 }
 
-type Parameter[astCtx] struct {
+type Parameter[ctx] struct {
     name: str,
-    param_type: str,
+    param_type: Type[ctx],
     span: token.Span
 }
 
-type VariantDef[astCtx] struct {
+type VariantDef[ctx] struct {
     name: str,
-    fields: Index[std.Vector[FieldDef[astCtx], astCtx], astCtx],
+    fields: Index[std.Vector[FieldDef[ctx], ctx], ctx],
     span: token.Span
 }
 
-type MatchCase[astCtx] struct {
+type MatchCase[ctx] struct {
     variant_name: str,
-    fields: Index[std.Vector[str, astCtx], astCtx],
-    body: Index[BlockStatement[astCtx], astCtx],
+    fields: Index[std.Vector[str, ctx], ctx],
+    body: BlockStatement[ctx],
     span: token.Span
 }
 
-type BlockStatement[astCtx] struct {
-    statements: Index[std.Vector[Index[Statement[astCtx], astCtx], astCtx], astCtx],
+type BlockStatement[ctx] struct {
+    statements: Index[std.Vector[Statement[ctx], ctx], ctx],
     span: token.Span
 }
 
-type Statement[astCtx] enum {
+type Type[ctx] enum {
+    Int,
+    Byte,
+    Bool,
+    Void,
+    Arena,
+    Str,
+    Slice {
+        inner: Index[Type[ctx], ctx]
+    },
+    Index {
+        struct_name: str,
+        brand: Index[str, ctx]
+    },
+    Struct {
+        struct_name: str,
+        brand: Index[str, ctx]
+    },
+    RawPointer {
+        inner: Index[Type[ctx], ctx]
+    },
+    Generic {
+        name: str,
+        args: Index[std.Vector[Type[ctx], ctx], ctx]
+    }
+}
+
+type Statement[ctx] enum {
     Import {
         path: str,
-        alias: str,
+        alias: Index[str, ctx],
         span: token.Span
     },
     StructDecl {
         name: str,
-        generics: Index[std.Vector[str, astCtx], astCtx],
-        fields: Index[std.Vector[FieldDef[astCtx], astCtx], astCtx],
+        generics: Index[std.Vector[str, ctx], ctx],
+        fields: Index[std.Vector[FieldDef[ctx], ctx], ctx],
         span: token.Span
     },
     EnumDecl {
         name: str,
-        generics: Index[std.Vector[str, astCtx], astCtx],
-        variants: Index[std.Vector[VariantDef[astCtx], astCtx], astCtx],
+        generics: Index[std.Vector[str, ctx], ctx],
+        variants: Index[std.Vector[VariantDef[ctx], ctx], ctx],
         span: token.Span
     },
     FunctionDecl {
         name: str,
-        params: Index[std.Vector[Parameter[astCtx], astCtx], astCtx],
-        return_type: str,
-        body: Index[BlockStatement[astCtx], astCtx],
+        params: Index[std.Vector[Parameter[ctx], ctx], ctx],
+        return_type: Index[Type[ctx], ctx],
+        body: BlockStatement[ctx],
         span: token.Span
     },
     VarDecl {
         name: str,
-        is_mut: bool,
-        value: Index[Expression[astCtx], astCtx],
-        var_type: str,
+        is_mut: int,
+        value: Index[Expression[ctx], ctx],
+        var_type: Index[Type[ctx], ctx],
         span: token.Span
     },
     Assignment {
-        left: Index[Expression[astCtx], astCtx],
-        value: Index[Expression[astCtx], astCtx],
+        left: Index[Expression[ctx], ctx],
+        value: Index[Expression[ctx], ctx],
         span: token.Span
     },
     While {
-        condition: Index[Expression[astCtx], astCtx],
-        body: Index[BlockStatement[astCtx], astCtx],
+        condition: Index[Expression[ctx], ctx],
+        body: BlockStatement[ctx],
         span: token.Span
     },
     If {
-        condition: Index[Expression[astCtx], astCtx],
-        consequence: Index[BlockStatement[astCtx], astCtx],
-        alternative: Index[BlockStatement[astCtx], astCtx],
+        condition: Index[Expression[ctx], ctx],
+        consequence: BlockStatement[ctx],
+        alternative: BlockStatement[ctx],
         span: token.Span
     },
     Match {
-        expression: Index[Expression[astCtx], astCtx],
-        cases: Index[std.Vector[MatchCase[astCtx], astCtx], astCtx],
+        expression: Index[Expression[ctx], ctx],
+        cases: Index[std.Vector[MatchCase[ctx], ctx], ctx],
         span: token.Span
     },
     Guard {
         name: str,
-        is_mut: bool,
-        value: Index[Expression[astCtx], astCtx],
-        else_body: Index[BlockStatement[astCtx], astCtx],
+        is_mut: int,
+        value: Index[Expression[ctx], ctx],
+        else_body: BlockStatement[ctx],
         span: token.Span
     },
     UnsafeBlock {
-        body: Index[BlockStatement[astCtx], astCtx],
+        body: BlockStatement[ctx],
         span: token.Span
     },
     Defer {
-        expr: Index[Expression[astCtx], astCtx],
+        expr: Index[Expression[ctx], ctx],
         span: token.Span
     },
     Return {
-        expr: Index[Expression[astCtx], astCtx],
+        expr: Index[Expression[ctx], ctx],
         span: token.Span
     },
     Expression {
-        expr: Index[Expression[astCtx], astCtx],
+        expr: Index[Expression[ctx], ctx],
         span: token.Span
     }
 }
 
-type Expression[astCtx] enum {
+type Expression[ctx] enum {
     Identifier {
         name: str,
         span: token.Span
@@ -117,64 +144,64 @@ type Expression[astCtx] enum {
         val: int,
         span: token.Span
     },
-    StringVal {
+    String {
         val: str,
         span: token.Span
     },
-    BoolVal {
-        val: bool,
+    Bool {
+        val: int,
         span: token.Span
     },
     Move {
-        inner: Index[Expression[astCtx], astCtx],
+        expr: Index[Expression[ctx], ctx],
         span: token.Span
     },
     Take {
-        inner: Index[Expression[astCtx], astCtx],
+        expr: Index[Expression[ctx], ctx],
         span: token.Span
     },
     AddressOf {
-        inner: Index[Expression[astCtx], astCtx],
+        expr: Index[Expression[ctx], ctx],
         span: token.Span
     },
     Dereference {
-        inner: Index[Expression[astCtx], astCtx],
+        expr: Index[Expression[ctx], ctx],
         span: token.Span
     },
     IndexAccess {
-        allocator: Index[Expression[astCtx], astCtx],
-        index: Index[Expression[astCtx], astCtx],
+        allocator: Index[Expression[ctx], ctx],
+        index: Index[Expression[ctx], ctx],
         span: token.Span
     },
     AsCast {
-        left: Index[Expression[astCtx], astCtx],
-        target_type: str,
-        is_reference: bool,
+        left: Index[Expression[ctx], ctx],
+        target_type: Index[Type[ctx], ctx],
+        is_reference: int,
         span: token.Span
     },
     Binary {
         op: str,
-        left: Index[Expression[astCtx], astCtx],
-        right: Index[Expression[astCtx], astCtx],
+        left: Index[Expression[ctx], ctx],
+        right: Index[Expression[ctx], ctx],
         span: token.Span
     },
     Selector {
-        left: Index[Expression[astCtx], astCtx],
+        left: Index[Expression[ctx], ctx],
         right: str,
         span: token.Span
     },
     Call {
-        function: Index[Expression[astCtx], astCtx],
-        arguments: Index[std.Vector[Index[Expression[astCtx], astCtx], astCtx], astCtx],
+        function: Index[Expression[ctx], ctx],
+        arguments: Index[std.Vector[Expression[ctx], ctx], ctx],
         span: token.Span
     },
     Empty {
-        target_type: str,
+        target_type: Index[Type[ctx], ctx],
         span: token.Span
     }
 }
 
-type Program[astCtx] struct {
-    statements: Index[std.Vector[Index[Statement[astCtx], astCtx], astCtx], astCtx],
+type Program[ctx] struct {
+    statements: Index[std.Vector[Statement[ctx], ctx], ctx],
     span: token.Span
 }
