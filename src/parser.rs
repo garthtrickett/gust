@@ -1049,7 +1049,9 @@ impl Parser {
                 | TokenType::Lt
                 | TokenType::Gt
                 | TokenType::LtEq
-                | TokenType::GtEq => {
+                | TokenType::GtEq
+                | TokenType::AmpAmp
+                | TokenType::PipePipe => {
                     let op_str = self.peek_token.literal.clone();
                     let op_prec = self.peek_token_precedence();
 
@@ -1101,7 +1103,7 @@ impl Parser {
             TokenType::Move => {
                 let start_span = self.cur_token.span;
                 self.next_token();
-                let expr = self.parse_expression(6)?;
+                let expr = self.parse_expression(8)?;
                 let end_span = expr.span();
                 Some(Expression::Move(
                     Box::new(expr),
@@ -1111,7 +1113,7 @@ impl Parser {
             TokenType::Take => {
                 let start_span = self.cur_token.span;
                 self.next_token();
-                let expr = self.parse_expression(6)?;
+                let expr = self.parse_expression(8)?;
                 let end_span = expr.span();
                 Some(Expression::Take(
                     Box::new(expr),
@@ -1121,7 +1123,7 @@ impl Parser {
             TokenType::Ampersand => {
                 let start_span = self.cur_token.span;
                 self.next_token();
-                let expr = self.parse_expression(6)?;
+                let expr = self.parse_expression(8)?;
                 let end_span = expr.span();
                 Some(Expression::AddressOf(
                     Box::new(expr),
@@ -1131,7 +1133,7 @@ impl Parser {
             TokenType::Asterisk => {
                 let start_span = self.cur_token.span;
                 self.next_token();
-                let expr = self.parse_expression(6)?;
+                let expr = self.parse_expression(8)?;
                 let end_span = expr.span();
                 Some(Expression::Dereference(
                     Box::new(expr),
@@ -1161,12 +1163,14 @@ impl Parser {
 
     fn peek_token_precedence(&self) -> i32 {
         match self.peek_token.token_type {
-            TokenType::EqEq | TokenType::NotEq => 2,
-            TokenType::Lt | TokenType::Gt | TokenType::LtEq | TokenType::GtEq => 3,
-            TokenType::Plus | TokenType::Minus => 4,
-            TokenType::Asterisk | TokenType::Slash => 5,
-            TokenType::As => 6,
-            TokenType::Dot | TokenType::LParen | TokenType::LBracket => 7,
+            TokenType::PipePipe => 2,
+            TokenType::AmpAmp => 3,
+            TokenType::EqEq | TokenType::NotEq => 4,
+            TokenType::Lt | TokenType::Gt | TokenType::LtEq | TokenType::GtEq => 5,
+            TokenType::Plus | TokenType::Minus => 6,
+            TokenType::Asterisk | TokenType::Slash => 7,
+            TokenType::As => 8,
+            TokenType::Dot | TokenType::LParen | TokenType::LBracket => 9,
             _ => 1,
         }
     }
@@ -1266,6 +1270,14 @@ mod tests {
         );
         assert_eq!(format_expr(&parse_expr_str("a < b > c")), "((a < b) > c)");
         assert_eq!(format_expr(&parse_expr_str("a <= b >= c")), "((a <= b) >= c)");
+    }
+
+    #[test]
+    fn test_logical_operator_precedence() {
+        assert_eq!(
+            format_expr(&parse_expr_str("a < 10 || b > 20 && c == 0")),
+            "((a < 10) || ((b > 20) && (c == 0)))"
+        );
     }
 
     #[test]
