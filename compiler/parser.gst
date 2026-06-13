@@ -247,7 +247,7 @@ func parse_block_statement(p: *Parser[ctx], ctx: &Arena) ast.BlockStatement[ctx]
         
         while is_at_end(p) == 0 {
             mut stmt := parse_statement(p, ctx);
-            ctx[block.statements].Push(ctx[stmt]);
+            (*dest_ptr).Push(ctx[stmt]);
             
             if cur_token_is(p, 10) { // Semicolon = 10
                 next_token(p);
