@@ -8,9 +8,9 @@
             defer ctx.Free();
 
             mut l: lexer.Lexer[ctx];
-            lexer.init_lexer(&l, "*&move x");
+            lexer.init_lexer(&l, "mut a := 10;");
 
-            mut p: parser.Parser[ctx];
+            mut p: parser.Parser;
             parser.init_parser(&p, &l, ctx);
 
             mut expr := parser.parse_expression(&p, 1, ctx);

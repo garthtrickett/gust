@@ -22,8 +22,8 @@ func init_parser(p: *Parser[ctx], l: *lexer.Lexer[ctx], ctx: &Arena) {
         (*p).pushback_tokens = std.VectorNew(ctx);
         (*p).errors = std.VectorNew(ctx);
         
-        lexer.next_token((*p).lexer, &(*p).cur_token);
-        lexer.next_token((*p).lexer, &(*p).peek_token);
+        lexer.next_token((*p).lexer as *lexer.Lexer[ctx], &(*p).cur_token as *token.Token[ctx]);
+        lexer.next_token((*p).lexer as *lexer.Lexer[ctx], &(*p).peek_token as *token.Token[ctx]);
     }
 }
 
@@ -33,7 +33,7 @@ func next_token(p: *Parser[ctx]) {
         if len((*p).pushback_tokens) > 0 {
             (*p).peek_token = (*p).pushback_tokens.Pop();
         } else {
-            lexer.next_token((*p).lexer, &(*p).peek_token);
+            lexer.next_token((*p).lexer as *lexer.Lexer[ctx], &(*p).peek_token as *token.Token[ctx]);
         }
     }
 }
