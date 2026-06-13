@@ -16,7 +16,7 @@ func read_char(l: *Lexer[ctx]) {
     } else {
         if l.position > 0 {
             l.column = l.column + 1;
-        } else {
+        } else { 
             if l.ch != 0 {
                 l.column = l.column + 1;
             }
@@ -24,10 +24,14 @@ func read_char(l: *Lexer[ctx]) {
     }
 
     mut input_len := len(l.input);
-    if l.read_position >= input_len {
+    if l.read_position == input_len {
         l.ch = 0;
     } else {
-        l.ch = std.str_byte_at(l.input, l.read_position);
+        if l.read_position > input_len {
+            l.ch = 0;
+        } else {
+            l.ch = std.str_byte_at(l.input, l.read_position);
+        }
     }
     l.position = l.read_position;
     l.read_position = l.read_position + 1;
@@ -35,7 +39,10 @@ func read_char(l: *Lexer[ctx]) {
 
 func peek_char(l: *Lexer[ctx]) byte {
     mut input_len := len(l.input);
-    if l.read_position >= input_len {
+    if l.read_position == input_len {
+        return 0;
+    }
+    if l.read_position > input_len {
         return 0;
     }
     return std.str_byte_at(l.input, l.read_position);
