@@ -1,9 +1,9 @@
 {
-  "summary": "debug: add token print logging to scan_imports",
+  "summary": "fix: allow both string and ident tags as import paths in scan_imports, remove debug logs",
   "files": [
     {
       "file_path": "compiler/resolver.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {\n    mut paths: std.Vector[str, ctx] := std.VectorNew(ctx);\n    mut l: lexer.Lexer[ctx];\n    lexer.init_lexer(&l, source);\n\n    mut loop_active := 1;\n    mut t: token.Token[ctx];\n    lexer.next_token(&l, &t);\n\n    while loop_active == 1 {\n        if t.token_type.tag == 28 { // TokenType::Import = 28\n=======\nfunc scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {\n    mut paths: std.Vector[str, ctx] := std.VectorNew(ctx);\n    mut l: lexer.Lexer[ctx];\n    lexer.init_lexer(&l, source);\n\n    mut loop_active := 1;\n    mut t: token.Token[ctx];\n    lexer.next_token(&l, &t);\n\n    while loop_active == 1 {\n        os.LogStr(\"TOKEN:\");\n        os.LogInt(t.token_type.tag);\n        os.LogStr(t.literal);\n        if t.token_type.tag == 28 { // TokenType::Import = 28\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    while loop_active == 1 {\n        os.LogStr(\"TOKEN:\");\n        os.LogInt(t.token_type.tag);\n        os.LogStr(t.literal);\n        if t.token_type.tag == 28 { // TokenType::Import = 28\n            mut path_tok: token.Token[ctx];\n            lexer.next_token(&l, &path_tok);\n            if path_tok.token_type.tag == 4 { // TokenType::String = 4\n                paths.Push(std.Clone(ctx, path_tok.literal));\n            }\n=======\n    while loop_active == 1 {\n        if t.token_type.tag == 28 { // TokenType::Import = 28\n            mut path_tok: token.Token[ctx];\n            lexer.next_token(&l, &path_tok);\n            if path_tok.token_type.tag == 4 || path_tok.token_type.tag == 2 { // String = 4, Ident = 2\n                paths.Push(std.Clone(ctx, path_tok.literal));\n            }\n>>>>>>> REPLACE"
     }
   ]
 }

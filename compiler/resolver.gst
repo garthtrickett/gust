@@ -11,13 +11,10 @@ func scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {
     lexer.next_token(&l, &t);
 
     while loop_active == 1 {
-        os.LogStr("TOKEN:");
-        os.LogInt(t.token_type.tag);
-        os.LogStr(t.literal);
         if t.token_type.tag == 28 { // TokenType::Import = 28
             mut path_tok: token.Token[ctx];
             lexer.next_token(&l, &path_tok);
-            if path_tok.token_type.tag == 4 { // TokenType::String = 4
+            if path_tok.token_type.tag == 4 || path_tok.token_type.tag == 2 { // String = 4, Ident = 2
                 paths.Push(std.Clone(ctx, path_tok.literal));
             }
 
