@@ -2513,9 +2513,16 @@ impl TypeChecker {
                 function,
                 arguments,
                 ..
-            } => {
+            } = > {
                 let raw_func_path = expression_to_string(function);
                 let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or_else(|_| raw_func_path.clone());
+
+                tracing::debug!(
+                    "👁️ Expression::Call Evaluation Start: Raw Function: '{}', Resolved: '{}', Registry Has Key: {}",
+                    raw_func_path,
+                    func_path,
+                    self.function_registry.contains_key(&func_path)
+                );
 
                 if func_path == "std.Format" || func_path == "std_Format" {
                     self.resolved_names.insert(function.span(), func_path.clone());
@@ -3153,10 +3160,28 @@ impl TypeChecker {
 
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
                     self.resolved_names.insert(function.span(), func_path.clone());
-                    if sig.params.len() != arguments.len() {
+
+                    // Evaluate arguments first for complete visibility and rich logging
+                    let mut evaluated_args = Vec::new();
+                    for arg in arguments {
+                        let arg_type = self.check_expression(arg)?;
+                        let resolved_arg = self.resolve_type(&arg_type)?;
+                        evaluated_args.push((expression_to_string(arg), resolved_arg));
+                    }
+
+                    tracing::debug!(
+                        "👁️ Call-Site Verification: Raw Function: '{}', Resolved: '{}', Expected Params Count: {}, Expected Params: {:?}, Actual Args: {:?}",
+                        raw_func_path,
+                        func_path,
+                        sig.params.len(),
+                        sig.params,
+                        evaluated_args
+                    );
+
+                    if sig.params.len() != arguments.len() { 
                         return Err(TypeError {
                             kind: TypeErrorKind::ArgumentMismatch,
-                            message: format!(
+                            message: format!( 
                                 "Semantic Error: Function '{}' expects {} arguments but got {}",
                                 func_path,
                                 sig.params.len(),
@@ -3182,21 +3207,18 @@ impl TypeChecker {
                         }
                     }
 
-                    for (i, arg) in arguments.iter().enumerate() {
-                        let arg_type = self.check_expression(arg)?;
-                        let resolved_arg = self.resolve_type(&arg_type)?;
-
+                    for (i, (_arg_str, resolved_arg)) in evaluated_args.iter().enumerate() {
                         let substituted_expected =
                             self.substitute_brand_names(&sig.params[i], &brand_map);
 
-                        if !types_match(&substituted_expected, &resolved_arg) {
+                        if !types_match(&substituted_expected, resolved_arg) {
                             return Err(TypeError {
                                 kind: TypeErrorKind::TypeMismatch,
                                 message: format!( 
                                     "Semantic Error: Argument type mismatch for function '{}'. Expected {:?} but got {:?}",
                                     func_path, substituted_expected, resolved_arg
                                 ),
-                                span: Some(arg.span()), // Tier B: Point directly to offending argument
+                                span: Some(arguments[i].span()), // Tier B: Point directly to offending argument
                             });
                         }
                     }
