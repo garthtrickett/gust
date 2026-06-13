@@ -2423,8 +2423,8 @@ impl TypeChecker {
                 let alloc_type = self.check_expression(allocator)?;
                 let index_type = self.check_expression(index)?;
 
-                if let Type::RawPointer(inner) = &alloc_type {
-                    if **inner != Type::Arena {
+                if let Type::RawPointer(inner) = &alloc_type
+                    && **inner != Type::Arena {
                         if !self.in_unsafe_block {
                             return Err(TypeError {
                                 kind: TypeErrorKind::UnsafeProhibited,
@@ -2442,7 +2442,6 @@ impl TypeChecker {
                         let resolved_elem = self.resolve_type(inner)?;
                         return Ok(resolved_elem);
                     }
-                }
 
                 if let Type::Slice(elem_type) = &alloc_type {
                     if index_type != Type::Int && index_type != Type::Byte {

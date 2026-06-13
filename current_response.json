@@ -1,9 +1,0 @@
-{
-  "summary": "chore: add gcf alias for cargo clippy --fix --allow-dirty in flake.nix",
-  "files": [
-    {
-      "file_path": "flake.nix",
-      "code_diff": "<<<<<<< SEARCH\n            gt-one() {\n              if [ -z \"$1\" ]; then\n                echo \"❌ Error: Please provide a test name (e.g., gt-one test_self_hosted_import_scanner)\"\n                return 1\n              fi\n              RUST_LOG=debug cargo test \"$1\" -- --nocapture > to.log 2>&1\n              echo \"📝 Test '$1' run. Output written to to.log\"\n            }\n\n            echo \"💡 Available Commands:\"\n            echo \"  gtl             - Run all tests with debug logging directed to to.log\"\n            echo \"  gt-one <test_name> - Run a specific test with debug logging directed to to.log\"\n=======\n            gt-one() {\n              if [ -z \"$1\" ]; then\n                echo \"❌ Error: Please provide a test name (e.g., gt-one test_self_hosted_import_scanner)\"\n                return 1\n              fi\n              RUST_LOG=debug cargo test \"$1\" -- --nocapture > to.log 2>&1\n              echo \"📝 Test '$1' run. Output written to to.log\"\n            }\n\n            gcf() {\n              cargo clippy --fix --allow-dirty\n            }\n\n            echo \"💡 Available Commands:\"\n            echo \"  gtl             - Run all tests with debug logging directed to to.log\"\n            echo \"  gt-one <test_name> - Run a specific test with debug logging directed to to.log\"\n            echo \"  gcf             - Run 'cargo clippy --fix --allow-dirty'\"\n>>>>>>> REPLACE"
-    }
-  ]
-}
