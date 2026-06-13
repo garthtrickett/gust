@@ -1381,7 +1381,7 @@ impl TypeChecker {
                     let resolved_explicit = self.resolve_type_namespacing(&resolved_explicit)?;
                     self.resolved_types.insert(*span, resolved_explicit.clone());
 
-                    if !types_match(&resolved_explicit, &val_type) {
+                    if !self.types_match_modulo_brand(&resolved_explicit, &val_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: format!(
@@ -1425,12 +1425,12 @@ impl TypeChecker {
                                 ),
                                 span: Some(left.span()), // Tier B: Point directly to LHS identifier
                             })
-                        }
+                        } 
                     }
                     _ => self.check_expression(left),
                 }?;
                 let val_type = self.check_expression(value)?;
-                if !types_match(&left_type, &val_type) {
+                if !self.types_match_modulo_brand(&left_type, &val_type) {
                     return Err(TypeError {
                         kind: TypeErrorKind::TypeMismatch,
                         message: format!(
@@ -1870,7 +1870,7 @@ impl TypeChecker {
                 };
 
                 if let Some(expected_t) = &self.expected_return_type {
-                    if !types_match(expected_t, &actual_return) {
+                    if !self.types_match_modulo_brand(expected_t, &actual_return) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: format!(
@@ -2597,7 +2597,7 @@ impl TypeChecker {
                     return Ok(left_type);
                 }
 
-                if !types_match(&left_type, &right_type) {
+                if !self.types_match_modulo_brand(&left_type, &right_type) {
                     return Err(TypeError {
                         kind: TypeErrorKind::TypeMismatch,
                         message: format!(
@@ -3301,7 +3301,7 @@ impl TypeChecker {
 
                     let expected_dir_type =
                         Type::Struct(format!("os_Dir_{}", brand_name), Some(brand_name.clone()));
-                    if !types_match(&expected_dir_type, &dir_type) {
+                    if !self.types_match_modulo_brand(&expected_dir_type, &dir_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: format!(
@@ -3465,7 +3465,7 @@ impl TypeChecker {
                         let substituted_expected =
                             self.substitute_brand_names(&sig.params[i], &brand_map);
 
-                        if !types_match(&substituted_expected, resolved_arg) {
+                        if !self.types_match_modulo_brand(&substituted_expected, resolved_arg) {
                             return Err(TypeError {
                                 kind: TypeErrorKind::TypeMismatch,
                                 message: format!(
@@ -3680,7 +3680,7 @@ impl TypeChecker {
                                         span: None,
                                     }
                                 })?;
-                            if !types_match(&elem_type, &arg_type) {
+                            if !self.types_match_modulo_brand(&elem_type, &arg_type) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: format!(
@@ -3768,7 +3768,7 @@ impl TypeChecker {
                                     message: "Invalid HashMap struct layout".to_string(),
                                     span: None,
                                 })?;
-                            if !types_match(&k_type, &k_arg) {
+                            if !self.types_match_modulo_brand(&k_type, &k_arg) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: format!(
@@ -3778,7 +3778,7 @@ impl TypeChecker {
                                     span: None,
                                 });
                             }
-                            if !types_match(&v_type, &v_arg) {
+                            if !self.types_match_modulo_brand(&v_type, &v_arg) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: format!(
@@ -3809,7 +3809,7 @@ impl TypeChecker {
                                     message: "Invalid HashMap struct layout".to_string(),
                                     span: None,
                                 })?;
-                            if !types_match(&k_type, &k_arg) {
+                            if !self.types_match_modulo_brand(&k_type, &k_arg) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: format!(
@@ -3855,7 +3855,7 @@ impl TypeChecker {
                                     message: "Invalid HashMap struct layout".to_string(),
                                     span: None,
                                 })?;
-                            if !types_match(&k_type, &k_arg) {
+                            if !self.types_match_modulo_brand(&k_type, &k_arg) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: format!(
@@ -3936,7 +3936,7 @@ impl TypeChecker {
                                         span: None,
                                     }
                                 })?;
-                            if !types_match(&elem_type, &arg_type) {
+                            if !self.types_match_modulo_brand(&elem_type, &arg_type) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: format!(
@@ -3985,7 +3985,7 @@ impl TypeChecker {
                                 _ => "SessionNode".to_string(),
                             };
                             let expected_index_type = Type::Index(elem_struct_name, brand_name);
-                            if !types_match(&expected_index_type, &arg_type) {
+                            if !self.types_match_modulo_brand(&expected_index_type, &arg_type) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: format!(
@@ -4079,7 +4079,7 @@ impl TypeChecker {
                                         span: None,
                                     }
                                 })?;
-                            if !types_match(&elem_type, &arg_type) {
+                            if !self.types_match_modulo_brand(&elem_type, &arg_type) {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
                                     message: format!(
@@ -4198,7 +4198,7 @@ impl TypeChecker {
                             }
 
                             if let Some(expected_t) = t_type
-                                && !types_match(&expected_t, &arg_type)
+                                && !self.types_match_modulo_brand(&expected_t, &arg_type)
                             {
                                 return Err(TypeError {
                                     kind: TypeErrorKind::TypeMismatch,
