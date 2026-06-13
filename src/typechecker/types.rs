@@ -35,6 +35,19 @@ pub fn strip_brand_prefix(brand: &str) -> &str {
     }
 }
 
+pub fn normalize_struct_name(name: &str, brand: &Option<String>) -> String {
+    let mut clean = name.to_string();
+    if let Some(b) = brand {
+        let stripped_b = strip_brand_prefix(b);
+        let old_suffix = format!("_{}", b);
+        let new_suffix = format!("_{}", stripped_b);
+        if clean.ends_with(&old_suffix) {
+            clean = format!("{}{}", &clean[..clean.len() - old_suffix.len()], new_suffix);
+        }
+    }
+    clean
+}
+
 // Brand crossing rule helper: checks if two types are structurally identical
 // but differ only by their value-brands.
 pub fn types_match_except_brand(expected: &Type, actual: &Type) -> bool {
@@ -77,8 +90,10 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             true
         }
         (Type::Index(e_struct, e_brand), Type::Index(a_struct, a_brand)) => {
-            let e_clean = strip_std_prefix(e_struct);
-            let a_clean = strip_std_prefix(a_struct);
+            let e_norm = normalize_struct_name(e_struct, e_brand);
+            let a_norm = normalize_struct_name(a_struct, a_brand);
+            let e_clean = strip_std_prefix(&e_norm);
+            let a_clean = strip_std_prefix(&a_norm);
             if e_clean != a_clean && e_clean != "Any" && a_clean != "Any" {
                 return false;
             }
@@ -94,8 +109,10 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             e_b == a_b
         }
         (Type::Struct(e_struct, e_brand), Type::Struct(a_struct, a_brand)) => {
-            let e_clean = strip_std_prefix(e_struct);
-            let a_clean = strip_std_prefix(a_struct);
+            let e_norm = normalize_struct_name(e_struct, e_brand);
+            let a_norm = normalize_struct_name(a_struct, a_brand);
+            let e_clean = strip_std_prefix(&e_norm);
+            let a_clean = strip_std_prefix(&a_norm);
             if e_clean != a_clean {
                 let is_vector_any = (e_clean.starts_with("Vector_")
                     && a_clean.starts_with("Vector_Any"))
