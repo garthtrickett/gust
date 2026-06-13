@@ -318,6 +318,10 @@ impl TypeChecker {
                                 Type::Int
                             } else if inner_t_name == "byte" {
                                 Type::Byte
+                            } else if inner_t_name == "bool" {
+                                Type::Bool
+                            } else if inner_t_name == "str" {
+                                Type::Str
                             } else {
                                 Type::Struct(inner_t_name, None)
                             };

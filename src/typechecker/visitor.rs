@@ -3431,6 +3431,11 @@ impl TypeChecker {
                     }
 
                     let mut brand_map = HashMap::new();
+                    let func_prefix = if let Some(pos) = func_path.rfind("__") {
+                        &func_path[..pos + 2]
+                    } else {
+                        ""
+                    };
                     for (i, (param_type, arg)) in
                         sig.params.iter().zip(arguments.iter()).enumerate()
                     {
@@ -3442,7 +3447,17 @@ impl TypeChecker {
                         if *param_type == Type::Arena || is_arena_ptr {
                             let formal_name = &sig.param_names[i];
                             let actual_name = expression_to_string(arg);
-                            brand_map.insert(formal_name.clone(), actual_name);
+                            brand_map.insert(formal_name.clone(), actual_name.clone());
+                            
+                            if !func_prefix.is_empty() {
+                                let namespaced_formal = format!("{}{}", func_prefix, formal_name);
+                                let namespaced_actual = if self.current_prefix.is_empty() {
+                                    actual_name.clone()
+                                } else {
+                                    format!("{}{}", self.current_prefix, actual_name)
+                                };
+                                brand_map.insert(namespaced_formal, namespaced_actual);
+                            }
                         }
                     }
 
