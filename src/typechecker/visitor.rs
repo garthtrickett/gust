@@ -1,6 +1,7 @@
 use super::TypeChecker;
 use super::types::{
-    StructLayout, Type, TypeError, TypeErrorKind, expression_to_string, types_match,
+    StructLayout, Type, TypeError, TypeErrorKind, expression_to_string, strip_brand_prefix,
+    types_match,
 };
 use crate::ast::{Expression, Program, Statement};
 use std::collections::{HashMap, HashSet};
@@ -2635,8 +2636,9 @@ impl TypeChecker {
                 }
 
                 if let Type::Struct(struct_name, _brand) = &left_type {
-                    if struct_name.starts_with("CastResult_")
-                        || struct_name.starts_with("LookupResult_")
+                    let clean_struct_name = strip_brand_prefix(struct_name);
+                    if clean_struct_name.starts_with("CastResult_")
+                        || clean_struct_name.starts_with("LookupResult_")
                     {
                         if right == "Ok" {
                             return Ok(Type::Int);
@@ -2654,12 +2656,12 @@ impl TypeChecker {
                                 });
                             }
 
-                            let prefix = if struct_name.starts_with("CastResult_") {
+                            let prefix = if clean_struct_name.starts_with("CastResult_") {
                                 "CastResult_"
                             } else {
                                 "LookupResult_"
                             };
-                            let target_struct = struct_name.trim_start_matches(prefix).to_string();
+                            let target_struct = clean_struct_name.strip_prefix(prefix).unwrap_or(&clean_struct_name).to_string();
                             if target_struct == "int" {
                                 return Ok(Type::Int);
                             }
