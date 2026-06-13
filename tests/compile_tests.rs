@@ -2408,7 +2408,7 @@ fn test_lexer_view_extraction() {
             defer ctx.Free();
             
             mut l: lexer.Lexer[ctx];
-            lexer.init_lexer(&l, \"identifier 12345 \\\"string\\\"\");
+            lexer.init_lexer(&l, \"identifier 12345 string\");
             
             mut ident: str := lexer.read_identifier(&l);
             lexer.skip_whitespace(&l);
