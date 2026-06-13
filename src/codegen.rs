@@ -1692,7 +1692,6 @@ impl Codegen {
                             use_arrow = true;
                         }
                     }
-                }
                 } else if let Expression::Selector {
                     left: inner_left,
                     right: inner_right,
