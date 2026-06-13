@@ -475,10 +475,10 @@ impl Codegen {
                     {
                         target_struct = struct_name;
                     }
-                    return Some(Type::RawPointer(Box::new(Type::Struct(
+                    return Some(Type::Struct(
                         target_struct,
                         None,
-                    ))));
+                    ));
                 }
                 None
             }
@@ -1704,12 +1704,12 @@ impl Codegen {
 
                     if use_arrow {
                         format!(
-                            "(( {}*)((char*){}->BaseAddress + {}))",
+                            "(*(( {}*)((char*){}->BaseAddress + {})))",
                             target_struct, alloc_str, index_str
                         )
                     } else {
                         format!(
-                            "(( {}*)((char*){}.BaseAddress + {}))",
+                            "(*(( {}*)((char*){}.BaseAddress + {})))",
                             target_struct, alloc_str, index_str
                         )
                     }
@@ -1731,15 +1731,7 @@ impl Codegen {
                 {
                     use_arrow = true;
                 }
-                if !use_arrow && let Expression::IndexAccess { allocator, .. } = &**left {
-                    if let Some(alloc_type) = self.get_expr_type(allocator) {
-                        let is_arena = alloc_type == Type::Arena
-                            || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
-                        if is_arena {
-                            use_arrow = true;
-                        }
-                    }
-                } else if let Expression::Selector {
+                if !use_arrow && let Expression::Selector {
                     left: inner_left,
                     right: inner_right,
                     ..
