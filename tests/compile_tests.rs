@@ -2345,6 +2345,157 @@ fn test_self_hosted_import_scanner() {
 }
 
 #[test]
+fn test_self_hosted_graph_construction() {
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/graph_test_entry.gst");
+
+    std::fs::create_dir_all("compiler").unwrap();
+    
+    // Create nested mock files
+    let temp_dir = std::env::temp_dir().join("gust_graph_test");
+    std::fs::create_dir_all(temp_dir.join("nested")).unwrap();
+    
+    let main_gst = temp_dir.join("main.gst");
+    let lib_gst = temp_dir.join("lib.gst");
+    let deep_gst = temp_dir.join("nested/deep.gst");
+    
+    std::fs::write(&main_gst, "import \"lib.gst\";\nimport \"nested/deep.gst\";\nfunc main() {}").unwrap();
+    std::fs::write(&lib_gst, "import \"nested/deep.gst\";\nfunc helper() {}").unwrap();
+    std::fs::write(&deep_gst, "func deep_helper() {}").unwrap();
+
+    let entry_source = format!(
+        "
+        import \"resolver.gst\" as resolver;
+        func main() {{
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            os.SetThreadScratch(ctx);
+            
+            mut graph: std.Graph[str, ctx] := std.GraphNew(ctx);
+            mut path_to_node: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+            
+            resolver.resolve_imports_recursive({:?}, &graph, &path_to_node, ctx);
+            
+            mut lookup_main := path_to_node.Get({:?});
+            mut lookup_lib := path_to_node.Get({:?});
+            mut lookup_deep := path_to_node.Get({:?});
+            
+            if lookup_main.Ok {{
+                os.LogStr(\"main ok\");
+            }}
+            if lookup_lib.Ok {{
+                os.LogStr(\"lib ok\");
+            }}
+            if lookup_deep.Ok {{
+                os.LogStr(\"deep ok\");
+            }}
+            
+            os.LogInt(graph.nodes.len);
+            
+            unsafe {{
+                mut main_node := &graph.nodes.data[lookup_main.Val];
+                os.LogInt(len(main_node.edges));
+                
+                mut target_idx := main_node.edges[0];
+                mut name_ptr := graph.GetNode(target_idx);
+                os.LogStr(*name_ptr);
+            }}
+        }}
+        ",
+        main_gst.to_string_lossy(),
+        main_gst.to_string_lossy(),
+        lib_gst.to_string_lossy(),
+        deep_gst.to_string_lossy()
+    );
+    std::fs::write(&entry_path, entry_source).unwrap();
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, mut modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    let temp_out_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let c_filename = format!("gust_e2e_resolver_{:?}_{}_graph.c", thread_id, process_id);
+    let bin_filename = format!("gust_e2e_resolver_{:?}_{}_graph.bin", thread_id, process_id);
+
+    let c_path = temp_out_dir.join(&c_filename);
+    let bin_path = temp_out_dir.join(&bin_filename);
+
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "Compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = std::process::Command::new(&bin_path)
+        .output()
+        .expect("Execution failed");
+
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_file(entry_path);
+    let _ = std::fs::remove_dir_all(temp_dir);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+
+    assert_eq!(stdout_str.trim(), format!("main ok\nlib ok\ndeep ok\n3\n2\n{}", lib_gst.to_string_lossy()));
+}
+
+#[test]
 fn test_self_hosted_token_definitions() {
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;

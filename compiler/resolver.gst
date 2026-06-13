@@ -64,3 +64,53 @@ func scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {
 
     return paths;
 }
+
+func get_directory(path: str, ctx: &Arena) str {
+    mut i := len(path) - 1;
+    while i >= 0 {
+        mut b := std.str_byte_at(path, i);
+        if b == 47 { // '/' is 47
+            return std.str_slice(path, 0, i);
+        }
+        i = i - 1;
+    }
+    return ".";
+}
+
+func resolve_imports_recursive(
+    file_path: str,
+    graph: *std.Graph[str, resolveCtx],
+    path_to_node: *std.HashMap[str, int, resolveCtx],
+    resolveCtx: &Arena
+) {
+    mut lookup := path_to_node.Get(file_path);
+    if lookup.Ok {
+        return;
+    }
+
+    mut node_idx := graph.AddNode(file_path);
+    path_to_node.Insert(file_path, node_idx);
+
+    mut source := os.ReadFile(resolveCtx, file_path);
+    if len(source) == 0 {
+        return;
+    }
+
+    mut imports := scan_imports(source, resolveCtx);
+    mut current_dir := get_directory(file_path, resolveCtx);
+
+    mut i := 0;
+    while i < len(imports) {
+        mut imp := imports[i];
+        mut joined_path := os_path_join(current_dir, imp, resolveCtx);
+
+        resolve_imports_recursive(joined_path, graph, path_to_node, resolveCtx);
+
+        mut imported_lookup := path_to_node.Get(joined_path);
+        if imported_lookup.Ok {
+            graph.AddEdge(node_idx, imported_lookup.Val);
+        }
+
+        i = i + 1;
+    }
+}
