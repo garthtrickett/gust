@@ -32,7 +32,7 @@ impl TypeChecker {
         match t {
             Type::Str | Type::Slice(_) | Type::ByteSlice | Type::RawPointer(_) => true,
             Type::Struct(name, _) => {
-                if name.starts_with("CastResult_") || name.starts_with("LookupResult_") {
+                if name.starts_with("CastResult_") || name.starts_with("LookupResult_") || name.ends_with("_Any") {
                     return true;
                 }
                 self.contains_ephemeral_view(t)

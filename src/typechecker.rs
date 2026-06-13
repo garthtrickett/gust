@@ -146,6 +146,9 @@ impl TypeChecker {
         match t {
             Type::Str | Type::ByteSlice | Type::Slice(_) => true,
             Type::Struct(name, _) => {
+                if name.ends_with("_Any") {
+                    return true;
+                }
                 if visited.contains(name) {
                     return false;
                 }
