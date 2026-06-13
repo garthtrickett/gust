@@ -1,9 +1,9 @@
 {
-  "summary": "fix: prevent prefixing already-namespaced standard library templates in typechecker",
+  "summary": "fix: restore missing local variables in codegen call block",
   "files": [
     {
-      "file_path": "src/typechecker.rs",
-      "code_diff": "<<<<<<< SEARCH\n        } else if name.contains(\"__\") {\n            name.to_string()\n        } else {\n            format!(\"{}{}\", self.current_prefix, name)\n        };\n=======\n        } else if name.contains(\"__\") || name.starts_with(\"std_\") || name.starts_with(\"os_\") {\n            name.to_string()\n        } else {\n            format!(\"{}{}\", self.current_prefix, name)\n        };\n>>>>>>> REPLACE"
+      "file_path": "src/codegen.rs",
+      "code_diff": "<<<<<<< SEARCH\n                    let mut is_vec = false;\n                    let mut is_map = false;\n                    let mut is_pool = false;\n                    let mut is_rc = false;\n                    let mut is_graph = false;\n                    let mut left_type = self.get_expr_type(left).unwrap_or(Type::Void);\n                    if let Type::RawPointer(inner) = &left_type {\n                        left_type = *inner.clone();\n                    }\n\n                    if let Type::Struct(struct_name, brand) = &left_type {\n=======\n                    let mut is_vec = false;\n                    let mut is_map = false;\n                    let mut is_pool = false;\n                    let mut is_rc = false;\n                    let mut is_graph = false;\n                    let mut is_gen_arena = false;\n                    let mut left_type = self.get_expr_type(left).unwrap_or(Type::Void);\n                    if let Type::RawPointer(inner) = &left_type {\n                        left_type = *inner.clone();\n                    }\n\n                    let mut is_mutex = false;\n                    let mut is_channel = false;\n                    if let Type::Struct(struct_name, brand) = &left_type {\n>>>>>>> REPLACE"
     }
   ]
 }

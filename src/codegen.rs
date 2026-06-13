@@ -338,10 +338,7 @@ impl Codegen {
 
         let mut erased_resolved_types = HashMap::new();
         for (span, t) in resolved_types {
-            erased_resolved_types.insert(
-                span,
-                erase_type_with_registry(&t, &struct_registry),
-            );
+            erased_resolved_types.insert(span, erase_type_with_registry(&t, &struct_registry));
         }
 
         Codegen {
@@ -445,7 +442,7 @@ impl Codegen {
                             return Some((**inner).clone());
                         }
                     } else if erased_name.starts_with("HashMap_")
-                        || erased_name.starts_with("std_HashMap_") 
+                        || erased_name.starts_with("std_HashMap_")
                     {
                         if let Some(layout) = self.struct_registry.get(&erased_name)
                             && let Some(Type::RawPointer(inner)) = layout.fields.get("values")
@@ -453,12 +450,12 @@ impl Codegen {
                             return Some((**inner).clone());
                         }
                     } else if (erased_name.starts_with("Pool_")
-                        || erased_name.starts_with("std_Pool_") )
+                        || erased_name.starts_with("std_Pool_"))
                         && let Some(layout) = self.struct_registry.get(&erased_name)
-                            && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
-                        {
-                            return Some((**inner).clone());
-                        }
+                        && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
+                    {
+                        return Some((**inner).clone());
+                    }
                 }
                 // Check if this is Arena indexing
                 let is_arena = alloc_type == Type::Arena
@@ -1482,13 +1479,14 @@ impl Codegen {
                 if let Some(t) = self.get_expr_type(inner) {
                     is_lin = self.is_linear(&t);
                 }
-                let can_memset = is_lin && matches!(
-                    &**inner,
-                    Expression::Identifier(_, _)
-                        | Expression::Selector { .. }
-                        | Expression::IndexAccess { .. }
-                        | Expression::Dereference(_, _)
-                );
+                let can_memset = is_lin
+                    && matches!(
+                        &**inner,
+                        Expression::Identifier(_, _)
+                            | Expression::Selector { .. }
+                            | Expression::IndexAccess { .. }
+                            | Expression::Dereference(_, _)
+                    );
                 if can_memset {
                     format!(
                         "(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))",
@@ -1512,13 +1510,14 @@ impl Codegen {
                 if let Some(t) = self.get_expr_type(inner) {
                     is_lin = self.is_linear(&t);
                 }
-                let can_memset = is_lin && matches!(
-                    &**inner,
-                    Expression::Identifier(_, _)
-                        | Expression::Selector { .. }
-                        | Expression::IndexAccess { .. }
-                        | Expression::Dereference(_, _)
-                );
+                let can_memset = is_lin
+                    && matches!(
+                        &**inner,
+                        Expression::Identifier(_, _)
+                            | Expression::Selector { .. }
+                            | Expression::IndexAccess { .. }
+                            | Expression::Dereference(_, _)
+                    );
                 if can_memset {
                     format!(
                         "(({{\n        __typeof__({0}) _tmp = {0};\n        memset(&{0}, 0, sizeof({0}));\n        _tmp;\n    }}))",
@@ -1536,11 +1535,13 @@ impl Codegen {
                 ..
             } => {
                 let left_str = self.gen_expression(left);
-                let mut resolved_target_owned = self.resolved_types.get(span).unwrap_or(target_type).clone();
+                let mut resolved_target_owned =
+                    self.resolved_types.get(span).unwrap_or(target_type).clone();
                 if let Type::Struct(ref name, ref brand) = resolved_target_owned
-                    && let Some(stripped) = name.strip_prefix("CastResult_") {
-                        resolved_target_owned = Type::Struct(stripped.to_string(), brand.clone());
-                    }
+                    && let Some(stripped) = name.strip_prefix("CastResult_")
+                {
+                    resolved_target_owned = Type::Struct(stripped.to_string(), brand.clone());
+                }
                 let resolved_target = &resolved_target_owned;
                 let target_str = self.get_c_type(resolved_target);
 
@@ -1722,7 +1723,7 @@ impl Codegen {
                     if let Some(alloc_type) = self.get_expr_type(allocator) {
                         let is_arena = alloc_type == Type::Arena
                             || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
-                        if is_arena { 
+                        if is_arena {
                             use_arrow = true;
                         }
                     }
@@ -2259,7 +2260,10 @@ impl Codegen {
                     let mut is_rc = false;
                     let mut is_graph = false;
                     let mut is_gen_arena = false;
-                    let left_type = self.get_expr_type(left).unwrap_or(Type::Void);
+                    let mut left_type = self.get_expr_type(left).unwrap_or(Type::Void);
+                    if let Type::RawPointer(inner) = &left_type {
+                        left_type = *inner.clone();
+                    }
 
                     let mut is_mutex = false;
                     let mut is_channel = false;
@@ -2355,7 +2359,8 @@ impl Codegen {
                             || right == "swap")
                     {
                         let t_name = "Node".to_string();
-                        let _opt_struct_name = if let Type::Struct(struct_name, brand) = &left_type {
+                        let _opt_struct_name = if let Type::Struct(struct_name, brand) = &left_type
+                        {
                             Some(erase_struct_name_with_registry(
                                 struct_name,
                                 brand,
