@@ -2235,6 +2235,103 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_self_hosted_token_definitions() { Clark::resolver::ModuleResolver::new(); }
+
+#[test]
+fn test_self_hosted_token_definitions_scaffold() {
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/token_defs_entry.gst");
+
+    std::fs::create_dir_all("compiler").unwrap();
+
+    // 1. Valid branded token use
+    let entry_source = "
+        import \"token.gst\" as token;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            
+            mut pos: token.Position;
+            pos.line = 10;
+            pos.column = 5;
+            pos.offset = 120;
+            
+            mut span: token.Span;
+            span.start = pos;
+            span.end = pos;
+            
+            mut tok_type: token.TokenType;
+            tok_type.tag = 2;
+            
+            mut tok: token.Token[ctx];
+            tok.token_type = tok_type;
+            tok.literal = \"test\";
+            tok.span = span;
+        }
+    ";
+    std::fs::write(&entry_path, entry_source).unwrap();
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+        }
+    }
+
+    // 2. Reject lifetime brand mismatch
+    let invalid_entry_source = "
+        import \"token.gst\" as token;
+        func main() {
+            mut ctx1 := os.Arena.New();
+            defer ctx1.Free();
+            mut ctx2 := os.Arena.New();
+            defer ctx2.Free();
+            
+            mut t1: token.Token[ctx1];
+            mut t2: token.Token[ctx2] := t1;
+        }
+    ";
+    std::fs::write(&entry_path, invalid_entry_source).unwrap();
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok());
+    let (order, modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+    let mut had_error = false;
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            if checker.check_module(&module.program, &prefix).is_err() {
+                had_error = true;
+                break;
+            } 
+        }
+    }
+    assert!(had_error, "Expected lifetime brand mismatch to be rejected by typechecker");
+
+    let _ = std::fs::remove_file(entry_path);
+}
+
+#[test]
 fn test_cli_dump_ast_integration() {
     use std::fs as std_fs;
     use std::process::Command;
