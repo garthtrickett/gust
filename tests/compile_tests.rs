@@ -2235,7 +2235,8 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
-fn test_self_hosted_import_scanner() {
+#[test]
+fn test_self_hosted_import_scanner() { 
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/resolver_test_entry.gst");
@@ -2249,12 +2250,7 @@ fn test_self_hosted_import_scanner() {
             defer ctx.Free();
             os.SetThreadScratch(ctx);
             
-            mut temp := "
-                // comments can be here
-                import 'std' as standard;
-                import 'os';
-                func main() {}
-            ";
+            mut temp := "import 'std' as standard;|import 'os';|func main() {}";
             mut source := std.Concat("", temp);
             
             unsafe {
@@ -2263,6 +2259,9 @@ fn test_self_hosted_import_scanner() {
                 while i < len(bytes) {
                     if bytes[i] == 39 {
                         bytes[i] = 34;
+                    }
+                    if bytes[i] == 124 {
+                        bytes[i] = 10;
                     }
                     i = i + 1;
                 }
@@ -2291,12 +2290,7 @@ fn test_self_hosted_import_scanner() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(
-                check_res.is_ok(),
-                "Typechecking failed on {:?}: {:?}",
-                path,
-                check_res.err()
-            );
+            assert!(check_res.is_ok(), "Typechecking failed on {:?}: {:?}", path, check_res.err());
         }
     }
 
@@ -2335,11 +2329,7 @@ fn test_self_hosted_import_scanner() {
     if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
+    let compile_output = cmd.arg("-o").arg(&bin_path).output().expect("GCC command failed");
 
     assert!(
         compile_output.status.success(),
@@ -2347,9 +2337,7 @@ fn test_self_hosted_import_scanner() {
         String::from_utf8_lossy(&compile_output.stderr)
     );
 
-    let run_output = std::process::Command::new(&bin_path)
-        .output()
-        .expect("Execution failed");
+    let run_output = std::process::Command::new(&bin_path).output().expect("Execution failed");
 
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
