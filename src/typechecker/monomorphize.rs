@@ -155,6 +155,8 @@ impl TypeChecker {
                     Some("arena".to_string())
                 } else if name.ends_with("_a") || name.contains("_a_") {
                     Some("a".to_string())
+                } else if name.ends_with("_Any") || name.contains("_Any_") {
+                    Some("Any".to_string())
                 } else {
                     None
                 }
@@ -162,7 +164,7 @@ impl TypeChecker {
             Type::Struct(name, brand) => {
                 if let Some(b) = brand {
                     Some(b.clone())
-                } else if let Some(layout) = self.struct_registry.get(name) {
+                } else if let Some(layout) = self.struct_registry.get(name) { 
                     if let Some(b) = &layout.brand {
                         Some(b.clone())
                     } else if name.ends_with("_ctx") || name.contains("_ctx_") {
@@ -173,6 +175,8 @@ impl TypeChecker {
                         Some("arena".to_string())
                     } else if name.ends_with("_a") || name.contains("_a_") {
                         Some("a".to_string())
+                    } else if name.ends_with("_Any") || name.contains("_Any_") {
+                        Some("Any".to_string())
                     } else {
                         None
                     }
@@ -185,6 +189,8 @@ impl TypeChecker {
                         Some("arena".to_string())
                     } else if name.ends_with("_a") || name.contains("_a_") {
                         Some("a".to_string())
+                    } else if name.ends_with("_Any") || name.contains("_Any_") {
+                        Some("Any".to_string())
                     } else {
                         None
                     }
@@ -193,7 +199,7 @@ impl TypeChecker {
             Type::RawPointer(inner) => self.get_type_brand(inner),
             Type::Slice(inner) => self.get_type_brand(inner),
             _ => None,
-        }
+        } 
     }
 
     pub(crate) fn resolve_type(&mut self, t: &Type) -> Result<Type, TypeError> {

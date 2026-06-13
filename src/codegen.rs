@@ -28,6 +28,8 @@ fn extract_brand_from_name(name: &str) -> Option<String> {
         Some("arena".to_string())
     } else if name.ends_with("_a") || name.contains("_a_") || name == "a" {
         Some("a".to_string())
+    } else if name.ends_with("_Any") || name.contains("_Any_") || name == "Any" {
+        Some("Any".to_string())
     } else {
         None
     }
@@ -73,17 +75,20 @@ fn erase_struct_name_with_registry(
     erased
 }
 
-fn is_brand_type(t: &Type) -> bool {
+fn is_brand_type_with_registry(t: &Type, registry: &HashMap<String, StructLayout>) -> bool {
     match t {
         Type::Struct(name, _) => {
-            name == "ctx"
+            let is_brand_name = name == "ctx"
                 || name == "connCtx"
                 || name == "arena"
                 || name == "a"
+                || name == "Any"
                 || name.ends_with("_ctx")
                 || name.ends_with("_connCtx")
                 || name.ends_with("_arena")
                 || name.ends_with("_a")
+                || name.ends_with("_Any");
+            is_brand_name && !registry.contains_key(name)
         }
         _ => false,
     }
@@ -106,7 +111,7 @@ fn erase_type_with_registry(t: &Type, registry: &HashMap<String, StructLayout>) 
         Type::Generic(name, args) => {
             let erased_args: Vec<Type> = args
                 .iter()
-                .filter(|arg| !is_brand_type(arg))
+                .filter(|arg| !is_brand_type_with_registry(arg, registry))
                 .map(|arg| erase_type_with_registry(arg, registry))
                 .collect();
             Type::Generic(name.clone(), erased_args)
