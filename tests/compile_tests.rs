@@ -2394,6 +2394,78 @@ fn test_self_hosted_lexer_scaffold() {
 }
 
 #[test]
+fn test_lexer_view_extraction() {
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/lexer_view_extraction_entry.gst");
+
+    std::fs::create_dir_all("compiler").unwrap();
+
+    let entry_source = "
+        import \"lexer.gst\" as lexer;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            
+            mut l: lexer.Lexer[ctx];
+            lexer.init_lexer(&l, \"identifier 12345 \\\"string\\\"\");
+            
+            mut ident: str := lexer.read_identifier(&l);
+            lexer.skip_whitespace(&l);
+            mut num: str := lexer.read_number(&l);
+            lexer.skip_whitespace(&l);
+            mut s: str := lexer.read_string(&l);
+            
+            os.LogStr(ident);
+            os.LogStr(num);
+            os.LogStr(s);
+        }
+    ";
+    std::fs::write(&entry_path, entry_source).unwrap();
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+    let c_output = codegen.generate(&modules_for_codegen);
+    assert!(c_output.contains("lexer__read_identifier("));
+    assert!(c_output.contains("lexer__read_number("));
+    assert!(c_output.contains("lexer__read_string("));
+    assert!(c_output.contains("lexer__lookup_ident("));
+
+    let _ = std::fs::remove_file(entry_path);
+}
+
+#[test]
 fn test_cli_dump_ast_integration() {
     use std::fs as std_fs;
     use std::process::Command;
