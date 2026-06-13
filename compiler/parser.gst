@@ -56,14 +56,16 @@ func peek_token_is(p: *Parser[ctx], tag: int) bool {
 }
 
 func expect_peek(p: *Parser[ctx], tag: int, ctx: &Arena) ParseResult[token.Token[ctx], ctx] {
-    mut res: ParseResult[token.Token[ctx], ctx];
     unsafe {
+        mut res_ptr := p as *ParseResult[token.Token[ctx], ctx];
+        mut res := *res_ptr;
         if (*p).peek_token.token_type.tag == tag {
             res.Ok = 1;
             res.Val = (*p).peek_token;
             next_token(p);
         } else {
             res.Ok = 0;
+            res.Val = (*p).peek_token;
             
             mut err: errors.CompilerError[ctx];
             err.kind.tag = 1; // ParserError
@@ -72,8 +74,8 @@ func expect_peek(p: *Parser[ctx], tag: int, ctx: &Arena) ParseResult[token.Token
             
             (*p).errors.Push(err);
         }
+        return res;
     }
-    return res;
 }
 
 func merge_spans(start: token.Span, end: token.Span) token.Span {
