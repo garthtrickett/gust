@@ -2513,7 +2513,7 @@ impl TypeChecker {
                 function,
                 arguments,
                 ..
-            } = > {
+            } => {
                 let raw_func_path = expression_to_string(function);
                 let func_path = self.resolve_namespaced_ident(&raw_func_path).unwrap_or_else(|_| raw_func_path.clone());
 
