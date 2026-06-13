@@ -2369,7 +2369,7 @@ impl Codegen {
                     if is_channel && right == "Recv" {
                         let type_str = self.get_c_type(&left_type);
                         return format!(
-                            "(({{\n        __typeof__(*(((struct {}*)0)->_phantom))) _val;\n        std_Channel_Recv_impl({}.capacity, &_val);\n        _val;\n    }}))",
+                            "(({{\n        __typeof__(*(((struct {}*)0)->_phantom)) _val;\n        std_Channel_Recv_impl({}.capacity, &_val);\n        _val;\n    }}))",
                             type_str, left_str
                         );
                     }
