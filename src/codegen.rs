@@ -230,15 +230,17 @@ impl Codegen {
                 true
             }
             Type::Generic(_, _) => true,
-            Type::Struct(name, _) => {
+            Type::Struct(name, brand) => {
                 if name == "T" || name == "K" || name == "V" {
                     return true;
                 }
-                if visited.contains(name) {
+                let erased_name =
+                    erase_struct_name_with_registry(name, brand, &self.struct_registry);
+                if visited.contains(&erased_name) {
                     return false;
                 }
-                visited.insert(name.clone());
-                if let Some(layout) = self.struct_registry.get(name) {
+                visited.insert(erased_name.clone());
+                if let Some(layout) = self.struct_registry.get(&erased_name) {
                     for field_type in layout.fields.values() {
                         if self.is_linear_impl(field_type, visited) {
                             return true;
@@ -317,6 +319,14 @@ impl Codegen {
             erased_enum_registry.insert(erased_name, variants);
         }
 
+        let mut erased_resolved_types = HashMap::new();
+        for (span, t) in resolved_types {
+            erased_resolved_types.insert(
+                span,
+                erase_type_with_registry(&t, &struct_registry),
+            );
+        }
+
         Codegen {
             symbol_table: RefCell::new(erased_symbol_table),
             original_symbol_table,
@@ -327,7 +337,7 @@ impl Codegen {
             current_function: RefCell::new(None),
             current_file_path: RefCell::new(None),
             resolved_names,
-            resolved_types,
+            resolved_types: erased_resolved_types,
             clone_helpers_needed: RefCell::new(std::collections::HashSet::new()),
         }
     }
@@ -385,10 +395,15 @@ impl Codegen {
                 if let Type::RawPointer(inner) = left_type {
                     left_type = *inner.clone();
                 }
-                if let Type::Struct(struct_name, _) = left_type
-                    && let Some(layout) = self.struct_registry.get(&struct_name)
-                {
-                    return layout.fields.get(right).cloned();
+                if let Type::Struct(struct_name, brand) = left_type {
+                    let erased_name = erase_struct_name_with_registry(
+                        &struct_name,
+                        &brand,
+                        &self.struct_registry,
+                    );
+                    if let Some(layout) = self.struct_registry.get(&erased_name) {
+                        return layout.fields.get(right).cloned();
+                    }
                 }
                 None
             }
@@ -402,26 +417,32 @@ impl Codegen {
                 if alloc_type == Type::Str {
                     return Some(Type::Byte);
                 }
-                if let Type::Struct(struct_name, _) = &alloc_type {
-                    if struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_")
+                if let Type::Struct(struct_name, brand) = &alloc_type {
+                    let erased_name =
+                        erase_struct_name_with_registry(struct_name, brand, &self.struct_registry);
+                    if erased_name.starts_with("Vector_") || erased_name.starts_with("std_Vector_")
                     {
-                        if let Some(layout) = self.struct_registry.get(struct_name)
+                        if let Some(layout) = self.struct_registry.get(&erased_name)
                             && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
                         {
                             return Some((**inner).clone());
                         }
-                    } else if (struct_name.starts_with("HashMap_")
-                        || struct_name.starts_with("std_HashMap_"))
-                        && let Some(layout) = self.struct_registry.get(struct_name)
-                        && let Some(Type::RawPointer(inner)) = layout.fields.get("values")
+                    } else if (erased_name.starts_with("HashMap_")
+                        || erased_name.starts_with("std_HashMap_"))
                     {
-                        return Some((**inner).clone());
-                    } else if (struct_name.starts_with("Pool_")
-                        || struct_name.starts_with("std_Pool_"))
-                        && let Some(layout) = self.struct_registry.get(struct_name)
-                        && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
+                        if let Some(layout) = self.struct_registry.get(&erased_name)
+                            && let Some(Type::RawPointer(inner)) = layout.fields.get("values")
+                        {
+                            return Some((**inner).clone());
+                        }
+                    } else if (erased_name.starts_with("Pool_")
+                        || erased_name.starts_with("std_Pool_"))
                     {
-                        return Some((**inner).clone());
+                        if let Some(layout) = self.struct_registry.get(&erased_name)
+                            && let Some(Type::RawPointer(inner)) = layout.fields.get("data")
+                        {
+                            return Some((**inner).clone());
+                        }
                     }
                 }
                 // Check if this is Arena indexing
@@ -452,12 +473,14 @@ impl Codegen {
     ) -> bool {
         match t {
             Type::Byte | Type::Bool => true,
-            Type::Struct(name, _) => {
-                if visited.contains(name) {
+            Type::Struct(name, brand) => {
+                let erased_name =
+                    erase_struct_name_with_registry(name, brand, &self.struct_registry);
+                if visited.contains(&erased_name) {
                     return false;
                 }
-                visited.insert(name.clone());
-                if let Some(layout) = self.struct_registry.get(name) {
+                visited.insert(erased_name.clone());
+                if let Some(layout) = self.struct_registry.get(&erased_name) {
                     for field_type in layout.fields.values() {
                         if self.has_boolean_fields_recursive(field_type, visited) {
                             return true;
@@ -994,15 +1017,15 @@ impl Codegen {
             }
         }
 
-        let mut ordered_helpers: Vec<String> =
+        let mut erased_helpers: Vec<String> =
             self.clone_helpers_needed.borrow().iter().cloned().collect();
-        ordered_helpers.sort();
+        erased_helpers.sort();
 
-        if !ordered_helpers.is_empty() {
+        if !erased_helpers.is_empty() {
             c_code.push_str("// ====================================================\n");
             c_code.push_str("// GENERATIONAL ARENA CLONE HELPER FORWARD DECLARATIONS\n");
             c_code.push_str("// ====================================================\n");
-            for name in &ordered_helpers {
+            for name in &erased_helpers {
                 c_code.push_str(&format!(
                     "int std_GenerationalArena_Clone_{}(os_Arena* dest, os_Arena* src, int src_idx);\n",
                     name
@@ -1017,7 +1040,7 @@ impl Codegen {
             c_code.push_str("// ====================================================\n");
             c_code.push_str("// GENERATIONAL ARENA CLONE HELPER DEFINITIONS\n");
             c_code.push_str("// ====================================================\n");
-            for name in &ordered_helpers {
+            for name in &erased_helpers {
                 c_code.push_str(&self.generate_clone_helper(name));
             }
         }
@@ -1200,10 +1223,18 @@ impl Codegen {
                 let type_str = self.get_c_type(&var_type);
 
                 let mut target_struct = None;
-                if let Type::Index(struct_name, _) = &var_type {
-                    target_struct = Some(struct_name.clone());
-                } else if let Type::Struct(struct_name, _) = &var_type {
-                    target_struct = Some(struct_name.clone());
+                if let Type::Index(struct_name, brand) = &var_type {
+                    target_struct = Some(erase_struct_name_with_registry(
+                        struct_name,
+                        brand,
+                        &self.struct_registry,
+                    ));
+                } else if let Type::Struct(struct_name, brand) = &var_type {
+                    target_struct = Some(erase_struct_name_with_registry(
+                        struct_name,
+                        brand,
+                        &self.struct_registry,
+                    ));
                 }
                 *self.current_alloc_struct.borrow_mut() = target_struct;
 
@@ -1219,10 +1250,18 @@ impl Codegen {
             Statement::Assignment { left, value, .. } => {
                 let mut target_struct = None;
                 let left_type = self.get_expr_type(left).unwrap_or(Type::Void);
-                if let Type::Index(struct_name, _) = &left_type {
-                    target_struct = Some(struct_name.clone());
-                } else if let Type::Struct(struct_name, _) = &left_type {
-                    target_struct = Some(struct_name.clone());
+                if let Type::Index(struct_name, brand) = &left_type {
+                    target_struct = Some(erase_struct_name_with_registry(
+                        struct_name,
+                        brand,
+                        &self.struct_registry,
+                    ));
+                } else if let Type::Struct(struct_name, brand) = &left_type {
+                    target_struct = Some(erase_struct_name_with_registry(
+                        struct_name,
+                        brand,
+                        &self.struct_registry,
+                    ));
                 }
                 *self.current_alloc_struct.borrow_mut() = target_struct;
 
@@ -1517,50 +1556,57 @@ impl Codegen {
                 let mut is_pool = false;
                 let mut is_str_key = false;
 
-                if let Type::Struct(struct_name, _) = &alloc_type {
-                    if struct_name.starts_with("Vector_") || struct_name.starts_with("std_Vector_")
+                if let Type::Struct(struct_name, brand) = &alloc_type {
+                    let erased_name =
+                        erase_struct_name_with_registry(struct_name, brand, &self.struct_registry);
+                    if erased_name.starts_with("Vector_") || erased_name.starts_with("std_Vector_")
                     {
                         is_vector = true;
-                    } else if struct_name.starts_with("HashMap_")
-                        || struct_name.starts_with("std_HashMap_")
+                    } else if erased_name.starts_with("HashMap_")
+                        || erased_name.starts_with("std_HashMap_")
                     {
                         is_hashmap = true;
-                        if let Some(layout) = self.struct_registry.get(struct_name)
+                        if let Some(layout) = self.struct_registry.get(&erased_name)
                             && let Some(Type::RawPointer(k_inner)) = layout.fields.get("keys")
                             && **k_inner == Type::Str
                         {
                             is_str_key = true;
                         }
-                    } else if struct_name.starts_with("Pool_")
-                        || struct_name.starts_with("std_Pool_")
+                    } else if erased_name.starts_with("Pool_")
+                        || erased_name.starts_with("std_Pool_")
                     {
                         is_pool = true;
                     }
                 } else {
                     // Fallback to checking the allocator variable name in symbol table directly
                     let alloc_ident = expression_to_string(allocator);
-                    if let Some(Type::Struct(struct_name, _)) = self
+                    if let Some(Type::Struct(struct_name, brand)) = self
                         .resolved_types
                         .get(&allocator.span())
-                        .or_else(|| self.symbol_table.borrow().get(&alloc_ident))
                         .cloned()
+                        .or_else(|| self.symbol_table.borrow().get(&alloc_ident).cloned())
                     {
-                        if struct_name.starts_with("Vector_")
-                            || struct_name.starts_with("std_Vector_")
+                        let erased_name = erase_struct_name_with_registry(
+                            &struct_name,
+                            &brand,
+                            &self.struct_registry,
+                        );
+                        if erased_name.starts_with("Vector_")
+                            || erased_name.starts_with("std_Vector_")
                         {
                             is_vector = true;
-                        } else if struct_name.starts_with("HashMap_")
-                            || struct_name.starts_with("std_HashMap_")
+                        } else if erased_name.starts_with("HashMap_")
+                            || erased_name.starts_with("std_HashMap_")
                         {
                             is_hashmap = true;
-                            if let Some(layout) = self.struct_registry.get(&struct_name)
+                            if let Some(layout) = self.struct_registry.get(&erased_name)
                                 && let Some(Type::RawPointer(k_inner)) = layout.fields.get("keys")
                                 && **k_inner == Type::Str
                             {
                                 is_str_key = true;
                             }
-                        } else if struct_name.starts_with("Pool_")
-                            || struct_name.starts_with("std_Pool_")
+                        } else if erased_name.starts_with("Pool_")
+                            || erased_name.starts_with("std_Pool_")
                         {
                             is_pool = true;
                         }
@@ -1602,8 +1648,9 @@ impl Codegen {
                         && let Some(Type::RawPointer(inner)) = self
                             .resolved_types
                             .get(span)
-                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
-                        && **inner == Type::Arena
+                            .cloned()
+                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
+                        && *inner == Type::Arena
                     {
                         use_arrow = true;
                     }
@@ -1643,8 +1690,8 @@ impl Codegen {
                         && let Some(t) = self
                             .resolved_types
                             .get(span)
-                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
                             .cloned()
+                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
                     {
                         let is_arena_ptr = if let Type::RawPointer(inner) = &t {
                             **inner == Type::Arena
@@ -1689,22 +1736,32 @@ impl Codegen {
                     let arg_str = self.gen_expression(&arguments[0]);
                     let mut is_coll = false;
                     let arg_type = self.get_expr_type(&arguments[0]).unwrap_or(Type::Void);
-                    if let Type::Struct(struct_name, _) = &arg_type {
-                        if struct_name.starts_with("Vector_")
-                            || struct_name.starts_with("std_Vector_")
-                            || struct_name.starts_with("HashMap_")
-                            || struct_name.starts_with("std_HashMap_")
+                    if let Type::Struct(struct_name, brand) = &arg_type {
+                        let erased_name = erase_struct_name_with_registry(
+                            struct_name,
+                            brand,
+                            &self.struct_registry,
+                        );
+                        if erased_name.starts_with("Vector_")
+                            || erased_name.starts_with("std_Vector_")
+                            || erased_name.starts_with("HashMap_")
+                            || erased_name.starts_with("std_HashMap_")
                         {
                             is_coll = true;
                         }
                     } else {
                         let arg_ident = expression_to_string(&arguments[0]);
-                        if let Some(Type::Struct(struct_name, _)) =
+                        if let Some(Type::Struct(struct_name, brand)) =
                             self.symbol_table.borrow().get(&arg_ident)
-                            && (struct_name.starts_with("Vector_")
-                                || struct_name.starts_with("std_Vector_")
-                                || struct_name.starts_with("HashMap_")
-                                || struct_name.starts_with("std_HashMap_"))
+                            && let erased_name = erase_struct_name_with_registry(
+                                struct_name,
+                                brand,
+                                &self.struct_registry,
+                            )
+                            && (erased_name.starts_with("Vector_")
+                                || erased_name.starts_with("std_Vector_")
+                                || erased_name.starts_with("HashMap_")
+                                || erased_name.starts_with("std_HashMap_"))
                         {
                             is_coll = true;
                         }
@@ -1864,8 +1921,9 @@ impl Codegen {
                         && let Some(Type::RawPointer(inner)) = self
                             .resolved_types
                             .get(span)
-                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
-                        && **inner == Type::Arena
+                            .cloned()
+                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
+                        && *inner == Type::Arena
                     {
                         dest_is_ptr = true;
                     }
@@ -2003,8 +2061,9 @@ impl Codegen {
                         && let Some(Type::RawPointer(inner)) = self
                             .resolved_types
                             .get(span)
-                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
-                        && **inner == Type::Arena
+                            .cloned()
+                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
+                        && *inner == Type::Arena
                     {
                         is_ptr = true;
                     }
@@ -2036,8 +2095,9 @@ impl Codegen {
                         && let Some(Type::RawPointer(inner)) = self
                             .resolved_types
                             .get(span)
-                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
-                        && **inner == Type::Arena
+                            .cloned()
+                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
+                        && *inner == Type::Arena
                     {
                         is_ptr = true;
                     }
@@ -2069,8 +2129,9 @@ impl Codegen {
                         && let Some(Type::RawPointer(inner)) = self
                             .resolved_types
                             .get(span)
-                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
-                        && **inner == Type::Arena
+                            .cloned()
+                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
+                        && *inner == Type::Arena
                     {
                         is_ptr = true;
                     }
@@ -2178,75 +2239,85 @@ impl Codegen {
 
                     let mut is_mutex = false;
                     let mut is_channel = false;
-                    if let Type::Struct(struct_name, _) = &left_type {
-                        if struct_name.starts_with("Vector_")
-                            || struct_name.starts_with("std_Vector_")
+                    if let Type::Struct(struct_name, brand) = &left_type {
+                        let erased_name = erase_struct_name_with_registry(
+                            struct_name,
+                            brand,
+                            &self.struct_registry,
+                        );
+                        if erased_name.starts_with("Vector_")
+                            || erased_name.starts_with("std_Vector_")
                         {
                             is_vec = true;
-                        } else if struct_name.starts_with("HashMap_")
-                            || struct_name.starts_with("std_HashMap_")
+                        } else if erased_name.starts_with("HashMap_")
+                            || erased_name.starts_with("std_HashMap_")
                         {
                             is_map = true;
-                        } else if struct_name.starts_with("Pool_")
-                            || struct_name.starts_with("std_Pool_")
+                        } else if erased_name.starts_with("Pool_")
+                            || erased_name.starts_with("std_Pool_")
                         {
                             is_pool = true;
-                        } else if struct_name.starts_with("Rc_")
-                            || struct_name.starts_with("std_Rc_")
+                        } else if erased_name.starts_with("Rc_")
+                            || erased_name.starts_with("std_Rc_")
                         {
                             is_rc = true;
-                        } else if struct_name.starts_with("Graph_")
-                            || struct_name.starts_with("std_Graph_")
+                        } else if erased_name.starts_with("Graph_")
+                            || erased_name.starts_with("std_Graph_")
                         {
                             is_graph = true;
-                        } else if struct_name.starts_with("Mutex_")
-                            || struct_name.starts_with("std_Mutex_")
+                        } else if erased_name.starts_with("Mutex_")
+                            || erased_name.starts_with("std_Mutex_")
                         {
                             is_mutex = true;
-                        } else if struct_name.starts_with("Channel_")
-                            || struct_name.starts_with("std_Channel_")
+                        } else if erased_name.starts_with("Channel_")
+                            || erased_name.starts_with("std_Channel_")
                         {
                             is_channel = true;
-                        } else if struct_name.starts_with("std_GenerationalArena_")
-                            || struct_name.starts_with("GenerationalArena_")
+                        } else if erased_name.starts_with("std_GenerationalArena_")
+                            || erased_name.starts_with("GenerationalArena_")
                         {
                             is_gen_arena = true;
                         }
                     } else {
                         let left_ident = expression_to_string(left);
-                        if let Some(Type::Struct(struct_name, _)) =
-                            self.symbol_table.borrow().get(&left_ident)
+                        if let Some(Type::Struct(struct_name, brand)) =
+                            self.symbol_table.borrow().get(&left_ident).cloned()
                         {
-                            if struct_name.starts_with("Vector_")
-                                || struct_name.starts_with("std_Vector_")
+                            let erased_name = erase_struct_name_with_registry(
+                                &struct_name,
+                                &brand,
+                                &self.struct_registry,
+                            );
+                            if erased_name.starts_with("Vector_")
+                                || erased_name.starts_with("std_Vector_")
                             {
                                 is_vec = true;
-                            } else if struct_name.starts_with("HashMap_")
-                                || struct_name.starts_with("std_HashMap_")
+                            } else if erased_name.starts_with("HashMap_")
+                                || erased_name.starts_with("std_HashMap_")
                             {
                                 is_map = true;
-                            } else if struct_name.starts_with("Pool_")
-                                || struct_name.starts_with("std_Pool_")
+                            } else if erased_name.starts_with("Pool_")
+                                || erased_name.starts_with("std_Pool_")
                             {
                                 is_pool = true;
-                            } else if struct_name.starts_with("Rc_")
-                                || struct_name.starts_with("std_Rc_")
+                            } else if erased_name.starts_with("Rc_")
+                                || erased_name.starts_with("std_Rc_")
                             {
                                 is_rc = true;
-                            } else if struct_name.starts_with("Graph_")
-                                || struct_name.starts_with("std_Graph_")
+                            } else if erased_name.starts_with("Graph_")
+                                || erased_name.starts_with("std_Graph_")
                             {
                                 is_graph = true;
-                            } else if struct_name.starts_with("Mutex_")
-                                || struct_name.starts_with("std_Mutex_")
+                            } else if erased_name.starts_with("Mutex_")
+                                || erased_name.starts_with("std_Mutex_")
                             {
                                 is_mutex = true;
-                            } else if struct_name.starts_with("Channel_")
-                                || struct_name.starts_with("std_Channel_")
+                            } else if erased_name.starts_with("Channel_")
+                                || erased_name.starts_with("std_Channel_")
                             {
                                 is_channel = true;
-                            } else if struct_name.starts_with("std_GenerationalArena_")
-                                || struct_name.starts_with("GenerationalArena_")
+                            } else if erased_name.starts_with("std_GenerationalArena_")
+                                || erased_name.starts_with("GenerationalArena_")
                             {
                                 is_gen_arena = true;
                             }
@@ -2260,36 +2331,26 @@ impl Codegen {
                             || right == "swap")
                     {
                         let mut t_name = "Node".to_string();
-                        let opt_struct_name = if let Type::Struct(struct_name, _) = &left_type {
-                            Some(struct_name.clone())
+                        let opt_struct_name = if let Type::Struct(struct_name, brand) = &left_type {
+                            Some(erase_struct_name_with_registry(
+                                struct_name,
+                                brand,
+                                &self.struct_registry,
+                            ))
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) =
+                            if let Some(Type::Struct(struct_name, brand)) =
                                 self.symbol_table.borrow().get(&left_ident)
                             {
-                                Some(struct_name.clone())
+                                Some(erase_struct_name_with_registry(
+                                    struct_name,
+                                    brand,
+                                    &self.struct_registry,
+                                ))
                             } else {
                                 None
                             }
                         };
-                        if let Some(struct_name) = opt_struct_name {
-                            if let Some(suffix) = struct_name.strip_prefix("std_GenerationalArena_")
-                            {
-                                if let Some(pos) = suffix.rfind('_') {
-                                    t_name = suffix[..pos].to_string();
-                                } else {
-                                    t_name = suffix.to_string();
-                                }
-                            } else if let Some(suffix) =
-                                struct_name.strip_prefix("GenerationalArena_")
-                            {
-                                if let Some(pos) = suffix.rfind('_') {
-                                    t_name = suffix[..pos].to_string();
-                                } else {
-                                    t_name = suffix.to_string();
-                                }
-                            }
-                        }
                         return format!("std_GenerationalArena_Step_{}(&{})", t_name, left_str);
                     }
 
@@ -2305,14 +2366,14 @@ impl Codegen {
                     if is_channel && right == "Send" {
                         let arg_str = self.gen_expression(&arguments[0]);
                         return format!(
-                            "(({{\n        __typeof__({1}) _tmp = {1};\n        std_Channel_Send_impl({0}.capacity, &_tmp);\n    }}))",
+                            "((({{\n        __typeof__({1}) _tmp = {1};\n        std_Channel_Send_impl({0}.capacity, &_tmp);\n    }}))",
                             left_str, arg_str
                         );
                     }
                     if is_channel && right == "Recv" {
                         let type_str = self.get_c_type(&left_type);
                         return format!(
-                            "(({{\n        __typeof__(*(((struct {}*)0)->_phantom)) _val;\n        std_Channel_Recv_impl({}.capacity, &_val);\n        _val;\n    }}))",
+                            "((({{\n        __typeof__(*(((struct {}*)0)->_phantom)) _val;\n        std_Channel_Recv_impl({}.capacity, &_val);\n        _val;\n    }}))",
                             type_str, left_str
                         );
                     }
@@ -2367,14 +2428,22 @@ impl Codegen {
                         let k_str = self.gen_expression(&arguments[0]);
                         let v_str = self.gen_expression(&arguments[1]);
                         let mut is_str_key = false;
-                        let opt_struct_name = if let Type::Struct(struct_name, _) = &left_type {
-                            Some(struct_name.clone())
+                        let opt_struct_name = if let Type::Struct(struct_name, brand) = &left_type {
+                            Some(erase_struct_name_with_registry(
+                                struct_name,
+                                brand,
+                                &self.struct_registry,
+                            ))
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) =
+                            if let Some(Type::Struct(struct_name, brand)) =
                                 self.symbol_table.borrow().get(&left_ident)
                             {
-                                Some(struct_name.clone())
+                                Some(erase_struct_name_with_registry(
+                                    struct_name,
+                                    brand,
+                                    &self.struct_registry,
+                                ))
                             } else {
                                 None
                             }
@@ -2395,14 +2464,22 @@ impl Codegen {
                         let k_str = self.gen_expression(&arguments[0]);
                         let mut is_str_key = false;
                         let mut lookup_struct = "LookupResult_int".to_string();
-                        let opt_struct_name = if let Type::Struct(struct_name, _) = &left_type {
-                            Some(struct_name.clone())
+                        let opt_struct_name = if let Type::Struct(struct_name, brand) = &left_type {
+                            Some(erase_struct_name_with_registry(
+                                struct_name,
+                                brand,
+                                &self.struct_registry,
+                            ))
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) =
+                            if let Some(Type::Struct(struct_name, brand)) =
                                 self.symbol_table.borrow().get(&left_ident)
                             {
-                                Some(struct_name.clone())
+                                Some(erase_struct_name_with_registry(
+                                    struct_name,
+                                    brand,
+                                    &self.struct_registry,
+                                ))
                             } else {
                                 None
                             }
@@ -2428,14 +2505,22 @@ impl Codegen {
                     if is_map && right == "Remove" {
                         let k_str = self.gen_expression(&arguments[0]);
                         let mut is_str_key = false;
-                        let opt_struct_name = if let Type::Struct(struct_name, _) = &left_type {
-                            Some(struct_name.clone())
+                        let opt_struct_name = if let Type::Struct(struct_name, brand) = &left_type {
+                            Some(erase_struct_name_with_registry(
+                                struct_name,
+                                brand,
+                                &self.struct_registry,
+                            ))
                         } else {
                             let left_ident = expression_to_string(left);
-                            if let Some(Type::Struct(struct_name, _)) =
+                            if let Some(Type::Struct(struct_name, brand)) =
                                 self.symbol_table.borrow().get(&left_ident)
                             {
-                                Some(struct_name.clone())
+                                Some(erase_struct_name_with_registry(
+                                    struct_name,
+                                    brand,
+                                    &self.struct_registry,
+                                ))
                             } else {
                                 None
                             }
@@ -2462,10 +2547,14 @@ impl Codegen {
                                 Type::Struct("std_Vector_int".to_string(), None)
                             });
                         let vec_type_str = self.get_c_type(&expr_type);
-                        let is_ctx_ptr = if let Expression::Identifier(name, _) = &arguments[0]
-                            && let Some(Type::RawPointer(inner)) =
-                                self.symbol_table.borrow().get(name)
-                            && **inner == Type::Arena
+                        let is_ctx_ptr = if let Expression::Identifier(name, arg_span) =
+                            &arguments[0]
+                            && let Some(Type::RawPointer(inner)) = self
+                                .resolved_types
+                                .get(arg_span)
+                                .cloned()
+                                .or_else(|| self.symbol_table.borrow().get(name).cloned())
+                            && *inner == Type::Arena
                         {
                             true
                         } else {
@@ -2506,9 +2595,13 @@ impl Codegen {
                 let func_c = func_path.replace(".", "_");
                 let mut arg_strs = Vec::new();
                 for arg in arguments {
-                    if let Expression::Identifier(name, _) = arg
-                        && let Some(var_type) = self.symbol_table.borrow().get(name)
-                        && *var_type == Type::Arena
+                    if let Expression::Identifier(name, arg_span) = arg
+                        && let Some(var_type) = self
+                            .resolved_types
+                            .get(arg_span)
+                            .cloned()
+                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
+                        && var_type == Type::Arena
                     {
                         arg_strs.push(format!("&{}", name));
                         continue;

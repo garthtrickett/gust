@@ -13,5 +13,4 @@
 # Aggregator output
 /a.txt
 
-/test_output_file.txt
-/test_output.log
+/test_results.log
