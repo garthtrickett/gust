@@ -1200,19 +1200,19 @@ static inline void os_HashMapClear_impl(void* map_void, size_t key_size, size_t 
 
 #define os_HashMapContains(map_ptr, key, is_str_key) \
     ({ \
-        __typeof__(*(map_ptr)->keys) _key = (key); \
+        __typeof__(key) _key = (key); \
         os_HashMapContains_impl((map_void_ptr)(map_ptr), &_key, (is_str_key), sizeof(*(map_ptr)->keys)); \
     })
 
 #define os_HashMapRef(map_ptr, key, is_str_key) \
     ((__typeof__((map_ptr)->values))({ \
-        __typeof__(*(map_ptr)->keys) _key = (key); \
+        __typeof__(key) _key = (key); \
         os_HashMapRef_impl((map_void_ptr)(map_ptr), &_key, (is_str_key), sizeof(*(map_ptr)->keys), sizeof(*(map_ptr)->values)); \
     }))
 
 #define os_HashMapRemove(map_ptr, key, is_str_key) \
     do { \
-        __typeof__(*(map_ptr)->keys) _key = (key); \
+        __typeof__(key) _key = (key); \
         os_HashMapRemove_impl((map_void_ptr)(map_ptr), &_key, (is_str_key), sizeof(*(map_ptr)->keys), sizeof(*(map_ptr)->values)); \
     } while(0)
 
