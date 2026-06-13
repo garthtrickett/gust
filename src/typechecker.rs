@@ -71,7 +71,7 @@ impl TypeChecker {
     }
 
     pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> Result<String, TypeError> { 
-        if name == "int" || name == "byte" || name == "bool" || name == "str" || name == "Arena" || name == "os_Arena" || name == "os.Arena" || name == "void" || name == "Any" || name == "SessionNode" || name == "APIRequest" { 
+        if name == "len" || name == "int" || name == "byte" || name == "bool" || name == "str" || name == "Arena" || name == "os_Arena" || name == "os.Arena" || name == "void" || name == "Any" || name == "SessionNode" || name == "APIRequest" { 
             return Ok(name.to_string());
         }
         if let Some(pos) = name.find('.') {
