@@ -2331,24 +2331,8 @@ fn test_self_hosted_import_scanner() {
         String::from_utf8_lossy(&compile_output.stderr)
     );
 
-    let run_output = std::process::Command::new(&bin_path)
-        .output()
-        .expect("Execution failed");
-
-    let stdout_lossy = String::from_utf8_lossy(&run_output.stdout).to_string();
-    let stderr_lossy = String::from_utf8_lossy(&run_output.stderr).to_string();
-
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
-    let _ = std::fs::remove_file(entry_path);
-
-    if !run_output.status.success() {
-        panic!(
-            "Execution failed!\nSTDOUT:\n{}\nSTDERR:\n{}",
-            stdout_lossy,
-            stderr_lossy
-        );
-    }
+    let lexer_content = std::fs::read_to_string("compiler/lexer.gst").unwrap();
+    panic!("LEXER.GST CONTENT:\n{}", lexer_content);
     let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
     assert_eq!(stdout_str.trim(), "2\nstd\nos");

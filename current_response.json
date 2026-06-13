@@ -1,9 +1,9 @@
 {
-  "summary": "fix: replace unsupported logical OR operator with sequential if statement checks in scan_imports",
+  "summary": "debug: read and print compiler/lexer.gst contents via panic",
   "files": [
     {
-      "file_path": "compiler/resolver.gst",
-      "code_diff": "<<<<<<< SEARCH\n            mut path_tok: token.Token[ctx];\n            lexer.next_token(&l, &path_tok);\n            if path_tok.token_type.tag == 4 || path_tok.token_type.tag == 2 { // String = 4, Ident = 2\n                paths.Push(std.Clone(ctx, path_tok.literal));\n            }\n=======\n            mut path_tok: token.Token[ctx];\n            lexer.next_token(&l, &path_tok);\n            \n            mut is_valid_path := 0;\n            if path_tok.token_type.tag == 4 {\n                is_valid_path = 1;\n            }\n            if path_tok.token_type.tag == 2 {\n                is_valid_path = 1;\n            }\n            if is_valid_path == 1 {\n                paths.Push(std.Clone(ctx, path_tok.literal));\n            }\n>>>>>>> REPLACE"
+      "file_path": "tests/compile_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n    let run_output = std::process::Command::new(&bin_path)\n        .output()\n        .expect(\"Execution failed\");\n\n    let stdout_lossy = String::from_utf8_lossy(&run_output.stdout).to_string();\n    let stderr_lossy = String::from_utf8_lossy(&run_output.stderr).to_string();\n\n    let _ = std::fs::remove_file(&c_path);\n    let _ = std::fs::remove_file(&bin_path);\n    let _ = std::fs::remove_file(entry_path);\n\n    if !run_output.status.success() {\n        panic!(\n            \"Execution failed!\\nSTDOUT:\\n{}\\nSTDERR:\\n{}\",\n            stdout_lossy,\n            stderr_lossy\n        );\n    }\n=======\n    let lexer_content = std::fs::read_to_string(\"compiler/lexer.gst\").unwrap();\n    panic!(\"LEXER.GST CONTENT:\\n{}\", lexer_content);\n>>>>>>> REPLACE"
     }
   ]
 }
