@@ -246,6 +246,42 @@ impl TypeChecker {
                         );
                     }
 
+                for template_prefix in &[
+                    "std_Vector_", "Vector_", 
+                    "std_HashMap_", "HashMap_", 
+                    "std_Pool_", "Pool_", 
+                    "std_Mutex_", "Mutex_", 
+                    "std_Channel_", "Channel_",
+                    "std_Graph_", "Graph_",
+                    "std_GenerationalArena_", "GenerationalArena_"
+                ] {
+                    if name.starts_with(template_prefix) && !self.struct_registry.contains_key(name) {
+                        let suffix = name.strip_prefix(template_prefix).unwrap_or(name);
+                        let normalized = suffix.replace("__", "@");
+                        let parts: Vec<&str> = normalized.split('_').collect();
+                        
+                        let mut args = Vec::new();
+                        for part in parts {
+                            let clean_part = part.replace("@", "__");
+                            if clean_part == "int" {
+                                args.push(Type::Int);
+                            } else if clean_part == "byte" {
+                                args.push(Type::Byte);
+                            } else if clean_part == "bool" {
+                                args.push(Type::Bool);
+                            } else if clean_part == "str" {
+                                args.push(Type::Str);
+                            } else {
+                                args.push(Type::Struct(clean_part, None));
+                            }
+                        }
+                        
+                        let template = template_prefix.trim_end_matches('_').replace("_", ".");
+                        let _ = self.monomorphize(&template, &args);
+                        break;
+                    }
+                }
+
                 if (name.starts_with("RcNode_") || name.starts_with("std_RcNode_"))
                     && !self.struct_registry.contains_key(name) {
                         let inner_t_name = if let Some(stripped) = name.strip_prefix("RcNode_") {
