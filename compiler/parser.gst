@@ -87,6 +87,18 @@ func merge_spans(start: token.Span, end: token.Span) token.Span {
     return s;
 }
 
+func is_at_end(p: *Parser[ctx]) int {
+    unsafe {
+        if cur_token_is(p, 14) { // RBrace = 14
+            return 1;
+        }
+        if cur_token_is(p, 0) { // Eof = 0
+            return 1;
+        }
+        return 0;
+    }
+}
+
 func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx] {
     mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
@@ -183,7 +195,8 @@ func parse_var_decl(p: *Parser[ctx], is_mut: int, ctx: &Arena) Index[ast.Stateme
         }
     }
     
-    if !cur_token_is(p, 2) { // Ident = 2
+    if cur_token_is(p, 2) {
+    } else {
         return empty[Index[ast.Statement[ctx], ctx]];
     }
     
@@ -230,7 +243,7 @@ func parse_block_statement(p: *Parser[ctx], ctx: &Arena) ast.BlockStatement[ctx]
         
         next_token(p); // consume '{'
         
-        while !cur_token_is(p, 14) && !cur_token_is(p, 0) { // RBrace = 14, Eof = 0
+        while is_at_end(p) == 0 {
             mut stmt := parse_statement(p, ctx);
             ctx[block.statements].Push(ctx[stmt]);
             
@@ -326,7 +339,8 @@ func parse_guard_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
         }
     }
     
-    if !cur_token_is(p, 2) { // Ident = 2
+    if cur_token_is(p, 2) {
+    } else {
         return empty[Index[ast.Statement[ctx], ctx]];
     }
     
