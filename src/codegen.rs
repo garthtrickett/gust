@@ -982,23 +982,25 @@ impl Codegen {
 
         for struct_name in self.struct_registry.keys() {
             if let Some(suffix) = struct_name.strip_prefix("std_GenerationalArena_") {
-                if let Some(pos) = suffix.rfind('_') {
+                let normalized = suffix.replace("__", "@");
+                if let Some(pos) = normalized.rfind('_') {
                     let t_name = &suffix[..pos];
                     self.clone_helpers_needed
                         .borrow_mut()
                         .insert(t_name.to_string());
-                } else {
+                } else { 
                     self.clone_helpers_needed
                         .borrow_mut()
                         .insert(suffix.to_string());
                 }
             } else if let Some(suffix) = struct_name.strip_prefix("GenerationalArena_") {
-                if let Some(pos) = suffix.rfind('_') {
+                let normalized = suffix.replace("__", "@");
+                if let Some(pos) = normalized.rfind('_') {
                     let t_name = &suffix[..pos];
                     self.clone_helpers_needed
                         .borrow_mut()
                         .insert(t_name.to_string());
-                } else {
+                } else { 
                     self.clone_helpers_needed
                         .borrow_mut()
                         .insert(suffix.to_string());

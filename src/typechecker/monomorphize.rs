@@ -273,18 +273,19 @@ impl TypeChecker {
                         } else {
                             name.strip_prefix("std_GraphNode_").unwrap_or(name)
                         };
-                        let parts: Vec<&str> = suffix.split('_').collect();
+                        let normalized = suffix.replace("__", "@");
+                        let parts: Vec<&str> = normalized.split('_').collect();
                         if parts.len() == 2 {
-                            let inner_t_name = parts[0];
-                            let ctx_name = parts[1];
+                            let inner_t_name = parts[0].replace("@", "__");
+                            let ctx_name = parts[1].replace("@", "__");
                             let inner_t = if inner_t_name == "int" {
                                 Type::Int
                             } else if inner_t_name == "byte" {
                                 Type::Byte
                             } else {
-                                Type::Struct(inner_t_name.to_string(), None)
+                                Type::Struct(inner_t_name, None)
                             };
-                            let ctx_t = Type::Struct(ctx_name.to_string(), None);
+                            let ctx_t = Type::Struct(ctx_name, None);
                             let template = if name.starts_with("GraphNode_") { "GraphNode" } else { "std.GraphNode" };
                             let _ = self.monomorphize(template, &[inner_t, ctx_t]);
                         }
