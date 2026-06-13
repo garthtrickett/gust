@@ -2565,11 +2565,7 @@ fn test_self_hosted_cycle_detection() {
     let lib_gst = temp_dir.join("lib.gst");
 
     // Cycle: main imports lib, lib imports main
-    std::fs::write(
-        &main_gst,
-        "import \"lib.gst\";\nfunc main() {}",
-    )
-    .unwrap();
+    std::fs::write(&main_gst, "import \"lib.gst\";\nfunc main() {}").unwrap();
     std::fs::write(&lib_gst, "import \"main.gst\";\nfunc helper() {}").unwrap();
 
     let entry_source = format!(

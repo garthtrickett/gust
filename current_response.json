@@ -1,9 +1,0 @@
-{
-  "summary": "fix: resolve unexpected closing delimiter in compile_tests.rs",
-  "files": [
-    {
-      "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n#[test]\nfn test_self_hosted_import_scanner() {\n    let lexer_content = std::fs::read_to_string(\"compiler/lexer.gst\").unwrap();\n    panic!(\"LEXER.GST CONTENT:\\n{}\", lexer_content);\n}\n    let stdout_str = String::from_utf8(run_output.stdout).expect(\"Invalid UTF-8\");\n\n    assert_eq!(stdout_str.trim(), \"2\\nstd\\nos\");\n}\n=======\n#[test]\nfn test_self_hosted_import_scanner() {\n    let lexer_content = std::fs::read_to_string(\"compiler/lexer.gst\").unwrap();\n    panic!(\"LEXER.GST CONTENT:\\n{}\", lexer_content);\n}\n>>>>>>> REPLACE"
-    }
-  ]
-}
