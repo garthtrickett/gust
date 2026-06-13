@@ -5181,15 +5181,19 @@ fn test_self_hosted_statement_parsing() {
         if let Some(module) = modules.get(path) {
             let stem = path.file_stem().unwrap().to_str().unwrap();
             let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry { "" } else { "parser__" };
-            let check_res = checker.check_module(&module.program, prefix);
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
             assert!(
                 check_res.is_ok(),
                 "Typechecking failed on {:?}: {:?}",
                 path,
                 check_res.err()
             );
-        }
+        } 
     }
 
     let codegen = Codegen::new(

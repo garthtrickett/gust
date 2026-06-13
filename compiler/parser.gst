@@ -100,6 +100,19 @@ func is_at_end(p: *Parser[ctx]) int {
 }
 
 func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx] {
+func is_at_end(p: *Parser[ctx]) int {
+    unsafe {
+        if cur_token_is(p, 14) { // RBrace = 14
+            return 1;
+        }
+        if cur_token_is(p, 0) { // Eof = 0
+            return 1;
+        }
+        return 0;
+    }
+}
+
+func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx] {
     mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
         if cur_token_is(p, 2) { // Ident = 2
