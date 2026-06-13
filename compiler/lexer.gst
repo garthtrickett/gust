@@ -98,11 +98,17 @@ func read_number(l: *Lexer[ctx]) str {
 }
 
 func read_string(l: *Lexer[ctx]) str {
+    mut quote_char := l.ch;
+    if quote_char != 34 {
+        if quote_char != 39 {
+            quote_char = 34;
+        }
+    }
     mut start_pos := l.position + 1;
     mut loop_active := 1;
     while loop_active == 1 {
         read_char(l);
-        if l.ch == 34 {
+        if l.ch == quote_char {
             loop_active = 0;
         } else {
             if l.ch == 0 {
@@ -289,6 +295,23 @@ func next_token(l: *Lexer[ctx], tok: *token.Token[ctx]) {
 
     if matched == 0 {
         if l.ch == 34 {
+            matched = 1;
+            mut lit := read_string(l);
+            tok_type.tag = 4;
+            tok.token_type = tok_type;
+            tok.literal = lit;
+            mut end_pos: token.Position;
+            end_pos.line = l.line;
+            end_pos.column = l.column;
+            end_pos.offset = l.position;
+            tok.span.start = start_pos;
+            tok.span.end = end_pos;
+            return;
+        }
+    }
+
+    if matched == 0 {
+        if l.ch == 39 {
             matched = 1;
             mut lit := read_string(l);
             tok_type.tag = 4;
