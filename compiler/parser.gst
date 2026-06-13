@@ -61,11 +61,13 @@ func expect_peek(p: *Parser[ctx], tag: int, ctx: &Arena) ParseResult {
         mut res := *res_ptr;
         if (*p).peek_token.token_type.tag == tag {
             res.Ok = 1;
-            res.Val = (*p).peek_token;
+            mut val_ptr := &(*p).peek_token as *token.Token[Any];
+            res.Val = *val_ptr;
             next_token(p);
-        } else { 
+        } else {
             res.Ok = 0;
-            res.Val = (*p).peek_token;
+            mut val_ptr := &(*p).peek_token as *token.Token[Any];
+            res.Val = *val_ptr;
             
             mut err: errors.CompilerError[ctx];
             err.kind.tag = 1; // ParserError
