@@ -14,7 +14,15 @@ func scan_imports(source: str, ctx: &Arena) std.Vector[str, ctx] {
         if t.token_type.tag == 28 { // TokenType::Import = 28
             mut path_tok: token.Token[ctx];
             lexer.next_token(&l, &path_tok);
-            if path_tok.token_type.tag == 4 || path_tok.token_type.tag == 2 { // String = 4, Ident = 2
+            
+            mut is_valid_path := 0;
+            if path_tok.token_type.tag == 4 {
+                is_valid_path = 1;
+            }
+            if path_tok.token_type.tag == 2 {
+                is_valid_path = 1;
+            }
+            if is_valid_path == 1 {
                 paths.Push(std.Clone(ctx, path_tok.literal));
             }
 

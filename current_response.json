@@ -1,9 +1,9 @@
 {
-  "summary": "fix: allow both string and ident tags as import paths in scan_imports, remove debug logs",
+  "summary": "fix: replace unsupported logical OR operator with sequential if statement checks in scan_imports",
   "files": [
     {
       "file_path": "compiler/resolver.gst",
-      "code_diff": "<<<<<<< SEARCH\n    while loop_active == 1 {\n        os.LogStr(\"TOKEN:\");\n        os.LogInt(t.token_type.tag);\n        os.LogStr(t.literal);\n        if t.token_type.tag == 28 { // TokenType::Import = 28\n            mut path_tok: token.Token[ctx];\n            lexer.next_token(&l, &path_tok);\n            if path_tok.token_type.tag == 4 { // TokenType::String = 4\n                paths.Push(std.Clone(ctx, path_tok.literal));\n            }\n=======\n    while loop_active == 1 {\n        if t.token_type.tag == 28 { // TokenType::Import = 28\n            mut path_tok: token.Token[ctx];\n            lexer.next_token(&l, &path_tok);\n            if path_tok.token_type.tag == 4 || path_tok.token_type.tag == 2 { // String = 4, Ident = 2\n                paths.Push(std.Clone(ctx, path_tok.literal));\n            }\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n            mut path_tok: token.Token[ctx];\n            lexer.next_token(&l, &path_tok);\n            if path_tok.token_type.tag == 4 || path_tok.token_type.tag == 2 { // String = 4, Ident = 2\n                paths.Push(std.Clone(ctx, path_tok.literal));\n            }\n=======\n            mut path_tok: token.Token[ctx];\n            lexer.next_token(&l, &path_tok);\n            \n            mut is_valid_path := 0;\n            if path_tok.token_type.tag == 4 {\n                is_valid_path = 1;\n            }\n            if path_tok.token_type.tag == 2 {\n                is_valid_path = 1;\n            }\n            if is_valid_path == 1 {\n                paths.Push(std.Clone(ctx, path_tok.literal));\n            }\n>>>>>>> REPLACE"
     }
   ]
 }
