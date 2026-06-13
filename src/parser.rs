@@ -1169,7 +1169,6 @@ impl Parser {
             TokenType::Dot | TokenType::LParen | TokenType::LBracket => 7,
             _ => 1,
         }
-    } 
     }
 
     fn parse_call_arguments(&mut self) -> Option<Vec<Expression>> {
