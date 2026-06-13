@@ -20,13 +20,13 @@ pub struct Codegen {
 
 // Brand Erasure Helpers
 fn extract_brand_from_name(name: &str) -> Option<String> {
-    if name.ends_with("_ctx") || name.contains("_ctx_") {
+    if name.ends_with("_ctx") || name.contains("_ctx_") || name == "ctx" {
         Some("ctx".to_string())
-    } else if name.ends_with("_connCtx") || name.contains("_connCtx_") {
+    } else if name.ends_with("_connCtx") || name.contains("_connCtx_") || name == "connCtx" {
         Some("connCtx".to_string())
-    } else if name.ends_with("_arena") || name.contains("_arena_") {
+    } else if name.ends_with("_arena") || name.contains("_arena_") || name == "arena" {
         Some("arena".to_string())
-    } else if name.ends_with("_a") || name.contains("_a_") {
+    } else if name.ends_with("_a") || name.contains("_a_") || name == "a" {
         Some("a".to_string())
     } else {
         None
@@ -73,6 +73,22 @@ fn erase_struct_name_with_registry(
     erased
 }
 
+fn is_brand_type(t: &Type) -> bool {
+    match t {
+        Type::Struct(name, _) => {
+            name == "ctx"
+                || name == "connCtx"
+                || name == "arena"
+                || name == "a"
+                || name.ends_with("_ctx")
+                || name.ends_with("_connCtx")
+                || name.ends_with("_arena")
+                || name.ends_with("_a")
+        }
+        _ => false,
+    }
+}
+
 fn erase_type_with_registry(t: &Type, registry: &HashMap<String, StructLayout>) -> Type {
     match t {
         Type::Struct(name, brand) => {
@@ -90,6 +106,7 @@ fn erase_type_with_registry(t: &Type, registry: &HashMap<String, StructLayout>) 
         Type::Generic(name, args) => {
             let erased_args: Vec<Type> = args
                 .iter()
+                .filter(|arg| !is_brand_type(arg))
                 .map(|arg| erase_type_with_registry(arg, registry))
                 .collect();
             Type::Generic(name.clone(), erased_args)
