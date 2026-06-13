@@ -3244,6 +3244,8 @@ fn get_expected_lexer_output(source: &str) -> String {
             gust_lexer::token::TokenType::NotEq => 24,
             gust_lexer::token::TokenType::Lt => 25,
             gust_lexer::token::TokenType::Gt => 26,
+            gust_lexer::token::TokenType::LtEq => 48,
+            gust_lexer::token::TokenType::GtEq => 49,
             gust_lexer::token::TokenType::Guard => 27,
             gust_lexer::token::TokenType::Import => 28,
             gust_lexer::token::TokenType::Mut => 29,

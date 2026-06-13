@@ -1,9 +1,9 @@
 {
-  "summary": "fix: remove duplicate closing brace in Parser implementation",
+  "summary": "fix: add missing token arms for LtEq and GtEq in get_expected_lexer_output",
   "files": [
     {
-      "file_path": "src/parser.rs",
-      "code_diff": "<<<<<<< SEARCH\n    fn peek_token_precedence(&self) -> i32 {\n        match self.peek_token.token_type {\n            TokenType::EqEq | TokenType::NotEq => 2,\n            TokenType::Lt | TokenType::Gt | TokenType::LtEq | TokenType::GtEq => 3,\n            TokenType::Plus | TokenType::Minus => 4,\n            TokenType::Asterisk | TokenType::Slash => 5,\n            TokenType::As => 6,\n            TokenType::Dot | TokenType::LParen | TokenType::LBracket => 7,\n            _ => 1,\n        }\n    } \n    }\n\n    fn parse_call_arguments(&mut self) -> Option<Vec<Expression>> {\n=======\n    fn peek_token_precedence(&self) -> i32 {\n        match self.peek_token.token_type {\n            TokenType::EqEq | TokenType::NotEq => 2,\n            TokenType::Lt | TokenType::Gt | TokenType::LtEq | TokenType::GtEq => 3,\n            TokenType::Plus | TokenType::Minus => 4,\n            TokenType::Asterisk | TokenType::Slash => 5,\n            TokenType::As => 6,\n            TokenType::Dot | TokenType::LParen | TokenType::LBracket => 7,\n            _ => 1,\n        }\n    }\n\n    fn parse_call_arguments(&mut self) -> Option<Vec<Expression>> {\n>>>>>>> REPLACE"
+      "file_path": "tests/e2e_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n            gust_lexer::token::TokenType::Lt => 25,\n            gust_lexer::token::TokenType::Gt => 26,\n            gust_lexer::token::TokenType::Guard => 27,\n=======\n            gust_lexer::token::TokenType::Lt => 25,\n            gust_lexer::token::TokenType::Gt => 26,\n            gust_lexer::token::TokenType::LtEq => 48,\n            gust_lexer::token::TokenType::GtEq => 49,\n            gust_lexer::token::TokenType::Guard => 27,\n>>>>>>> REPLACE"
     }
   ]
 }
