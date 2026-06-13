@@ -2662,7 +2662,7 @@ impl TypeChecker {
                             } else {
                                 "LookupResult_"
                             };
-                            let target_struct = clean_struct_name.strip_prefix(prefix).unwrap_or(&clean_struct_name).to_string();
+                            let target_struct = clean_struct_name.strip_prefix(prefix).unwrap_or(clean_struct_name).to_string();
                             if target_struct == "int" {
                                 return Ok(Type::Int);
                             }
