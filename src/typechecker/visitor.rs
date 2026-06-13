@@ -2588,6 +2588,30 @@ impl TypeChecker {
                 let left_type = self.check_expression(left)?;
                 let right_type = self.check_expression(right)?;
 
+                if op == "&&" || op == "||" {
+                    if left_type != Type::Bool && left_type != Type::Int {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: Left operand of logical '{}' must be Int or Bool, but got {:?}",
+                                op, left_type
+                            ),
+                            span: Some(left.span()),
+                        });
+                    }
+                    if right_type != Type::Bool && right_type != Type::Int {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: format!(
+                                "Semantic Error: Right operand of logical '{}' must be Int or Bool, but got {:?}",
+                                op, right_type
+                            ),
+                            span: Some(right.span()),
+                        });
+                    }
+                    return Ok(Type::Bool);
+                }
+
                 if op == "==" || op == "!=" {
                     if let Type::Index(_, _) = left_type
                         && let Expression::Identifier(name, _) = &**right

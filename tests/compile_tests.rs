@@ -3762,8 +3762,30 @@ fn test_generational_arena_method_calls() {
     let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
     let c_output = codegen.generate(&modules_for_codegen);
 
-    // Verify correct transpilation of Step and Swap calls to the FFI function
+    // Verify transpiled C of the generational arenaStep/Swap
     assert!(c_output.contains("std_GenerationalArena_Step_Node(&arena);"));
+}
+
+#[test]
+fn test_typecheck_logical_operators_invalid() {
+    let source = "
+        type Node struct { val: int }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut n: Node;
+            mut ptr := &n;
+            
+            if n && ptr {
+                os.LogInt(1);
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(err.message.contains("Left operand of logical"));
 }
 
 #[test]
