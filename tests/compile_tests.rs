@@ -2235,6 +2235,71 @@ fn test_multi_file_compilation_success() {
 }
 
 #[test]
+fn test_cli_dump_ast_integration() {
+    use std::fs as std_fs;
+    use std::process::Command;
+
+    let temp_dir = std::env::temp_dir().join("gust_cli_test_ast");
+    std_fs::create_dir_all(&temp_dir).unwrap();
+    let file_path = temp_dir.join("test.gst");
+    std_fs::write(&file_path, "mut x: int := 42;").unwrap();
+
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("--dump-ast")
+        .arg(&file_path)
+        .output()
+        .expect("failed to execute cargo run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("Program:"));
+    assert!(stdout.contains("VarDecl: x (mut=true) : Int"));
+    assert!(stdout.contains("Integer: 42"));
+
+    // Ensure no output C file is written
+    let c_file = std::path::Path::new("gust_output.c");
+    assert!(!c_file.exists());
+
+    let _ = std_fs::remove_file(file_path);
+    let _ = std_fs::remove_dir(temp_dir);
+}
+
+#[test]
+fn test_cli_dump_types_integration() {
+    use std::fs as std_fs;
+    use std::process::Command;
+
+    let temp_dir = std::env::temp_dir().join("gust_cli_test_types");
+    std_fs::create_dir_all(&temp_dir).unwrap();
+    let file_path = temp_dir.join("test.gst");
+    std_fs::write(&file_path, "type Point struct { x: int, y: int } func main() {}").unwrap();
+
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("--dump-types")
+        .arg(&file_path)
+        .output()
+        .expect("failed to execute cargo run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("Structures:"));
+    assert!(stdout.contains("Point:"));
+    assert!(stdout.contains("x : Int"));
+    assert!(stdout.contains("y : Int"));
+
+    // Ensure no output C file is written
+    let c_file = std::path::Path::new("gust_output.c");
+    assert!(!c_file.exists());
+
+    let _ = std_fs::remove_file(file_path);
+    let _ = std_fs::remove_dir(temp_dir);
+}
+
+#[test]
 fn test_generic_enum_typechecking() {
     let source = "
         type MyResult[T, ctx] enum {

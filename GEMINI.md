@@ -313,3 +313,25 @@ Maintain a multi-layered testing topology:
 * **Layer 1: Unit Tests (`cargo test`):** Put unit tests in the same file as the tested components using a `tests` module block with `#[cfg(test)]`. Target pure calculations and lexer/parser invariants.
 * **Layer 2: Integration / E2E Tests:** Keep integration and end-to-end user flows inside a separate `/tests` directory (e.g., `tests/compile_tests.rs`, `tests/e2e_tests.rs`).
 * **Strict Assertion of Invariants:** Use `assert_eq!`, `assert!`, and `matches!` pattern testing directly rather than mock structures. Avoid mocking libraries unless strictly testing I/O boundaries.
+
+---
+
+## 9. Diagnostic CLI Flags & Self-Hosting Roadmap
+
+The `gust_v1` compiler provides two diagnostic command-line flags to assist with ground-truth verification during the self-hosting phase:
+
+### `--dump-ast`
+* **Purpose**: Intercepts the pipeline directly after parsing.
+* **Behavior**: Walking the parsed Abstract Syntax Tree (AST), this flag serializes it into a highly deterministic, stable, human-readable indented text structure. Volatile spans are stripped to ensure the output remains perfectly diffable against the self-hosted parser in Phase 3.
+* **Usage**:
+  ```bash
+  cargo run -- --dump-ast src/main.gst
+  ```
+
+### `--dump-types`
+* **Purpose**: Intercepts the pipeline directly after typechecking.
+* **Behavior**: Extracts the populated type checking databases (including resolved variable types, alphabetically sorted struct layouts, enum variant listings, and alphabetically sorted function signatures) and serializes them. This acts as our semantic ground-truth reference database for the self-hosted typechecker in Phase 4.
+* **Usage**:
+  ```bash
+  cargo run -- --dump-types src/main.gst
+  ```

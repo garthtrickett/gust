@@ -4033,3 +4033,36 @@ impl TypeChecker {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::TypeChecker;
+    use crate::lexer::Lexer;
+    use crate::parser::Parser;
+
+    #[test]
+    fn test_type_db_serialization() {
+        let source = "
+            type MyStruct struct {
+                field_b: int,
+                field_a: bool
+            }
+            func main() {
+                mut x: int := 10;
+            }
+        ";
+        let lexer = Lexer::new(source);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(parser.errors.len(), 0);
+
+        let mut checker = TypeChecker::new();
+        let res = checker.check_program(&program);
+        assert!(res.is_ok());
+
+        let serialized = checker.serialize();
+        assert!(serialized.contains("MyStruct:\n    field_a : Bool\n    field_b : Int"));
+        assert!(serialized.contains("x : Int"));
+        assert!(serialized.contains("main() -> Void"));
+    }
+}

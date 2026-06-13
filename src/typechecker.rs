@@ -730,4 +730,65 @@ impl TypeChecker {
             open_directories: HashSet::new(),
         }
     }
+
+    pub fn serialize(&self) -> String {
+        let mut out = String::new();
+
+        // 1. Variables
+        out.push_str("Variables:\n");
+        let mut sorted_vars: Vec<(&String, &Type)> = self.variable_types.iter().collect();
+        sorted_vars.sort_by(|a, b| a.0.cmp(b.0));
+        for (name, ty) in sorted_vars {
+            out.push_str(&format!("  {} : {:?}\n", name, ty));
+        }
+
+        // 2. Structures
+        out.push_str("Structures:\n");
+        let mut sorted_structs: Vec<(&String, &StructLayout)> = self.struct_registry.iter().collect();
+        sorted_structs.sort_by(|a, b| a.0.cmp(b.0));
+        for (name, layout) in sorted_structs {
+            let brand_str = match &layout.brand {
+                Some(b) => format!(" [{}]", b),
+                None => "".to_string(),
+            };
+            out.push_str(&format!("  {}{}:\n", name, brand_str));
+            let mut sorted_fields: Vec<(&String, &Type)> = layout.fields.iter().collect();
+            sorted_fields.sort_by(|a, b| a.0.cmp(b.0));
+            for (f_name, f_type) in sorted_fields {
+                out.push_str(&format!("    {} : {:?}\n", f_name, f_type));
+            }
+        }
+
+        // 3. Enums
+        out.push_str("Enums:\n");
+        let mut sorted_enums: Vec<(&String, &Vec<String>)> = self.enum_registry.iter().collect();
+        sorted_enums.sort_by(|a, b| a.0.cmp(b.0));
+        for (name, variants) in sorted_enums {
+            let mut sorted_variants = variants.clone();
+            sorted_variants.sort();
+            out.push_str(&format!("  {}:\n", name));
+            for var in sorted_variants {
+                out.push_str(&format!("    {}\n", var));
+            }
+        }
+
+        // 4. Functions
+        out.push_str("Functions:\n");
+        let mut sorted_funcs: Vec<(&String, &FunctionSignature)> = self.function_registry.iter().collect();
+        sorted_funcs.sort_by(|a, b| a.0.cmp(b.0));
+        for (name, sig) in sorted_funcs {
+            let mut params_str = Vec::new();
+            for (p_name, p_type) in sig.param_names.iter().zip(sig.params.iter()) {
+                params_str.push(format!("{}: {:?}", p_name, p_type));
+            }
+            out.push_str(&format!(
+                "  {}({}) -> {:?}\n",
+                name,
+                params_str.join(", "),
+                sig.return_type
+            ));
+        }
+
+        out
+    }
 }

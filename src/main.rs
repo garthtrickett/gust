@@ -85,6 +85,12 @@ fn run_compile_pass_file(input_filename: &str, output_filename: &str) {
                 std::process::exit(1);
             }
 
+            if dump_types {
+                let types_str = checker.serialize();
+                print!("{}", types_str);
+                std::process::exit(0);
+            }
+
             let codegen = Codegen::new(
                 checker.variable_types,
                 checker.struct_registry,
