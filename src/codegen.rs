@@ -2366,14 +2366,14 @@ impl Codegen {
                     if is_channel && right == "Send" {
                         let arg_str = self.gen_expression(&arguments[0]);
                         return format!(
-                            "((({{\n        __typeof__({1}) _tmp = {1};\n        std_Channel_Send_impl({0}.capacity, &_tmp);\n    }}))",
+                            "(({{\n        __typeof__({1}) _tmp = {1};\n        std_Channel_Send_impl({0}.capacity, &_tmp);\n    }}))",
                             left_str, arg_str
                         );
                     }
                     if is_channel && right == "Recv" {
                         let type_str = self.get_c_type(&left_type);
                         return format!(
-                            "((({{\n        __typeof__(*(((struct {}*)0)->_phantom)) _val;\n        std_Channel_Recv_impl({}.capacity, &_val);\n        _val;\n    }}))",
+                            "(({{\n        __typeof__(*(((struct {}*)0)->_phantom))) _val;\n        std_Channel_Recv_impl({}.capacity, &_val);\n        _val;\n    }}))",
                             type_str, left_str
                         );
                     }
