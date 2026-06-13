@@ -1379,52 +1379,56 @@ impl TypeChecker {
                             }
                         }
 
-                // Invalidate any active views that borrow from the root variable being modified
-                if let Some(root_name) = get_root_variable(left) {
-                    let mut to_invalidate = Vec::new();
-                    for (var_name, origins) in &self.variable_origins {
-                        if var_name != &root_name && origins.contains(&root_name) {
-                            to_invalidate.push(var_name.clone());
-                        }
-                    }
-                    for var in to_invalidate {
-                        self.moved_vars.insert(var);
-                    }
-                }
+                let is_ptr_write = self.is_pointer_write(left);
 
-                // Track assignments to variables to update their active memory origins
-                if let Some(root_name) = get_root_variable(left) {
-                    let mut origs = if self.is_ephemeral_view(&left_type) {
-                        self.get_expression_origins(value)
-                    } else {
-                        HashSet::new()
-                    };
-                    if matches!(left, Expression::Identifier(_, _)) {
-                        if origs.is_empty() {
-                            origs.insert(root_name.clone());
-                        }
-                        self.variable_origins.insert(root_name.clone(), origs.clone());
-                        self.all_variable_origins.insert(root_name.clone(), origs);
-                    } else {
-                        if !origs.is_empty() {
-                            if let Some(existing) = self.variable_origins.get_mut(&root_name) {
-                                existing.extend(origs.clone());
-                            } else {
-                                self.variable_origins.insert(root_name.clone(), origs.clone());
+                if !is_ptr_write {
+                    // Invalidate any active views that borrow from the root variable being modified
+                    if let Some(root_name) = get_root_variable(left) {
+                        let mut to_invalidate = Vec::new();
+                        for (var_name, origins) in &self.variable_origins {
+                            if var_name != &root_name && origins.contains(&root_name) {
+                                to_invalidate.push(var_name.clone());
                             }
-                            if let Some(existing) = self.all_variable_origins.get_mut(&root_name) {
-                                existing.extend(origs.clone());
-                            } else {
-                                self.all_variable_origins.insert(root_name.clone(), origs);
-                            }
+                        } 
+                        for var in to_invalidate {
+                            self.moved_vars.insert(var);
                         }
                     }
-                    self.moved_vars.remove(&root_name); // Re-initialized!
 
-                    if let Type::Struct(ref struct_name, _) = val_type
-                        && struct_name.starts_with("os_Dir_") {
-                            self.open_directories.insert(root_name.clone());
+                    // Track assignments to variables to update their active memory origins
+                    if let Some(root_name) = get_root_variable(left) {
+                        let mut origs = if self.is_ephemeral_view(&left_type) {
+                            self.get_expression_origins(value)
+                        } else {
+                            HashSet::new()
+                        };
+                        if matches!(left, Expression::Identifier(_, _)) {
+                            if origs.is_empty() {
+                                origs.insert(root_name.clone());
+                            }
+                            self.variable_origins.insert(root_name.clone(), origs.clone());
+                            self.all_variable_origins.insert(root_name.clone(), origs);
+                        } else {
+                            if !origs.is_empty() {
+                                if let Some(existing) = self.variable_origins.get_mut(&root_name) {
+                                    existing.extend(origs.clone());
+                                } else {
+                                    self.variable_origins.insert(root_name.clone(), origs.clone());
+                                }
+                                if let Some(existing) = self.all_variable_origins.get_mut(&root_name) {
+                                    existing.extend(origs.clone());
+                                } else {
+                                    self.all_variable_origins.insert(root_name.clone(), origs);
+                                }
+                            }
                         }
+                        self.moved_vars.remove(&root_name); // Re-initialized!
+
+                        if let Type::Struct(ref struct_name, _) = val_type
+                            && struct_name.starts_with("os_Dir_") {
+                                self.open_directories.insert(root_name.clone());
+                            }
+                    }
                 }
             }
             Statement::While {
@@ -1792,6 +1796,24 @@ impl TypeChecker {
             }
         }
         Ok(())
+    }
+
+    pub fn is_pointer_write(&self, expr: &Expression) -> bool {
+        match expr {
+            Expression::Dereference(_, _) => true,
+            Expression::IndexAccess { .. } => true,
+            Expression::Selector { left, .. } => {
+                if let Some(left_type) = self.resolved_types.get(&left.span()) {
+                    matches!(left_type, Type::RawPointer(_)) || self.is_pointer_write(left)
+                } else {
+                    self.is_pointer_write(left)
+                }
+            }
+            Expression::AsCast { left, .. } => self.is_pointer_write(left),
+            Expression::Move(inner, _) => self.is_pointer_write(inner),
+            Expression::Take(inner, _) => self.is_pointer_write(inner),
+            _ => false,
+        }
     }
 
     // Dynamic, recursive Set-Based memory origin extractor
