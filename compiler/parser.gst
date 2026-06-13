@@ -284,15 +284,6 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
     if left == empty[Index[ast.Expression[ctx], ctx]] {
         return left;
     }
-    
-    unsafe {
-        while precedence < peek_token_precedence(p) {
-            if cur_token_is(p, 10) { // Semicolon = 10
-                break;
-            }
-            break;
-        }
-    }
     return left;
 }
 
