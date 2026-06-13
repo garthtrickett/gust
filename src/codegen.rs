@@ -2202,6 +2202,40 @@ impl Codegen {
                     );
                 }
 
+                // os.GraphNew / std.GraphNew
+                if func_path == "os.GraphNew"
+                    || func_path == "os_GraphNew"
+                    || func_path == "std.GraphNew"
+                    || func_path == "std_GraphNew"
+                {
+                    let arg_str = self.gen_expression(&arguments[0]);
+                    let type_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
+                        struct_name.clone()
+                    } else {
+                        "std_Graph_Any".to_string()
+                    };
+                    let mut is_ptr = false;
+                    if let Expression::Identifier(name, span) = &arguments[0]
+                        && let Some(Type::RawPointer(inner)) = self
+                            .resolved_types
+                            .get(span)
+                            .cloned()
+                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
+                        && *inner == Type::Arena
+                    {
+                        is_ptr = true;
+                    }
+                    let arena_expr = if is_ptr {
+                        arg_str
+                    } else {
+                        format!("&{}", arg_str)
+                    };
+                    return format!(
+                        "(struct {}){{ .nodes = {{ .arena = {}, .capacity = 0, .data = NULL, .free_len = 0, .free_list = NULL, .len = 0, .occupied = NULL }} }}",
+                        type_str, arena_expr
+                    );
+                }
+
                 if func_path == "std.Spawn" || func_path == "std_Spawn" {
                     let raw_func_name = expression_to_string(&arguments[0]);
                     let thread_func_name = self
