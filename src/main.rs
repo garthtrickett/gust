@@ -121,15 +121,13 @@ fn run_compile_pass_file(input_filename: &str, output_filename: &str, dump_ast: 
 
     match resolver.resolve(std::path::Path::new(input_filename), &fs_impl) {
         Ok((order, modules)) => {
-            if dump_ast {
-                if let Some(entry_path) = order.last() {
-                    if let Some(module) = modules.get(entry_path) {
+            if dump_ast
+                && let Some(entry_path) = order.last()
+                    && let Some(module) = modules.get(entry_path) {
                         let ast_str = module.program.serialize(0);
                         print!("{}", ast_str);
                         std::process::exit(0);
                     }
-                }
-            }
 
             let mut checker = TypeChecker::new();
             let mut check_error = None;

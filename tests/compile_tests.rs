@@ -2244,6 +2244,12 @@ fn test_cli_dump_ast_integration() {
     let file_path = temp_dir.join("test.gst");
     std_fs::write(&file_path, "mut x: int := 42;").unwrap();
 
+    // Robustness: clean up any pre-existing gust_output.c so we can verify early termination
+    let c_file = std::path::Path::new("gust_output.c");
+    if c_file.exists() {
+        let _ = std_fs::remove_file(c_file);
+    }
+
     let output = Command::new("cargo")
         .arg("run")
         .arg("--")
@@ -2259,7 +2265,6 @@ fn test_cli_dump_ast_integration() {
     assert!(stdout.contains("Integer: 42"));
 
     // Ensure no output C file is written
-    let c_file = std::path::Path::new("gust_output.c");
     assert!(!c_file.exists());
 
     let _ = std_fs::remove_file(file_path);
@@ -2275,6 +2280,12 @@ fn test_cli_dump_types_integration() {
     std_fs::create_dir_all(&temp_dir).unwrap();
     let file_path = temp_dir.join("test.gst");
     std_fs::write(&file_path, "type Point struct { x: int, y: int } func main() {}").unwrap();
+
+    // Robustness: clean up any pre-existing gust_output.c so we can verify early termination
+    let c_file = std::path::Path::new("gust_output.c");
+    if c_file.exists() {
+        let _ = std_fs::remove_file(c_file);
+    }
 
     let output = Command::new("cargo")
         .arg("run")
@@ -2292,7 +2303,6 @@ fn test_cli_dump_types_integration() {
     assert!(stdout.contains("y : Int"));
 
     // Ensure no output C file is written
-    let c_file = std::path::Path::new("gust_output.c");
     assert!(!c_file.exists());
 
     let _ = std_fs::remove_file(file_path);
