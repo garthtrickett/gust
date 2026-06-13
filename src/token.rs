@@ -35,6 +35,8 @@ pub enum TokenType {
     Gt,
     LtEq,
     GtEq,
+    AmpAmp,
+    PipePipe,
 
     // Keywords
     Guard,

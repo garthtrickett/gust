@@ -173,11 +173,38 @@ impl Lexer {
                 literal: ";".to_string(),
                 span: crate::token::Span { start: start_pos, end: start_pos },
             },
-            '&' => Token {
-                token_type: TokenType::Ampersand,
-                literal: "&".to_string(),
-                span: crate::token::Span { start: start_pos, end: start_pos },
-            },
+            '&' => {
+                if self.peek_char() == '&' {
+                    self.read_char();
+                    Token {
+                        token_type: TokenType::AmpAmp,
+                        literal: "&&".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
+                    }
+                } else {
+                    Token {
+                        token_type: TokenType::Ampersand,
+                        literal: "&".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
+                    }
+                }
+            }
+            '|' => {
+                if self.peek_char() == '|' {
+                    self.read_char();
+                    Token {
+                        token_type: TokenType::PipePipe,
+                        literal: "||".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
+                    }
+                } else {
+                    Token {
+                        token_type: TokenType::Illegal,
+                        literal: "|".to_string(),
+                        span: crate::token::Span { start: start_pos, end: start_pos },
+                    }
+                }
+            }
             '+' => Token {
                 token_type: TokenType::Plus,
                 literal: "+".to_string(),
@@ -699,5 +726,25 @@ mod tests {
                 offset: 16
             }
         );
+    }
+
+    #[test]
+    fn test_logical_operator_lexing() {
+        let input = "&& || & |";
+        let mut l = Lexer::new(input);
+
+        let expected = vec![
+            (TokenType::AmpAmp, "&&"),
+            (TokenType::PipePipe, "||"),
+            (TokenType::Ampersand, "&"),
+            (TokenType::Illegal, "|"),
+            (TokenType::Eof, ""),
+        ];
+
+        for (expected_type, expected_literal) in expected {
+            let tok = l.next_token();
+            assert_eq!(tok.token_type, expected_type);
+            assert_eq!(tok.literal, expected_literal);
+        }
     }
 }
