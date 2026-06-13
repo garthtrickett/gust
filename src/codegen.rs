@@ -18,37 +18,11 @@ pub struct Codegen {
     clone_helpers_needed: RefCell<std::collections::HashSet<String>>,
 }
 
-// Brand Erasure Helpers
-fn extract_brand_from_name(name: &str) -> Option<String> {
-    if name.ends_with("_ctx") || name.contains("_ctx_") || name == "ctx" {
-        Some("ctx".to_string())
-    } else if name.ends_with("_connCtx") || name.contains("_connCtx_") || name == "connCtx" {
-        Some("connCtx".to_string())
-    } else if name.ends_with("_arena") || name.contains("_arena_") || name == "arena" {
-        Some("arena".to_string())
-    } else if name.ends_with("_a") || name.contains("_a_") || name == "a" {
-        Some("a".to_string())
-    } else if name.ends_with("_Any") || name.contains("_Any_") || name == "Any" {
-        Some("Any".to_string())
-    } else {
-        None
-    }
-}
-
 fn erase_struct_name_with_registry(
     name: &str,
-    brand: &Option<String>,
-    registry: &HashMap<String, StructLayout>,
+    _brand: &Option<String>,
+    _registry: &HashMap<String, StructLayout>,
 ) -> String {
-    let mut actual_brand = brand.clone();
-    if actual_brand.is_none()
-        && let Some(layout) = registry.get(name)
-    {
-        actual_brand = layout.brand.clone();
-    }
-    if actual_brand.is_none() {
-        actual_brand = extract_brand_from_name(name);
-    }
     let mut erased = name.to_string();
     let mut suffix = String::new();
     if let Some(pos) = erased.rfind('_') {
@@ -61,16 +35,44 @@ fn erase_struct_name_with_registry(
             erased = erased[..pos].to_string();
         }
     }
-    if let Some(b) = &actual_brand {
-        let pattern_mid = format!("_{}_", b);
-        let pattern_end = format!("_{}", b);
-        if erased.contains(&pattern_mid) {
-            erased = erased.replace(&pattern_mid, "_");
-        }
-        if erased.ends_with(&pattern_end) {
-            erased = erased[..erased.len() - pattern_end.len()].to_string();
+
+    let brand_bases = ["connCtx", "arena", "ctx", "Any", "a"];
+    let mut changed = true;
+    while changed {
+        changed = false;
+        for base in &brand_bases {
+            let pat_mid_simple = format!("_{}_", base);
+            if let Some(pos) = erased.find(&pat_mid_simple) {
+                erased.replace_range(pos..pos + pat_mid_simple.len() - 1, "");
+                changed = true;
+                break;
+            }
+            let pat_mid_ns = format!("__{}_", base);
+            if let Some(pos) = erased.find(&pat_mid_ns) {
+                if let Some(start_pos) = erased[..pos].rfind('_') {
+                    erased.replace_range(start_pos..pos + pat_mid_ns.len() - 1, "");
+                    changed = true;
+                    break;
+                }
+            }
+            let pat_end_simple = format!("_{}", base);
+            if erased.ends_with(&pat_end_simple) {
+                erased.truncate(erased.len() - pat_end_simple.len());
+                changed = true;
+                break;
+            }
+            let pat_end_ns = format!("__{}", base);
+            if erased.ends_with(&pat_end_ns) {
+                let pos = erased.len() - pat_end_ns.len();
+                if let Some(start_pos) = erased[..pos].rfind('_') {
+                    erased.truncate(start_pos);
+                    changed = true;
+                    break;
+                }
+            }
         }
     }
+
     erased.push_str(&suffix);
     erased
 }
