@@ -87,7 +87,7 @@ impl TypeChecker {
                     span: None,
                 });
             }
-        } else if name.contains("__") {
+        } else if name.contains("__") || name.starts_with("std_") || name.starts_with("os_") {
             name.to_string()
         } else {
             format!("{}{}", self.current_prefix, name)

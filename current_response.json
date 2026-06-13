@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve syntax error in get_directory by replacing unsupported operator",
+  "summary": "fix: prevent prefixing already-namespaced standard library templates in typechecker",
   "files": [
     {
-      "file_path": "compiler/resolver.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc get_directory(path: str, ctx: &Arena) str {\n    mut i := len(path) - 1;\n    while i >= 0 {\n        mut b := std.str_byte_at(path, i);\n        if b == 47 { // '/' is 47\n            return std.str_slice(path, 0, i);\n        }\n        i = i - 1;\n    }\n    return \".\";\n}\n=======\nfunc get_directory(path: str, ctx: &Arena) str {\n    mut i := len(path) - 1;\n    while i > 0 - 1 {\n        mut b := std.str_byte_at(path, i);\n        if b == 47 { // '/' is 47\n            return std.str_slice(path, 0, i);\n        }\n        i = i - 1;\n    }\n    return \".\";\n}\n>>>>>>> REPLACE"
+      "file_path": "src/typechecker.rs",
+      "code_diff": "<<<<<<< SEARCH\n        } else if name.contains(\"__\") {\n            name.to_string()\n        } else {\n            format!(\"{}{}\", self.current_prefix, name)\n        };\n=======\n        } else if name.contains(\"__\") || name.starts_with(\"std_\") || name.starts_with(\"os_\") {\n            name.to_string()\n        } else {\n            format!(\"{}{}\", self.current_prefix, name)\n        };\n>>>>>>> REPLACE"
     }
   ]
 }
