@@ -39,13 +39,19 @@ func next_token(p: *Parser[ctx]) {
 
 func cur_token_is(p: *Parser[ctx], tag: int) bool {
     unsafe {
-        return (*p).cur_token.token_type.tag == tag;
+        if (*p).cur_token.token_type.tag == tag {
+            return true;
+        }
+        return false;
     }
 }
 
 func peek_token_is(p: *Parser[ctx], tag: int) bool {
     unsafe {
-        return (*p).peek_token.token_type.tag == tag;
+        if (*p).peek_token.token_type.tag == tag {
+            return true;
+        }
+        return false;
     }
 }
 
