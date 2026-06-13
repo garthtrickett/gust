@@ -988,7 +988,7 @@ impl Codegen {
                     self.clone_helpers_needed
                         .borrow_mut()
                         .insert(t_name.to_string());
-                } else { 
+                } else {
                     self.clone_helpers_needed
                         .borrow_mut()
                         .insert(suffix.to_string());
@@ -1000,7 +1000,7 @@ impl Codegen {
                     self.clone_helpers_needed
                         .borrow_mut()
                         .insert(t_name.to_string());
-                } else { 
+                } else {
                     self.clone_helpers_needed
                         .borrow_mut()
                         .insert(suffix.to_string());
@@ -2262,13 +2262,17 @@ impl Codegen {
                     let mut is_rc = false;
                     let mut is_graph = false;
                     let mut is_gen_arena = false;
-                    let mut left_type = self.get_expr_type(left).unwrap_or(Type::Void);
-                    if let Type::RawPointer(inner) = &left_type {
+                    let raw_left_type = self.get_expr_type(left).unwrap_or(Type::Void);
+                    let is_left_ptr = matches!(raw_left_type, Type::RawPointer(_));
+                    let mut left_type = raw_left_type.clone();
+                    if let Type::RawPointer(inner) = &raw_left_type {
                         left_type = *inner.clone();
                     }
+                    let ref_prefix = if is_left_ptr { "" } else { "&" };
 
                     let mut is_mutex = false;
                     let mut is_channel = false;
+                    let is_arena = left_type == Type::Arena;
                     if let Type::Struct(struct_name, brand) = &left_type {
                         let erased_name = erase_struct_name_with_registry(
                             struct_name,
@@ -2382,78 +2386,91 @@ impl Codegen {
                                 None
                             }
                         };
-                        return format!("std_GenerationalArena_Step_{}(&{})", t_name, left_str);
+                        return format!(
+                            "std_GenerationalArena_Step_{}({}{})",
+                            t_name, ref_prefix, left_str
+                        );
                     }
 
                     if is_mutex && right == "Lock" {
+                        let arrow_or_dot = if is_left_ptr { "->" } else { "." };
                         return format!(
-                            "std_Mutex_Lock_impl({}.lock_state, &({}.value))",
-                            left_str, left_str
+                            "std_Mutex_Lock_impl({0}{1}lock_state, &({0}{1}value))",
+                            left_str, arrow_or_dot
                         );
                     }
                     if is_mutex && right == "Unlock" {
-                        return format!("std_Mutex_Unlock_impl({}.lock_state)", left_str);
+                        let arrow_or_dot = if is_left_ptr { "->" } else { "." };
+                        return format!(
+                            "std_Mutex_Unlock_impl({}{}{}lock_state)",
+                            left_str, arrow_or_dot, ""
+                        );
                     }
                     if is_channel && right == "Send" {
                         let arg_str = self.gen_expression(&arguments[0]);
+                        let arrow_or_dot = if is_left_ptr { "->" } else { "." };
                         return format!(
-                            "(({{\n        __typeof__({1}) _tmp = {1};\n        std_Channel_Send_impl({0}.capacity, &_tmp);\n    }}))",
-                            left_str, arg_str
+                            "(({{\n        __typeof__({1}) _tmp = {1};\n        std_Channel_Send_impl({0}{2}capacity, &_tmp);\n    }}))",
+                            left_str, arg_str, arrow_or_dot
                         );
                     }
                     if is_channel && right == "Recv" {
                         let type_str = self.get_c_type(&left_type);
+                        let arrow_or_dot = if is_left_ptr { "->" } else { "." };
                         return format!(
-                            "(({{\n        __typeof__(*(((struct {}*)0)->_phantom)) _val;\n        std_Channel_Recv_impl({}.capacity, &_val);\n        _val;\n    }}))",
-                            type_str, left_str
+                            "(({{\n        __typeof__(*(((struct {0}*)0)->_phantom)) _val;\n        std_Channel_Recv_impl({1}{2}capacity, &_val);\n        _val;\n    }}))",
+                            type_str, left_str, arrow_or_dot
                         );
                     }
 
-                    if is_rc && right == "Clone" {
-                        return format!("std_RcClone(&{})", left_str);
-                    }
-                    if is_rc && right == "Release" {
-                        return format!("std_RcRelease(&{})", left_str);
-                    }
-                    if is_rc && right == "Get" {
-                        return format!("std_RcGet(&{})", left_str);
+                    if is_arena && right == "Free" {
+                        return format!("os_Arena_Free({}{})", ref_prefix, left_str);
                     }
 
                     if is_rc && right == "Clone" {
-                        return format!("std_RcClone(&{})", left_str);
+                        return format!("std_RcClone({}{})", ref_prefix, left_str);
                     }
                     if is_rc && right == "Release" {
-                        return format!("std_RcRelease(&{})", left_str);
+                        return format!("std_RcRelease({}{})", ref_prefix, left_str);
                     }
                     if is_rc && right == "Get" {
-                        return format!("std_RcGet(&{})", left_str);
+                        return format!("std_RcGet({}{})", ref_prefix, left_str);
                     }
                     if is_graph && right == "AddNode" {
                         let arg_str = self.gen_expression(&arguments[0]);
-                        return format!("std_GraphAddNode(&{}, {})", left_str, arg_str);
+                        return format!(
+                            "std_GraphAddNode({}{}, {})",
+                            ref_prefix, left_str, arg_str
+                        );
                     }
                     if is_graph && right == "AddEdge" {
                         let arg0 = self.gen_expression(&arguments[0]);
                         let arg1 = self.gen_expression(&arguments[1]);
-                        return format!("std_GraphAddEdge(&{}, {}, {})", left_str, arg0, arg1);
+                        return format!(
+                            "std_GraphAddEdge({}{}, {}, {})",
+                            ref_prefix, left_str, arg0, arg1
+                        );
                     }
                     if is_graph && right == "GetNode" {
                         let arg_str = self.gen_expression(&arguments[0]);
-                        return format!("std_GraphGetNode(&{}, {})", left_str, arg_str);
+                        return format!(
+                            "std_GraphGetNode({}{}, {})",
+                            ref_prefix, left_str, arg_str
+                        );
                     }
 
                     if is_vec && right == "Push" {
                         let arg_str = self.gen_expression(&arguments[0]);
-                        return format!("os_VectorPush(&{}, {})", left_str, arg_str);
+                        return format!("os_VectorPush({}{}, {})", ref_prefix, left_str, arg_str);
                     }
                     if is_vec && right == "Pop" {
-                        return format!("os_VectorPop(&{})", left_str);
+                        return format!("os_VectorPop({}{})", ref_prefix, left_str);
                     }
                     if is_vec && right == "Clear" {
-                        return format!("os_VectorClear(&{})", left_str);
+                        return format!("os_VectorClear({}{})", ref_prefix, left_str);
                     }
                     if is_vec && right == "Back" {
-                        return format!("os_VectorBack(&{})", left_str);
+                        return format!("os_VectorBack({}{})", ref_prefix, left_str);
                     }
                     if is_map && right == "Insert" {
                         let k_str = self.gen_expression(&arguments[0]);
@@ -2487,8 +2504,8 @@ impl Codegen {
                         }
                         let is_str_key_str = if is_str_key { "1" } else { "0" };
                         return format!(
-                            "*os_HashMapRef(&{}, {}, {}) = {}",
-                            left_str, k_str, is_str_key_str, v_str
+                            "*os_HashMapRef({}{}, {}, {}) = {}",
+                            ref_prefix, left_str, k_str, is_str_key_str, v_str
                         );
                     }
                     if is_map && right == "Get" {
@@ -2523,14 +2540,8 @@ impl Codegen {
                         }
                         let is_str_key_str = if is_str_key { "1" } else { "0" };
                         return format!(
-                            "({{ {} res = {{0}}; res.Ok = os_HashMapContains(&{}, {}, {}); if (res.Ok) {{ res.Val = *os_HashMapRef(&{}, {}, {}); }} res; }})",
-                            lookup_struct,
-                            left_str,
-                            k_str,
-                            is_str_key_str,
-                            left_str,
-                            k_str,
-                            is_str_key_str
+                            "({{ {0} res = {{0}}; res.Ok = os_HashMapContains({1}{2}, {3}, {4}); if (res.Ok) {{ res.Val = *os_HashMapRef({1}{2}, {3}, {4}); }} res; }})",
+                            lookup_struct, ref_prefix, left_str, k_str, is_str_key_str
                         );
                     }
                     if is_map && right == "Remove" {
@@ -2564,12 +2575,12 @@ impl Codegen {
                         }
                         let is_str_key_str = if is_str_key { "1" } else { "0" };
                         return format!(
-                            "os_HashMapRemove(&{}, {}, {})",
-                            left_str, k_str, is_str_key_str
+                            "os_HashMapRemove({}{}, {}, {})",
+                            ref_prefix, left_str, k_str, is_str_key_str
                         );
                     }
                     if is_map && right == "Clear" {
-                        return format!("os_HashMapClear(&{})", left_str);
+                        return format!("os_HashMapClear({}{})", ref_prefix, left_str);
                     }
                     if is_map && right == "Keys" {
                         let ctx_str = self.gen_expression(&arguments[0]);
@@ -2596,30 +2607,21 @@ impl Codegen {
                         } else {
                             format!("&{}", ctx_str)
                         };
+                        let arrow_or_dot = if is_left_ptr { "->" } else { "." };
                         return format!(
-                            "(({{\n        {} _v = ({}){{ .data = NULL, .len = 0, .capacity = 0, .arena = {} }};\n        for (int _i = 0; _i < ({}).capacity; _i++) {{\n            if (({}).occupied[_i] == 1) {{\n                os_VectorPush(&_v, ({}).keys[_i]);\n            }}\n        }}\n        _v;\n    }}))",
-                            vec_type_str, vec_type_str, arena_expr, left_str, left_str, left_str
+                            "(({{\n        {0} _v = ({1}){{ .data = NULL, .len = 0, .capacity = 0, .arena = {2} }};\\n        for (int _i = 0; _i < ({3}{4}capacity); _i++) {{\\n            if (({3}{4}occupied)[_i] == 1) {{\\n                os_VectorPush(&_v, ({3}{4}keys)[_i]);\\n            }}\\n        }}\\n        _v;\\n    }}))",
+                            vec_type_str, vec_type_str, arena_expr, left_str, arrow_or_dot
                         );
                     }
 
                     if is_pool && right == "Alloc" {
                         let arg_str = self.gen_expression(&arguments[0]);
-                        return format!("std_PoolAlloc(&{}, {})", left_str, arg_str);
+                        return format!("std_PoolAlloc({}{}, {})", ref_prefix, left_str, arg_str);
                     }
 
                     if is_pool && right == "Free" {
                         let arg_str = self.gen_expression(&arguments[0]);
-                        return format!("std_PoolFree(&{}, {})", left_str, arg_str);
-                    }
-
-                    let is_arena_alloc = left_type == Type::Arena
-                        || matches!(left_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
-                    if is_arena_alloc && right == "Free" {
-                        if matches!(left_type, Type::RawPointer(_)) {
-                            return format!("os_Arena_Free({}", left_str);
-                        } else {
-                            return format!("os_Arena_Free(&{})", left_str);
-                        }
+                        return format!("std_PoolFree({}{}, {})", ref_prefix, left_str, arg_str);
                     }
                 }
 
