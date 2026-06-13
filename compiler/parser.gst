@@ -123,22 +123,177 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
     return t_idx;
 }
 
-func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.Expression[ctx], ctx] {
+func get_expression_span(expr: Index[ast.Expression[ctx], ctx], ctx: &Arena) token.Span { 
+    mut s: token.Span;
+    unsafe {
+        mut tag := ctx[expr].tag;
+        if tag == 0 { s = ctx[expr].Identifier.span; }
+        else if tag == 1 { s = ctx[expr].Integer.span; }
+        else if tag == 2 { s = ctx[expr].String.span; }
+        else if tag == 3 { s = ctx[expr].Bool.span; }
+        else if tag == 4 { s = ctx[expr].Move.span; }
+        else if tag == 5 { s = ctx[expr].Take.span; }
+        else if tag == 6 { s = ctx[expr].AddressOf.span; }
+        else if tag == 7 { s = ctx[expr].Dereference.span; }
+        else if tag == 8 { s = ctx[expr].IndexAccess.span; }
+        else if tag == 9 { s = ctx[expr].AsCast.span; }
+        else if tag == 10 { s = ctx[expr].Binary.span; }
+        else if tag == 11 { s = ctx[expr].Selector.span; }
+        else if tag == 12 { s = ctx[expr].Call.span; }
+        else if tag == 13 { s = ctx[expr].Empty.span; }
+    }
+    return s;
+}
+
+func peek_token_precedence(p: *Parser[ctx]) int {
+    unsafe {
+        mut tag := (*p).peek_token.token_type.tag;
+        if tag == 51 { // PipePipe = 51
+            return 2;
+        }
+        if tag == 50 { // AmpAmp = 50
+            return 3;
+        }
+        if tag == 23 || tag == 24 { // EqEq = 23, NotEq = 24
+            return 4;
+        }
+        if tag == 25 || tag == 26 || tag == 48 || tag == 49 { // Lt = 25, Gt = 26, LtEq = 48, GtEq = 49
+            return 5;
+        }
+        if tag == 19 || tag == 20 { // Plus = 19, Minus = 20
+            return 6;
+        }
+        if tag == 21 || tag == 22 { // Asterisk = 21, Slash = 22
+            return 7;
+        }
+        if tag == 37 { // As = 37
+            return 8;
+        }
+        if tag == 7 || tag == 11 || tag == 15 { // Dot = 7, LParen = 11, LBracket = 15
+            return 9;
+        }
+        return 1;
+    }
+}
+
+func parse_prefix_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[ctx], ctx] {
     mut e_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        if cur_token_is(p, 2) { // Ident = 2
+        mut tag := (*p).cur_token.token_type.tag;
+        mut start_span := (*p).cur_token.span;
+
+        if tag == 2 { // Ident = 2
             ctx[e_idx].tag = 0; // Identifier = 0
             ctx[e_idx].Identifier.name = std.Clone(ctx, (*p).cur_token.literal);
             ctx[e_idx].Identifier.span = (*p).cur_token.span;
             next_token(p);
-        } else if cur_token_is(p, 3) { // Int = 3
+            return e_idx;
+        }
+        if tag == 3 { // Int = 3
             ctx[e_idx].tag = 1; // Integer = 1
             ctx[e_idx].Integer.val = std.parse_int((*p).cur_token.literal);
             ctx[e_idx].Integer.span = (*p).cur_token.span;
             next_token(p);
+            return e_idx;
+        }
+        if tag == 4 { // String = 4
+            ctx[e_idx].tag = 2; // String = 2
+            ctx[e_idx].String.val = std.Clone(ctx, (*p).cur_token.literal);
+            ctx[e_idx].String.span = (*p).cur_token.span;
+            next_token(p);
+            return e_idx;
+        }
+        if tag == 46 { // True = 46
+            ctx[e_idx].tag = 3; // Bool = 3
+            ctx[e_idx].Bool.val = 1;
+            ctx[e_idx].Bool.span = (*p).cur_token.span;
+            next_token(p);
+            return e_idx;
+        }
+        if tag == 47 { // False = 47
+            ctx[e_idx].tag = 3; // Bool = 3
+            ctx[e_idx].Bool.val = 0;
+            ctx[e_idx].Bool.span = (*p).cur_token.span;
+            next_token(p);
+            return e_idx;
+        }
+        if tag == 11 { // LParen = 11
+            next_token(p); // consume '('
+            mut inner := parse_expression(p, 1, ctx);
+            guard rparen_tok := expect_peek(p, 12, ctx) else {
+                return empty[Index[ast.Expression[ctx], ctx]];
+            }
+            return inner;
+        }
+        if tag == 32 { // Move = 32
+            next_token(p); // consume 'move'
+            mut inner := parse_expression(p, 8, ctx);
+            ctx[e_idx].tag = 4; // Move = 4
+            ctx[e_idx].Move.expr = inner;
+            ctx[e_idx].Move.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            return e_idx;
+        }
+        if tag == 33 { // Take = 33
+            next_token(p); // consume 'take'
+            mut inner := parse_expression(p, 8, ctx);
+            ctx[e_idx].tag = 5; // Take = 5
+            ctx[e_idx].Take.expr = inner;
+            ctx[e_idx].Take.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            return e_idx;
+        }
+        if tag == 17 { // Ampersand = 17
+            next_token(p); // consume '&'
+            mut inner := parse_expression(p, 8, ctx);
+            ctx[e_idx].tag = 6; // AddressOf = 6
+            ctx[e_idx].AddressOf.expr = inner;
+            ctx[e_idx].AddressOf.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            return e_idx;
+        }
+        if tag == 21 { // Asterisk = 21
+            next_token(p); // consume '*'
+            mut inner := parse_expression(p, 8, ctx);
+            ctx[e_idx].tag = 7; // Dereference = 7
+            ctx[e_idx].Dereference.expr = inner;
+            ctx[e_idx].Dereference.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            return e_idx;
+        }
+        if tag == 44 { // Empty = 44
+            next_token(p); // consume 'empty'
+            if cur_token_is(p, 15) { // LBracket = 15 ('[')
+                next_token(p); // consume '['
+            } else {
+                return empty[Index[ast.Expression[ctx], ctx]];
+            }
+            mut target_type := parse_type_signature(p, ctx);
+            if cur_token_is(p, 16) { // RBracket = 16 (']')
+                next_token(p); // consume ']'
+            } else {
+                return empty[Index[ast.Expression[ctx], ctx]];
+            }
+            ctx[e_idx].tag = 13; // Empty = 13
+            ctx[e_idx].Empty.target_type = target_type;
+            ctx[e_idx].Empty.span = merge_spans(start_span, (*p).cur_token.span);
+            return e_idx;
+        }
+        return empty[Index[ast.Expression[ctx], ctx]];
+    }
+}
+
+func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.Expression[ctx], ctx] {
+    mut left := parse_prefix_expression(p, ctx);
+    if left == empty[Index[ast.Expression[ctx], ctx]] {
+        return left;
+    }
+    
+    unsafe {
+        while precedence < peek_token_precedence(p) {
+            if cur_token_is(p, 10) { // Semicolon = 10
+                break;
+            }
+            break;
         }
     }
-    return e_idx;
+    return left;
 }
 
 func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
