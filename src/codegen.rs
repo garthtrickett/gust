@@ -1684,24 +1684,15 @@ impl Codegen {
                 {
                     use_arrow = true;
                 }
-                if !use_arrow && matches!(**left, Expression::IndexAccess { .. }) {
-                    if let Expression::IndexAccess { allocator, .. } = &**left
-                        && let Expression::Identifier(name, span) = &**allocator
-                        && let Some(t) = self
-                            .resolved_types
-                            .get(span)
-                            .cloned()
-                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
-                    {
-                        let is_arena_ptr = if let Type::RawPointer(inner) = &t {
-                            **inner == Type::Arena
-                        } else {
-                            false
-                        };
-                        if t == Type::Arena || is_arena_ptr {
+                if !use_arrow && let Expression::IndexAccess { allocator, .. } = &**left {
+                    if let Some(alloc_type) = self.get_expr_type(allocator) {
+                        let is_arena = alloc_type == Type::Arena
+                            || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena);
+                        if is_arena { 
                             use_arrow = true;
                         }
                     }
+                }
                 } else if let Expression::Selector {
                     left: inner_left,
                     right: inner_right,
