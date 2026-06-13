@@ -6,43 +6,131 @@ use std::env;
 use std::fs::File;
 use std::io::Write;
 
+#[derive(Debug, PartialEq, Eq)]
+enum CliMode {
+    Compile,
+    Test,
+    DumpAst,
+    DumpTypes,
+}
+
+struct CliArgs {
+    mode: CliMode,
+    input_file: Option<String>,
+    output_file: Option<String>,
+}
+
+fn parse_cli_args(args: &[String]) -> Result<CliArgs, String> {
+    if args.len() < 2 {
+        return Err("No arguments provided".to_string());
+    }
+
+    if args[1] == "--test" {
+        return Ok(CliArgs {
+            mode: CliMode::Test,
+            input_file: None,
+            output_file: None,
+        });
+    }
+
+    if args[1] == "--dump-ast" {
+        if args.len() < 3 {
+            return Err("Missing input file for --dump-ast".to_string());
+        }
+        return Ok(CliArgs {
+            mode: CliMode::DumpAst,
+            input_file: Some(args[2].clone()),
+            output_file: None,
+        });
+    }
+
+    if args[1] == "--dump-types" {
+        if args.len() < 3 {
+            return Err("Missing input file for --dump-types".to_string());
+        }
+        return Ok(CliArgs {
+            mode: CliMode::DumpTypes,
+            input_file: Some(args[2].clone()),
+            output_file: None,
+        });
+    }
+
+    if args[1].starts_with('-') {
+        return Err(format!("Unknown flag: {}", args[1]));
+    }
+
+    let input_file = args[1].clone();
+    let output_file = if args.len() > 2 {
+        Some(args[2].clone())
+    } else {
+        Some("gust_output.c".to_string())
+    };
+
+    Ok(CliArgs {
+        mode: CliMode::Compile,
+        input_file: Some(input_file),
+        output_file,
+    })
+}
+
 fn main() {
     gust_lexer::init_logging();
     let args: Vec<String> = env::args().collect();
 
-    if args.len() < 2 {
-        print_usage();
-        return;
-    }
-
-    if args[1] == "--test" {
-        run_self_tests();
-        return;
-    }
-
-    let input_filename = &args[1];
-    let output_filename = if args.len() > 2 {
-        &args[2]
-    } else {
-        "gust_output.c"
+    let cli_args = match parse_cli_args(&args) {
+        Ok(args) => args,
+        Err(err) => {
+            eprintln!("Error: {}", err);
+            print_usage();
+            std::process::exit(1);
+        }
     };
 
-    println!("Compiling Gust program '{}'...", input_filename);
-    run_compile_pass_file(input_filename, output_filename);
+    match cli_args.mode {
+        CliMode::Test => {
+            run_self_tests();
+        }
+        CliMode::Compile => {
+            let input_filename = cli_args.input_file.as_ref().unwrap();
+            let output_filename = cli_args.output_file.as_ref().unwrap();
+            println!("Compiling Gust program '{}'...", input_filename);
+            run_compile_pass_file(input_filename, output_filename, false, false);
+        }
+        CliMode::DumpAst => {
+            let input_filename = cli_args.input_file.as_ref().unwrap();
+            run_compile_pass_file(input_filename, "", true, false);
+        }
+        CliMode::DumpTypes => {
+            let input_filename = cli_args.input_file.as_ref().unwrap();
+            run_compile_pass_file(input_filename, "", false, true);
+        }
+    }
 }
 
 fn print_usage() {
     println!("Usage:");
     println!("  cargo run -- <input_file.gst> [output_file.c]   Compile a Gust file");
+    println!("  cargo run -- --dump-ast <input_file.gst>        Dump entry module AST and exit");
+    println!("  cargo run -- --dump-types <input_file.gst>      Dump type database and exit");
     println!("  cargo run -- --test                             Run compiler self-tests");
 }
 
-fn run_compile_pass_file(input_filename: &str, output_filename: &str) {
+fn run_compile_pass_file(input_filename: &str, output_filename: &str, dump_ast: bool, dump_types: bool) {
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
 
     match resolver.resolve(std::path::Path::new(input_filename), &fs_impl) {
         Ok((order, modules)) => {
+            if dump_ast {
+                if let Some(entry_path) = order.last() {
+                    if let Some(module) = modules.get(entry_path) {
+                        let ast_str = module.program.serialize(0);
+                        print!("{}", ast_str);
+                        std::process::exit(0);
+                    }
+                }
+            }
+
             let mut checker = TypeChecker::new();
             let mut check_error = None;
             for path in &order {
