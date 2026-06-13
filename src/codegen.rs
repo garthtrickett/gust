@@ -204,9 +204,10 @@ impl Codegen {
         match erased_t {
             Type::Int | Type::Byte | Type::Bool => "0".to_string(),
             Type::Void => "".to_string(),
-            Type::Arena => "{0}".to_string(),
+            Type::Arena => "((os_Arena){0})".to_string(),
             Type::RawPointer(_) => "NULL".to_string(),
-            Type::Str | Type::Slice(_) | Type::ByteSlice => "{ NULL, 0 }".to_string(),
+            Type::Str | Type::ByteSlice => "((Slice_unsigned_char){ NULL, 0 })".to_string(),
+            Type::Slice(inner) => format!("((Slice_{}){{ NULL, 0 }})", self.get_c_type_ident(&inner)),
             Type::Index(_, _) => "0xFFFFFFFF".to_string(),
             Type::Struct(name, _) => {
                 if self.enum_registry.contains_key(&name) {
@@ -225,7 +226,7 @@ impl Codegen {
                     }
                     format!("(({}){{ {} }})", name, fields_init.join(", "))
                 } else {
-                    "{0}".to_string()
+                    format!("(({}){{0}})", name)
                 }
             }
             Type::Generic(name, args) => {
@@ -1259,7 +1260,12 @@ impl Codegen {
                 };
 
                 *self.current_alloc_struct.borrow_mut() = None;
-                result.push_str(&format!("    {} {} = {};\n", type_str, name, val_str));
+                if value.is_some() {
+                    result.push_str(&format!("    {} {};\n", type_str, name));
+                    result.push_str(&format!("    {} = {};\n", name, val_str));
+                } else {
+                    result.push_str(&format!("    {} {} = {};\n", type_str, name, val_str));
+                }
             }
             Statement::Assignment { left, value, .. } => {
                 let mut target_struct = None;
@@ -1332,10 +1338,8 @@ impl Codegen {
 
                 let val_expr_str = self.gen_expression(value);
 
-                result.push_str(&format!(
-                    "    const {} {} = {};\n",
-                    wrapper_name, guard_res_name, val_expr_str
-                ));
+                result.push_str(&format!("    {} {};\n", wrapper_name, guard_res_name));
+                result.push_str(&format!("    {} = {};\n", guard_res_name, val_expr_str));
                 result.push_str(&format!("    if (!{}.Ok) {{\n", guard_res_name));
                 for stmt in &else_body.statements {
                     result.push_str(&format!("    {}", self.gen_statement(stmt).trim_start()));
