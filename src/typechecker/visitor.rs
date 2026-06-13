@@ -1165,11 +1165,12 @@ impl TypeChecker {
                 self.current_function_local_vars = old_local_vars;
             }
             Statement::Guard {
+            Statement::Guard { 
                 name,
                 is_mut: _,
                 value,
                 else_body,
-                span: _,
+                span,
             } => {
                 // 1. Typecheck the RHS expression 'value'
                 let val_type = self.check_expression(value)?;
@@ -1224,6 +1225,7 @@ impl TypeChecker {
                 // 4. Bind the <identifier> to the active symbol table using the type of the .Val field
                 self.symbol_table.insert(name.clone(), payload_type.clone());
                 self.variable_types.insert(name.clone(), payload_type.clone());
+                self.resolved_types.insert(*span, payload_type.clone());
 
                 // 5. Track memory origins
                 let origins = self.get_expression_origins(value);
@@ -1316,6 +1318,7 @@ impl TypeChecker {
                 } else {
                     self.symbol_table.insert(name.clone(), val_type.clone());
                     self.variable_types.insert(name.clone(), val_type.clone());
+                    self.resolved_types.insert(*span, val_type.clone());
                 }
 
                 if let Type::Struct(ref struct_name, _) = val_type
@@ -1898,7 +1901,10 @@ impl TypeChecker {
                 }
                 Err(err)
             }
-            Ok(t) => Ok(t),
+            Ok(t) => {
+                self.resolved_types.insert(expr.span(), t.clone());
+                Ok(t)
+            }
         }
     }
 
