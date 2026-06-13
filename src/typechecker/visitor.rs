@@ -1008,6 +1008,7 @@ impl TypeChecker {
                 params,
                 return_type,
                 body,
+                span,
                 ..
             } => {
                 let parent_scope = self.symbol_table.clone();
@@ -1075,11 +1076,16 @@ impl TypeChecker {
                     .clone()
                     .unwrap_or_default();
 
+                let namespaced_name = self
+                    .resolved_names
+                    .get(span)
+                    .cloned()
+                    .unwrap_or_else(|| self.current_prefix.clone() + name.as_str());
+
                 // Populate formal return origins on signature for propagation
-                if let Some(sig) = self.function_registry.get_mut(name) {
+                if let Some(sig) = self.function_registry.get_mut(&namespaced_name) {
                     sig.return_origins = formal_return_origins;
                 }
-
                 // Check for resource leaks in local scope before clean-up and restoring parent scopes
                 if let Some(ref local_vars) = self.current_function_local_vars {
                     for local_var in local_vars {

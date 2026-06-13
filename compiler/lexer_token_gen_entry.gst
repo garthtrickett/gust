@@ -8,23 +8,28 @@
             mut l: lexer.Lexer[ctx];
             lexer.init_lexer(&l, "mut a := 10;");
             
-            mut t1 := lexer.next_token(&l);
+            mut t1: token.Token[ctx];
+            lexer.next_token(&l, &t1);
             os.LogInt(t1.token_type.tag);
             os.LogStr(t1.literal);
             
-            mut t2 := lexer.next_token(&l);
+            mut t2: token.Token[ctx];
+            lexer.next_token(&l, &t2);
             os.LogInt(t2.token_type.tag);
             os.LogStr(t2.literal);
             
-            mut t3 := lexer.next_token(&l);
+            mut t3: token.Token[ctx];
+            lexer.next_token(&l, &t3);
             os.LogInt(t3.token_type.tag);
             os.LogStr(t3.literal);
             
-            mut t4 := lexer.next_token(&l);
+            mut t4: token.Token[ctx];
+            lexer.next_token(&l, &t4);
             os.LogInt(t4.token_type.tag);
             os.LogStr(t4.literal);
             
-            mut t5 := lexer.next_token(&l);
+            mut t5: token.Token[ctx];
+            lexer.next_token(&l, &t5);
             os.LogInt(t5.token_type.tag);
             os.LogStr(t5.literal);
         }
