@@ -5143,3 +5143,75 @@ fn test_self_hosted_parser_scaffold() {
 
     let _ = std::fs::remove_file(entry_path);
 }
+
+#[test]
+fn test_self_hosted_statement_parsing() {
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/parser_statement_test_entry.gst");
+
+    std::fs::create_dir_all("compiler").unwrap();
+
+    let entry_source = "
+        import \"token.gst\" as token;
+        import \"lexer.gst\" as lexer;
+        import \"parser.gst\" as parser;
+        import \"ast.gst\" as ast;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut l: lexer.Lexer[ctx];
+            lexer.init_lexer(&l, \"while 1 { mut x: int := 42; if x { x = 20; } else { x = 30; } guard mut y := 10 else { return; } }\");
+
+            mut p: parser.Parser[ctx];
+            parser.init_parser(&p, &l, ctx);
+
+            mut stmt := parser.parse_statement(&p, ctx);
+        }
+    ";
+    std::fs::write(&entry_path, entry_source).unwrap();
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry { "" } else { "parser__" };
+            let check_res = checker.check_module(&module.program, prefix);
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+    let c_output = codegen.generate(&modules_for_codegen);
+    assert!(c_output.contains("parser__parse_statement("));
+    assert!(c_output.contains("parser__parse_var_decl("));
+    assert!(c_output.contains("parser__parse_while_statement("));
+    assert!(c_output.contains("parser__parse_if_statement("));
+    assert!(c_output.contains("parser__parse_guard_statement("));
+
+    let _ = std::fs::remove_file(entry_path);
+}
