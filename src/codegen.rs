@@ -1650,11 +1650,15 @@ impl Codegen {
                     }
                 }
 
+                let is_ptr = matches!(alloc_type, Type::RawPointer(ref inner) if **inner != Type::Arena);
+
                 if is_slice {
                     format!(
                         "(*({{ if ({} < 0 || {} >= {}.len) {{ printf(\"Slice bounds check failed at line %d\\n\", __LINE__); exit(1); }} &({}.data[{}]); }}))",
                         index_str, index_str, alloc_str, alloc_str, index_str
                     )
+                } else if is_ptr {
+                    format!("({}[{}])", alloc_str, index_str)
                 } else if is_vector {
                     format!(
                         "(*({{ if ({} < 0 || {} >= {}.len) {{ printf(\"Vector bounds check failed at line %d\\n\", __LINE__); exit(1); }} &({}.data[{}]); }}))",
