@@ -70,28 +70,36 @@ impl TypeChecker {
         }
     }
 
-    pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> Result<String, TypeError> { 
-        if name == "len" || name == "int" || name == "byte" || name == "bool" || name == "str" || name == "Arena" || name == "os_Arena" || name == "os.Arena" || name == "void" || name == "Any" || name == "SessionNode" || name == "APIRequest" { 
-            return Ok(name.to_string());
-        }
-        if let Some(pos) = name.find('.') {
+        pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> Result<String, TypeError> {
+        let resolved = if name == "len" || name == "int" || name == "byte" || name == "bool" || name == "str" || name == "Arena" || name == "os_Arena" || name == "os.Arena" || name == "void" || name == "Any" || name == "SessionNode" || name == "APIRequest" {
+            name.to_string()
+        } else if let Some(pos) = name.find('.') {
             let alias = &name[..pos];
             let rest = &name[pos+1..];
-            if let Some(prefix) = self.imports.get(alias) { 
-                return Ok(format!("{}{}", prefix, rest));
+            if let Some(prefix) = self.imports.get(alias) {
+                format!("{}{}", prefix, rest)
             } else {
-                return Err(TypeError { 
+                return Err(TypeError {
                     kind: TypeErrorKind::TypeMismatch,
                     message: format!("Semantic Error: Unresolved namespace alias '{}'", alias),
                     span: None,
                 });
             }
-        }
-        if name.contains("__") { 
-            return Ok(name.to_string());
-        }
-        Ok(format!("{}{}", self.current_prefix, name))
-    } 
+        } else if name.contains("__") {
+            name.to_string()
+        } else {
+            format!("{}{}", self.current_prefix, name)
+        };
+
+        tracing::debug!(
+            "👁️ Namespace Resolution: Lookup '{}' -> Resolved: '{}' (Current Prefix: '{}')",
+            name,
+            resolved,
+            self.current_prefix
+        );
+
+        Ok(resolved)
+    }  
 }
 
 impl TypeChecker {

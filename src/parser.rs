@@ -220,6 +220,11 @@ impl Parser {
         }
         
         let end_span = self.cur_token.span;
+        tracing::debug!(
+            "📥 Parsed Import Statement: Path '{}', Alias: '{:?}'",
+            path,
+            alias
+        );
         Some(Statement::Import {
             path,
             alias,

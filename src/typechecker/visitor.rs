@@ -773,15 +773,23 @@ impl TypeChecker {
 
         // 1. Pre-register std library namespaces
         self.imports.insert("os".to_string(), "os_".to_string());
+        tracing::debug!("🗄️ Stdlib Registered: Alias 'os' maps to prefix 'os_'");
         self.imports.insert("std".to_string(), "std_".to_string());
+        tracing::debug!("🗄️ Stdlib Registered: Alias 'std' maps to prefix 'std_'");
         self.pre_register_std_functions();
 
         // Pre-pass: Dynamically register structs, templates, enums, and functions [3]
         for stmt in &program.statements { 
-            if let Statement::Import { path, alias, .. } = stmt { 
+            if let Statement::Import { path, alias, .. } = stmt {
                 let stem = get_file_stem(path);
                 let pfx = format!("{}__", stem);
-                let alias_name = alias.clone().unwrap_or(stem);
+                let alias_name = alias.clone().unwrap_or_else(|| stem.clone());
+                tracing::debug!(
+                    "🗄️ Import Alias Mapping Registered (Pre-pass): '{}' -> '{}' (for path '{}')",
+                    alias_name,
+                    pfx,
+                    path
+                );
                 self.imports.insert(alias_name, pfx);
             }
 
@@ -1008,7 +1016,13 @@ impl TypeChecker {
             Statement::Import { path, alias, span: _ } => { 
                 let stem = get_file_stem(path);
                 let prefix = format!("{}__", stem);
-                let alias_name = alias.clone().unwrap_or(stem);
+                let alias_name = alias.clone().unwrap_or_else(|| stem.clone());
+                tracing::debug!(
+                    "🗄️ Import Alias Mapping Registered (Statement Pass): '{}' -> '{}' (for path '{}')",
+                    alias_name,
+                    prefix,
+                    path
+                );
                 self.imports.insert(alias_name, prefix);
             }
             Statement::StructDecl { .. } => {}
