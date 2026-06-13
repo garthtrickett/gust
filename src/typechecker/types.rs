@@ -152,6 +152,7 @@ pub enum TypeErrorKind {
     ArgumentMismatch,
     UndefinedFunction,
     LargeEnumVariantPayload,
+    DuplicateFunctionDefinition,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
