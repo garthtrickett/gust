@@ -1165,7 +1165,6 @@ impl TypeChecker {
                 self.current_function_local_vars = old_local_vars;
             }
             Statement::Guard {
-            Statement::Guard { 
                 name,
                 is_mut: _,
                 value,

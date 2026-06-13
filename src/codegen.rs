@@ -1183,24 +1183,20 @@ impl Codegen {
 
                 result.push_str(&body_str);
             }
-            Statement::VarDecl { 
+            Statement::VarDecl {
                 name,
                 is_mut: _,
                 value,
                 var_type: _,
                 span,
             } => {
-                let var_type = self
-                    .resolved_types
-                    .get(span)
-                    .cloned()
-                    .unwrap_or_else(|| {
-                        self.symbol_table
-                            .borrow()
-                            .get(name)
-                            .cloned()
-                            .unwrap_or(Type::Void)
-                    });
+                let var_type = self.resolved_types.get(span).cloned().unwrap_or_else(|| {
+                    self.symbol_table
+                        .borrow()
+                        .get(name)
+                        .cloned()
+                        .unwrap_or(Type::Void)
+                });
                 let type_str = self.get_c_type(&var_type);
 
                 let mut target_struct = None;
@@ -1267,17 +1263,13 @@ impl Codegen {
                 else_body,
                 span,
             } => {
-                let val_type = self
-                    .resolved_types
-                    .get(span)
-                    .cloned()
-                    .unwrap_or_else(|| {
-                        self.symbol_table
-                            .borrow()
-                            .get(name)
-                            .cloned()
-                            .unwrap_or(Type::Void)
-                    });
+                let val_type = self.resolved_types.get(span).cloned().unwrap_or_else(|| {
+                    self.symbol_table
+                        .borrow()
+                        .get(name)
+                        .cloned()
+                        .unwrap_or(Type::Void)
+                });
                 let val_type_c = self.get_c_type(&val_type);
                 let wrapper_name = self.find_wrapper_type(&val_type);
 
@@ -1544,11 +1536,14 @@ impl Codegen {
                     {
                         is_pool = true;
                     }
-                } else { 
+                } else {
                     // Fallback to checking the allocator variable name in symbol table directly
                     let alloc_ident = expression_to_string(allocator);
-                    if let Some(Type::Struct(struct_name, _)) =
-                        self.resolved_types.get(&allocator.span()).or_else(|| self.symbol_table.borrow().get(&alloc_ident)).cloned()
+                    if let Some(Type::Struct(struct_name, _)) = self
+                        .resolved_types
+                        .get(&allocator.span())
+                        .or_else(|| self.symbol_table.borrow().get(&alloc_ident))
+                        .cloned()
                     {
                         if struct_name.starts_with("Vector_")
                             || struct_name.starts_with("std_Vector_")
@@ -1604,7 +1599,10 @@ impl Codegen {
 
                     let mut use_arrow = false;
                     if let Expression::Identifier(name, span) = &**allocator
-                        && let Some(Type::RawPointer(inner)) = self.resolved_types.get(span).or_else(|| self.symbol_table.borrow().get(name).as_ref())
+                        && let Some(Type::RawPointer(inner)) = self
+                            .resolved_types
+                            .get(span)
+                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
                         && **inner == Type::Arena
                     {
                         use_arrow = true;
@@ -1641,15 +1639,19 @@ impl Codegen {
                 }
                 if !use_arrow && matches!(**left, Expression::IndexAccess { .. }) {
                     if let Expression::IndexAccess { allocator, .. } = &**left
-                        && let Expression::Identifier(name, _) = &**allocator
-                        && let Some(t) = self.symbol_table.borrow().get(name)
+                        && let Expression::Identifier(name, span) = &**allocator
+                        && let Some(t) = self
+                            .resolved_types
+                            .get(span)
+                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
+                            .cloned()
                     {
-                        let is_arena_ptr = if let Type::RawPointer(inner) = t {
+                        let is_arena_ptr = if let Type::RawPointer(inner) = &t {
                             **inner == Type::Arena
                         } else {
                             false
                         };
-                        if *t == Type::Arena || is_arena_ptr {
+                        if t == Type::Arena || is_arena_ptr {
                             use_arrow = true;
                         }
                     }
@@ -1859,7 +1861,10 @@ impl Codegen {
 
                     let mut dest_is_ptr = false;
                     if let Expression::Identifier(name, span) = &arguments[0]
-                        && let Some(Type::RawPointer(inner)) = self.resolved_types.get(span).or_else(|| self.symbol_table.borrow().get(name).as_ref())
+                        && let Some(Type::RawPointer(inner)) = self
+                            .resolved_types
+                            .get(span)
+                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
                         && **inner == Type::Arena
                     {
                         dest_is_ptr = true;
@@ -1995,7 +2000,10 @@ impl Codegen {
                     };
                     let mut is_ptr = false;
                     if let Expression::Identifier(name, span) = &arguments[0]
-                        && let Some(Type::RawPointer(inner)) = self.resolved_types.get(span).or_else(|| self.symbol_table.borrow().get(name).as_ref())
+                        && let Some(Type::RawPointer(inner)) = self
+                            .resolved_types
+                            .get(span)
+                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
                         && **inner == Type::Arena
                     {
                         is_ptr = true;
@@ -2025,7 +2033,10 @@ impl Codegen {
                     };
                     let mut is_ptr = false;
                     if let Expression::Identifier(name, span) = &arguments[0]
-                        && let Some(Type::RawPointer(inner)) = self.resolved_types.get(span).or_else(|| self.symbol_table.borrow().get(name).as_ref())
+                        && let Some(Type::RawPointer(inner)) = self
+                            .resolved_types
+                            .get(span)
+                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
                         && **inner == Type::Arena
                     {
                         is_ptr = true;
@@ -2055,7 +2066,10 @@ impl Codegen {
                     };
                     let mut is_ptr = false;
                     if let Expression::Identifier(name, span) = &arguments[0]
-                        && let Some(Type::RawPointer(inner)) = self.resolved_types.get(span).or_else(|| self.symbol_table.borrow().get(name).as_ref())
+                        && let Some(Type::RawPointer(inner)) = self
+                            .resolved_types
+                            .get(span)
+                            .or_else(|| self.symbol_table.borrow().get(name).as_ref())
                         && **inner == Type::Arena
                     {
                         is_ptr = true;
