@@ -764,7 +764,7 @@ impl TypeChecker {
                 let mut sorted_keys: Vec<&String> = map.keys().collect();
                 sorted_keys.sort_by_key(|k| std::cmp::Reverse(k.len()));
                 for old_b in sorted_keys {
-                    let new_b = &map[*old_b];
+                    let new_b = &map[old_b];
                     let suffix = format!("_{}", old_b);
                     let new_suffix = format!("_{}", new_b);
                     if let Some(stripped) = new_struct_name.strip_suffix(&suffix) {
@@ -780,7 +780,7 @@ impl TypeChecker {
                 let mut sorted_keys: Vec<&String> = map.keys().collect();
                 sorted_keys.sort_by_key(|k| std::cmp::Reverse(k.len()));
                 for old_b in sorted_keys {
-                    let new_b = &map[*old_b];
+                    let new_b = &map[old_b];
                     let suffix = format!("_{}", old_b);
                     let suffix_2 = format!("_{}", new_b);
                     if let Some(stripped) = new_struct_name.strip_suffix(&suffix) {
