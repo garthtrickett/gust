@@ -1507,8 +1507,13 @@ impl Codegen {
                 ..
             } => {
                 let left_str = self.gen_expression(left);
-                let resolved_target = self.resolved_types.get(span).unwrap_or(target_type);
-                let target_str = self.get_c_type(resolved_target);
+                let mut resolved_target = self.resolved_types.get(span).unwrap_or(target_type).clone();
+                if let Type::Struct(ref name, ref brand) = resolved_target {
+                    if let Some(stripped) = name.strip_prefix("CastResult_") {
+                        resolved_target = Type::Struct(stripped.to_string(), brand.clone());
+                    }
+                }
+                let target_str = self.get_c_type(&resolved_target);
 
                 if *is_reference {
                     let clean_target = target_str.trim_end_matches('*').trim();
