@@ -99,8 +99,9 @@ func is_at_end(p: *Parser[ctx]) int {
 }
 
 func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx] {
-    mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(*ctx);
+    mut t_idx: Index[ast.Type[ctx], ctx] := empty[Index[ast.Type[ctx], ctx]];
     unsafe {
+        t_idx = os.ArenaAlloc(*ctx);
         if cur_token_is(p, 2) { // Ident = 2
             mut literal := (*p).cur_token.literal;
             if std.str_eq(literal, "int") {
@@ -175,8 +176,9 @@ func peek_token_precedence(p: *Parser[ctx]) int {
 }
 
 func parse_prefix_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[ctx], ctx] {
-    mut e_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(*ctx);
+    mut e_idx: Index[ast.Expression[ctx], ctx] := empty[Index[ast.Expression[ctx], ctx]];
     unsafe {
+        e_idx = os.ArenaAlloc(*ctx);
         mut tag := (*p).cur_token.token_type.tag;
         mut start_span := (*p).cur_token.span;
 
