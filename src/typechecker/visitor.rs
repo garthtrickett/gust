@@ -33,9 +33,10 @@ impl TypeChecker {
         match t {
             Type::Str | Type::Slice(_) | Type::ByteSlice | Type::RawPointer(_) => true,
             Type::Struct(name, _) => {
-                if name.starts_with("CastResult_")
-                    || name.starts_with("LookupResult_")
-                    || name.ends_with("_Any")
+                let clean_name = strip_brand_prefix(name);
+                if clean_name.starts_with("CastResult_")
+                    || clean_name.starts_with("LookupResult_")
+                    || clean_name.ends_with("_Any")
                 {
                     return true;
                 }
