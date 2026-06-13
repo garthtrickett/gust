@@ -2885,6 +2885,7 @@ impl TypeChecker {
                     brand_map.insert(src_brand, dest_brand);
 
                     let cloned_type = self.substitute_brand_names(&src_type, &brand_map);
+                    let cloned_type = self.resolve_type(&cloned_type)?;
                     return Ok(cloned_type);
                 }
 
@@ -3461,6 +3462,7 @@ impl TypeChecker {
                         }
                     }
                     let resolved_return = self.substitute_brand_names(&sig.return_type, &brand_map);
+                    let resolved_return = self.resolve_type(&resolved_return)?;
                     return Ok(resolved_return);
                 }
 
