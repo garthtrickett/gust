@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve variable declaration codegen to use combined declaration and initialization",
+  "summary": "fix: correct newline escaping in HashMap Keys codegen to prevent stray backslash compilation errors",
   "files": [
     {
       "file_path": "src/codegen.rs",
-      "code_diff": "<<<<<<< SEARCH\n                *self.current_alloc_struct.borrow_mut() = None;\n                if value.is_some() {\n                    result.push_str(&format!(\"    {} {};\\n\", type_str, name));\n                    result.push_str(&format!(\"    {} = {};\\n\", name, val_str));\n                } else {\n                    result.push_str(&format!(\"    {} {} = {};\\n\", type_str, name, val_str));\n                }\n=======\n                *self.current_alloc_struct.borrow_mut() = None;\n                result.push_str(&format!(\"    {} {} = {};\\n\", type_str, name, val_str));\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n                        return format!(\n                            \"(({{\\n        {0} _v = ({1}){{ .data = NULL, .len = 0, .capacity = 0, .arena = {2} }};\\\\n        for (int _i = 0; _i < ({3}{4}capacity); _i++) {{\\\\n            if (({3}{4}occupied)[_i] == 1) {{\\\\n                os_VectorPush(&_v, ({3}{4}keys)[_i]);\\\\n            }}\\\\n        }}\\\\n        _v;\\\\n    }}))\",\n                            vec_type_str, vec_type_str, arena_expr, left_str, arrow_or_dot\n                        );\n=======\n                        return format!(\n                            \"(({{\\n        {0} _v = ({1}){{ .data = NULL, .len = 0, .capacity = 0, .arena = {2} }};\\n        for (int _i = 0; _i < ({3}{4}capacity); _i++) {{\\n            if (({3}{4}occupied)[_i] == 1) {{\\n                os_VectorPush(&_v, ({3}{4}keys)[_i]);\\n            }}\\n        }}\\n        _v;\\n    }}))\",\n                            vec_type_str, vec_type_str, arena_expr, left_str, arrow_or_dot\n                        );\n>>>>>>> REPLACE"
     }
   ]
 }

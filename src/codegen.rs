@@ -2646,7 +2646,7 @@ impl Codegen {
                         };
                         let arrow_or_dot = if is_left_ptr { "->" } else { "." };
                         return format!(
-                            "(({{\n        {0} _v = ({1}){{ .data = NULL, .len = 0, .capacity = 0, .arena = {2} }};\\n        for (int _i = 0; _i < ({3}{4}capacity); _i++) {{\\n            if (({3}{4}occupied)[_i] == 1) {{\\n                os_VectorPush(&_v, ({3}{4}keys)[_i]);\\n            }}\\n        }}\\n        _v;\\n    }}))",
+                            "(({{\n        {0} _v = ({1}){{ .data = NULL, .len = 0, .capacity = 0, .arena = {2} }};\n        for (int _i = 0; _i < ({3}{4}capacity); _i++) {{\n            if (({3}{4}occupied)[_i] == 1) {{\n                os_VectorPush(&_v, ({3}{4}keys)[_i]);\n            }}\n        }}\n        _v;\n    }}))",
                             vec_type_str, vec_type_str, arena_expr, left_str, arrow_or_dot
                         );
                     }
