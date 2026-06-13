@@ -19,16 +19,6 @@ fn get_root_variable(expr: &Expression) -> Option<String> {
     }
 }
 
-fn is_ephemeral_view(t: &Type) -> bool {
-    match t {
-        Type::Str | Type::Slice(_) | Type::ByteSlice | Type::RawPointer(_) => true,
-        Type::Struct(name, _) => {
-            name.starts_with("CastResult_") || name.starts_with("LookupResult_")
-        }
-        _ => false,
-    }
-}
-
 fn get_file_stem(path_str: &str) -> String {
     let p = std::path::Path::new(path_str);
     p.file_stem()
@@ -38,6 +28,19 @@ fn get_file_stem(path_str: &str) -> String {
 }
 
 impl TypeChecker {
+    pub fn is_ephemeral_view(&self, t: &Type) -> bool {
+        match t {
+            Type::Str | Type::Slice(_) | Type::ByteSlice | Type::RawPointer(_) => true,
+            Type::Struct(name, _) => {
+                if name.starts_with("CastResult_") || name.starts_with("LookupResult_") {
+                    return true;
+                }
+                self.contains_ephemeral_view(t)
+            }
+            _ => false,
+        }
+    }
+
     fn erase_struct_name(&self, name: &str, brand: &Option<String>) -> String {
         let mut actual_brand = brand.clone();
         if actual_brand.is_none()
@@ -1233,7 +1236,7 @@ impl TypeChecker {
                 } else {
                     false
                 };
-                let mut final_origins = if is_ephemeral_view(&payload_type) || is_cast_result {
+                let mut final_origins = if self.is_ephemeral_view(&payload_type) || is_cast_result {
                     origins
                 } else {
                     HashSet::new()
@@ -1262,7 +1265,7 @@ impl TypeChecker {
                     let mut t = self.check_expression(val_expr)?;
                     t = self.resolve_type(&t)?;
                     t = self.resolve_type_namespacing(&t)?;
-                    let mut origs = if is_ephemeral_view(&t) { 
+                    let mut origs = if self.is_ephemeral_view(&t) { 
                         self.get_expression_origins(val_expr)
                     } else { 
                         HashSet::new()
@@ -1391,7 +1394,7 @@ impl TypeChecker {
 
                 // Track assignments to variables to update their active memory origins
                 if let Some(root_name) = get_root_variable(left) {
-                    let mut origs = if is_ephemeral_view(&left_type) {
+                    let mut origs = if self.is_ephemeral_view(&left_type) {
                         self.get_expression_origins(value)
                     } else {
                         HashSet::new()
@@ -1609,7 +1612,7 @@ impl TypeChecker {
 
                                             // Flow the memory origin
                                             let parent_origins_set = self.get_expression_origins(expression);
-                                            let mut final_origins = if is_ephemeral_view(field_type) {
+                                            let mut final_origins = if self.is_ephemeral_view(field_type) {
                                                 parent_origins_set
                                             } else {
                                                 HashSet::new()

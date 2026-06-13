@@ -44,9 +44,7 @@ pub fn types_match_except_brand(expected: &Type, actual: &Type) -> bool {
         (Type::RawPointer(e_inner), Type::RawPointer(a_inner)) => {
             types_match_except_brand(e_inner, a_inner)
         }
-        (Type::Slice(e_inner), Type::Slice(a_inner)) => {
-            types_match_except_brand(e_inner, a_inner)
-        }
+        (Type::Slice(e_inner), Type::Slice(a_inner)) => types_match_except_brand(e_inner, a_inner),
         (Type::Generic(e_name, e_args), Type::Generic(a_name, a_args)) => {
             if e_name != a_name || e_args.len() != a_args.len() {
                 return false;
@@ -59,7 +57,7 @@ pub fn types_match_except_brand(expected: &Type, actual: &Type) -> bool {
             true
         }
         _ => types_match(expected, actual),
-    } 
+    }
 }
 
 pub fn types_match(expected: &Type, actual: &Type) -> bool {
@@ -84,7 +82,11 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             if e_clean != a_clean && e_clean != "Any" && a_clean != "Any" {
                 return false;
             }
-            if e_brand.is_none() || a_brand.is_none() || e_brand.as_deref() == Some("Any") || a_brand.as_deref() == Some("Any") {
+            if e_brand.is_none()
+                || a_brand.is_none()
+                || e_brand.as_deref() == Some("Any")
+                || a_brand.as_deref() == Some("Any")
+            {
                 return true;
             }
             let e_b = e_brand.as_ref().map(|b| strip_brand_prefix(b));
@@ -101,11 +103,9 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
                 let is_hashmap_any = (e_clean.starts_with("HashMap_")
                     && a_clean.starts_with("HashMap_Any"))
                     || (a_clean.starts_with("HashMap_") && e_clean.starts_with("HashMap_Any"));
-                let is_pool_any = (e_clean.starts_with("Pool_")
-                    && a_clean.starts_with("Pool_Any"))
+                let is_pool_any = (e_clean.starts_with("Pool_") && a_clean.starts_with("Pool_Any"))
                     || (a_clean.starts_with("Pool_") && e_clean.starts_with("Pool_Any"));
-                let is_rc_any = (e_clean.starts_with("Rc_")
-                    && a_clean.starts_with("Rc_Any"))
+                let is_rc_any = (e_clean.starts_with("Rc_") && a_clean.starts_with("Rc_Any"))
                     || (a_clean.starts_with("Rc_") && e_clean.starts_with("Rc_Any"));
                 let is_graph_any = (e_clean.starts_with("Graph_")
                     && a_clean.starts_with("Graph_Any"))
@@ -118,12 +118,25 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
                     || (a_clean.starts_with("Channel_") && e_clean.starts_with("Channel_Any"));
                 let is_tl_any = (e_clean.starts_with("ThreadLocalContext_")
                     && a_clean.starts_with("ThreadLocalContext_Any"))
-                    || (a_clean.starts_with("ThreadLocalContext_") && e_clean.starts_with("ThreadLocalContext_Any"));
-                if !is_vector_any && !is_hashmap_any && !is_pool_any && !is_rc_any && !is_graph_any && !is_mutex_any && !is_channel_any && !is_tl_any {
+                    || (a_clean.starts_with("ThreadLocalContext_")
+                        && e_clean.starts_with("ThreadLocalContext_Any"));
+                if !is_vector_any
+                    && !is_hashmap_any
+                    && !is_pool_any
+                    && !is_rc_any
+                    && !is_graph_any
+                    && !is_mutex_any
+                    && !is_channel_any
+                    && !is_tl_any
+                {
                     return false;
                 }
             }
-            if e_brand.is_none() || a_brand.is_none() || e_brand.as_deref() == Some("Any") || a_brand.as_deref() == Some("Any") {
+            if e_brand.is_none()
+                || a_brand.is_none()
+                || e_brand.as_deref() == Some("Any")
+                || a_brand.as_deref() == Some("Any")
+            {
                 return true;
             }
             let e_b = e_brand.as_ref().map(|b| strip_brand_prefix(b));
@@ -227,7 +240,9 @@ pub fn expression_to_string(expr: &Expression) -> String {
         Expression::Selector { left, right, .. } => {
             format!("{}.{}", expression_to_string(left), right)
         }
-        Expression::IndexAccess { allocator, index, .. } => {
+        Expression::IndexAccess {
+            allocator, index, ..
+        } => {
             format!(
                 "{}[{}]",
                 expression_to_string(allocator),
@@ -236,7 +251,9 @@ pub fn expression_to_string(expr: &Expression) -> String {
         }
         Expression::Move(inner, _) => expression_to_string(inner),
         Expression::Take(inner, _) => expression_to_string(inner),
-        Expression::Binary { op, left, right, .. } => {
+        Expression::Binary {
+            op, left, right, ..
+        } => {
             format!(
                 "{} {} {}",
                 expression_to_string(left),
@@ -254,7 +271,11 @@ pub fn expression_to_string(expr: &Expression) -> String {
 pub fn format_diagnostic(source: &str, error: &TypeError) -> String {
     if let Some(span) = error.span {
         let lines: Vec<&str> = source.lines().collect();
-        let line_idx = if span.start.line > 0 { span.start.line - 1 } else { 0 };
+        let line_idx = if span.start.line > 0 {
+            span.start.line - 1
+        } else {
+            0
+        };
         let line_content = if line_idx < lines.len() {
             lines[line_idx]
         } else {
@@ -268,7 +289,11 @@ pub fn format_diagnostic(source: &str, error: &TypeError) -> String {
             line_content.len() + 1
         };
 
-        let width = if end_col > start_col { end_col - start_col } else { 1 };
+        let width = if end_col > start_col {
+            end_col - start_col
+        } else {
+            1
+        };
         let padding = " ".repeat(start_col.saturating_sub(1));
         let carets = "^".repeat(width);
 
