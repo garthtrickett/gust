@@ -1880,7 +1880,7 @@ impl TypeChecker {
                     call_origins.insert("scratch".to_string());
                     return call_origins;
                 }
-                if func_path == "std.VectorNew" || func_path == "os.VectorNew"
+                if (func_path == "std.VectorNew" || func_path == "os.VectorNew"
                     || func_path == "std_VectorNew" || func_path == "os_VectorNew"
                     || func_path == "std.HashMapNew" || func_path == "os.HashMapNew"
                     || func_path == "std_HashMapNew" || func_path == "os_HashMapNew"
@@ -1888,12 +1888,10 @@ impl TypeChecker {
                     || func_path == "std_PoolNew" || func_path == "os_PoolNew"
                     || func_path == "std.GraphNew" || func_path == "std_GraphNew"
                     || func_path == "std.MutexNew" || func_path == "std_MutexNew"
-                    || func_path == "std.ChannelNew" || func_path == "std_ChannelNew"
-                {
-                    if !arguments.is_empty() {
+                    || func_path == "std.ChannelNew" || func_path == "std_ChannelNew")
+                    && !arguments.is_empty() {
                         return self.get_expression_origins(&arguments[0]);
                     }
-                }
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
                     let mut call_origins = HashSet::new();
                     if self.contains_ephemeral_view(&sig.return_type) {
