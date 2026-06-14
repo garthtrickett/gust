@@ -6533,3 +6533,18 @@ fn test_self_hosted_expression_serialization() {
         "Identifier: my_var\n\nBinary: +\n  Integer: 42\n  Integer: 10\n\nBinary: ==\n  String: \"hello\"\n  Bool: true\n\nSelector: val\n  IndexAccess:\n    Identifier: ctx\n    Identifier: n\n\nCall:\n  Identifier: my_func\n  AsCast: RawPointer(Int) (ref=false)\n    Empty: Int"
     );
 }
+
+#[test]
+fn test_namespaced_fallback_type_matching() {
+    let source = "
+        type MyStruct struct {
+            val: int
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut vec: std.Vector[MyStruct, ctx] := std.VectorNew(ctx);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}

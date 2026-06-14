@@ -61,9 +61,12 @@ fn erase_struct_name_with_registry(
             if erased.ends_with(&ns_suffix) {
                 let pos = erased.len() - ns_suffix.len();
                 if let Some(start_pos) = erased[..pos].rfind('_') {
-                    erased.truncate(start_pos);
-                    changed = true;
-                    break;
+                    // If the prefix is a module separator '__', do not over-eagerly truncate the preceding template name
+                    if !erased[..pos].ends_with("__") {
+                        erased.truncate(start_pos);
+                        changed = true;
+                        break;
+                    }
                 }
             }
             
