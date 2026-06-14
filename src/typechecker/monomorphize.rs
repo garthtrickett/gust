@@ -13,13 +13,11 @@ impl TypeChecker {
         let mut resolved = name.to_string();
         let mut local_names = Vec::new();
         if !self.current_prefix.is_empty() {
-            for key in self
-                .struct_registry
-                .keys()
+            for key in self.struct_registry.keys()
                 .chain(self.struct_templates.keys())
                 .chain(self.enum_templates.keys())
             {
-                if key.contains("__GUST_MONO_RESOLVE_TEMP_") {
+                if key.contains("__GUST_MONO_RESOLVE_TEMP_") || key.contains("__PLACEHOLDER_") {
                     continue;
                 }
                 if let Some(stripped) = key.strip_prefix(&self.current_prefix) {
