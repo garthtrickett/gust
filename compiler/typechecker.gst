@@ -56,12 +56,14 @@ type TypeEnvironment[ctx] struct {
 }
 
 func env_new(ctx: &Arena) TypeEnvironment[ctx] {
-    mut env: TypeEnvironment[ctx];
-    env.struct_registry = std.HashMapNew(ctx);
-    env.function_registry = std.HashMapNew(ctx);
-    env.current_prefix = "";
-    env.imports = std.HashMapNew(ctx);
-    return env;
+    mut env_idx: Index[TypeEnvironment[ctx], ctx] := os.ArenaAlloc(ctx);
+    unsafe {
+        ctx[env_idx].struct_registry = std.HashMapNew(ctx);
+        ctx[env_idx].function_registry = std.HashMapNew(ctx);
+        ctx[env_idx].current_prefix = "";
+        ctx[env_idx].imports = std.HashMapNew(ctx);
+        return ctx[env_idx];
+    }
 }
 
 func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
