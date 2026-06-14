@@ -5908,3 +5908,130 @@ fn test_self_hosted_parser_recovery() {
 
     assert_eq!(stdout_str.trim(), "1\n1\n3\nmain");
 }
+
+#[test]
+fn test_ast_serialization_helpers() {
+    gust_lexer::init_logging();
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/ast_helpers_test_entry.gst");
+
+    std::fs::create_dir_all("compiler").unwrap();
+
+    let entry_source = "
+        import \"token.gst\" as token;
+        import \"ast.gst\" as ast;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut strings: std.Vector[str, ctx] := std.VectorNew(ctx);
+            strings.Push(\"hello\");
+            strings.Push(\"world\");
+            mut joined := ast.ast_join_strings(strings, \", \", ctx);
+            os.LogStr(joined);
+
+            mut fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+            mut f: ast.FieldDef[ctx];
+            f.name = \"my_field\";
+            f.field_type.tag = 0;
+            fields.Push(f);
+            mut fields_str := ast.ast_join_fields(fields, 1, ctx);
+            os.LogStr(fields_str);
+
+            mut params: std.Vector[ast.Parameter[ctx], ctx] := std.VectorNew(ctx);
+            mut param: ast.Parameter[ctx];
+            param.name = \"my_param\";
+            param.param_type.tag = 1;
+            params.Push(param);
+            mut params_str := ast.ast_join_params(params, 1, ctx);
+            os.LogStr(params_str);
+        }
+    ";
+    std::fs::write(&entry_path, entry_source).unwrap();
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, mut modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = gust_lexer::codegen::Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let c_filename = format!("gust_e2e_ast_helpers_{:?}_{}.c", thread_id, process_id);
+    let bin_filename = format!("gust_e2e_ast_helpers_{:?}_{}.bin", thread_id, process_id);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "Compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = std::process::Command::new(&bin_path)
+        .output()
+        .expect("Execution failed");
+
+    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_file(entry_path);
+
+    assert_eq!(
+        stdout_str.trim(),
+        "hello, world\n  FieldDef: my_field : TypePlaceholder\n\n  Parameter: my_param : TypePlaceholder"
+    );
+}
