@@ -5182,7 +5182,7 @@ fn test_self_hosted_type_parsing() {
             os.LogStr(ctx[stmt2].EnumDecl.name);
         }
     ";
-    std.fs::write(&entry_path, entry_source).unwrap();
+    std::fs::write(&entry_path, entry_source).unwrap();
 
     let res = resolver.resolve(&entry_path, &fs_impl);
     assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
