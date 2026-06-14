@@ -569,16 +569,21 @@ impl TypeChecker {
                         format!("{}_{}", concrete_name, variant.name);
                     let mut variant_fields = HashMap::new();
                     for field in &variant.fields {
-                        let substituted_type =
-                            self.substitute_generics(&field.field_type, &substitution_map);
-                        let resolved_field_type = match self.resolve_type(&substituted_type) {
+                        let substituted_type = match self.substitute_generics(&field.field_type, &substitution_map) {
                             Ok(t) => t,
                             Err(e) => {
                                 self.current_prefix = old_prefix;
                                 return Err(e);
                             }
                         };
-                        let resolved_field_type =
+                        let resolved_field_type = match self.resolve_type(&substituted_type) { 
+                            Ok(t) => t,
+                            Err(e) => {
+                                self.current_prefix = old_prefix;
+                                return Err(e);
+                            }
+                        };
+                        let resolved_field_type = 
                             match self.resolve_type_namespacing(&resolved_field_type) {
                                 Ok(t) => t,
                                 Err(e) => {
@@ -718,8 +723,13 @@ impl TypeChecker {
 
             let mut concrete_fields = HashMap::new();
             for field in &template.fields {
-                let substituted_type =
-                    self.substitute_generics(&field.field_type, &substitution_map);
+                let substituted_type = match self.substitute_generics(&field.field_type, &substitution_map) {
+                    Ok(t) => t,
+                    Err(e) => {
+                        self.current_prefix = old_prefix;
+                        return Err(e);
+                    }
+                };
                 let resolved_field_type = match self.resolve_type(&substituted_type) {
                     Ok(t) => t,
                     Err(e) => {
@@ -785,8 +795,8 @@ impl TypeChecker {
         name.replace(".", "_")
     }
 
-    pub(crate) fn substitute_generics(&self, t: &Type, map: &HashMap<String, Type>) -> Type {
-        match t {
+    pub(crate) fn substitute_generics(&mut self, t: &Type, map: &HashMap<String, Type>) -> Result<Type, TypeError> {
+        let substituted = match t {
             Type::Struct(name, brand) => {
                 let mut new_name = name.clone();
                 if new_name == "RcNode_T" || new_name == "std_RcNode_T" {
@@ -801,7 +811,7 @@ impl TypeChecker {
                 } else if (new_name == "GraphNode_T_ctx" || new_name == "std_GraphNode_T_ctx")
                     && let Some(substituted_t) = map.get("T")
                     && let Some(substituted_ctx) = map.get("ctx")
-                {
+                { 
                     let t_ident = self.get_type_ident(substituted_t);
                     let ctx_ident = self.get_type_ident(substituted_ctx);
                     new_name = if name == "GraphNode_T_ctx" {
@@ -839,7 +849,7 @@ impl TypeChecker {
                 } else if (new_struct == "GraphNode_T_ctx" || new_struct == "std_GraphNode_T_ctx")
                     && let Some(substituted_t) = map.get("T")
                     && let Some(substituted_ctx) = map.get("ctx")
-                {
+                { 
                     let t_ident = self.get_type_ident(substituted_t);
                     let ctx_ident = self.get_type_ident(substituted_ctx);
                     new_struct = if struct_name == "GraphNode_T_ctx" {
@@ -860,7 +870,7 @@ impl TypeChecker {
                 let new_brand = if let Some(b) = brand {
                     if let Some(Type::Struct(b_name, _)) = map.get(b) {
                         Some(b_name.clone())
-                    } else {
+                    } else { 
                         Some(b.clone())
                     }
                 } else {
@@ -869,18 +879,22 @@ impl TypeChecker {
                 Type::Index(final_struct, new_brand)
             }
             Type::RawPointer(inner) => {
-                Type::RawPointer(Box::new(self.substitute_generics(inner, map)))
+                Type::RawPointer(Box::new(self.substitute_generics(inner, map)?))
             }
-            Type::Slice(inner) => Type::Slice(Box::new(self.substitute_generics(inner, map))),
+            Type::Slice(inner) => Type::Slice(Box::new(self.substitute_generics(inner, map)?)),
             Type::Generic(name, args) => {
-                let new_args: Vec<Type> = args
-                    .iter()
-                    .map(|arg| self.substitute_generics(arg, map))
-                    .collect();
+                let mut new_args = Vec::new();
+                for arg in args {
+                    new_args.push(self.substitute_generics(arg, map)?);
+                }
                 Type::Generic(name.clone(), new_args)
             }
             _ => t.clone(),
-        }
+        };
+
+        let resolved_namespaced = self.resolve_type_namespacing(&substituted)?;
+        let resolved = self.resolve_type(&resolved_namespaced)?;
+        Ok(resolved)
     }
 
     pub(crate) fn substitute_brand_names(&self, t: &Type, map: &HashMap<String, String>) -> Type {
@@ -930,5 +944,40 @@ impl TypeChecker {
             }
             _ => t.clone(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::typechecker::Type;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_structural_namespacing_on_substitution() {
+        let mut checker = TypeChecker::new();
+        checker.current_prefix = "my_module__".to_string();
+
+        checker.struct_registry.insert(
+            "my_module__LocalStruct".to_string(),
+            crate::typechecker::StructLayout {
+                brand: None,
+                fields: HashMap::new(),
+            },
+        );
+
+        let t_placeholder = Type::Struct("T".to_string(), None);
+        
+        let mut map = HashMap::new();
+        map.insert("T".to_string(), Type::Struct("LocalStruct".to_string(), None));
+
+        let res = checker.substitute_generics(&t_placeholder, &map);
+        assert!(res.is_ok());
+        let substituted = res.unwrap();
+
+        assert_eq!(
+            substituted,
+            Type::Struct("my_module__LocalStruct".to_string(), None)
+        );
     }
 }

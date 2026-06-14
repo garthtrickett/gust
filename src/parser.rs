@@ -1662,7 +1662,7 @@ fn test_namespaced_type_signature_parsing() {
     }
 
     let t1 = parse_type_str("std.Vector[int, ctx]");
-    if let Type::Generic(name, args) = t1 {
+    if let Type::Generic(name, args) = &t1 {
         assert_eq!(name, "std.Vector");
         assert_eq!(args.len(), 2);
         assert_eq!(args[0], Type::Int);
@@ -1674,6 +1674,20 @@ fn test_namespaced_type_signature_parsing() {
     } else {
         panic!("Expected Type::Generic");
     }
+
+    // Validate boundary of type signature resolution on the TypeChecker
+    use crate::typechecker::TypeChecker;
+    let mut checker = TypeChecker::new();
+    checker.current_prefix = "my_module__".to_string();
+
+    let resolved_t1 = checker.resolve_type(&t1).expect("Failed to resolve t1");
+    assert_eq!(
+        resolved_t1,
+        Type::Struct(
+            "std_Vector_int_my_module__ctx".to_string(),
+            Some("my_module__ctx".to_string())
+        )
+    );
 
     let t2 = parse_type_str("os.Arena");
     assert_eq!(t2, Type::Arena);
