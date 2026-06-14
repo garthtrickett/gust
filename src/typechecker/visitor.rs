@@ -53,13 +53,34 @@ impl TypeChecker {
         {
             actual_brand = layout.brand.clone();
         }
-        if let Some(b) = &actual_brand {
-            let suffix = format!("_{}", b);
-            if name.ends_with(&suffix) {
-                return name[..name.len() - suffix.len()].to_string();
+        let mut erased = name.to_string();
+        if let Some(ref b) = actual_brand {
+            let clean_b = strip_brand_prefix(b);
+            
+            // Check for namespaced brand pattern first: e.g. std_Graph_str_resolver__ctx
+            let ns_suffix = format!("__{}", clean_b);
+            if erased.ends_with(&ns_suffix) {
+                let pos = erased.len() - ns_suffix.len();
+                if let Some(start_pos) = erased[..pos].rfind('_') {
+                    erased.truncate(start_pos);
+                    return erased;
+                }
+            }
+            
+            // Check for standard flat brand pattern: e.g. std_Graph_str_ctx
+            let flat_suffix = format!("_{}", clean_b);
+            if erased.ends_with(&flat_suffix) {
+                erased.truncate(erased.len() - flat_suffix.len());
+                return erased;
+            }
+            
+            // Fallback to direct brand suffix
+            let direct_suffix = format!("_{}", b);
+            if let Some(stripped) = erased.strip_suffix(&direct_suffix) {
+                return stripped.to_string();
             }
         }
-        name.to_string()
+        erased
     }
 
     fn types_match_modulo_brand(&self, expected: &Type, actual: &Type) -> bool {
