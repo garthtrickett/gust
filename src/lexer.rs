@@ -80,15 +80,16 @@ impl Lexer {
     }
 
     fn read_string(&mut self) -> String {
+        let delimiter = self.ch;
         let start_pos = self.position + 1;
         loop {
             self.read_char();
-            if self.ch == '"' || self.ch == '\0' {
+            if self.ch == delimiter || self.ch == '\0' {
                 break;
             }
         }
         let out = self.input[start_pos..self.position].iter().collect();
-        self.read_char(); // consume closing '"'
+        self.read_char(); // consume closing delimiter
         out
     }
 
@@ -297,13 +298,13 @@ impl Lexer {
                 literal: "".to_string(),
                 span: crate::token::Span { start: start_pos, end: start_pos },
             },
-            '"' => {
+            '"' | '\'' => {
                 let literal = self.read_string();
                 let end_pos = self.current_position();
                 return Token {
                     token_type: TokenType::String,
                     literal,
-                    span: crate::token::Span { start: start_pos, end: end_pos },
+                    span: crate::token::Span { start: start_pos, end: start_pos },
                 };
             }
             c => {
