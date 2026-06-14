@@ -211,36 +211,37 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             }
             if e_clean_final != a_clean_final {
                 let is_vector_any = (e_clean_final.starts_with("Vector_")
-                    && a_clean_final.starts_with("Vector_Any"))
+                    && a_clean_final == "Vector")
                     || (a_clean_final.starts_with("Vector_")
-                        && e_clean_final.starts_with("Vector_Any"));
+                        && e_clean_final == "Vector");
                 let is_hashmap_any = (e_clean_final.starts_with("HashMap_")
-                    && a_clean_final.starts_with("HashMap_Any"))
+                    && a_clean_final == "HashMap")
                     || (a_clean_final.starts_with("HashMap_")
-                        && e_clean_final.starts_with("HashMap_Any"));
+                        && e_clean_final == "HashMap");
                 let is_pool_any = (e_clean_final.starts_with("Pool_")
-                    && a_clean_final.starts_with("Pool_Any"))
+                    && a_clean_final == "Pool")
                     || (a_clean_final.starts_with("Pool_")
-                        && e_clean_final.starts_with("Pool_Any"));
+                        && e_clean_final == "Pool");
                 let is_rc_any = (e_clean_final.starts_with("Rc_")
-                    && a_clean_final.starts_with("Rc_Any"))
-                    || (a_clean_final.starts_with("Rc_") && e_clean_final.starts_with("Rc_Any"));
+                    && a_clean_final == "Rc")
+                    || (a_clean_final.starts_with("Rc_")
+                        && e_clean_final == "Rc");
                 let is_graph_any = (e_clean_final.starts_with("Graph_")
-                    && a_clean_final.starts_with("Graph_Any"))
+                    && a_clean_final == "Graph")
                     || (a_clean_final.starts_with("Graph_")
-                        && e_clean_final.starts_with("Graph_Any"));
+                        && e_clean_final == "Graph");
                 let is_mutex_any = (e_clean_final.starts_with("Mutex_")
-                    && a_clean_final.starts_with("Mutex_Any"))
+                    && a_clean_final == "Mutex")
                     || (a_clean_final.starts_with("Mutex_")
-                        && e_clean_final.starts_with("Mutex_Any"));
+                        && e_clean_final == "Mutex");
                 let is_channel_any = (e_clean_final.starts_with("Channel_")
-                    && a_clean_final.starts_with("Channel_Any"))
+                    && a_clean_final == "Channel")
                     || (a_clean_final.starts_with("Channel_")
-                        && e_clean_final.starts_with("Channel_Any"));
+                        && e_clean_final == "Channel");
                 let is_tl_any = (e_clean_final.starts_with("ThreadLocalContext_")
-                    && a_clean_final.starts_with("ThreadLocalContext_Any"))
+                    && a_clean_final == "ThreadLocalContext")
                     || (a_clean_final.starts_with("ThreadLocalContext_")
-                        && e_clean_final.starts_with("ThreadLocalContext_Any"));
+                        && e_clean_final == "ThreadLocalContext");
                 if !is_vector_any
                     && !is_hashmap_any
                     && !is_pool_any
