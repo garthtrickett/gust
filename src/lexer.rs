@@ -322,7 +322,7 @@ impl Lexer {
                 return Token {
                     token_type: TokenType::String,
                     literal,
-                    span: crate::token::Span { start: start_pos, end: start_pos },
+                    span: crate::token::Span { start: start_pos, end: end_pos },
                 };
             }
             c => {

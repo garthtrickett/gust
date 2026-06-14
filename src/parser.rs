@@ -36,6 +36,7 @@ impl Parser {
             Type::Arena => "Arena".to_string(),
             Type::Void => "void".to_string(),
             Type::Str => "str".to_string(),
+            Type::ByteSlice => "ByteSlice".to_string(),
             Type::RawPointer(inner) => format!("{}_ptr", self.get_type_ident(inner)),
             Type::Slice(inner) => format!("Slice_{}", self.get_type_ident(inner)),
             Type::Struct(name, _) => name.clone(),
