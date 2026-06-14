@@ -1339,7 +1339,7 @@ impl Codegen {
 
                 let val_expr_str = self.gen_expression(value);
 
-                result.push_str(&format!("    {} {};\n", wrapper_name, guard_res_name));
+                result.push_str(&format!("    {} {} = {{0}};\n", wrapper_name, guard_res_name));
                 result.push_str(&format!("    {} = {};\n", guard_res_name, val_expr_str));
                 result.push_str(&format!("    if (!{}.Ok) {{\n", guard_res_name));
                 for stmt in &else_body.statements {
