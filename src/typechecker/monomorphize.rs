@@ -1174,4 +1174,64 @@ mod tests {
             )
         );
     }
+
+    #[test]
+    fn test_substitute_brand_deep_nested_pointer_slice() {
+        let checker = TypeChecker::new();
+
+        // Type: *[]MyNode_ctx
+        let t_deep = Type::RawPointer(Box::new(Type::Slice(Box::new(Type::Struct(
+            "MyNode_ctx".to_string(),
+            Some("ctx".to_string()),
+        )))));
+
+        let substituted = checker.substitute_brand(&t_deep, &Some("connCtx".to_string()));
+
+        assert_eq!(
+            substituted,
+            Type::RawPointer(Box::new(Type::Slice(Box::new(Type::Struct(
+                "MyNode_connCtx".to_string(),
+                Some("connCtx".to_string()),
+            )))))
+        );
+    }
+
+    #[test]
+    fn test_substitute_brand_multi_layer_slice() {
+        let checker = TypeChecker::new();
+
+        // Type: [][]Item_old
+        let t_slices = Type::Slice(Box::new(Type::Slice(Box::new(Type::Struct(
+            "Item_old".to_string(),
+            Some("old".to_string()),
+        )))));
+
+        let substituted = checker.substitute_brand(&t_slices, &Some("new".to_string()));
+
+        assert_eq!(
+            substituted,
+            Type::Slice(Box::new(Type::Slice(Box::new(Type::Struct(
+                "Item_new".to_string(),
+                Some("new".to_string()),
+            )))))
+        );
+    }
+
+    #[test]
+    fn test_substitute_brand_idempotency_primitives() {
+        let checker = TypeChecker::new();
+
+        assert_eq!( 
+            checker.substitute_brand(&Type::Int, &Some("ctx".to_string())),
+            Type::Int
+        );
+        assert_eq!( 
+            checker.substitute_brand(&Type::Str, &Some("ctx".to_string())),
+            Type::Str
+        );
+        assert_eq!( 
+            checker.substitute_brand(&Type::Arena, &Some("ctx".to_string())),
+            Type::Arena
+        );
+    }
 }
