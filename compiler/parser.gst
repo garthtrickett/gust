@@ -264,7 +264,7 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                 if has_brand == 1 && is_builtin_brand == 0 {
                     mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[t_idx].tag = 8; // Struct = 8
-                    ctx[t_idx].Struct.struct_name = base_name;
+                    ctx[t_idx].Struct.struct_name = std.Clone(*ctx, base_name);
                     
                     mut brand_idx := os.ArenaAlloc(ctx);
                     ctx[t_idx].Struct.brand = brand_idx as Index[str, ctx];
@@ -274,7 +274,7 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                 } else {
                     mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[t_idx].tag = 10; // Generic = 10
-                    ctx[t_idx].Generic.name = base_name;
+                    ctx[t_idx].Generic.name = std.Clone(*ctx, base_name);
                     ctx[t_idx].Generic.args = os.ArenaAlloc(ctx);
                     mut dest_args := &ctx[ctx[t_idx].Generic.args] as *std.Vector[ast.Type[ctx], ctx];
                     *dest_args = args_vec;
@@ -284,7 +284,7 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
 
             mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx[t_idx].tag = 10; // Generic = 10
-            ctx[t_idx].Generic.name = base_name;
+            ctx[t_idx].Generic.name = std.Clone(*ctx, base_name);
             ctx[t_idx].Generic.args = os.ArenaAlloc(ctx);
             mut dest_args := &ctx[ctx[t_idx].Generic.args] as *std.Vector[ast.Type[ctx], ctx];
             *dest_args = args_vec;
@@ -304,7 +304,7 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
             ctx[t_idx].tag = 5; // Str = 5
         } else {
             ctx[t_idx].tag = 8; // Struct = 8
-            ctx[t_idx].Struct.struct_name = base_name;
+            ctx[t_idx].Struct.struct_name = std.Clone(*ctx, base_name);
             ctx[t_idx].Struct.brand = empty[Index[str, ctx]];
         }
         return t_idx;
