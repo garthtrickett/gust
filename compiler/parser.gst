@@ -1151,7 +1151,14 @@ func parse_while_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
     
     mut condition := parse_expression(p, 1, ctx);
     
-    guard lbrace_tok := expect_peek(p, 13, ctx) else { // LBrace = 13
+    if cur_token_is(p, 13) == false { // LBrace = 13
+        unsafe {
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Expected '{' after while condition";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
+        }
         return empty[Index[ast.Statement[ctx], ctx]];
     }
     
@@ -1176,7 +1183,14 @@ func parse_if_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], 
     
     mut condition := parse_expression(p, 1, ctx);
     
-    guard lbrace_tok := expect_peek(p, 13, ctx) else { // LBrace = 13
+    if cur_token_is(p, 13) == false { // LBrace = 13
+        unsafe {
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Expected '{' after if condition";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
+        }
         return empty[Index[ast.Statement[ctx], ctx]];
     }
     
