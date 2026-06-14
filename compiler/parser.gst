@@ -9,18 +9,21 @@ type ParseResult struct {
 }
 
 type Parser[ctx] struct {
+type Parser[ctx] struct { 
     lexer: *lexer.Lexer[Any],
     cur_token: token.Token[Any],
     peek_token: token.Token[Any],
     pushback_tokens: std.Vector[token.Token[Any], Any],
-    errors: std.Vector[errors.CompilerError[Any], Any]
+    errors: std.Vector[errors.CompilerError[Any], Any],
+    has_non_import_statement: int
 }
 
 func init_parser(p: *Parser[ctx], l: *lexer.Lexer[ctx], ctx: &Arena) { 
-    unsafe {
+    unsafe { 
         (*p).lexer = l as *lexer.Lexer[Any];
         (*p).pushback_tokens = std.VectorNew(ctx);
         (*p).errors = std.VectorNew(ctx);
+        (*p).has_non_import_statement = 0;
         
         lexer.next_token((*p).lexer as *lexer.Lexer[ctx], &(*p).cur_token as *token.Token[ctx]);
         lexer.next_token((*p).lexer as *lexer.Lexer[ctx], &(*p).peek_token as *token.Token[ctx]);
@@ -287,6 +290,11 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
 
 func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
     unsafe {
+        if cur_token_is(p, 28) { // Import = 28
+            return parse_import_statement(p, ctx);
+        }
+        (*p).has_non_import_statement = 1;
+
         if cur_token_is(p, 29) { // Mut = 29
             return parse_var_decl(p, 1, ctx);
         }
@@ -530,4 +538,76 @@ func parse_guard_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
         ctx[stmt_idx].Guard.span = merge_spans(start_span, else_body.span);
     }
     return stmt_idx;
+}
+
+func parse_program(p: *Parser[ctx], ctx: &Arena) ast.Program[ctx] {
+    mut prog: ast.Program[ctx];
+    unsafe {
+        prog.statements = os.ArenaAlloc(ctx);
+        mut dest_ptr := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        *dest_ptr = std.VectorNew(ctx);
+        
+        mut start_span := (*p).cur_token.span;
+        
+        while (*p).cur_token.token_type.tag != 0 { // TokenType::Eof = 0
+            mut stmt := parse_statement(p, ctx);
+            if stmt != empty[Index[ast.Statement[ctx], ctx]] {
+                (*dest_ptr).Push(ctx[stmt]);
+            }
+            next_token(p);
+        }
+        prog.span = merge_spans(start_span, (*p).cur_token.span);
+    }
+    return prog;
+}
+
+func parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
+    mut start_span := (*p).cur_token.span;
+    
+    unsafe {
+        if (*p).has_non_import_statement == 1 {
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Imports must be at the beginning of the program";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
+        }
+        
+        next_token(p); // consume 'import'
+        
+        if !cur_token_is(p, 4) { // String = 4
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Expected string literal specifying the import path";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+        
+        mut path := std.Clone(*ctx, (*p).cur_token.literal);
+        next_token(p); // consume string path
+        
+        mut alias := empty[Index[str, ctx]];
+        if cur_token_is(p, 37) { // As = 37
+            next_token(p); // consume 'as'
+            if !cur_token_is(p, 2) { // Ident = 2
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected identifier alias after 'as'";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            alias = os.ArenaAlloc(ctx);
+            ctx[alias] = std.Clone(*ctx, (*p).cur_token.literal);
+            next_token(p); // consume alias
+        }
+        
+        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[stmt_idx].tag = 0; // Import = 0
+        ctx[stmt_idx].Import.path = path;
+        ctx[stmt_idx].Import.alias = alias;
+        ctx[stmt_idx].Import.span = merge_spans(start_span, (*p).cur_token.span);
+        return stmt_idx;
+    }
 }
