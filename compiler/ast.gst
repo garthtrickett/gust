@@ -358,3 +358,135 @@ func ast_join_params(params: std.Vector[Parameter[ctx], ctx], indent: int, ctx: 
     }
     return std.Clone(ctx, result);
 }
+
+func serialize_expression(expr_idx: Index[Expression[ctx], ctx], indent: int, ctx: &Arena) str {
+    unsafe {
+        if expr_idx == empty[Index[Expression[ctx], ctx]] {
+            return "";
+        }
+        mut expr := ctx[expr_idx];
+        mut pad := ast_repeat_spaces(indent, ctx);
+
+        if expr.tag == 0 { // Identifier
+            mut res := std.Concat(pad, "Identifier: ");
+            res = std.Concat(res, expr.Identifier.name);
+            res = std.Concat(res, "\n");
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 1 { // Integer
+            mut val_str := std.FormatInt(expr.Integer.val);
+            mut res := std.Concat(pad, "Integer: ");
+            res = std.Concat(res, val_str);
+            res = std.Concat(res, "\n");
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 2 { // String
+            mut quote := '"';
+            mut res := std.Concat(pad, "String: ");
+            res = std.Concat(res, quote);
+            res = std.Concat(res, expr.String.val);
+            res = std.Concat(res, quote);
+            res = std.Concat(res, "\n");
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 3 { // Bool
+            mut val_str := "false";
+            if expr.Bool.val == 1 {
+                val_str = "true";
+            }
+            mut res := std.Concat(pad, "Bool: ");
+            res = std.Concat(res, val_str);
+            res = std.Concat(res, "\n");
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 4 { // Move
+            mut res := std.Concat(pad, "Move:\n");
+            mut inner := serialize_expression(expr.Move.expr, indent + 1, ctx);
+            res = std.Concat(res, inner);
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 5 { // Take
+            mut res := std.Concat(pad, "Take:\n");
+            mut inner := serialize_expression(expr.Take.expr, indent + 1, ctx);
+            res = std.Concat(res, inner);
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 6 { // AddressOf
+            mut res := std.Concat(pad, "AddressOf:\n");
+            mut inner := serialize_expression(expr.AddressOf.expr, indent + 1, ctx);
+            res = std.Concat(res, inner);
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 7 { // Dereference
+            mut res := std.Concat(pad, "Dereference:\n");
+            mut inner := serialize_expression(expr.Dereference.expr, indent + 1, ctx);
+            res = std.Concat(res, inner);
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 8 { // IndexAccess
+            mut res := std.Concat(pad, "IndexAccess:\n");
+            mut alloc_str := serialize_expression(expr.IndexAccess.allocator, indent + 1, ctx);
+            mut idx_str := serialize_expression(expr.IndexAccess.index, indent + 1, ctx);
+            res = std.Concat(res, alloc_str);
+            res = std.Concat(res, idx_str);
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 9 { // AsCast
+            mut target_type_str := serialize_type(ctx[expr.AsCast.target_type], ctx);
+            mut ref_str := "false";
+            if expr.AsCast.is_reference == 1 {
+                ref_str = "true";
+            }
+            mut res := std.Concat(pad, "AsCast: ");
+            res = std.Concat(res, target_type_str);
+            res = std.Concat(res, " (ref=");
+            res = std.Concat(res, ref_str);
+            res = std.Concat(res, ")\n");
+            mut inner := serialize_expression(expr.AsCast.left, indent + 1, ctx);
+            res = std.Concat(res, inner);
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 10 { // Binary
+            mut res := std.Concat(pad, "Binary: ");
+            res = std.Concat(res, expr.Binary.op);
+            res = std.Concat(res, "\n");
+            mut left_str := serialize_expression(expr.Binary.left, indent + 1, ctx);
+            mut right_str := serialize_expression(expr.Binary.right, indent + 1, ctx);
+            res = std.Concat(res, left_str);
+            res = std.Concat(res, right_str);
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 11 { // Selector
+            mut res := std.Concat(pad, "Selector: ");
+            res = std.Concat(res, expr.Selector.right);
+            res = std.Concat(res, "\n");
+            mut inner := serialize_expression(expr.Selector.left, indent + 1, ctx);
+            res = std.Concat(res, inner);
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 12 { // Call
+            mut res := std.Concat(pad, "Call:\n");
+            mut func_str := serialize_expression(expr.Call.function, indent + 1, ctx);
+            res = std.Concat(res, func_str);
+            
+            mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[Expression[ctx], ctx];
+            mut i := 0;
+            while i < len(*args_vec) {
+                mut arg_idx: Index[Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg_idx] = (*args_vec)[i];
+                mut arg_str := serialize_expression(arg_idx, indent + 1, ctx);
+                res = std.Concat(res, arg_str);
+                i = i + 1;
+            }
+            return std.Clone(ctx, res);
+        }
+        if expr.tag == 13 { // Empty
+            mut target_type_str := serialize_type(ctx[expr.Empty.target_type], ctx);
+            mut res := std.Concat(pad, "Empty: ");
+            res = std.Concat(res, target_type_str);
+            res = std.Concat(res, "\n");
+            return std.Clone(ctx, res);
+        }
+    }
+    return "UnknownExpr";
+}

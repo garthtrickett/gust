@@ -6020,7 +6020,7 @@ fn test_self_hosted_type_serialization() {
 
     std::fs::create_dir_all("compiler").unwrap();
 
-        let entry_source = "
+    let entry_source = "
             import 'token.gst' as token;
             import 'ast.gst' as ast;
             func main() {
@@ -6177,5 +6177,158 @@ fn test_self_hosted_type_serialization() {
     assert_eq!(
         stdout_str.trim(),
         "Int\nStruct(\"MyNode\", None)\nStruct(\"MyNode\", Some(\"connCtx\"))\nRawPointer(Int)\nGeneric(\"std.Vector\", [Int, Struct(\"ctx\", None)])"
+    );
+}
+
+#[test]
+fn test_self_hosted_expression_serialization() {
+    gust_lexer::init_logging();
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/expression_serialization_test_entry.gst");
+
+    std::fs::create_dir_all("compiler").unwrap();
+
+    let entry_source = "
+            import 'token.gst' as token;
+            import 'lexer.gst' as lexer;
+            import 'parser.gst' as parser;
+            import 'ast.gst' as ast;
+            func main() {
+                mut ctx := os.Arena.New();
+                defer ctx.Free();
+
+                // 1. Identifier
+                mut l1: lexer.Lexer[ctx];
+                lexer.init_lexer(&l1, 'my_var');
+                mut p1: parser.Parser[ctx];
+                parser.init_parser(&p1, &l1, ctx);
+                mut expr1 := parser.parse_expression(&p1, 1, ctx);
+                os.LogStr(ast.serialize_expression(expr1, 0, ctx));
+
+                // 2. Binary and Integer
+                mut l2: lexer.Lexer[ctx];
+                lexer.init_lexer(&l2, '42 + 10');
+                mut p2: parser.Parser[ctx];
+                parser.init_parser(&p2, &l2, ctx);
+                mut expr2 := parser.parse_expression(&p2, 1, ctx);
+                os.LogStr(ast.serialize_expression(expr2, 0, ctx));
+
+                // 3. String & Bool
+                mut l3: lexer.Lexer[ctx];
+                lexer.init_lexer(&l3, '\\\"hello\\\" == true');
+                mut p3: parser.Parser[ctx];
+                parser.init_parser(&p3, &l3, ctx);
+                mut expr3 := parser.parse_expression(&p3, 1, ctx);
+                os.LogStr(ast.serialize_expression(expr3, 0, ctx));
+
+                // 4. Selector & IndexAccess
+                mut l4: lexer.Lexer[ctx];
+                lexer.init_lexer(&l4, 'ctx[n].val');
+                mut p4: parser.Parser[ctx];
+                parser.init_parser(&p4, &l4, ctx);
+                mut expr4 := parser.parse_expression(&p4, 1, ctx);
+                os.LogStr(ast.serialize_expression(expr4, 0, ctx));
+
+                // 5. Call & Cast & Empty
+                mut l5: lexer.Lexer[ctx];
+                lexer.init_lexer(&l5, 'my_func(empty[int] as *int)');
+                mut p5: parser.Parser[ctx];
+                parser.init_parser(&p5, &l5, ctx);
+                mut expr5 := parser.parse_expression(&p5, 1, ctx);
+                os.LogStr(ast.serialize_expression(expr5, 0, ctx));
+            }
+        ";
+    std::fs::write(&entry_path, entry_source).unwrap();
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, mut modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let c_filename = format!(
+        "gust_e2e_expression_serialization_{:?}_{}.c",
+        thread_id, process_id
+    );
+    let bin_filename = format!(
+        "gust_e2e_expression_serialization_{:?}_{}.bin",
+        thread_id, process_id
+    );
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "Compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = std::process::Command::new(&bin_path)
+        .output()
+        .expect("Execution failed");
+
+    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_file(entry_path);
+
+    assert_eq!(
+        stdout_str.trim(),
+        "Identifier: my_var\n\nBinary: +\n  Integer: 42\n  Integer: 10\n\nBinary: ==\n  String: \"hello\"\n  Bool: true\n\nSelector: val\n  IndexAccess:\n    Identifier: ctx\n    Identifier: n\n\nCall:\n  Identifier: my_func\n  AsCast: RawPointer(Int) (ref=false)\n    Empty: Int"
     );
 }
