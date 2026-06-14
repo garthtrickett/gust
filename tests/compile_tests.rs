@@ -3418,9 +3418,9 @@ fn test_self_hosted_ast_compilation() {
             os.LogStr(spaces);
 
             mut strings: std.Vector[str, ctx] := std.VectorNew(ctx);
-            strings.Push("hello");
-            strings.Push("world");
-            mut joined := ast.ast_join_strings(strings, ", ", ctx);
+            strings.Push(\"hello\");
+            strings.Push(\"world\");
+            mut joined := ast.ast_join_strings(strings, \", \", ctx);
             os.LogStr(joined);
         }
     ";
