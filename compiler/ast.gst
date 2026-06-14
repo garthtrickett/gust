@@ -205,3 +205,13 @@ type Program[ctx] struct {
     statements: Index[std.Vector[Statement[ctx], ctx], ctx],
     span: token.Span
 }
+
+func ast_repeat_spaces(indent: int, ctx: &Arena) str {
+    mut spaces := "";
+    mut i := 0;
+    while i < indent {
+        spaces = std.Concat(spaces, "  ");
+        i = i + 1;
+    }
+    return spaces;
+}

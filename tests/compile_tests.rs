@@ -3413,6 +3413,9 @@ fn test_self_hosted_ast_compilation() {
             mut e: ast.Expression[ctx];
             e.tag = 1;
             e.Integer.val = 42;
+
+            mut spaces := ast.ast_repeat_spaces(2, ctx);
+            os.LogStr(spaces);
         }
     ";
     std::fs::write(&entry_path, entry_source).unwrap();
