@@ -72,6 +72,47 @@ impl TypeChecker {
     }
 
     pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> Result<String, TypeError> {
+        if let Some(suffix) = name.strip_prefix("LookupResult_") {
+            let resolved_suffix = self.resolve_namespaced_ident(suffix)?;
+            return Ok(format!("LookupResult_{}", resolved_suffix));
+        }
+        if let Some(suffix) = name.strip_prefix("CastResult_") {
+            let resolved_suffix = self.resolve_namespaced_ident(suffix)?;
+            return Ok(format!("CastResult_{}", resolved_suffix));
+        }
+
+        let prefixes = [
+            "std_Vector_",
+            "std_HashMap_",
+            "std_Pool_",
+            "std_RcNode_",
+            "std_Rc_",
+            "std_GraphNode_",
+            "std_Graph_",
+            "std_Mutex_",
+            "std_Channel_",
+            "std_GenerationalArena_",
+            "std_ThreadLocalContext_",
+            "os_Dir_",
+            "os_DirEntry_",
+        ];
+        for prefix in &prefixes {
+            if let Some(suffix) = name.strip_prefix(prefix) {
+                if suffix.contains("__") {
+                    return Ok(name.to_string());
+                }
+                let normalized = suffix.replace("__", "@");
+                let parts: Vec<&str> = normalized.split('_').collect();
+                let mut resolved_parts = Vec::new();
+                for part in parts {
+                    let clean_part = part.replace("@", "__");
+                    let resolved_part = self.resolve_namespaced_ident(&clean_part)?;
+                    resolved_parts.push(resolved_part);
+                }
+                return Ok(format!("{}{}", prefix, resolved_parts.join("_")));
+            }
+        }
+
         let resolved = if name == "len"
             || name == "int"
             || name == "byte"
@@ -91,8 +132,6 @@ impl TypeChecker {
             || name == "Channel_Any"
             || name == "ThreadLocalContext_Any"
             || name == "std_ThreadLocalContext_Any"
-            || name.starts_with("LookupResult_")
-            || name.starts_with("CastResult_")
         {
             name.to_string()
         } else if let Some(pos) = name.find('.') {
