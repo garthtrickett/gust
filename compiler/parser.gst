@@ -100,6 +100,37 @@ func is_at_end(p: *Parser[ctx]) int {
     }
 }
 
+func error_at_current(p: *Parser[ctx], message: str) {
+    unsafe {
+        mut err: errors.CompilerError[Any];
+        err.kind.tag = 1; // ParserError
+        err.message = message;
+        err.span = (*p).cur_token.span;
+        (*p).errors.Push(err);
+    }
+}
+
+func synchronize(p: *Parser[ctx]) {
+    unsafe {
+        while (*p).cur_token.token_type.tag != 0 { // TokenType::Eof = 0
+            mut tag := (*p).cur_token.token_type.tag;
+            if tag == 10 { // Semicolon = 10
+                next_token(p); // consume the semicolon
+                return;
+            }
+            if tag == 14 { // RBrace = 14
+                // Stop at closing brace so the enclosing block parser can see and handle it
+                return;
+            }
+            if tag == 30 || tag == 39 || tag == 29 || tag == 34 || tag == 35 || tag == 43 || tag == 42 || tag == 31 || tag == 38 || tag == 27 {
+                // Func=30, Type=39, Mut=29, While=34, If=35, Return=43, Match=42, Defer=31, Unsafe=38, Guard=27
+                return;
+            }
+            next_token(p);
+        }
+    }
+}
+
 func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx] {
     mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
@@ -1125,13 +1156,22 @@ func parse_block_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.BlockStatemen
         next_token(p); // consume '{'
         
         while is_at_end(p) == 0 {
+            mut before_errors := len((*p).errors);
             mut stmt := parse_statement(p, ctx);
             if stmt != empty[Index[ast.Statement[ctx], ctx]] {
                 (*dest_ptr).Push(ctx[stmt]);
-            }
-            
-            if cur_token_is(p, 10) { // Semicolon = 10
-                next_token(p);
+                if cur_token_is(p, 10) { // Semicolon = 10
+                    next_token(p);
+                }
+            } else {
+                if len((*p).errors) == before_errors {
+                    error_at_current(p, "Expected valid statement inside block");
+                }
+                mut before_sync := (*p).cur_token.token_type.tag;
+                synchronize(p);
+                if (*p).cur_token.token_type.tag == before_sync {
+                    next_token(p);
+                }
             }
         }
         
@@ -1296,18 +1336,28 @@ func parse_guard_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
 
 func parse_program(p: *Parser[ctx], ctx: &Arena) ast.Program[ctx] {
     mut prog: ast.Program[ctx];
-    unsafe {
+    unsafe { 
         mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
         mut dest_ptr := &statements_vec;
         
         mut start_span := (*p).cur_token.span;
         
         while (*p).cur_token.token_type.tag != 0 { // TokenType::Eof = 0
+            mut before_errors := len((*p).errors);
             mut stmt := parse_statement(p, ctx);
             if stmt != empty[Index[ast.Statement[ctx], ctx]] {
                 (*dest_ptr).Push(ctx[stmt]);
+                next_token(p);
+            } else {
+                if len((*p).errors) == before_errors {
+                    error_at_current(p, "Syntax Error: unexpected token or malformed statement");
+                }
+                mut before_sync := (*p).cur_token.token_type.tag;
+                synchronize(p);
+                if (*p).cur_token.token_type.tag == before_sync {
+                    next_token(p);
+                }
             }
-            next_token(p);
         }
         
         prog.statements = os.ArenaAlloc(ctx);
