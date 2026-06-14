@@ -132,9 +132,9 @@ func synchronize(p: *Parser[ctx]) {
 }
 
 func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx] {
-    mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
         if cur_token_is(p, 2) { // Ident = 2
+            mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
             mut literal := (*p).cur_token.literal;
             if std.str_eq(literal, "int") {
                 ctx[t_idx].tag = 0; // Int = 0
@@ -146,12 +146,15 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                 ctx[t_idx].Struct.brand = empty[Index[str, ctx]];
             }
             next_token(p);
+            return t_idx;
         } else if cur_token_is(p, 45) { // Bool = 45
+            mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx[t_idx].tag = 2; // Bool = 2
             next_token(p);
+            return t_idx;
         }
+        return empty[Index[ast.Type[ctx], ctx]];
     }
-    return t_idx;
 }
 
 func get_expression_span(expr: Index[ast.Expression[ctx], ctx], ctx: &Arena) token.Span { 
