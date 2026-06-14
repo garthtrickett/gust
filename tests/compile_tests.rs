@@ -5168,8 +5168,12 @@ fn test_self_hosted_full_parsing() {
             mut p1: parser.Parser[ctx];
             parser.init_parser(&p1, &l1, ctx);
             mut stmt1 := parser.parse_statement(&p1, ctx);
-            os.LogInt(ctx[stmt1].tag);
-            os.LogStr(ctx[stmt1].FunctionDecl.name);
+            if stmt1 == empty[Index[ast.Statement[ctx], ctx]] {
+                os.LogStr("stmt1 is empty");
+            } else {
+                os.LogInt(ctx[stmt1].tag);
+                os.LogStr(ctx[stmt1].FunctionDecl.name);
+            }
 
             // 2. Parse a match statement
             mut l2: lexer.Lexer[ctx];
@@ -5177,7 +5181,13 @@ fn test_self_hosted_full_parsing() {
             mut p2: parser.Parser[ctx];
             parser.init_parser(&p2, &l2, ctx);
             mut stmt2 := parser.parse_statement(&p2, ctx);
-            os.LogInt(ctx[stmt2].tag);
+            if stmt2 == empty[Index[ast.Statement[ctx], ctx]] {
+                os.LogStr("stmt2 is empty");
+                os.LogStr("p2 cur_token: ");
+                os.LogStr(p2.cur_token.literal);
+            } else {
+                os.LogInt(ctx[stmt2].tag);
+            }
 
             // 3. Parse a defer statement
             mut l3: lexer.Lexer[ctx];
@@ -5185,7 +5195,11 @@ fn test_self_hosted_full_parsing() {
             mut p3: parser.Parser[ctx];
             parser.init_parser(&p3, &l3, ctx);
             mut stmt3 := parser.parse_statement(&p3, ctx);
-            os.LogInt(ctx[stmt3].tag);
+            if stmt3 == empty[Index[ast.Statement[ctx], ctx]] {
+                os.LogStr("stmt3 is empty");
+            } else {
+                os.LogInt(ctx[stmt3].tag);
+            }
 
             // 4. Parse an unsafe block
             mut l4: lexer.Lexer[ctx];
@@ -5193,7 +5207,11 @@ fn test_self_hosted_full_parsing() {
             mut p4: parser.Parser[ctx];
             parser.init_parser(&p4, &l4, ctx);
             mut stmt4 := parser.parse_statement(&p4, ctx);
-            os.LogInt(ctx[stmt4].tag);
+            if stmt4 == empty[Index[ast.Statement[ctx], ctx]] {
+                os.LogStr("stmt4 is empty");
+            } else {
+                os.LogInt(ctx[stmt4].tag);
+            }
         }
     "#;
     std::fs::write(&entry_path, entry_source).unwrap();

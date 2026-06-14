@@ -959,6 +959,8 @@ func parse_match_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
             }
             mut body := parse_block_statement(p, ctx);
             mut case_end := ctx[body].span;
+            os.LogStr("After case block parse. Cur token: ");
+            os.LogStr((*p).cur_token.literal);
             next_token(p); // consume '}'
 
             mut mcase: ast.MatchCase[ctx];
@@ -975,6 +977,9 @@ func parse_match_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
                 next_token(p);
             }
         }
+
+        os.LogStr("Match block closing brace check. Cur token: ");
+        os.LogStr((*p).cur_token.literal);
 
         if cur_token_is(p, 14) == false { // RBrace = 14
             return empty[Index[ast.Statement[ctx], ctx]];
@@ -1129,6 +1134,9 @@ func parse_block_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.BlockStatemen
             mut stmt := parse_statement(p, ctx);
             if stmt != empty[Index[ast.Statement[ctx], ctx]] {
                 (*dest_ptr).Push(ctx[stmt]);
+            } else {
+                os.LogStr("parse_statement returned empty inside block. Unresolved cur token: ");
+                os.LogStr((*p).cur_token.literal);
             }
             
             if cur_token_is(p, 10) { // Semicolon = 10
@@ -1307,6 +1315,9 @@ func parse_program(p: *Parser[ctx], ctx: &Arena) ast.Program[ctx] {
             mut stmt := parse_statement(p, ctx);
             if stmt != empty[Index[ast.Statement[ctx], ctx]] {
                 (*dest_ptr).Push(ctx[stmt]);
+            } else {
+                os.LogStr("parse_statement returned empty in program. Unresolved cur token: ");
+                os.LogStr((*p).cur_token.literal);
             }
             next_token(p);
         }
