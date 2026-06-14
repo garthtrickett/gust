@@ -228,3 +228,43 @@ func ast_join_strings(vec: std.Vector[str, ctx], sep: str, ctx: &Arena) str {
     }
     return std.Clone(ctx, result);
 }
+
+func serialize_type(t: Type[ctx], ctx: &Arena) str {
+    return "TypePlaceholder";
+}
+
+func ast_join_fields(fields: std.Vector[FieldDef[ctx], ctx], indent: int, ctx: &Arena) str {
+    mut result := "";
+    mut i := 0;
+    while i < len(fields) {
+        mut f := fields[i];
+        mut pad := ast_repeat_spaces(indent, ctx);
+        mut field_type_str := serialize_type(f.field_type, ctx);
+        mut line := std.Concat(pad, "FieldDef: ");
+        line = std.Concat(line, f.name);
+        line = std.Concat(line, " : ");
+        line = std.Concat(line, field_type_str);
+        line = std.Concat(line, "\n");
+        result = std.Concat(result, line);
+        i = i + 1;
+    }
+    return std.Clone(ctx, result);
+}
+
+func ast_join_params(params: std.Vector[Parameter[ctx], ctx], indent: int, ctx: &Arena) str {
+    mut result := "";
+    mut i := 0;
+    while i < len(params) {
+        mut p := params[i];
+        mut pad := ast_repeat_spaces(indent, ctx);
+        mut param_type_str := serialize_type(p.param_type, ctx);
+        mut line := std.Concat(pad, "Parameter: ");
+        line = std.Concat(line, p.name);
+        line = std.Concat(line, " : ");
+        line = std.Concat(line, param_type_str);
+        line = std.Concat(line, "\n");
+        result = std.Concat(result, line);
+        i = i + 1;
+    }
+    return std.Clone(ctx, result);
+}
