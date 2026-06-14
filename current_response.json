@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve duplicate struct declaration in parser scaffold",
+  "summary": "fix: resolve invalid prefix operator by using explicit false checks",
   "files": [
     {
       "file_path": "compiler/parser.gst",
-      "code_diff": "<<<<<<< SEARCH\ntype Parser[ctx] struct {\ntype Parser[ctx] struct { \n    lexer: *lexer.Lexer[Any],\n=======\ntype Parser[ctx] struct { \n    lexer: *lexer.Lexer[Any],\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n        if !cur_token_is(p, 4) { // String = 4\n=======\n        if cur_token_is(p, 4) == false { // String = 4\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n            if !cur_token_is(p, 2) { // Ident = 2\n=======\n            if cur_token_is(p, 2) == false { // Ident = 2\n>>>>>>> REPLACE"
     }
   ]
 }

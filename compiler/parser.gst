@@ -574,7 +574,7 @@ func parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ct
         
         next_token(p); // consume 'import'
         
-        if !cur_token_is(p, 4) { // String = 4
+        if cur_token_is(p, 4) == false { // String = 4
             mut err: errors.CompilerError[Any];
             err.kind.tag = 1; // ParserError
             err.message = "Expected string literal specifying the import path";
@@ -589,7 +589,7 @@ func parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ct
         mut alias := empty[Index[str, ctx]];
         if cur_token_is(p, 37) { // As = 37
             next_token(p); // consume 'as'
-            if !cur_token_is(p, 2) { // Ident = 2
+            if cur_token_is(p, 2) == false { // Ident = 2
                 mut err: errors.CompilerError[Any];
                 err.kind.tag = 1; // ParserError
                 err.message = "Expected identifier alias after 'as'";
