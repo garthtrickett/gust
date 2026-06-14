@@ -215,7 +215,7 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                     ctx[t_idx].tag = 7; // Index = 7
                     ctx[t_idx].Index.struct_name = "SessionNode";
                     
-                    mut brand_idx := os.ArenaAlloc(ctx);
+                    mut brand_idx: Index[ast.Parameter[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[t_idx].Index.brand = brand_idx as Index[str, ctx];
                     mut dest_ptr := &ctx[brand_idx] as *str;
                     *dest_ptr = std.Clone(*ctx, brand_name);
@@ -235,7 +235,7 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                     ctx[t_idx].tag = 7; // Index = 7
                     ctx[t_idx].Index.struct_name = std.Clone(*ctx, struct_name);
                     
-                    mut brand_idx := os.ArenaAlloc(ctx);
+                    mut brand_idx: Index[ast.Parameter[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[t_idx].Index.brand = brand_idx as Index[str, ctx];
                     mut dest_ptr := &ctx[brand_idx] as *str;
                     *dest_ptr = std.Clone(*ctx, brand_name);
@@ -266,7 +266,7 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                     ctx[t_idx].tag = 8; // Struct = 8
                     ctx[t_idx].Struct.struct_name = std.Clone(*ctx, base_name);
                     
-                    mut brand_idx := os.ArenaAlloc(ctx);
+                    mut brand_idx: Index[ast.Parameter[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[t_idx].Struct.brand = brand_idx as Index[str, ctx];
                     mut dest_ptr := &ctx[brand_idx] as *str;
                     *dest_ptr = std.Clone(*ctx, brand_name);
