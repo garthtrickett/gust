@@ -1469,9 +1469,10 @@ impl Codegen {
                 }
             }
             Expression::String(val, _) => {
-                format!(
+                let escaped = val.replace("\\", "\\\\").replace("\"", "\\\"");
+                format!( 
                     "((Slice_unsigned_char){{ (unsigned char*)\"{}\", {} }})",
-                    val,
+                    escaped,
                     val.len()
                 )
             }
