@@ -17,6 +17,85 @@ type Parser[ctx] struct {
     has_non_import_statement: int
 }
 
+func parser_get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
+    unsafe {
+        mut base := "";
+        if t.tag == 0 { // Int
+            base = "int";
+        } else if t.tag == 1 { // Byte
+            base = "byte";
+        } else if t.tag == 2 { // Bool
+            base = "bool";
+        } else if t.tag == 3 { // Void
+            base = "void";
+        } else if t.tag == 4 { // Arena
+            base = "Arena";
+        } else if t.tag == 5 { // Str
+            base = "str";
+        } else if t.tag == 6 { // Slice
+            mut inner_t := ctx[t.Slice.inner];
+            base = std.Concat("Slice_", parser_get_type_ident(inner_t, ctx));
+        } else if t.tag == 7 { // Index
+            base = std.Concat("Index_", t.Index.struct_name);
+        } else if t.tag == 8 { // Struct
+            base = t.Struct.struct_name;
+        } else if t.tag == 9 { // RawPointer
+            mut inner_t := ctx[t.RawPointer.inner];
+            base = std.Concat(parser_get_type_ident(inner_t, ctx), "_ptr");
+        } else if t.tag == 10 { // Generic
+            base = parser_get_monomorphized_name(t.Generic.name, t.Generic.args, ctx);
+        } else {
+            base = "unknown";
+        }
+
+        mut out := "";
+        mut i := 0;
+        while i < len(base) {
+            mut b := std.str_byte_at(base, i);
+            if b == 46 { // '.' = 46
+                out = std.Concat(out, "_");
+            } else {
+                mut char_slice := std.str_slice(base, i, i + 1);
+                out = std.Concat(out, char_slice);
+            }
+            i = i + 1;
+        }
+        return std.Clone(ctx, out);
+    }
+}
+
+func parser_get_monomorphized_name(template_name: str, args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx], ctx: &Arena) str {
+    unsafe {
+        mut args_vec := &ctx[args_idx] as *std.Vector[ast.Type[ctx], ctx];
+        mut arg_names := "";
+        mut i := 0;
+        while i < len(*args_vec) {
+            if i > 0 {
+                arg_names = std.Concat(arg_names, "_");
+            }
+            mut arg_name := parser_get_type_ident((*args_vec)[i], ctx);
+            arg_names = std.Concat(arg_names, arg_name);
+            i = i + 1;
+        }
+        mut name := std.Concat(template_name, "_");
+        name = std.Concat(name, arg_names);
+
+        mut out := "";
+        mut j := 0;
+        while j < len(name) {
+            mut b := std.str_byte_at(name, j);
+            if b == 46 { // '.' = 46
+                out = std.Concat(out, "_");
+            } else {
+                mut char_slice := std.str_slice(name, j, j + 1);
+                out = std.Concat(out, char_slice);
+            }
+            j = j + 1;
+        }
+        return std.Clone(ctx, out);
+    }
+}
+
 func init_parser(p: *Parser[ctx], l: *lexer.Lexer[ctx], ctx: &Arena) { 
     unsafe { 
         (*p).lexer = l as *lexer.Lexer[Any];
