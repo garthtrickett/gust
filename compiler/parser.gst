@@ -279,12 +279,152 @@ func parse_prefix_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[
     }
 }
 
+func cur_token_precedence(p: *Parser[ctx]) int {
+    unsafe {
+        mut tag := (*p).cur_token.token_type.tag;
+        if tag == 51 { // PipePipe = 51
+            return 2;
+        }
+        if tag == 50 { // AmpAmp = 50
+            return 3;
+        }
+        if tag == 23 || tag == 24 { // EqEq = 23, NotEq = 24
+            return 4;
+        }
+        if tag == 25 || tag == 26 || tag == 48 || tag == 49 { // Lt = 25, Gt = 26, LtEq = 48, GtEq = 49
+            return 5;
+        }
+        if tag == 19 || tag == 20 { // Plus = 19, Minus = 20
+            return 6;
+        }
+        if tag == 21 || tag == 22 { // Asterisk = 21, Slash = 22
+            return 7;
+        }
+        if tag == 37 { // As = 37
+            return 8;
+        }
+        if tag == 7 || tag == 11 || tag == 15 { // Dot = 7, LParen = 11, LBracket = 15
+            return 9;
+        }
+        return 1;
+    }
+}
+
 func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.Expression[ctx], ctx] {
-    mut left := parse_prefix_expression(p, ctx);
-    if left == empty[Index[ast.Expression[ctx], ctx]] {
+    unsafe {
+        mut left := parse_prefix_expression(p, ctx);
+        if left == empty[Index[ast.Expression[ctx], ctx]] {
+            return left;
+        }
+
+        while precedence < cur_token_precedence(p) {
+            if cur_token_is(p, 10) { // Semicolon = 10
+                return left;
+            }
+            mut cur_tag := (*p).cur_token.token_type.tag;
+            
+            if cur_tag == 7 { // Dot = 7
+                mut start_span := get_expression_span(left, ctx);
+                next_token(p); // consume '.'
+                if cur_token_is(p, 2) == false { // Ident = 2
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                mut right := std.Clone(*ctx, (*p).cur_token.literal);
+                mut end_span := (*p).cur_token.span;
+                next_token(p); // consume member ident
+                
+                mut next_expr: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[next_expr].tag = 11; // Selector = 11
+                ctx[next_expr].Selector.left = left;
+                ctx[next_expr].Selector.right = right;
+                ctx[next_expr].Selector.span = merge_spans(start_span, end_span);
+                left = next_expr;
+            } else if cur_tag == 11 { // LParen = 11
+                mut start_span := get_expression_span(left, ctx);
+                next_token(p); // consume '('
+                
+                // Parse arguments list
+                mut args_vec: std.Vector[ast.Expression[ctx], ctx] := std.VectorNew(ctx);
+                if cur_token_is(p, 12) == false { // RParen = 12
+                    args_vec.Push(ctx[parse_expression(p, 1, ctx)]);
+                    while cur_token_is(p, 8) { // Comma = 8
+                        next_token(p); // consume comma
+                        args_vec.Push(ctx[parse_expression(p, 1, ctx)]);
+                    }
+                }
+                if cur_token_is(p, 12) == false { // RParen = 12
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                mut end_span := (*p).cur_token.span;
+                next_token(p); // consume ')'
+                
+                mut next_expr: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[next_expr].tag = 12; // Call = 12
+                ctx[next_expr].Call.function = left;
+                ctx[next_expr].Call.arguments = os.ArenaAlloc(ctx);
+                mut dest_args := &ctx[ctx[next_expr].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                *dest_args = args_vec;
+                ctx[next_expr].Call.span = merge_spans(start_span, end_span);
+                left = next_expr;
+            } else if cur_tag == 15 { // LBracket = 15
+                mut start_span := get_expression_span(left, ctx);
+                next_token(p); // consume '['
+                mut index_expr := parse_expression(p, 1, ctx);
+                if cur_token_is(p, 16) == false { // RBracket = 16
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                mut end_span := (*p).cur_token.span;
+                next_token(p); // consume ']'
+                
+                mut next_expr: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[next_expr].tag = 8; // IndexAccess = 8
+                ctx[next_expr].IndexAccess.allocator = left;
+                ctx[next_expr].IndexAccess.index = index_expr;
+                ctx[next_expr].IndexAccess.span = merge_spans(start_span, end_span);
+                left = next_expr;
+            } else if cur_tag == 37 { // As = 37
+                mut start_span := get_expression_span(left, ctx);
+                next_token(p); // consume 'as'
+                mut is_reference := 0;
+                if cur_token_is(p, 17) { // Ampersand = 17
+                    next_token(p); // consume '&'
+                    is_reference = 1;
+                }
+                mut target_type := parse_type_signature(p, ctx);
+                mut end_span := (*p).cur_token.span;
+                
+                mut next_expr: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[next_expr].tag = 9; // AsCast = 9
+                ctx[next_expr].AsCast.left = left;
+                ctx[next_expr].AsCast.target_type = target_type;
+                ctx[next_expr].AsCast.is_reference = is_reference;
+                ctx[next_expr].AsCast.span = merge_spans(start_span, end_span);
+                left = next_expr;
+            } else if cur_tag == 19 || cur_tag == 20 || cur_tag == 21 || cur_tag == 22 ||
+                      cur_tag == 23 || cur_tag == 24 || cur_tag == 25 || cur_tag == 26 ||
+                      cur_tag == 48 || cur_tag == 49 || cur_tag == 50 || cur_tag == 51 {
+                mut op_str := (*p).cur_token.literal;
+                mut op_prec := cur_token_precedence(p);
+                
+                next_token(p); // consume operator
+                
+                mut right := parse_expression(p, op_prec, ctx);
+                mut start_span := get_expression_span(left, ctx);
+                mut end_span := get_expression_span(right, ctx);
+                
+                mut next_expr: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[next_expr].tag = 10; // Binary = 10
+                ctx[next_expr].Binary.op = std.Clone(*ctx, op_str);
+                ctx[next_expr].Binary.left = left;
+                ctx[next_expr].Binary.right = right;
+                ctx[next_expr].Binary.span = merge_spans(start_span, end_span);
+                left = next_expr;
+            } else {
+                return left;
+            }
+        }
         return left;
     }
-    return left;
 }
 
 func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
@@ -569,7 +709,7 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
             (*p).errors.Push(err);
             return empty[Index[ast.Statement[ctx], ctx]];
         }
-        next_token(p); // consume '('
+        next_token(p); // consume '('\n
 
         mut params_vec: std.Vector[ast.Parameter[ctx], ctx] := std.VectorNew(ctx);
         while cur_token_is(p, 12) == false && cur_token_is(p, 0) == false { // RParen = 12, Eof = 0

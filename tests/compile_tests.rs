@@ -5146,6 +5146,7 @@ fn test_self_hosted_parser_scaffold() {
 
 #[test]
 fn test_self_hosted_full_parsing() {
+    gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/parser_full_test_entry.gst");
