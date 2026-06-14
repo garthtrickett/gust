@@ -56,7 +56,7 @@ impl TypeChecker {
         let mut erased = name.to_string();
         if let Some(ref b) = actual_brand {
             let clean_b = strip_brand_prefix(b);
-            
+
             // Check for namespaced brand pattern first: e.g. std_Graph_str_resolver__ctx
             let ns_suffix = format!("__{}", clean_b);
             if erased.ends_with(&ns_suffix) {
@@ -66,14 +66,14 @@ impl TypeChecker {
                     return erased;
                 }
             }
-            
+
             // Check for standard flat brand pattern: e.g. std_Graph_str_ctx
             let flat_suffix = format!("_{}", clean_b);
             if erased.ends_with(&flat_suffix) {
                 erased.truncate(erased.len() - flat_suffix.len());
                 return erased;
             }
-            
+
             // Fallback to direct brand suffix
             let direct_suffix = format!("_{}", b);
             if let Some(stripped) = erased.strip_suffix(&direct_suffix) {
@@ -1446,7 +1446,7 @@ impl TypeChecker {
                                 ),
                                 span: Some(left.span()), // Tier B: Point directly to LHS identifier
                             })
-                        } 
+                        }
                     }
                     _ => self.check_expression(left),
                 }?;
@@ -2445,24 +2445,26 @@ impl TypeChecker {
                 let index_type = self.check_expression(index)?;
 
                 if let Type::RawPointer(inner) = &alloc_type
-                    && **inner != Type::Arena {
-                        if !self.in_unsafe_block {
-                            return Err(TypeError {
+                    && **inner != Type::Arena
+                {
+                    if !self.in_unsafe_block {
+                        return Err(TypeError {
                                 kind: TypeErrorKind::UnsafeProhibited,
                                 message: "Semantic Error: Indexing raw pointers is strictly prohibited outside 'unsafe' blocks".to_string(),
                                 span: None,
                             });
-                        }
-                        if index_type != Type::Int && index_type != Type::Byte {
-                            return Err(TypeError {
-                                kind: TypeErrorKind::InvalidIndexType,
-                                message: "Semantic Error: Pointer index must resolve to an Int or Byte".to_string(),
-                                span: Some(index.span()),
-                        });
-                        }
-                        let resolved_elem = self.resolve_type(inner)?;
-                        return Ok(resolved_elem);
                     }
+                    if index_type != Type::Int && index_type != Type::Byte {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::InvalidIndexType,
+                            message: "Semantic Error: Pointer index must resolve to an Int or Byte"
+                                .to_string(),
+                            span: Some(index.span()),
+                        });
+                    }
+                    let resolved_elem = self.resolve_type(inner)?;
+                    return Ok(resolved_elem);
+                }
 
                 if let Type::Slice(elem_type) = &alloc_type {
                     if index_type != Type::Int && index_type != Type::Byte {
@@ -2727,7 +2729,10 @@ impl TypeChecker {
                             } else {
                                 "LookupResult_"
                             };
-                            let target_struct = clean_struct_name.strip_prefix(prefix).unwrap_or(clean_struct_name).to_string();
+                            let target_struct = clean_struct_name
+                                .strip_prefix(prefix)
+                                .unwrap_or(clean_struct_name)
+                                .to_string();
                             if target_struct == "int" {
                                 return Ok(Type::Int);
                             }
@@ -3274,7 +3279,7 @@ impl TypeChecker {
                         });
                     }
                     let path_type = self.check_expression(&arguments[1])?;
-                    if path_type != Type::Str {
+                    if !types_match(&Type::Str, &path_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: format!(
@@ -3306,7 +3311,7 @@ impl TypeChecker {
                         });
                     }
                     let path_type = self.check_expression(&arguments[1])?;
-                    if path_type != Type::Str {
+                    if !types_match(&Type::Str, &path_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: format!(
@@ -3437,7 +3442,7 @@ impl TypeChecker {
                         });
                     }
                     let path_type = self.check_expression(&arguments[0])?;
-                    if path_type != Type::Str {
+                    if !types_match(&Type::Str, &path_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: format!(
@@ -3448,7 +3453,7 @@ impl TypeChecker {
                         });
                     }
                     let contents_type = self.check_expression(&arguments[1])?;
-                    if contents_type != Type::Str {
+                    if !types_match(&Type::Str, &contents_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: format!(
@@ -3513,7 +3518,7 @@ impl TypeChecker {
                             let formal_name = &sig.param_names[i];
                             let actual_name = expression_to_string(arg);
                             brand_map.insert(formal_name.clone(), actual_name.clone());
-                            
+
                             if !func_prefix.is_empty() {
                                 let namespaced_formal = format!("{}{}", func_prefix, formal_name);
                                 let namespaced_actual = if self.current_prefix.is_empty() {
@@ -3683,7 +3688,7 @@ impl TypeChecker {
                         });
                     }
                     let arg_type = self.check_expression(&arguments[0])?;
-                    if arg_type != Type::Str {
+                    if !types_match(&Type::Str, &arg_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: format!(

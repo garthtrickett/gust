@@ -109,6 +109,11 @@ impl TypeChecker {
         if matches!(element, Type::Str | Type::Slice(_) | Type::ByteSlice) {
             return true;
         }
+        if let Type::Struct(name, _) = element {
+            if name == "str" {
+                return true;
+            }
+        }
         if let Some(ib) = self.get_type_brand(element)
             && strip_brand_prefix(&ib) == strip_brand_prefix(ob)
         {
@@ -269,7 +274,6 @@ impl TypeChecker {
                 self.monomorphize(name, &resolved_args?)
             }
             Type::Struct(name, brand) => {
-                let clean_name = strip_brand_prefix(name);
                 if name.starts_with("LookupResult_") && !self.struct_registry.contains_key(name) {
                     let target_struct = name
                         .strip_prefix("LookupResult_")
@@ -344,7 +348,40 @@ impl TypeChecker {
                             self.enum_templates.get(&template).unwrap().generics.len()
                         };
 
-                        if parts.len() > num_generics {
+                        if parts.len() == 2 && num_generics == 2 { 
+                            let first_part = parts[0].replace("@", "__");
+                            let second_part = parts[1].replace("@", "__");
+                            let is_generic_template =
+                                self.struct_templates.contains_key(&first_part)
+                                    || self.enum_templates.contains_key(&first_part);
+                            if is_generic_template {
+                                let reconstructed = format!("{}_{}", first_part, second_part);
+                                args.push(Type::Struct(reconstructed, None));
+                            } else {
+                                if first_part == "int" {
+                                    args.push(Type::Int);
+                                } else if first_part == "byte" {
+                                    args.push(Type::Byte);
+                                } else if first_part == "bool" {
+                                    args.push(Type::Bool);
+                                } else if first_part == "str" {
+                                    args.push(Type::Str);
+                                } else {
+                                    args.push(Type::Struct(first_part, None));
+                                }
+                            }
+                            if second_part == "int" {
+                                args.push(Type::Int);
+                            } else if second_part == "byte" {
+                                args.push(Type::Byte);
+                            } else if second_part == "bool" {
+                                args.push(Type::Bool);
+                            } else if second_part == "str" {
+                                args.push(Type::Str);
+                            } else {
+                                args.push(Type::Struct(second_part, None));
+                            }
+                        } else if parts.len() > num_generics {
                             let num_to_join = parts.len() - num_generics + 1;
                             let joined_first_arg =
                                 parts[..num_to_join].join("_").replace("@", "__");
@@ -381,7 +418,11 @@ impl TypeChecker {
                         }
 
                         if let Err(ref err) = self.monomorphize(&template, &args) {
-                            tracing::error!("❌ Fallback monomorphization of '{}' failed: {:?}", template, err);
+                            tracing::error!(
+                                "❌ Fallback monomorphization of '{}' failed: {:?}",
+                                template,
+                                err
+                            );
                         }
                     }
                 }

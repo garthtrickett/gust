@@ -74,11 +74,12 @@ pub fn clean_monomorphized_name(name: &str) -> String {
             }
             let ns_mid = format!("__{}_", base);
             if let Some(pos) = erased.find(&ns_mid)
-                && let Some(start_pos) = erased[..pos].rfind('_') {
-                    erased.replace_range(start_pos..pos + ns_mid.len() - 1, "");
-                    changed = true;
-                    break;
-                }
+                && let Some(start_pos) = erased[..pos].rfind('_')
+            {
+                erased.replace_range(start_pos..pos + ns_mid.len() - 1, "");
+                changed = true;
+                break;
+            }
             let flat_suffix = format!("_{}", base);
             if erased.ends_with(&flat_suffix) {
                 erased.truncate(erased.len() - flat_suffix.len());
@@ -100,6 +101,10 @@ pub fn clean_monomorphized_name(name: &str) -> String {
 // but differ only by their value-brands.
 pub fn types_match_except_brand(expected: &Type, actual: &Type) -> bool {
     match (expected, actual) {
+        (Type::Struct(e_name, _), Type::Str) if e_name == "str" => true,
+        (Type::Str, Type::Struct(a_name, _)) if a_name == "str" => true,
+        (Type::Index(e_name, _), Type::Str) if e_name == "str" => true,
+        (Type::Str, Type::Index(a_name, _)) if a_name == "str" => true,
         (Type::Index(e_struct, _), Type::Index(a_struct, _)) => {
             let e_norm = normalize_struct_name(e_struct, &None);
             let a_norm = normalize_struct_name(a_struct, &None);
@@ -153,6 +158,10 @@ pub fn types_match_except_brand(expected: &Type, actual: &Type) -> bool {
 
 pub fn types_match(expected: &Type, actual: &Type) -> bool {
     match (expected, actual) {
+        (Type::Struct(e_name, _), Type::Str) if e_name == "str" => true,
+        (Type::Str, Type::Struct(a_name, _)) if a_name == "str" => true,
+        (Type::Index(e_name, _), Type::Str) if e_name == "str" => true,
+        (Type::Str, Type::Index(a_name, _)) if a_name == "str" => true,
         (Type::Int, Type::Byte) | (Type::Byte, Type::Int) => true,
         (Type::RawPointer(e_inner), Type::Arena) if matches!(**e_inner, Type::Arena) => true,
         (Type::Arena, Type::RawPointer(a_inner)) if matches!(**a_inner, Type::Arena) => true,
@@ -212,32 +221,23 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             if e_clean_final != a_clean_final {
                 let is_vector_any = (e_clean_final.starts_with("Vector_")
                     && a_clean_final == "Vector")
-                    || (a_clean_final.starts_with("Vector_")
-                        && e_clean_final == "Vector");
+                    || (a_clean_final.starts_with("Vector_") && e_clean_final == "Vector");
                 let is_hashmap_any = (e_clean_final.starts_with("HashMap_")
                     && a_clean_final == "HashMap")
-                    || (a_clean_final.starts_with("HashMap_")
-                        && e_clean_final == "HashMap");
-                let is_pool_any = (e_clean_final.starts_with("Pool_")
-                    && a_clean_final == "Pool")
-                    || (a_clean_final.starts_with("Pool_")
-                        && e_clean_final == "Pool");
-                let is_rc_any = (e_clean_final.starts_with("Rc_")
-                    && a_clean_final == "Rc")
-                    || (a_clean_final.starts_with("Rc_")
-                        && e_clean_final == "Rc");
+                    || (a_clean_final.starts_with("HashMap_") && e_clean_final == "HashMap");
+                let is_pool_any = (e_clean_final.starts_with("Pool_") && a_clean_final == "Pool")
+                    || (a_clean_final.starts_with("Pool_") && e_clean_final == "Pool");
+                let is_rc_any = (e_clean_final.starts_with("Rc_") && a_clean_final == "Rc")
+                    || (a_clean_final.starts_with("Rc_") && e_clean_final == "Rc");
                 let is_graph_any = (e_clean_final.starts_with("Graph_")
                     && a_clean_final == "Graph")
-                    || (a_clean_final.starts_with("Graph_")
-                        && e_clean_final == "Graph");
+                    || (a_clean_final.starts_with("Graph_") && e_clean_final == "Graph");
                 let is_mutex_any = (e_clean_final.starts_with("Mutex_")
                     && a_clean_final == "Mutex")
-                    || (a_clean_final.starts_with("Mutex_")
-                        && e_clean_final == "Mutex");
+                    || (a_clean_final.starts_with("Mutex_") && e_clean_final == "Mutex");
                 let is_channel_any = (e_clean_final.starts_with("Channel_")
                     && a_clean_final == "Channel")
-                    || (a_clean_final.starts_with("Channel_")
-                        && e_clean_final == "Channel");
+                    || (a_clean_final.starts_with("Channel_") && e_clean_final == "Channel");
                 let is_tl_any = (e_clean_final.starts_with("ThreadLocalContext_")
                     && a_clean_final == "ThreadLocalContext")
                     || (a_clean_final.starts_with("ThreadLocalContext_")
