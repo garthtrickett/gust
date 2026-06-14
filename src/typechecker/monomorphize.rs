@@ -3,6 +3,40 @@ use super::types::{StructLayout, Type, TypeError, TypeErrorKind, strip_brand_pre
 use std::collections::HashMap;
 
 impl TypeChecker {
+    fn namespace_resolve_monomorphized_name(&self, name: &str) -> String {
+        let mut resolved = name.to_string();
+        let mut local_names = Vec::new();
+        if !self.current_prefix.is_empty() {
+            for key in self.struct_registry.keys()
+                .chain(self.struct_templates.keys())
+                .chain(self.enum_templates.keys())
+            {
+                if let Some(stripped) = key.strip_prefix(&self.current_prefix) {
+                    if !stripped.is_empty() {
+                        local_names.push((stripped.to_string(), key.clone()));
+                    }
+                }
+            }
+        }
+        local_names.sort_by_key(|a| std::cmp::Reverse(a.0.len()));
+
+        for (local, namespaced) in local_names {
+            let pat_mid = format!("_{}_", local);
+            if resolved.contains(&pat_mid) {
+                resolved = resolved.replace(&pat_mid, &format!("_{}_", namespaced));
+            }
+            let pat_start = format!("{}_", local);
+            if resolved.starts_with(&pat_start) {
+                resolved = format!("{}{}", namespaced, &resolved[local.len()..]);
+            }
+            let pat_end = format!("_{}", local);
+            if resolved.ends_with(&pat_end) {
+                resolved = format!("{}{}", &resolved[..resolved.len() - local.len()], namespaced);
+            }
+        }
+        resolved
+    }
+
     pub(crate) fn substitute_brand(&self, t: &Type, new_brand: &Option<String>) -> Type {
         match t {
             Type::Index(struct_name, _)
@@ -360,17 +394,22 @@ impl TypeChecker {
                     Ok(t.clone())
                 }
             }
-            Type::Index(struct_name, Some(brand)) => {
-                if self.struct_templates.contains_key(struct_name) || self.enum_templates.contains_key(struct_name) {
-                    let args = vec![Type::Struct(brand.clone(), None)];
-                    let monomorphized_struct = self.monomorphize(struct_name, &args)?;
-                    if let Type::Struct(concrete_name, _) = monomorphized_struct {
-                        Ok(Type::Index(concrete_name, Some(brand.clone())))
+            Type::Index(struct_name, brand) => {
+                let resolved_struct_name = self.namespace_resolve_monomorphized_name(struct_name);
+                if let Some(brand_name) = brand {
+                    if self.struct_templates.contains_key(&resolved_struct_name) || self.enum_templates.contains_key(&resolved_struct_name) {
+                        let args = vec![Type::Struct(brand_name.clone(), None)];
+                        let monomorphized_struct = self.monomorphize(&resolved_struct_name, &args)?;
+                        if let Type::Struct(concrete_name, _) = monomorphized_struct {
+                            Ok(Type::Index(concrete_name, Some(brand_name.clone())))
+                        } else {
+                            Ok(Type::Index(resolved_struct_name, Some(brand_name.clone())))
+                        }
                     } else {
-                        Ok(t.clone())
+                        Ok(Type::Index(resolved_struct_name, Some(brand_name.clone())))
                     }
                 } else {
-                    Ok(t.clone())
+                    Ok(Type::Index(resolved_struct_name, None))
                 }
             }
             Type::RawPointer(inner) => {
