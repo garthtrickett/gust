@@ -1,0 +1,17 @@
+{
+  "summary": "test: define semantic typechecker types and add compilation test",
+  "files": [
+    {
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nimport \"ast.gst\" as ast;\n\ntype StructLayout[ctx] struct {\n    brand: Index[str, ctx],\n    fields: std.HashMap[str, ast.Type[ctx], ctx]\n}\n\ntype FunctionSignature[ctx] struct {\n    param_names: std.Vector[str, ctx],\n    params: std.Vector[ast.Type[ctx], ctx],\n    return_type: ast.Type[ctx]\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "compiler/typechecker_types_test_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nimport \"ast.gst\" as ast;\nimport \"typechecker.gst\" as typechecker;\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut layout: typechecker.StructLayout[ctx];\n    layout.brand = empty[Index[str, ctx]];\n    layout.fields = std.HashMapNew(ctx);\n\n    mut sig: typechecker.FunctionSignature[ctx];\n    sig.param_names = std.VectorNew(ctx);\n    sig.params = std.VectorNew(ctx);\n    sig.return_type.tag = 3; // Void\n\n    os.LogInt(sig.return_type.tag);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/compile_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n    // Clean up temporary entry file\n    let _ = std::fs::remove_file(entry_path);\n}\n\n#[test]\nfn test_ast_serialization_helpers() {\n=======\n    // Clean up temporary entry file\n    let _ = std::fs::remove_file(entry_path);\n}\n\n#[test]\nfn test_self_hosted_typechecker_types_compilation() {\n    gust_lexer::init_logging();\n    let resolver = gust_lexer::resolver::ModuleResolver::new();\n    let fs_impl = gust_lexer::resolver::RealFileSystem;\n    let entry_path = std::path::Path::new(\"compiler/typechecker_types_test_entry.gst\");\n\n    let res = resolver.resolve(&entry_path, &fs_impl);\n    assert!(res.is_ok(), \"Module resolution failed: {:?}\", res.err());\n\n    let (order, mut modules) = res.unwrap();\n\n    let mut checker = TypeChecker::new();\n    for path in &order {\n        if let Some(module) = modules.get(path) {\n            let stem = path.file_stem().unwrap().to_str().unwrap();\n            let is_entry = path == order.last().unwrap();\n            let prefix = if is_entry {\n                \"\".to_string()\n            } else {\n                format!(\"{}__\", stem)\n            };\n            let check_res = checker.check_module(&module.program, &prefix);\n            assert!(\n                check_res.is_ok(),\n                \"Typechecking failed on {:?}: {:?}\",\n                path,\n                check_res.err()\n            );\n        }\n    }\n\n    let mut modules_for_codegen = Vec::new();\n    for path in &order {\n        if let Some(module) = modules.get_mut(path) {\n            modules_for_codegen.push((path.clone(), module.program.clone()));\n        } \n    }\n\n    let codegen = Codegen::new(\n        checker.variable_types,\n        checker.struct_registry,\n        checker.function_registry,\n        checker.enum_registry,\n        checker.resolved_names,\n        checker.resolved_types,\n    );\n    let c_output = codegen.generate(&modules_for_codegen);\n\n    assert!(c_output.contains(\"struct typechecker__StructLayout {\"));\n    assert!(c_output.contains(\"struct typechecker__FunctionSignature {\"));\n}\n\n#[test]\nfn test_ast_serialization_helpers() {\n>>>>>>> REPLACE"
+    }
+  ]
+}
