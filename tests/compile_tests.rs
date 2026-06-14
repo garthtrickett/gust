@@ -6564,7 +6564,9 @@ fn test_namespaced_generic_type_signature_mismatch_reproduction() {
             Variant { val: int }
         }
         func process(ctx: &Arena) {
-            mut args_vec := empty[*int] as *std.Vector[MyGeneric[ctx], ctx];
+            unsafe {
+                mut args_vec := empty[*int] as *std.Vector[MyGeneric[ctx], ctx];
+            }
         }
     ";
 
