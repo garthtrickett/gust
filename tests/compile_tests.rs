@@ -6063,22 +6063,22 @@ fn test_self_hosted_type_serialization() {
                 mut t_gen: ast.Type[ctx];
                 t_gen.tag = 10;
                 t_gen.Generic.name = 'std.Vector';
+                
+                mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+
+                mut arg1: ast.Type[ctx];
+                arg1.tag = 0;
+                args.Push(arg1);
+
+                mut arg2: ast.Type[ctx];
+                arg2.tag = 8;
+                arg2.Struct.struct_name = 'ctx';
+                arg2.Struct.brand = empty[Index[str, ctx]];
+                args.Push(arg2);
+
                 mut args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[args_idx] = args;
                 t_gen.Generic.args = args_idx;
-                unsafe {
-                    mut args := &ctx[t_gen.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-                    *args = std.VectorNew(ctx);
-
-                    mut arg1: ast.Type[ctx];
-                    arg1.tag = 0;
-                    (*args).Push(arg1);
-
-                    mut arg2: ast.Type[ctx];
-                    arg2.tag = 8;
-                    arg2.Struct.struct_name = 'ctx';
-                    arg2.Struct.brand = empty[Index[str, ctx]];
-                    (*args).Push(arg2);
-                }
 
                 os.LogStr(ast.serialize_type(t_gen, ctx));
             }
