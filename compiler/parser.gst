@@ -287,12 +287,275 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
     return left;
 }
 
-func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
+func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
+    mut start_span := (*p).cur_token.span;
     unsafe {
+        next_token(p); // consume 'type'
+        if cur_token_is(p, 2) == false { // Ident = 2
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Expected identifier after 'type'";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+        mut name := std.Clone(*ctx, (*p).cur_token.literal);
+        next_token(p);
+
+        mut generics_vec: std.Vector[str, ctx] := std.VectorNew(ctx);
+        if cur_token_is(p, 15) { // LBracket = 15
+            next_token(p); // consume '['
+            while cur_token_is(p, 2) { // Ident = 2
+                generics_vec.Push(std.Clone(*ctx, (*p).cur_token.literal));
+                next_token(p);
+                if cur_token_is(p, 8) { // Comma = 8
+                    next_token(p);
+                }
+            }
+            if cur_token_is(p, 16) == false { // RBracket = 16
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected closing bracket ']' in generic type parameters";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p); // consume ']'
+        }
+
+        if cur_token_is(p, 40) { // Struct = 40
+            next_token(p); // consume 'struct'
+            if cur_token_is(p, 13) == false { // LBrace = 13
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected opening brace '{' after 'struct'";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p); // consume '{'
+
+            mut fields_vec: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+            while cur_token_is(p, 14) == false && cur_token_is(p, 0) == false { // RBrace = 14, Eof = 0
+                if cur_token_is(p, 2) { // Ident = 2
+                    mut f_start := (*p).cur_token.span;
+                    mut f_name := std.Clone(*ctx, (*p).cur_token.literal);
+                    next_token(p);
+
+                    if cur_token_is(p, 9) == false { // Colon = 9
+                        mut err: errors.CompilerError[Any];
+                        err.kind.tag = 1; // ParserError
+                        err.message = "Expected ':' after struct field identifier";
+                        err.span = (*p).cur_token.span;
+                        (*p).errors.Push(err);
+                        return empty[Index[ast.Statement[ctx], ctx]];
+                    }
+                    next_token(p); // consume ':'
+
+                    mut f_type := parse_type_signature(p, ctx);
+                    if f_type == empty[Index[ast.Type[ctx], ctx]] {
+                        mut err: errors.CompilerError[Any];
+                        err.kind.tag = 1; // ParserError
+                        err.message = "Expected field type signature";
+                        err.span = (*p).cur_token.span;
+                        (*p).errors.Push(err);
+                        return empty[Index[ast.Statement[ctx], ctx]];
+                    }
+                    mut f_end := (*p).cur_token.span;
+
+                    mut field: ast.FieldDef[ctx];
+                    field.name = f_name;
+                    field.field_type = ctx[f_type];
+                    field.span = merge_spans(f_start, f_end);
+                    fields_vec.Push(field);
+
+                    if cur_token_is(p, 8) || cur_token_is(p, 10) { // Comma = 8, Semicolon = 10
+                        next_token(p);
+                    }
+                } else {
+                    mut err: errors.CompilerError[Any];
+                    err.kind.tag = 1; // ParserError
+                    err.message = "Expected struct field identifier or '}'";
+                    err.span = (*p).cur_token.span;
+                    (*p).errors.Push(err);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+            }
+
+            if cur_token_is(p, 14) == false { // RBrace = 14
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected closing brace '}' after struct fields";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            mut end_span := (*p).cur_token.span;
+            next_token(p); // consume '}'
+
+            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[stmt_idx].tag = 1; // StructDecl = 1
+
+            ctx[stmt_idx].StructDecl.name = name;
+
+            ctx[stmt_idx].StructDecl.generics = os.ArenaAlloc(ctx);
+            mut dest_generics := &ctx[ctx[stmt_idx].StructDecl.generics] as *std.Vector[str, ctx];
+            *dest_generics = generics_vec;
+
+            ctx[stmt_idx].StructDecl.fields = os.ArenaAlloc(ctx);
+            mut dest_fields := &ctx[ctx[stmt_idx].StructDecl.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+            *dest_fields = fields_vec;
+
+            ctx[stmt_idx].StructDecl.span = merge_spans(start_span, end_span);
+            return stmt_idx;
+        } else if cur_token_is(p, 41) { // Enum = 41
+            next_token(p); // consume 'enum'
+
+            if cur_token_is(p, 13) == false { // LBrace = 13
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected opening brace '{' after 'enum'";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p); // consume '{'
+
+            mut variants_vec: std.Vector[ast.VariantDef[ctx], ctx] := std.VectorNew(ctx);
+            while cur_token_is(p, 14) == false && cur_token_is(p, 0) == false { // RBrace = 14, Eof = 0
+                if cur_token_is(p, 2) { // Ident = 2
+                    mut variant_start := (*p).cur_token.span;
+                    mut variant_name := std.Clone(*ctx, (*p).cur_token.literal);
+                    next_token(p);
+
+                    mut fields_vec: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+                    if cur_token_is(p, 13) { // LBrace = 13
+                        next_token(p); // consume '{'
+                        while cur_token_is(p, 14) == false && cur_token_is(p, 0) == false { // RBrace = 14, Eof = 0
+                            if cur_token_is(p, 2) { // Ident = 2
+                                mut f_start := (*p).cur_token.span;
+                                mut f_name := std.Clone(*ctx, (*p).cur_token.literal);
+                                next_token(p);
+
+                                if cur_token_is(p, 9) == false { // Colon = 9
+                                    mut err: errors.CompilerError[Any];
+                                    err.kind.tag = 1; // ParserError
+                                    err.message = "Expected ':' after enum variant field identifier";
+                                    err.span = (*p).cur_token.span;
+                                    (*p).errors.Push(err);
+                                    return empty[Index[ast.Statement[ctx], ctx]];
+                                }
+                                next_token(p); // consume ':'
+
+                                mut f_type := parse_type_signature(p, ctx);
+                                if f_type == empty[Index[ast.Type[ctx], ctx]] {
+                                    mut err: errors.CompilerError[Any];
+                                    err.kind.tag = 1; // ParserError
+                                    err.message = "Expected field type signature";
+                                    err.span = (*p).cur_token.span;
+                                    (*p).errors.Push(err);
+                                    return empty[Index[ast.Statement[ctx], ctx]];
+                                }
+                                mut f_end := (*p).cur_token.span;
+
+                                mut field: ast.FieldDef[ctx];
+                                field.name = f_name;
+                                field.field_type = ctx[f_type];
+                                field.span = merge_spans(f_start, f_end);
+                                fields_vec.Push(field);
+
+                                if cur_token_is(p, 8) || cur_token_is(p, 10) { // Comma = 8, Semicolon = 10
+                                    next_token(p);
+                                }
+                            } else {
+                                mut err: errors.CompilerError[Any];
+                                err.kind.tag = 1; // ParserError
+                                err.message = "Expected enum variant field identifier or '}'";
+                                err.span = (*p).cur_token.span;
+                                (*p).errors.Push(err);
+                                return empty[Index[ast.Statement[ctx], ctx]];
+                            }
+                        }
+                        if cur_token_is(p, 14) == false { // RBrace = 14
+                            mut err: errors.CompilerError[Any];
+                            err.kind.tag = 1; // ParserError
+                            err.message = "Expected closing brace '}' after enum variant fields";
+                            err.span = (*p).cur_token.span;
+                            (*p).errors.Push(err);
+                            return empty[Index[ast.Statement[ctx], ctx]];
+                        }
+                        next_token(p); // consume '}'
+                    }
+                    mut variant_end := (*p).cur_token.span;
+
+                    mut variant: ast.VariantDef[ctx];
+                    variant.name = variant_name;
+                    variant.fields = os.ArenaAlloc(ctx);
+                    mut dest_vfields := &ctx[variant.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+                    *dest_vfields = fields_vec;
+                    variant.span = merge_spans(variant_start, variant_end);
+                    variants_vec.Push(variant);
+
+                    if cur_token_is(p, 8) || cur_token_is(p, 10) { // Comma = 8, Semicolon = 10
+                        next_token(p);
+                    }
+                } else {
+                    mut err: errors.CompilerError[Any];
+                    err.kind.tag = 1; // ParserError
+                    err.message = "Expected enum variant identifier or '}'";
+                    err.span = (*p).cur_token.span;
+                    (*p).errors.Push(err);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+            }
+
+            if cur_token_is(p, 14) == false { // RBrace = 14
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected closing brace '}' after enum variants";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            mut end_span := (*p).cur_token.span;
+            next_token(p); // consume '}'
+
+            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[stmt_idx].tag = 2; // EnumDecl = 2
+
+            ctx[stmt_idx].EnumDecl.name = name;
+
+            ctx[stmt_idx].EnumDecl.generics = os.ArenaAlloc(ctx);
+            mut dest_generics := &ctx[ctx[stmt_idx].EnumDecl.generics] as *std.Vector[str, ctx];
+            *dest_generics = generics_vec;
+
+            ctx[stmt_idx].EnumDecl.variants = os.ArenaAlloc(ctx);
+            mut dest_variants := &ctx[ctx[stmt_idx].EnumDecl.variants] as *std.Vector[ast.VariantDef[ctx], ctx];
+            *dest_variants = variants_vec;
+
+            ctx[stmt_idx].EnumDecl.span = merge_spans(start_span, end_span);
+            return stmt_idx;
+        } else {
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Expected 'struct' or 'enum' declaration";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+    }
+}
+
+func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
+    unsafe { 
         if cur_token_is(p, 28) { // Import = 28
             return parse_import_statement(p, ctx);
         }
         (*p).has_non_import_statement = 1;
+
+        if cur_token_is(p, 39) { // Type = 39
+            return parse_struct_decl(p, ctx);
+        }
 
         if cur_token_is(p, 29) { // Mut = 29
             return parse_var_decl(p, 1, ctx);
