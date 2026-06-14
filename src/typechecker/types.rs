@@ -60,8 +60,30 @@ pub fn normalize_struct_name(name: &str, brand: &Option<String>) -> String {
 // but differ only by their value-brands.
 pub fn types_match_except_brand(expected: &Type, actual: &Type) -> bool {
     match (expected, actual) {
-        (Type::Index(e_struct, _), Type::Index(a_struct, _)) => e_struct == a_struct,
-        (Type::Struct(e_struct, _), Type::Struct(a_struct, _)) => e_struct == a_struct,
+        (Type::Index(e_struct, _), Type::Index(a_struct, _)) => {
+            let e_clean = strip_module_prefixes(strip_std_prefix(&normalize_struct_name(e_struct, &None)));
+            let a_clean = strip_module_prefixes(strip_std_prefix(&normalize_struct_name(a_struct, &None)));
+            if e_clean.contains("__GUST_MONO_RESOLVE_TEMP_")
+                || a_clean.contains("__GUST_MONO_RESOLVE_TEMP_")
+                || e_clean.contains("__PLACEHOLDER_")
+                || a_clean.contains("__PLACEHOLDER_")
+            {
+                return true;
+            }
+            e_clean == a_clean
+        }
+        (Type::Struct(e_struct, _), Type::Struct(a_struct, _)) => {
+            let e_clean = strip_module_prefixes(strip_std_prefix(&normalize_struct_name(e_struct, &None)));
+            let a_clean = strip_module_prefixes(strip_std_prefix(&normalize_struct_name(a_struct, &None)));
+            if e_clean.contains("__GUST_MONO_RESOLVE_TEMP_")
+                || a_clean.contains("__GUST_MONO_RESOLVE_TEMP_")
+                || e_clean.contains("__PLACEHOLDER_")
+                || a_clean.contains("__PLACEHOLDER_")
+            {
+                return true;
+            }
+            e_clean == a_clean
+        }
         (Type::RawPointer(e_inner), Type::RawPointer(a_inner)) => {
             types_match_except_brand(e_inner, a_inner)
         }
