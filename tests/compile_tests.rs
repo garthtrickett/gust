@@ -6077,7 +6077,10 @@ fn test_self_hosted_type_serialization() {
                 args.Push(arg2);
 
                 mut args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[args_idx] = args;
+                unsafe {
+                    mut args_ptr := &ctx[args_idx] as *std.Vector[ast.Type[ctx], ctx];
+                    *args_ptr = args;
+                }
                 t_gen.Generic.args = args_idx;
 
                 os.LogStr(ast.serialize_type(t_gen, ctx));
