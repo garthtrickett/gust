@@ -60,10 +60,56 @@ impl TypeChecker {
 
     pub(crate) fn substitute_brand(&self, t: &Type, new_brand: &Option<String>) -> Type {
         match t {
-            Type::Index(struct_name, _) => Type::Index(struct_name.clone(), new_brand.clone()),
-            Type::Struct(struct_name, _) => Type::Struct(struct_name.clone(), new_brand.clone()),
+            Type::Index(struct_name, old_brand) => {
+                let mut new_struct_name = struct_name.clone();
+                if let (Some(old_b), Some(new_b)) = (old_brand, new_brand) { 
+                    let old_b_clean = strip_brand_prefix(old_b);
+                    let new_b_clean = strip_brand_prefix(new_b);
+                    let suffix = format!("_{}", old_b_clean);
+                    let new_suffix = format!("_{}", new_b_clean);
+                    if let Some(stripped) = new_struct_name.strip_suffix(&suffix) {
+                        new_struct_name = format!("{}{}", stripped, new_suffix);
+                    } else {
+                        let suffix_full = format!("_{}", old_b);
+                        let new_suffix_full = format!("_{}", new_b);
+                        if let Some(stripped) = new_struct_name.strip_suffix(&suffix_full) {
+                            new_struct_name = format!("{}{}", stripped, new_suffix_full);
+                        }
+                    }
+                }
+                Type::Index(new_struct_name, new_brand.clone())
+            }
+            Type::Struct(struct_name, old_brand) => {
+                let mut new_struct_name = struct_name.clone();
+                if let (Some(old_b), Some(new_b)) = (old_brand, new_brand) { 
+                    let old_b_clean = strip_brand_prefix(old_b);
+                    let new_b_clean = strip_brand_prefix(new_b);
+                    let suffix = format!("_{}", old_b_clean);
+                    let new_suffix = format!("_{}", new_b_clean);
+                    if let Some(stripped) = new_struct_name.strip_suffix(&suffix) {
+                        new_struct_name = format!("{}{}", stripped, new_suffix);
+                    } else {
+                        let suffix_full = format!("_{}", old_b);
+                        let new_suffix_full = format!("_{}", new_b);
+                        if let Some(stripped) = new_struct_name.strip_suffix(&suffix_full) {
+                            new_struct_name = format!("{}{}", stripped, new_suffix_full);
+                        }
+                    }
+                }
+                Type::Struct(new_struct_name, new_brand.clone())
+            }
             Type::RawPointer(inner) => {
                 Type::RawPointer(Box::new(self.substitute_brand(inner, new_brand)))
+            }
+            Type::Slice(inner) => {
+                Type::Slice(Box::new(self.substitute_brand(inner, new_brand)))
+            }
+            Type::Generic(name, args) => {
+                let new_args: Vec<Type> = args
+                    .iter()
+                    .map(|arg| self.substitute_brand(arg, new_brand))
+                    .collect();
+                Type::Generic(name.clone(), new_args)
             }
             _ => t.clone(),
         }
@@ -898,19 +944,42 @@ impl TypeChecker {
     }
 
     pub(crate) fn substitute_brand_names(&self, t: &Type, map: &HashMap<String, String>) -> Type {
-        match t {
+        match t { 
             Type::Index(struct_name, Some(brand)) => {
                 let new_brand = map.get(brand).cloned().unwrap_or_else(|| brand.clone());
                 let mut new_struct_name = struct_name.clone();
-                let mut sorted_keys: Vec<&String> = map.keys().collect();
-                sorted_keys.sort_by_key(|k| std::cmp::Reverse(k.len()));
-                for old_b in sorted_keys {
-                    let new_b = &map[old_b];
-                    let suffix = format!("_{}", old_b);
-                    let new_suffix = format!("_{}", new_b);
+                if let Some(new_b) = map.get(brand) {
+                    let old_b_clean = strip_brand_prefix(brand);
+                    let new_b_clean = strip_brand_prefix(new_b);
+                    let suffix = format!("_{}", old_b_clean);
+                    let new_suffix = format!("_{}", new_b_clean);
                     if let Some(stripped) = new_struct_name.strip_suffix(&suffix) {
                         new_struct_name = format!("{}{}", stripped, new_suffix);
-                        break;
+                    } else {
+                        let suffix_full = format!("_{}", brand);
+                        let new_suffix_full = format!("_{}", new_b);
+                        if let Some(stripped) = new_struct_name.strip_suffix(&suffix_full) {
+                            new_struct_name = format!("{}{}", stripped, new_suffix_full);
+                        }
+                    }
+                } else {
+                    let mut sorted_keys: Vec<&String> = map.keys().collect();
+                    sorted_keys.sort_by_key(|k| std::cmp::Reverse(k.len()));
+                    for old_b in sorted_keys { 
+                        let new_b = &map[old_b];
+                        let suffix = format!("_{}", strip_brand_prefix(old_b));
+                        let new_suffix = format!("_{}", strip_brand_prefix(new_b));
+                        if let Some(stripped) = new_struct_name.strip_suffix(&suffix) { 
+                            new_struct_name = format!("{}{}", stripped, new_suffix);
+                            break;
+                        } else {
+                            let suffix_full = format!("_{}", old_b);
+                            let new_suffix_full = format!("_{}", new_b);
+                            if let Some(stripped) = new_struct_name.strip_suffix(&suffix_full) { 
+                                  new_struct_name = format!("{}{}", stripped, new_suffix_full);
+                                  break;
+                            }
+                        }
                     }
                 }
                 Type::Index(new_struct_name, Some(new_brand))
@@ -918,15 +987,38 @@ impl TypeChecker {
             Type::Struct(struct_name, Some(brand)) => {
                 let new_brand = map.get(brand).cloned().unwrap_or_else(|| brand.clone());
                 let mut new_struct_name = struct_name.clone();
-                let mut sorted_keys: Vec<&String> = map.keys().collect();
-                sorted_keys.sort_by_key(|k| std::cmp::Reverse(k.len()));
-                for old_b in sorted_keys {
-                    let new_b = &map[old_b];
-                    let suffix = format!("_{}", old_b);
-                    let suffix_2 = format!("_{}", new_b);
+                if let Some(new_b) = map.get(brand) {
+                    let old_b_clean = strip_brand_prefix(brand);
+                    let new_b_clean = strip_brand_prefix(new_b);
+                    let suffix = format!("_{}", old_b_clean);
+                    let new_suffix = format!("_{}", new_b_clean);
                     if let Some(stripped) = new_struct_name.strip_suffix(&suffix) {
-                        new_struct_name = format!("{}{}", stripped, suffix_2);
-                        break;
+                        new_struct_name = format!("{}{}", stripped, new_suffix);
+                    } else {
+                        let suffix_full = format!("_{}", brand);
+                        let new_suffix_full = format!("_{}", new_b);
+                        if let Some(stripped) = new_struct_name.strip_suffix(&suffix_full) {
+                            new_struct_name = format!("{}{}", stripped, new_suffix_full);
+                        }
+                    }
+                } else { 
+                    let mut sorted_keys: Vec<&String> = map.keys().collect();
+                    sorted_keys.sort_by_key(|k| std::cmp::Reverse(k.len()));
+                    for old_b in sorted_keys { 
+                        let new_b = &map[old_b];
+                        let suffix = format!("_{}", strip_brand_prefix(old_b));
+                        let new_suffix = format!("_{}", strip_brand_prefix(new_b));
+                        if let Some(stripped) = new_struct_name.strip_suffix(&suffix) { 
+                            new_struct_name = format!("{}{}", stripped, new_suffix);
+                            break;
+                        } else {
+                            let suffix_full = format!("_{}", old_b);
+                            let new_suffix_full = format!("_{}", new_b);
+                            if let Some(stripped) = new_struct_name.strip_suffix(&suffix_full) { 
+                                  new_struct_name = format!("{}{}", stripped, new_suffix_full);
+                                  break;
+                            }
+                        }
                     }
                 }
                 Type::Struct(new_struct_name, Some(new_brand))
@@ -1053,6 +1145,33 @@ mod tests {
                 "my_module__Item".to_string(),
                 None
             )))))
+        );
+    }
+
+    #[test]
+    fn test_substitute_brand_recursive_structures() {
+        let checker = TypeChecker::new();
+
+        // 1. Generic type with branded struct arg
+        let t_gen = Type::Generic(
+            "std.Vector".to_string(),
+            vec![
+                Type::Struct("MyNode_ctx".to_string(), Some("ctx".to_string())),
+                Type::Struct("ctx".to_string(), None),
+            ],
+        );
+
+        let substituted = checker.substitute_brand(&t_gen, &Some("connCtx".to_string()));
+
+        assert_eq!(
+            substituted,
+            Type::Generic(
+                "std.Vector".to_string(),
+                vec![
+                    Type::Struct("MyNode_connCtx".to_string(), Some("connCtx".to_string())),
+                    Type::Struct("ctx".to_string(), Some("connCtx".to_string())),
+                ],
+            )
         );
     }
 }
