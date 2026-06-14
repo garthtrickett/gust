@@ -22,7 +22,7 @@ impl TypeChecker {
         local_names.sort_by_key(|a| std::cmp::Reverse(a.0.len()));
 
         for (local, namespaced) in local_names {
-            let placeholder = format!("__PLACEHOLDER_{}__", local);
+            let placeholder = format!("__GUST_MONO_RESOLVE_TEMP_{}__", local);
             resolved = resolved.replace(&namespaced, &placeholder);
 
             let pat_mid = format!("_{}_", local);
