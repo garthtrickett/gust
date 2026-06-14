@@ -5301,13 +5301,22 @@ fn test_self_hosted_primitive_index_parsing() {
             os.LogStr(ctx[t_sig].Index.struct_name); // Expected: str
             
             mut l2: lexer.Lexer[ctx];
-            lexer.init_lexer(&l2, \"Index[int, ctx]\");
+            lexer.init_lexer(&l2, "Index[int, ctx]");
             
             mut p2: parser.Parser[ctx];
             parser.init_parser(&p2, &l2, ctx);
             
             mut t_sig2 := parser.parse_type_signature(&p2, ctx);
             os.LogStr(ctx[t_sig2].Index.struct_name); // Expected: int
+
+            mut l3: lexer.Lexer[ctx];
+            lexer.init_lexer(&l3, "Index[std.Vector[int, ctx], ctx]");
+            
+            mut p3: parser.Parser[ctx];
+            parser.init_parser(&p3, &l3, ctx);
+            
+            mut t_sig3 := parser.parse_type_signature(&p3, ctx);
+            os.LogStr(ctx[t_sig3].Index.struct_name); // Expected: std_Vector_int_ctx
         }
     ";
     std::fs::write(&entry_path, entry_source).unwrap();
@@ -5390,7 +5399,7 @@ fn test_self_hosted_primitive_index_parsing() {
     let _ = std::fs::remove_file(&bin_path);
     let _ = std::fs::remove_file(entry_path);
 
-    assert_eq!(stdout_str.trim(), "7\nstr\nint");
+    assert_eq!(stdout_str.trim(), "7\nstr\nint\nstd_Vector_int_ctx");
 }
 
 #[test]
