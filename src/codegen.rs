@@ -42,13 +42,12 @@ fn erase_struct_name_with_registry(
         changed = false;
         for base in &brand_bases {
             let pat_mid_ns = format!("__{}_", base);
-            if let Some(pos) = erased.find(&pat_mid_ns) {
-                if let Some(start_pos) = erased[..pos].rfind('_') {
+            if let Some(pos) = erased.find(&pat_mid_ns)
+                && let Some(start_pos) = erased[..pos].rfind('_') {
                     erased.replace_range(start_pos..pos + pat_mid_ns.len() - 1, "");
                     changed = true;
                     break;
                 }
-            }
             let pat_mid_simple = format!("_{}_", base);
             if let Some(pos) = erased.find(&pat_mid_simple) {
                 erased.replace_range(pos..pos + pat_mid_simple.len() - 1, "");
