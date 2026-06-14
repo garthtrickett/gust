@@ -20,14 +20,14 @@ pub struct Codegen {
 
 fn erase_struct_name_with_registry(
     name: &str,
-    _brand: &Option<String>,
+    brand: &Option<String>,
     _registry: &HashMap<String, StructLayout>,
 ) -> String {
     let mut erased = name.to_string();
     let mut suffix = String::new();
     if let Some(pos) = erased.rfind('_') {
         let last_part = &erased[pos + 1..];
-        if !last_part.is_empty()
+        if !last_part.is_empty() 
             && last_part.chars().next().unwrap().is_uppercase()
             && last_part != "Any"
         {
@@ -36,36 +36,46 @@ fn erase_struct_name_with_registry(
         }
     }
 
+    // 1. Direct structural brand suffix erasure
+    if let Some(ref b) = brand {
+        let direct_suffix = format!("_{}", b);
+        if let Some(stripped) = erased.strip_suffix(&direct_suffix) {
+            erased = stripped.to_string();
+        } else {
+            let clean_b = crate::typechecker::types::strip_brand_prefix(b);
+            let clean_suffix = format!("_{}", clean_b);
+            if let Some(stripped) = erased.strip_suffix(&clean_suffix) {
+                erased = stripped.to_string();
+            }
+        }
+    }
+
+    // 2. Refactored backup suffix-replacement loop to detect and strip namespaces associated with standard brand words
     let brand_bases = ["connCtx", "arena", "ctx", "Any", "a"];
     let mut changed = true;
     while changed {
         changed = false;
         for base in &brand_bases {
-            let pat_mid_ns = format!("__{}_", base);
-            if let Some(pos) = erased.find(&pat_mid_ns)
-                && let Some(start_pos) = erased[..pos].rfind('_') {
-                    erased.replace_range(start_pos..pos + pat_mid_ns.len() - 1, "");
-                    changed = true;
-                    break;
-                }
-            let pat_mid_simple = format!("_{}_", base);
-            if let Some(pos) = erased.find(&pat_mid_simple) {
-                erased.replace_range(pos..pos + pat_mid_simple.len() - 1, "");
-                changed = true;
-                break;
+            let mut matched_pos = None;
+            let mut pattern_len = 0;
+            
+            let mid_pat = format!("_{}_", base);
+            if let Some(pos) = erased.find(&mid_pat) {
+                matched_pos = Some(pos);
+                pattern_len = mid_pat.len() - 1;
+            } else if erased.ends_with(&format!("_{}", base)) {
+                let pos = erased.len() - base.len() - 1;
+                matched_pos = Some(pos);
+                pattern_len = base.len() + 1;
             }
-            let pat_end_ns = format!("__{}", base);
-            if erased.ends_with(&pat_end_ns) {
-                let pos = erased.len() - pat_end_ns.len();
-                if let Some(start_pos) = erased[..pos].rfind('_') {
-                    erased.truncate(start_pos);
-                    changed = true;
-                    break;
+
+            if let Some(pos) = matched_pos {
+                let search_limit = pos;
+                if let Some(start_pos) = erased[..search_limit].rfind('_') {
+                    erased.replace_range(start_pos..pos + pattern_len, "");
+                } else {
+                    erased.replace_range(pos..pos + pattern_len, "");
                 }
-            }
-            let pat_end_simple = format!("_{}", base);
-            if erased.ends_with(&pat_end_simple) {
-                erased.truncate(erased.len() - pat_end_simple.len());
                 changed = true;
                 break;
             }

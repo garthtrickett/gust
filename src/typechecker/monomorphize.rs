@@ -3,62 +3,6 @@ use super::types::{StructLayout, Type, TypeError, TypeErrorKind, strip_brand_pre
 use std::collections::HashMap;
 
 impl TypeChecker {
-    fn namespace_resolve_monomorphized_name(&self, name: &str) -> String {
-        if name.starts_with("__PLACEHOLDER_") || name.starts_with("__GUST_MONO_RESOLVE_TEMP_") {
-            return name.to_string();
-        }
-        if self.current_prefix.is_empty() {
-            return name.to_string();
-        }
-        let mut resolved = name.to_string();
-        let mut local_names = Vec::new();
-        if !self.current_prefix.is_empty() {
-            for key in self
-                .struct_registry
-                .keys()
-                .chain(self.struct_templates.keys())
-                .chain(self.enum_templates.keys())
-            {
-                if key.contains("__GUST_MONO_RESOLVE_TEMP_") || key.contains("__PLACEHOLDER_") {
-                    continue;
-                }
-                if let Some(stripped) = key.strip_prefix(&self.current_prefix)
-                    && !stripped.is_empty() {
-                        local_names.push((stripped.to_string(), key.clone()));
-                    }
-            }
-        }
-        local_names.sort_by_key(|a| std::cmp::Reverse(a.0.len()));
-
-        for (local, namespaced) in local_names {
-            let placeholder = format!("__GUST_MONO_RESOLVE_TEMP_{}__", local);
-            resolved = resolved.replace(&namespaced, &placeholder);
-
-            let pat_mid = format!("_{}_", local);
-            if resolved.contains(&pat_mid) {
-                resolved = resolved.replace(&pat_mid, &format!("_{}_", namespaced));
-            }
-            let pat_start = format!("{}_", local);
-            if resolved.starts_with(&pat_start) {
-                resolved = format!("{}{}", namespaced, &resolved[local.len()..]);
-            }
-            let pat_end = format!("_{}", local);
-            if resolved.ends_with(&pat_end) {
-                resolved = format!(
-                    "{}{}",
-                    &resolved[..resolved.len() - local.len()],
-                    namespaced
-                );
-            }
-            if resolved == local {
-                resolved = namespaced.clone();
-            }
-
-            resolved = resolved.replace(&placeholder, &namespaced);
-        }
-        resolved
-    }
-
     pub(crate) fn substitute_brand(&self, t: &Type, new_brand: &Option<String>) -> Type {
         match t {
             Type::Index(struct_name, old_brand) => {
@@ -432,7 +376,7 @@ impl TypeChecker {
                 }
             }
             Type::Index(struct_name, brand) => {
-                let resolved_struct_name = self.namespace_resolve_monomorphized_name(struct_name);
+                let resolved_struct_name = struct_name.clone();
                 if let Some(brand_name) = brand {
                     if self.struct_templates.contains_key(&resolved_struct_name)
                         || self.enum_templates.contains_key(&resolved_struct_name)
@@ -1167,5 +1111,61 @@ mod tests {
         let res_type = resolved.unwrap();
         assert_eq!(res_type, Type::Struct("std_RcNode_int".to_string(), None));
         assert!(checker.struct_registry.contains_key("std_RcNode_int"));
+    }
+
+    #[test]
+    fn test_monomorphization_without_string_patching() {
+        let mut checker = TypeChecker::new();
+        checker.current_prefix = "caller__".to_string();
+
+        // Register 'std' in active imports
+        checker
+            .imports
+            .insert("std".to_string(), "std_".to_string());
+        // Register 'lib' in active imports
+        checker
+            .imports
+            .insert("lib".to_string(), "lib_module__".to_string());
+
+        // Snapshot 'caller__' imports
+        checker
+            .module_imports
+            .insert("caller__".to_string(), checker.imports.clone());
+
+        // Configure library imports in module_imports
+        let mut lib_imports = HashMap::new();
+        lib_imports.insert("std".to_string(), "std_".to_string());
+        checker
+            .module_imports
+            .insert("lib_module__".to_string(), lib_imports);
+
+        // Define a multi-layered nested generic std.Vector[lib_module__MyNode[ctx], ctx]
+        let t_nested = Type::Generic(
+            "std.Vector".to_string(),
+            vec![
+                Type::Struct("lib_module__MyNode".to_string(), Some("ctx".to_string())),
+                Type::Struct("ctx".to_string(), None),
+            ],
+        );
+
+        let mut map = HashMap::new();
+        map.insert("ctx".to_string(), Type::Struct("ctx".to_string(), None));
+
+        // substitute and resolve without any legacy string patching!
+        let res = checker.substitute_generics(&t_nested, &map);
+        if let Err(ref e) = res {
+            println!("❌ TypeChecker Substitution Error: {:?}", e);
+        }
+        assert!(res.is_ok());
+        let substituted = res.unwrap();
+
+        // Verify that the fully-qualified flat name std_Vector_lib_module__MyNode_caller__ctx is natively generated!
+        assert_eq!(
+            substituted,
+            Type::Struct(
+                "std_Vector_lib_module__MyNode_caller__ctx".to_string(),
+                Some("caller__ctx".to_string())
+            )
+        );
     }
 }
