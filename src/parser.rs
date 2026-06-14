@@ -28,6 +28,29 @@ impl Parser {
         }
     }
 
+    fn get_type_ident(&self, t: &Type) -> String {
+        let base = match t {
+            Type::Int => "int".to_string(),
+            Type::Byte => "byte".to_string(),
+            Type::Bool => "bool".to_string(),
+            Type::Arena => "Arena".to_string(),
+            Type::Void => "void".to_string(),
+            Type::Str => "str".to_string(),
+            Type::RawPointer(inner) => format!("{}_ptr", self.get_type_ident(inner)),
+            Type::Slice(inner) => format!("Slice_{}", self.get_type_ident(inner)),
+            Type::Struct(name, _) => name.clone(),
+            Type::Index(name, _) => format!("Index_{}", name),
+            Type::Generic(name, args) => self.get_monomorphized_name(name, args),
+        };
+        base.replace(".", "_")
+    }
+
+    fn get_monomorphized_name(&self, template_name: &str, args: &[Type]) -> String {
+        let arg_names: Vec<String> = args.iter().map(|arg| self.get_type_ident(arg)).collect();
+        let name = format!("{}_{}", template_name, arg_names.join("_"));
+        name.replace(".", "_")
+    }
+
     pub fn error_at_current(&mut self, message: String) {
         self.errors.push(TypeError {
             kind: TypeErrorKind::SyntaxError,
