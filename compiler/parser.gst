@@ -220,9 +220,10 @@ func parse_prefix_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[
         if tag == 11 { // LParen = 11
             next_token(p); // consume '('
             mut inner := parse_expression(p, 1, ctx);
-            guard rparen_tok := expect_peek(p, 12, ctx) else {
+            if cur_token_is(p, 12) == false { // RParen = 12
                 return empty[Index[ast.Expression[ctx], ctx]];
             }
+            next_token(p); // consume ')'
             return inner;
         }
         if tag == 32 { // Move = 32
