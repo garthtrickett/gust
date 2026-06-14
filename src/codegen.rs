@@ -1702,13 +1702,14 @@ impl Codegen {
                         index_str, index_str, alloc_str, alloc_str, index_str
                     )
                 } else {
-                    // Arena indexing (Value-Branded)
+                    // Arena indexing (Value-Branded) 
                     let mut target_struct = "SessionNode".to_string();
                     if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index)
                         && struct_name != "Any"
                     {
                         target_struct = struct_name;
                     }
+                    let c_target_struct = self.get_c_type_name_by_struct_name(&target_struct);
 
                     let mut use_arrow = false;
                     if let Expression::Identifier(name, span) = &**allocator
@@ -1723,14 +1724,14 @@ impl Codegen {
                     }
 
                     if use_arrow {
-                        format!(
+                        format!( 
                             "(*(( {}*)((char*){}->BaseAddress + {})))",
-                            target_struct, alloc_str, index_str
+                            c_target_struct, alloc_str, index_str
                         )
                     } else {
-                        format!(
+                        format!( 
                             "(*(( {}*)((char*){}.BaseAddress + {})))",
-                            target_struct, alloc_str, index_str
+                            c_target_struct, alloc_str, index_str
                         )
                     }
                 }
