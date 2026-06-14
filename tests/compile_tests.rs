@@ -5448,7 +5448,7 @@ fn test_self_hosted_import_parsing() {
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
 
-    std.fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
