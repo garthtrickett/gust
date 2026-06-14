@@ -1469,7 +1469,17 @@ impl Codegen {
                 }
             }
             Expression::String(val, _) => {
-                let escaped = val.replace("\\", "\\\\").replace("\"", "\\\"");
+                let mut escaped = String::new();
+                for c in val.chars() {
+                    match c {
+                        '\\' => escaped.push_str("\\\\"),
+                        '"' => escaped.push_str("\\\""),
+                        '\n' => escaped.push_str("\\n"),
+                        '\t' => escaped.push_str("\\t"),
+                        '\r' => escaped.push_str("\\r"),
+                        _ => escaped.push(c),
+                    }
+                }
                 format!( 
                     "((Slice_unsigned_char){{ (unsigned char*)\"{}\", {} }})",
                     escaped,

@@ -81,14 +81,32 @@ impl Lexer {
 
     fn read_string(&mut self) -> String {
         let delimiter = self.ch;
-        let start_pos = self.position + 1;
+        let mut out = String::new();
         loop {
             self.read_char();
             if self.ch == delimiter || self.ch == '\0' {
                 break;
             }
+            if self.ch == '\\' {
+                self.read_char();
+                match self.ch {
+                    'n' => out.push('\n'),
+                    't' => out.push('\t'),
+                    'r' => out.push('\r'),
+                    '\\' => out.push('\\'),
+                    '"' => out.push('"'),
+                    '\'' => out.push('\''),
+                    _ => {
+                        out.push('\\');
+                        if self.ch != '\0' {
+                            out.push(self.ch);
+                        }
+                    }
+                }
+            } else {
+                out.push(self.ch);
+            }
         }
-        let out = self.input[start_pos..self.position].iter().collect();
         self.read_char(); // consume closing delimiter
         out
     }
