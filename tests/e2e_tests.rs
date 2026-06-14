@@ -3514,6 +3514,7 @@ fn test_e2e_logical_and_or_operators() {
             os.LogInt(side_effect_count);
             
             // Test 5: Combining operators with comparisons
+    // Test 5: Combining operators with comparisons
             mut x := 10;
             mut y := 20;
             if x < 15 && y > 15 {
@@ -3524,4 +3525,125 @@ fn test_e2e_logical_and_or_operators() {
         }
     ";
     run_e2e_test(source, "0\n1\n1\n2\n100");
+}
+
+#[test]
+fn test_e2e_canonicalized_namespacing_compilation() {
+    use crate::resolver::{ModuleResolver, MockFileSystem};
+    
+    let lib_source = "
+        type Helper struct {
+            value: int
+        }
+        type MyTemplate[T] struct {
+            item: T,
+            helper_field: Helper
+        }
+    ";
+    
+    let main_source = "
+        import \"lib.gst\" as lib;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            
+            mut x: lib.MyTemplate[int];
+            x.item = 42;
+            x.helper_field.value = 100;
+            
+            os.LogInt(x.item);
+            os.LogInt(x.helper_field.value);
+        }
+    ";
+
+    let mut fs_mock = MockFileSystem::new();
+    fs_mock.add_file("main.gst", main_source);
+    fs_mock.add_file("lib.gst", lib_source);
+
+    let resolver = ModuleResolver::new();
+    let res = resolver.resolve(std::path::Path::new("main.gst"), &fs_mock);
+    assert!(res.is_ok());
+    let (order, mut modules) = res.unwrap();
+
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok());
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        } 
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&modules_for_codegen);
+
+    // Verify transpiled structures exist and are named correctly
+    assert!(c_code.contains("struct lib__MyTemplate_int {"));
+    assert!(c_code.contains("struct lib__Helper {"));
+
+    // Write to disk and compile E2E using system cc
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+
+    let c_filename = format!("gust_e2e_isolation_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_e2e_isolation_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    std::fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd.arg("-o").arg(&bin_path).output();
+
+    let compile_success = match compile_output {
+        Ok(output) => {
+            if !output.status.success() {
+                println!("--- GCC Compilation Failed ---");
+                println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
+                println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
+            }
+            output.status.success()
+        }
+        Err(e) => {
+            let _ = std::fs::remove_file(&c_path);
+            panic!("CC failed: {:?}", e);
+        }
+    };
+    assert!(compile_success, "C compilation of cross-module template namespacing isolation failed!");
+
+    let run_output = Command::new(&bin_path).output().expect("Execution failed");
+    let stdout_str = String::from_utf8(run_output.stdout).expect("Captured output is not valid UTF-8");
+
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+
+    assert_eq!(stdout_str.trim(), "42\n100");
 }

@@ -27,7 +27,7 @@ fn erase_struct_name_with_registry(
     let mut suffix = String::new();
     if let Some(pos) = erased.rfind('_') {
         let last_part = &erased[pos + 1..];
-        if !last_part.is_empty() 
+        if !last_part.is_empty()
             && last_part.chars().next().unwrap().is_uppercase()
             && last_part != "Any"
         {
@@ -37,7 +37,7 @@ fn erase_struct_name_with_registry(
     }
 
     // 1. Direct structural brand suffix erasure
-    if let Some(ref b) = brand {
+    if let Some(b) = brand {
         let direct_suffix = format!("_{}", b);
         if let Some(stripped) = erased.strip_suffix(&direct_suffix) {
             erased = stripped.to_string();
@@ -58,7 +58,7 @@ fn erase_struct_name_with_registry(
         for base in &brand_bases {
             let mut matched_pos = None;
             let mut pattern_len = 0;
-            
+
             let mid_pat = format!("_{}_", base);
             if let Some(pos) = erased.find(&mid_pat) {
                 matched_pos = Some(pos);
@@ -1358,7 +1358,10 @@ impl Codegen {
 
                 let val_expr_str = self.gen_expression(value);
 
-                result.push_str(&format!("    {} {} = {{0}};\n", wrapper_name, guard_res_name));
+                result.push_str(&format!(
+                    "    {} {} = {{0}};\n",
+                    wrapper_name, guard_res_name
+                ));
                 result.push_str(&format!("    {} = {};\n", guard_res_name, val_expr_str));
                 result.push_str(&format!("    if (!{}.Ok) {{\n", guard_res_name));
                 for stmt in &else_body.statements {
@@ -1500,7 +1503,7 @@ impl Codegen {
                         _ => escaped.push(c),
                     }
                 }
-                format!( 
+                format!(
                     "((Slice_unsigned_char){{ (unsigned char*)\"{}\", {} }})",
                     escaped,
                     val.len()
@@ -1712,7 +1715,7 @@ impl Codegen {
                         index_str, index_str, alloc_str, alloc_str, index_str
                     )
                 } else {
-                    // Arena indexing (Value-Branded) 
+                    // Arena indexing (Value-Branded)
                     let mut target_struct = "SessionNode".to_string();
                     if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index)
                         && struct_name != "Any"
@@ -1734,12 +1737,12 @@ impl Codegen {
                     }
 
                     if use_arrow {
-                        format!( 
+                        format!(
                             "(*(( {}*)((char*){}->BaseAddress + {})))",
                             c_target_struct, alloc_str, index_str
                         )
                     } else {
-                        format!( 
+                        format!(
                             "(*(( {}*)((char*){}.BaseAddress + {})))",
                             c_target_struct, alloc_str, index_str
                         )
@@ -1838,7 +1841,7 @@ impl Codegen {
                     let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
                         self.get_c_type_name_by_struct_name(struct_name)
                     } else {
-                        "sizeof(SessionNode)".to_string() 
+                        "sizeof(SessionNode)".to_string()
                     };
                     let arg_str = self.gen_expression(&arguments[0]);
                     let mut is_ptr = false;
@@ -1867,7 +1870,10 @@ impl Codegen {
 
                 if func_path == "os_ScratchAlloc" || func_path == "os.ScratchAlloc" {
                     let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
-                        format!("sizeof({})", self.get_c_type_name_by_struct_name(struct_name))
+                        format!(
+                            "sizeof({})",
+                            self.get_c_type_name_by_struct_name(struct_name)
+                        )
                     } else if !arguments.is_empty() {
                         self.gen_expression(&arguments[0])
                     } else {
