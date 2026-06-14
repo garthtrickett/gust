@@ -69,13 +69,12 @@ fn erase_struct_name_with_registry(
             
             // Check for namespaced brand pattern in the middle: e.g. std_Vector_lib_module__ctx_SomeSuffix
             let ns_mid = format!("__{}_", base);
-            if let Some(pos) = erased.find(&ns_mid) {
-                if let Some(start_pos) = erased[..pos].rfind('_') {
+            if let Some(pos) = erased.find(&ns_mid)
+                && let Some(start_pos) = erased[..pos].rfind('_') {
                     erased.replace_range(start_pos..pos + ns_mid.len() - 1, "");
                     changed = true;
                     break;
                 }
-            }
 
             // Check for standard flat brand pattern at the end: e.g. ast__Statement_ctx
             let flat_suffix = format!("_{}", base);

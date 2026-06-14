@@ -2234,11 +2234,11 @@ fn test_multi_file_compilation_success() {
     let _ = fs::remove_dir(temp_dir);
 }
 
-#[test]
-fn test_self_hosted_import_scanner_debug() {
-    let lexer_content = std::fs::read_to_string("compiler/lexer.gst").unwrap();
-    panic!("LEXER.GST CONTENT:\n{}", lexer_content);
-}
+// #[test]
+// fn test_self_hosted_import_scanner_debug() {
+//     let lexer_content = std::fs::read_to_string("compiler/lexer.gst").unwrap();
+//     panic!("LEXER.GST CONTENT:\n{}", lexer_content);
+// }
 
 #[test]
 fn test_self_hosted_import_scanner_old() {
