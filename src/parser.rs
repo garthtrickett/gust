@@ -28,7 +28,7 @@ impl Parser {
         }
     }
 
-    fn get_type_ident(&self, t: &Type) -> String {
+        fn get_type_ident(&self, t: &Type) -> String {
         let base = match t {
             Type::Int => "int".to_string(),
             Type::Byte => "byte".to_string(),
