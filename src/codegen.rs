@@ -38,14 +38,30 @@ fn erase_struct_name_with_registry(
 
     // 1. Direct structural brand suffix erasure
     if let Some(b) = brand {
-        let direct_suffix = format!("_{}", b);
-        if let Some(stripped) = erased.strip_suffix(&direct_suffix) {
-            erased = stripped.to_string();
-        } else {
-            let clean_b = crate::typechecker::types::strip_brand_prefix(b);
-            let clean_suffix = format!("_{}", clean_b);
-            if let Some(stripped) = erased.strip_suffix(&clean_suffix) {
+        let clean_b = crate::typechecker::types::strip_brand_prefix(b);
+        let mut stripped_brand = false;
+
+        // Check for namespaced brand pattern first: e.g. std_Vector_str_resolver__ctx
+        let ns_suffix = format!("__{}", clean_b);
+        if erased.ends_with(&ns_suffix) {
+            let pos = erased.len() - ns_suffix.len();
+            if let Some(start_pos) = erased[..pos].rfind('_') {
+                if !erased[..pos].ends_with("__") {
+                    erased.truncate(start_pos);
+                    stripped_brand = true;
+                }
+            }
+        }
+
+        if !stripped_brand {
+            let direct_suffix = format!("_{}", b);
+            if let Some(stripped) = erased.strip_suffix(&direct_suffix) {
                 erased = stripped.to_string();
+            } else {
+                let clean_suffix = format!("_{}", clean_b);
+                if let Some(stripped) = erased.strip_suffix(&clean_suffix) {
+                    erased = stripped.to_string();
+                }
             }
         }
     }
