@@ -6044,7 +6044,10 @@ fn test_self_hosted_type_serialization() {
                 t_branded.tag = 8;
                 t_branded.Struct.struct_name = 'MyNode';
                 t_branded.Struct.brand = os.ArenaAlloc(ctx);
-                ctx[t_branded.Struct.brand] = 'connCtx';
+                unsafe {
+                    mut brand_ptr := &ctx[t_branded.Struct.brand] as *str;
+                    *brand_ptr = 'connCtx';
+                }
                 os.LogStr(ast.serialize_type(t_branded, ctx));
 
                 // 4. Raw Pointer Type
