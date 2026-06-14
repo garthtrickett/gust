@@ -1,13 +1,9 @@
 {
-  "summary": "feat: implement ast_repeat_spaces helper in self-hosted ast",
+  "summary": "fix: resolve scratchpad escape analysis violation in ast_repeat_spaces",
   "files": [
     {
       "file_path": "compiler/ast.gst",
-      "code_diff": "<<<<<<< SEARCH\ntype Program[ctx] struct {\n    statements: Index[std.Vector[Statement[ctx], ctx], ctx],\n    span: token.Span\n}\n=======\ntype Program[ctx] struct {\n    statements: Index[std.Vector[Statement[ctx], ctx], ctx],\n    span: token.Span\n}\n\nfunc ast_repeat_spaces(indent: int, ctx: &Arena) str {\n    mut spaces := \"\";\n    mut i := 0;\n    while i < indent {\n        spaces = std.Concat(spaces, \"  \");\n        i = i + 1;\n    }\n    return spaces;\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    // Write a dummy entry file that imports token.gst and ast.gst\n    let entry_source = \"\n        import \\\"token.gst\\\" as token;\n        import \\\"ast.gst\\\" as ast;\n        func main() {\n            mut ctx := os.Arena.New();\n            defer ctx.Free();\n            \n            mut p: ast.Program[ctx];\n            p.statements = os.ArenaAlloc(ctx);\n            \n            mut s: ast.Statement[ctx];\n            s.tag = 13;\n            s.Expression.expr = os.ArenaAlloc(ctx);\n            \n            mut e: ast.Expression[ctx];\n            e.tag = 1;\n            e.Integer.val = 42;\n        }\n    \";\n=======\n    // Write a dummy entry file that imports token.gst and ast.gst\n    let entry_source = \"\n        import \\\"token.gst\\\" as token;\n        import \\\"ast.gst\\\" as ast;\n        func main() {\n            mut ctx := os.Arena.New();\n            defer ctx.Free();\n            \n            mut p: ast.Program[ctx];\n            p.statements = os.ArenaAlloc(ctx);\n            \n            mut s: ast.Statement[ctx];\n            s.tag = 13;\n            s.Expression.expr = os.ArenaAlloc(ctx);\n            \n            mut e: ast.Expression[ctx];\n            e.tag = 1;\n            e.Integer.val = 42;\n\n            mut spaces := ast.ast_repeat_spaces(2, ctx);\n            os.LogStr(spaces);\n        }\n    \";\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\nfunc ast_repeat_spaces(indent: int, ctx: &Arena) str {\n    mut spaces := \"\";\n    mut i := 0;\n    while i < indent {\n        spaces = std.Concat(spaces, \"  \");\n        i = i + 1;\n    }\n    return spaces;\n}\n=======\nfunc ast_repeat_spaces(indent: int, ctx: &Arena) str {\n    mut spaces := \"\";\n    mut i := 0;\n    while i < indent {\n        spaces = std.Concat(spaces, \"  \");\n        i = i + 1;\n    }\n    return std.Clone(ctx, spaces);\n}\n>>>>>>> REPLACE"
     }
   ]
 }

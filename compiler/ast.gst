@@ -213,5 +213,5 @@ func ast_repeat_spaces(indent: int, ctx: &Arena) str {
         spaces = std.Concat(spaces, "  ");
         i = i + 1;
     }
-    return spaces;
+    return std.Clone(ctx, spaces);
 }
