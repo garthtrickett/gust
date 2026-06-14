@@ -5363,14 +5363,17 @@ fn test_self_hosted_import_parsing() {
             defer ctx.Free();
 
             mut l: lexer.Lexer[ctx];
-            lexer.init_lexer(&l, "import \"token.gst\" as token;\nimport \"lexer.gst\";\nmut x := 42;");
+            lexer.init_lexer(&l, "import 'token.gst' as token;\nimport 'lexer.gst';\nmut x := 42;");
 
             mut p: parser.Parser[ctx];
             parser.init_parser(&p, &l, ctx);
 
             mut prog := parser.parse_program(&p, ctx);
             os.LogInt(len(p.errors)); // Expected: 0
-            os.LogInt(len(ctx[prog.statements])); // Expected: 3
+            unsafe {
+                    mut statements_ptr := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+                    os.LogInt((*statements_ptr).len); // Expected: 3
+            }
         }
 
         func test_misplaced() {
@@ -5378,7 +5381,7 @@ fn test_self_hosted_import_parsing() {
             defer ctx.Free();
 
             mut l: lexer.Lexer[ctx];
-            lexer.init_lexer(&l, "mut x := 42;\nimport \"token.gst\";");
+            lexer.init_lexer(&l, "mut x := 42;\nimport 'token.gst';");
 
             mut p: parser.Parser[ctx];
             parser.init_parser(&p, &l, ctx);
@@ -5470,10 +5473,18 @@ fn test_self_hosted_import_parsing() {
         .expect("Execution failed");
 
     let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+    let stderr_str = String::from_utf8_lossy(&run_output.stderr);
 
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
     let _ = std::fs::remove_file(entry_path);
+
+    if !run_output.status.success() {
+        panic!(
+            "Execution failed!\nSTDOUT:\n{}\nSTDERR:\n{}",
+            stdout_str, stderr_str
+        );
+    }
 
     assert_eq!(stdout_str.trim(), "0\n3\n1");
 }
