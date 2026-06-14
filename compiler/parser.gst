@@ -546,6 +546,306 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
     }
 }
 
+func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] { 
+    unsafe {
+        mut start_span := (*p).cur_token.span;
+        next_token(p); // consume 'func'
+        if cur_token_is(p, 2) == false { // Ident = 2
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Expected identifier after 'func'";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+        mut name := std.Clone(*ctx, (*p).cur_token.literal);
+        next_token(p);
+
+        if cur_token_is(p, 11) == false { // LParen = 11
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Expected '(' after function name";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+        next_token(p); // consume '('
+
+        mut params_vec: std.Vector[ast.Parameter[ctx], ctx] := std.VectorNew(ctx);
+        while cur_token_is(p, 12) == false && cur_token_is(p, 0) == false { // RParen = 12, Eof = 0
+            if cur_token_is(p, 2) == false { // Ident = 2
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected parameter name identifier";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            mut param_start := (*p).cur_token.span;
+            mut param_name := std.Clone(*ctx, (*p).cur_token.literal);
+            next_token(p);
+
+            if cur_token_is(p, 9) == false { // Colon = 9
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected ':' after parameter name";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p); // consume ':'
+
+            mut p_type := parse_type_signature(p, ctx);
+            if p_type == empty[Index[ast.Type[ctx], ctx]] {
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected parameter type signature";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            mut param_end := (*p).cur_token.span;
+
+            mut param: ast.Parameter[ctx];
+            param.name = param_name;
+            param.param_type = ctx[p_type];
+            param.span = merge_spans(param_start, param_end);
+            params_vec.Push(param);
+
+            if cur_token_is(p, 8) { // Comma = 8
+                next_token(p); // consume ','
+            }
+        }
+
+        if cur_token_is(p, 12) == false { // RParen = 12
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Expected closing parenthesis ')'";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+        next_token(p); // consume ')'
+
+        mut r_type: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[r_type].tag = 3; // Default Type::Void = 3
+        
+        // Parse optional return type
+        if cur_token_is(p, 2) || cur_token_is(p, 45) || cur_token_is(p, 15) || cur_token_is(p, 21) || cur_token_is(p, 17) {
+            mut parsed_r_type := parse_type_signature(p, ctx);
+            if parsed_r_type == empty[Index[ast.Type[ctx], ctx]] {
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected return type signature";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            r_type = parsed_r_type;
+        }
+
+        if cur_token_is(p, 13) == false { // LBrace = 13
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Expected opening brace '{' for function body";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+
+        mut body := parse_block_statement(p, ctx);
+        mut end_span := ctx[body].span;
+
+        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[stmt_idx].tag = 3; // FunctionDecl = 3
+
+        ctx[stmt_idx].FunctionDecl.name = name;
+
+        ctx[stmt_idx].FunctionDecl.params = os.ArenaAlloc(ctx);
+        mut dest_params := &ctx[ctx[stmt_idx].FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
+        *dest_params = params_vec;
+
+        ctx[stmt_idx].FunctionDecl.return_type = r_type;
+        ctx[stmt_idx].FunctionDecl.body = body;
+        ctx[stmt_idx].FunctionDecl.span = merge_spans(start_span, end_span);
+
+        return stmt_idx;
+    }
+}
+
+func parse_defer_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
+    unsafe {
+        mut start_span := (*p).cur_token.span;
+        next_token(p); // consume 'defer'
+        mut expr := parse_expression(p, 1, ctx);
+        if expr == empty[Index[ast.Expression[ctx], ctx]] {
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+        mut end_span := get_expression_span(expr, ctx);
+
+        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[stmt_idx].tag = 11; // Defer = 11
+        ctx[stmt_idx].Defer.expr = expr;
+        ctx[stmt_idx].Defer.span = merge_spans(start_span, end_span);
+        return stmt_idx;
+    }
+}
+
+func parse_return_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
+    unsafe {
+        mut start_span := (*p).cur_token.span;
+        next_token(p); // consume 'return'
+        if cur_token_is(p, 10) || cur_token_is(p, 14) { // Semicolon = 10, RBrace = 14
+            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[stmt_idx].tag = 12; // Return = 12
+            ctx[stmt_idx].Return.expr = empty[Index[ast.Expression[ctx], ctx]];
+            ctx[stmt_idx].Return.span = start_span;
+            return stmt_idx;
+        }
+
+        mut expr := parse_expression(p, 1, ctx);
+        if expr == empty[Index[ast.Expression[ctx], ctx]] {
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+        mut end_span := get_expression_span(expr, ctx);
+
+        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[stmt_idx].tag = 12; // Return = 12
+        ctx[stmt_idx].Return.expr = expr;
+        ctx[stmt_idx].Return.span = merge_spans(start_span, end_span);
+        return stmt_idx;
+    }
+}
+
+func parse_unsafe_block(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
+    unsafe {
+        mut start_span := (*p).cur_token.span;
+        next_token(p); // consume 'unsafe'
+        if cur_token_is(p, 13) == false { // LBrace = 13
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+        mut body := parse_block_statement(p, ctx);
+        mut end_span := ctx[body].span;
+
+        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[stmt_idx].tag = 10; // UnsafeBlock = 10
+        ctx[stmt_idx].UnsafeBlock.body = body;
+        ctx[stmt_idx].UnsafeBlock.span = merge_spans(start_span, end_span);
+        return stmt_idx;
+    }
+}
+
+func parse_match_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
+    unsafe {
+        mut start_span := (*p).cur_token.span;
+        next_token(p); // consume 'match'
+        mut expression := parse_expression(p, 1, ctx);
+        if expression == empty[Index[ast.Expression[ctx], ctx]] {
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+
+        next_token(p);
+        if cur_token_is(p, 13) == false { // LBrace = 13
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+        next_token(p); // consume '{'
+
+        mut cases_vec: std.Vector[ast.MatchCase[ctx], ctx] := std.VectorNew(ctx);
+        while cur_token_is(p, 14) == false && cur_token_is(p, 0) == false { // RBrace = 14, Eof = 0
+            mut case_start := (*p).cur_token.span;
+            if cur_token_is(p, 2) == false { // Ident = 2
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            mut variant_name := std.Clone(*ctx, (*p).cur_token.literal);
+            next_token(p);
+
+            mut fields_vec: std.Vector[str, ctx] := std.VectorNew(ctx);
+            if cur_token_is(p, 13) { // LBrace = 13
+                next_token(p); // consume '{'
+                while cur_token_is(p, 14) == false && cur_token_is(p, 0) == false { // RBrace = 14, Eof = 0
+                    if cur_token_is(p, 2) { // Ident = 2
+                        fields_vec.Push(std.Clone(*ctx, (*p).cur_token.literal));
+                        next_token(p);
+                    } else {
+                        mut err: errors.CompilerError[Any];
+                        err.kind.tag = 1; // ParserError
+                        err.message = "Expected identifier in match pattern destructuring";
+                        err.span = (*p).cur_token.span;
+                        (*p).errors.Push(err);
+                        return empty[Index[ast.Statement[ctx], ctx]];
+                    }
+
+                    if cur_token_is(p, 8) { // Comma = 8
+                        next_token(p);
+                    } else if cur_token_is(p, 14) == false { // RBrace = 14
+                        mut err: errors.CompilerError[Any];
+                        err.kind.tag = 1; // ParserError
+                        err.message = "Expected ',' or '}' in match pattern destructuring";
+                        err.span = (*p).cur_token.span;
+                        (*p).errors.Push(err);
+                        return empty[Index[ast.Statement[ctx], ctx]];
+                    }
+                }
+                if cur_token_is(p, 14) == false { // RBrace = 14
+                    mut err: errors.CompilerError[Any];
+                    err.kind.tag = 1; // ParserError
+                    err.message = "Expected closing brace '}' in match pattern destructuring";
+                    err.span = (*p).cur_token.span;
+                    (*p).errors.Push(err);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p); // consume '}'
+            }
+
+            if cur_token_is(p, 18) == false { // FatArrow = 18
+                mut err: errors.CompilerError[Any];
+                err.kind.tag = 1; // ParserError
+                err.message = "Expected '=>' after match pattern";
+                err.span = (*p).cur_token.span;
+                (*p).errors.Push(err);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p); // consume '=>'
+
+            if cur_token_is(p, 13) == false { // LBrace = 13
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            mut body := parse_block_statement(p, ctx);
+            mut case_end := ctx[body].span;
+            next_token(p); // consume '}'
+
+            mut case: ast.MatchCase[ctx];
+            case.variant_name = variant_name;
+            case.fields = os.ArenaAlloc(ctx);
+            mut dest_cfields := &ctx[case.fields] as *std.Vector[str, ctx];
+            *dest_cfields = fields_vec;
+            case.body = body;
+            case.span = merge_spans(case_start, case_end);
+
+            cases_vec.Push(case);
+
+            if cur_token_is(p, 8) { // Comma = 8
+                next_token(p);
+            }
+        }
+
+        if cur_token_is(p, 14) == false { // RBrace = 14
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+        mut end_span := (*p).cur_token.span;
+
+        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[stmt_idx].tag = 8; // Match = 8
+        ctx[stmt_idx].Match.expression = expression;
+        ctx[stmt_idx].Match.cases = os.ArenaAlloc(ctx);
+        mut dest_cases := &ctx[ctx[stmt_idx].Match.cases] as *std.Vector[ast.MatchCase[ctx], ctx];
+        *dest_cases = cases_vec;
+        ctx[stmt_idx].Match.span = merge_spans(start_span, end_span);
+
+        return stmt_idx;
+    }
+}
+
 func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
     unsafe { 
         if cur_token_is(p, 28) { // Import = 28
@@ -555,6 +855,26 @@ func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx
 
         if cur_token_is(p, 39) { // Type = 39
             return parse_struct_decl(p, ctx);
+        }
+
+        if cur_token_is(p, 30) { // Func = 30
+            return parse_function_decl(p, ctx);
+        }
+
+        if cur_token_is(p, 31) { // Defer = 31
+            return parse_defer_statement(p, ctx);
+        }
+
+        if cur_token_is(p, 38) { // Unsafe = 38
+            return parse_unsafe_block(p, ctx);
+        }
+
+        if cur_token_is(p, 43) { // Return = 43
+            return parse_return_statement(p, ctx);
+        }
+
+        if cur_token_is(p, 42) { // Match = 42
+            return parse_match_statement(p, ctx);
         }
 
         if cur_token_is(p, 29) { // Mut = 29
