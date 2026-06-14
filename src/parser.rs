@@ -703,6 +703,7 @@ impl Parser {
                         Type::Byte => "byte".to_string(),
                         Type::Bool => "bool".to_string(),
                         Type::Arena => "Arena".to_string(),
+                        Type::Generic(name, generic_args) => self.get_monomorphized_name(name, generic_args),
                         _ => "SessionNode".to_string(),
                     };
                     let brand = match &args[1] {
