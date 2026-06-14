@@ -3528,7 +3528,6 @@ fn test_e2e_logical_and_or_operators() {
 }
 
 #[test]
-#[test]
 fn test_e2e_canonicalized_namespacing_compilation() {
     use std::fs;
     let temp_dir = std::env::temp_dir().join("gust_e2e_namespaced_isolation");

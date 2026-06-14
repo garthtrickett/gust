@@ -56,26 +56,39 @@ fn erase_struct_name_with_registry(
     while changed {
         changed = false;
         for base in &brand_bases {
-            let mut matched_pos = None;
-            let mut pattern_len = 0;
-
-            let mid_pat = format!("_{}_", base);
-            if let Some(pos) = erased.find(&mid_pat) {
-                matched_pos = Some(pos);
-                pattern_len = mid_pat.len() - 1;
-            } else if erased.ends_with(&format!("_{}", base)) {
-                let pos = erased.len() - base.len() - 1;
-                matched_pos = Some(pos);
-                pattern_len = base.len() + 1;
+            // Check for namespaced brand pattern first: e.g. std_Vector_lib_module__ctx
+            let ns_suffix = format!("__{}", base);
+            if erased.ends_with(&ns_suffix) {
+                let pos = erased.len() - ns_suffix.len();
+                if let Some(start_pos) = erased[..pos].rfind('_') {
+                    erased.truncate(start_pos);
+                    changed = true;
+                    break;
+                }
+            }
+            
+            // Check for namespaced brand pattern in the middle: e.g. std_Vector_lib_module__ctx_SomeSuffix
+            let ns_mid = format!("__{}_", base);
+            if let Some(pos) = erased.find(&ns_mid) {
+                if let Some(start_pos) = erased[..pos].rfind('_') {
+                    erased.replace_range(start_pos..pos + ns_mid.len() - 1, "");
+                    changed = true;
+                    break;
+                }
             }
 
-            if let Some(pos) = matched_pos {
-                let search_limit = pos;
-                if let Some(start_pos) = erased[..search_limit].rfind('_') {
-                    erased.replace_range(start_pos..pos + pattern_len, "");
-                } else {
-                    erased.replace_range(pos..pos + pattern_len, "");
-                }
+            // Check for standard flat brand pattern at the end: e.g. ast__Statement_ctx
+            let flat_suffix = format!("_{}", base);
+            if erased.ends_with(&flat_suffix) {
+                erased.truncate(erased.len() - flat_suffix.len());
+                changed = true;
+                break;
+            }
+
+            // Check for standard flat brand pattern in the middle: e.g. ast__Statement_ctx_SomeSuffix
+            let flat_mid = format!("_{}_", base);
+            if let Some(pos) = erased.find(&flat_mid) {
+                erased.replace_range(pos..pos + flat_mid.len() - 1, "");
                 changed = true;
                 break;
             }
