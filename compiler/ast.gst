@@ -264,7 +264,8 @@ func serialize_type(t: Type[ctx], ctx: &Arena) str {
             if t.Index.brand == empty[Index[str, ctx]] {
                 res = std.Concat(res, ", None)");
             } else {
-                mut brand_str := ctx[t.Index.brand];
+                mut brand_str_ptr := &ctx[t.Index.brand] as *str;
+                mut brand_str := *brand_str_ptr;
                 res = std.Concat(res, ", Some(");
                 res = std.Concat(res, quote);
                 res = std.Concat(res, brand_str);
@@ -282,7 +283,8 @@ func serialize_type(t: Type[ctx], ctx: &Arena) str {
             if t.Struct.brand == empty[Index[str, ctx]] {
                 res = std.Concat(res, ", None)");
             } else {
-                mut brand_str := ctx[t.Struct.brand];
+                mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
+                mut brand_str := *brand_str_ptr;
                 res = std.Concat(res, ", Some(");
                 res = std.Concat(res, quote);
                 res = std.Concat(res, brand_str);
