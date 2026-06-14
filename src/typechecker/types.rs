@@ -102,6 +102,13 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             let a_norm = normalize_struct_name(a_struct, a_brand);
             let e_clean = strip_module_prefixes(strip_std_prefix(&e_norm));
             let a_clean = strip_module_prefixes(strip_std_prefix(&a_norm));
+            if e_clean.contains("__GUST_MONO_RESOLVE_TEMP_")
+                || a_clean.contains("__GUST_MONO_RESOLVE_TEMP_")
+                || e_clean.contains("__PLACEHOLDER_")
+                || a_clean.contains("__PLACEHOLDER_")
+            {
+                return true;
+            }
             if e_clean != a_clean && e_clean != "Any" && a_clean != "Any" { 
                 return false;
             }
@@ -121,6 +128,13 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
             let a_norm = normalize_struct_name(a_struct, a_brand);
             let e_clean = strip_module_prefixes(strip_std_prefix(&e_norm));
             let a_clean = strip_module_prefixes(strip_std_prefix(&a_norm));
+            if e_clean.contains("__GUST_MONO_RESOLVE_TEMP_")
+                || a_clean.contains("__GUST_MONO_RESOLVE_TEMP_")
+                || e_clean.contains("__PLACEHOLDER_")
+                || a_clean.contains("__PLACEHOLDER_")
+            {
+                return true;
+            }
             if e_clean != a_clean {
                 let is_vector_any = (e_clean.starts_with("Vector_")
                     && a_clean.starts_with("Vector_Any"))
