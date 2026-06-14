@@ -1595,7 +1595,9 @@ func parse_program(p: *Parser[ctx], ctx: &Arena) ast.Program[ctx] {
             mut stmt := parse_statement(p, ctx);
             if stmt != empty[Index[ast.Statement[ctx], ctx]] {
                 (*dest_ptr).Push(ctx[stmt]);
-                next_token(p);
+                if cur_token_is(p, 10) { // Semicolon = 10
+                    next_token(p);
+                }
             } else {
                 if len((*p).errors) == before_errors {
                     error_at_current(p, "Syntax Error: unexpected token or malformed statement");
