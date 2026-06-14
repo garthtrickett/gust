@@ -3593,7 +3593,7 @@ fn test_ast_serialization_helpers() {
 
     assert_eq!(
         stdout_str.trim(),
-        "hello, world\n  FieldDef: my_field : TypePlaceholder\n\n  Parameter: my_param : TypePlaceholder"
+        "hello, world\n  FieldDef: my_field : Int\n\n  Parameter: my_param : Byte"
     );
 }
 

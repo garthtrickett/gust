@@ -1,9 +1,9 @@
 {
-  "summary": "fix: map primitive types in os_ScratchAlloc codegen size resolution",
+  "summary": "test: update expected serialized types in ast helper test assertion",
   "files": [
     {
-      "file_path": "src/codegen.rs",
-      "code_diff": "<<<<<<< SEARCH\n                if func_path == \"os_ScratchAlloc\" || func_path == \"os.ScratchAlloc\" {\n                    let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {\n                        format!(\"sizeof({})\", struct_name)\n                    } else if !arguments.is_empty() {\n                        self.gen_expression(&arguments[0])\n                    } else {\n                        \"sizeof(SessionNode)\".to_string()\n                    };\n                    return format!(\"os_ScratchAlloc({})\", size_str);\n                }\n=======\n                if func_path == \"os_ScratchAlloc\" || func_path == \"os.ScratchAlloc\" {\n                    let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {\n                        format!(\"sizeof({})\", self.get_c_type_name_by_struct_name(struct_name))\n                    } else if !arguments.is_empty() {\n                        self.gen_expression(&arguments[0])\n                    } else {\n                        \"sizeof(SessionNode)\".to_string()\n                    };\n                    return format!(\"os_ScratchAlloc({})\", size_str);\n                }\n>>>>>>> REPLACE"
+      "file_path": "tests/compile_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n    let stdout_str = String::from_utf8(run_output.stdout).expect(\"Invalid UTF-8\");\n\n    let _ = std::fs::remove_file(&c_path);\n    let _ = std::fs::remove_file(&bin_path);\n    let _ = std::fs::remove_file(entry_path);\n\n    assert_eq!(\n        stdout_str.trim(),\n        \"hello, world\\n  FieldDef: my_field : TypePlaceholder\\n\\n  Parameter: my_param : TypePlaceholder\"\n    );\n}\n=======\n    let stdout_str = String::from_utf8(run_output.stdout).expect(\"Invalid UTF-8\");\n\n    let _ = std::fs::remove_file(&c_path);\n    let _ = std::fs::remove_file(&bin_path);\n    let _ = std::fs::remove_file(entry_path);\n\n    assert_eq!(\n        stdout_str.trim(),\n        \"hello, world\\n  FieldDef: my_field : Int\\n\\n  Parameter: my_param : Byte\"\n    );\n}\n>>>>>>> REPLACE"
     }
   ]
 }
