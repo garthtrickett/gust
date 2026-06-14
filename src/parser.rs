@@ -1425,6 +1425,21 @@ mod tests {
     }
 
     #[test]
+    fn test_index_primitive_parsing() {
+        fn parse_type_str(input: &str) -> Type {
+            let lexer = Lexer::new(input);
+            let mut parser = Parser::new(lexer);
+            parser.parse_type_signature().expect("Failed to parse type signature")
+        }
+
+        assert_eq!(parse_type_str("Index[str, ctx]"), Type::Index("str".to_string(), Some("ctx".to_string())));
+        assert_eq!(parse_type_str("Index[int, ctx]"), Type::Index("int".to_string(), Some("ctx".to_string())));
+        assert_eq!(parse_type_str("Index[byte, ctx]"), Type::Index("byte".to_string(), Some("ctx".to_string())));
+        assert_eq!(parse_type_str("Index[bool, ctx]"), Type::Index("bool".to_string(), Some("ctx".to_string())));
+        assert_eq!(parse_type_str("Index[Arena, ctx]"), Type::Index("Arena".to_string(), Some("ctx".to_string())));
+    }
+
+    #[test]
     fn test_parser_span_merging() {
         let expr = parse_expr_str("a + b * c");
         let span = expr.span();
