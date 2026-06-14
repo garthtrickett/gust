@@ -270,12 +270,12 @@ impl TypeChecker {
             }
             Type::Struct(name, brand) => {
                 let clean_name = strip_brand_prefix(name);
-                if clean_name.starts_with("LookupResult_")
+                if name.starts_with("LookupResult_")
                     && !self.struct_registry.contains_key(name)
                 {
-                    let target_struct = clean_name
+                    let target_struct = name
                         .strip_prefix("LookupResult_")
-                        .unwrap_or(clean_name)
+                        .unwrap_or(name)
                         .to_string();
                     let v_type = if target_struct == "int" {
                         Type::Int
@@ -294,11 +294,11 @@ impl TypeChecker {
                     );
                 }
 
-                if clean_name.starts_with("CastResult_") && !self.struct_registry.contains_key(name)
+                if name.starts_with("CastResult_") && !self.struct_registry.contains_key(name)
                 {
-                    let target_struct = clean_name
+                    let target_struct = name
                         .strip_prefix("CastResult_")
-                        .unwrap_or(clean_name)
+                        .unwrap_or(name)
                         .to_string();
                     let v_type = if target_struct == "int" {
                         Type::Int
