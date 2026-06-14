@@ -155,6 +155,16 @@ impl Codegen {
         path_str.replace('\\', "\\\\").replace('"', "\\\"")
     }
 
+    fn get_c_type_name_by_struct_name(&self, name: &str) -> String {
+        match name {
+            "str" => "Slice_unsigned_char".to_string(),
+            "int" => "int".to_string(),
+            "byte" | "bool" => "unsigned char".to_string(),
+            "Arena" | "os_Arena" | "os.Arena" => "os_Arena".to_string(),
+            _ => name.to_string(),
+        }
+    }
+
     fn gen_line_directive(&self, span: &crate::token::Span) -> String {
         if let Some(path) = &*self.current_file_path.borrow() {
             let escaped_path = self.escape_c_path(path);
@@ -1815,9 +1825,9 @@ impl Codegen {
                 // Compile-time resolution of os_ArenaAlloc [3]
                 if func_path == "os_ArenaAlloc" || func_path == "os.ArenaAlloc" {
                     let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
-                        struct_name.clone()
+                        self.get_c_type_name_by_struct_name(struct_name)
                     } else {
-                        "sizeof(SessionNode)".to_string()
+                        "sizeof(SessionNode)".to_string() 
                     };
                     let arg_str = self.gen_expression(&arguments[0]);
                     let mut is_ptr = false;
