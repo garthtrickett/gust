@@ -13,7 +13,9 @@ impl TypeChecker {
         let mut resolved = name.to_string();
         let mut local_names = Vec::new();
         if !self.current_prefix.is_empty() {
-            for key in self.struct_registry.keys()
+            for key in self
+                .struct_registry
+                .keys()
                 .chain(self.struct_templates.keys())
                 .chain(self.enum_templates.keys())
             {
@@ -62,7 +64,7 @@ impl TypeChecker {
         match t {
             Type::Index(struct_name, old_brand) => {
                 let mut new_struct_name = struct_name.clone();
-                if let (Some(old_b), Some(new_b)) = (old_brand, new_brand) { 
+                if let (Some(old_b), Some(new_b)) = (old_brand, new_brand) {
                     let old_b_clean = strip_brand_prefix(old_b);
                     let new_b_clean = strip_brand_prefix(new_b);
                     let suffix = format!("_{}", old_b_clean);
@@ -81,7 +83,7 @@ impl TypeChecker {
             }
             Type::Struct(struct_name, old_brand) => {
                 let mut new_struct_name = struct_name.clone();
-                if let (Some(old_b), Some(new_b)) = (old_brand, new_brand) { 
+                if let (Some(old_b), Some(new_b)) = (old_brand, new_brand) {
                     let old_b_clean = strip_brand_prefix(old_b);
                     let new_b_clean = strip_brand_prefix(new_b);
                     let suffix = format!("_{}", old_b_clean);
@@ -101,9 +103,7 @@ impl TypeChecker {
             Type::RawPointer(inner) => {
                 Type::RawPointer(Box::new(self.substitute_brand(inner, new_brand)))
             }
-            Type::Slice(inner) => {
-                Type::Slice(Box::new(self.substitute_brand(inner, new_brand)))
-            }
+            Type::Slice(inner) => Type::Slice(Box::new(self.substitute_brand(inner, new_brand))),
             Type::Generic(name, args) => {
                 let new_args: Vec<Type> = args
                     .iter()
@@ -374,25 +374,28 @@ impl TypeChecker {
                     );
                 }
 
-                for template_prefix in &[
-                    "std_Vector_",
-                    "Vector_",
-                    "std_HashMap_",
-                    "HashMap_",
-                    "std_Pool_",
-                    "Pool_",
-                    "std_Mutex_",
-                    "Mutex_",
-                    "std_Channel_",
-                    "Channel_",
-                    "std_Graph_",
-                    "Graph_",
-                    "std_GenerationalArena_",
-                    "GenerationalArena_",
-                ] {
-                    if name.starts_with(template_prefix) && !self.struct_registry.contains_key(name)
-                    {
-                        let suffix = name.strip_prefix(template_prefix).unwrap_or(name);
+                if !self.struct_registry.contains_key(name) {
+                    let mut matched_template = None;
+                    let mut matched_prefix = None;
+
+                    let templates = self
+                        .struct_templates
+                        .keys()
+                        .chain(self.enum_templates.keys())
+                        .cloned()
+                        .collect::<Vec<String>>();
+
+                    for template_name in templates {
+                        let prefix = format!("{}_", template_name.replace(".", "_"));
+                        if name.starts_with(&prefix) {
+                            matched_template = Some(template_name);
+                            matched_prefix = Some(prefix);
+                            break;
+                        }
+                    }
+
+                    if let (Some(template), Some(prefix)) = (matched_template, matched_prefix) {
+                        let suffix = name.strip_prefix(&prefix).unwrap_or(name);
                         let normalized = suffix.replace("__", "@");
                         let parts: Vec<&str> = normalized.split('_').collect();
 
@@ -412,87 +415,8 @@ impl TypeChecker {
                             }
                         }
 
-                        let template = template_prefix.trim_end_matches('_').replace("_", ".");
                         let _ = self.monomorphize(&template, &args);
-                        break;
                     }
-                }
-
-                if (name.starts_with("RcNode_") || name.starts_with("std_RcNode_"))
-                    && !self.struct_registry.contains_key(name)
-                {
-                    let inner_t_name = if let Some(stripped) = name.strip_prefix("RcNode_") {
-                        stripped
-                    } else {
-                        name.strip_prefix("std_RcNode_").unwrap_or(name)
-                    };
-                    let inner_t = if inner_t_name == "int" {
-                        Type::Int
-                    } else if inner_t_name == "byte" {
-                        Type::Byte
-                    } else if inner_t_name == "bool" {
-                        Type::Bool
-                    } else {
-                        Type::Struct(inner_t_name.to_string(), None)
-                    };
-                    let template = if name.starts_with("RcNode_") {
-                        "RcNode"
-                    } else {
-                        "std.RcNode"
-                    };
-                    let _ = self.monomorphize(template, &[inner_t]);
-                }
-
-                if (name.starts_with("GraphNode_") || name.starts_with("std_GraphNode_"))
-                    && !self.struct_registry.contains_key(name)
-                {
-                    let suffix = if let Some(stripped) = name.strip_prefix("GraphNode_") {
-                        stripped
-                    } else {
-                        name.strip_prefix("std_GraphNode_").unwrap_or(name)
-                    };
-                    let normalized = suffix.replace("__", "@");
-                    let parts: Vec<&str> = normalized.split('_').collect();
-                    if parts.len() == 2 {
-                        let inner_t_name = parts[0].replace("@", "__");
-                        let ctx_name = parts[1].replace("@", "__");
-                        let inner_t = if inner_t_name == "int" {
-                            Type::Int
-                        } else if inner_t_name == "byte" {
-                            Type::Byte
-                        } else if inner_t_name == "bool" {
-                            Type::Bool
-                        } else if inner_t_name == "str" {
-                            Type::Str
-                        } else {
-                            Type::Struct(inner_t_name, None)
-                        };
-                        let ctx_t = Type::Struct(ctx_name, None);
-                        let template = if name.starts_with("GraphNode_") {
-                            "GraphNode"
-                        } else {
-                            "std.GraphNode"
-                        };
-                        let _ = self.monomorphize(template, &[inner_t, ctx_t]);
-                    }
-                }
-
-                if (name.starts_with("ThreadLocalContext_")
-                    || name.starts_with("std_ThreadLocalContext_"))
-                    && !self.struct_registry.contains_key(name)
-                {
-                    let suffix = if let Some(stripped) = name.strip_prefix("ThreadLocalContext_") {
-                        stripped
-                    } else {
-                        name.strip_prefix("std_ThreadLocalContext_").unwrap_or(name)
-                    };
-                    let ctx_t = Type::Struct(suffix.to_string(), None);
-                    let template = if name.starts_with("ThreadLocalContext_") {
-                        "ThreadLocalContext"
-                    } else {
-                        "std.ThreadLocalContext"
-                    };
-                    let _ = self.monomorphize(template, &[ctx_t]);
                 }
 
                 if let Some(brand_name) = brand {
@@ -615,21 +539,22 @@ impl TypeChecker {
                         format!("{}_{}", concrete_name, variant.name);
                     let mut variant_fields = HashMap::new();
                     for field in &variant.fields {
-                        let substituted_type = match self.substitute_generics(&field.field_type, &substitution_map) {
+                        let substituted_type =
+                            match self.substitute_generics(&field.field_type, &substitution_map) {
+                                Ok(t) => t,
+                                Err(e) => {
+                                    self.current_prefix = old_prefix;
+                                    return Err(e);
+                                }
+                            };
+                        let resolved_field_type = match self.resolve_type(&substituted_type) {
                             Ok(t) => t,
                             Err(e) => {
                                 self.current_prefix = old_prefix;
                                 return Err(e);
                             }
                         };
-                        let resolved_field_type = match self.resolve_type(&substituted_type) { 
-                            Ok(t) => t,
-                            Err(e) => {
-                                self.current_prefix = old_prefix;
-                                return Err(e);
-                            }
-                        };
-                        let resolved_field_type = 
+                        let resolved_field_type =
                             match self.resolve_type_namespacing(&resolved_field_type) {
                                 Ok(t) => t,
                                 Err(e) => {
@@ -642,23 +567,6 @@ impl TypeChecker {
                             && let Some(layout) = self.struct_registry.get(struct_name)
                             && layout.fields.len() > 2
                         {
-                            eprintln!("====================================================");
-                            eprintln!("❌ LARGE ENUM VARIANT PAYLOAD DIAGNOSTIC DETECTED");
-                            eprintln!("====================================================");
-                            eprintln!("Concrete Enum Name:  {}", concrete_name);
-                            eprintln!("Variant Name:       {}", variant.name);
-                            eprintln!("Payload Struct:     {}", struct_name);
-                            eprintln!("Total Fields Count: {}", layout.fields.len());
-                            eprintln!("----------------------------------------------------");
-                            eprintln!("Registered Fields:");
-                            let mut sorted_fields: Vec<(&String, &Type)> =
-                                layout.fields.iter().collect();
-                            sorted_fields.sort_by(|a, b| a.0.cmp(b.0));
-                            for (f_name, f_type) in sorted_fields {
-                                eprintln!("  - {}: {:?}", f_name, f_type);
-                            }
-                            eprintln!("====================================================");
-
                             self.current_prefix = old_prefix;
                             return Err(TypeError {
                                 kind: TypeErrorKind::LargeEnumVariantPayload,
@@ -769,13 +677,14 @@ impl TypeChecker {
 
             let mut concrete_fields = HashMap::new();
             for field in &template.fields {
-                let substituted_type = match self.substitute_generics(&field.field_type, &substitution_map) {
-                    Ok(t) => t,
-                    Err(e) => {
-                        self.current_prefix = old_prefix;
-                        return Err(e);
-                    }
-                };
+                let substituted_type =
+                    match self.substitute_generics(&field.field_type, &substitution_map) {
+                        Ok(t) => t,
+                        Err(e) => {
+                            self.current_prefix = old_prefix;
+                            return Err(e);
+                        }
+                    };
                 let resolved_field_type = match self.resolve_type(&substituted_type) {
                     Ok(t) => t,
                     Err(e) => {
@@ -841,31 +750,26 @@ impl TypeChecker {
         name.replace(".", "_")
     }
 
-    pub(crate) fn substitute_generics(&mut self, t: &Type, map: &HashMap<String, Type>) -> Result<Type, TypeError> {
+    pub(crate) fn substitute_generics(
+        &mut self,
+        t: &Type,
+        map: &HashMap<String, Type>,
+    ) -> Result<Type, TypeError> {
         let substituted = match t {
             Type::Struct(name, brand) => {
                 let mut new_name = name.clone();
-                if new_name == "RcNode_T" || new_name == "std_RcNode_T" {
-                    if let Some(substituted_t) = map.get("T") {
-                        let t_ident = self.get_type_ident(substituted_t);
-                        new_name = if name == "RcNode_T" {
-                            format!("RcNode_{}", t_ident)
-                        } else {
-                            format!("std_RcNode_{}", t_ident)
-                        };
+                let mut parts: Vec<String> = new_name.split('_').map(|s| s.to_string()).collect();
+                let mut changed = false;
+                for part in &mut parts {
+                    if let Some(substituted_type) = map.get(part) {
+                        *part = self.get_type_ident(substituted_type);
+                        changed = true;
                     }
-                } else if (new_name == "GraphNode_T_ctx" || new_name == "std_GraphNode_T_ctx")
-                    && let Some(substituted_t) = map.get("T")
-                    && let Some(substituted_ctx) = map.get("ctx")
-                { 
-                    let t_ident = self.get_type_ident(substituted_t);
-                    let ctx_ident = self.get_type_ident(substituted_ctx);
-                    new_name = if name == "GraphNode_T_ctx" {
-                        format!("GraphNode_{}_{}", t_ident, ctx_ident)
-                    } else {
-                        format!("std_GraphNode_{}_{}", t_ident, ctx_ident)
-                    };
                 }
+                if changed {
+                    new_name = parts.join("_");
+                }
+
                 if let Some(substituted) = map.get(&new_name) {
                     substituted.clone()
                 } else {
@@ -883,27 +787,18 @@ impl TypeChecker {
             }
             Type::Index(struct_name, brand) => {
                 let mut new_struct = struct_name.clone();
-                if new_struct == "RcNode_T" || new_struct == "std_RcNode_T" {
-                    if let Some(substituted_t) = map.get("T") {
-                        let t_ident = self.get_type_ident(substituted_t);
-                        new_struct = if struct_name == "RcNode_T" {
-                            format!("RcNode_{}", t_ident)
-                        } else {
-                            format!("std_RcNode_{}", t_ident)
-                        };
+                let mut parts: Vec<String> = new_struct.split('_').map(|s| s.to_string()).collect();
+                let mut changed = false;
+                for part in &mut parts {
+                    if let Some(substituted_type) = map.get(part) {
+                        *part = self.get_type_ident(substituted_type);
+                        changed = true;
                     }
-                } else if (new_struct == "GraphNode_T_ctx" || new_struct == "std_GraphNode_T_ctx")
-                    && let Some(substituted_t) = map.get("T")
-                    && let Some(substituted_ctx) = map.get("ctx")
-                { 
-                    let t_ident = self.get_type_ident(substituted_t);
-                    let ctx_ident = self.get_type_ident(substituted_ctx);
-                    new_struct = if struct_name == "GraphNode_T_ctx" {
-                        format!("GraphNode_{}_{}", t_ident, ctx_ident)
-                    } else {
-                        format!("std_GraphNode_{}_{}", t_ident, ctx_ident)
-                    };
                 }
+                if changed {
+                    new_struct = parts.join("_");
+                }
+
                 let final_struct = if let Some(substituted) = map.get(&new_struct) {
                     match substituted {
                         Type::Struct(name, _) => name.clone(),
@@ -916,7 +811,7 @@ impl TypeChecker {
                 let new_brand = if let Some(b) = brand {
                     if let Some(Type::Struct(b_name, _)) = map.get(b) {
                         Some(b_name.clone())
-                    } else { 
+                    } else {
                         Some(b.clone())
                     }
                 } else {
@@ -944,7 +839,7 @@ impl TypeChecker {
     }
 
     pub(crate) fn substitute_brand_names(&self, t: &Type, map: &HashMap<String, String>) -> Type {
-        match t { 
+        match t {
             Type::Index(struct_name, Some(brand)) => {
                 let new_brand = map.get(brand).cloned().unwrap_or_else(|| brand.clone());
                 let mut new_struct_name = struct_name.clone();
@@ -965,19 +860,19 @@ impl TypeChecker {
                 } else {
                     let mut sorted_keys: Vec<&String> = map.keys().collect();
                     sorted_keys.sort_by_key(|k| std::cmp::Reverse(k.len()));
-                    for old_b in sorted_keys { 
+                    for old_b in sorted_keys {
                         let new_b = &map[old_b];
                         let suffix = format!("_{}", strip_brand_prefix(old_b));
                         let new_suffix = format!("_{}", strip_brand_prefix(new_b));
-                        if let Some(stripped) = new_struct_name.strip_suffix(&suffix) { 
+                        if let Some(stripped) = new_struct_name.strip_suffix(&suffix) {
                             new_struct_name = format!("{}{}", stripped, new_suffix);
                             break;
                         } else {
                             let suffix_full = format!("_{}", old_b);
                             let new_suffix_full = format!("_{}", new_b);
-                            if let Some(stripped) = new_struct_name.strip_suffix(&suffix_full) { 
-                                  new_struct_name = format!("{}{}", stripped, new_suffix_full);
-                                  break;
+                            if let Some(stripped) = new_struct_name.strip_suffix(&suffix_full) {
+                                new_struct_name = format!("{}{}", stripped, new_suffix_full);
+                                break;
                             }
                         }
                     }
@@ -1001,22 +896,22 @@ impl TypeChecker {
                             new_struct_name = format!("{}{}", stripped, new_suffix_full);
                         }
                     }
-                } else { 
+                } else {
                     let mut sorted_keys: Vec<&String> = map.keys().collect();
                     sorted_keys.sort_by_key(|k| std::cmp::Reverse(k.len()));
-                    for old_b in sorted_keys { 
+                    for old_b in sorted_keys {
                         let new_b = &map[old_b];
                         let suffix = format!("_{}", strip_brand_prefix(old_b));
                         let new_suffix = format!("_{}", strip_brand_prefix(new_b));
-                        if let Some(stripped) = new_struct_name.strip_suffix(&suffix) { 
+                        if let Some(stripped) = new_struct_name.strip_suffix(&suffix) {
                             new_struct_name = format!("{}{}", stripped, new_suffix);
                             break;
                         } else {
                             let suffix_full = format!("_{}", old_b);
                             let new_suffix_full = format!("_{}", new_b);
-                            if let Some(stripped) = new_struct_name.strip_suffix(&suffix_full) { 
-                                  new_struct_name = format!("{}{}", stripped, new_suffix_full);
-                                  break;
+                            if let Some(stripped) = new_struct_name.strip_suffix(&suffix_full) {
+                                new_struct_name = format!("{}{}", stripped, new_suffix_full);
+                                break;
                             }
                         }
                     }
@@ -1049,6 +944,7 @@ mod tests {
     fn test_structural_namespacing_on_substitution() {
         let mut checker = TypeChecker::new();
         checker.current_prefix = "my_module__".to_string();
+        checker.imports.insert("std".to_string(), "std_".to_string());
 
         checker.struct_registry.insert(
             "my_module__LocalStruct".to_string(),
@@ -1058,18 +954,38 @@ mod tests {
             },
         );
 
-        let t_placeholder = Type::Struct("T".to_string(), None);
-        
+        // Nested generic placeholder std.Vector[std.Vector[T, ctx], ctx]
+        let t_placeholder = Type::Generic(
+            "std.Vector".to_string(),
+            vec![
+                Type::Generic(
+                    "std.Vector".to_string(),
+                    vec![
+                        Type::Struct("T".to_string(), None),
+                        Type::Struct("ctx".to_string(), None),
+                    ],
+                ),
+                Type::Struct("ctx".to_string(), None),
+            ],
+        );
+
         let mut map = HashMap::new();
         map.insert("T".to_string(), Type::Struct("LocalStruct".to_string(), None));
+        map.insert("ctx".to_string(), Type::Struct("ctx".to_string(), None));
 
         let res = checker.substitute_generics(&t_placeholder, &map);
+        if let Err(ref e) = res {
+            println!("❌ TypeChecker Substitution Error: {:?}", e);
+        }
         assert!(res.is_ok());
         let substituted = res.unwrap();
 
         assert_eq!(
             substituted,
-            Type::Struct("my_module__LocalStruct".to_string(), None)
+            Type::Struct(
+                "std_Vector_std_Vector_my_module__LocalStruct_my_module__ctx_my_module__ctx".to_string(),
+                Some("my_module__ctx".to_string())
+            )
         );
     }
 
@@ -1077,7 +993,9 @@ mod tests {
     fn test_substitute_nested_generics() {
         let mut checker = TypeChecker::new();
         checker.current_prefix = "my_module__".to_string();
-        checker.imports.insert("std".to_string(), "std_".to_string());
+        checker
+            .imports
+            .insert("std".to_string(), "std_".to_string());
 
         checker.struct_registry.insert(
             "my_module__MyNode".to_string(),
@@ -1130,7 +1048,10 @@ mod tests {
         );
 
         // *[]T
-        let t_ptr = Type::RawPointer(Box::new(Type::Slice(Box::new(Type::Struct("T".to_string(), None)))));
+        let t_ptr = Type::RawPointer(Box::new(Type::Slice(Box::new(Type::Struct(
+            "T".to_string(),
+            None,
+        )))));
 
         let mut map = HashMap::new();
         map.insert("T".to_string(), Type::Struct("Item".to_string(), None));
@@ -1221,17 +1142,30 @@ mod tests {
     fn test_substitute_brand_idempotency_primitives() {
         let checker = TypeChecker::new();
 
-        assert_eq!( 
+        assert_eq!(
             checker.substitute_brand(&Type::Int, &Some("ctx".to_string())),
             Type::Int
         );
-        assert_eq!( 
+        assert_eq!(
             checker.substitute_brand(&Type::Str, &Some("ctx".to_string())),
             Type::Str
         );
-        assert_eq!( 
+        assert_eq!(
             checker.substitute_brand(&Type::Arena, &Some("ctx".to_string())),
             Type::Arena
         );
+    }
+
+    #[test]
+    fn test_generic_monomorphization_without_hardcoding() {
+        let mut checker = TypeChecker::new();
+        checker.current_prefix = "my_module__".to_string();
+
+        // std.RcNode[int] monomorphization check (previously hardcoded, now generic!)
+        let resolved = checker.resolve_type(&Type::Struct("std_RcNode_int".to_string(), None));
+        assert!(resolved.is_ok());
+        let res_type = resolved.unwrap();
+        assert_eq!(res_type, Type::Struct("std_RcNode_int".to_string(), None));
+        assert!(checker.struct_registry.contains_key("std_RcNode_int"));
     }
 }

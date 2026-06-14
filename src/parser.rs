@@ -1693,6 +1693,17 @@ fn test_namespaced_type_signature_parsing() {
     assert_eq!(t2, Type::Arena);
 
     let t3 = parse_type_str("std.HashMap[int, str, ctx]");
+    
+    // Validate standard HashMap monomorphization as well
+    checker.imports.insert("std".to_string(), "std_".to_string());
+    let resolved_t3 = checker.resolve_type(&t3).expect("Failed to resolve t3");
+    assert_eq!(
+        resolved_t3,
+        Type::Struct(
+            "std_HashMap_int_str_my_module__ctx".to_string(),
+            Some("my_module__ctx".to_string())
+        )
+    );
     if let Type::Generic(name, args) = t3 {
         assert_eq!(name, "std.HashMap");
         assert_eq!(args.len(), 3);
