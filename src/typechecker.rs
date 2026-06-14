@@ -113,14 +113,28 @@ impl TypeChecker {
             format!("{}{}", self.current_prefix, name)
         };
 
+        let mut final_resolved = resolved;
+        for (alias, prefix) in &self.imports {
+            let start_pattern = format!("{}_", alias);
+            let mid_pattern = format!("_{}_", alias);
+            if final_resolved.starts_with(&start_pattern) && !final_resolved.contains(prefix) {
+                final_resolved = final_resolved.replacen(&start_pattern, prefix, 1);
+            } else if let Some(pos) = final_resolved.find(&mid_pattern) {
+                if !final_resolved.contains(prefix) {
+                    let replacement = format!("_{}", prefix);
+                    final_resolved.replace_range(pos..pos + mid_pattern.len(), &replacement);
+                }
+            }
+        }
+
         tracing::debug!(
             "👁️ Namespace Resolution: Lookup '{}' -> Resolved: '{}' (Current Prefix: '{}')",
             name,
-            resolved,
+            final_resolved,
             self.current_prefix
         );
 
-        Ok(resolved)
+        Ok(final_resolved)
     }
 
     pub fn is_linear(&self, t: &Type) -> bool {
