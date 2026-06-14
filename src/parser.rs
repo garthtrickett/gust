@@ -675,6 +675,11 @@ impl Parser {
                 } else if args.len() == 2 {
                     let struct_name = match &args[0] {
                         Type::Struct(name, _) => name.clone(),
+                        Type::Str => "str".to_string(),
+                        Type::Int => "int".to_string(),
+                        Type::Byte => "byte".to_string(),
+                        Type::Bool => "bool".to_string(),
+                        Type::Arena => "Arena".to_string(),
                         _ => "SessionNode".to_string(),
                     };
                     let brand = match &args[1] {

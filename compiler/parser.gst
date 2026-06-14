@@ -226,6 +226,16 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                     mut struct_name := "SessionNode";
                     if arg0.tag == 8 { // Struct = 8
                         struct_name = arg0.Struct.struct_name;
+                    } else if arg0.tag == 5 { // Str = 5
+                        struct_name = "str";
+                    } else if arg0.tag == 0 { // Int = 0
+                        struct_name = "int";
+                    } else if arg0.tag == 1 { // Byte = 1
+                        struct_name = "byte";
+                    } else if arg0.tag == 2 { // Bool = 2
+                        struct_name = "bool";
+                    } else if arg0.tag == 4 { // Arena = 4
+                        struct_name = "Arena";
                     }
                     mut brand_name := "";
                     if arg1.tag == 8 { // Struct = 8
