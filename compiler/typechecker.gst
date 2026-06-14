@@ -41,7 +41,9 @@ func scope_lookup(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) ast.Typ
             curr_scope = ctx[curr_scope].parent;
         }
     }
-    mut void_type: ast.Type[ctx];
-    void_type.tag = 3; // Void
-    return void_type;
+    mut dummy: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+    unsafe {
+        ctx[dummy].tag = 3; // Void
+        return ctx[dummy];
+    }
 }
