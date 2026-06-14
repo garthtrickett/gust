@@ -388,10 +388,9 @@ func parse_var_decl(p: *Parser[ctx], is_mut: int, ctx: &Arena) Index[ast.Stateme
 
 func parse_block_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.BlockStatement[ctx], ctx] {
     mut block_idx: Index[ast.BlockStatement[ctx], ctx] := os.ArenaAlloc(ctx);
-    unsafe {
-        ctx[block_idx].statements = os.ArenaAlloc(ctx);
-        mut dest_ptr := &ctx[ctx[block_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
-        *dest_ptr = std.VectorNew(ctx);
+    unsafe { 
+        mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
+        mut dest_ptr := &statements_vec;
         ctx[block_idx].span = (*p).cur_token.span;
         
         next_token(p); // consume '{'
@@ -406,6 +405,10 @@ func parse_block_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.BlockStatemen
                 next_token(p);
             }
         }
+        
+        ctx[block_idx].statements = os.ArenaAlloc(ctx);
+        mut dest_arena_ptr := &ctx[ctx[block_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+        *dest_arena_ptr = statements_vec;
         
         ctx[block_idx].span = merge_spans(ctx[block_idx].span, (*p).cur_token.span);
         if cur_token_is(p, 14) { // RBrace = 14
@@ -544,9 +547,8 @@ func parse_guard_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
 func parse_program(p: *Parser[ctx], ctx: &Arena) ast.Program[ctx] {
     mut prog: ast.Program[ctx];
     unsafe {
-        prog.statements = os.ArenaAlloc(ctx);
-        mut dest_ptr := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        *dest_ptr = std.VectorNew(ctx);
+        mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
+        mut dest_ptr := &statements_vec;
         
         mut start_span := (*p).cur_token.span;
         
@@ -557,6 +559,11 @@ func parse_program(p: *Parser[ctx], ctx: &Arena) ast.Program[ctx] {
             }
             next_token(p);
         }
+        
+        prog.statements = os.ArenaAlloc(ctx);
+        mut dest_arena_ptr := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        *dest_arena_ptr = statements_vec;
+        
         prog.span = merge_spans(start_span, (*p).cur_token.span);
     }
     return prog;
