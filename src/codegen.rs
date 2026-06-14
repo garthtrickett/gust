@@ -1857,7 +1857,7 @@ impl Codegen {
 
                 if func_path == "os_ScratchAlloc" || func_path == "os.ScratchAlloc" {
                     let size_str = if let Some(struct_name) = &*self.current_alloc_struct.borrow() {
-                        format!("sizeof({})", struct_name)
+                        format!("sizeof({})", self.get_c_type_name_by_struct_name(struct_name))
                     } else if !arguments.is_empty() {
                         self.gen_expression(&arguments[0])
                     } else {
