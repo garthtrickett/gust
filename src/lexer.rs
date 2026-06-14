@@ -502,6 +502,15 @@ mod tests {
     }
 
     #[test]
+    fn test_string_escape_sequences() {
+        let input = r#""line1\nline2\ttab\\backslash\"quote""#;
+        let mut l = Lexer::new(input);
+        let tok = l.next_token();
+        assert_eq!(tok.token_type, TokenType::String);
+        assert_eq!(tok.literal, "line1\nline2\ttab\\backslash\"quote");
+    }
+
+    #[test]
     fn test_import_lexing() {
         let input = "import \"std\" as standard;";
         let mut l = Lexer::new(input);

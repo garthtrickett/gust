@@ -224,6 +224,17 @@ fn test_e2e_bool_primitive() {
 }
 
 #[test]
+fn test_e2e_string_escape_sequences() {
+    let source = "
+        func main() {
+            mut msg := \"line1\\nline2\\ttab\\\\backslash\\\"quote\";
+            os.LogStr(msg);
+        } 
+    ";
+    run_e2e_test(source, "line1\nline2\ttab\\backslash\"quote");
+}
+
+#[test]
 fn test_e2e_safe_branding() {
     let source = "
         type CustomNode[connCtx] struct {
