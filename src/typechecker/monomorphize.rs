@@ -985,6 +985,7 @@ mod tests {
     fn test_substitute_nested_generics() {
         let mut checker = TypeChecker::new();
         checker.current_prefix = "my_module__".to_string();
+        checker.imports.insert("std".to_string(), "std_".to_string());
 
         checker.struct_registry.insert(
             "my_module__MyNode".to_string(),
@@ -1008,6 +1009,9 @@ mod tests {
         map.insert("ctx".to_string(), Type::Struct("ctx".to_string(), None));
 
         let res = checker.substitute_generics(&t_generic, &map);
+        if let Err(ref e) = res {
+            println!("❌ TypeChecker Substitution Error: {:?}", e);
+        }
         assert!(res.is_ok());
         let substituted = res.unwrap();
 
