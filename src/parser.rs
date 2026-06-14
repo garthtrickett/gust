@@ -1464,6 +1464,20 @@ mod tests {
     }
 
     #[test]
+    fn test_index_generic_parsing() {
+        fn parse_type_str(input: &str) -> Type {
+            let lexer = Lexer::new(input);
+            let mut parser = Parser::new(lexer);
+            parser.parse_type_signature().expect("Failed to parse type signature")
+        }
+
+        assert_eq!( 
+            parse_type_str("Index[std.Vector[int, ctx], ctx]"),
+            Type::Index("std_Vector_int_ctx".to_string(), Some("ctx".to_string()))
+        );
+    }
+
+    #[test]
     fn test_parser_span_merging() {
         let expr = parse_expr_str("a + b * c");
         let span = expr.span();
