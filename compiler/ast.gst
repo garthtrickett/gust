@@ -230,7 +230,95 @@ func ast_join_strings(vec: std.Vector[str, ctx], sep: str, ctx: &Arena) str {
 }
 
 func serialize_type(t: Type[ctx], ctx: &Arena) str {
-    return "TypePlaceholder";
+    unsafe {
+        if t.tag == 0 { // Int
+            return "Int";
+        }
+        if t.tag == 1 { // Byte
+            return "Byte";
+        }
+        if t.tag == 2 { // Bool
+            return "Bool";
+        }
+        if t.tag == 3 { // Void
+            return "Void";
+        }
+        if t.tag == 4 { // Arena
+            return "Arena";
+        }
+        if t.tag == 5 { // Str
+            return "Str";
+        }
+        if t.tag == 6 { // Slice
+            mut inner_str := serialize_type(ctx[t.Slice.inner], ctx);
+            mut res := std.Concat("Slice(", inner_str);
+            res = std.Concat(res, ")");
+            return std.Clone(ctx, res);
+        }
+        if t.tag == 7 { // Index
+            mut quote := '"';
+            mut struct_name := t.Index.struct_name;
+            mut res := std.Concat("Index(", quote);
+            res = std.Concat(res, struct_name);
+            res = std.Concat(res, quote);
+            if t.Index.brand == empty[Index[str, ctx]] {
+                res = std.Concat(res, ", None)");
+            } else {
+                mut brand_str := ctx[t.Index.brand];
+                res = std.Concat(res, ", Some(");
+                res = std.Concat(res, quote);
+                res = std.Concat(res, brand_str);
+                res = std.Concat(res, quote);
+                res = std.Concat(res, "))");
+            }
+            return std.Clone(ctx, res);
+        }
+        if t.tag == 8 { // Struct
+            mut quote := '"';
+            mut struct_name := t.Struct.struct_name;
+            mut res := std.Concat("Struct(", quote);
+            res = std.Concat(res, struct_name);
+            res = std.Concat(res, quote);
+            if t.Struct.brand == empty[Index[str, ctx]] {
+                res = std.Concat(res, ", None)");
+            } else {
+                mut brand_str := ctx[t.Struct.brand];
+                res = std.Concat(res, ", Some(");
+                res = std.Concat(res, quote);
+                res = std.Concat(res, brand_str);
+                res = std.Concat(res, quote);
+                res = std.Concat(res, "))");
+            }
+            return std.Clone(ctx, res);
+        }
+        if t.tag == 9 { // RawPointer
+            mut inner_str := serialize_type(ctx[t.RawPointer.inner], ctx);
+            mut res := std.Concat("RawPointer(", inner_str);
+            res = std.Concat(res, ")");
+            return std.Clone(ctx, res);
+        }
+        if t.tag == 10 { // Generic
+            mut quote := '"';
+            mut name := t.Generic.name;
+            mut args_vec := &ctx[t.Generic.args] as *std.Vector[Type[ctx], ctx];
+            mut arg_strs: std.Vector[str, ctx] := std.VectorNew(ctx);
+            mut i := 0;
+            while i < len(*args_vec) {
+                mut arg_str := serialize_type((*args_vec)[i], ctx);
+                arg_strs.Push(arg_str);
+                i = i + 1;
+            }
+            mut joined := ast_join_strings(arg_strs, ", ", ctx);
+            mut res := std.Concat("Generic(", quote);
+            res = std.Concat(res, name);
+            res = std.Concat(res, quote);
+            res = std.Concat(res, ", [");
+            res = std.Concat(res, joined);
+            res = std.Concat(res, "])");
+            return std.Clone(ctx, res);
+        }
+    }
+    return "Unknown";
 }
 
 func ast_join_fields(fields: std.Vector[FieldDef[ctx], ctx], indent: int, ctx: &Arena) str {
