@@ -1,9 +1,9 @@
 {
-  "summary": "fix: correct namespace separator typo in type parsing test write call",
+  "summary": "fix: wrap raw pointer dereference in unsafe block in parser.gst",
   "files": [
     {
-      "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n            mut stmt2 := parser.parse_statement(&p2, ctx);\n            os.LogInt(ctx[stmt2].tag);\n            os.LogStr(ctx[stmt2].EnumDecl.name);\n        }\n    \";\n    std.fs::write(&entry_path, entry_source).unwrap();\n\n    let res = resolver.resolve(&entry_path, &fs_impl);\n=======\n            mut stmt2 := parser.parse_statement(&p2, ctx);\n            os.LogInt(ctx[stmt2].tag);\n            os.LogStr(ctx[stmt2].EnumDecl.name);\n        }\n    \";\n    std::fs::write(&entry_path, entry_source).unwrap();\n\n    let res = resolver.resolve(&entry_path, &fs_impl);\n>>>>>>> REPLACE"
+      "file_path": "compiler/parser.gst",
+      "code_diff": "<<<<<<< SEARCH\nfunc parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {\n    mut start_span := (*p).cur_token.span;\n    unsafe {\n        next_token(p); // consume 'type'\n=======\nfunc parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {\n    unsafe {\n        mut start_span := (*p).cur_token.span;\n        next_token(p); // consume 'type'\n>>>>>>> REPLACE"
     }
   ]
 }

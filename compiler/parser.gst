@@ -288,8 +288,8 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
 }
 
 func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
-    mut start_span := (*p).cur_token.span;
     unsafe {
+        mut start_span := (*p).cur_token.span;
         next_token(p); // consume 'type'
         if cur_token_is(p, 2) == false { // Ident = 2
             mut err: errors.CompilerError[Any];
