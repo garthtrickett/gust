@@ -885,8 +885,12 @@ func parse_match_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
             return empty[Index[ast.Statement[ctx], ctx]];
         }
 
-        next_token(p);
         if cur_token_is(p, 13) == false { // LBrace = 13
+            mut err: errors.CompilerError[Any];
+            err.kind.tag = 1; // ParserError
+            err.message = "Expected '{' after match expression";
+            err.span = (*p).cur_token.span;
+            (*p).errors.Push(err);
             return empty[Index[ast.Statement[ctx], ctx]];
         }
         next_token(p); // consume '{'
