@@ -214,7 +214,9 @@ impl Codegen {
             Type::Arena => "((os_Arena){0})".to_string(),
             Type::RawPointer(_) => "NULL".to_string(),
             Type::Str | Type::ByteSlice => "((Slice_unsigned_char){ NULL, 0 })".to_string(),
-            Type::Slice(inner) => format!("((Slice_{}){{ NULL, 0 }})", self.get_c_type_ident(&inner)),
+            Type::Slice(inner) => {
+                format!("((Slice_{}){{ NULL, 0 }})", self.get_c_type_ident(&inner))
+            }
             Type::Index(_, _) => "0xFFFFFFFF".to_string(),
             Type::Struct(name, _) => {
                 if self.enum_registry.contains_key(&name) {
@@ -475,10 +477,7 @@ impl Codegen {
                     {
                         target_struct = struct_name;
                     }
-                    return Some(Type::Struct(
-                        target_struct,
-                        None,
-                    ));
+                    return Some(Type::Struct(target_struct, None));
                 }
                 None
             }
@@ -1656,7 +1655,8 @@ impl Codegen {
                     }
                 }
 
-                let is_ptr = matches!(alloc_type, Type::RawPointer(ref inner) if **inner != Type::Arena);
+                let is_ptr =
+                    matches!(alloc_type, Type::RawPointer(ref inner) if **inner != Type::Arena);
 
                 if is_slice {
                     format!(
@@ -1731,11 +1731,12 @@ impl Codegen {
                 {
                     use_arrow = true;
                 }
-                if !use_arrow && let Expression::Selector {
-                    left: inner_left,
-                    right: inner_right,
-                    ..
-                } = &**left
+                if !use_arrow
+                    && let Expression::Selector {
+                        left: inner_left,
+                        right: inner_right,
+                        ..
+                    } = &**left
                     && let Expression::Identifier(name, _) = &**inner_left
                     && name == "result"
                     && inner_right == "Val"
@@ -1817,7 +1818,7 @@ impl Codegen {
                             .cloned()
                             .or_else(|| self.symbol_table.borrow().get(name).cloned())
                         && *inner == Type::Arena
-                    {                    
+                    {
                         is_ptr = true;
                     }
                     let arena_expr = if is_ptr {

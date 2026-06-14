@@ -21,7 +21,7 @@ type VariantDef[ctx] struct {
 type MatchCase[ctx] struct {
     variant_name: str,
     fields: Index[std.Vector[str, ctx], ctx],
-    body: BlockStatement[ctx],
+    body: Index[BlockStatement[ctx], ctx],
     span: token.Span
 }
 
@@ -79,7 +79,7 @@ type Statement[ctx] enum {
         name: str,
         params: Index[std.Vector[Parameter[ctx], ctx], ctx],
         return_type: Index[Type[ctx], ctx],
-        body: BlockStatement[ctx],
+        body: Index[BlockStatement[ctx], ctx],
         span: token.Span
     },
     VarDecl {
@@ -96,13 +96,13 @@ type Statement[ctx] enum {
     },
     While {
         condition: Index[Expression[ctx], ctx],
-        body: BlockStatement[ctx],
+        body: Index[BlockStatement[ctx], ctx],
         span: token.Span
     },
     If {
         condition: Index[Expression[ctx], ctx],
-        consequence: BlockStatement[ctx],
-        alternative: BlockStatement[ctx],
+        consequence: Index[BlockStatement[ctx], ctx],
+        alternative: Index[BlockStatement[ctx], ctx],
         span: token.Span
     },
     Match {
@@ -114,11 +114,11 @@ type Statement[ctx] enum {
         name: str,
         is_mut: int,
         value: Index[Expression[ctx], ctx],
-        else_body: BlockStatement[ctx],
+        else_body: Index[BlockStatement[ctx], ctx],
         span: token.Span
     },
     UnsafeBlock {
-        body: BlockStatement[ctx],
+        body: Index[BlockStatement[ctx], ctx],
         span: token.Span
     },
     Defer {

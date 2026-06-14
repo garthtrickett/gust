@@ -386,34 +386,36 @@ func parse_var_decl(p: *Parser[ctx], is_mut: int, ctx: &Arena) Index[ast.Stateme
     return stmt_idx;
 }
 
-func parse_block_statement(p: *Parser[ctx], ctx: &Arena) ast.BlockStatement[ctx] {
-    mut block: ast.BlockStatement[ctx];
+func parse_block_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.BlockStatement[ctx], ctx] {
+    mut block_idx: Index[ast.BlockStatement[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        block.statements = os.ArenaAlloc(ctx);
-        mut dest_ptr := &ctx[block.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        ctx[block_idx].statements = os.ArenaAlloc(ctx);
+        mut dest_ptr := &ctx[ctx[block_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
         *dest_ptr = std.VectorNew(ctx);
-        block.span = (*p).cur_token.span;
+        ctx[block_idx].span = (*p).cur_token.span;
         
         next_token(p); // consume '{'
         
         while is_at_end(p) == 0 {
             mut stmt := parse_statement(p, ctx);
-            (*dest_ptr).Push(ctx[stmt]);
+            if stmt != empty[Index[ast.Statement[ctx], ctx]] {
+                (*dest_ptr).Push(ctx[stmt]);
+            }
             
             if cur_token_is(p, 10) { // Semicolon = 10
                 next_token(p);
             }
         }
         
-        block.span = merge_spans(block.span, (*p).cur_token.span);
+        ctx[block_idx].span = merge_spans(ctx[block_idx].span, (*p).cur_token.span);
         if cur_token_is(p, 14) { // RBrace = 14
             next_token(p); // consume '}'
         }
     }
-    return block;
+    return block_idx;
 }
 
-func parse_while_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
+func parse_while_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] { 
     mut start_span: token.Span;
     unsafe {
         start_span = (*p).cur_token.span;
@@ -428,12 +430,12 @@ func parse_while_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
     
     mut body := parse_block_statement(p, ctx);
     
-    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx); 
     unsafe {
         ctx[stmt_idx].tag = 6; // While = 6
         ctx[stmt_idx].While.condition = condition;
         ctx[stmt_idx].While.body = body;
-        ctx[stmt_idx].While.span = merge_spans(start_span, body.span);
+        ctx[stmt_idx].While.span = merge_spans(start_span, ctx[body].span);
     }
     return stmt_idx;
 }
@@ -453,16 +455,16 @@ func parse_if_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], 
     
     mut consequence := parse_block_statement(p, ctx);
     
-    mut alternative: ast.BlockStatement[ctx];
-    alternative.statements = empty[Index[std.Vector[ast.Statement[ctx], ctx], ctx]];
-    alternative.span = consequence.span;
+    mut alternative := empty[Index[ast.BlockStatement[ctx], ctx]];
+    mut end_span := ctx[consequence].span;
     
     unsafe {
         if cur_token_is(p, 36) { // Else = 36
             next_token(p); // consume 'else'
             if cur_token_is(p, 13) { // LBrace = 13
                 alternative = parse_block_statement(p, ctx);
-            }
+                end_span = ctx[alternative].span;
+            } 
         }
     }
     
@@ -534,7 +536,7 @@ func parse_guard_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
         ctx[stmt_idx].Guard.is_mut = is_mut;
         ctx[stmt_idx].Guard.value = value;
         ctx[stmt_idx].Guard.else_body = else_body;
-        ctx[stmt_idx].Guard.span = merge_spans(start_span, else_body.span);
+        ctx[stmt_idx].Guard.span = merge_spans(start_span, ctx[else_body].span);
     }
     return stmt_idx;
 }
