@@ -3528,9 +3528,15 @@ fn test_e2e_logical_and_or_operators() {
 }
 
 #[test]
+#[test]
 fn test_e2e_canonicalized_namespacing_compilation() {
-    use gust_lexer::resolver::{ModuleResolver, MockFileSystem};
-    
+    use std::fs;
+    let temp_dir = std::env::temp_dir().join("gust_e2e_namespaced_isolation");
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let main_path = temp_dir.join("main.gst");
+    let lib_path = temp_dir.join("lib.gst");
+
     let lib_source = "
         type Helper struct {
             value: int
@@ -3556,12 +3562,13 @@ fn test_e2e_canonicalized_namespacing_compilation() {
         }
     ";
 
-    let mut fs_mock = MockFileSystem::new();
-    fs_mock.add_file("main.gst", main_source);
-    fs_mock.add_file("lib.gst", lib_source);
+    fs::write(&lib_path, lib_source).expect("Failed to write lib.gst");
+    fs::write(&main_path, main_source).expect("Failed to write main.gst");
 
+    use gust_lexer::resolver::{ModuleResolver, RealFileSystem};
     let resolver = ModuleResolver::new();
-    let res = resolver.resolve(std::path::Path::new("main.gst"), &fs_mock);
+    let fs_impl = RealFileSystem;
+    let res = resolver.resolve(&main_path, &fs_impl);
     assert!(res.is_ok());
     let (order, mut modules) = res.unwrap();
 
@@ -3602,7 +3609,6 @@ fn test_e2e_canonicalized_namespacing_compilation() {
     assert!(c_code.contains("struct lib__Helper {"));
 
     // Write to disk and compile E2E using system cc
-    let temp_dir = std::env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
@@ -3613,7 +3619,7 @@ fn test_e2e_canonicalized_namespacing_compilation() {
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
 
-    std::fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+    fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = Command::new(&cc_compiler);
@@ -3633,7 +3639,10 @@ fn test_e2e_canonicalized_namespacing_compilation() {
             output.status.success()
         }
         Err(e) => {
-            let _ = std::fs::remove_file(&c_path);
+            let _ = fs::remove_file(&c_path);
+            let _ = fs::remove_file(&main_path);
+            let _ = fs::remove_file(&lib_path);
+            let _ = fs::remove_dir(temp_dir);
             panic!("CC failed: {:?}", e);
         }
     };
@@ -3642,8 +3651,11 @@ fn test_e2e_canonicalized_namespacing_compilation() {
     let run_output = Command::new(&bin_path).output().expect("Execution failed");
     let stdout_str = String::from_utf8(run_output.stdout).expect("Captured output is not valid UTF-8");
 
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+    let _ = fs::remove_file(&main_path);
+    let _ = fs::remove_file(&lib_path);
+    let _ = fs::remove_dir(temp_dir);
 
     assert_eq!(stdout_str.trim(), "42\n100");
 }
