@@ -27,6 +27,14 @@ fn strip_std_prefix(s: &str) -> &str {
     }
 }
 
+fn strip_module_prefixes(s: &str) -> String {
+    let mut clean = s.to_string();
+    for prefix in &["ast_", "lexer_", "parser_", "errors_", "token_"] {
+        clean = clean.replace(prefix, "");
+    }
+    clean
+}
+
 pub fn strip_brand_prefix(brand: &str) -> &str {
     if let Some(pos) = brand.rfind("__") {
         &brand[pos + 2..]
@@ -92,9 +100,9 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
         (Type::Index(e_struct, e_brand), Type::Index(a_struct, a_brand)) => {
             let e_norm = normalize_struct_name(e_struct, e_brand);
             let a_norm = normalize_struct_name(a_struct, a_brand);
-            let e_clean = strip_std_prefix(&e_norm);
-            let a_clean = strip_std_prefix(&a_norm);
-            if e_clean != a_clean && e_clean != "Any" && a_clean != "Any" {
+            let e_clean = strip_module_prefixes(strip_std_prefix(&e_norm));
+            let a_clean = strip_module_prefixes(strip_std_prefix(&a_norm));
+            if e_clean != a_clean && e_clean != "Any" && a_clean != "Any" { 
                 return false;
             }
             if e_brand.is_none()
@@ -111,8 +119,8 @@ pub fn types_match(expected: &Type, actual: &Type) -> bool {
         (Type::Struct(e_struct, e_brand), Type::Struct(a_struct, a_brand)) => {
             let e_norm = normalize_struct_name(e_struct, e_brand);
             let a_norm = normalize_struct_name(a_struct, a_brand);
-            let e_clean = strip_std_prefix(&e_norm);
-            let a_clean = strip_std_prefix(&a_norm);
+            let e_clean = strip_module_prefixes(strip_std_prefix(&e_norm));
+            let a_clean = strip_module_prefixes(strip_std_prefix(&a_norm));
             if e_clean != a_clean {
                 let is_vector_any = (e_clean.starts_with("Vector_")
                     && a_clean.starts_with("Vector_Any"))
