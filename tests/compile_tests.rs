@@ -6017,14 +6017,8 @@ fn test_self_hosted_type_serialization() {
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/type_serialization_test_entry.gst");
-    #[test]
-    fn test_self_hosted_type_serialization() {
-        gust_lexer::init_logging();
-        let resolver = gust_lexer::resolver::ModuleResolver::new();
-        let fs_impl = gust_lexer::resolver::RealFileSystem;
-        let entry_path = std::path::Path::new("compiler/type_serialization_test_entry.gst");
 
-        std::fs::create_dir_all("compiler").unwrap();
+    std::fs::create_dir_all("compiler").unwrap();
 
         let entry_source = "
             import 'token.gst' as token;
