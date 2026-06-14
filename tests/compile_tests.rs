@@ -2331,6 +2331,19 @@ fn test_self_hosted_import_scanner_old() {
         .output()
         .expect("GCC command failed");
 
+    if !compile_output.status.success() {
+        eprintln!("====================================================");
+        eprintln!("❌ C COMPILATION FAILED!");
+        eprintln!("====================================================");
+        eprintln!("--- GENERATED C CODE ---");
+        for (idx, line) in c_output.lines().enumerate() {
+            eprintln!("{:4} | {}", idx + 1, line);
+        }
+        eprintln!("------------------------");
+        eprintln!("STDERR:\n{}", String::from_utf8_lossy(&compile_output.stderr));
+        eprintln!("====================================================");
+    }
+
     assert!(
         compile_output.status.success(),
         "Compilation failed: {}",
