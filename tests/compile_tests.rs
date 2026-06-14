@@ -6017,10 +6017,16 @@ fn test_self_hosted_type_serialization() {
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/type_serialization_test_entry.gst");
+    #[test]
+    fn test_self_hosted_type_serialization() {
+        gust_lexer::init_logging();
+        let resolver = gust_lexer::resolver::ModuleResolver::new();
+        let fs_impl = gust_lexer::resolver::RealFileSystem;
+        let entry_path = std::path::Path::new("compiler/type_serialization_test_entry.gst");
 
-    std::fs::create_dir_all("compiler").unwrap();
+        std::fs::create_dir_all("compiler").unwrap();
 
-    let entry_source = "
+        let entry_source = "
             import 'token.gst' as token;
             import 'ast.gst' as ast;
             func main() {
@@ -6043,7 +6049,8 @@ fn test_self_hosted_type_serialization() {
                 mut t_branded: ast.Type[ctx];
                 t_branded.tag = 8;
                 t_branded.Struct.struct_name = 'MyNode';
-                t_branded.Struct.brand = os.ArenaAlloc(ctx);
+                mut brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
+                t_branded.Struct.brand = brand_idx;
                 unsafe {
                     mut brand_ptr := &ctx[t_branded.Struct.brand] as *str;
                     *brand_ptr = 'connCtx';
@@ -6053,7 +6060,8 @@ fn test_self_hosted_type_serialization() {
                 // 4. Raw Pointer Type
                 mut t_ptr: ast.Type[ctx];
                 t_ptr.tag = 9;
-                t_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+                mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+                t_ptr.RawPointer.inner = inner_idx;
                 ctx[t_ptr.RawPointer.inner].tag = 0;
                 os.LogStr(ast.serialize_type(t_ptr, ctx));
 
@@ -6061,7 +6069,8 @@ fn test_self_hosted_type_serialization() {
                 mut t_gen: ast.Type[ctx];
                 t_gen.tag = 10;
                 t_gen.Generic.name = 'std.Vector';
-                t_gen.Generic.args = os.ArenaAlloc(ctx);
+                mut args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+                t_gen.Generic.args = args_idx;
                 unsafe {
                     mut args := &ctx[t_gen.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
                     *args = std.VectorNew(ctx);
