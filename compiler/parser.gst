@@ -311,6 +311,8 @@ func cur_token_precedence(p: *Parser[ctx]) int {
     }
 }
 
+// parse_expression executes the full Pratt parsing loop under the consumed convention,
+// resolving nested binary expressions, member selectors, indexes, and function calls.
 func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.Expression[ctx], ctx] {
     unsafe {
         mut left := parse_prefix_expression(p, ctx);
