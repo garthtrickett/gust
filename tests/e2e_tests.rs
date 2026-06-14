@@ -3529,7 +3529,7 @@ fn test_e2e_logical_and_or_operators() {
 
 #[test]
 fn test_e2e_canonicalized_namespacing_compilation() {
-    use crate::resolver::{ModuleResolver, MockFileSystem};
+    use gust_lexer::resolver::{ModuleResolver, MockFileSystem};
     
     let lib_source = "
         type Helper struct {
