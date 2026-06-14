@@ -28,7 +28,7 @@ impl Parser {
         }
     }
 
-        fn get_type_ident(&self, t: &Type) -> String {
+    fn get_type_ident(&self, t: &Type) -> String {
         let base = match t {
             Type::Int => "int".to_string(),
             Type::Byte => "byte".to_string(),
@@ -704,7 +704,9 @@ impl Parser {
                         Type::Byte => "byte".to_string(),
                         Type::Bool => "bool".to_string(),
                         Type::Arena => "Arena".to_string(),
-                        Type::Generic(name, generic_args) => self.get_monomorphized_name(name, generic_args),
+                        Type::Generic(name, generic_args) => {
+                            self.get_monomorphized_name(name, generic_args)
+                        }
                         _ => "SessionNode".to_string(),
                     };
                     let brand = match &args[1] {
@@ -1454,14 +1456,31 @@ mod tests {
         fn parse_type_str(input: &str) -> Type {
             let lexer = Lexer::new(input);
             let mut parser = Parser::new(lexer);
-            parser.parse_type_signature().expect("Failed to parse type signature")
+            parser
+                .parse_type_signature()
+                .expect("Failed to parse type signature")
         }
 
-        assert_eq!(parse_type_str("Index[str, ctx]"), Type::Index("str".to_string(), Some("ctx".to_string())));
-        assert_eq!(parse_type_str("Index[int, ctx]"), Type::Index("int".to_string(), Some("ctx".to_string())));
-        assert_eq!(parse_type_str("Index[byte, ctx]"), Type::Index("byte".to_string(), Some("ctx".to_string())));
-        assert_eq!(parse_type_str("Index[bool, ctx]"), Type::Index("bool".to_string(), Some("ctx".to_string())));
-        assert_eq!(parse_type_str("Index[Arena, ctx]"), Type::Index("Arena".to_string(), Some("ctx".to_string())));
+        assert_eq!(
+            parse_type_str("Index[str, ctx]"),
+            Type::Index("str".to_string(), Some("ctx".to_string()))
+        );
+        assert_eq!(
+            parse_type_str("Index[int, ctx]"),
+            Type::Index("int".to_string(), Some("ctx".to_string()))
+        );
+        assert_eq!(
+            parse_type_str("Index[byte, ctx]"),
+            Type::Index("byte".to_string(), Some("ctx".to_string()))
+        );
+        assert_eq!(
+            parse_type_str("Index[bool, ctx]"),
+            Type::Index("bool".to_string(), Some("ctx".to_string()))
+        );
+        assert_eq!(
+            parse_type_str("Index[Arena, ctx]"),
+            Type::Index("Arena".to_string(), Some("ctx".to_string()))
+        );
     }
 
     #[test]
@@ -1469,10 +1488,12 @@ mod tests {
         fn parse_type_str(input: &str) -> Type {
             let lexer = Lexer::new(input);
             let mut parser = Parser::new(lexer);
-            parser.parse_type_signature().expect("Failed to parse type signature")
+            parser
+                .parse_type_signature()
+                .expect("Failed to parse type signature")
         }
 
-        assert_eq!( 
+        assert_eq!(
             parse_type_str("Index[std.Vector[int, ctx], ctx]"),
             Type::Index("std_Vector_int_ctx".to_string(), Some("ctx".to_string()))
         );
@@ -1679,6 +1700,9 @@ fn test_namespaced_type_signature_parsing() {
     use crate::typechecker::TypeChecker;
     let mut checker = TypeChecker::new();
     checker.current_prefix = "my_module__".to_string();
+    checker
+        .imports
+        .insert("std".to_string(), "std_".to_string());
 
     let resolved_t1 = checker.resolve_type(&t1).expect("Failed to resolve t1");
     assert_eq!(
@@ -1693,9 +1717,11 @@ fn test_namespaced_type_signature_parsing() {
     assert_eq!(t2, Type::Arena);
 
     let t3 = parse_type_str("std.HashMap[int, str, ctx]");
-    
+
     // Validate standard HashMap monomorphization as well
-    checker.imports.insert("std".to_string(), "std_".to_string());
+    checker
+        .imports
+        .insert("std".to_string(), "std_".to_string());
     let resolved_t3 = checker.resolve_type(&t3).expect("Failed to resolve t3");
     assert_eq!(
         resolved_t3,

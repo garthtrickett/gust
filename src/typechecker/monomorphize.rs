@@ -22,11 +22,10 @@ impl TypeChecker {
                 if key.contains("__GUST_MONO_RESOLVE_TEMP_") || key.contains("__PLACEHOLDER_") {
                     continue;
                 }
-                if let Some(stripped) = key.strip_prefix(&self.current_prefix) {
-                    if !stripped.is_empty() {
+                if let Some(stripped) = key.strip_prefix(&self.current_prefix)
+                    && !stripped.is_empty() {
                         local_names.push((stripped.to_string(), key.clone()));
                     }
-                }
             }
         }
         local_names.sort_by_key(|a| std::cmp::Reverse(a.0.len()));
@@ -470,6 +469,34 @@ impl TypeChecker {
         template_name: &str,
         args: &[Type],
     ) -> Result<Type, TypeError> {
+        let old_prefix = self.current_prefix.clone();
+        let old_imports = self.imports.clone();
+
+        let mut template_prefix = String::new();
+        if let Some(pos) = template_name.rfind("__") {
+            template_prefix = template_name[..pos + 2].to_string();
+        }
+
+        if !template_prefix.is_empty() {
+            self.current_prefix = template_prefix.clone();
+            if let Some(imports) = self.module_imports.get(&template_prefix) {
+                self.imports = imports.clone();
+            }
+        }
+
+        let result = self.monomorphize_impl(template_name, args);
+
+        self.current_prefix = old_prefix;
+        self.imports = old_imports;
+
+        result
+    }
+
+    pub(crate) fn monomorphize_impl(
+        &mut self,
+        template_name: &str,
+        args: &[Type],
+    ) -> Result<Type, TypeError> {
         if self.enum_templates.contains_key(template_name) {
             let template = self.enum_templates.get(template_name).cloned().unwrap();
 
@@ -510,11 +537,6 @@ impl TypeChecker {
             }
 
             if !self.struct_registry.contains_key(&concrete_name) {
-                let old_prefix = self.current_prefix.clone();
-                if let Some(pos) = template_name.rfind("__") {
-                    self.current_prefix = template_name[..pos + 2].to_string();
-                }
-
                 // Place empty/placeholder structural layout for cyclic definitions
                 self.struct_registry.insert(
                     concrete_name.clone(),
@@ -540,34 +562,15 @@ impl TypeChecker {
                     let mut variant_fields = HashMap::new();
                     for field in &variant.fields {
                         let substituted_type =
-                            match self.substitute_generics(&field.field_type, &substitution_map) {
-                                Ok(t) => t,
-                                Err(e) => {
-                                    self.current_prefix = old_prefix;
-                                    return Err(e);
-                                }
-                            };
-                        let resolved_field_type = match self.resolve_type(&substituted_type) {
-                            Ok(t) => t,
-                            Err(e) => {
-                                self.current_prefix = old_prefix;
-                                return Err(e);
-                            }
-                        };
+                            self.substitute_generics(&field.field_type, &substitution_map)?;
+                        let resolved_field_type = self.resolve_type(&substituted_type)?;
                         let resolved_field_type =
-                            match self.resolve_type_namespacing(&resolved_field_type) {
-                                Ok(t) => t,
-                                Err(e) => {
-                                    self.current_prefix = old_prefix;
-                                    return Err(e);
-                                }
-                            };
+                            self.resolve_type_namespacing(&resolved_field_type)?;
 
                         if let Type::Struct(ref struct_name, _) = resolved_field_type
                             && let Some(layout) = self.struct_registry.get(struct_name)
                             && layout.fields.len() > 2
                         {
-                            self.current_prefix = old_prefix;
                             return Err(TypeError {
                                 kind: TypeErrorKind::LargeEnumVariantPayload,
                                 message: format!(
@@ -597,8 +600,6 @@ impl TypeChecker {
                         Type::Struct(concrete_variant_struct_name, None),
                     );
                 }
-
-                self.current_prefix = old_prefix;
 
                 if let Some(layout) = self.struct_registry.get_mut(&concrete_name) {
                     layout.fields = enum_fields;
@@ -658,14 +659,6 @@ impl TypeChecker {
         }
 
         if !self.struct_registry.contains_key(&concrete_name) {
-            // Temporarily override the current_prefix to the template's defining namespace.
-            // This ensures that nested field types (such as module-local enum types) resolve
-            // within the context where the template was defined, rather than the caller's context.
-            let old_prefix = self.current_prefix.clone();
-            if let Some(pos) = template_name.rfind("__") {
-                self.current_prefix = template_name[..pos + 2].to_string();
-            }
-
             // First insert a placeholder to short-circuit recursive structural self-references [1]
             self.struct_registry.insert(
                 concrete_name.clone(),
@@ -678,24 +671,10 @@ impl TypeChecker {
             let mut concrete_fields = HashMap::new();
             for field in &template.fields {
                 let substituted_type =
-                    match self.substitute_generics(&field.field_type, &substitution_map) {
-                        Ok(t) => t,
-                        Err(e) => {
-                            self.current_prefix = old_prefix;
-                            return Err(e);
-                        }
-                    };
-                let resolved_field_type = match self.resolve_type(&substituted_type) {
-                    Ok(t) => t,
-                    Err(e) => {
-                        self.current_prefix = old_prefix;
-                        return Err(e);
-                    }
-                };
+                    self.substitute_generics(&field.field_type, &substitution_map)?;
+                let resolved_field_type = self.resolve_type(&substituted_type)?;
                 concrete_fields.insert(field.name.clone(), resolved_field_type);
             }
-
-            self.current_prefix = old_prefix;
 
             // Populate resolved layout fields [3]
             if let Some(layout) = self.struct_registry.get_mut(&concrete_name) {
@@ -757,6 +736,9 @@ impl TypeChecker {
     ) -> Result<Type, TypeError> {
         let substituted = match t {
             Type::Struct(name, brand) => {
+                if let Some(substituted) = map.get(name) {
+                    return Ok(substituted.clone());
+                }
                 let mut new_name = name.clone();
                 let mut parts: Vec<String> = new_name.split('_').map(|s| s.to_string()).collect();
                 let mut changed = false;
@@ -787,16 +769,28 @@ impl TypeChecker {
             }
             Type::Index(struct_name, brand) => {
                 let mut new_struct = struct_name.clone();
-                let mut parts: Vec<String> = new_struct.split('_').map(|s| s.to_string()).collect();
-                let mut changed = false;
-                for part in &mut parts {
-                    if let Some(substituted_type) = map.get(part) {
-                        *part = self.get_type_ident(substituted_type);
-                        changed = true;
+                if let Some(substituted) = map.get(&new_struct) {
+                    match substituted {
+                        Type::Struct(name, _) => {
+                            new_struct = name.clone();
+                        }
+                        _ => {
+                            new_struct = self.get_type_ident(substituted);
+                        }
                     }
-                }
-                if changed {
-                    new_struct = parts.join("_");
+                } else {
+                    let mut parts: Vec<String> =
+                        new_struct.split('_').map(|s| s.to_string()).collect();
+                    let mut changed = false;
+                    for part in &mut parts {
+                        if let Some(substituted_type) = map.get(part) {
+                            *part = self.get_type_ident(substituted_type);
+                            changed = true;
+                        }
+                    }
+                    if changed {
+                        new_struct = parts.join("_");
+                    }
                 }
 
                 let final_struct = if let Some(substituted) = map.get(&new_struct) {
@@ -944,7 +938,9 @@ mod tests {
     fn test_structural_namespacing_on_substitution() {
         let mut checker = TypeChecker::new();
         checker.current_prefix = "my_module__".to_string();
-        checker.imports.insert("std".to_string(), "std_".to_string());
+        checker
+            .imports
+            .insert("std".to_string(), "std_".to_string());
 
         checker.struct_registry.insert(
             "my_module__LocalStruct".to_string(),
@@ -970,7 +966,10 @@ mod tests {
         );
 
         let mut map = HashMap::new();
-        map.insert("T".to_string(), Type::Struct("LocalStruct".to_string(), None));
+        map.insert(
+            "T".to_string(),
+            Type::Struct("LocalStruct".to_string(), None),
+        );
         map.insert("ctx".to_string(), Type::Struct("ctx".to_string(), None));
 
         let res = checker.substitute_generics(&t_placeholder, &map);
@@ -983,7 +982,8 @@ mod tests {
         assert_eq!(
             substituted,
             Type::Struct(
-                "std_Vector_std_Vector_my_module__LocalStruct_my_module__ctx_my_module__ctx".to_string(),
+                "std_Vector_std_Vector_my_module__LocalStruct_my_module__ctx_my_module__ctx"
+                    .to_string(),
                 Some("my_module__ctx".to_string())
             )
         );

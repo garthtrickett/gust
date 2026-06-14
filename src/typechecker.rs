@@ -4,7 +4,7 @@ pub mod visitor;
 
 pub use types::{
     FunctionSignature, StructLayout, StructTemplate, Type, TypeError, TypeErrorKind,
-    expression_to_string, types_match, format_diagnostic,
+    expression_to_string, format_diagnostic, types_match,
 };
 
 use std::collections::{HashMap, HashSet};
@@ -24,13 +24,14 @@ pub struct TypeChecker {
     pub enum_registry: HashMap<String, Vec<String>>, // Added Enum Registry
     pub variable_origins: HashMap<String, HashSet<String>>, // Upgraded to Set-Based Union Tracker
     pub all_variable_origins: HashMap<String, HashSet<String>>,
-    pub function_registry: HashMap<String, FunctionSignature>,     // Function Registry
+    pub function_registry: HashMap<String, FunctionSignature>, // Function Registry
     pub(crate) expected_return_type: Option<Type>,
     pub(crate) current_function_return_origins: Option<HashSet<String>>, // Track return statement origins
     pub checked_results: HashSet<String>, // Added for Definite Check Rule
     pub(crate) current_function_inout_params: Option<Vec<String>>, // Track inout parameters for return checks
     pub(crate) current_function_local_vars: Option<HashSet<String>>, // Track local variables inside function body
     pub(crate) open_directories: HashSet<String>,
+    pub(crate) module_imports: HashMap<String, HashMap<String, String>>,
 }
 
 impl Default for TypeChecker {
@@ -40,7 +41,7 @@ impl Default for TypeChecker {
 }
 
 impl TypeChecker {
-    pub(crate) fn resolve_type_namespacing(&self, t: &Type) -> Result<Type, TypeError> { 
+    pub(crate) fn resolve_type_namespacing(&self, t: &Type) -> Result<Type, TypeError> {
         match t {
             Type::Struct(name, brand) => {
                 let resolved_name = self.resolve_namespaced_ident(name)?;
@@ -61,7 +62,7 @@ impl TypeChecker {
             Type::Generic(name, args) => {
                 let resolved_name = self.resolve_namespaced_ident(name)?;
                 let mut resolved_args = Vec::new();
-                for arg in args { 
+                for arg in args {
                     resolved_args.push(self.resolve_type_namespacing(arg)?);
                 }
                 Ok(Type::Generic(resolved_name, resolved_args))
@@ -71,14 +72,32 @@ impl TypeChecker {
     }
 
     pub(crate) fn resolve_namespaced_ident(&self, name: &str) -> Result<String, TypeError> {
-        let resolved = if name == "len" || name == "int" || name == "byte" || name == "bool" || name == "str" || name == "Arena" || name == "os_Arena" || name == "os.Arena" || name == "void" || name == "Any" || name == "SessionNode" || name == "APIRequest"
-            || name == "Vector_Any" || name == "HashMap_Any" || name == "Pool_Any" || name == "Mutex_Any" || name == "Channel_Any" || name == "ThreadLocalContext_Any" || name == "std_ThreadLocalContext_Any"
-            || name.starts_with("LookupResult_") || name.starts_with("CastResult_")
+        let resolved = if name == "len"
+            || name == "int"
+            || name == "byte"
+            || name == "bool"
+            || name == "str"
+            || name == "Arena"
+            || name == "os_Arena"
+            || name == "os.Arena"
+            || name == "void"
+            || name == "Any"
+            || name == "SessionNode"
+            || name == "APIRequest"
+            || name == "Vector_Any"
+            || name == "HashMap_Any"
+            || name == "Pool_Any"
+            || name == "Mutex_Any"
+            || name == "Channel_Any"
+            || name == "ThreadLocalContext_Any"
+            || name == "std_ThreadLocalContext_Any"
+            || name.starts_with("LookupResult_")
+            || name.starts_with("CastResult_")
         {
             name.to_string()
         } else if let Some(pos) = name.find('.') {
             let alias = &name[..pos];
-            let rest = &name[pos+1..];
+            let rest = &name[pos + 1..];
             if let Some(prefix) = self.imports.get(alias) {
                 format!("{}{}", prefix, rest)
             } else {
@@ -102,10 +121,8 @@ impl TypeChecker {
         );
 
         Ok(resolved)
-    }  
-}
+    }
 
-impl TypeChecker {
     pub fn is_linear(&self, t: &Type) -> bool {
         let mut visited = HashSet::new();
         self.is_linear_impl(t, &mut visited)
@@ -114,7 +131,9 @@ impl TypeChecker {
     fn is_linear_impl(&self, t: &Type, visited: &mut HashSet<String>) -> bool {
         match t {
             Type::Int | Type::Byte | Type::Bool | Type::Void | Type::Index(_, _) => false,
-            Type::Arena | Type::RawPointer(_) | Type::Slice(_) | Type::ByteSlice | Type::Str => true,
+            Type::Arena | Type::RawPointer(_) | Type::Slice(_) | Type::ByteSlice | Type::Str => {
+                true
+            }
             Type::Generic(_, _) => true,
             Type::Struct(name, _) => {
                 if name == "T" || name == "K" || name == "V" {
@@ -389,14 +408,14 @@ impl TypeChecker {
                 fields: rc_node_fields.clone(),
             },
         );
-        struct_templates.insert( 
+        struct_templates.insert(
             "std.RcNode".to_string(),
             StructTemplate {
                 generics: vec!["T".to_string()],
                 fields: rc_node_fields.clone(),
             },
         );
-        struct_templates.insert( 
+        struct_templates.insert(
             "std_RcNode".to_string(),
             StructTemplate {
                 generics: vec!["T".to_string()],
@@ -484,19 +503,17 @@ impl TypeChecker {
         );
 
         // Graph[T, ctx]
-        let graph_fields = vec![
-            crate::ast::FieldDef {
-                name: "nodes".to_string(),
-                field_type: Type::Generic(
-                    "std.Pool".to_string(),
-                    vec![
-                        Type::Struct("std_GraphNode_T_ctx".to_string(), None),
-                        Type::Struct("ctx".to_string(), None),
-                    ],
-                ),
-                span: crate::token::Span::dummy(),
-            },
-        ];
+        let graph_fields = vec![crate::ast::FieldDef {
+            name: "nodes".to_string(),
+            field_type: Type::Generic(
+                "std.Pool".to_string(),
+                vec![
+                    Type::Struct("std_GraphNode_T_ctx".to_string(), None),
+                    Type::Struct("ctx".to_string(), None),
+                ],
+            ),
+            span: crate::token::Span::dummy(),
+        }];
         struct_templates.insert(
             "Graph".to_string(),
             StructTemplate {
@@ -595,13 +612,11 @@ impl TypeChecker {
         );
 
         // os.Dir[ctx]
-        let os_dir_fields = vec![
-            crate::ast::FieldDef {
-                name: "handle".to_string(),
-                field_type: Type::RawPointer(Box::new(Type::Byte)),
-                span: crate::token::Span::dummy(),
-            },
-        ];
+        let os_dir_fields = vec![crate::ast::FieldDef {
+            name: "handle".to_string(),
+            field_type: Type::RawPointer(Box::new(Type::Byte)),
+            span: crate::token::Span::dummy(),
+        }];
         struct_templates.insert(
             "os.Dir".to_string(),
             StructTemplate {
@@ -742,6 +757,7 @@ impl TypeChecker {
             current_function_inout_params: None,
             current_function_local_vars: None,
             open_directories: HashSet::new(),
+            module_imports: HashMap::new(),
         }
     }
 
@@ -758,7 +774,8 @@ impl TypeChecker {
 
         // 2. Structures
         out.push_str("Structures:\n");
-        let mut sorted_structs: Vec<(&String, &StructLayout)> = self.struct_registry.iter().collect();
+        let mut sorted_structs: Vec<(&String, &StructLayout)> =
+            self.struct_registry.iter().collect();
         sorted_structs.sort_by(|a, b| a.0.cmp(b.0));
         for (name, layout) in sorted_structs {
             let brand_str = match &layout.brand {
@@ -788,7 +805,8 @@ impl TypeChecker {
 
         // 4. Functions
         out.push_str("Functions:\n");
-        let mut sorted_funcs: Vec<(&String, &FunctionSignature)> = self.function_registry.iter().collect();
+        let mut sorted_funcs: Vec<(&String, &FunctionSignature)> =
+            self.function_registry.iter().collect();
         sorted_funcs.sort_by(|a, b| a.0.cmp(b.0));
         for (name, sig) in sorted_funcs {
             let mut params_str = Vec::new();

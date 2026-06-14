@@ -5190,6 +5190,76 @@ fn test_codegen_emits_multi_file_line_directives() {
 }
 
 #[test]
+fn test_cross_module_template_namespacing_isolation() {
+    use std::fs;
+    let temp_dir = std::env::temp_dir().join("gust_test_namespaced_isolation");
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let main_path = temp_dir.join("main.gst");
+    let lib_path = temp_dir.join("lib.gst");
+
+    // lib.gst defines a non-generic Helper struct and a generic MyTemplate[T] having a field of type Helper
+    fs::write(
+        &lib_path,
+        "type Helper struct { value: int }\ntype MyTemplate[T] struct { item: T, helper_field: Helper }"
+    ).unwrap();
+
+    // main.gst imports lib.gst as lib and instantiates lib.MyTemplate[int]
+    fs::write(
+        &main_path,
+        "import \"lib.gst\" as lib;\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut x: lib.MyTemplate[int];\n}"
+    ).unwrap();
+
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = resolver.resolve(&main_path, &fs_impl);
+    assert!(res.is_ok());
+
+    let (order, modules) = res.unwrap();
+    let mut checker = TypeChecker::new();
+
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(
+                check_res.is_ok(),
+                "Failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        }
+    }
+
+    // Assert that the monomorphized MyTemplate struct was registered under lib__MyTemplate_int
+    assert!(checker.struct_registry.contains_key("lib__MyTemplate_int"));
+
+    // Verify its fields: helper_field must point to lib__Helper!
+    let layout = checker
+        .struct_registry
+        .get("lib__MyTemplate_int")
+        .expect("Missing layout for MyTemplate");
+    let helper_field_type = layout
+        .fields
+        .get("helper_field")
+        .expect("Missing helper_field");
+    assert_eq!(
+        *helper_field_type,
+        Type::Struct("lib__Helper".to_string(), None)
+    );
+
+    let _ = fs::remove_file(main_path);
+    let _ = fs::remove_file(lib_path);
+    let _ = fs::remove_dir(temp_dir);
+}
+
+#[test]
 fn test_self_hosted_parser_scaffold() {
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
@@ -5344,7 +5414,7 @@ fn test_self_hosted_primitive_index_parsing() {
         }
     }
 
-    let codegen = Codegen::new( 
+    let codegen = Codegen::new(
         checker.variable_types,
         checker.struct_registry,
         checker.function_registry,
@@ -5374,13 +5444,13 @@ fn test_self_hosted_primitive_index_parsing() {
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
     cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() { 
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
     let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
-        .output() 
+        .output()
         .expect("GCC command failed");
 
     assert!(
