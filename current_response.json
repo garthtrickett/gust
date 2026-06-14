@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve invalid prefix operator by using explicit false checks",
+  "summary": "fix: wrap start_span dereference inside unsafe block in parse_import_statement",
   "files": [
     {
       "file_path": "compiler/parser.gst",
-      "code_diff": "<<<<<<< SEARCH\n        if !cur_token_is(p, 4) { // String = 4\n=======\n        if cur_token_is(p, 4) == false { // String = 4\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n            if !cur_token_is(p, 2) { // Ident = 2\n=======\n            if cur_token_is(p, 2) == false { // Ident = 2\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\nfunc parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {\n    mut start_span := (*p).cur_token.span;\n    \n    unsafe {\n        if (*p).has_non_import_statement == 1 {\n=======\nfunc parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {\n    unsafe {\n        mut start_span := (*p).cur_token.span;\n        if (*p).has_non_import_statement == 1 {\n>>>>>>> REPLACE"
     }
   ]
 }

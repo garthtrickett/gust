@@ -561,9 +561,8 @@ func parse_program(p: *Parser[ctx], ctx: &Arena) ast.Program[ctx] {
 }
 
 func parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
-    mut start_span := (*p).cur_token.span;
-    
     unsafe {
+        mut start_span := (*p).cur_token.span;
         if (*p).has_non_import_statement == 1 {
             mut err: errors.CompilerError[Any];
             err.kind.tag = 1; // ParserError
