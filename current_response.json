@@ -1,9 +1,13 @@
 {
-  "summary": "fix: resolve scratchpad escape analysis violation in ast_repeat_spaces",
+  "summary": "feat: implement ast_join_strings helper in self-hosted ast",
   "files": [
     {
       "file_path": "compiler/ast.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc ast_repeat_spaces(indent: int, ctx: &Arena) str {\n    mut spaces := \"\";\n    mut i := 0;\n    while i < indent {\n        spaces = std.Concat(spaces, \"  \");\n        i = i + 1;\n    }\n    return spaces;\n}\n=======\nfunc ast_repeat_spaces(indent: int, ctx: &Arena) str {\n    mut spaces := \"\";\n    mut i := 0;\n    while i < indent {\n        spaces = std.Concat(spaces, \"  \");\n        i = i + 1;\n    }\n    return std.Clone(ctx, spaces);\n}\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\nfunc ast_repeat_spaces(indent: int, ctx: &Arena) str {\n    mut spaces := \"\";\n    mut i := 0;\n    while i < indent {\n        spaces = std.Concat(spaces, \"  \");\n        i = i + 1;\n    }\n    return std.Clone(ctx, spaces);\n}\n=======\nfunc ast_repeat_spaces(indent: int, ctx: &Arena) str {\n    mut spaces := \"\";\n    mut i := 0;\n    while i < indent {\n        spaces = std.Concat(spaces, \"  \");\n        i = i + 1;\n    }\n    return std.Clone(ctx, spaces);\n}\n\nfunc ast_join_strings(vec: std.Vector[str, ctx], sep: str, ctx: &Arena) str {\n    mut result := \"\";\n    mut i := 0;\n    while i < len(vec) {\n        if i > 0 {\n            result = std.Concat(result, sep);\n        }\n        result = std.Concat(result, vec[i]);\n        i = i + 1;\n    }\n    return std.Clone(ctx, result);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/compile_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n            mut spaces := ast.ast_repeat_spaces(2, ctx);\n            os.LogStr(spaces);\n        }\n    \";\n=======\n            mut spaces := ast.ast_repeat_spaces(2, ctx);\n            os.LogStr(spaces);\n\n            mut strings: std.Vector[str, ctx] := std.VectorNew(ctx);\n            strings.Push(\"hello\");\n            strings.Push(\"world\");\n            mut joined := ast.ast_join_strings(strings, \", \", ctx);\n            os.LogStr(joined);\n        }\n    \";\n>>>>>>> REPLACE"
     }
   ]
 }

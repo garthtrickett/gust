@@ -215,3 +215,16 @@ func ast_repeat_spaces(indent: int, ctx: &Arena) str {
     }
     return std.Clone(ctx, spaces);
 }
+
+func ast_join_strings(vec: std.Vector[str, ctx], sep: str, ctx: &Arena) str {
+    mut result := "";
+    mut i := 0;
+    while i < len(vec) {
+        if i > 0 {
+            result = std.Concat(result, sep);
+        }
+        result = std.Concat(result, vec[i]);
+        i = i + 1;
+    }
+    return std.Clone(ctx, result);
+}

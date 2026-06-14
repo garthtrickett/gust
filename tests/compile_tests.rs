@@ -3416,6 +3416,12 @@ fn test_self_hosted_ast_compilation() {
 
             mut spaces := ast.ast_repeat_spaces(2, ctx);
             os.LogStr(spaces);
+
+            mut strings: std.Vector[str, ctx] := std.VectorNew(ctx);
+            strings.Push("hello");
+            strings.Push("world");
+            mut joined := ast.ast_join_strings(strings, ", ", ctx);
+            os.LogStr(joined);
         }
     ";
     std::fs::write(&entry_path, entry_source).unwrap();
