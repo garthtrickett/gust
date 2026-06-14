@@ -81,7 +81,7 @@ The patching tool uses Tree-sitter to validate the syntax of JavaScript, TypeScr
 COMMANDS
 RUST_LOG=debug cargo test -- --nocapture --test-threads=1 > to.log 2>&1
 RUST_LOG=debug cargo test test_ast_serialization_helpers -- --nocapture > to.log 2>&1
-RUST_LOG=debug cargo test test_ast_serialization_helpers -- --nocapture 
+RUST_LOG=debug cargo test test_namespaced_generic_type_signature_mismatch_reproduction -- --nocapture 
 cargo clippy --fix --allow-dirty
 cc gust_output.c -o gust_program && ./gust_program
 cargo run -- --test

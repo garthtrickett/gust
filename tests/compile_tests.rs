@@ -6550,7 +6550,8 @@ fn test_namespaced_fallback_type_matching() {
 }
 
 #[test]
-fn test_namespaced_generic_type_signature_mismatch_reproduction() { 
+fn test_namespaced_generic_type_signature_mismatch_reproduction() {
+    gust_lexer::init_logging();
     use std::fs;
     let temp_dir = std::env::temp_dir().join("gust_test_namespaced_reproduction");
     fs::create_dir_all(&temp_dir).unwrap();
@@ -6596,8 +6597,10 @@ fn test_namespaced_generic_type_signature_mismatch_reproduction() {
             } else {
                 format!("{}__", stem)
             };
-            let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok());
+            if let Err(err) = checker.check_module(&module.program, &prefix) {
+                let diagnostic = gust_lexer::typechecker::format_diagnostic(&module.source, &err);
+                panic!("Typechecking failed on {:?}:\n{}", path, diagnostic);
+            }
         }
     }
 
