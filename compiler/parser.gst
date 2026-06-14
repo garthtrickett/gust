@@ -214,8 +214,11 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                     mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[t_idx].tag = 7; // Index = 7
                     ctx[t_idx].Index.struct_name = "SessionNode";
-                    ctx[t_idx].Index.brand = os.ArenaAlloc(ctx);
-                    ctx[ctx[t_idx].Index.brand] = std.Clone(*ctx, brand_name);
+                    
+                    mut brand_idx := os.ArenaAlloc(ctx);
+                    ctx[t_idx].Index.brand = brand_idx as Index[str, ctx];
+                    mut dest_ptr := &ctx[brand_idx] as *str;
+                    *dest_ptr = std.Clone(*ctx, brand_name);
                     return t_idx;
                 } else if len(args_vec) == 2 {
                     mut arg0 := args_vec[0];
@@ -231,8 +234,11 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                     mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[t_idx].tag = 7; // Index = 7
                     ctx[t_idx].Index.struct_name = std.Clone(*ctx, struct_name);
-                    ctx[t_idx].Index.brand = os.ArenaAlloc(ctx);
-                    ctx[ctx[t_idx].Index.brand] = std.Clone(*ctx, brand_name);
+                    
+                    mut brand_idx := os.ArenaAlloc(ctx);
+                    ctx[t_idx].Index.brand = brand_idx as Index[str, ctx];
+                    mut dest_ptr := &ctx[brand_idx] as *str;
+                    *dest_ptr = std.Clone(*ctx, brand_name);
                     return t_idx;
                 }
             }
@@ -259,8 +265,11 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                     mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[t_idx].tag = 8; // Struct = 8
                     ctx[t_idx].Struct.struct_name = base_name;
-                    ctx[t_idx].Struct.brand = os.ArenaAlloc(ctx);
-                    ctx[ctx[t_idx].Struct.brand] = std.Clone(*ctx, brand_name);
+                    
+                    mut brand_idx := os.ArenaAlloc(ctx);
+                    ctx[t_idx].Struct.brand = brand_idx as Index[str, ctx];
+                    mut dest_ptr := &ctx[brand_idx] as *str;
+                    *dest_ptr = std.Clone(*ctx, brand_name);
                     return t_idx;
                 } else {
                     mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);

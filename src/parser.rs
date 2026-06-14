@@ -173,7 +173,7 @@ impl Parser {
             _ => {
                 self.has_non_import_statement = true;
                 let expr = self.parse_expression(1)?;
-                if self.peek_token.token_type == TokenType::Eq { 
+                if self.peek_token.token_type == TokenType::Eq {
                     self.next_token();
                     self.next_token();
                     let value = self.parse_expression(1)?;
@@ -184,7 +184,7 @@ impl Parser {
                         value,
                         span: self.merge_spans(start_span, end_span),
                     })
-                } else { 
+                } else {
                     let span = expr.span();
                     Some(Statement::Expression(expr, span))
                 }
@@ -194,20 +194,22 @@ impl Parser {
 
     fn parse_import_statement(&mut self) -> Option<Statement> {
         let start_span = self.cur_token.span;
-        
+
         if self.has_non_import_statement {
-            self.error_at_current("Syntax Error: Imports must be at the beginning of the program".to_string());
+            self.error_at_current(
+                "Syntax Error: Imports must be at the beginning of the program".to_string(),
+            );
         }
-        
+
         self.next_token(); // consume 'import'
-        
+
         if self.cur_token.token_type != TokenType::String {
             self.error_at_current("Expected string literal specifying the import path".to_string());
             return None;
         }
         let path = self.cur_token.literal.clone();
         self.next_token(); // consume path string
-        
+
         let mut alias = None;
         if self.cur_token.token_type == TokenType::As {
             self.next_token(); // consume 'as'
@@ -218,7 +220,7 @@ impl Parser {
             alias = Some(self.cur_token.literal.clone());
             self.next_token(); // consume alias identifier
         }
-        
+
         let end_span = self.cur_token.span;
         tracing::debug!(
             "📥 Parsed Import Statement: Path '{}', Alias: '{:?}'",
@@ -533,7 +535,7 @@ impl Parser {
             && self.cur_token.token_type != TokenType::Eof
         {
             let before_errors = self.errors.len();
-            if let Some(stmt) = self.parse_statement() { 
+            if let Some(stmt) = self.parse_statement() {
                 statements.push(stmt);
                 if self.peek_token.token_type == TokenType::Semicolon {
                     self.next_token();
@@ -871,19 +873,25 @@ impl Parser {
                         fields.push(self.cur_token.literal.clone());
                         self.next_token();
                     } else {
-                        self.error_at_current("Expected identifier in match pattern destructuring".to_string());
+                        self.error_at_current(
+                            "Expected identifier in match pattern destructuring".to_string(),
+                        );
                         return None;
                     }
 
                     if self.cur_token.token_type == TokenType::Comma {
                         self.next_token();
                     } else if self.cur_token.token_type != TokenType::RBrace {
-                        self.error_at_current("Expected ',' or '}' in match pattern destructuring".to_string());
+                        self.error_at_current(
+                            "Expected ',' or '}' in match pattern destructuring".to_string(),
+                        );
                         return None;
                     }
                 }
                 if self.cur_token.token_type != TokenType::RBrace {
-                    self.error_at_current("Expected closing brace '}' in match pattern destructuring".to_string());
+                    self.error_at_current(
+                        "Expected closing brace '}' in match pattern destructuring".to_string(),
+                    );
                     return None;
                 }
                 self.next_token(); // consume '}'
@@ -1269,7 +1277,10 @@ mod tests {
             "((a == b) != c)"
         );
         assert_eq!(format_expr(&parse_expr_str("a < b > c")), "((a < b) > c)");
-        assert_eq!(format_expr(&parse_expr_str("a <= b >= c")), "((a <= b) >= c)");
+        assert_eq!(
+            format_expr(&parse_expr_str("a <= b >= c")),
+            "((a <= b) >= c)"
+        );
     }
 
     #[test]
@@ -1358,12 +1369,15 @@ mod tests {
 
         if let Statement::Match { cases, .. } = &program.statements[0] {
             assert_eq!(cases.len(), 3);
-            
+
             assert_eq!(cases[0].variant_name, "Circle");
             assert_eq!(cases[0].fields, vec!["radius".to_string()]);
 
             assert_eq!(cases[1].variant_name, "Rectangle");
-            assert_eq!(cases[1].fields, vec!["width".to_string(), "height".to_string()]);
+            assert_eq!(
+                cases[1].fields,
+                vec!["width".to_string(), "height".to_string()]
+            );
 
             assert_eq!(cases[2].variant_name, "Point");
             assert!(cases[2].fields.is_empty());
@@ -1495,14 +1509,14 @@ mod tests {
         if let Statement::Import { path, alias, .. } = &program.statements[0] {
             assert_eq!(path, "std");
             assert_eq!(alias.as_deref(), Some("standard"));
-        } else { 
+        } else {
             panic!("Expected first statement to be import");
         }
 
         if let Statement::Import { path, alias, .. } = &program.statements[1] {
             assert_eq!(path, "os");
             assert_eq!(alias, &None);
-        } else { 
+        } else {
             panic!("Expected second statement to be import");
         }
     }
@@ -1515,7 +1529,11 @@ mod tests {
         let _program = parser.parse_program();
 
         assert_eq!(parser.errors.len(), 1);
-        assert!(parser.errors[0].message.contains("Imports must be at the beginning of the program"));
+        assert!(
+            parser.errors[0]
+                .message
+                .contains("Imports must be at the beginning of the program")
+        );
     }
 
     #[test]
@@ -1615,6 +1633,12 @@ fn test_namespaced_type_signature_parsing() {
     } else {
         panic!("Expected Type::Generic");
     }
+
+    let t4 = parse_type_str("*int");
+    assert!(matches!(t4, Type::RawPointer(inner) if *inner == Type::Int));
+
+    let t5 = parse_type_str("[]byte");
+    assert!(matches!(t5, Type::Slice(inner) if *inner == Type::Byte));
 }
 
 #[test]
@@ -1648,7 +1672,12 @@ fn test_parser_else_if_desugaring() {
         assert!(alternative.is_some());
         let alt = alternative.as_ref().unwrap();
         assert_eq!(alt.statements.len(), 1);
-        if let Statement::If { consequence, alternative: nested_alt, .. } = &alt.statements[0] {
+        if let Statement::If {
+            consequence,
+            alternative: nested_alt,
+            ..
+        } = &alt.statements[0]
+        {
             assert_eq!(consequence.statements.len(), 1);
             assert!(nested_alt.is_some());
             let nested_alt_block = nested_alt.as_ref().unwrap();
