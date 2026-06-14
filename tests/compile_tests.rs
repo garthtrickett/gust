@@ -3798,6 +3798,169 @@ fn test_self_hosted_domain_model_e2e() {
 }
 
 #[test]
+fn test_self_hosted_program_serialization_e2e() {
+    gust_lexer::init_logging();
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/serialization_e2e_entry.gst");
+
+    // Create compiler directory if it doesn't exist
+    std::fs::create_dir_all("compiler").unwrap();
+
+    let entry_source = r#"
+        import "token.gst" as token;
+        import "lexer.gst" as lexer;
+        import "parser.gst" as parser;
+        import "ast.gst" as ast;
+
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut source := "import 'std' as standard;\ntype MyStruct struct {\n    val: int\n}\nfunc add(x: int) int {\n    return x + 1;\n}\nfunc main() {\n    mut x := 42;\n    while x < 50 {\n        x = x + 1;\n    }\n}";
+
+            mut l: lexer.Lexer[ctx];
+            lexer.init_lexer(&l, source);
+
+            mut p: parser.Parser[ctx];
+            parser.init_parser(&p, &l, ctx);
+
+            mut prog := parser.parse_program(&p, ctx);
+            
+            mut serialized := ast.serialize_program(&prog, 0, ctx);
+            os.LogStr(serialized);
+        }
+    "#;
+    std::fs::write(&entry_path, entry_source).unwrap();
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, mut modules) = res.unwrap();
+
+    let mut checker = gust_lexer::typechecker::TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        } 
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        } 
+    }
+
+    let codegen = gust_lexer::codegen::Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let count = 77777;
+
+    let c_filename = format!("gust_serialization_e2e_{:?}_{}.c", thread_id, count);
+    let bin_filename = format!("gust_serialization_e2e_{:?}_{}.bin", thread_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd.arg("-o").arg(&bin_path).output();
+
+    let compile_success = match compile_output {
+        Ok(output) => {
+            if !output.status.success() {
+                println!("--- GCC Compilation Failed ---");
+                println!("--- GENERATED C CODE ---");
+                for (idx, line) in c_output.lines().enumerate() {
+                    println!("{:4} | {}", idx + 1, line);
+                }
+                println!("------------------------");
+                println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
+                println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
+            }
+            output.status.success()
+        }
+        Err(e) => {
+            let _ = std::fs::remove_file(&c_path);
+            panic!("CC failed: {:?}", e);
+        }
+    };
+    assert!(
+        compile_success,
+        "C compilation of self-hosted Program & Statement serialization failed!"
+    );
+
+    let run_output = std::process::Command::new(&bin_path)
+        .output()
+        .expect("Failed to execute binary");
+
+    // Clean up temporary files
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_file(entry_path);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+
+    let expected = r#"Program:
+  Import: std as standard
+  StructDecl: MyStruct <>
+    FieldDef: val : Int
+  FunctionDecl: add -> Int
+    Parameter: x : Int
+    BlockStatement:
+      Return:
+        Binary: +
+          Identifier: x
+          Integer: 1
+  FunctionDecl: main -> Void
+    BlockStatement:
+      VarDecl: x (mut=true) : <inferred>
+        Integer: 42
+      While:
+        Binary: <
+          Identifier: x
+          Integer: 50
+        BlockStatement:
+          Assignment:
+            Identifier: x
+            Binary: +
+              Identifier: x
+              Integer: 1"#;
+
+    assert_eq!(stdout_str.trim(), expected.trim());
+}
+
+#[test]
 fn test_generational_arena_template_typechecking() {
     let source = "
         type Node struct {

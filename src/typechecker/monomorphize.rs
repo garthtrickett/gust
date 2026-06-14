@@ -109,11 +109,10 @@ impl TypeChecker {
         if matches!(element, Type::Str | Type::Slice(_) | Type::ByteSlice) {
             return true;
         }
-        if let Type::Struct(name, _) = element {
-            if name == "str" {
+        if let Type::Struct(name, _) = element
+            && name == "str" {
                 return true;
             }
-        }
         if let Some(ib) = self.get_type_brand(element)
             && strip_brand_prefix(&ib) == strip_brand_prefix(ob)
         {

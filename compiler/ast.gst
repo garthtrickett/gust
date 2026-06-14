@@ -490,3 +490,262 @@ func serialize_expression(expr_idx: Index[Expression[ctx], ctx], indent: int, ct
     }
     return "UnknownExpr";
 }
+
+func serialize_block_statement(block_idx: Index[BlockStatement[ctx], ctx], indent: int, ctx: &Arena) str {
+    unsafe {
+        if block_idx == empty[Index[BlockStatement[ctx], ctx]] {
+            return "";
+        }
+        mut block := ctx[block_idx];
+        mut pad := ast_repeat_spaces(indent, ctx);
+        mut res := std.Concat(pad, "BlockStatement:\n");
+        
+        mut statements_vec := &ctx[block.statements] as *std.Vector[Statement[ctx], ctx];
+        mut i := 0;
+        while i < len(*statements_vec) {
+            mut stmt_idx: Index[Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[stmt_idx] = (*statements_vec)[i];
+            mut stmt_str := serialize_statement(stmt_idx, indent + 1, ctx);
+            res = std.Concat(res, stmt_str);
+            i = i + 1;
+        }
+        return std.Clone(ctx, res);
+    }
+}
+
+func serialize_variant_def(v: VariantDef[ctx], indent: int, ctx: &Arena) str {
+    unsafe {
+        mut pad := ast_repeat_spaces(indent, ctx);
+        mut res := std.Concat(pad, "VariantDef: ");
+        res = std.Concat(res, v.name);
+        res = std.Concat(res, "\n");
+        
+        mut fields_vec := &ctx[v.fields] as *std.Vector[FieldDef[ctx], ctx];
+        mut fields_str := ast_join_fields(*fields_vec, indent + 1, ctx);
+        res = std.Concat(res, fields_str);
+        return std.Clone(ctx, res);
+    }
+}
+
+func serialize_match_case(case_val: MatchCase[ctx], indent: int, ctx: &Arena) str {
+    unsafe {
+        mut pad := ast_repeat_spaces(indent, ctx);
+        mut fields_vec := &ctx[case_val.fields] as *std.Vector[str, ctx];
+        mut joined_fields := ast_join_strings(*fields_vec, ", ", ctx);
+        
+        mut res := std.Concat(pad, "MatchCase: ");
+        res = std.Concat(res, case_val.variant_name);
+        res = std.Concat(res, " [");
+        res = std.Concat(res, joined_fields);
+        res = std.Concat(res, "],\n");
+        
+        mut body_str := serialize_block_statement(case_val.body, indent + 1, ctx);
+        res = std.Concat(res, body_str);
+        return std.Clone(ctx, res);
+    }
+}
+
+func serialize_statement(stmt_idx: Index[Statement[ctx], ctx], indent: int, ctx: &Arena) str {
+    unsafe {
+        if stmt_idx == empty[Index[Statement[ctx], ctx]] {
+            return "";
+        }
+        mut stmt := ctx[stmt_idx];
+        mut pad := ast_repeat_spaces(indent, ctx);
+
+        if stmt.tag == 0 { // Import
+            mut alias_str := stmt.Import.alias;
+            if std.str_eq(alias_str, "") {
+                alias_str = "<none>";
+            }
+            mut res := std.Concat(pad, "Import: ");
+            res = std.Concat(res, stmt.Import.path);
+            res = std.Concat(res, " as ");
+            res = std.Concat(res, alias_str);
+            res = std.Concat(res, "\n");
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 1 { // StructDecl
+            mut generics_vec := &ctx[stmt.StructDecl.generics] as *std.Vector[str, ctx];
+            mut joined_generics := ast_join_strings(*generics_vec, ", ", ctx);
+            mut res := std.Concat(pad, "StructDecl: ");
+            res = std.Concat(res, stmt.StructDecl.name);
+            res = std.Concat(res, " <");
+            res = std.Concat(res, joined_generics);
+            res = std.Concat(res, ">\n");
+            
+            mut fields_vec := &ctx[stmt.StructDecl.fields] as *std.Vector[FieldDef[ctx], ctx];
+            mut fields_str := ast_join_fields(*fields_vec, indent + 1, ctx);
+            res = std.Concat(res, fields_str);
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 2 { // EnumDecl
+            mut generics_vec := &ctx[stmt.EnumDecl.generics] as *std.Vector[str, ctx];
+            mut joined_generics := ast_join_strings(*generics_vec, ", ", ctx);
+            mut res := std.Concat(pad, "EnumDecl: ");
+            res = std.Concat(res, stmt.EnumDecl.name);
+            res = std.Concat(res, " <");
+            res = std.Concat(res, joined_generics);
+            res = std.Concat(res, ">\n");
+            
+            mut variants_vec := &ctx[stmt.EnumDecl.variants] as *std.Vector[VariantDef[ctx], ctx];
+            mut i := 0;
+            while i < len(*variants_vec) {
+                mut variant_str := serialize_variant_def((*variants_vec)[i], indent + 1, ctx);
+                res = std.Concat(res, variant_str);
+                i = i + 1;
+            }
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 3 { // FunctionDecl
+            mut return_type_str := serialize_type(ctx[stmt.FunctionDecl.return_type], ctx);
+            mut res := std.Concat(pad, "FunctionDecl: ");
+            res = std.Concat(res, stmt.FunctionDecl.name);
+            res = std.Concat(res, " -> ");
+            res = std.Concat(res, return_type_str);
+            res = std.Concat(res, "\n");
+            
+            mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[Parameter[ctx], ctx];
+            mut params_str := ast_join_params(*params_vec, indent + 1, ctx);
+            res = std.Concat(res, params_str);
+            
+            mut body_str := serialize_block_statement(stmt.FunctionDecl.body, indent + 1, ctx);
+            res = std.Concat(res, body_str);
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 4 { // VarDecl
+            mut type_str := "<inferred>";
+            if stmt.VarDecl.var_type != empty[Index[Type[ctx], ctx]] {
+                type_str = serialize_type(ctx[stmt.VarDecl.var_type], ctx);
+            }
+            mut mut_str := "false";
+            if stmt.VarDecl.is_mut == 1 {
+                mut_str = "true";
+            }
+            mut res := std.Concat(pad, "VarDecl: ");
+            res = std.Concat(res, stmt.VarDecl.name);
+            res = std.Concat(res, " (mut=");
+            res = std.Concat(res, mut_str);
+            res = std.Concat(res, ") : ");
+            res = std.Concat(res, type_str);
+            res = std.Concat(res, "\n");
+            
+            if stmt.VarDecl.value != empty[Index[Expression[ctx], ctx]] {
+                mut value_str := serialize_expression(stmt.VarDecl.value, indent + 1, ctx);
+                res = std.Concat(res, value_str);
+            }
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 5 { // Assignment
+            mut res := std.Concat(pad, "Assignment:\n");
+            mut left_str := serialize_expression(stmt.Assignment.left, indent + 1, ctx);
+            mut val_str := serialize_expression(stmt.Assignment.value, indent + 1, ctx);
+            res = std.Concat(res, left_str);
+            res = std.Concat(res, val_str);
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 6 { // While
+            mut res := std.Concat(pad, "While:\n");
+            mut cond_str := serialize_expression(stmt.While.condition, indent + 1, ctx);
+            mut body_str := serialize_block_statement(stmt.While.body, indent + 1, ctx);
+            res = std.Concat(res, cond_str);
+            res = std.Concat(res, body_str);
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 7 { // If
+            mut res := std.Concat(pad, "If:\n");
+            mut cond_str := serialize_expression(stmt.If.condition, indent + 1, ctx);
+            mut cons_str := serialize_block_statement(stmt.If.consequence, indent + 1, ctx);
+            res = std.Concat(res, cond_str);
+            res = std.Concat(res, cons_str);
+            
+            if stmt.If.alternative != empty[Index[BlockStatement[ctx], ctx]] {
+                res = std.Concat(res, pad);
+                res = std.Concat(res, "Else:\n");
+                mut alt_str := serialize_block_statement(stmt.If.alternative, indent + 1, ctx);
+                res = std.Concat(res, alt_str);
+            }
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 8 { // Match
+            mut res := std.Concat(pad, "Match:\n");
+            mut expr_str := serialize_expression(stmt.Match.expression, indent + 1, ctx);
+            res = std.Concat(res, expr_str);
+            
+            mut cases_vec := &ctx[stmt.Match.cases] as *std.Vector[MatchCase[ctx], ctx];
+            mut i := 0;
+            while i < len(*cases_vec) {
+                mut case_str := serialize_match_case((*cases_vec)[i], indent + 1, ctx);
+                res = std.Concat(res, case_str);
+                i = i + 1;
+            }
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 9 { // Guard
+            mut mut_str := "false";
+            if stmt.Guard.is_mut == 1 {
+                mut_str = "true";
+            }
+            mut res := std.Concat(pad, "Guard: ");
+            res = std.Concat(res, stmt.Guard.name);
+            res = std.Concat(res, " (mut=");
+            res = std.Concat(res, mut_str);
+            res = std.Concat(res, ")\n");
+            
+            mut val_str := serialize_expression(stmt.Guard.value, indent + 1, ctx);
+            mut else_str := serialize_block_statement(stmt.Guard.else_body, indent + 1, ctx);
+            res = std.Concat(res, val_str);
+            res = std.Concat(res, else_str);
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 10 { // UnsafeBlock
+            mut res := std.Concat(pad, "UnsafeBlock:\n");
+            mut body_str := serialize_block_statement(stmt.UnsafeBlock.body, indent + 1, ctx);
+            res = std.Concat(res, body_str);
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 11 { // Defer
+            mut res := std.Concat(pad, "Defer:\n");
+            mut expr_str := serialize_expression(stmt.Defer.expr, indent + 1, ctx);
+            res = std.Concat(res, expr_str);
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 12 { // Return
+            mut res := std.Concat(pad, "Return:\n");
+            if stmt.Return.expr == empty[Index[Expression[ctx], ctx]] {
+                mut void_pad := ast_repeat_spaces(indent + 1, ctx);
+                res = std.Concat(res, void_pad);
+                res = std.Concat(res, "<void>\n");
+            } else {
+                mut expr_str := serialize_expression(stmt.Return.expr, indent + 1, ctx);
+                res = std.Concat(res, expr_str);
+            }
+            return std.Clone(ctx, res);
+        }
+        if stmt.tag == 13 { // Expression
+            mut res := std.Concat(pad, "ExpressionStatement:\n");
+            mut expr_str := serialize_expression(stmt.Expression.expr, indent + 1, ctx);
+            res = std.Concat(res, expr_str);
+            return std.Clone(ctx, res);
+        }
+    }
+    return "UnknownStmt";
+}
+
+func serialize_program(prog: *Program[ctx], indent: int, ctx: &Arena) str {
+    unsafe {
+        mut pad := ast_repeat_spaces(indent, ctx);
+        mut res := std.Concat(pad, "Program:\n");
+        
+        mut statements_vec := &ctx[(*prog).statements] as *std.Vector[Statement[ctx], ctx];
+        mut i := 0;
+        while i < len(*statements_vec) {
+            mut stmt_idx: Index[Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[stmt_idx] = (*statements_vec)[i];
+            mut stmt_str := serialize_statement(stmt_idx, indent + 1, ctx);
+            res = std.Concat(res, stmt_str);
+            i = i + 1;
+        }
+        return std.Clone(ctx, res);
+    }
+}

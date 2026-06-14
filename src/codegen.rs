@@ -45,12 +45,11 @@ fn erase_struct_name_with_registry(
         let ns_suffix = format!("__{}", clean_b);
         if erased.ends_with(&ns_suffix) {
             let pos = erased.len() - ns_suffix.len();
-            if let Some(start_pos) = erased[..pos].rfind('_') {
-                if !erased[..pos].ends_with("__") {
+            if let Some(start_pos) = erased[..pos].rfind('_')
+                && !erased[..pos].ends_with("__") {
                     erased.truncate(start_pos);
                     stripped_brand = true;
                 }
-            }
         }
 
         if !stripped_brand {
