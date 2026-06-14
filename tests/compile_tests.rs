@@ -6548,3 +6548,104 @@ fn test_namespaced_fallback_type_matching() {
     ";
     assert!(check_program(source).is_ok());
 }
+
+#[test]
+fn test_namespaced_generic_type_signature_mismatch_reproduction() { 
+    use std::fs;
+    let temp_dir = std::env::temp_dir().join("gust_test_namespaced_reproduction");
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let main_path = temp_dir.join("main.gst");
+    let lib_path = temp_dir.join("lib.gst");
+
+    let lib_source = "
+        type MyGeneric[ctx] enum {
+            Variant { val: int }
+        }
+        func process(ctx: &Arena) {
+            mut args_vec := empty[*int] as *std.Vector[MyGeneric[ctx], ctx];
+        }
+    ";
+
+    let main_source = "
+        import \"lib.gst\" as lib;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            lib.process(ctx);
+        }
+    ";
+
+    fs::write(&lib_path, lib_source).expect("Failed to write lib.gst");
+    fs::write(&main_path, main_source).expect("Failed to write main.gst");
+
+    use gust_lexer::resolver::{ModuleResolver, RealFileSystem};
+    let resolver = ModuleResolver::new();
+    let fs_impl = RealFileSystem;
+    let res = resolver.resolve(&main_path, &fs_impl);
+    assert!(res.is_ok());
+    let (order, mut modules) = res.unwrap();
+
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(check_res.is_ok());
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&modules_for_codegen);
+
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let c_filename = format!("gust_e2e_repro_{:?}_{}.c", thread_id, process_id);
+    let bin_filename = format!("gust_e2e_repro_{:?}_{}.bin", thread_id, process_id);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd.arg("-o").arg(&bin_path).output().expect("Failed to compile C code");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+    let _ = fs::remove_file(&main_path);
+    let _ = fs::remove_file(&lib_path);
+    let _ = fs::remove_dir(temp_dir);
+
+    assert!(
+        compile_output.status.success(),
+        "Reproduction compilation failed. STDOUT: {}, STDERR: {}",
+        String::from_utf8_lossy(&compile_output.stdout),
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+}
