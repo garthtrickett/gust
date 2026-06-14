@@ -133,27 +133,172 @@ func synchronize(p: *Parser[ctx]) {
 
 func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx] {
     unsafe {
-        if cur_token_is(p, 2) { // Ident = 2
-            mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-            mut literal := (*p).cur_token.literal;
-            if std.str_eq(literal, "int") {
-                ctx[t_idx].tag = 0; // Int = 0
-            } else if std.str_eq(literal, "bool") {
-                ctx[t_idx].tag = 2; // Bool = 2
-            } else {
-                ctx[t_idx].tag = 8; // Struct = 8
-                ctx[t_idx].Struct.struct_name = std.Clone(*ctx, literal);
-                ctx[t_idx].Struct.brand = empty[Index[str, ctx]];
+        if cur_token_is(p, 21) || cur_token_is(p, 17) { // Asterisk = 21, Ampersand = 17
+            next_token(p);
+            mut target := parse_type_signature(p, ctx);
+            if target == empty[Index[ast.Type[ctx], ctx]] {
+                return empty[Index[ast.Type[ctx], ctx]];
             }
-            next_token(p);
-            return t_idx;
-        } else if cur_token_is(p, 45) { // Bool = 45
             mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[t_idx].tag = 2; // Bool = 2
-            next_token(p);
+            ctx[t_idx].tag = 9; // RawPointer = 9
+            ctx[t_idx].RawPointer.inner = target;
             return t_idx;
         }
-        return empty[Index[ast.Type[ctx], ctx]];
+
+        if cur_token_is(p, 15) { // LBracket = 15
+            next_token(p);
+            if cur_token_is(p, 16) == false { // RBracket = 16
+                return empty[Index[ast.Type[ctx], ctx]];
+            }
+            next_token(p);
+            mut target := parse_type_signature(p, ctx);
+            if target == empty[Index[ast.Type[ctx], ctx]] {
+                return empty[Index[ast.Type[ctx], ctx]];
+            }
+            mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[t_idx].tag = 6; // Slice = 6
+            ctx[t_idx].Slice.inner = target;
+            return t_idx;
+        }
+
+        if cur_token_is(p, 2) == false && cur_token_is(p, 45) == false {
+            return empty[Index[ast.Type[ctx], ctx]];
+        }
+
+        mut base_name := std.Clone(*ctx, (*p).cur_token.literal);
+        next_token(p);
+
+        while cur_token_is(p, 7) { // Dot = 7
+            next_token(p);
+            if cur_token_is(p, 2) == false { // Ident = 2
+                return empty[Index[ast.Type[ctx], ctx]];
+            }
+            base_name = std.Concat(base_name, ".");
+            base_name = std.Concat(base_name, (*p).cur_token.literal);
+            next_token(p);
+        }
+
+        if cur_token_is(p, 15) { // LBracket = 15
+            next_token(p);
+            mut args_vec: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+
+            if cur_token_is(p, 16) == false { // RBracket = 16
+                mut first_arg := parse_type_signature(p, ctx);
+                if first_arg == empty[Index[ast.Type[ctx], ctx]] {
+                    return empty[Index[ast.Type[ctx], ctx]];
+                }
+                args_vec.Push(ctx[first_arg]);
+
+                while cur_token_is(p, 8) { // Comma = 8
+                    next_token(p);
+                    mut next_arg := parse_type_signature(p, ctx);
+                    if next_arg == empty[Index[ast.Type[ctx], ctx]] {
+                        return empty[Index[ast.Type[ctx], ctx]];
+                    }
+                    args_vec.Push(ctx[next_arg]);
+                }
+            }
+
+            if cur_token_is(p, 16) == false { // RBracket = 16
+                return empty[Index[ast.Type[ctx], ctx]];
+            }
+            next_token(p);
+
+            if std.str_eq(base_name, "Index") {
+                if len(args_vec) == 1 {
+                    mut arg0 := args_vec[0];
+                    mut brand_name := "";
+                    if arg0.tag == 8 { // Struct = 8
+                        brand_name = arg0.Struct.struct_name;
+                    }
+                    mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[t_idx].tag = 7; // Index = 7
+                    ctx[t_idx].Index.struct_name = "SessionNode";
+                    ctx[t_idx].Index.brand = os.ArenaAlloc(ctx);
+                    ctx[ctx[t_idx].Index.brand] = std.Clone(*ctx, brand_name);
+                    return t_idx;
+                } else if len(args_vec) == 2 {
+                    mut arg0 := args_vec[0];
+                    mut arg1 := args_vec[1];
+                    mut struct_name := "SessionNode";
+                    if arg0.tag == 8 { // Struct = 8
+                        struct_name = arg0.Struct.struct_name;
+                    }
+                    mut brand_name := "";
+                    if arg1.tag == 8 { // Struct = 8
+                        brand_name = arg1.Struct.struct_name;
+                    }
+                    mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[t_idx].tag = 7; // Index = 7
+                    ctx[t_idx].Index.struct_name = std.Clone(*ctx, struct_name);
+                    ctx[t_idx].Index.brand = os.ArenaAlloc(ctx);
+                    ctx[ctx[t_idx].Index.brand] = std.Clone(*ctx, brand_name);
+                    return t_idx;
+                }
+            }
+
+            if len(args_vec) == 1 {
+                mut arg0 := args_vec[0];
+                mut brand_name := "";
+                mut has_brand := 0;
+                if arg0.tag == 8 { // Struct = 8
+                    brand_name = arg0.Struct.struct_name;
+                    has_brand = 1;
+                }
+                
+                mut is_builtin_brand := 0;
+                if has_brand == 1 {
+                    if std.str_eq(brand_name, "int") || std.str_eq(brand_name, "byte") ||
+                       std.str_eq(brand_name, "str") || std.str_eq(brand_name, "Arena") ||
+                       std.str_eq(brand_name, "os_Arena") {
+                        is_builtin_brand = 1;
+                    }
+                }
+
+                if has_brand == 1 && is_builtin_brand == 0 {
+                    mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[t_idx].tag = 8; // Struct = 8
+                    ctx[t_idx].Struct.struct_name = base_name;
+                    ctx[t_idx].Struct.brand = os.ArenaAlloc(ctx);
+                    ctx[ctx[t_idx].Struct.brand] = std.Clone(*ctx, brand_name);
+                    return t_idx;
+                } else {
+                    mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[t_idx].tag = 10; // Generic = 10
+                    ctx[t_idx].Generic.name = base_name;
+                    ctx[t_idx].Generic.args = os.ArenaAlloc(ctx);
+                    mut dest_args := &ctx[ctx[t_idx].Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+                    *dest_args = args_vec;
+                    return t_idx;
+                }
+            }
+
+            mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[t_idx].tag = 10; // Generic = 10
+            ctx[t_idx].Generic.name = base_name;
+            ctx[t_idx].Generic.args = os.ArenaAlloc(ctx);
+            mut dest_args := &ctx[ctx[t_idx].Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            *dest_args = args_vec;
+            return t_idx;
+        }
+
+        mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+        if std.str_eq(base_name, "int") {
+            ctx[t_idx].tag = 0; // Int = 0
+        } else if std.str_eq(base_name, "byte") {
+            ctx[t_idx].tag = 1; // Byte = 1
+        } else if std.str_eq(base_name, "bool") {
+            ctx[t_idx].tag = 2; // Bool = 2
+        } else if std.str_eq(base_name, "Arena") || std.str_eq(base_name, "os_Arena") || std.str_eq(base_name, "os.Arena") {
+            ctx[t_idx].tag = 4; // Arena = 4
+        } else if std.str_eq(base_name, "str") {
+            ctx[t_idx].tag = 5; // Str = 5
+        } else {
+            ctx[t_idx].tag = 8; // Struct = 8
+            ctx[t_idx].Struct.struct_name = base_name;
+            ctx[t_idx].Struct.brand = empty[Index[str, ctx]];
+        }
+        return t_idx;
     }
 }
 
