@@ -980,4 +980,75 @@ mod tests {
             Type::Struct("my_module__LocalStruct".to_string(), None)
         );
     }
+
+    #[test]
+    fn test_substitute_nested_generics() {
+        let mut checker = TypeChecker::new();
+        checker.current_prefix = "my_module__".to_string();
+
+        checker.struct_registry.insert(
+            "my_module__MyNode".to_string(),
+            crate::typechecker::StructLayout {
+                brand: None,
+                fields: HashMap::new(),
+            },
+        );
+
+        // std.Vector[T, ctx]
+        let t_generic = Type::Generic(
+            "std.Vector".to_string(),
+            vec![
+                Type::Struct("T".to_string(), None),
+                Type::Struct("ctx".to_string(), None),
+            ],
+        );
+
+        let mut map = HashMap::new();
+        map.insert("T".to_string(), Type::Struct("MyNode".to_string(), None));
+        map.insert("ctx".to_string(), Type::Struct("ctx".to_string(), None));
+
+        let res = checker.substitute_generics(&t_generic, &map);
+        assert!(res.is_ok());
+        let substituted = res.unwrap();
+
+        assert_eq!(
+            substituted,
+            Type::Struct(
+                "std_Vector_my_module__MyNode_my_module__ctx".to_string(),
+                Some("my_module__ctx".to_string())
+            )
+        );
+    }
+
+    #[test]
+    fn test_substitute_pointer_and_slice() {
+        let mut checker = TypeChecker::new();
+        checker.current_prefix = "my_module__".to_string();
+
+        checker.struct_registry.insert(
+            "my_module__Item".to_string(),
+            crate::typechecker::StructLayout {
+                brand: None,
+                fields: HashMap::new(),
+            },
+        );
+
+        // *[]T
+        let t_ptr = Type::RawPointer(Box::new(Type::Slice(Box::new(Type::Struct("T".to_string(), None)))));
+
+        let mut map = HashMap::new();
+        map.insert("T".to_string(), Type::Struct("Item".to_string(), None));
+
+        let res = checker.substitute_generics(&t_ptr, &map);
+        assert!(res.is_ok());
+        let substituted = res.unwrap();
+
+        assert_eq!(
+            substituted,
+            Type::RawPointer(Box::new(Type::Slice(Box::new(Type::Struct(
+                "my_module__Item".to_string(),
+                None
+            )))))
+        );
+    }
 }
