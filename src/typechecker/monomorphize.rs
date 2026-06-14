@@ -270,9 +270,7 @@ impl TypeChecker {
             }
             Type::Struct(name, brand) => {
                 let clean_name = strip_brand_prefix(name);
-                if name.starts_with("LookupResult_")
-                    && !self.struct_registry.contains_key(name)
-                {
+                if name.starts_with("LookupResult_") && !self.struct_registry.contains_key(name) {
                     let target_struct = name
                         .strip_prefix("LookupResult_")
                         .unwrap_or(name)
@@ -294,12 +292,9 @@ impl TypeChecker {
                     );
                 }
 
-                if name.starts_with("CastResult_") && !self.struct_registry.contains_key(name)
-                {
-                    let target_struct = name
-                        .strip_prefix("CastResult_")
-                        .unwrap_or(name)
-                        .to_string();
+                if name.starts_with("CastResult_") && !self.struct_registry.contains_key(name) {
+                    let target_struct =
+                        name.strip_prefix("CastResult_").unwrap_or(name).to_string();
                     let v_type = if target_struct == "int" {
                         Type::Int
                     } else {
@@ -343,22 +338,51 @@ impl TypeChecker {
                         let parts: Vec<&str> = normalized.split('_').collect();
 
                         let mut args = Vec::new();
-                        for part in parts {
-                            let clean_part = part.replace("@", "__");
-                            if clean_part == "int" {
-                                args.push(Type::Int);
-                            } else if clean_part == "byte" {
-                                args.push(Type::Byte);
-                            } else if clean_part == "bool" {
-                                args.push(Type::Bool);
-                            } else if clean_part == "str" {
-                                args.push(Type::Str);
-                            } else {
-                                args.push(Type::Struct(clean_part, None));
+                        let num_generics = if self.struct_templates.contains_key(&template) {
+                            self.struct_templates.get(&template).unwrap().generics.len()
+                        } else {
+                            self.enum_templates.get(&template).unwrap().generics.len()
+                        };
+
+                        if parts.len() > num_generics {
+                            let num_to_join = parts.len() - num_generics + 1;
+                            let joined_first_arg =
+                                parts[..num_to_join].join("_").replace("@", "__");
+                            args.push(Type::Struct(joined_first_arg, None));
+                            for part in &parts[num_to_join..] {
+                                let clean_part = part.replace("@", "__");
+                                if clean_part == "int" {
+                                    args.push(Type::Int);
+                                } else if clean_part == "byte" {
+                                    args.push(Type::Byte);
+                                } else if clean_part == "bool" {
+                                    args.push(Type::Bool);
+                                } else if clean_part == "str" {
+                                    args.push(Type::Str);
+                                } else {
+                                    args.push(Type::Struct(clean_part, None));
+                                }
+                            }
+                        } else {
+                            for part in parts {
+                                let clean_part = part.replace("@", "__");
+                                if clean_part == "int" {
+                                    args.push(Type::Int);
+                                } else if clean_part == "byte" {
+                                    args.push(Type::Byte);
+                                } else if clean_part == "bool" {
+                                    args.push(Type::Bool);
+                                } else if clean_part == "str" {
+                                    args.push(Type::Str);
+                                } else {
+                                    args.push(Type::Struct(clean_part, None));
+                                }
                             }
                         }
 
-                        let _ = self.monomorphize(&template, &args);
+                        if let Err(ref err) = self.monomorphize(&template, &args) {
+                            tracing::error!("❌ Fallback monomorphization of '{}' failed: {:?}", template, err);
+                        }
                     }
                 }
 
@@ -376,25 +400,13 @@ impl TypeChecker {
                 }
             }
             Type::Index(struct_name, brand) => {
-                let resolved_struct_name = struct_name.clone();
-                if let Some(brand_name) = brand {
-                    if self.struct_templates.contains_key(&resolved_struct_name)
-                        || self.enum_templates.contains_key(&resolved_struct_name)
-                    {
-                        let args = vec![Type::Struct(brand_name.clone(), None)];
-                        let monomorphized_struct =
-                            self.monomorphize(&resolved_struct_name, &args)?;
-                        if let Type::Struct(concrete_name, _) = monomorphized_struct {
-                            Ok(Type::Index(concrete_name, Some(brand_name.clone())))
-                        } else {
-                            Ok(Type::Index(resolved_struct_name, Some(brand_name.clone())))
-                        }
-                    } else {
-                        Ok(Type::Index(resolved_struct_name, Some(brand_name.clone())))
-                    }
-                } else {
-                    Ok(Type::Index(resolved_struct_name, None))
-                }
+                let resolved_inner =
+                    self.resolve_type(&Type::Struct(struct_name.clone(), brand.clone()))?;
+                let concrete_name = match resolved_inner {
+                    Type::Struct(name, _) => name,
+                    _ => struct_name.clone(),
+                };
+                Ok(Type::Index(concrete_name, brand.clone()))
             }
             Type::RawPointer(inner) => {
                 let resolved = self.resolve_type(inner)?;
@@ -926,9 +938,8 @@ mod tests {
         assert_eq!(
             substituted,
             Type::Struct(
-                "std_Vector_std_Vector_my_module__LocalStruct_my_module__ctx_my_module__ctx"
-                    .to_string(),
-                Some("my_module__ctx".to_string())
+                "std_Vector_std_Vector_my_module__LocalStruct_ctx_ctx".to_string(),
+                Some("ctx".to_string())
             )
         );
     }
@@ -972,8 +983,8 @@ mod tests {
         assert_eq!(
             substituted,
             Type::Struct(
-                "std_Vector_my_module__MyNode_my_module__ctx".to_string(),
-                Some("my_module__ctx".to_string())
+                "std_Vector_my_module__MyNode_ctx".to_string(),
+                Some("ctx".to_string())
             )
         );
     }
@@ -1159,12 +1170,12 @@ mod tests {
         assert!(res.is_ok());
         let substituted = res.unwrap();
 
-        // Verify that the fully-qualified flat name std_Vector_lib_module__MyNode_caller__ctx is natively generated!
+        // Verify that the fully-qualified flat name std_Vector_lib_module__MyNode_ctx is natively generated!
         assert_eq!(
             substituted,
             Type::Struct(
-                "std_Vector_lib_module__MyNode_caller__ctx".to_string(),
-                Some("caller__ctx".to_string())
+                "std_Vector_lib_module__MyNode_ctx".to_string(),
+                Some("ctx".to_string())
             )
         );
     }

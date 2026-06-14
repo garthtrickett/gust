@@ -2340,7 +2340,10 @@ fn test_self_hosted_import_scanner_old() {
             eprintln!("{:4} | {}", idx + 1, line);
         }
         eprintln!("------------------------");
-        eprintln!("STDERR:\n{}", String::from_utf8_lossy(&compile_output.stderr));
+        eprintln!(
+            "STDERR:\n{}",
+            String::from_utf8_lossy(&compile_output.stderr)
+        );
         eprintln!("====================================================");
     }
 
@@ -3760,8 +3763,13 @@ fn test_self_hosted_domain_model_e2e() {
         Ok(output) => {
             if !output.status.success() {
                 println!("--- GCC Compilation Failed ---");
-                println!("STDOUT:\\n{}", String::from_utf8_lossy(&output.stdout));
-                println!("STDERR:\\n{}", String::from_utf8_lossy(&output.stderr));
+                println!("--- GENERATED C CODE ---");
+                for (idx, line) in c_output.lines().enumerate() {
+                    println!("{:4} | {}", idx + 1, line);
+                }
+                println!("------------------------");
+                println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
+                println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
             }
             output.status.success()
         }
@@ -6652,7 +6660,11 @@ fn test_namespaced_generic_type_signature_mismatch_reproduction() {
     if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
-    let compile_output = cmd.arg("-o").arg(&bin_path).output().expect("Failed to compile C code");
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Failed to compile C code");
 
     let _ = fs::remove_file(&c_path);
     let _ = fs::remove_file(&bin_path);

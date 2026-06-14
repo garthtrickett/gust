@@ -1707,10 +1707,7 @@ fn test_namespaced_type_signature_parsing() {
     let resolved_t1 = checker.resolve_type(&t1).expect("Failed to resolve t1");
     assert_eq!(
         resolved_t1,
-        Type::Struct(
-            "std_Vector_int_my_module__ctx".to_string(),
-            Some("my_module__ctx".to_string())
-        )
+        Type::Struct("std_Vector_int_ctx".to_string(), Some("ctx".to_string()))
     );
 
     let t2 = parse_type_str("os.Arena");
@@ -1726,8 +1723,8 @@ fn test_namespaced_type_signature_parsing() {
     assert_eq!(
         resolved_t3,
         Type::Struct(
-            "std_HashMap_int_str_my_module__ctx".to_string(),
-            Some("my_module__ctx".to_string())
+            "std_HashMap_int_str_ctx".to_string(),
+            Some("ctx".to_string())
         )
     );
     if let Type::Generic(name, args) = t3 {

@@ -104,12 +104,46 @@ impl TypeChecker {
                 let normalized = suffix.replace("__", "@");
                 let parts: Vec<&str> = normalized.split('_').collect();
                 let mut resolved_parts = Vec::new();
+                let mut active_prefix = self.current_prefix.clone();
                 for part in parts {
                     let clean_part = part.replace("@", "__");
-                    let resolved_part = self.resolve_namespaced_ident(&clean_part)?;
-                    resolved_parts.push(resolved_part);
+                    if let Some(import_prefix) = self.imports.get(&clean_part) {
+                        active_prefix = import_prefix.clone();
+                    } else {
+                        let temp_resolved = if clean_part == "len"
+                            || clean_part == "int"
+                            || clean_part == "byte"
+                            || clean_part == "bool"
+                            || clean_part == "str"
+                            || clean_part == "Arena"
+                            || clean_part == "os_Arena"
+                            || clean_part == "os.Arena"
+                            || clean_part == "void"
+                            || clean_part == "Any"
+                            || clean_part == "SessionNode"
+                            || clean_part == "APIRequest"
+                            || clean_part == "Vector_Any"
+                            || clean_part == "HashMap_Any"
+                            || clean_part == "Pool_Any"
+                            || clean_part == "Mutex_Any"
+                            || clean_part == "Channel_Any"
+                            || clean_part == "ThreadLocalContext_Any"
+                            || clean_part == "std_ThreadLocalContext_Any"
+                            || clean_part == "ctx"
+                            || clean_part == "connCtx"
+                            || clean_part == "arena"
+                            || clean_part == "a"
+                        {
+                            clean_part.clone()
+                        } else {
+                            format!("{}{}", active_prefix, clean_part)
+                        };
+                        resolved_parts.push(temp_resolved);
+                        active_prefix = self.current_prefix.clone();
+                    }
                 }
-                return Ok(format!("{}{}", prefix, resolved_parts.join("_")));
+                let joined = format!("{}{}", prefix, resolved_parts.join("_")).replace("___", "__");
+                return Ok(joined);
             }
         }
 
@@ -132,6 +166,10 @@ impl TypeChecker {
             || name == "Channel_Any"
             || name == "ThreadLocalContext_Any"
             || name == "std_ThreadLocalContext_Any"
+            || name == "ctx"
+            || name == "connCtx"
+            || name == "arena"
+            || name == "a"
         {
             name.to_string()
         } else if let Some(pos) = name.find('.') {
@@ -159,7 +197,9 @@ impl TypeChecker {
             if final_resolved.starts_with(&start_pattern) && !final_resolved.contains(prefix) {
                 final_resolved = final_resolved.replacen(&start_pattern, prefix, 1);
             } else if let Some(pos) = final_resolved.find(&mid_pattern) {
-                if !final_resolved.contains(prefix) {
+                let is_standard_monomorphized =
+                    final_resolved.starts_with("std_") || final_resolved.starts_with("os_");
+                if is_standard_monomorphized && !final_resolved.contains(prefix) {
                     let replacement = format!("_{}", prefix);
                     final_resolved.replace_range(pos..pos + mid_pattern.len(), &replacement);
                 }
