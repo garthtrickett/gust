@@ -3324,8 +3324,7 @@ fn test_e2e_self_hosted_module_resolver() {
         std::fs::read_to_string("compiler/token.gst").expect("compiler/token.gst missing");
     let lexer_src =
         std::fs::read_to_string("compiler/lexer.gst").expect("compiler/lexer.gst missing");
-    let ast_src =
-        std::fs::read_to_string("compiler/ast.gst").expect("compiler/ast.gst missing");
+    let ast_src = std::fs::read_to_string("compiler/ast.gst").expect("compiler/ast.gst missing");
     let mut errors_src =
         std::fs::read_to_string("compiler/errors.gst").expect("compiler/errors.gst missing");
     let resolver_src =
@@ -3434,7 +3433,10 @@ fn test_e2e_self_hosted_module_resolver() {
     let count = 8888;
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_resolver_{:?}_{}_{}.c", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_e2e_resolver_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
     let bin_filename = format!(
         "gust_e2e_resolver_{:?}_{}_{}.bin",
         thread_id, process_id, count
@@ -3545,7 +3547,7 @@ fn test_e2e_canonicalized_namespacing_compilation() {
             helper_field: Helper
         }
     ";
-    
+
     let main_source = "
         import \"lib.gst\" as lib;
         func main() {
@@ -3590,7 +3592,7 @@ fn test_e2e_canonicalized_namespacing_compilation() {
     for path in &order {
         if let Some(module) = modules.get_mut(path) {
             modules_for_codegen.push((path.clone(), module.program.clone()));
-        } 
+        }
     }
 
     let codegen = Codegen::new(
@@ -3612,8 +3614,14 @@ fn test_e2e_canonicalized_namespacing_compilation() {
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
-    let c_filename = format!("gust_e2e_isolation_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_e2e_isolation_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_e2e_isolation_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_e2e_isolation_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -3645,10 +3653,14 @@ fn test_e2e_canonicalized_namespacing_compilation() {
             panic!("CC failed: {:?}", e);
         }
     };
-    assert!(compile_success, "C compilation of cross-module template namespacing isolation failed!");
+    assert!(
+        compile_success,
+        "C compilation of cross-module template namespacing isolation failed!"
+    );
 
     let run_output = Command::new(&bin_path).output().expect("Execution failed");
-    let stdout_str = String::from_utf8(run_output.stdout).expect("Captured output is not valid UTF-8");
+    let stdout_str =
+        String::from_utf8(run_output.stdout).expect("Captured output is not valid UTF-8");
 
     let _ = fs::remove_file(&c_path);
     let _ = fs::remove_file(&bin_path);
@@ -3657,4 +3669,173 @@ fn test_e2e_canonicalized_namespacing_compilation() {
     let _ = fs::remove_dir(temp_dir);
 
     assert_eq!(stdout_str.trim(), "42\n100");
+}
+
+#[test]
+fn test_self_hosted_parser_ast_dump() {
+    gust_lexer::init_logging();
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/ast_dump_entry.gst");
+
+    // Create compiler directory if it doesn't exist
+    std::fs::create_dir_all("compiler").unwrap();
+
+    // Write the entry program for the bootstrapped AST dumper
+    let entry_source = r#"
+        import "token.gst" as token;
+        import "lexer.gst" as lexer;
+        import "parser.gst" as parser;
+        import "ast.gst" as ast;
+
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            os.SetThreadScratch(ctx);
+
+            mut args := os.Args(ctx);
+            if len(args) < 2 {
+                os.LogStr("Usage: ast_dump <file>");
+                os.Exit(1);
+            }
+            mut file_path := args[1];
+            mut source := os.ReadFile(ctx, file_path);
+            if len(source) == 0 {
+                os.LogStr("Error: empty file or failed to read");
+                os.Exit(1);
+            }
+
+            mut l: lexer.Lexer[ctx];
+            lexer.init_lexer(&l, source);
+
+            mut p: parser.Parser[ctx];
+            parser.init_parser(&p, &l, ctx);
+
+            mut prog := parser.parse_program(&p, ctx);
+            mut serialized := ast.serialize_program(&prog, 0, ctx);
+            os.LogStr(serialized);
+        }
+    "#;
+    std::fs::write(&entry_path, entry_source).unwrap();
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, mut modules) = res.unwrap();
+
+    let mut checker = gust_lexer::typechecker::TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = 99999;
+
+    let c_filename = format!("gust_ast_dump_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_ast_dump_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC compile command failed");
+
+    if !compile_output.status.success() {
+        println!("--- GCC Compilation Failed ---");
+        println!(
+            "STDOUT:\n{}",
+            String::from_utf8_lossy(&compile_output.stdout)
+        );
+        println!(
+            "STDERR:\n{}",
+            String::from_utf8_lossy(&compile_output.stderr)
+        );
+    }
+    assert!(
+        compile_output.status.success(),
+        "C compilation of self-hosted parser/dumper failed"
+    );
+
+    // Perform validation on both compiler/token.gst and compiler/errors.gst
+    let target_files = vec!["compiler/token.gst", "compiler/errors.gst"];
+    for target in target_files {
+        // 1. Capture bootstrapped AST serialization
+        let run_output = Command::new(&bin_path)
+            .arg(target)
+            .output()
+            .expect("Failed to execute bootstrapped AST dumper");
+
+        assert!(
+            run_output.status.success(),
+            "Bootstrapped binary failed on {}",
+            target
+        );
+        let bootstrapped_stdout =
+            String::from_utf8(run_output.stdout).expect("Invalid UTF-8 output");
+
+        // 2. Capture Rust prototype AST serialization
+        let rust_res = resolver
+            .resolve(std::path::Path::new(target), &fs_impl)
+            .unwrap();
+        let entry_module = rust_res.1.get(rust_res.0.last().unwrap()).unwrap();
+        let expected_stdout = entry_module.program.serialize(0);
+
+        // 3. Compare byte-by-byte (whitespace trimmed)
+        assert_eq!(
+            bootstrapped_stdout.trim(),
+            expected_stdout.trim(),
+            "Byte-by-byte AST dump mismatch on {}",
+            target
+        );
+    }
+
+    // Clean up temporary files
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_file(entry_path);
 }
