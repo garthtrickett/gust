@@ -8,7 +8,6 @@ type ParseResult struct {
     Val: token.Token[Any]
 }
 
-type Parser[ctx] struct {
 type Parser[ctx] struct { 
     lexer: *lexer.Lexer[Any],
     cur_token: token.Token[Any],
