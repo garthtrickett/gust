@@ -340,88 +340,90 @@ impl TypeChecker {
                         let normalized = suffix.replace("__", "@");
                         let parts: Vec<&str> = normalized.split('_').collect();
 
-                        let mut args = Vec::new();
                         let num_generics = if self.struct_templates.contains_key(&template) {
                             self.struct_templates.get(&template).unwrap().generics.len()
                         } else {
                             self.enum_templates.get(&template).unwrap().generics.len()
                         };
 
-                        if parts.len() == 2 && num_generics == 2 { 
-                            let first_part = parts[0].replace("@", "__");
-                            let second_part = parts[1].replace("@", "__");
-                            let is_generic_template =
-                                self.struct_templates.contains_key(&first_part)
-                                    || self.enum_templates.contains_key(&first_part);
-                            if is_generic_template {
-                                let reconstructed = format!("{}_{}", first_part, second_part);
-                                args.push(Type::Struct(reconstructed, None));
+                        if parts.len() >= num_generics {
+                            let mut args = Vec::new();
+                            if parts.len() == 2 && num_generics == 2 { 
+                                let first_part = parts[0].replace("@", "__");
+                                let second_part = parts[1].replace("@", "__");
+                                let is_generic_template =
+                                    self.struct_templates.contains_key(&first_part)
+                                        || self.enum_templates.contains_key(&first_part);
+                                if is_generic_template {
+                                    let reconstructed = format!("{}_{}", first_part, second_part);
+                                    args.push(Type::Struct(reconstructed, None));
+                                } else {
+                                    if first_part == "int" {
+                                        args.push(Type::Int);
+                                    } else if first_part == "byte" {
+                                        args.push(Type::Byte);
+                                    } else if first_part == "bool" {
+                                        args.push(Type::Bool);
+                                    } else if first_part == "str" {
+                                        args.push(Type::Str);
+                                    } else {
+                                        args.push(Type::Struct(first_part, None));
+                                    }
+                                }
+                                if second_part == "int" {
+                                    args.push(Type::Int);
+                                } else if second_part == "byte" {
+                                    args.push(Type::Byte);
+                                } else if second_part == "bool" {
+                                    args.push(Type::Bool);
+                                } else if second_part == "str" {
+                                    args.push(Type::Str);
+                                } else { 
+                                    args.push(Type::Struct(second_part, None));
+                                }
+                            } else if parts.len() > num_generics {
+                                let num_to_join = parts.len() - num_generics + 1;
+                                let joined_first_arg = 
+                                    parts[..num_to_join].join("_").replace("@", "__");
+                                args.push(Type::Struct(joined_first_arg, None));
+                                for part in &parts[num_to_join..] {
+                                    let clean_part = part.replace("@", "__");
+                                    if clean_part == "int" {
+                                        args.push(Type::Int);
+                                    } else if clean_part == "byte" {
+                                        args.push(Type::Byte);
+                                    } else if clean_part == "bool" {
+                                        args.push(Type::Bool);
+                                    } else if clean_part == "str" {
+                                        args.push(Type::Str);
+                                    } else {
+                                        args.push(Type::Struct(clean_part, None));
+                                    }
+                                }
                             } else {
-                                if first_part == "int" {
-                                    args.push(Type::Int);
-                                } else if first_part == "byte" {
-                                    args.push(Type::Byte);
-                                } else if first_part == "bool" {
-                                    args.push(Type::Bool);
-                                } else if first_part == "str" {
-                                    args.push(Type::Str);
-                                } else {
-                                    args.push(Type::Struct(first_part, None));
+                                for part in parts {
+                                    let clean_part = part.replace("@", "__");
+                                    if clean_part == "int" {
+                                        args.push(Type::Int);
+                                    } else if clean_part == "byte" {
+                                        args.push(Type::Byte);
+                                    } else if clean_part == "bool" {
+                                        args.push(Type::Bool);
+                                    } else if clean_part == "str" {
+                                        args.push(Type::Str);
+                                    } else {
+                                        args.push(Type::Struct(clean_part, None));
+                                    }
                                 }
                             }
-                            if second_part == "int" {
-                                args.push(Type::Int);
-                            } else if second_part == "byte" {
-                                args.push(Type::Byte);
-                            } else if second_part == "bool" {
-                                args.push(Type::Bool);
-                            } else if second_part == "str" {
-                                args.push(Type::Str);
-                            } else {
-                                args.push(Type::Struct(second_part, None));
-                            }
-                        } else if parts.len() > num_generics {
-                            let num_to_join = parts.len() - num_generics + 1;
-                            let joined_first_arg =
-                                parts[..num_to_join].join("_").replace("@", "__");
-                            args.push(Type::Struct(joined_first_arg, None));
-                            for part in &parts[num_to_join..] {
-                                let clean_part = part.replace("@", "__");
-                                if clean_part == "int" {
-                                    args.push(Type::Int);
-                                } else if clean_part == "byte" {
-                                    args.push(Type::Byte);
-                                } else if clean_part == "bool" {
-                                    args.push(Type::Bool);
-                                } else if clean_part == "str" {
-                                    args.push(Type::Str);
-                                } else {
-                                    args.push(Type::Struct(clean_part, None));
-                                }
-                            }
-                        } else {
-                            for part in parts {
-                                let clean_part = part.replace("@", "__");
-                                if clean_part == "int" {
-                                    args.push(Type::Int);
-                                } else if clean_part == "byte" {
-                                    args.push(Type::Byte);
-                                } else if clean_part == "bool" {
-                                    args.push(Type::Bool);
-                                } else if clean_part == "str" {
-                                    args.push(Type::Str);
-                                } else {
-                                    args.push(Type::Struct(clean_part, None));
-                                }
-                            }
-                        }
 
-                        if let Err(ref err) = self.monomorphize(&template, &args) {
-                            tracing::error!(
-                                "❌ Fallback monomorphization of '{}' failed: {:?}",
-                                template,
-                                err
-                            );
+                            if let Err(ref err) = self.monomorphize(&template, &args) {
+                                tracing::error!(
+                                    "❌ Fallback monomorphization of '{}' failed: {:?}",
+                                    template,
+                                    err
+                                );
+                            }
                         }
                     }
                 }
