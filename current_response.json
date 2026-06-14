@@ -1,9 +1,0 @@
-{
-  "summary": "fix: resolve statement parser synchronization bug in self-hosted parser",
-  "files": [
-    {
-      "file_path": "compiler/parser.gst",
-      "code_diff": "<<<<<<< SEARCH\n        while (*p).cur_token.token_type.tag != 0 { // TokenType::Eof = 0\n            mut before_errors := len((*p).errors);\n            mut stmt := parse_statement(p, ctx);\n            if stmt != empty[Index[ast.Statement[ctx], ctx]] {\n                (*dest_ptr).Push(ctx[stmt]);\n                next_token(p);\n            } else {\n=======\n        while (*p).cur_token.token_type.tag != 0 { // TokenType::Eof = 0\n            mut before_errors := len((*p).errors);\n            mut stmt := parse_statement(p, ctx);\n            if stmt != empty[Index[ast.Statement[ctx], ctx]] {\n                (*dest_ptr).Push(ctx[stmt]);\n                if cur_token_is(p, 10) { // Semicolon = 10\n                    next_token(p);\n                }\n            } else {\n>>>>>>> REPLACE"
-    }
-  ]
-}
