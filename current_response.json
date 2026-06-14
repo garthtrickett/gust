@@ -1,9 +1,9 @@
 {
-  "summary": "fix: update monomorphization resolver placeholder prefix to prevent collision with cyclic parser placeholder",
+  "summary": "fix: add system placeholder guard clause in namespace_resolve_monomorphized_name",
   "files": [
     {
       "file_path": "src/typechecker/monomorphize.rs",
-      "code_diff": "<<<<<<< SEARCH\n        for (local, namespaced) in local_names {\n            let placeholder = format!(\"__PLACEHOLDER_{}__\", local);\n            resolved = resolved.replace(&namespaced, &placeholder);\n\n            let pat_mid = format!(\"_{}_\", local);\n=======\n        for (local, namespaced) in local_names {\n            let placeholder = format!(\"__GUST_MONO_RESOLVE_TEMP_{}__\", local);\n            resolved = resolved.replace(&namespaced, &placeholder);\n\n            let pat_mid = format!(\"_{}_\", local);\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\nimpl TypeChecker {\n    fn namespace_resolve_monomorphized_name(&self, name: &str) -> String {\n        if self.current_prefix.is_empty() {\n            return name.to_string();\n        }\n        let mut resolved = name.to_string();\n=======\nimpl TypeChecker {\n    fn namespace_resolve_monomorphized_name(&self, name: &str) -> String {\n        if name.starts_with(\"__PLACEHOLDER_\") || name.starts_with(\"__GUST_MONO_RESOLVE_TEMP_\") {\n            return name.to_string();\n        }\n        if self.current_prefix.is_empty() {\n            return name.to_string();\n        }\n        let mut resolved = name.to_string();\n>>>>>>> REPLACE"
     }
   ]
 }

@@ -4,18 +4,28 @@ use std::collections::HashMap;
 
 impl TypeChecker {
     fn namespace_resolve_monomorphized_name(&self, name: &str) -> String {
+        if name.starts_with("__PLACEHOLDER_") || name.starts_with("__GUST_MONO_RESOLVE_TEMP_") {
+            return name.to_string();
+        }
         if self.current_prefix.is_empty() {
             return name.to_string();
         }
         let mut resolved = name.to_string();
         let mut local_names = Vec::new();
-        for key in self.struct_registry.keys()
-            .chain(self.struct_templates.keys())
-            .chain(self.enum_templates.keys())
-        {
-            if let Some(stripped) = key.strip_prefix(&self.current_prefix) {
-                if !stripped.is_empty() {
-                    local_names.push((stripped.to_string(), key.clone()));
+        if !self.current_prefix.is_empty() {
+            for key in self
+                .struct_registry
+                .keys()
+                .chain(self.struct_templates.keys())
+                .chain(self.enum_templates.keys())
+            {
+                if key.contains("__GUST_MONO_RESOLVE_TEMP_") {
+                    continue;
+                }
+                if let Some(stripped) = key.strip_prefix(&self.current_prefix) {
+                    if !stripped.is_empty() {
+                        local_names.push((stripped.to_string(), key.clone()));
+                    }
                 }
             }
         }
@@ -35,7 +45,7 @@ impl TypeChecker {
             }
             let pat_end = format!("_{}", local);
             if resolved.ends_with(&pat_end) {
-                resolved = format!( 
+                resolved = format!(
                     "{}{}",
                     &resolved[..resolved.len() - local.len()],
                     namespaced
