@@ -60,7 +60,7 @@ type Type[ctx] enum {
 type Statement[ctx] enum {
     Import {
         path: str,
-        alias: Index[str, ctx],
+        alias: str,
         span: token.Span
     },
     StructDecl {

@@ -1,9 +1,13 @@
 {
-  "summary": "fix: wrap start_span dereference inside unsafe block in parse_import_statement",
+  "summary": "fix: update import alias type to primitive Str in ast and parser to avoid arena allocation type mismatch",
   "files": [
     {
+      "file_path": "compiler/ast.gst",
+      "code_diff": "<<<<<<< SEARCH\n    Import {\n        path: str,\n        alias: Index[str, ctx],\n        span: token.Span\n    },\n=======\n    Import {\n        path: str,\n        alias: str,\n        span: token.Span\n    },\n>>>>>>> REPLACE"
+    },
+    {
       "file_path": "compiler/parser.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {\n    mut start_span := (*p).cur_token.span;\n    \n    unsafe {\n        if (*p).has_non_import_statement == 1 {\n=======\nfunc parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {\n    unsafe {\n        mut start_span := (*p).cur_token.span;\n        if (*p).has_non_import_statement == 1 {\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n        mut alias := empty[Index[str, ctx]];\n        if cur_token_is(p, 37) { // As = 37\n            next_token(p); // consume 'as'\n            if cur_token_is(p, 2) == false { // Ident = 2\n                mut err: errors.CompilerError[Any];\n                err.kind.tag = 1; // ParserError\n                err.message = \"Expected identifier alias after 'as'\";\n                err.span = (*p).cur_token.span;\n                (*p).errors.Push(err);\n                return empty[Index[ast.Statement[ctx], ctx]];\n            }\n            alias = os.ArenaAlloc(ctx);\n            ctx[alias] = std.Clone(*ctx, (*p).cur_token.literal);\n            next_token(p); // consume alias\n        }\n        \n        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);\n        ctx[stmt_idx].tag = 0; // Import = 0\n        ctx[stmt_idx].Import.path = path;\n        ctx[stmt_idx].Import.alias = alias;\n        ctx[stmt_idx].Import.span = merge_spans(start_span, (*p).cur_token.span);\n        return stmt_idx;\n=======\n        mut alias := \"\";\n        if cur_token_is(p, 37) { // As = 37\n            next_token(p); // consume 'as'\n            if cur_token_is(p, 2) == false { // Ident = 2\n                mut err: errors.CompilerError[Any];\n                err.kind.tag = 1; // ParserError\n                err.message = \"Expected identifier alias after 'as'\";\n                err.span = (*p).cur_token.span;\n                (*p).errors.Push(err);\n                return empty[Index[ast.Statement[ctx], ctx]];\n            }\n            alias = std.Clone(*ctx, (*p).cur_token.literal);\n            next_token(p); // consume alias\n        }\n        \n        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);\n        ctx[stmt_idx].tag = 0; // Import = 0\n        ctx[stmt_idx].Import.path = path;\n        ctx[stmt_idx].Import.alias = alias;\n        ctx[stmt_idx].Import.span = merge_spans(start_span, (*p).cur_token.span);\n        return stmt_idx;\n>>>>>>> REPLACE"
     }
   ]
 }

@@ -585,7 +585,7 @@ func parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ct
         mut path := std.Clone(*ctx, (*p).cur_token.literal);
         next_token(p); // consume string path
         
-        mut alias := empty[Index[str, ctx]];
+        mut alias := "";
         if cur_token_is(p, 37) { // As = 37
             next_token(p); // consume 'as'
             if cur_token_is(p, 2) == false { // Ident = 2
@@ -596,8 +596,7 @@ func parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ct
                 (*p).errors.Push(err);
                 return empty[Index[ast.Statement[ctx], ctx]];
             }
-            alias = os.ArenaAlloc(ctx);
-            ctx[alias] = std.Clone(*ctx, (*p).cur_token.literal);
+            alias = std.Clone(*ctx, (*p).cur_token.literal);
             next_token(p); // consume alias
         }
         
