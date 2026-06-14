@@ -315,6 +315,8 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                         struct_name = "bool";
                     } else if arg0.tag == 4 { // Arena = 4
                         struct_name = "Arena";
+                    } else if arg0.tag == 10 { // Generic = 10
+                        struct_name = parser_get_monomorphized_name(arg0.Generic.name, arg0.Generic.args, ctx);
                     }
                     mut brand_name := "";
                     if arg1.tag == 8 { // Struct = 8
