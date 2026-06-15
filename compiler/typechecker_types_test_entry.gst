@@ -145,4 +145,11 @@ func main() {
         os.LogStr(std.Concat("Sorted vector element: ", test_vec[v_idx]));
         v_idx = v_idx + 1;
     }
+
+    // 6. Test Flat Category Formatters (Step 2.3 Verification)
+    mut serialized_vars := typechecker.typechecker_serialize_variables(&env, ctx);
+    os.LogStr(serialized_vars);
+
+    mut serialized_enums := typechecker.typechecker_serialize_enums(&env, ctx);
+    os.LogStr(serialized_enums);
 }

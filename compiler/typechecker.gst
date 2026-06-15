@@ -2863,3 +2863,55 @@ func typechecker_get_sorted_keys_func(map: *std.HashMap[str, FunctionSignature[c
         return keys;
     }
 }
+
+func typechecker_serialize_variables(env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    mut result := "Variables:\n";
+    unsafe {
+        mut keys := typechecker_get_sorted_keys_type(&(*env).variable_types, ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut key := keys[i];
+            mut lookup := (*env).variable_types.Get(key);
+            if lookup.Ok {
+                mut ty_str := ast.serialize_type(lookup.Val, ctx);
+                result = std.Concat(result, "  ");
+                result = std.Concat(result, key);
+                result = std.Concat(result, " : ");
+                result = std.Concat(result, ty_str);
+                result = std.Concat(result, "\n");
+            }
+            i = i + 1;
+        }
+    }
+    return std.Clone(ctx, result);
+}
+
+func typechecker_serialize_enums(env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    mut result := "Enums:\n";
+    unsafe {
+        mut keys := typechecker_get_sorted_keys_enum(&(*env).enum_registry, ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut key := keys[i];
+            mut lookup := (*env).enum_registry.Get(key);
+            if lookup.Ok {
+                result = std.Concat(result, "  ");
+                result = std.Concat(result, key);
+                result = std.Concat(result, ":\n");
+                
+                mut variants := lookup.Val;
+                typechecker_sort_vector_str(&variants, ctx);
+                mut j := 0;
+                while j < len(variants) {
+                    mut variant := variants[j];
+                    result = std.Concat(result, "    ");
+                    result = std.Concat(result, variant);
+                    result = std.Concat(result, "\n");
+                    j = j + 1;
+                }
+            }
+            i = i + 1;
+        }
+    }
+    return std.Clone(ctx, result);
+}
