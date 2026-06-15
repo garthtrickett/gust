@@ -1242,7 +1242,7 @@ impl Codegen {
                     body_str.push_str("    os_argc = argc;\n");
                     body_str.push_str("    os_argv = argv;\n");
                     body_str.push_str("    gust_scheduler_init(4);\n");
-                    body_str.push_str("    gust_scheduler_spawn(16384, gust_user_main, NULL);\n");
+                    body_str.push_str("    gust_scheduler_spawn(8388608, gust_user_main, NULL);\n");
                     body_str.push_str("    gust_scheduler_destroy();\n");
                     body_str.push_str("    return 0;\n");
                     body_str.push_str("}\n\n");
@@ -2355,7 +2355,7 @@ impl Codegen {
                         format!("(void*)(uintptr_t){}", arg_str)
                     };
                     return format!(
-                        "gust_scheduler_spawn(16384, (void (*)(void*)){}, {})",
+                        "gust_scheduler_spawn(8388608, (void (*)(void*)){}, {})",
                         thread_func_name, cast_expr
                     );
                 }
