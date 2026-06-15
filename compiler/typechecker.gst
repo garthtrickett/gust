@@ -774,25 +774,26 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
                 }
                 
                 mut final_lookup := map.Get(new_name);
-                if final_lookup.Ok {
+                if final_lookup.Ok { 
                     res_type = final_lookup.Val;
                 } else {
                     mut new_brand := t.Struct.brand;
-                if t.Struct.brand != empty[Index[str, ctx]] {
-                    mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
-                    mut brand_lookup := map.Get(*brand_str_ptr);
-                    if brand_lookup.Ok {
-                        mut b_type := brand_lookup.Val;
-                        if b_type.tag == 8 { // Struct
-                            new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                            mut ptr := &ctx[new_brand] as *str;
-                            *ptr = std.Clone(ctx, b_type.Struct.struct_name);
+                    if t.Struct.brand != empty[Index[str, ctx]] {
+                        mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
+                        mut brand_lookup := map.Get(*brand_str_ptr);
+                        if brand_lookup.Ok {
+                            mut b_type := brand_lookup.Val;
+                            if b_type.tag == 8 { // Struct
+                                new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                                mut ptr := &ctx[new_brand] as *str;
+                                *ptr = std.Clone(ctx, b_type.Struct.struct_name);
+                            }
                         }
                     }
+                    res_type.tag = 8; // Struct
+                    res_type.Struct.struct_name = std.Clone(ctx, new_name);
+                    res_type.Struct.brand = new_brand;
                 }
-                res_type.tag = 8; // Struct
-                res_type.Struct.struct_name = std.Clone(ctx, new_name);
-                res_type.Struct.brand = new_brand;
             }
         } else if t.tag == 7 { // Index
             mut name := t.Index.struct_name;
