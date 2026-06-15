@@ -146,17 +146,7 @@ func main() {
         v_idx = v_idx + 1;
     }
 
-    // 6. Test Flat Category Formatters (Step 2.3 Verification)
-    mut serialized_vars := typechecker.typechecker_serialize_variables(&env, ctx);
-    os.LogStr(serialized_vars);
-
-    mut serialized_enums := typechecker.typechecker_serialize_enums(&env, ctx);
-    os.LogStr(serialized_enums);
-
-    // 7. Test Complex Category Formatters (Step 2.4 Verification)
-    mut serialized_structs := typechecker.typechecker_serialize_structures(&env, ctx);
-    os.LogStr(serialized_structs);
-
-    mut serialized_funcs := typechecker.typechecker_serialize_functions(&env, ctx);
-    os.LogStr(serialized_funcs);
+    // 6. Test Complete Environment Serializer (Step 2.5 Verification)
+    mut full_dump := typechecker.typechecker_serialize_type_environment(&env, ctx);
+    os.LogStr(full_dump);
 }

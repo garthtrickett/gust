@@ -2999,3 +2999,11 @@ func typechecker_serialize_functions(env: *TypeEnvironment[ctx], ctx: &Arena) st
     }
     return std.Clone(ctx, result);
 }
+
+func typechecker_serialize_type_environment(env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    mut result := typechecker_serialize_variables(env, ctx);
+    result = std.Concat(result, typechecker_serialize_structures(env, ctx));
+    result = std.Concat(result, typechecker_serialize_enums(env, ctx));
+    result = std.Concat(result, typechecker_serialize_functions(env, ctx));
+    return std.Clone(ctx, result);
+}
