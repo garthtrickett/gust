@@ -1,5 +1,39 @@
 import "ast.gst" as ast;
 
+type OriginSet[ctx] struct {
+    map: std.HashMap[str, int, ctx]
+}
+
+func set_init(ctx: &Arena) OriginSet[ctx] {
+    mut s: OriginSet[ctx];
+    s.map = std.HashMapNew(ctx);
+    return s;
+}
+
+func set_add(set: *OriginSet[ctx], element: str, ctx: &Arena) {
+    unsafe {
+        (*set).map.Insert(std.Clone(ctx, element), 1);
+    }
+}
+
+func set_union(dest: *OriginSet[ctx], src: *OriginSet[ctx], ctx: &Arena) {
+    unsafe {
+        mut keys := (*src).map.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut key := keys[i];
+            (*dest).map.Insert(std.Clone(ctx, key), 1);
+            i = i + 1;
+        }
+    }
+}
+
+func set_contains(set: *OriginSet[ctx], element: str) bool {
+    unsafe {
+        return (*set).map.Get(element).Ok;
+    }
+}
+
 type StructLayout[ctx] struct {
     brand: Index[str, ctx],
     fields: std.HashMap[str, ast.Type[ctx], ctx]
@@ -52,7 +86,10 @@ type TypeEnvironment[ctx] struct {
     struct_registry: std.HashMap[str, StructLayout[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     current_prefix: str,
-    imports: std.HashMap[str, str, ctx]
+    imports: std.HashMap[str, str, ctx],
+    variable_origins: std.HashMap[str, Index[std.HashMap[str, int, ctx], ctx], ctx],
+    moved_vars: std.HashMap[str, int, ctx],
+    open_directories: std.HashMap[str, int, ctx]
 }
 
 func env_new(ctx: &Arena) TypeEnvironment[ctx] {
@@ -62,6 +99,9 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].function_registry = std.HashMapNew(ctx);
         ctx[env_idx].current_prefix = "";
         ctx[env_idx].imports = std.HashMapNew(ctx);
+        ctx[env_idx].variable_origins = std.HashMapNew(ctx);
+        ctx[env_idx].moved_vars = std.HashMapNew(ctx);
+        ctx[env_idx].open_directories = std.HashMapNew(ctx);
         return ctx[env_idx];
     }
 }
