@@ -1,5 +1,5 @@
-func leak_dir(ctx: &Arena) {
-    mut d: os.Dir[ctx];
+func leak_dir() {
+    mut d: os_Dir_ctx;
     // forgot to call os.CloseDir(d);
 }
 
