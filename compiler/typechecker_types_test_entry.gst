@@ -117,4 +117,18 @@ func main() {
     } else {
         os.LogStr("enum_registry lookup failed");
     }
+
+    // 4. Test Key Sorting Utility (Step 2.2 Verification)
+    mut test_map: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+    test_map.Insert("banana", 1);
+    test_map.Insert("apple", 2);
+    test_map.Insert("cherry", 3);
+
+    mut sorted_keys := typechecker.typechecker_get_sorted_keys_int(&test_map, ctx);
+    os.LogStr(std.Concat("Sorted keys count: ", std.FormatInt(len(sorted_keys))));
+    mut k_idx := 0;
+    while k_idx < len(sorted_keys) {
+        os.LogStr(std.Concat("Sorted key: ", sorted_keys[k_idx]));
+        k_idx = k_idx + 1;
+    }
 }
