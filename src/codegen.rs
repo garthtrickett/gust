@@ -439,7 +439,12 @@ impl Codegen {
             Type::Struct(name, brand) => {
                 if let Some(b) = brand {
                     let clean_b = crate::typechecker::types::strip_brand_prefix(b);
-                    format!("{}_{}", name, clean_b)
+                    let suffix = format!("_{}", clean_b);
+                    if name.ends_with(&suffix) {
+                        name.clone()
+                    } else {
+                        format!("{}_{}", name, clean_b)
+                    }
                 } else {
                     name.clone()
                 }
@@ -447,7 +452,12 @@ impl Codegen {
             Type::Index(name, brand) => {
                 if let Some(b) = brand {
                     let clean_b = crate::typechecker::types::strip_brand_prefix(b);
-                    format!("Index_{}_{}", name, clean_b)
+                    let suffix = format!("_{}", clean_b);
+                    if name.ends_with(&suffix) {
+                        format!("Index_{}", name)
+                    } else {
+                        format!("Index_{}_{}", name, clean_b)
+                    }
                 } else {
                     format!("Index_{}", name)
                 }
