@@ -132,8 +132,9 @@ func main() {
     mut t_index: ast.Type[ctx];
     t_index.tag = 7; // Index
     t_index.Index.struct_name = std.Clone(ctx, "Node");
-    mut brand_idx := os.ArenaAlloc(ctx) as Index[str, ctx];
+    mut brand_idx: Index[str, ctx] := empty[Index[str, ctx]];
     unsafe {
+        brand_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
         mut brand_ptr := &ctx[brand_idx] as *str;
         *brand_ptr = "ctx_brand";
     }
