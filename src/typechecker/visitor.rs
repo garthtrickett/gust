@@ -2743,7 +2743,7 @@ impl TypeChecker {
                                 return Ok(Type::Int);
                             }
                             if let Some(suffix) = target_struct.strip_prefix("Index_") {
-                                let brand = extract_brand_from_suffix(&suffix);
+                                let brand = extract_brand_from_suffix(suffix);
                                 return Ok(Type::Index(suffix.to_string(), brand));
                             }
                             let brand = extract_brand_from_suffix(&target_struct);

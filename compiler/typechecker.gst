@@ -918,11 +918,12 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             if len(*generics_vec) != len(args) {
                 mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[err].kind.tag = 2; // TypeError
-                ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Template '", template_name));
-                ctx[err].message = std.Concat(ctx[err].message, "' expects ");
-                ctx[err].message = std.Concat(ctx[err].message, std.FormatInt(len(*generics_vec)));
-                ctx[err].message = std.Concat(ctx[err].message, " generic arguments but got ");
-                ctx[err].message = std.Concat(ctx[err].message, std.FormatInt(len(args)));
+                mut msg := std.Concat("Semantic Error: Template '", template_name);
+                msg = std.Concat(msg, "' expects ");
+                msg = std.Concat(msg, std.FormatInt(len(*generics_vec)));
+                msg = std.Concat(msg, " generic arguments but got ");
+                msg = std.Concat(msg, std.FormatInt(len(args)));
+                ctx[err].message = std.Clone(ctx, msg);
                 res.tag = 1; // Err
                 res.Err.error = err;
                 return res;
@@ -989,10 +990,11 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                                 if sub_layout_lookup.Val.fields.Get("tag").Ok == 0 {
                                     mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
                                         ctx[err].kind.tag = 2; // TypeError
-                                        ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Variant '", variant.name));
-                                        ctx[err].message = std.Concat(ctx[err].message, "' contains a large enum variant payload struct '");
-                                        ctx[err].message = std.Concat(ctx[err].message, resolved_field_type.Struct.struct_name);
-                                        ctx[err].message = std.Concat(ctx[err].message, "' (3 fields). Use Index, or pointer indirection to avoid memory bloat.");
+                                        mut msg := std.Concat("Semantic Error: Variant '", variant.name);
+                                        msg = std.Concat(msg, "' contains a large enum variant payload struct '");
+                                        msg = std.Concat(msg, resolved_field_type.Struct.struct_name);
+                                        msg = std.Concat(msg, "' (3 fields). Use Index, or pointer indirection to avoid memory bloat.");
+                                        ctx[err].message = std.Clone(ctx, msg);
                                         res.tag = 1; // Err
                                         res.Err.error = err;
                                         return res;
@@ -1038,11 +1040,12 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             if len(*generics_vec) != len(args) {
                 mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[err].kind.tag = 2; // TypeError
-                ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Template '", template_name));
-                ctx[err].message = std.Concat(ctx[err].message, "' expects ");
-                ctx[err].message = std.Concat(ctx[err].message, std.FormatInt(len(*generics_vec)));
-                ctx[err].message = std.Concat(ctx[err].message, " generic arguments but got ");
-                ctx[err].message = std.Concat(ctx[err].message, std.FormatInt(len(args)));
+                mut msg := std.Concat("Semantic Error: Template '", template_name);
+                msg = std.Concat(msg, "' expects ");
+                msg = std.Concat(msg, std.FormatInt(len(*generics_vec)));
+                msg = std.Concat(msg, " generic arguments but got ");
+                msg = std.Concat(msg, std.FormatInt(len(args)));
+                ctx[err].message = std.Clone(ctx, msg);
                 res.tag = 1; // Err
                 res.Err.error = err;
                 return res;
@@ -1105,10 +1108,11 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                         if env_type_is_ephemeral_view(field_type, ctx) == 1 {
                             mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[err].kind.tag = 2; // TypeError
-                            ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Unbranded monomorphized struct '", concrete_name));
-                            ctx[err].message = std.Concat(ctx[err].message, "' cannot contain ephemeral slice or view field '");
-                            ctx[err].message = std.Concat(ctx[err].message, field.name);
-                            ctx[err].message = std.Concat(ctx[err].message, "'");
+                            mut msg := std.Concat("Semantic Error: Unbranded monomorphized struct '", concrete_name);
+                            msg = std.Concat(msg, "' cannot contain ephemeral slice or view field '");
+                            msg = std.Concat(msg, field.name);
+                            msg = std.Concat(msg, "'");
+                            ctx[err].message = std.Clone(ctx, msg);
                             res.tag = 1; // Err
                             res.Err.error = err;
                             return res;

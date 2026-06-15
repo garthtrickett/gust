@@ -1,6 +1,14 @@
 use super::TypeChecker;
-use super::types::{StructLayout, Type, TypeError, TypeErrorKind, strip_brand_prefix};
 use std::collections::HashMap;
+
+use super::types::{
+    StructLayout,
+    Type,
+    TypeError,
+    TypeErrorKind,
+    extract_brand_from_suffix, // <-- Add this
+    strip_brand_prefix,
+};
 
 impl TypeChecker {
     pub(crate) fn substitute_brand(&self, t: &Type, new_brand: &Option<String>) -> Type {
@@ -277,12 +285,16 @@ impl TypeChecker {
                 let mut clean_name = name.as_str();
                 if let Some(pos) = name.find("__") {
                     let after_pfx = &name[pos + 2..];
-                    if after_pfx.starts_with("LookupResult_") || after_pfx.starts_with("CastResult_") {
+                    if after_pfx.starts_with("LookupResult_")
+                        || after_pfx.starts_with("CastResult_")
+                    {
                         clean_name = after_pfx;
                     }
                 }
 
-                if clean_name.starts_with("LookupResult_") && !self.struct_registry.contains_key(name) {
+                if clean_name.starts_with("LookupResult_")
+                    && !self.struct_registry.contains_key(name)
+                {
                     let target_struct = clean_name
                         .strip_prefix("LookupResult_")
                         .unwrap_or(clean_name)
@@ -290,24 +302,29 @@ impl TypeChecker {
                     let v_type = if target_struct == "int" {
                         Type::Int
                     } else if let Some(suffix) = target_struct.strip_prefix("Index_") {
-                        let brand = if suffix.ends_with("_ctx") {
-                            Some("ctx".to_string())
-                        } else if suffix.ends_with("_connCtx") {
-                            Some("connCtx".to_string())
-                        } else if suffix.ends_with("_arena") {
-                            Some("arena".to_string())
-                        } else if suffix.ends_with("_a") {
-                            Some("a".to_string())
-                        } else if suffix.ends_with("_Any") {
-                            Some("Any".to_string())
-                        } else {
-                            None
-                        };
+                        let brand = extract_brand_from_suffix(suffix);
                         Type::Index(suffix.to_string(), brand)
                     } else {
-                        Type::Struct(target_struct, None)
+                        let brand = extract_brand_from_suffix(&target_struct);
+                        Type::Struct(target_struct, brand)
+                    };
+                    let _resolved_v_type = self.resolve_type(&v_type)?;
+                }
+
+                if clean_name.starts_with("CastResult_") && !self.struct_registry.contains_key(name)
+                {
+                    let target_struct = clean_name
+                        .strip_prefix("CastResult_")
+                        .unwrap_or(clean_name)
+                        .to_string();
+                    let v_type = if target_struct == "int" {
+                        Type::Int
+                    } else {
+                        let brand = extract_brand_from_suffix(&target_struct);
+                        Type::RawPointer(Box::new(Type::Struct(target_struct, brand)))
                     };
                     let resolved_v_type = self.resolve_type(&v_type)?;
+
                     let mut fields = HashMap::new();
                     fields.insert("Ok".to_string(), Type::Int);
                     fields.insert("Val".to_string(), resolved_v_type);
@@ -320,9 +337,12 @@ impl TypeChecker {
                     );
                 }
 
-                if clean_name.starts_with("CastResult_") && !self.struct_registry.contains_key(name) {
-                    let target_struct =
-                        clean_name.strip_prefix("CastResult_").unwrap_or(clean_name).to_string();
+                if clean_name.starts_with("CastResult_") && !self.struct_registry.contains_key(name)
+                {
+                    let target_struct = clean_name
+                        .strip_prefix("CastResult_")
+                        .unwrap_or(clean_name)
+                        .to_string();
                     let v_type = if target_struct == "int" {
                         Type::Int
                     } else {
