@@ -639,6 +639,248 @@ func make_field(name: str, t: ast.Type[ctx], ctx: &Arena) ast.FieldDef[ctx] {
     return f;
 }
 
+func strip_brand_prefix(brand: str, ctx: &Arena) str {
+    mut last_double_underscore := 0 - 1;
+    mut i := 0;
+    while i < len(brand) - 1 {
+        mut b1 := std.str_byte_at(brand, i);
+        mut b2 := std.str_byte_at(brand, i + 1);
+        if b1 == 95 && b2 == 95 { // "__"
+            last_double_underscore = i;
+        }
+        i = i + 1;
+    }
+    if last_double_underscore == 0 - 1 {
+        return brand;
+    }
+    return std.str_slice(brand, last_double_underscore + 2, len(brand));
+}
+
+func get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
+    unsafe {
+        mut base := "";
+        if t.tag == 0 { // Int
+            base = "int";
+        } else if t.tag == 1 { // Byte
+            base = "byte";
+        } else if t.tag == 2 { // Bool
+            base = "bool";
+        } else if t.tag == 3 { // Void
+            base = "void";
+        } else if t.tag == 4 { // Arena
+            base = "Arena";
+        } else if t.tag == 5 { // Str
+            base = "str";
+        } else if t.tag == 6 { // Slice
+            mut inner_t := ctx[t.Slice.inner];
+            base = std.Concat("Slice_", get_type_ident(inner_t, ctx));
+        } else if t.tag == 7 { // Index
+            base = std.Concat("Index_", t.Index.struct_name);
+            if t.Index.brand != empty[Index[str, ctx]] {
+                mut brand_str_ptr := &ctx[t.Index.brand] as *str;
+                mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
+                base = std.Concat(base, "_");
+                base = std.Concat(base, clean_b);
+            }
+        } else if t.tag == 8 { // Struct
+            base = t.Struct.struct_name;
+            if t.Struct.brand != empty[Index[str, ctx]] {
+                mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
+                mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
+                base = std.Concat(base, "_");
+                base = std.Concat(base, clean_b);
+            }
+        } else if t.tag == 9 { // RawPointer
+            mut inner_t := ctx[t.RawPointer.inner];
+            base = std.Concat(get_type_ident(inner_t, ctx), "_ptr");
+        } else if t.tag == 10 { // Generic
+            base = get_monomorphized_name(t.Generic.name, t.Generic.args, ctx);
+        } else {
+            base = "unknown";
+        }
+
+        mut out := "";
+        mut i := 0;
+        while i < len(base) {
+            mut b := std.str_byte_at(base, i);
+            if b == 46 { // '.'
+                out = std.Concat(out, "_");
+            } else {
+                mut char_slice := std.str_slice(base, i, i + 1);
+                out = std.Concat(out, char_slice);
+            }
+            i = i + 1;
+        }
+        return std.Clone(ctx, out);
+    }
+}
+
+func get_monomorphized_name(template_name: str, args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx], ctx: &Arena) str {
+    unsafe {
+        mut args_vec := &ctx[args_idx] as *std.Vector[ast.Type[ctx], ctx];
+        mut arg_names := "";
+        mut i := 0;
+        while i < len(*args_vec) {
+            if i > 0 {
+                arg_names = std.Concat(arg_names, "_");
+            }
+            mut arg_name := get_type_ident((*args_vec)[i], ctx);
+            arg_names = std.Concat(arg_names, arg_name);
+            i = i + 1;
+        }
+        mut name := std.Concat(template_name, "_");
+        name = std.Concat(name, arg_names);
+
+        mut out := "";
+        mut j := 0;
+        while j < len(name) {
+            mut b := std.str_byte_at(name, j);
+            if b == 46 { // '.'
+                out = std.Concat(out, "_");
+            } else {
+                mut char_slice := std.str_slice(name, j, j + 1);
+                out = std.Concat(out, char_slice);
+            }
+            j = j + 1;
+        }
+        return std.Clone(ctx, out);
+    }
+}
+
+func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.HashMap[str, ast.Type[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        mut res_type: ast.Type[ctx];
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            mut lookup := map.Get(name);
+            if lookup.Ok {
+                return lookup.Val;
+            }
+            
+            mut parts := std.str_split(name, "_", ctx);
+            mut changed := 0;
+            mut i := 0;
+            while i < len(parts) {
+                mut part := parts[i];
+                mut part_lookup := map.Get(part);
+                if part_lookup.Ok {
+                    parts[i] = get_type_ident(part_lookup.Val, ctx);
+                    changed = 1;
+                }
+                i = i + 1;
+            }
+            mut new_name := name;
+            if changed == 1 {
+                new_name = ast.ast_join_strings(parts, "_", ctx);
+            }
+            
+            mut final_lookup := map.Get(new_name);
+            if final_lookup.Ok {
+                return final_lookup.Val;
+            } else {
+                mut new_brand := t.Struct.brand;
+                if t.Struct.brand != empty[Index[str, ctx]] {
+                    mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
+                    mut brand_lookup := map.Get(*brand_str_ptr);
+                    if brand_lookup.Ok {
+                        mut b_type := brand_lookup.Val;
+                        if b_type.tag == 8 { // Struct
+                            new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                            mut ptr := &ctx[new_brand] as *str;
+                            *ptr = std.Clone(ctx, b_type.Struct.struct_name);
+                        }
+                    }
+                }
+                res_type.tag = 8; // Struct
+                res_type.Struct.struct_name = std.Clone(ctx, new_name);
+                res_type.Struct.brand = new_brand;
+            }
+        } else if t.tag == 7 { // Index
+            mut name := t.Index.struct_name;
+            mut lookup := map.Get(name);
+            mut new_struct := name;
+            if lookup.Ok {
+                mut b_type := lookup.Val;
+                if b_type.tag == 8 { // Struct
+                    new_struct = b_type.Struct.struct_name;
+                } else {
+                    new_struct = get_type_ident(b_type, ctx);
+                }
+            } else {
+                mut parts := std.str_split(name, "_", ctx);
+                mut changed := 0;
+                mut i := 0;
+                while i < len(parts) {
+                    mut part := parts[i];
+                    mut part_lookup := map.Get(part);
+                    if part_lookup.Ok {
+                        parts[i] = get_type_ident(part_lookup.Val, ctx);
+                        changed = 1;
+                    }
+                    i = i + 1;
+                }
+                if changed == 1 {
+                    new_struct = ast.ast_join_strings(parts, "_", ctx);
+                }
+            }
+
+            mut final_lookup := map.Get(new_struct);
+            mut final_struct := new_struct;
+            if final_lookup.Ok {
+                mut b_type := final_lookup.Val;
+                if b_type.tag == 8 { // Struct
+                    final_struct = b_type.Struct.struct_name;
+                }
+            }
+
+            mut new_brand := t.Index.brand;
+            if t.Index.brand != empty[Index[str, ctx]] {
+                mut brand_str_ptr := &ctx[t.Index.brand] as *str;
+                mut brand_lookup := map.Get(*brand_str_ptr);
+                if brand_lookup.Ok {
+                    mut b_type := brand_lookup.Val;
+                    if b_type.tag == 8 { // Struct
+                        new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                        mut ptr := &ctx[new_brand] as *str;
+                        *ptr = std.Clone(ctx, b_type.Struct.struct_name);
+                    }
+                }
+            }
+
+            res_type.tag = 7; // Index
+            res_type.Index.struct_name = std.Clone(ctx, final_struct);
+            res_type.Index.brand = new_brand;
+        } else if t.tag == 9 { // RawPointer
+            mut inner := ctx[t.RawPointer.inner];
+            mut sub_inner := substitute_generics(env, inner, map, ctx);
+            res_type = make_type_pointer(sub_inner, ctx);
+        } else if t.tag == 6 { // Slice
+            mut inner := ctx[t.Slice.inner];
+            mut sub_inner := substitute_generics(env, inner, map, ctx);
+            mut s: ast.Type[ctx];
+            s.tag = 6; // Slice
+            s.Slice.inner = os.ArenaAlloc(ctx);
+            ctx[s.Slice.inner] = sub_inner;
+            res_type = s;
+        } else if t.tag == 10 { // Generic
+            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            mut sub_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+            mut i := 0;
+            while i < len(*args_vec) {
+                mut arg := (*args_vec)[i];
+                sub_args.Push(substitute_generics(env, arg, map, ctx));
+                i = i + 1;
+            }
+            res_type = make_type_generic(t.Generic.name, sub_args, ctx);
+        } else {
+            res_type = t;
+        }
+
+        mut resolved_namespaced := env_resolve_type(env, res_type, ctx);
+        return resolved_namespaced;
+    }
+}
+
 func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
     unsafe {
         mut t_int := make_type_int();
