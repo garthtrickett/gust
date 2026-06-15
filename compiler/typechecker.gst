@@ -1021,9 +1021,8 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                     v_idx = v_idx + 1;
                 }
 
-                mut layout_update := (*env).struct_registry.Get(concrete_name).Val;
-                layout_update.fields = enum_fields;
-                (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), layout_update);
+                placeholder.fields = enum_fields;
+                (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
             }
 
             res.Ok.val.tag = 8; // Struct
@@ -1095,9 +1094,8 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                     f_idx = f_idx + 1;
                 }
 
-                mut layout_update := (*env).struct_registry.Get(concrete_name).Val;
-                layout_update.fields = concrete_fields;
-                (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), layout_update);
+                placeholder.fields = concrete_fields;
+                (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
 
                 // Ephemeral view checking for unbranded monomorphization
                 if brand == empty[Index[str, ctx]] {
