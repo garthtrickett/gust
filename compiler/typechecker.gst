@@ -1596,7 +1596,7 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
             mut expr_type := check_expression(expr_idx, env, scope, ctx);
             if expr_type.tag == 8 { // Struct
                 mut enum_name := expr_type.Struct.struct_name;
-                mut matched_variants := std.HashMapNew(ctx);
+                mut matched_variants: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
 
                 mut i := 0;
                 while i < len(*cases_vec) {
