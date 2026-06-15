@@ -1,5 +1,7 @@
 import "ast.gst" as ast;
 import "typechecker.gst" as typechecker;
+import "lexer.gst" as lexer;
+import "parser.gst" as parser;
 
 func main() {
     mut ctx := os.Arena.New();

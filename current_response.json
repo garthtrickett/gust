@@ -1,10 +1,9 @@
 {
-  "summary": "fix: resolve definite check violations and invalid dereference in self-hosted test suites",
+  "summary": "test: add missing lexer and parser imports to typechecker types test entry",
   "files": [
     {
       "file_path": "compiler/typechecker_types_test_entry.gst",
-      "code_diff": "<<<<<<< SEARCH\n    mut mono_res := typechecker.monomorphize(&env, \"Result\", res_args, ctx);\n    if mono_res.tag == 0 {\n        mut concrete_t := mono_res.Ok.val;\n        os.LogStr(std.Concat(\"Monomorphized Result name: \", concrete_t.Struct.struct_name));\n\n        mut parent_layout := env.struct_registry.Get(concrete_t.Struct.struct_name).Val;\n        os.LogInt(parent_layout.fields.len);\n\n        // Verify sub-variant structure\n        mut ok_variant_t := parent_layout.fields.Get(\"Ok\").Val;\n        mut ok_layout := env.struct_registry.Get(ok_variant_t.Struct.struct_name).Val;\n        os.LogStr(std.Concat(\"Ok variant field type tag: \", std.FormatInt(ok_layout.fields.Get(\"val\").Val.tag)));\n    } else {\n        os.LogStr(\"Result monomorphization failed\");\n    }\n=======\n    mut mono_res := typechecker.monomorphize(&env, \"Result\", res_args, ctx);\n    if mono_res.tag == 0 {\n        mut concrete_t := mono_res.Ok.val;\n        os.LogStr(std.Concat(\"Monomorphized Result name: \", concrete_t.Struct.struct_name));\n\n        guard parent_layout := env.struct_registry.Get(concrete_t.Struct.struct_name) else {\n            return;\n        }\n        os.LogInt(parent_layout.fields.len);\n\n        // Verify sub-variant structure\n        guard ok_variant_t := parent_layout.fields.Get(\"Ok\") else {\n            return;\n        }\n        guard ok_layout := env.struct_registry.Get(ok_variant_t.Struct.struct_name) else {\n            return;\n        }\n        os.LogStr(std.Concat(\"Ok variant field type tag: \", std.FormatInt(ok_layout.fields.Get(\"val\").Val.tag)));\n    } else {\n        os.LogStr(\"Result monomorphization failed\");\n    }\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\nimport \"ast.gst\" as ast;\nimport \"typechecker.gst\" as typechecker;\n\nfunc main() {\n=======\nimport \"ast.gst\" as ast;\nimport \"typechecker.gst\" as typechecker;\nimport \"lexer.gst\" as lexer;\nimport \"parser.gst\" as parser;\n\nfunc main() {\n>>>>>>> REPLACE"
     }
-    
   ]
 }
