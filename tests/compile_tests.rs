@@ -7080,7 +7080,7 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
             if res.tag == 1 { // Err
                 os.LogStr("Argument mismatch correctly detected!");
                 unsafe {
-                    os.LogStr((*res.Err.error).message);
+                    os.LogStr(ctx[res.Err.error].message);
                 }
             } else {
                 os.LogStr("Failed to detect argument mismatch!");

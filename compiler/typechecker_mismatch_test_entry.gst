@@ -17,9 +17,9 @@
             if res.tag == 1 { // Err
                 os.LogStr("Argument mismatch correctly detected!");
                 unsafe {
-                    os.LogStr((*res.Err.error).message);
+                    os.LogStr(ctx[res.Err.error].message);
                 }
-            } else {
+            } else { 
                 os.LogStr("Failed to detect argument mismatch!");
             }
         }

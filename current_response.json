@@ -1,9 +1,14 @@
 {
-  "summary": "test: update self-hosted templates pre-registration test assertion to match correct monomorphization behavior",
+  "summary": "fix: resolve definite check violations and invalid dereference in self-hosted test suites",
   "files": [
+    
+    {
+      "file_path": "compiler/typechecker_mismatch_test_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n            mut res := typechecker.monomorphize(&env, \"std.Vector\", vec_args, ctx);\n            if res.tag == 1 { // Err\n                os.LogStr(\"Argument mismatch correctly detected!\");\n                unsafe {\n                    os.LogStr((*res.Err.error).message);\n                }\n            } else {\n                os.LogStr(\"Failed to detect argument mismatch!\");\n            }\n=======\n            mut res := typechecker.monomorphize(&env, \"std.Vector\", vec_args, ctx);\n            if res.tag == 1 { // Err\n                os.LogStr(\"Argument mismatch correctly detected!\");\n                unsafe {\n                    os.LogStr(ctx[res.Err.error].message);\n                }\n            } else { \n                os.LogStr(\"Failed to detect argument mismatch!\");\n            }\n>>>>>>> REPLACE"
+    },
     {
       "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    let expected = vec![\n        \"Vector template found\",\n        \"std_HashMap template found\",\n        \"Custom registered as template\",\n        \"Custom absent from concrete registry\",\n        \"substitute_generics Int ok\",\n        \"lib_module__MyStruct\",\n        \"Pointer inner: lib_module__MyStruct\",\n        \"Slice inner: lib_module__MyStruct\",\n        \"std_Vector\",\n        \"lib_module__MyStruct\",\n        \"std_Vector_lib_module__MyStruct_ctx\",\n    ]\n    .join(\"\\n\");\n=======\n    let expected = vec![\n        \"Vector template found\",\n        \"std_HashMap template found\",\n        \"Custom registered as template\",\n        \"Custom absent from concrete registry\",\n        \"substitute_generics Int ok\",\n        \"lib_module__MyStruct\",\n        \"Pointer inner: lib_module__MyStruct\",\n        \"Slice inner: lib_module__MyStruct\",\n        \"std_Vector_lib_module__MyStruct_ctx\",\n    ]\n    .join(\"\\n\");\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n            mut res := typechecker.monomorphize(&env, \"std.Vector\", vec_args, ctx);\n            if res.tag == 1 { // Err\n                os.LogStr(\"Argument mismatch correctly detected!\");\n                unsafe {\n                    os.LogStr((*res.Err.error).message);\n                }\n            } else {\n                os.LogStr(\"Failed to detect argument mismatch!\");\n            }\n        }\n    \"#;\n=======\n            mut res := typechecker.monomorphize(&env, \"std.Vector\", vec_args, ctx);\n            if res.tag == 1 { // Err\n                os.LogStr(\"Argument mismatch correctly detected!\");\n                unsafe {\n                    os.LogStr(ctx[res.Err.error].message);\n                }\n            } else {\n                os.LogStr(\"Failed to detect argument mismatch!\");\n            }\n        }\n    \"#;\n>>>>>>> REPLACE"
     }
   ]
 }
