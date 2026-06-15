@@ -211,7 +211,7 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
                 }
             }
 
-            if std.str_eq(brand_name, "") == false {
+            if std.str_eq(brand_name, "") == 0 {
                 if (*env).moved_vars.Get(brand_name).Ok {
                     mut err: errors.CompilerError[ctx];
                     err.kind.tag = 2; // TypeError
