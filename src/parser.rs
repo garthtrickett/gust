@@ -1192,6 +1192,7 @@ impl Parser {
                     return None;
                 }
                 let end_span = self.cur_token.span;
+                self.next_token(); // consume ']'
                 Some(Expression::Empty(
                     target_type,
                     self.merge_spans(start_span, end_span),
