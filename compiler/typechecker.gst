@@ -828,30 +828,30 @@ func get_root_variable(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) s
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
             return "";
         }
-        mut expr := ctx[expr_idx];
-        if expr.tag == 0 { // Identifier
-            return expr.Identifier.name;
+        mut expr_ptr := &ctx[expr_idx] as *ast.Expression[ctx];
+        if (*expr_ptr).tag == 0 { // Identifier
+            return (*expr_ptr).Identifier.name;
         }
-        if expr.tag == 4 { // Move
-            return get_root_variable(expr.Move.expr, ctx);
+        if (*expr_ptr).tag == 4 { // Move
+            return get_root_variable((*expr_ptr).Move.expr, ctx);
         }
-        if expr.tag == 5 { // Take
-            return get_root_variable(expr.Take.expr, ctx);
+        if (*expr_ptr).tag == 5 { // Take
+            return get_root_variable((*expr_ptr).Take.expr, ctx);
         }
-        if expr.tag == 6 { // AddressOf
-            return get_root_variable(expr.AddressOf.expr, ctx);
+        if (*expr_ptr).tag == 6 { // AddressOf
+            return get_root_variable((*expr_ptr).AddressOf.expr, ctx);
         }
-        if expr.tag == 7 { // Dereference
-            return get_root_variable(expr.Dereference.expr, ctx);
+        if (*expr_ptr).tag == 7 { // Dereference
+            return get_root_variable((*expr_ptr).Dereference.expr, ctx);
         }
-        if expr.tag == 8 { // IndexAccess
-            return get_root_variable(expr.IndexAccess.allocator, ctx);
+        if (*expr_ptr).tag == 8 { // IndexAccess
+            return get_root_variable((*expr_ptr).IndexAccess.allocator, ctx);
         }
-        if expr.tag == 9 { // AsCast
-            return get_root_variable(expr.AsCast.left, ctx);
+        if (*expr_ptr).tag == 9 { // AsCast
+            return get_root_variable((*expr_ptr).AsCast.left, ctx);
         }
-        if expr.tag == 11 { // Selector
-            return get_root_variable(expr.Selector.left, ctx);
+        if (*expr_ptr).tag == 11 { // Selector
+            return get_root_variable((*expr_ptr).Selector.left, ctx);
         }
         return "";
     }
@@ -894,16 +894,16 @@ func get_call_func_name(func_expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Ar
         if func_expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
             return "";
         }
-        mut expr := ctx[func_expr_idx];
-        if expr.tag == 0 { // Identifier
-            return expr.Identifier.name;
+        mut expr_ptr := &ctx[func_expr_idx] as *ast.Expression[ctx];
+        if (*expr_ptr).tag == 0 { // Identifier
+            return (*expr_ptr).Identifier.name;
         }
-        if expr.tag == 11 { // Selector
-            mut left_expr_idx := expr.Selector.left;
+        if (*expr_ptr).tag == 11 { // Selector
+            mut left_expr_idx := (*expr_ptr).Selector.left;
             if left_expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                mut left_expr := ctx[left_expr_idx];
-                if left_expr.tag == 0 { // Identifier
-                    return std.Concat(std.Concat(left_expr.Identifier.name, "."), expr.Selector.right);
+                mut left_ptr := &ctx[left_expr_idx] as *ast.Expression[ctx];
+                if (*left_ptr).tag == 0 { // Identifier
+                    return std.Concat(std.Concat((*left_ptr).Identifier.name, "."), (*expr_ptr).Selector.right);
                 }
             }
         }
@@ -975,17 +975,17 @@ func expression_to_string(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
             return "";
         }
-        mut expr := ctx[expr_idx];
-        if expr.tag == 0 { // Identifier
-            return expr.Identifier.name;
+        mut expr_ptr := &ctx[expr_idx] as *ast.Expression[ctx];
+        if (*expr_ptr).tag == 0 { // Identifier
+            return (*expr_ptr).Identifier.name;
         }
-        if expr.tag == 11 { // Selector
-            mut left_str := expression_to_string(expr.Selector.left, ctx);
-            return std.Concat(std.Concat(left_str, "."), expr.Selector.right);
+        if (*expr_ptr).tag == 11 { // Selector
+            mut left_str := expression_to_string((*expr_ptr).Selector.left, ctx);
+            return std.Concat(std.Concat(left_str, "."), (*expr_ptr).Selector.right);
         }
-        if expr.tag == 8 { // IndexAccess
-            mut alloc_str := expression_to_string(expr.IndexAccess.allocator, ctx);
-            mut idx_str := expression_to_string(expr.IndexAccess.index, ctx);
+        if (*expr_ptr).tag == 8 { // IndexAccess
+            mut alloc_str := expression_to_string((*expr_ptr).IndexAccess.allocator, ctx);
+            mut idx_str := expression_to_string((*expr_ptr).IndexAccess.index, ctx);
             return std.Concat(std.Concat(std.Concat(alloc_str, "["), idx_str), "]");
         }
         return "";
@@ -997,34 +997,34 @@ func extract_ok_checked_variable(expr_idx: Index[ast.Expression[ctx], ctx], ctx:
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
             return "";
         }
-        mut expr := ctx[expr_idx];
-        if expr.tag == 11 { // Selector
-            if std.str_eq(expr.Selector.right, "Ok") {
-                return expression_to_string(expr.Selector.left, ctx);
+        mut expr_ptr := &ctx[expr_idx] as *ast.Expression[ctx];
+        if (*expr_ptr).tag == 11 { // Selector
+            if std.str_eq((*expr_ptr).Selector.right, "Ok") {
+                return expression_to_string((*expr_ptr).Selector.left, ctx);
             }
         }
-        if expr.tag == 10 { // Binary
-            if std.str_eq(expr.Binary.op, "==") {
+        if (*expr_ptr).tag == 10 { // Binary
+            if std.str_eq((*expr_ptr).Binary.op, "==") {
                 // Case: path.Ok == 1
-                mut left_idx := expr.Binary.left;
-                mut right_idx := expr.Binary.right;
+                mut left_idx := (*expr_ptr).Binary.left;
+                mut right_idx := (*expr_ptr).Binary.right;
                 if left_idx != empty[Index[ast.Expression[ctx], ctx]] && right_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                    mut left := ctx[left_idx];
-                    mut right := ctx[right_idx];
-                    if left.tag == 11 { // Selector
-                        if std.str_eq(left.Selector.right, "Ok") {
-                            if right.tag == 1 { // Integer
-                                if right.Integer.val == 1 {
-                                    return expression_to_string(left.Selector.left, ctx);
+                    mut left_ptr := &ctx[left_idx] as *ast.Expression[ctx];
+                    mut right_ptr := &ctx[right_idx] as *ast.Expression[ctx];
+                    if (*left_ptr).tag == 11 { // Selector
+                        if std.str_eq((*left_ptr).Selector.right, "Ok") {
+                            if (*right_ptr).tag == 1 { // Integer
+                                if (*right_ptr).Integer.val == 1 {
+                                    return expression_to_string((*left_ptr).Selector.left, ctx);
                                 }
                             }
                         }
                     }
-                    if right.tag == 11 { // Selector
-                        if std.str_eq(right.Selector.right, "Ok") {
-                            if left.tag == 1 { // Integer
-                                if left.Integer.val == 1 {
-                                    return expression_to_string(right.Selector.left, ctx);
+                    if (*right_ptr).tag == 11 { // Selector
+                        if std.str_eq((*right_ptr).Selector.right, "Ok") {
+                            if (*left_ptr).tag == 1 { // Integer
+                                if (*left_ptr).Integer.val == 1 {
+                                    return expression_to_string((*right_ptr).Selector.left, ctx);
                                 }
                             }
                         }
