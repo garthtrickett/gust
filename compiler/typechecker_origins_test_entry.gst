@@ -89,4 +89,108 @@ func main() {
     } else {
         os.LogStr("expr2 failed to identify scratch");
     }
+
+    // --- PART 3: Expression Typechecker Verification Tests ---
+    mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+    // Case 1: Variable Origin Invalidated Check
+    mut t_int: ast.Type[ctx];
+    t_int.tag = 0; // Int
+    typechecker.scope_insert(scope, "var_a", t_int, ctx);
+
+    mut orig_a := typechecker.set_init(ctx);
+    typechecker.set_add(orig_a, "origin_x", ctx);
+    env.variable_origins.Insert(std.Clone(ctx, "var_a"), orig_a);
+
+    env.moved_vars.Insert(std.Clone(ctx, "origin_x"), 1);
+
+    mut l3: lexer.Lexer[ctx];
+    lexer.init_lexer(&l3, "var_a");
+    mut p3: parser.Parser[ctx];
+    parser.init_parser(&p3, &l3, ctx);
+    mut expr3 := parser.parse_expression(&p3, 1, ctx);
+
+    typechecker.check_expression(expr3, &env, scope, ctx);
+
+    mut has_origin_err := 0;
+    mut j := 0;
+    while j < len(env.errors) { 
+        mut err := env.errors[j];
+        if std.str_find(err.message, "origin invalidated") != 0 - 1 {
+            has_origin_err = 1;
+        }
+        j = j + 1;
+    }
+
+    if has_origin_err == 1 {
+        os.LogStr("expr3 correctly flagged origin_x invalidation");
+    } else {
+        os.LogStr("expr3 failed to flag origin_x invalidation");
+    }
+
+    // Case 2: Allocator Moved Or Freed Check
+    mut t_index: ast.Type[ctx];
+    t_index.tag = 7; // Index
+    t_index.Index.struct_name = std.Clone(ctx, "Node");
+    mut brand_idx := os.ArenaAlloc(ctx) as Index[str, ctx];
+    unsafe {
+        mut brand_ptr := &ctx[brand_idx] as *str;
+        *brand_ptr = "ctx_brand";
+    }
+    t_index.Index.brand = brand_idx;
+    typechecker.scope_insert(scope, "var_b", t_index, ctx);
+
+    env.moved_vars.Insert(std.Clone(ctx, "ctx_brand"), 1);
+
+    mut l4: lexer.Lexer[ctx];
+    lexer.init_lexer(&l4, "var_b");
+    mut p4: parser.Parser[ctx];
+    parser.init_parser(&p4, &l4, ctx);
+    mut expr4 := parser.parse_expression(&p4, 1, ctx);
+
+    typechecker.check_expression(expr4, &env, scope, ctx);
+
+    mut has_brand_err := 0;
+    mut k := 0;
+    while k < len(env.errors) { 
+        mut err := env.errors[k];
+        if std.str_find(err.message, "Allocator moved or freed") != 0 - 1 {
+            has_brand_err = 1;
+        }
+        k = k + 1;
+    }
+
+    if has_brand_err == 1 {
+        os.LogStr("expr4 correctly flagged ctx_brand invalidation");
+    } else {
+        os.LogStr("expr4 failed to flag ctx_brand invalidation");
+    }
+
+    // Case 3: Use Of Moved Variable Check
+    typechecker.scope_insert(scope, "var_c", t_int, ctx);
+    env.moved_vars.Insert(std.Clone(ctx, "var_c"), 1);
+
+    mut l5: lexer.Lexer[ctx];
+    lexer.init_lexer(&l5, "var_c");
+    mut p5: parser.Parser[ctx];
+    parser.init_parser(&p5, &l5, ctx);
+    mut expr5 := parser.parse_expression(&p5, 1, ctx);
+
+    typechecker.check_expression(expr5, &env, scope, ctx);
+
+    mut has_move_err := 0;
+    mut m := 0;
+    while m < len(env.errors) { 
+        mut err := env.errors[m];
+        if std.str_find(err.message, "Use of moved variable") != 0 - 1 {
+            has_move_err = 1;
+        }
+        m = m + 1;
+    }
+
+    if has_move_err == 1 {
+        os.LogStr("expr5 correctly flagged var_c move");
+    } else {
+        os.LogStr("expr5 failed to flag var_c move");
+    }
 }

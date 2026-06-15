@@ -1,4 +1,6 @@
 import "ast.gst" as ast;
+import "token.gst" as token;
+import "errors.gst" as errors;
 
 type OriginSet[ctx] struct {
     map: std.HashMap[str, int, ctx]
@@ -63,7 +65,7 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
     }
 }
 
-func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) Index[OriginSet[ctx], ctx] {
+func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) Index[OriginSet[ctx], ctx] { 
     unsafe {
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
             return set_init(ctx);
@@ -143,6 +145,179 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
     }
 }
 
+func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        mut dummy: ast.Type[ctx];
+        dummy.tag = 3; // Void
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return dummy;
+        }
+        mut expr := ctx[expr_idx];
+
+        if expr.tag == 0 { // Identifier
+            mut name := expr.Identifier.name;
+            mut resolved_name := env_resolve_namespaced_ident(env, name, ctx);
+            mut t := scope_lookup(scope, resolved_name, ctx);
+
+            // Check if resolved_name is moved
+            if (*env).moved_vars.Get(resolved_name).Ok {
+                mut err: errors.CompilerError[ctx];
+                err.kind.tag = 2; // TypeError
+                err.message = std.Clone(ctx, std.Concat("Semantic Error: Use of moved variable ", resolved_name));
+                err.span = expr.Identifier.span;
+                (*env).errors.Push(err);
+            }
+
+            // Check variable origins
+            mut lookup_orig := (*env).variable_origins.Get(resolved_name);
+            if lookup_orig.Ok {
+                mut origs := lookup_orig.Val;
+                mut keys := ctx[origs].map.Keys(ctx);
+                mut i := 0;
+                while i < len(keys) {
+                    mut orig_name := keys[i];
+                    if (*env).moved_vars.Get(orig_name).Ok {
+                        mut err: errors.CompilerError[ctx];
+                        err.kind.tag = 2; // TypeError
+                        err.message = std.Clone(ctx, std.Concat("Semantic Error: Variable origin invalidated: ", orig_name));
+                        err.span = expr.Identifier.span;
+                        (*env).errors.Push(err);
+                    }
+                    i = i + 1;
+                }
+            }
+
+            // Check allocator brand
+            mut brand_name := "";
+            if t.tag == 7 { // Index
+                if t.Index.brand != empty[Index[str, ctx]] {
+                    mut brand_str_ptr := &ctx[t.Index.brand] as *str;
+                    brand_name = *brand_str_ptr;
+                }
+            } else if t.tag == 8 { // Struct
+                if t.Struct.brand != empty[Index[str, ctx]] {
+                    mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
+                    brand_name = *brand_str_ptr;
+                }
+            }
+
+            if !std.str_eq(brand_name, "") {
+                if (*env).moved_vars.Get(brand_name).Ok {
+                    mut err: errors.CompilerError[ctx];
+                    err.kind.tag = 2; // TypeError
+                    err.message = std.Clone(ctx, std.Concat("Semantic Error: Allocator moved or freed: ", brand_name));
+                    err.span = expr.Identifier.span;
+                    (*env).errors.Push(err);
+                }
+            }
+            return t;
+        }
+        if expr.tag == 1 { // Integer
+            mut t: ast.Type[ctx];
+            t.tag = 0; // Int
+            return t;
+        }
+        if expr.tag == 2 { // String
+            mut t: ast.Type[ctx];
+            t.tag = 5; // Str
+            return t;
+        }
+        if expr.tag == 3 { // Bool
+            mut t: ast.Type[ctx];
+            t.tag = 2; // Bool
+            return t;
+        }
+        if expr.tag == 4 { // Move
+            return check_expression(expr.Move.expr, env, scope, ctx);
+        }
+        if expr.tag == 5 { // Take
+            return check_expression(expr.Take.expr, env, scope, ctx);
+        }
+        if expr.tag == 6 { // AddressOf
+            mut inner := check_expression(expr.AddressOf.expr, env, scope, ctx);
+            mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[t_idx].tag = 9; // RawPointer
+            ctx[t_idx].RawPointer.inner = os.ArenaAlloc(ctx);
+            ctx[ctx[t_idx].RawPointer.inner] = inner;
+            return ctx[t_idx];
+        }
+        if expr.tag == 7 { // Dereference
+            mut inner := check_expression(expr.Dereference.expr, env, scope, ctx);
+            if inner.tag == 9 {
+                return ctx[inner.RawPointer.inner];
+            }
+            return inner;
+        }
+        if expr.tag == 8 { // IndexAccess
+            mut alloc_t := check_expression(expr.IndexAccess.allocator, env, scope, ctx);
+            mut idx_t := check_expression(expr.IndexAccess.index, env, scope, ctx);
+            if alloc_t.tag == 6 { // Slice
+                return ctx[alloc_t.Slice.inner];
+            }
+            if alloc_t.tag == 7 { // Index
+                mut t: ast.Type[ctx];
+                t.tag = 8; // Struct
+                t.Struct.struct_name = std.Clone(ctx, alloc_t.Index.struct_name);
+                t.Struct.brand = alloc_t.Index.brand;
+                return t;
+            }
+            mut t: ast.Type[ctx];
+            t.tag = 0; // Int
+            return t;
+        }
+        if expr.tag == 9 { // AsCast
+            return ctx[expr.AsCast.target_type];
+        }
+        if expr.tag == 10 { // Binary
+            check_expression(expr.Binary.left, env, scope, ctx);
+            check_expression(expr.Binary.right, env, scope, ctx);
+            mut t: ast.Type[ctx];
+            t.tag = 0; // Int
+            return t;
+        }
+        if expr.tag == 11 { // Selector
+            mut left_t := check_expression(expr.Selector.left, env, scope, ctx);
+            if left_t.tag == 8 { // Struct
+                mut lookup_struct := (*env).struct_registry.Get(left_t.Struct.struct_name);
+                if lookup_struct.Ok {
+                    mut field_lookup := lookup_struct.Val.fields.Get(expr.Selector.right);
+                    if field_lookup.Ok {
+                        return field_lookup.Val;
+                    }
+                }
+            }
+            mut t: ast.Type[ctx];
+            t.tag = 0; // Int
+            return t;
+        }
+        if expr.tag == 12 { // Call
+            mut func_name := "";
+            mut func_expr := ctx[expr.Call.function];
+            if func_expr.tag == 0 { // Identifier
+                func_name = func_expr.Identifier.name;
+            } else if func_expr.tag == 11 { // Selector
+                mut left_expr := ctx[func_expr.Selector.left];
+                if left_expr.tag == 0 {
+                    func_name = std.Concat(left_expr.Identifier.name, ".");
+                    func_name = std.Concat(func_name, func_expr.Selector.right);
+                }
+            }
+            mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
+            mut sig_lookup := (*env).function_registry.Get(resolved_func);
+            if sig_lookup.Ok {
+                return sig_lookup.Val.return_type;
+            }
+            mut t: ast.Type[ctx];
+            t.tag = 0; // Int
+            return t;
+        }
+        if expr.tag == 13 { // Empty
+            return ctx[expr.Empty.target_type];
+        }
+        return dummy;
+    }
+}
+
 type StructLayout[ctx] struct {
     brand: Index[str, ctx],
     fields: std.HashMap[str, ast.Type[ctx], ctx]
@@ -198,7 +373,8 @@ type TypeEnvironment[ctx] struct {
     imports: std.HashMap[str, str, ctx],
     variable_origins: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx],
     moved_vars: std.HashMap[str, int, ctx],
-    open_directories: std.HashMap[str, int, ctx]
+    open_directories: std.HashMap[str, int, ctx],
+    errors: std.Vector[errors.CompilerError[ctx], ctx]
 }
 
 func env_new(ctx: &Arena) TypeEnvironment[ctx] {
@@ -213,6 +389,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].variable_origins = std.HashMapNew(ctx);
         ctx[env_idx].moved_vars = std.HashMapNew(ctx);
         ctx[env_idx].open_directories = std.HashMapNew(ctx);
+        ctx[env_idx].errors = std.VectorNew(ctx);
         return ctx[env_idx];
     }
 }

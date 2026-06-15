@@ -4115,6 +4115,6 @@ fn test_e2e_self_hosted_origins() {
 
     assert_eq!(
         stdout_str.trim(),
-        "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch"
+        "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch\nexpr3 correctly flagged origin_x invalidation\nexpr4 correctly flagged ctx_brand invalidation\nexpr5 correctly flagged var_c move"
     );
 }
