@@ -39,7 +39,6 @@ func main() {
         os.LogStr("set1 still missing origin_c");
     }
 
-    if typechecker.set_contains(set1, "origin_d", ctx) {
     if typechecker.set_contains(set1, "origin_d", ctx) == 1 {
         os.LogStr("set1 now has origin_d");
     } else {
