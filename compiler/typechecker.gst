@@ -36,6 +36,111 @@ func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) in
     }
 }
 
+func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 5 { // Str
+            return 1;
+        }
+        if t.tag == 6 { // Slice
+            return 1;
+        }
+        if t.tag == 9 { // RawPointer
+            return 1;
+        }
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            if std.str_eq(name, "str") {
+                return 1;
+            }
+            if len(name) >= 11 && std.str_eq(std.str_slice(name, 0, 11), "CastResult_") {
+                return 1;
+            }
+            if len(name) >= 13 && std.str_eq(std.str_slice(name, 0, 13), "LookupResult_") {
+                return 1;
+            }
+        }
+        return 0;
+    }
+}
+
+func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) Index[OriginSet[ctx], ctx] {
+    unsafe {
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return set_init(ctx);
+        }
+        mut expr := ctx[expr_idx];
+        if expr.tag == 0 { // Identifier
+            mut lookup := (*env).variable_origins.Get(expr.Identifier.name);
+            if lookup.Ok {
+                return lookup.Val;
+            } else {
+                mut s := set_init(ctx);
+                set_add(s, expr.Identifier.name, ctx);
+                return s;
+            }
+        }
+        if expr.tag == 4 { // Move
+            return get_expression_origins(expr.Move.expr, env, ctx);
+        }
+        if expr.tag == 5 { // Take
+            return get_expression_origins(expr.Take.expr, env, ctx);
+        }
+        if expr.tag == 6 { // AddressOf
+            return get_expression_origins(expr.AddressOf.expr, env, ctx);
+        }
+        if expr.tag == 7 { // Dereference
+            return get_expression_origins(expr.Dereference.expr, env, ctx);
+        }
+        if expr.tag == 8 { // IndexAccess
+            return get_expression_origins(expr.IndexAccess.allocator, env, ctx);
+        }
+        if expr.tag == 9 { // AsCast
+            return get_expression_origins(expr.AsCast.left, env, ctx);
+        }
+        if expr.tag == 11 { // Selector
+            return get_expression_origins(expr.Selector.left, env, ctx);
+        }
+        if expr.tag == 12 { // Call
+            mut func_name := "";
+            mut func_expr := ctx[expr.Call.function];
+            if func_expr.tag == 0 { // Identifier
+                func_name = func_expr.Identifier.name;
+            } else if func_expr.tag == 11 { // Selector
+                mut left_expr := ctx[func_expr.Selector.left];
+                if left_expr.tag == 0 {
+                    func_name = std.Concat(left_expr.Identifier.name, ".");
+                    func_name = std.Concat(func_name, func_expr.Selector.right);
+                }
+            }
+            mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
+            if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std_FormatInt") || 
+               std.str_eq(resolved_func, "std_Concat") || std.str_eq(resolved_func, "os_ScratchAlloc") {
+                mut s := set_init(ctx);
+                set_add(s, "scratch", ctx);
+                return s;
+            }
+            mut sig_lookup := (*env).function_registry.Get(resolved_func);
+            if sig_lookup.Ok {
+                mut sig := sig_lookup.Val;
+                if env_type_is_ephemeral_view(sig.return_type, ctx) == 1 {
+                    mut s := set_init(ctx);
+                    mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                    mut i := 0;
+                    while i < len(*args_vec) {
+                        mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg_idx] = (*args_vec)[i];
+                        mut arg_origins := get_expression_origins(arg_idx, env, ctx);
+                        set_union(s, arg_origins, ctx);
+                        i = i + 1;
+                    }
+                    return s;
+                }
+            }
+        }
+        return set_init(ctx);
+    }
+}
+
 type StructLayout[ctx] struct {
     brand: Index[str, ctx],
     fields: std.HashMap[str, ast.Type[ctx], ctx]

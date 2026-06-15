@@ -4115,6 +4115,6 @@ fn test_e2e_self_hosted_origins() {
 
     assert_eq!(
         stdout_str.trim(),
-        "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d"
+        "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch"
     );
 }
