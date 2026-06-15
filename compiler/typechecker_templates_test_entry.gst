@@ -56,4 +56,100 @@ func main() {
     } else {
         os.LogStr("Custom absent from concrete registry");
     }
+
+    // --- Step 2 Tests: substitute_generics and namespaced resolution ---
+    env.current_prefix = "main__";
+    env.imports.Insert(std.Clone(ctx, "lib"), std.Clone(ctx, "lib_module__"));
+
+    // Register dummy namespaced struct "lib_module__MyStruct"
+    mut layout: typechecker.StructLayout[ctx];
+    layout.brand = empty[Index[str, ctx]];
+    layout.fields = std.HashMapNew(ctx);
+    typechecker.env_register_struct(&env, "lib_module__MyStruct", layout, ctx);
+
+    // Map generic parameters: T -> lib.MyStruct (which resolves to lib_module__MyStruct), ctx -> ctx
+    mut subst_map: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+    subst_map.Insert(std.Clone(ctx, "T"), typechecker.make_type_struct("lib.MyStruct", "", ctx));
+    subst_map.Insert(std.Clone(ctx, "ctx"), typechecker.make_type_struct("ctx", "", ctx));
+
+    // Test 1: Test simple primitive substitution (Int) -> should remain Int
+    mut t_int := typechecker.make_type_int();
+    mut res_int := typechecker.substitute_generics(&env, t_int, subst_map, ctx);
+    if res_int.tag == 0 {
+        os.LogStr("substitute_generics Int ok");
+    }
+
+    // Test 2: Test basic generic placeholder 'T' substitution -> should resolve to lib_module__MyStruct
+    mut t_generic_placeholder := typechecker.make_type_struct("T", "", ctx);
+    mut res_struct := typechecker.substitute_generics(&env, t_generic_placeholder, subst_map, ctx);
+    if res_struct.tag == 8 {
+        os.LogStr(res_struct.Struct.struct_name); // Should print: lib_module__MyStruct
+    }
+
+    // Test 3: Test pointer-to-T '*T' substitution -> should resolve to *lib_module__MyStruct
+    mut t_ptr := typechecker.make_type_pointer(t_generic_placeholder, ctx);
+    mut res_ptr := typechecker.substitute_generics(&env, t_ptr, subst_map, ctx);
+    if res_ptr.tag == 9 {
+        unsafe {
+            mut inner := ctx[res_ptr.RawPointer.inner];
+            if inner.tag == 8 {
+                os.LogStr(std.Concat("Pointer inner: ", inner.Struct.struct_name)); // Should print: Pointer inner: lib_module__MyStruct
+            }
+        }
+    }
+
+    // Test 4: Test slice-of-T '[]T' substitution -> should resolve to []lib_module__MyStruct
+    mut t_slice: ast.Type[ctx];
+    t_slice.tag = 6;
+    t_slice.Slice.inner = os.ArenaAlloc(ctx);
+    unsafe {
+        ctx[t_slice.Slice.inner] = t_generic_placeholder;
+    }
+    mut res_slice := typechecker.substitute_generics(&env, t_slice, subst_map, ctx);
+    if res_slice.tag == 6 {
+        unsafe {
+            mut inner := ctx[res_slice.Slice.inner];
+            if inner.tag == 8 {
+                os.LogStr(std.Concat("Slice inner: ", inner.Struct.struct_name)); // Should print: Slice inner: lib_module__MyStruct
+            }
+        }
+    }
+
+    // Test 5: Namespaced generic type std.Vector[lib.MyStruct, ctx] -> std_Vector[lib_module__MyStruct, ctx]
+    mut t_namespaced_vector: ast.Type[ctx];
+    t_namespaced_vector.tag = 10; // Generic
+    t_namespaced_vector.Generic.name = std.Clone(ctx, "std.Vector");
+    
+    mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    args.Push(typechecker.make_type_struct("lib.MyStruct", "", ctx));
+    args.Push(typechecker.make_type_struct("ctx", "", ctx));
+    
+    t_namespaced_vector.Generic.args = os.ArenaAlloc(ctx);
+    unsafe {
+        mut args_ptr := &ctx[t_namespaced_vector.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+        *args_ptr = args;
+    }
+
+    mut res_namespaced := typechecker.env_resolve_type(&env, t_namespaced_vector, ctx);
+    if res_namespaced.tag == 10 {
+        os.LogStr(res_namespaced.Generic.name); // Should print: std_Vector
+        unsafe {
+            mut res_args := &ctx[res_namespaced.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            os.LogStr((*res_args)[0].Struct.struct_name); // Should print: lib_module__MyStruct
+        }
+    }
+
+    // Test 6: Verify get_monomorphized_name with resolved args -> std_Vector_lib_module__MyStruct_ctx
+    mut mono_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    mono_args.Push(res_struct); // MyStruct
+    mono_args.Push(typechecker.make_type_struct("ctx", "", ctx));
+    
+    mut mono_args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    unsafe {
+        mut mono_args_ptr := &ctx[mono_args_idx] as *std.Vector[ast.Type[ctx], ctx];
+        *mono_args_ptr = mono_args;
+    }
+
+    mut mono_name := typechecker.get_monomorphized_name("std.Vector", mono_args_idx, ctx);
+    os.LogStr(mono_name); // Should print: std_Vector_lib_module__MyStruct_ctx
 }

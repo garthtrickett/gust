@@ -3487,10 +3487,20 @@ fn test_self_hosted_templates_pre_registration() {
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
 
-    assert_eq!(
-        stdout_str.trim(),
-        "Vector template found\nstd_HashMap template found\nCustom registered as template\nCustom absent from concrete registry"
-    );
+    let expected = vec![
+        "Vector template found",
+        "std_HashMap template found",
+        "Custom registered as template",
+        "Custom absent from concrete registry",
+        "substitute_generics Int ok",
+        "lib_module__MyStruct",
+        "Pointer inner: lib_module__MyStruct",
+        "Slice inner: lib_module__MyStruct",
+        "std_Vector",
+        "lib_module__MyStruct",
+        "std_Vector_lib_module__MyStruct_ctx"
+    ].join("\n");
+    assert_eq!(stdout_str.trim(), expected.trim());
 }
 
 #[test]
