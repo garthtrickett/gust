@@ -1,4 +1,6 @@
 import "ast.gst" as ast;
+import "lexer.gst" as lexer;
+import "parser.gst" as parser;
 import "typechecker.gst" as typechecker;
 
 func main() {

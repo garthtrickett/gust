@@ -1,9 +1,9 @@
 {
-  "summary": "fix: remove duplicated unclosed if statement in typechecker_origins_test_entry",
+  "summary": "fix: add missing imports for lexer and parser in typechecker_origins_test_entry",
   "files": [
     {
       "file_path": "compiler/typechecker_origins_test_entry.gst",
-      "code_diff": "<<<<<<< SEARCH\n    if typechecker.set_contains(set1, \"origin_d\", ctx) {\n    if typechecker.set_contains(set1, \"origin_d\", ctx) == 1 {\n        os.LogStr(\"set1 now has origin_d\");\n    } else {\n        os.LogStr(\"set1 still missing origin_d\");\n    }\n=======\n    if typechecker.set_contains(set1, \"origin_d\", ctx) == 1 {\n        os.LogStr(\"set1 now has origin_d\");\n    } else {\n        os.LogStr(\"set1 still missing origin_d\");\n    }\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\nimport \"ast.gst\" as ast;\nimport \"typechecker.gst\" as typechecker;\n=======\nimport \"ast.gst\" as ast;\nimport \"lexer.gst\" as lexer;\nimport \"parser.gst\" as parser;\nimport \"typechecker.gst\" as typechecker;\n>>>>>>> REPLACE"
     }
   ]
 }
