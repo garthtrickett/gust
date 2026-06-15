@@ -130,6 +130,9 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
                 set_add(s, "scratch", ctx);
                 return s;
             } else {
+                if std.str_eq(resolved_func, "std_Clone") || std.str_eq(resolved_func, "std.Clone") {
+                    return set_init(ctx);
+                }
                 mut sig_lookup := (*env).function_registry.Get(resolved_func);
                 if sig_lookup.Ok {
                     mut sig := sig_lookup.Val;
@@ -903,7 +906,7 @@ func get_call_func_name(func_expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Ar
             if left_expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
                 mut left_ptr := &ctx[left_expr_idx] as *ast.Expression[ctx];
                 if (*left_ptr).tag == 0 { // Identifier
-                    return std.Concat(std.Concat((*left_ptr).Identifier.name, "."), (*expr_ptr).Selector.right);
+                    return std.Clone(ctx, std.Concat(std.Concat((*left_ptr).Identifier.name, "."), (*expr_ptr).Selector.right));
                 }
             }
         }
@@ -981,12 +984,12 @@ func expression_to_string(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena
         }
         if (*expr_ptr).tag == 11 { // Selector
             mut left_str := expression_to_string((*expr_ptr).Selector.left, ctx);
-            return std.Concat(std.Concat(left_str, "."), (*expr_ptr).Selector.right);
+            return std.Clone(ctx, std.Concat(std.Concat(left_str, "."), (*expr_ptr).Selector.right));
         }
         if (*expr_ptr).tag == 8 { // IndexAccess
             mut alloc_str := expression_to_string((*expr_ptr).IndexAccess.allocator, ctx);
             mut idx_str := expression_to_string((*expr_ptr).IndexAccess.index, ctx);
-            return std.Concat(std.Concat(std.Concat(alloc_str, "["), idx_str), "]");
+            return std.Clone(ctx, std.Concat(std.Concat(std.Concat(alloc_str, "["), idx_str), "]"));
         }
         return "";
     }
