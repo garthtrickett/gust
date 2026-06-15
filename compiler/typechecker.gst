@@ -54,10 +54,15 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
             if std.str_eq(name, "str") {
                 return 1;
             }
-            if len(name) >= 11 && std.str_eq(std.str_slice(name, 0, 11), "CastResult_") {
+            mut clean_name := name;
+            mut d_idx := std.str_find(name, "__");
+            if d_idx != 0 - 1 {
+                clean_name = std.str_slice(name, d_idx + 2, len(name));
+            }
+            if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") {
                 return 1;
             }
-            if len(name) >= 13 && std.str_eq(std.str_slice(name, 0, 13), "LookupResult_") {
+            if len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_") {
                 return 1;
             }
         }

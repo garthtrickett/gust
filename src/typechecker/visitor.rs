@@ -2701,7 +2701,16 @@ impl TypeChecker {
                 }
 
                 if let Type::Struct(struct_name, _brand) = &left_type {
-                    let clean_struct_name = strip_brand_prefix(struct_name);
+                    let clean_struct_name = if let Some(pos) = struct_name.find("__") {
+                        let after_pfx = &struct_name[pos + 2..];
+                        if after_pfx.starts_with("CastResult_") || after_pfx.starts_with("LookupResult_") {
+                            after_pfx
+                        } else {
+                            struct_name.as_str()
+                        }
+                    } else {
+                        struct_name.as_str()
+                    };
                     if clean_struct_name.starts_with("CastResult_")
                         || clean_struct_name.starts_with("LookupResult_")
                     {
