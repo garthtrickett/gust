@@ -385,7 +385,19 @@ impl TypeChecker {
                                 let num_to_join = parts.len() - num_generics + 1;
                                 let joined_first_arg = 
                                     parts[..num_to_join].join("_").replace("@", "__");
-                                args.push(Type::Struct(joined_first_arg, None));
+                                
+                                let is_generic_template =
+                                    self.struct_templates.contains_key(&joined_first_arg)
+                                        || self.enum_templates.contains_key(&joined_first_arg);
+                                
+                                if is_generic_template && num_to_join < parts.len() { 
+                                    let brand_part = parts[num_to_join].replace("@", "__");
+                                    let reconstructed = format!("{}_{}", joined_first_arg, brand_part);
+                                    args.push(Type::Struct(reconstructed, None));
+                                } else {
+                                    args.push(Type::Struct(joined_first_arg, None));
+                                }
+
                                 for part in &parts[num_to_join..] {
                                     let clean_part = part.replace("@", "__");
                                     if clean_part == "int" {
@@ -400,6 +412,7 @@ impl TypeChecker {
                                         args.push(Type::Struct(clean_part, None));
                                     }
                                 }
+                            }
                             } else {
                                 for part in parts {
                                     let clean_part = part.replace("@", "__");
