@@ -1,9 +1,9 @@
 {
-  "summary": "fix: correct set_contains return type mismatch by comparing Ok field to 1",
+  "summary": "fix: resolve return type mismatch in set_contains by returning int instead of bool",
   "files": [
     {
       "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) bool {\n    unsafe {\n        return ctx[set].map.Get(element).Ok;\n    }\n}\n=======\nfunc set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) bool {\n    unsafe {\n        return ctx[set].map.Get(element).Ok == 1;\n    }\n}\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\nfunc set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) bool {\n    unsafe {\n        return ctx[set].map.Get(element).Ok == 1;\n    }\n}\n=======\nfunc set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) int {\n    unsafe {\n        return ctx[set].map.Get(element).Ok;\n    }\n}\n>>>>>>> REPLACE"
     }
   ]
 }

@@ -30,9 +30,9 @@ func set_union(dest: Index[OriginSet[ctx], ctx], src: Index[OriginSet[ctx], ctx]
     }
 }
 
-func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) bool {
+func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) int {
     unsafe {
-        return ctx[set].map.Get(element).Ok == 1;
+        return ctx[set].map.Get(element).Ok;
     }
 }
 
