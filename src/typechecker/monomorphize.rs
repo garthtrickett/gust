@@ -588,14 +588,14 @@ impl TypeChecker {
                     self.struct_registry.insert(
                         concrete_variant_struct_name.clone(),
                         StructLayout {
-                            brand: None,
+                            brand: brand.clone(),
                             fields: variant_fields,
                         },
                     );
 
                     enum_fields.insert(
                         variant.name.clone(),
-                        Type::Struct(concrete_variant_struct_name, None),
+                        Type::Struct(concrete_variant_struct_name, brand.clone()),
                     );
                 }
 
