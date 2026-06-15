@@ -714,8 +714,22 @@ impl TypeChecker {
             Type::Str => "str".to_string(), // Added for String Views
             Type::RawPointer(inner) => format!("{}_ptr", self.get_type_ident(inner)),
             Type::Slice(inner) => format!("Slice_{}", self.get_type_ident(inner)),
-            Type::Struct(name, _) => name.clone(),
-            Type::Index(name, _) => format!("Index_{}", name),
+            Type::Struct(name, brand) => {
+                if let Some(b) = brand {
+                    let clean_b = strip_brand_prefix(b);
+                    format!("{}_{}", name, clean_b)
+                } else {
+                    name.clone()
+                }
+            }
+            Type::Index(name, brand) => {
+                if let Some(b) = brand {
+                    let clean_b = strip_brand_prefix(b);
+                    format!("Index_{}_{}", name, clean_b)
+                } else {
+                    format!("Index_{}", name)
+                }
+            }
             _ => "unknown".to_string(),
         };
         base.replace(".", "_")
