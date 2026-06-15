@@ -2801,53 +2801,65 @@ func typechecker_str_compare(s1: str, s2: str) int {
 }
 
 func typechecker_sort_vector_str(vec: *std.Vector[str, ctx], ctx: &Arena) {
-    mut n := len(*vec);
-    mut i := 0;
-    while i < n {
-        mut min_idx := i;
-        mut j := i + 1;
-        while j < n {
-            mut cmp := typechecker_str_compare((*vec)[j], (*vec)[min_idx]);
-            if cmp < 0 {
-                min_idx = j;
+    unsafe {
+        mut n := len(*vec);
+        mut i := 0;
+        while i < n {
+            mut min_idx := i;
+            mut j := i + 1;
+            while j < n {
+                mut cmp := typechecker_str_compare((*vec)[j], (*vec)[min_idx]);
+                if cmp < 0 {
+                    min_idx = j;
+                }
+                j = j + 1;
             }
-            j = j + 1;
+            if min_idx != i {
+                mut temp := (*vec)[i];
+                (*vec)[i] = (*vec)[min_idx];
+                (*vec)[min_idx] = temp;
+            }
+            i = i + 1;
         }
-        if min_idx != i {
-            mut temp := (*vec)[i];
-            (*vec)[i] = (*vec)[min_idx];
-            (*vec)[min_idx] = temp;
-        }
-        i = i + 1;
     }
 }
 
 func typechecker_get_sorted_keys_int(map: *std.HashMap[str, int, ctx], ctx: &Arena) std.Vector[str, ctx] {
-    mut keys := (*map).Keys(ctx);
-    typechecker_sort_vector_str(&keys, ctx);
-    return keys;
+    unsafe {
+        mut keys := (*map).Keys(ctx);
+        typechecker_sort_vector_str(&keys, ctx);
+        return keys;
+    }
 }
 
 func typechecker_get_sorted_keys_type(map: *std.HashMap[str, ast.Type[ctx], ctx], ctx: &Arena) std.Vector[str, ctx] {
-    mut keys := (*map).Keys(ctx);
-    typechecker_sort_vector_str(&keys, ctx);
-    return keys;
+    unsafe {
+        mut keys := (*map).Keys(ctx);
+        typechecker_sort_vector_str(&keys, ctx);
+        return keys;
+    }
 }
 
 func typechecker_get_sorted_keys_layout(map: *std.HashMap[str, StructLayout[ctx], ctx], ctx: &Arena) std.Vector[str, ctx] {
-    mut keys := (*map).Keys(ctx);
-    typechecker_sort_vector_str(&keys, ctx);
-    return keys;
+    unsafe {
+        mut keys := (*map).Keys(ctx);
+        typechecker_sort_vector_str(&keys, ctx);
+        return keys;
+    }
 }
 
 func typechecker_get_sorted_keys_enum(map: *std.HashMap[str, std.Vector[str, ctx], ctx], ctx: &Arena) std.Vector[str, ctx] {
-    mut keys := (*map).Keys(ctx);
-    typechecker_sort_vector_str(&keys, ctx);
-    return keys;
+    unsafe {
+        mut keys := (*map).Keys(ctx);
+        typechecker_sort_vector_str(&keys, ctx);
+        return keys;
+    }
 }
 
 func typechecker_get_sorted_keys_func(map: *std.HashMap[str, FunctionSignature[ctx], ctx], ctx: &Arena) std.Vector[str, ctx] {
-    mut keys := (*map).Keys(ctx);
-    typechecker_sort_vector_str(&keys, ctx);
-    return keys;
+    unsafe {
+        mut keys := (*map).Keys(ctx);
+        typechecker_sort_vector_str(&keys, ctx);
+        return keys;
+    }
 }

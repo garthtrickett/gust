@@ -131,4 +131,18 @@ func main() {
         os.LogStr(std.Concat("Sorted key: ", sorted_keys[k_idx]));
         k_idx = k_idx + 1;
     }
+
+    // 5. Test Pointer-Safe Vector Sorting (Step 2.2.1 Verification)
+    mut test_vec: std.Vector[str, ctx] := std.VectorNew(ctx);
+    test_vec.Push("cherry");
+    test_vec.Push("banana");
+    test_vec.Push("apple");
+
+    typechecker.typechecker_sort_vector_str(&test_vec, ctx);
+    os.LogStr(std.Concat("Sorted vector count: ", std.FormatInt(len(test_vec))));
+    mut v_idx := 0;
+    while v_idx < len(test_vec) {
+        os.LogStr(std.Concat("Sorted vector element: ", test_vec[v_idx]));
+        v_idx = v_idx + 1;
+    }
 }
