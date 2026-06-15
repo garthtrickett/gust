@@ -281,6 +281,21 @@ impl TypeChecker {
                         .to_string();
                     let v_type = if target_struct == "int" {
                         Type::Int
+                    } else if let Some(suffix) = target_struct.strip_prefix("Index_") {
+                        let brand = if suffix.ends_with("_ctx") {
+                            Some("ctx".to_string())
+                        } else if suffix.ends_with("_connCtx") {
+                            Some("connCtx".to_string())
+                        } else if suffix.ends_with("_arena") {
+                            Some("arena".to_string())
+                        } else if suffix.ends_with("_a") {
+                            Some("a".to_string())
+                        } else if suffix.ends_with("_Any") {
+                            Some("Any".to_string())
+                        } else {
+                            None
+                        };
+                        Type::Index(suffix.to_string(), brand)
                     } else {
                         Type::Struct(target_struct, None)
                     };
