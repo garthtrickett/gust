@@ -107,11 +107,13 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
             mut func_expr := ctx[expr.Call.function];
             if func_expr.tag == 0 { // Identifier
                 func_name = func_expr.Identifier.name;
-            } else if func_expr.tag == 11 { // Selector
-                mut left_expr := ctx[func_expr.Selector.left];
-                if left_expr.tag == 0 {
-                    func_name = std.Concat(left_expr.Identifier.name, ".");
-                    func_name = std.Concat(func_name, func_expr.Selector.right);
+            } else {
+                if func_expr.tag == 11 { // Selector
+                    mut left_expr := ctx[func_expr.Selector.left];
+                    if left_expr.tag == 0 {
+                        func_name = std.Concat(left_expr.Identifier.name, ".");
+                        func_name = std.Concat(func_name, func_expr.Selector.right);
+                    }
                 }
             }
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
@@ -194,10 +196,12 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
                     mut brand_str_ptr := &ctx[t.Index.brand] as *str;
                     brand_name = *brand_str_ptr;
                 }
-            } else if t.tag == 8 { // Struct
-                if t.Struct.brand != empty[Index[str, ctx]] {
-                    mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
-                    brand_name = *brand_str_ptr;
+            } else {
+                if t.tag == 8 { // Struct
+                    if t.Struct.brand != empty[Index[str, ctx]] {
+                        mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
+                        brand_name = *brand_str_ptr;
+                    }
                 }
             }
 
@@ -295,11 +299,13 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
             mut func_expr := ctx[expr.Call.function];
             if func_expr.tag == 0 { // Identifier
                 func_name = func_expr.Identifier.name;
-            } else if func_expr.tag == 11 { // Selector
-                mut left_expr := ctx[func_expr.Selector.left];
-                if left_expr.tag == 0 {
-                    func_name = std.Concat(left_expr.Identifier.name, ".");
-                    func_name = std.Concat(func_name, func_expr.Selector.right);
+            } else {
+                if func_expr.tag == 11 { // Selector
+                    mut left_expr := ctx[func_expr.Selector.left];
+                    if left_expr.tag == 0 {
+                        func_name = std.Concat(left_expr.Identifier.name, ".");
+                        func_name = std.Concat(func_name, func_expr.Selector.right);
+                    }
                 }
             }
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
@@ -483,29 +489,37 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
         ctx[res_idx] = t;
         if t.tag == 7 { // Index
             ctx[res_idx].Index.struct_name = env_resolve_namespaced_ident(env, t.Index.struct_name, ctx);
-        } else if t.tag == 8 { // Struct
-            ctx[res_idx].Struct.struct_name = env_resolve_namespaced_ident(env, t.Struct.struct_name, ctx);
-        } else if t.tag == 9 { // RawPointer
-            mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[inner_idx] = env_resolve_type(env, ctx[t.RawPointer.inner], ctx);
-            ctx[res_idx].RawPointer.inner = inner_idx;
-        } else if t.tag == 6 { // Slice
-            mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[inner_idx] = env_resolve_type(env, ctx[t.Slice.inner], ctx);
-            ctx[res_idx].Slice.inner = inner_idx;
-        } else if t.tag == 10 { // Generic
-            ctx[res_idx].Generic.name = env_resolve_namespaced_ident(env, t.Generic.name, ctx);
-            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-            mut new_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
-            mut i := 0;
-            while i < len(*args_vec) {
-                mut arg := (*args_vec)[i];
-                new_args.Push(env_resolve_type(env, arg, ctx));
-                i = i + 1;
+        } else {
+            if t.tag == 8 { // Struct
+                ctx[res_idx].Struct.struct_name = env_resolve_namespaced_ident(env, t.Struct.struct_name, ctx);
+            } else {
+                if t.tag == 9 { // RawPointer
+                    mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx); 
+                    ctx[inner_idx] = env_resolve_type(env, ctx[t.RawPointer.inner], ctx);
+                    ctx[res_idx].RawPointer.inner = inner_idx;
+                } else {
+                    if t.tag == 6 { // Slice
+                        mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[inner_idx] = env_resolve_type(env, ctx[t.Slice.inner], ctx);
+                        ctx[res_idx].Slice.inner = inner_idx;
+                    } else {
+                        if t.tag == 10 { // Generic
+                            ctx[res_idx].Generic.name = env_resolve_namespaced_ident(env, t.Generic.name, ctx);
+                            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+                            mut new_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                            mut i := 0;
+                            while i < len(*args_vec) {
+                                mut arg := (*args_vec)[i];
+                                new_args.Push(env_resolve_type(env, arg, ctx));
+                                i = i + 1;
+                            }
+                            ctx[res_idx].Generic.args = os.ArenaAlloc(ctx);
+                            mut dest_args := &ctx[ctx[res_idx].Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+                            *dest_args = new_args;
+                        }
+                    }
+                }
             }
-            ctx[res_idx].Generic.args = os.ArenaAlloc(ctx);
-            mut dest_args := &ctx[ctx[res_idx].Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-            *dest_args = new_args;
         }
         return ctx[res_idx];
     }
