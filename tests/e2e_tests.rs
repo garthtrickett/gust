@@ -3980,14 +3980,8 @@ fn test_e2e_self_hosted_registries() {
     let temp_dir = std::env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
-    let c_filename = format!(
-        "gust_e2e_registry_{:?}_{}.c",
-        thread_id, process_id
-    );
-    let bin_filename = format!(
-        "gust_e2e_registry_{:?}_{}.bin",
-        thread_id, process_id
-    );
+    let c_filename = format!("gust_e2e_registry_{:?}_{}.c", thread_id, process_id);
+    let bin_filename = format!("gust_e2e_registry_{:?}_{}.bin", thread_id, process_id);
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -4003,7 +3997,7 @@ fn test_e2e_self_hosted_registries() {
     let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
-        .output() 
+        .output()
         .expect("GCC command failed");
 
     assert!(
@@ -4055,14 +4049,14 @@ fn test_e2e_self_hosted_origins() {
                 path,
                 check_res.err()
             );
-        } 
+        }
     }
 
     let mut modules_for_codegen = Vec::new();
     for path in &order {
         if let Some(module) = modules.get_mut(path) {
             modules_for_codegen.push((path.clone(), module.program.clone()));
-        } 
+        }
     }
 
     let codegen = Codegen::new(
@@ -4095,7 +4089,7 @@ fn test_e2e_self_hosted_origins() {
     let compile_output = cmd
         .arg("-o")
         .arg(&bin_path)
-        .output() 
+        .output()
         .expect("GCC command failed");
 
     assert!(
@@ -4117,4 +4111,128 @@ fn test_e2e_self_hosted_origins() {
         stdout_str.trim(),
         "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch\nexpr3 correctly flagged origin_x invalidation\nexpr4 correctly flagged ctx_brand invalidation\nexpr5 correctly flagged var_c move"
     );
+}
+
+#[test]
+fn test_self_hosted_typechecker_violations() {
+    gust_lexer::init_logging();
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
+
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, mut modules) = res.unwrap();
+
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let c_filename = format!("gust_self_hosted_driver_{:?}_{}.c", thread_id, process_id);
+    let bin_filename = format!("gust_self_hosted_driver_{:?}_{}.bin", thread_id, process_id);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "Compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    // Violation 1: test_escape_return_violation.gst
+    let run1 = std::process::Command::new(&bin_path)
+        .arg("compiler/test_escape_return_violation.gst")
+        .output()
+        .expect("Execution failed");
+    let out1 = String::from_utf8(run1.stdout).expect("Invalid UTF-8");
+    let err1 = String::from_utf8(run1.stderr).expect("Invalid UTF-8");
+    println!("RUN1 STATUS: {:?}", run1.status);
+    println!("RUN1 STDOUT:\n{}", out1);
+    println!("RUN1 STDERR:\n{}", err1);
+    assert!(!run1.status.success());
+    assert!(out1.contains("Returning ephemeral view of type Str whose origin traces back to local stack variable 'local'"));
+
+    // Violation 2: test_scratch_storage_violation.gst
+    let run2 = std::process::Command::new(&bin_path)
+        .arg("compiler/test_scratch_storage_violation.gst")
+        .output()
+        .expect("Execution failed");
+    let out2 = String::from_utf8(run2.stdout).expect("Invalid UTF-8");
+    let err2 = String::from_utf8(run2.stderr).expect("Invalid UTF-8");
+    println!("RUN2 STATUS: {:?}", run2.status);
+    println!("RUN2 STDOUT:\n{}", out2);
+    println!("RUN2 STDERR:\n{}", err2);
+    assert!(!run2.status.success());
+    assert!(out2.contains(
+        "Cannot assign scratchpad-allocated view to field of branded struct BrandedNode"
+    ));
+
+    // Violation 3: test_directory_leak_violation.gst
+    let run3 = std::process::Command::new(&bin_path)
+        .arg("compiler/test_directory_leak_violation.gst")
+        .output()
+        .expect("Execution failed");
+    let out3 = String::from_utf8(run3.stdout).expect("Invalid UTF-8");
+    let err3 = String::from_utf8(run3.stderr).expect("Invalid UTF-8");
+    println!("RUN3 STATUS: {:?}", run3.status);
+    println!("RUN3 STDOUT:\n{}", out3);
+    println!("RUN3 STDERR:\n{}", err3);
+    assert!(!run3.status.success());
+    assert!(out3.contains("Directory resource variable 'd' must be cleanly closed with os.CloseDir before leaving local scope"));
+
+    // Clean up temporary files
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
 }
