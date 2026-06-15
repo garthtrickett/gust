@@ -754,31 +754,30 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
             mut name := t.Struct.struct_name;
             mut lookup := map.Get(name);
             if lookup.Ok {
-                return lookup.Val;
-            }
-            
-            mut parts := std.str_split(name, "_", ctx);
-            mut changed := 0;
-            mut i := 0;
-            while i < len(parts) {
-                mut part := parts[i];
-                mut part_lookup := map.Get(part);
-                if part_lookup.Ok {
-                    parts[i] = get_type_ident(part_lookup.Val, ctx);
-                    changed = 1;
-                }
-                i = i + 1;
-            }
-            mut new_name := name;
-            if changed == 1 {
-                new_name = ast.ast_join_strings(parts, "_", ctx);
-            }
-            
-            mut final_lookup := map.Get(new_name);
-            if final_lookup.Ok {
-                return final_lookup.Val;
+                res_type = lookup.Val;
             } else {
-                mut new_brand := t.Struct.brand;
+                mut parts := std.str_split(name, "_", ctx);
+                mut changed := 0;
+                mut i := 0;
+                while i < len(parts) {
+                    mut part := parts[i];
+                    mut part_lookup := map.Get(part);
+                    if part_lookup.Ok {
+                        parts[i] = get_type_ident(part_lookup.Val, ctx);
+                        changed = 1;
+                    }
+                    i = i + 1;
+                }
+                mut new_name := name;
+                if changed == 1 {
+                    new_name = ast.ast_join_strings(parts, "_", ctx);
+                }
+                
+                mut final_lookup := map.Get(new_name);
+                if final_lookup.Ok {
+                    res_type = final_lookup.Val;
+                } else {
+                    mut new_brand := t.Struct.brand;
                 if t.Struct.brand != empty[Index[str, ctx]] {
                     mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
                     mut brand_lookup := map.Get(*brand_str_ptr);
