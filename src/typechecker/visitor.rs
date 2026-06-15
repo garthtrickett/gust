@@ -34,13 +34,10 @@ impl TypeChecker {
             Type::Str | Type::Slice(_) | Type::ByteSlice | Type::RawPointer(_) => true,
             Type::Struct(name, _) => {
                 let clean_name = strip_brand_prefix(name);
-                if clean_name.starts_with("CastResult_")
+                clean_name == "str"
+                    || clean_name.starts_with("CastResult_")
                     || clean_name.starts_with("LookupResult_")
                     || clean_name.ends_with("_Any")
-                {
-                    return true;
-                }
-                self.contains_ephemeral_view(t)
             }
             _ => false,
         }
@@ -1864,7 +1861,7 @@ impl TypeChecker {
                         });
                     }
 
-                    if self.contains_ephemeral_view(&t)
+                    if self.is_ephemeral_view(&t)
                         && let Some(ref local_vars) = self.current_function_local_vars
                     {
                         for origin in &expr_origins {
@@ -2029,7 +2026,7 @@ impl TypeChecker {
                 }
                 if let Some(sig) = self.function_registry.get(&func_path).cloned() {
                     let mut call_origins = HashSet::new();
-                    if self.contains_ephemeral_view(&sig.return_type) {
+                    if self.is_ephemeral_view(&sig.return_type) {
                         for arg in arguments {
                             let arg_origins = self.get_expression_origins(arg);
                             call_origins.extend(arg_origins);
