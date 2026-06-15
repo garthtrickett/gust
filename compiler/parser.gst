@@ -22,30 +22,50 @@ func parser_get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
         mut base := "";
         if t.tag == 0 { // Int
             base = "int";
-        } else if t.tag == 1 { // Byte
-            base = "byte";
-        } else if t.tag == 2 { // Bool
-            base = "bool";
-        } else if t.tag == 3 { // Void
-            base = "void";
-        } else if t.tag == 4 { // Arena
-            base = "Arena";
-        } else if t.tag == 5 { // Str
-            base = "str";
-        } else if t.tag == 6 { // Slice
-            mut inner_t := ctx[t.Slice.inner];
-            base = std.Concat("Slice_", parser_get_type_ident(inner_t, ctx));
-        } else if t.tag == 7 { // Index
-            base = std.Concat("Index_", t.Index.struct_name);
-        } else if t.tag == 8 { // Struct
-            base = t.Struct.struct_name;
-        } else if t.tag == 9 { // RawPointer
-            mut inner_t := ctx[t.RawPointer.inner];
-            base = std.Concat(parser_get_type_ident(inner_t, ctx), "_ptr");
-        } else if t.tag == 10 { // Generic
-            base = parser_get_monomorphized_name(t.Generic.name, t.Generic.args, ctx);
         } else {
-            base = "unknown";
+            if t.tag == 1 { // Byte
+                base = "byte";
+            } else {
+                if t.tag == 2 { // Bool
+                    base = "bool";
+                } else {
+                    if t.tag == 3 { // Void
+                        base = "void";
+                    } else {
+                        if t.tag == 4 { // Arena
+                            base = "Arena";
+                        } else {
+                            if t.tag == 5 { // Str
+                                base = "str";
+                            } else {
+                                if t.tag == 6 { // Slice
+                                    mut inner_t := ctx[t.Slice.inner];
+                                    base = std.Concat("Slice_", parser_get_type_ident(inner_t, ctx));
+                                } else {
+                                    if t.tag == 7 { // Index
+                                        base = std.Concat("Index_", t.Index.struct_name);
+                                    } else {
+                                        if t.tag == 8 { // Struct
+                                            base = t.Struct.struct_name;
+                                        } else {
+                                            if t.tag == 9 { // RawPointer
+                                                mut inner_t := ctx[t.RawPointer.inner];
+                                                base = std.Concat(parser_get_type_ident(inner_t, ctx), "_ptr");
+                                            } else {
+                                                if t.tag == 10 { // Generic
+                                                    base = parser_get_monomorphized_name(t.Generic.name, t.Generic.args, ctx);
+                                                } else {
+                                                    base = "unknown";
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         mut out := "";
@@ -299,38 +319,52 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                     mut dest_ptr := &ctx[brand_idx] as *str;
                     *dest_ptr = std.Clone(*ctx, brand_name);
                     return t_idx;
-                } else if len(args_vec) == 2 {
-                    mut arg0 := args_vec[0];
-                    mut arg1 := args_vec[1];
-                    mut struct_name := "SessionNode";
-                    if arg0.tag == 8 { // Struct = 8
-                        struct_name = arg0.Struct.struct_name;
-                    } else if arg0.tag == 5 { // Str = 5
-                        struct_name = "str";
-                    } else if arg0.tag == 0 { // Int = 0
-                        struct_name = "int";
-                    } else if arg0.tag == 1 { // Byte = 1
-                        struct_name = "byte";
-                    } else if arg0.tag == 2 { // Bool = 2
-                        struct_name = "bool";
-                    } else if arg0.tag == 4 { // Arena = 4
-                        struct_name = "Arena";
-                    } else if arg0.tag == 10 { // Generic = 10
-                        struct_name = parser_get_monomorphized_name(arg0.Generic.name, arg0.Generic.args, ctx);
+                } else {
+                    if len(args_vec) == 2 {
+                        mut arg0 := args_vec[0];
+                        mut arg1 := args_vec[1];
+                        mut struct_name := "SessionNode";
+                        if arg0.tag == 8 { // Struct = 8
+                            struct_name = arg0.Struct.struct_name;
+                        } else {
+                            if arg0.tag == 5 { // Str = 5
+                                struct_name = "str";
+                            } else {
+                                if arg0.tag == 0 { // Int = 0
+                                    struct_name = "int";
+                                } else {
+                                    if arg0.tag == 1 { // Byte = 1
+                                        struct_name = "byte";
+                                    } else {
+                                        if arg0.tag == 2 { // Bool = 2
+                                            struct_name = "bool";
+                                        } else {
+                                            if arg0.tag == 4 { // Arena = 4
+                                                struct_name = "Arena";
+                                            } else {
+                                                if arg0.tag == 10 { // Generic = 10
+                                                    struct_name = parser_get_monomorphized_name(arg0.Generic.name, arg0.Generic.args, ctx);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        mut brand_name := "";
+                        if arg1.tag == 8 { // Struct = 8
+                            brand_name = arg1.Struct.struct_name;
+                        }
+                        mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[t_idx].tag = 7; // Index = 7
+                        ctx[t_idx].Index.struct_name = std.Clone(*ctx, struct_name);
+                        
+                        mut brand_idx: Index[ast.Parameter[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[t_idx].Index.brand = brand_idx as Index[str, ctx];
+                        mut dest_ptr := &ctx[brand_idx] as *str;
+                        *dest_ptr = std.Clone(*ctx, brand_name);
+                        return t_idx;
                     }
-                    mut brand_name := "";
-                    if arg1.tag == 8 { // Struct = 8
-                        brand_name = arg1.Struct.struct_name;
-                    }
-                    mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[t_idx].tag = 7; // Index = 7
-                    ctx[t_idx].Index.struct_name = std.Clone(*ctx, struct_name);
-                    
-                    mut brand_idx: Index[ast.Parameter[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[t_idx].Index.brand = brand_idx as Index[str, ctx];
-                    mut dest_ptr := &ctx[brand_idx] as *str;
-                    *dest_ptr = std.Clone(*ctx, brand_name);
-                    return t_idx;
                 }
             }
 
