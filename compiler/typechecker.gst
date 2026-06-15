@@ -487,6 +487,16 @@ type Scope[ctx] struct {
     bindings: std.HashMap[str, ast.Type[ctx], ctx]
 }
 
+type StructTemplate[ctx] struct {
+    generics: Index[std.Vector[str, ctx], ctx],
+    fields: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx]
+}
+
+type EnumTemplate[ctx] struct {
+    generics: Index[std.Vector[str, ctx], ctx],
+    variants: Index[std.Vector[ast.VariantDef[ctx], ctx], ctx]
+}
+
 func scope_new(parent: Index[Scope[ctx], ctx], ctx: &Arena) Index[Scope[ctx], ctx] {
     mut scope_idx: Index[Scope[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
@@ -521,6 +531,8 @@ func scope_lookup(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) ast.Typ
 
 type TypeEnvironment[ctx] struct {
     struct_registry: std.HashMap[str, StructLayout[ctx], ctx],
+    struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
+    enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     current_prefix: str,
     imports: std.HashMap[str, str, ctx],
@@ -536,10 +548,418 @@ type TypeEnvironment[ctx] struct {
     in_unsafe_block: int
 }
 
-func env_new(ctx: &Arena) TypeEnvironment[ctx] {
-    mut env_idx: Index[TypeEnvironment[ctx], ctx] := os.ArenaAlloc(ctx);
+func make_type_int() ast.Type[ctx] {
+    mut t: ast.Type[ctx];
+    t.tag = 0; // Int
+    return t;
+}
+
+func make_type_byte() ast.Type[ctx] {
+    mut t: ast.Type[ctx];
+    t.tag = 1; // Byte
+    return t;
+}
+
+func make_type_bool() ast.Type[ctx] {
+    mut t: ast.Type[ctx];
+    t.tag = 2; // Bool
+    return t;
+}
+
+func make_type_arena() ast.Type[ctx] {
+    mut t: ast.Type[ctx];
+    t.tag = 4; // Arena
+    return t;
+}
+
+func make_type_str() ast.Type[ctx] {
+    mut t: ast.Type[ctx];
+    t.tag = 5; // Str
+    return t;
+}
+
+func make_type_pointer(inner: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
+    mut t: ast.Type[ctx];
+    t.tag = 9; // RawPointer
     unsafe {
+        t.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t.RawPointer.inner] = inner;
+    }
+    return t;
+}
+
+func make_type_struct(name: str, brand_name: str, ctx: &Arena) ast.Type[ctx] {
+    mut t: ast.Type[ctx];
+    t.tag = 8; // Struct
+    t.Struct.struct_name = std.Clone(ctx, name);
+    if std.str_eq(brand_name, "") {
+        t.Struct.brand = empty[Index[str, ctx]];
+    } else {
+        unsafe {
+            t.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+            mut ptr := &ctx[t.Struct.brand] as *str;
+            *ptr = std.Clone(ctx, brand_name);
+        }
+    }
+    return t;
+}
+
+func make_type_index(struct_name: str, brand_name: str, ctx: &Arena) ast.Type[ctx] {
+    mut t: ast.Type[ctx];
+    t.tag = 7; // Index
+    t.Index.struct_name = std.Clone(ctx, struct_name);
+    if std.str_eq(brand_name, "") {
+        t.Index.brand = empty[Index[str, ctx]];
+    } else {
+        unsafe {
+            t.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+            mut ptr := &ctx[t.Index.brand] as *str;
+            *ptr = std.Clone(ctx, brand_name);
+        }
+    }
+    return t;
+}
+
+func make_type_generic(name: str, args: std.Vector[ast.Type[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
+    mut t: ast.Type[ctx];
+    t.tag = 10; // Generic
+    t.Generic.name = std.Clone(ctx, name);
+    unsafe {
+        t.Generic.args = os.ArenaAlloc(ctx);
+        mut dest_args := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+        *dest_args = args;
+    }
+    return t;
+}
+
+func make_field(name: str, t: ast.Type[ctx], ctx: &Arena) ast.FieldDef[ctx] {
+    mut f: ast.FieldDef[ctx];
+    f.name = std.Clone(ctx, name);
+    f.field_type = t;
+    return f;
+}
+
+func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
+    unsafe {
+        mut t_int := make_type_int();
+        mut t_byte := make_type_byte();
+        mut t_bool := make_type_bool();
+        mut t_arena := make_type_arena();
+        mut t_str := make_type_str();
+        mut t_arena_ptr := make_type_pointer(t_arena, ctx);
+
+        // 1. Vector[T, ctx]
+        mut vec_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        vec_gen.Push(std.Clone(ctx, "T"));
+        vec_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut vec_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        vec_fields.Push(make_field("data", make_type_pointer(make_type_struct("T", "", ctx), ctx), ctx));
+        vec_fields.Push(make_field("len", t_int, ctx));
+        vec_fields.Push(make_field("capacity", t_int, ctx));
+        vec_fields.Push(make_field("arena", t_arena_ptr, ctx));
+
+        mut vec_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut vec_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[vec_gen_idx] = vec_gen;
+        ctx[vec_fields_idx] = vec_fields;
+
+        mut vec_tmpl: StructTemplate[ctx];
+        vec_tmpl.generics = vec_gen_idx;
+        vec_tmpl.fields = vec_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_Vector"), vec_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.Vector"), vec_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "Vector"), vec_tmpl);
+
+        // 2. HashMap[K, V, ctx]
+        mut map_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        map_gen.Push(std.Clone(ctx, "K"));
+        map_gen.Push(std.Clone(ctx, "V"));
+        map_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut map_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        map_fields.Push(make_field("keys", make_type_pointer(make_type_struct("K", "", ctx), ctx), ctx));
+        map_fields.Push(make_field("values", make_type_pointer(make_type_struct("V", "", ctx), ctx), ctx));
+        map_fields.Push(make_field("occupied", make_type_pointer(t_int, ctx), ctx));
+        map_fields.Push(make_field("len", t_int, ctx));
+        map_fields.Push(make_field("capacity", t_int, ctx));
+        map_fields.Push(make_field("arena", t_arena_ptr, ctx));
+
+        mut map_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut map_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[map_gen_idx] = map_gen;
+        ctx[map_fields_idx] = map_fields;
+
+        mut map_tmpl: StructTemplate[ctx];
+        map_tmpl.generics = map_gen_idx;
+        map_tmpl.fields = map_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_HashMap"), map_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.HashMap"), map_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "HashMap"), map_tmpl);
+
+        // 3. Pool[T, ctx]
+        mut pool_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        pool_gen.Push(std.Clone(ctx, "T"));
+        pool_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut pool_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        pool_fields.Push(make_field("data", make_type_pointer(make_type_struct("T", "", ctx), ctx), ctx));
+        pool_fields.Push(make_field("occupied", make_type_pointer(t_int, ctx), ctx));
+        pool_fields.Push(make_field("free_list", make_type_pointer(t_int, ctx), ctx));
+        pool_fields.Push(make_field("len", t_int, ctx));
+        pool_fields.Push(make_field("capacity", t_int, ctx));
+        pool_fields.Push(make_field("free_len", t_int, ctx));
+        pool_fields.Push(make_field("arena", t_arena_ptr, ctx));
+
+        mut pool_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut pool_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[pool_gen_idx] = pool_gen;
+        ctx[pool_fields_idx] = pool_fields;
+
+        mut pool_tmpl: StructTemplate[ctx];
+        pool_tmpl.generics = pool_gen_idx;
+        pool_tmpl.fields = pool_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_Pool"), pool_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.Pool"), pool_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "Pool"), pool_tmpl);
+
+        // 4. RcNode[T]
+        mut rcnode_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        rcnode_gen.Push(std.Clone(ctx, "T"));
+
+        mut rcnode_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        rcnode_fields.Push(make_field("value", make_type_struct("T", "", ctx), ctx));
+        rcnode_fields.Push(make_field("ref_count", t_int, ctx));
+
+        mut rcnode_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut rcnode_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[rcnode_gen_idx] = rcnode_gen;
+        ctx[rcnode_fields_idx] = rcnode_fields;
+
+        mut rcnode_tmpl: StructTemplate[ctx];
+        rcnode_tmpl.generics = rcnode_gen_idx;
+        rcnode_tmpl.fields = rcnode_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_RcNode"), rcnode_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.RcNode"), rcnode_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "RcNode"), rcnode_tmpl);
+
+        // 5. Rc[T, ctx]
+        mut rc_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        rc_gen.Push(std.Clone(ctx, "T"));
+        rc_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut rc_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        rc_fields.Push(make_field("node_index", make_type_index("std_RcNode_T", "ctx", ctx), ctx));
+
+        mut pool_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        pool_args.Push(make_type_struct("std_RcNode_T", "", ctx));
+        pool_args.Push(make_type_struct("ctx", "", ctx));
+        rc_fields.Push(make_field("pool", make_type_pointer(make_type_generic("std.Pool", pool_args, ctx), ctx), ctx));
+
+        mut rc_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut rc_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[rc_gen_idx] = rc_gen;
+        ctx[rc_fields_idx] = rc_fields;
+
+        mut rc_tmpl: StructTemplate[ctx];
+        rc_tmpl.generics = rc_gen_idx;
+        rc_tmpl.fields = rc_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_Rc"), rc_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.Rc"), rc_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "Rc"), rc_tmpl);
+
+        // 6. GraphNode[T, ctx]
+        mut gnode_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        gnode_gen.Push(std.Clone(ctx, "T"));
+        gnode_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut gnode_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        gnode_fields.Push(make_field("value", make_type_struct("T", "", ctx), ctx));
+
+        mut vec_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        vec_args.Push(t_int);
+        vec_args.Push(make_type_struct("ctx", "", ctx));
+        gnode_fields.Push(make_field("edges", make_type_generic("std.Vector", vec_args, ctx), ctx));
+
+        mut gnode_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut gnode_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[gnode_gen_idx] = gnode_gen;
+        ctx[gnode_fields_idx] = gnode_fields;
+
+        mut gnode_tmpl: StructTemplate[ctx];
+        gnode_tmpl.generics = gnode_gen_idx;
+        gnode_tmpl.fields = gnode_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_GraphNode"), gnode_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.GraphNode"), gnode_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "GraphNode"), gnode_tmpl);
+
+        // 7. Graph[T, ctx]
+        mut graph_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        graph_gen.Push(std.Clone(ctx, "T"));
+        graph_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut graph_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+
+        mut pool_args_g: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        pool_args_g.Push(make_type_struct("std_GraphNode_T_ctx", "", ctx));
+        pool_args_g.Push(make_type_struct("ctx", "", ctx));
+        graph_fields.Push(make_field("nodes", make_type_generic("std.Pool", pool_args_g, ctx), ctx));
+
+        mut graph_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut graph_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[graph_gen_idx] = graph_gen;
+        ctx[graph_fields_idx] = graph_fields;
+
+        mut graph_tmpl: StructTemplate[ctx];
+        graph_tmpl.generics = graph_gen_idx;
+        graph_tmpl.fields = graph_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_Graph"), graph_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.Graph"), graph_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "Graph"), graph_tmpl);
+
+        // 8. Mutex[T, ctx]
+        mut mutex_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mutex_gen.Push(std.Clone(ctx, "T"));
+        mutex_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut mutex_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        mutex_fields.Push(make_field("value", make_type_struct("T", "", ctx), ctx));
+        mutex_fields.Push(make_field("lock_state", t_int, ctx));
+
+        mut mutex_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut mutex_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[mutex_gen_idx] = mutex_gen;
+        ctx[mutex_fields_idx] = mutex_fields;
+
+        mut mutex_tmpl: StructTemplate[ctx];
+        mutex_tmpl.generics = mutex_gen_idx;
+        mutex_tmpl.fields = mutex_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_Mutex"), mutex_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.Mutex"), mutex_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "Mutex"), mutex_tmpl);
+
+        // 9. Channel[T, ctx]
+        mut chan_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        chan_gen.Push(std.Clone(ctx, "T"));
+        chan_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut chan_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        chan_fields.Push(make_field("capacity", t_int, ctx));
+        chan_fields.Push(make_field("len", t_int, ctx));
+        chan_fields.Push(make_field("_phantom", make_type_pointer(make_type_struct("T", "", ctx), ctx), ctx));
+
+        mut chan_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut chan_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[chan_gen_idx] = chan_gen;
+        ctx[chan_fields_idx] = chan_fields;
+
+        mut chan_tmpl: StructTemplate[ctx];
+        chan_tmpl.generics = chan_gen_idx;
+        chan_tmpl.fields = chan_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_Channel"), chan_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.Channel"), chan_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "Channel"), chan_tmpl);
+
+        // 10. GenerationalArena[T, ctx]
+        mut gena_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        gena_gen.Push(std.Clone(ctx, "T"));
+        gena_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut gena_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        gena_fields.Push(make_field("current_ctx", t_arena, ctx));
+        gena_fields.Push(make_field("next_ctx", t_arena, ctx));
+        gena_fields.Push(make_field("survivor", make_type_index("T", "current_ctx", ctx), ctx));
+
+        mut gena_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut gena_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[gena_gen_idx] = gena_gen;
+        ctx[gena_fields_idx] = gena_fields;
+
+        mut gena_tmpl: StructTemplate[ctx];
+        gena_tmpl.generics = gena_gen_idx;
+        gena_tmpl.fields = gena_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_GenerationalArena"), gena_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.GenerationalArena"), gena_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "GenerationalArena"), gena_tmpl);
+
+        // 11. os.Dir[ctx]
+        mut dir_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        dir_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut dir_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        dir_fields.Push(make_field("handle", make_type_pointer(t_byte, ctx), ctx));
+
+        mut dir_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut dir_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[dir_gen_idx] = dir_gen;
+        ctx[dir_fields_idx] = dir_fields;
+
+        mut dir_tmpl: StructTemplate[ctx];
+        dir_tmpl.generics = dir_gen_idx;
+        dir_tmpl.fields = dir_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "os_Dir"), dir_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "os.Dir"), dir_tmpl);
+
+        // 12. os.DirEntry[ctx]
+        mut dire_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        dire_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut dire_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        dire_fields.Push(make_field("name", t_str, ctx));
+        dire_fields.Push(make_field("is_dir", t_int, ctx));
+
+        mut dire_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut dire_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[dire_gen_idx] = dire_gen;
+        ctx[dire_fields_idx] = dire_fields;
+
+        mut dire_tmpl: StructTemplate[ctx];
+        dire_tmpl.generics = dire_gen_idx;
+        dire_tmpl.fields = dire_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "os_DirEntry"), dire_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "os.DirEntry"), dire_tmpl);
+
+        // 13. ThreadLocalContext[ctx]
+        mut tlc_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        tlc_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut tlc_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        tlc_fields.Push(make_field("arena", make_type_pointer(t_arena, ctx), ctx));
+        tlc_fields.Push(make_field("_phantom", make_type_pointer(make_type_struct("ctx", "", ctx), ctx), ctx));
+
+        mut tlc_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut tlc_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[tlc_gen_idx] = tlc_gen;
+        ctx[tlc_fields_idx] = tlc_fields;
+
+        mut tlc_tmpl: StructTemplate[ctx];
+        tlc_tmpl.generics = tlc_gen_idx;
+        tlc_tmpl.fields = tlc_fields_idx;
+
+        (*env).struct_templates.Insert(std.Clone(ctx, "std_ThreadLocalContext"), tlc_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "std.ThreadLocalContext"), tlc_tmpl);
+        (*env).struct_templates.Insert(std.Clone(ctx, "ThreadLocalContext"), tlc_tmpl);
+    }
+}
+
+func env_new(ctx: &Arena) TypeEnvironment[ctx] { 
+    mut env_idx: Index[TypeEnvironment[ctx], ctx] := os.ArenaAlloc(ctx);
+    unsafe { 
         ctx[env_idx].struct_registry = std.HashMapNew(ctx);
+        ctx[env_idx].struct_templates = std.HashMapNew(ctx);
+        ctx[env_idx].enum_templates = std.HashMapNew(ctx);
         ctx[env_idx].function_registry = std.HashMapNew(ctx);
         ctx[env_idx].current_prefix = "";
         ctx[env_idx].imports = std.HashMapNew(ctx);
@@ -555,6 +975,9 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].current_function_local_vars = empty[Index[OriginSet[ctx], ctx]];
         ctx[env_idx].checked_results = std.HashMapNew(ctx);
         ctx[env_idx].in_unsafe_block = 0;
+
+        env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
+
         return ctx[env_idx];
     }
 }
@@ -702,68 +1125,106 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
         mut name := stmt.StructDecl.name;
         mut namespaced_name := env_resolve_namespaced_ident(env, name, ctx);
         
-        mut layout: StructLayout[ctx];
-        layout.brand = empty[Index[str, ctx]];
-        layout.fields = std.HashMapNew(ctx);
-
+        mut is_generic := 0;
         unsafe {
-            mut fields_vec := &ctx[stmt.StructDecl.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
-            mut i := 0;
-            while i < len(*fields_vec) {
-                mut f := (*fields_vec)[i];
-                mut resolved_t := env_resolve_type(env, f.field_type, ctx);
-                layout.fields.Insert(std.Clone(ctx, f.name), resolved_t);
-                i = i + 1;
+            if stmt.StructDecl.generics != empty[Index[std.Vector[str, ctx], ctx]] {
+                mut generics_vec := &ctx[stmt.StructDecl.generics] as *std.Vector[str, ctx];
+                if len(*generics_vec) > 0 {
+                    is_generic = 1;
+                }
             }
         }
-        env_register_struct(env, namespaced_name, layout, ctx);
+
+        if is_generic == 1 {
+            unsafe {
+                mut template: StructTemplate[ctx];
+                template.generics = stmt.StructDecl.generics;
+                template.fields = stmt.StructDecl.fields;
+                (*env).struct_templates.Insert(std.Clone(ctx, namespaced_name), template);
+            }
+        } else {
+            mut layout: StructLayout[ctx];
+            layout.brand = empty[Index[str, ctx]];
+            layout.fields = std.HashMapNew(ctx);
+
+            unsafe {
+                mut fields_vec := &ctx[stmt.StructDecl.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+                mut i := 0;
+                while i < len(*fields_vec) {
+                    mut f := (*fields_vec)[i];
+                    mut resolved_t := env_resolve_type(env, f.field_type, ctx);
+                    layout.fields.Insert(std.Clone(ctx, f.name), resolved_t);
+                    i = i + 1;
+                }
+            }
+            env_register_struct(env, namespaced_name, layout, ctx);
+        }
     }
     if stmt.tag == 2 { // EnumDecl
         mut name := stmt.EnumDecl.name;
         mut namespaced_name := env_resolve_namespaced_ident(env, name, ctx);
 
-        mut enum_layout: StructLayout[ctx];
-        enum_layout.brand = empty[Index[str, ctx]];
-        enum_layout.fields = std.HashMapNew(ctx);
-
-        mut t_int: ast.Type[ctx];
-        t_int.tag = 0; // Int
-        enum_layout.fields.Insert(std.Clone(ctx, "tag"), t_int);
-
+        mut is_generic := 0;
         unsafe {
-            mut variants_vec := &ctx[stmt.EnumDecl.variants] as *std.Vector[ast.VariantDef[ctx], ctx];
-            mut i := 0;
-            while i < len(*variants_vec) {
-                mut v := (*variants_vec)[i];
-                mut variant_struct_name := std.Concat(namespaced_name, "_");
-                variant_struct_name = std.Concat(variant_struct_name, v.name);
-
-                mut variant_layout: StructLayout[ctx];
-                variant_layout.brand = empty[Index[str, ctx]];
-                variant_layout.fields = std.HashMapNew(ctx);
-
-                mut fields_vec := &ctx[v.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
-                mut j := 0;
-                while j < len(*fields_vec) {
-                    mut f := (*fields_vec)[j];
-                    mut resolved_t := env_resolve_type(env, f.field_type, ctx);
-                    variant_layout.fields.Insert(std.Clone(ctx, f.name), resolved_t);
-                    j = j + 1;
+            if stmt.EnumDecl.generics != empty[Index[std.Vector[str, ctx], ctx]] {
+                mut generics_vec := &ctx[stmt.EnumDecl.generics] as *std.Vector[str, ctx];
+                if len(*generics_vec) > 0 {
+                    is_generic = 1;
                 }
-
-                env_register_struct(env, variant_struct_name, variant_layout, ctx);
-
-                mut t_variant: ast.Type[ctx];
-                t_variant.tag = 8; // Struct
-                t_variant.Struct.struct_name = std.Clone(ctx, variant_struct_name);
-                t_variant.Struct.brand = empty[Index[str, ctx]];
-
-                enum_layout.fields.Insert(std.Clone(ctx, v.name), t_variant);
-                i = i + 1;
             }
         }
 
-        env_register_struct(env, namespaced_name, enum_layout, ctx);
+        if is_generic == 1 {
+            unsafe {
+                mut template: EnumTemplate[ctx];
+                template.generics = stmt.EnumDecl.generics;
+                template.variants = stmt.EnumDecl.variants;
+                (*env).enum_templates.Insert(std.Clone(ctx, namespaced_name), template);
+            }
+        } else {
+            mut enum_layout: StructLayout[ctx];
+            enum_layout.brand = empty[Index[str, ctx]];
+            enum_layout.fields = std.HashMapNew(ctx);
+
+            mut t_int: ast.Type[ctx];
+            t_int.tag = 0; // Int
+            enum_layout.fields.Insert(std.Clone(ctx, "tag"), t_int);
+
+            unsafe {
+                mut variants_vec := &ctx[stmt.EnumDecl.variants] as *std.Vector[ast.VariantDef[ctx], ctx];
+                mut i := 0;
+                while i < len(*variants_vec) {
+                    mut v := (*variants_vec)[i];
+                    mut variant_struct_name := std.Concat(namespaced_name, "_");
+                    variant_struct_name = std.Concat(variant_struct_name, v.name);
+
+                    mut variant_layout: StructLayout[ctx];
+                    variant_layout.brand = empty[Index[str, ctx]];
+                    variant_layout.fields = std.HashMapNew(ctx);
+
+                    mut fields_vec := &ctx[v.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+                    mut j := 0;
+                    while j < len(*fields_vec) {
+                        mut f := (*fields_vec)[j];
+                        mut resolved_t := env_resolve_type(env, f.field_type, ctx);
+                        variant_layout.fields.Insert(std.Clone(ctx, f.name), resolved_t);
+                        j = j + 1;
+                    }
+
+                    env_register_struct(env, variant_struct_name, variant_layout, ctx);
+
+                    mut t_variant: ast.Type[ctx];
+                    t_variant.tag = 8; // Struct
+                    t_variant.Struct.struct_name = std.Clone(ctx, variant_struct_name);
+                    t_variant.Struct.brand = empty[Index[str, ctx]];
+
+                    enum_layout.fields.Insert(std.Clone(ctx, v.name), t_variant);
+                    i = i + 1;
+                }
+            }
+
+            env_register_struct(env, namespaced_name, enum_layout, ctx);
+        }
     }
     if stmt.tag == 3 { // FunctionDecl
         mut name := stmt.FunctionDecl.name;
