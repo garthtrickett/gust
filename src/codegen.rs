@@ -46,10 +46,11 @@ fn erase_struct_name_with_registry(
         if erased.ends_with(&ns_suffix) {
             let pos = erased.len() - ns_suffix.len();
             if let Some(start_pos) = erased[..pos].rfind('_')
-                && !erased[..pos].ends_with("__") {
-                    erased.truncate(start_pos);
-                    stripped_brand = true;
-                }
+                && !erased[..pos].ends_with("__")
+            {
+                erased.truncate(start_pos);
+                stripped_brand = true;
+            }
         }
 
         if !stripped_brand {
@@ -84,15 +85,16 @@ fn erase_struct_name_with_registry(
                     }
                 }
             }
-            
+
             // Check for namespaced brand pattern in the middle: e.g. std_Vector_lib_module__ctx_SomeSuffix
             let ns_mid = format!("__{}_", base);
             if let Some(pos) = erased.find(&ns_mid)
-                && let Some(start_pos) = erased[..pos].rfind('_') {
-                    erased.replace_range(start_pos..pos + ns_mid.len() - 1, "");
-                    changed = true;
-                    break;
-                }
+                && let Some(start_pos) = erased[..pos].rfind('_')
+            {
+                erased.replace_range(start_pos..pos + ns_mid.len() - 1, "");
+                changed = true;
+                break;
+            }
 
             // Check for standard flat brand pattern at the end: e.g. ast__Statement_ctx
             let flat_suffix = format!("_{}", base);
@@ -1241,7 +1243,7 @@ impl Codegen {
                     body_str.push_str("int main(int argc, char** argv) {\n");
                     body_str.push_str("    os_argc = argc;\n");
                     body_str.push_str("    os_argv = argv;\n");
-                    body_str.push_str("    gust_scheduler_init(4);\n");
+                    body_str.push_str("    gust_scheduler_init(1);\n");
                     body_str.push_str("    gust_scheduler_spawn(8388608, gust_user_main, NULL);\n");
                     body_str.push_str("    gust_scheduler_destroy();\n");
                     body_str.push_str("    return 0;\n");
