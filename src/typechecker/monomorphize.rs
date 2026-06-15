@@ -110,9 +110,10 @@ impl TypeChecker {
             return true;
         }
         if let Type::Struct(name, _) = element
-            && name == "str" {
-                return true;
-            }
+            && name == "str"
+        {
+            return true;
+        }
         if let Some(ib) = self.get_type_brand(element)
             && strip_brand_prefix(&ib) == strip_brand_prefix(ob)
         {
@@ -348,7 +349,7 @@ impl TypeChecker {
 
                         if parts.len() >= num_generics {
                             let mut args = Vec::new();
-                            if parts.len() == 2 && num_generics == 2 { 
+                            if parts.len() == 2 && num_generics == 2 {
                                 let first_part = parts[0].replace("@", "__");
                                 let second_part = parts[1].replace("@", "__");
                                 let is_generic_template =
@@ -378,21 +379,22 @@ impl TypeChecker {
                                     args.push(Type::Bool);
                                 } else if second_part == "str" {
                                     args.push(Type::Str);
-                                } else { 
+                                } else {
                                     args.push(Type::Struct(second_part, None));
                                 }
                             } else if parts.len() > num_generics {
                                 let num_to_join = parts.len() - num_generics + 1;
-                                let joined_first_arg = 
+                                let joined_first_arg =
                                     parts[..num_to_join].join("_").replace("@", "__");
-                                
+
                                 let is_generic_template =
                                     self.struct_templates.contains_key(&joined_first_arg)
                                         || self.enum_templates.contains_key(&joined_first_arg);
-                                
-                                if is_generic_template && num_to_join < parts.len() { 
+
+                                if is_generic_template && num_to_join < parts.len() {
                                     let brand_part = parts[num_to_join].replace("@", "__");
-                                    let reconstructed = format!("{}_{}", joined_first_arg, brand_part);
+                                    let reconstructed =
+                                        format!("{}_{}", joined_first_arg, brand_part);
                                     args.push(Type::Struct(reconstructed, None));
                                 } else {
                                     args.push(Type::Struct(joined_first_arg, None));
@@ -412,7 +414,6 @@ impl TypeChecker {
                                         args.push(Type::Struct(clean_part, None));
                                     }
                                 }
-                            }
                             } else {
                                 for part in parts {
                                     let clean_part = part.replace("@", "__");
@@ -1284,13 +1285,19 @@ mod tests {
         // Resolve Type::Struct("std_Vector_my_module__FieldDef_ctx", Some("ctx"))
         // It is not in struct_registry, so fallback monomorphization should trigger,
         // and return std_Vector_my_module__FieldDef_ctx_ctx!
-        let t = Type::Struct("std_Vector_my_module__FieldDef_ctx".to_string(), Some("ctx".to_string()));
+        let t = Type::Struct(
+            "std_Vector_my_module__FieldDef_ctx".to_string(),
+            Some("ctx".to_string()),
+        );
         let resolved = checker.resolve_type(&t);
         assert!(resolved.is_ok());
         let res_type = resolved.unwrap();
         assert_eq!(
             res_type,
-            Type::Struct("std_Vector_my_module__FieldDef_ctx_ctx".to_string(), Some("ctx".to_string()))
+            Type::Struct(
+                "std_Vector_my_module__FieldDef_ctx_ctx".to_string(),
+                Some("ctx".to_string())
+            )
         );
     }
 }
