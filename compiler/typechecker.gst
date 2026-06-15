@@ -431,6 +431,16 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
                 }
             }
 
+            if std.str_eq(resolved_func, "std_Clone") || std.str_eq(resolved_func, "std.Clone") {
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec) == 2 {
+                    mut val_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[val_expr_idx] = (*args_vec)[1];
+                    mut val_type := check_expression(val_expr_idx, env, scope, ctx);
+                    return val_type;
+                }
+            }
+
             mut sig_lookup := (*env).function_registry.Get(resolved_func);
             if sig_lookup.Ok {
                 return sig_lookup.Val.return_type;
