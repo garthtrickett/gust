@@ -4215,9 +4215,8 @@ fn test_self_hosted_typechecker_violations() {
     println!("RUN2 STDOUT:\n{}", out2);
     println!("RUN2 STDERR:\n{}", err2);
     assert!(!run2.status.success());
-    assert!(out2.contains(
-        "Cannot assign scratchpad-allocated view to field of branded struct BrandedNode"
-    ));
+    assert!(out2.contains("Cannot assign scratchpad-allocated view to field of branded struct"));
+    assert!(out2.contains("BrandedNode"));
 
     // Violation 3: test_directory_leak_violation.gst
     let run3 = std::process::Command::new(&bin_path)

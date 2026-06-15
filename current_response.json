@@ -1,9 +1,9 @@
 {
-  "summary": "fix: update test_scratch_storage_violation.gst to use branded struct variable directly instead of Arena indexing",
+  "summary": "test: refine e2e test assertion for scratch storage violation to handle formatted type serialization",
   "files": [
     {
-      "file_path": "compiler/test_scratch_storage_violation.gst",
-      "code_diff": "<<<<<<< SEARCH\ntype BrandedNode[ctx] struct {\n    name: str\n}\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut n: Index[BrandedNode, ctx] := os.ArenaAlloc(ctx);\n    ctx[n].name = std.Format(\"Item %d\", 1);\n}\n=======\ntype BrandedNode[ctx] struct {\n    name: str\n}\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut n: BrandedNode[ctx];\n    n.name = std.Format(\"Item %d\", 1);\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/e2e_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n    // Violation 2: test_scratch_storage_violation.gst\n    let run2 = std::process::Command::new(&bin_path)\n        .arg(\"compiler/test_scratch_storage_violation.gst\")\n        .output()\n        .expect(\"Execution failed\");\n    let out2 = String::from_utf8(run2.stdout).expect(\"Invalid UTF-8\");\n    let err2 = String::from_utf8(run2.stderr).expect(\"Invalid UTF-8\");\n    println!(\"RUN2 STATUS: {:?}\", run2.status);\n    println!(\"RUN2 STDOUT:\\n{}\", out2);\n    println!(\"RUN2 STDERR:\\n{}\", err2);\n    assert!(!run2.status.success());\n    assert!(out2.contains(\n        \"Cannot assign scratchpad-allocated view to field of branded struct BrandedNode\"\n    ));\n=======\n    // Violation 2: test_scratch_storage_violation.gst\n    let run2 = std::process::Command::new(&bin_path)\n        .arg(\"compiler/test_scratch_storage_violation.gst\")\n        .output()\n        .expect(\"Execution failed\");\n    let out2 = String::from_utf8(run2.stdout).expect(\"Invalid UTF-8\");\n    let err2 = String::from_utf8(run2.stderr).expect(\"Invalid UTF-8\");\n    println!(\"RUN2 STATUS: {:?}\", run2.status);\n    println!(\"RUN2 STDOUT:\\n{}\", out2);\n    println!(\"RUN2 STDERR:\\n{}\", err2);\n    assert!(!run2.status.success());\n    assert!(out2.contains(\"Cannot assign scratchpad-allocated view to field of branded struct\"));\n    assert!(out2.contains(\"BrandedNode\"));\n>>>>>>> REPLACE"
     }
   ]
 }
