@@ -108,19 +108,7 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
             return get_expression_origins(expr.Selector.left, env, ctx);
         }
         if expr.tag == 12 { // Call
-            mut func_name := "";
-            mut func_expr := ctx[expr.Call.function];
-            if func_expr.tag == 0 { // Identifier
-                func_name = func_expr.Identifier.name;
-            } else {
-                if func_expr.tag == 11 { // Selector
-                    mut left_expr := ctx[func_expr.Selector.left];
-                    if left_expr.tag == 0 {
-                        func_name = std.Concat(left_expr.Identifier.name, ".");
-                        func_name = std.Concat(func_name, func_expr.Selector.right);
-                    }
-                }
-            }
+            mut func_name := expression_to_string(expr.Call.function, ctx);
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
             if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std.Format") || 
                std.str_eq(resolved_func, "std_FormatInt") || std.str_eq(resolved_func, "std.FormatInt") || 
@@ -381,19 +369,7 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
             return t;
         }
         if expr.tag == 12 { // Call
-            mut func_name := "";
-            mut func_expr := ctx[expr.Call.function];
-            if func_expr.tag == 0 { // Identifier
-                func_name = func_expr.Identifier.name;
-            } else {
-                if func_expr.tag == 11 { // Selector
-                    mut left_expr := ctx[func_expr.Selector.left];
-                    if left_expr.tag == 0 {
-                        func_name = std.Concat(left_expr.Identifier.name, ".");
-                        func_name = std.Concat(func_name, func_expr.Selector.right);
-                    }
-                }
-            }
+            mut func_name := expression_to_string(expr.Call.function, ctx);
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
             
             // Spawn / Concurrency Checks
