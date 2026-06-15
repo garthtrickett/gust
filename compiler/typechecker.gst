@@ -1350,9 +1350,12 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
                     while m < len(var_origins_keys) {
                         mut var_name := var_origins_keys[m];
                         if std.str_eq(var_name, root_name) == 0 {
-                            mut origins := (*env).variable_origins.Get(var_name).Val;
-                            if set_contains(origins, root_name, ctx) == 1 {
-                                (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
+                            mut lookup_origins := (*env).variable_origins.Get(var_name);
+                            if lookup_origins.Ok {
+                                mut origins := lookup_origins.Val;
+                                if set_contains(origins, root_name, ctx) == 1 {
+                                    (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
+                                }
                             }
                         }
                         m = m + 1;
@@ -1486,20 +1489,23 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
                 mut m := 0;
                 while m < len(conseq_keys) {
                     mut key := conseq_keys[m];
-                    mut orig_conseq := consequence_origins.Get(key).Val;
-                    mut orig_alt_lookup := alternative_origins.Get(key);
-                    
-                    mut union_set := set_init(ctx);
-                    set_union(union_set, orig_conseq, ctx);
-                    if orig_alt_lookup.Ok {
-                        set_union(union_set, orig_alt_lookup.Val, ctx);
-                    } else {
-                        mut pre_lookup := pre_origins.Get(key);
-                        if pre_lookup.Ok {
-                            set_union(union_set, pre_lookup.Val, ctx);
+                    mut lookup_conseq := consequence_origins.Get(key);
+                    if lookup_conseq.Ok {
+                        mut orig_conseq := lookup_conseq.Val;
+                        mut orig_alt_lookup := alternative_origins.Get(key);
+                        
+                        mut union_set := set_init(ctx);
+                        set_union(union_set, orig_conseq, ctx);
+                        if orig_alt_lookup.Ok {
+                            set_union(union_set, orig_alt_lookup.Val, ctx);
+                        } else {
+                            mut pre_lookup := pre_origins.Get(key);
+                            if pre_lookup.Ok {
+                                set_union(union_set, pre_lookup.Val, ctx);
+                            }
                         }
+                        merged_origins.Insert(std.Clone(ctx, key), union_set);
                     }
-                    merged_origins.Insert(std.Clone(ctx, key), union_set);
                     m = m + 1;
                 }
 
@@ -1509,14 +1515,17 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
                 while n < len(alt_keys) {
                     mut key := alt_keys[n];
                     if consequence_origins.Get(key).Ok == 0 {
-                        mut orig_alt := alternative_origins.Get(key).Val;
-                        mut union_set := set_init(ctx);
-                        set_union(union_set, orig_alt, ctx);
-                        mut pre_lookup := pre_origins.Get(key);
-                        if pre_lookup.Ok {
-                            set_union(union_set, pre_lookup.Val, ctx);
+                        mut lookup_alt := alternative_origins.Get(key);
+                        if lookup_alt.Ok {
+                            mut orig_alt := lookup_alt.Val;
+                            mut union_set := set_init(ctx);
+                            set_union(union_set, orig_alt, ctx);
+                            mut pre_lookup := pre_origins.Get(key);
+                            if pre_lookup.Ok {
+                                set_union(union_set, pre_lookup.Val, ctx);
+                            }
+                            merged_origins.Insert(std.Clone(ctx, key), union_set);
                         }
-                        merged_origins.Insert(std.Clone(ctx, key), union_set);
                     }
                     n = n + 1;
                 }
@@ -1546,15 +1555,18 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
                 mut m := 0;
                 while m < len(conseq_keys) {
                     mut key := conseq_keys[m];
-                    mut c_set := consequence_origins.Get(key).Val;
-                    mut pre_lookup := pre_origins.Get(key);
-                    if pre_lookup.Ok {
-                        mut union_set := set_init(ctx);
-                        set_union(union_set, pre_lookup.Val, ctx);
-                        set_union(union_set, c_set, ctx);
-                        merged_origins.Insert(std.Clone(ctx, key), union_set);
-                    } else {
-                        merged_origins.Insert(std.Clone(ctx, key), c_set);
+                    mut lookup_conseq := consequence_origins.Get(key);
+                    if lookup_conseq.Ok {
+                        mut c_set := lookup_conseq.Val;
+                        mut pre_lookup := pre_origins.Get(key);
+                        if pre_lookup.Ok {
+                            mut union_set := set_init(ctx);
+                            set_union(union_set, pre_lookup.Val, ctx);
+                            set_union(union_set, c_set, ctx);
+                            merged_origins.Insert(std.Clone(ctx, key), union_set);
+                        } else {
+                            merged_origins.Insert(std.Clone(ctx, key), c_set);
+                        }
                     }
                     m = m + 1;
                 }
