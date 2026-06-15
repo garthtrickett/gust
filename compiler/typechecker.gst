@@ -1434,6 +1434,216 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
     }
 }
 
+
+func env_register_std_structs(env: *TypeEnvironment[ctx], ctx: &Arena) {
+    unsafe {
+        mut t_int := make_type_int();
+
+        // 1. APIRequest
+        mut api_layout: StructLayout[ctx];
+        api_layout.brand = empty[Index[str, ctx]];
+        api_layout.fields = std.HashMapNew(ctx);
+        api_layout.fields.Insert("UserID", t_int);
+        api_layout.fields.Insert("SessionID", t_int);
+        api_layout.fields.Insert("Active", t_int);
+        env_register_struct(env, "APIRequest", api_layout, ctx);
+
+        // 2. SessionNode [connCtx]
+        mut session_layout: StructLayout[ctx];
+        mut brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+        mut brand_ptr := &ctx[brand_idx] as *str;
+        *brand_ptr = "connCtx";
+        session_layout.brand = brand_idx;
+        session_layout.fields = std.HashMapNew(ctx);
+        session_layout.fields.Insert("SessionID", t_int);
+        session_layout.fields.Insert("Next", make_type_index("SessionNode", "connCtx", ctx));
+        env_register_struct(env, "SessionNode", session_layout, ctx);
+    }
+}
+
+func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.Type[ctx], ctx], ret_t: ast.Type[ctx], ctx: &Arena) {
+    unsafe {
+        mut sig: FunctionSignature[ctx];
+        sig.params = params;
+        sig.return_type = ret_t;
+        sig.return_origins = set_init(ctx);
+        
+        mut param_names: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mut i := 0;
+        while i < len(params) {
+            param_names.Push(std.Concat("arg", std.FormatInt(i)));
+            i = i + 1;
+        }
+        sig.param_names = param_names;
+        
+        env_register_function(env, name, sig, ctx);
+    }
+}
+
+func env_register_std_functions(env: *TypeEnvironment[ctx], ctx: &Arena) {
+    unsafe {
+        mut t_int := make_type_int();
+        mut t_byte := make_type_byte();
+        mut t_bool := make_type_bool();
+        mut t_arena := make_type_arena();
+        mut t_str := make_type_str();
+        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+        mut t_arena_ptr := make_type_pointer(t_arena, ctx);
+        mut t_any_idx := make_type_index("Any", "", ctx);
+
+        // --- Standard FFI Argument Vector Configurations ---
+
+        mut p_void: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        mut p_int: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_int.Push(t_int);
+        mut p_str: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_str.Push(t_str);
+        mut p_byte: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_byte.Push(t_byte);
+
+        mut p_arena_ptr: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_arena_ptr.Push(t_arena_ptr);
+
+        mut p_arena_ptr_arena_ptr: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_arena_ptr_arena_ptr.Push(t_arena_ptr);
+        p_arena_ptr_arena_ptr.Push(t_arena_ptr);
+
+        mut p_arena_ptr_str: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_arena_ptr_str.Push(t_arena_ptr);
+        p_arena_ptr_str.Push(t_str);
+
+        mut p_str_str: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_str_str.Push(t_str);
+        p_str_str.Push(t_str);
+
+        mut p_str_int: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_str_int.Push(t_str);
+        p_str_int.Push(t_int);
+
+        mut p_str_int_int: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_str_int_int.Push(t_str);
+        p_str_int_int.Push(t_int);
+        p_str_int_int.Push(t_int);
+
+        mut p_str_str_arena_ptr: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_str_str_arena_ptr.Push(t_str);
+        p_str_str_arena_ptr.Push(t_str);
+        p_str_str_arena_ptr.Push(t_arena_ptr);
+
+        mut p_dir: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_dir.Push(make_type_struct("os_Dir_ctx", "ctx", ctx));
+
+        mut p_arena_ptr_dir: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_arena_ptr_dir.Push(t_arena_ptr);
+        p_arena_ptr_dir.Push(make_type_struct("os_Dir_ctx", "ctx", ctx));
+
+        mut p_arena_ptr_any: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        p_arena_ptr_any.Push(t_arena_ptr);
+        p_arena_ptr_any.Push(t_any_idx);
+
+        // Vector generic helper for return type signatures
+        mut vec_args_str: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        vec_args_str.Push(t_str);
+        vec_args_str.Push(make_type_struct("ctx", "", ctx));
+
+        // --- FFI Registration Mapping ---
+
+        register_fn(env, "os.ScratchReset", p_void, t_void, ctx);
+        register_fn(env, "os_ScratchReset", p_void, t_void, ctx);
+        register_fn(env, "std.Yield", p_void, t_void, ctx);
+        register_fn(env, "std_Yield", p_void, t_void, ctx);
+        register_fn(env, "os.Arena.New", p_void, t_arena, ctx);
+        register_fn(env, "os_Arena_New", p_void, t_arena, ctx);
+        register_fn(env, "os.GetThreadScratch", p_void, make_type_struct("std_ThreadLocalContext_Any", "Any", ctx), ctx);
+        register_fn(env, "os_GetThreadScratch", p_void, make_type_struct("std_ThreadLocalContext_Any", "Any", ctx), ctx);
+
+        register_fn(env, "os.Args", p_arena_ptr, make_type_generic("std.Vector", vec_args_str, ctx), ctx);
+        register_fn(env, "os_Args", p_arena_ptr, make_type_generic("std.Vector", vec_args_str, ctx), ctx);
+        register_fn(env, "os.ArenaValidate", p_arena_ptr, t_void, ctx);
+        register_fn(env, "os_ArenaValidate", p_arena_ptr, t_void, ctx);
+        register_fn(env, "os.SetThreadScratch", p_arena_ptr, t_void, ctx);
+        register_fn(env, "os_SetThreadScratch", p_arena_ptr, t_void, ctx);
+
+        register_fn(env, "os.VectorNew", p_arena_ptr, make_type_struct("std_Vector_Any", "ctx", ctx), ctx);
+        register_fn(env, "os_VectorNew", p_arena_ptr, make_type_struct("std_Vector_Any", "ctx", ctx), ctx);
+        register_fn(env, "std.VectorNew", p_arena_ptr, make_type_struct("std_Vector_Any", "ctx", ctx), ctx);
+        register_fn(env, "std_VectorNew", p_arena_ptr, make_type_struct("std_Vector_Any", "ctx", ctx), ctx);
+
+        register_fn(env, "os.HashMapNew", p_arena_ptr, make_type_struct("std_HashMap_Any", "ctx", ctx), ctx);
+        register_fn(env, "os_HashMapNew", p_arena_ptr, make_type_struct("std_HashMap_Any", "ctx", ctx), ctx);
+        register_fn(env, "std.HashMapNew", p_arena_ptr, make_type_struct("std_HashMap_Any", "ctx", ctx), ctx);
+        register_fn(env, "std_HashMapNew", p_arena_ptr, make_type_struct("std_HashMap_Any", "ctx", ctx), ctx);
+
+        register_fn(env, "os.PoolNew", p_arena_ptr, make_type_struct("std_Pool_Any", "ctx", ctx), ctx);
+        register_fn(env, "os_PoolNew", p_arena_ptr, make_type_struct("std_Pool_Any", "ctx", ctx), ctx);
+        register_fn(env, "std.PoolNew", p_arena_ptr, make_type_struct("std_Pool_Any", "ctx", ctx), ctx);
+        register_fn(env, "std_PoolNew", p_arena_ptr, make_type_struct("std_Pool_Any", "ctx", ctx), ctx);
+
+        register_fn(env, "std.MutexNew", p_arena_ptr, make_type_struct("std_Mutex_Any", "ctx", ctx), ctx);
+        register_fn(env, "std_MutexNew", p_arena_ptr, make_type_struct("std_Mutex_Any", "ctx", ctx), ctx);
+        register_fn(env, "std.ChannelNew", p_arena_ptr, make_type_struct("std_Channel_Any", "ctx", ctx), ctx);
+        register_fn(env, "std_ChannelNew", p_arena_ptr, make_type_struct("std_Channel_Any", "ctx", ctx), ctx);
+
+        register_fn(env, "os.Exit", p_int, t_void, ctx);
+        register_fn(env, "os_Exit", p_int, t_void, ctx);
+        register_fn(env, "os.ScratchAlloc", p_int, make_type_pointer(t_byte, ctx), ctx);
+        register_fn(env, "os_ScratchAlloc", p_int, make_type_pointer(t_byte, ctx), ctx);
+        register_fn(env, "std.FormatInt", p_int, t_str, ctx);
+        register_fn(env, "std_FormatInt", p_int, t_str, ctx);
+
+        register_fn(env, "std.Format", p_str, t_str, ctx);
+        register_fn(env, "std_Format", p_str, t_str, ctx);
+        register_fn(env, "std.parse_int", p_str, t_int, ctx);
+        register_fn(env, "std_parse_int", p_str, t_int, ctx);
+        register_fn(env, "std.str_trim", p_str, t_str, ctx);
+        register_fn(env, "std_str_trim", p_str, t_str, ctx);
+
+        register_fn(env, "std.is_alpha", p_byte, t_bool, ctx);
+        register_fn(env, "std_is_alpha", p_byte, t_bool, ctx);
+        register_fn(env, "std.is_digit", p_byte, t_bool, ctx);
+        register_fn(env, "std_is_digit", p_byte, t_bool, ctx);
+        register_fn(env, "std.is_whitespace", p_byte, t_bool, ctx);
+        register_fn(env, "std_is_whitespace", p_byte, t_bool, ctx);
+
+        register_fn(env, "std.GenerationalSwap", p_arena_ptr_arena_ptr, t_void, ctx);
+        register_fn(env, "std_GenerationalSwap", p_arena_ptr_arena_ptr, t_void, ctx);
+
+        register_fn(env, "os.OpenDir", p_arena_ptr_str, make_type_struct("LookupResult_os_Dir_ctx", "ctx", ctx), ctx);
+        register_fn(env, "os_OpenDir", p_arena_ptr_str, make_type_struct("LookupResult_os_Dir_ctx", "ctx", ctx), ctx);
+        register_fn(env, "os.ReadFile", p_arena_ptr_str, t_str, ctx);
+        register_fn(env, "os_ReadFile", p_arena_ptr_str, t_str, ctx);
+
+        register_fn(env, "std.Concat", p_str_str, t_str, ctx);
+        register_fn(env, "std_Concat", p_str_str, t_str, ctx);
+        register_fn(env, "std.str_eq", p_str_str, t_int, ctx);
+        register_fn(env, "std_str_eq", p_str_str, t_int, ctx);
+        register_fn(env, "std.str_find", p_str_str, t_int, ctx);
+        register_fn(env, "std_str_find", p_str_str, t_int, ctx);
+        register_fn(env, "os.WriteFile", p_str_str, t_int, ctx);
+        register_fn(env, "os_WriteFile", p_str_str, t_int, ctx);
+
+        register_fn(env, "std.str_byte_at", p_str_int, t_byte, ctx);
+        register_fn(env, "std_str_byte_at", p_str_int, t_byte, ctx);
+
+        register_fn(env, "std.str_slice", p_str_int_int, t_str, ctx);
+        register_fn(env, "std_str_slice", p_str_int_int, t_str, ctx);
+
+        register_fn(env, "os.path_join", p_str_str_arena_ptr, t_str, ctx);
+        register_fn(env, "os_path_join", p_str_str_arena_ptr, t_str, ctx);
+        register_fn(env, "std.str_split", p_str_str_arena_ptr, make_type_generic("std.Vector", vec_args_str, ctx), ctx);
+        register_fn(env, "std_str_split", p_str_str_arena_ptr, make_type_generic("std.Vector", vec_args_str, ctx), ctx);
+
+        register_fn(env, "os.CloseDir", p_dir, t_void, ctx);
+        register_fn(env, "os_CloseDir", p_dir, t_void, ctx);
+
+        register_fn(env, "os.ReadDir", p_arena_ptr_dir, make_type_struct("LookupResult_os_DirEntry_ctx", "ctx", ctx), ctx);
+        register_fn(env, "os_ReadDir", p_arena_ptr_dir, make_type_struct("LookupResult_os_DirEntry_ctx", "ctx", ctx), ctx);
+
+        register_fn(env, "std.Clone", p_arena_ptr_any, t_any_idx, ctx);
+        register_fn(env, "std_Clone", p_arena_ptr_any, t_any_idx, ctx);
+    }
+}
+
 func env_new(ctx: &Arena) TypeEnvironment[ctx] { 
     mut env_idx: Index[TypeEnvironment[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe { 
@@ -1459,10 +1669,15 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].in_unsafe_block = 0;
 
         env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
+        env_register_std_structs(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
+        env_register_std_functions(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
 
         return ctx[env_idx];
     }
 }
+
+
+
 
 func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
     // 1. Handle LookupResult_ and CastResult_ prefixes
@@ -2042,12 +2257,57 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
             }
             return 0;
         }
-        if expected.tag == 8 { // Struct
-            if std.str_eq(expected.Struct.struct_name, actual.Struct.struct_name) {
-                return 1;
+
+
+
+        
+         if expected.tag == 8 { // Struct
+                mut name1 := expected.Struct.struct_name;
+                mut name2 := actual.Struct.struct_name;
+                if std.str_eq(name1, name2) {
+                    return 1;
+                }
+
+                mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
+                prefixes.Push("std_Vector_");
+                prefixes.Push("std_HashMap_");
+                prefixes.Push("std_Pool_");
+                prefixes.Push("std_Rc_");
+                prefixes.Push("std_Graph_");
+                prefixes.Push("std_Mutex_");
+                prefixes.Push("std_Channel_");
+                prefixes.Push("std_GenerationalArena_");
+                prefixes.Push("os_Dir_");
+                prefixes.Push("os_DirEntry_");
+
+                mut p := 0;
+                while p < len(prefixes) {
+                    mut prefix := prefixes[p];
+                    mut is_prefix1 := 0;
+                    if len(name1) >= len(prefix) {
+                        if std.str_eq(std.str_slice(name1, 0, len(prefix)), prefix) {
+                            is_prefix1 = 1;
+                        }
+                    }
+                    mut is_prefix2 := 0;
+                    if len(name2) >= len(prefix) {
+                        if std.str_eq(std.str_slice(name2, 0, len(prefix)), prefix) {
+                            is_prefix2 = 1;
+                        }
+                    }
+
+                    if is_prefix1 == 1 && is_prefix2 == 1 {
+                        mut brand1 := get_type_brand(expected, ctx);
+                        mut brand2 := get_type_brand(actual, ctx);
+                        if std.str_eq(brand1, brand2) {
+                            return 1;
+                        }
+                    }
+                    p = p + 1;
+                }
+                return 0;
             }
-            return 0;
-        }
+        
         if expected.tag == 10 { // Generic
             if std.str_eq(expected.Generic.name, actual.Generic.name) {
                 return 1;
