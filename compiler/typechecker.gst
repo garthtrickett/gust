@@ -32,7 +32,7 @@ func set_union(dest: Index[OriginSet[ctx], ctx], src: Index[OriginSet[ctx], ctx]
 
 func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) bool {
     unsafe {
-        return ctx[set].map.Get(element).Ok;
+        return ctx[set].map.Get(element).Ok == 1;
     }
 }
 
