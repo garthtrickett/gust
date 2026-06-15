@@ -1102,18 +1102,21 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                     mut f := 0;
                     while f < len(*fields_vec) {
                         mut field := (*fields_vec)[f];
-                        mut field_type := concrete_fields.Get(field.name).Val;
-                        if env_type_is_ephemeral_view(field_type, ctx) == 1 {
-                            mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[err].kind.tag = 2; // TypeError
-                            mut msg := std.Concat("Semantic Error: Unbranded monomorphized struct '", concrete_name);
-                            msg = std.Concat(msg, "' cannot contain ephemeral slice or view field '");
-                            msg = std.Concat(msg, field.name);
-                            msg = std.Concat(msg, "'");
-                            ctx[err].message = std.Clone(ctx, msg);
-                            res.tag = 1; // Err
-                            res.Err.error = err;
-                            return res;
+                        mut lookup := concrete_fields.Get(field.name);
+                        if lookup.Ok {
+                            mut field_type := lookup.Val;
+                            if env_type_is_ephemeral_view(field_type, ctx) == 1 {
+                                mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                                ctx[err].kind.tag = 2; // TypeError
+                                mut msg := std.Concat("Semantic Error: Unbranded monomorphized struct '", concrete_name);
+                                msg = std.Concat(msg, "' cannot contain ephemeral slice or view field '");
+                                msg = std.Concat(msg, field.name);
+                                msg = std.Concat(msg, "'");
+                                ctx[err].message = std.Clone(ctx, msg);
+                                res.tag = 1; // Err
+                                res.Err.error = err;
+                                return res;
+                            }
                         }
                         f = f + 1;
                     }
