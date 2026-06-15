@@ -1236,11 +1236,11 @@ mod tests {
         assert!(res.is_ok());
         let substituted = res.unwrap();
 
-        // Verify that the fully-qualified flat name std_Vector_lib_module__MyNode_ctx is natively generated!
+        // Verify that the fully-qualified flat name std_Vector_lib_module__MyNode_ctx_ctx is natively generated!
         assert_eq!(
             substituted,
             Type::Struct(
-                "std_Vector_lib_module__MyNode_ctx".to_string(),
+                "std_Vector_lib_module__MyNode_ctx_ctx".to_string(),
                 Some("ctx".to_string())
             )
         );
