@@ -1,7 +1,7 @@
 use super::TypeChecker;
 use super::types::{
-    StructLayout, Type, TypeError, TypeErrorKind, expression_to_string, strip_brand_prefix,
-    types_match, extract_brand_from_suffix,
+    StructLayout, Type, TypeError, TypeErrorKind, expression_to_string, extract_brand_from_suffix,
+    strip_brand_prefix, types_match,
 };
 use crate::ast::{Expression, Program, Statement};
 use std::collections::{HashMap, HashSet};
@@ -265,7 +265,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "os.ScratchAlloc".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["size".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Int],
                 return_type: Type::RawPointer(Box::new(Type::Byte)),
                 return_origins: std::collections::HashSet::new(),
@@ -274,7 +274,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "os_ScratchAlloc".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["size".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Int],
                 return_type: Type::RawPointer(Box::new(Type::Byte)),
                 return_origins: std::collections::HashSet::new(),
@@ -302,7 +302,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.FormatInt".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["val".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Int],
                 return_type: Type::Str,
                 return_origins: std::collections::HashSet::new(),
@@ -311,7 +311,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_FormatInt".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["val".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Int],
                 return_type: Type::Str,
                 return_origins: std::collections::HashSet::new(),
@@ -320,7 +320,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.Concat".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s1".to_string(), "s2".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![Type::Str, Type::Str],
                 return_type: Type::Str,
                 return_origins: std::collections::HashSet::new(),
@@ -329,7 +329,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_Concat".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s1".to_string(), "s2".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![Type::Str, Type::Str],
                 return_type: Type::Str,
                 return_origins: std::collections::HashSet::new(),
@@ -339,7 +339,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_str_eq".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s1".to_string(), "s2".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![Type::Str, Type::Str],
                 return_type: Type::Int,
                 return_origins: std::collections::HashSet::new(),
@@ -348,7 +348,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.str_eq".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s1".to_string(), "s2".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![Type::Str, Type::Str],
                 return_type: Type::Int,
                 return_origins: std::collections::HashSet::new(),
@@ -358,7 +358,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.Clone".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["dest_ctx".to_string(), "src_val".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![
                     Type::RawPointer(Box::new(Type::Arena)),
                     Type::Index("Any".to_string(), None),
@@ -371,7 +371,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_Clone".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["dest_ctx".to_string(), "src_val".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![
                     Type::RawPointer(Box::new(Type::Arena)),
                     Type::Index("Any".to_string(), None),
@@ -384,7 +384,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.GenerationalSwap".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["current_ctx".to_string(), "next_ctx".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![
                     Type::RawPointer(Box::new(Type::Arena)),
                     Type::RawPointer(Box::new(Type::Arena)),
@@ -397,7 +397,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_GenerationalSwap".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["current_ctx".to_string(), "next_ctx".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![
                     Type::RawPointer(Box::new(Type::Arena)),
                     Type::RawPointer(Box::new(Type::Arena)),
@@ -410,9 +410,9 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.PoolNew".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["ctx".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::RawPointer(Box::new(Type::Arena))],
-                return_type: Type::Struct("Pool_Any".to_string(), Some("ctx".to_string())),
+                return_type: Type::Struct("std_Pool_Any".to_string(), Some("ctx".to_string())),
                 return_origins: std::collections::HashSet::new(),
             },
         );
@@ -420,9 +420,9 @@ impl TypeChecker {
         self.function_registry.insert(
             "os.PoolNew".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["ctx".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::RawPointer(Box::new(Type::Arena))],
-                return_type: Type::Struct("Pool_Any".to_string(), Some("ctx".to_string())),
+                return_type: Type::Struct("std_Pool_Any".to_string(), Some("ctx".to_string())),
                 return_origins: std::collections::HashSet::new(),
             },
         );
@@ -430,18 +430,18 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.MutexNew".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["ctx".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::RawPointer(Box::new(Type::Arena))],
-                return_type: Type::Struct("Mutex_Any".to_string(), Some("ctx".to_string())),
+                return_type: Type::Struct("std_Mutex_Any".to_string(), Some("ctx".to_string())),
                 return_origins: std::collections::HashSet::new(),
             },
         );
         self.function_registry.insert(
             "std_MutexNew".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["ctx".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::RawPointer(Box::new(Type::Arena))],
-                return_type: Type::Struct("Mutex_Any".to_string(), Some("ctx".to_string())),
+                return_type: Type::Struct("std_Mutex_Any".to_string(), Some("ctx".to_string())),
                 return_origins: std::collections::HashSet::new(),
             },
         );
@@ -449,18 +449,18 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.ChannelNew".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["ctx".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::RawPointer(Box::new(Type::Arena))],
-                return_type: Type::Struct("Channel_Any".to_string(), Some("ctx".to_string())),
+                return_type: Type::Struct("std_Channel_Any".to_string(), Some("ctx".to_string())),
                 return_origins: std::collections::HashSet::new(),
             },
         );
         self.function_registry.insert(
             "std_ChannelNew".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["ctx".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::RawPointer(Box::new(Type::Arena))],
-                return_type: Type::Struct("Channel_Any".to_string(), Some("ctx".to_string())),
+                return_type: Type::Struct("std_Channel_Any".to_string(), Some("ctx".to_string())),
                 return_origins: std::collections::HashSet::new(),
             },
         );
@@ -468,7 +468,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.Format".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["template".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Str],
                 return_type: Type::Str,
                 return_origins: {
@@ -481,7 +481,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_Format".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["template".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Str],
                 return_type: Type::Str,
                 return_origins: {
@@ -495,7 +495,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.str_slice".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string(), "start".to_string(), "end".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string(), "arg2".to_string()],
                 params: vec![Type::Str, Type::Int, Type::Int],
                 return_type: Type::Str,
                 return_origins: std::collections::HashSet::new(),
@@ -504,7 +504,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_str_slice".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string(), "start".to_string(), "end".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string(), "arg2".to_string()],
                 params: vec![Type::Str, Type::Int, Type::Int],
                 return_type: Type::Str,
                 return_origins: std::collections::HashSet::new(),
@@ -514,7 +514,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.str_byte_at".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string(), "idx".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![Type::Str, Type::Int],
                 return_type: Type::Byte,
                 return_origins: std::collections::HashSet::new(),
@@ -523,7 +523,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_str_byte_at".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string(), "idx".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![Type::Str, Type::Int],
                 return_type: Type::Byte,
                 return_origins: std::collections::HashSet::new(),
@@ -533,7 +533,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.str_find".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string(), "target".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![Type::Str, Type::Str],
                 return_type: Type::Int,
                 return_origins: std::collections::HashSet::new(),
@@ -542,7 +542,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_str_find".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string(), "target".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
                 params: vec![Type::Str, Type::Str],
                 return_type: Type::Int,
                 return_origins: std::collections::HashSet::new(),
@@ -552,7 +552,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.str_trim".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Str],
                 return_type: Type::Str,
                 return_origins: std::collections::HashSet::new(),
@@ -561,7 +561,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_str_trim".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Str],
                 return_type: Type::Str,
                 return_origins: std::collections::HashSet::new(),
@@ -571,7 +571,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.str_split".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string(), "delim".to_string(), "ctx".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string(), "arg2".to_string()],
                 params: vec![
                     Type::Str,
                     Type::Str,
@@ -587,7 +587,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_str_split".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string(), "delim".to_string(), "ctx".to_string()],
+                param_names: vec!["arg0".to_string(), "arg1".to_string(), "arg2".to_string()],
                 params: vec![
                     Type::Str,
                     Type::Str,
@@ -604,7 +604,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.is_alpha".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["b".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Byte],
                 return_type: Type::Bool,
                 return_origins: std::collections::HashSet::new(),
@@ -613,17 +613,16 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_is_alpha".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["b".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Byte],
                 return_type: Type::Bool,
                 return_origins: std::collections::HashSet::new(),
             },
         );
-
         self.function_registry.insert(
             "std.is_digit".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["b".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Byte],
                 return_type: Type::Bool,
                 return_origins: std::collections::HashSet::new(),
@@ -632,17 +631,16 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_is_digit".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["b".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Byte],
                 return_type: Type::Bool,
                 return_origins: std::collections::HashSet::new(),
             },
         );
-
         self.function_registry.insert(
             "std.is_whitespace".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["b".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Byte],
                 return_type: Type::Bool,
                 return_origins: std::collections::HashSet::new(),
@@ -651,7 +649,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_is_whitespace".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["b".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Byte],
                 return_type: Type::Bool,
                 return_origins: std::collections::HashSet::new(),
@@ -661,7 +659,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std.parse_int".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Str],
                 return_type: Type::Int,
                 return_origins: std::collections::HashSet::new(),
@@ -670,7 +668,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "std_parse_int".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["s".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Str],
                 return_type: Type::Int,
                 return_origins: std::collections::HashSet::new(),
@@ -680,7 +678,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "os.Args".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["ctx".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::RawPointer(Box::new(Type::Arena))],
                 return_type: Type::Generic(
                     "std.Vector".to_string(),
@@ -692,7 +690,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "os_Args".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["ctx".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::RawPointer(Box::new(Type::Arena))],
                 return_type: Type::Generic(
                     "std.Vector".to_string(),
@@ -704,7 +702,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "os.Exit".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["code".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Int],
                 return_type: Type::Void,
                 return_origins: std::collections::HashSet::new(),
@@ -713,7 +711,7 @@ impl TypeChecker {
         self.function_registry.insert(
             "os_Exit".to_string(),
             super::types::FunctionSignature {
-                param_names: vec!["code".to_string()],
+                param_names: vec!["arg0".to_string()],
                 params: vec![Type::Int],
                 return_type: Type::Void,
                 return_origins: std::collections::HashSet::new(),
@@ -722,7 +720,7 @@ impl TypeChecker {
 
         // os.OpenDir
         let open_dir_sig = super::types::FunctionSignature {
-            param_names: vec!["ctx".to_string(), "path".to_string()],
+            param_names: vec!["arg0".to_string(), "arg1".to_string()],
             params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::Str],
             return_type: Type::Struct(
                 "LookupResult_os_Dir_ctx".to_string(),
@@ -737,7 +735,7 @@ impl TypeChecker {
 
         // os.ReadDir
         let read_dir_sig = super::types::FunctionSignature {
-            param_names: vec!["ctx".to_string(), "dir".to_string()],
+            param_names: vec!["arg0".to_string(), "arg1".to_string()],
             params: vec![
                 Type::RawPointer(Box::new(Type::Arena)),
                 Type::Struct("os_Dir_ctx".to_string(), Some("ctx".to_string())),
@@ -755,7 +753,7 @@ impl TypeChecker {
 
         // os.CloseDir
         let close_dir_sig = super::types::FunctionSignature {
-            param_names: vec!["dir".to_string()],
+            param_names: vec!["arg0".to_string()],
             params: vec![Type::Struct(
                 "os_Dir_ctx".to_string(),
                 Some("ctx".to_string()),
@@ -770,7 +768,7 @@ impl TypeChecker {
 
         // os.path_join
         let path_join_sig = super::types::FunctionSignature {
-            param_names: vec!["dir".to_string(), "file".to_string(), "ctx".to_string()],
+            param_names: vec!["arg0".to_string(), "arg1".to_string(), "arg2".to_string()],
             params: vec![
                 Type::Str,
                 Type::Str,
@@ -786,7 +784,7 @@ impl TypeChecker {
 
         // os.SetThreadScratch
         let set_thread_scratch_sig = super::types::FunctionSignature {
-            param_names: vec!["ctx".to_string()],
+            param_names: vec!["arg0".to_string()],
             params: vec![Type::RawPointer(Box::new(Type::Arena))],
             return_type: Type::Void,
             return_origins: std::collections::HashSet::new(),
@@ -817,7 +815,7 @@ impl TypeChecker {
 
         // os.ArenaValidate
         let arena_validate_sig = super::types::FunctionSignature {
-            param_names: vec!["arena".to_string()],
+            param_names: vec!["arg0".to_string()],
             params: vec![Type::RawPointer(Box::new(Type::Arena))],
             return_type: Type::Void,
             return_origins: std::collections::HashSet::new(),
@@ -2703,7 +2701,9 @@ impl TypeChecker {
                 if let Type::Struct(struct_name, _brand) = &left_type {
                     let clean_struct_name = if let Some(pos) = struct_name.find("__") {
                         let after_pfx = &struct_name[pos + 2..];
-                        if after_pfx.starts_with("CastResult_") || after_pfx.starts_with("LookupResult_") {
+                        if after_pfx.starts_with("CastResult_")
+                            || after_pfx.starts_with("LookupResult_")
+                        {
                             after_pfx
                         } else {
                             struct_name.as_str()

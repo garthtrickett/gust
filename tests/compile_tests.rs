@@ -4412,7 +4412,7 @@ fn test_codegen_thread_local_redirection() {
     let c_output = codegen.generate(&modules_for_codegen);
 
     // Assert the forward declaration FFI headers exist in generated code
-    assert!(c_output.contains("void os_SetThreadScratch(os_Arena* ctx);"));
+    assert!(c_output.contains("void os_SetThreadScratch(os_Arena* arg0);"));
     assert!(c_output.contains("std_ThreadLocalContext os_GetThreadScratch(void);"));
 
     // Assert the calls compile to the correct C-level identifiers and pointer parameters
