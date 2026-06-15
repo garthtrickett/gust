@@ -1611,7 +1611,7 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
 
                     mut child_scope := scope_new(scope, ctx);
 
-                    if len(case.fields) > 0 {
+                    if len(ctx[case.fields]) > 0 {
                         mut variant_struct_name := std.Concat(std.Concat(enum_name, "_"), variant_name);
                         mut lookup_variant := (*env).struct_registry.Get(variant_struct_name);
                         if lookup_variant.Ok {
