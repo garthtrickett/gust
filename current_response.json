@@ -1,9 +1,9 @@
 {
-  "summary": "fix: add missing imports for lexer and parser in typechecker_origins_test_entry",
+  "summary": "fix: pre-populate std and os imports in env_new and add dot-separated fallbacks to get_expression_origins",
   "files": [
     {
-      "file_path": "compiler/typechecker_origins_test_entry.gst",
-      "code_diff": "<<<<<<< SEARCH\nimport \"ast.gst\" as ast;\nimport \"typechecker.gst\" as typechecker;\n=======\nimport \"ast.gst\" as ast;\nimport \"lexer.gst\" as lexer;\nimport \"parser.gst\" as parser;\nimport \"typechecker.gst\" as typechecker;\n>>>>>>> REPLACE"
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\n        ctx[env_idx].imports = std.HashMapNew(ctx);\n        ctx[env_idx].variable_origins = std.HashMapNew(ctx);\n        ctx[env_idx].moved_vars = std.HashMapNew(ctx);\n        ctx[env_idx].open_directories = std.HashMapNew(ctx);\n        return ctx[env_idx];\n=======\n        ctx[env_idx].imports = std.HashMapNew(ctx);\n        ctx[env_idx].imports.Insert(std.Clone(ctx, \"std\"), std.Clone(ctx, \"std_\"));\n        ctx[env_idx].imports.Insert(std.Clone(ctx, \"os\"), std.Clone(ctx, \"os_\"));\n        ctx[env_idx].variable_origins = std.HashMapNew(ctx);\n        ctx[env_idx].moved_vars = std.HashMapNew(ctx);\n        ctx[env_idx].open_directories = std.HashMapNew(ctx);\n        return ctx[env_idx];\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n            if std.str_eq(resolved_func, \"std_Format\") || std.str_eq(resolved_func, \"std_FormatInt\") || \n               std.str_eq(resolved_func, \"std_Concat\") || std.str_eq(resolved_func, \"os_ScratchAlloc\") {\n=======\n            if std.str_eq(resolved_func, \"std_Format\") || std.str_eq(resolved_func, \"std.Format\") || \n               std.str_eq(resolved_func, \"std_FormatInt\") || std.str_eq(resolved_func, \"std.FormatInt\") || \n               std.str_eq(resolved_func, \"std_Concat\") || std.str_eq(resolved_func, \"std.Concat\") || \n               std.str_eq(resolved_func, \"os_ScratchAlloc\") || std.str_eq(resolved_func, \"os.ScratchAlloc\") {\n>>>>>>> REPLACE"
     }
   ]
 }

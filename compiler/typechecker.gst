@@ -113,8 +113,10 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
                 }
             }
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
-            if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std_FormatInt") || 
-               std.str_eq(resolved_func, "std_Concat") || std.str_eq(resolved_func, "os_ScratchAlloc") {
+            if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std.Format") || 
+               std.str_eq(resolved_func, "std_FormatInt") || std.str_eq(resolved_func, "std.FormatInt") || 
+               std.str_eq(resolved_func, "std_Concat") || std.str_eq(resolved_func, "std.Concat") || 
+               std.str_eq(resolved_func, "os_ScratchAlloc") || std.str_eq(resolved_func, "os.ScratchAlloc") {
                 mut s := set_init(ctx);
                 set_add(s, "scratch", ctx);
                 return s;
@@ -206,6 +208,8 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].function_registry = std.HashMapNew(ctx);
         ctx[env_idx].current_prefix = "";
         ctx[env_idx].imports = std.HashMapNew(ctx);
+        ctx[env_idx].imports.Insert(std.Clone(ctx, "std"), std.Clone(ctx, "std_"));
+        ctx[env_idx].imports.Insert(std.Clone(ctx, "os"), std.Clone(ctx, "os_"));
         ctx[env_idx].variable_origins = std.HashMapNew(ctx);
         ctx[env_idx].moved_vars = std.HashMapNew(ctx);
         ctx[env_idx].open_directories = std.HashMapNew(ctx);
