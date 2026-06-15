@@ -2307,10 +2307,6 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
             return 0;
         }
 
-
-
-        
-         if expected.tag == 8 { // Struct
         if expected.tag == 8 { // Struct
                 mut name1 := expected.Struct.struct_name;
                 mut name2 := actual.Struct.struct_name;
