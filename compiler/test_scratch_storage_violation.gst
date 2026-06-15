@@ -6,6 +6,6 @@ func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
 
-    mut n: Index[BrandedNode, ctx] := os.ArenaAlloc(ctx);
-    ctx[n].name = std.Format("Item %d", 1);
+    mut n: BrandedNode[ctx];
+    n.name = std.Format("Item %d", 1);
 }
