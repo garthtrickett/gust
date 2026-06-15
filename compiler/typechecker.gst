@@ -2311,21 +2311,33 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
 
         
          if expected.tag == 8 { // Struct
+        if expected.tag == 8 { // Struct
                 mut name1 := expected.Struct.struct_name;
                 mut name2 := actual.Struct.struct_name;
                 if std.str_eq(name1, name2) {
                     return 1;
                 }
 
+                if len(name1) >= 4 {
+                    if std.str_eq(std.str_slice(name1, 0, 4), "std_") {
+                        name1 = std.str_slice(name1, 4, len(name1));
+                    }
+                }
+                if len(name2) >= 4 {
+                    if std.str_eq(std.str_slice(name2, 0, 4), "std_") {
+                        name2 = std.str_slice(name2, 4, len(name2));
+                    }
+                }
+
                 mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
-                prefixes.Push("std_Vector_");
-                prefixes.Push("std_HashMap_");
-                prefixes.Push("std_Pool_");
-                prefixes.Push("std_Rc_");
-                prefixes.Push("std_Graph_");
-                prefixes.Push("std_Mutex_");
-                prefixes.Push("std_Channel_");
-                prefixes.Push("std_GenerationalArena_");
+                prefixes.Push("Vector_");
+                prefixes.Push("HashMap_");
+                prefixes.Push("Pool_");
+                prefixes.Push("Rc_");
+                prefixes.Push("Graph_");
+                prefixes.Push("Mutex_");
+                prefixes.Push("Channel_");
+                prefixes.Push("GenerationalArena_");
                 prefixes.Push("os_Dir_");
                 prefixes.Push("os_DirEntry_");
 
