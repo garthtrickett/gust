@@ -2915,3 +2915,87 @@ func typechecker_serialize_enums(env: *TypeEnvironment[ctx], ctx: &Arena) str {
     }
     return std.Clone(ctx, result);
 }
+
+func typechecker_serialize_structures(env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    mut result := "Structures:\n";
+    unsafe {
+        mut keys := typechecker_get_sorted_keys_layout(&(*env).struct_registry, ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut key := keys[i];
+            mut lookup := (*env).struct_registry.Get(key);
+            if lookup.Ok {
+                mut layout := lookup.Val;
+                mut brand_str := "";
+                if layout.brand != empty[Index[str, ctx]] {
+                    mut brand_str_ptr := &ctx[layout.brand] as *str;
+                    brand_str = std.Concat(" [", *brand_str_ptr);
+                    brand_str = std.Concat(brand_str, "]");
+                }
+                result = std.Concat(result, "  ");
+                result = std.Concat(result, key);
+                result = std.Concat(result, brand_str);
+                result = std.Concat(result, ":\n");
+                
+                mut f_keys := typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                mut j := 0;
+                while j < len(f_keys) {
+                    mut f_key := f_keys[j];
+                    mut f_lookup := layout.fields.Get(f_key);
+                    if f_lookup.Ok {
+                        mut ty_str := ast.serialize_type(f_lookup.Val, ctx);
+                        result = std.Concat(result, "    ");
+                        result = std.Concat(result, f_key);
+                        result = std.Concat(result, " : ");
+                        result = std.Concat(result, ty_str);
+                        result = std.Concat(result, "\n");
+                    }
+                    j = j + 1;
+                }
+            }
+            i = i + 1;
+        }
+    }
+    return std.Clone(ctx, result);
+}
+
+func typechecker_serialize_functions(env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    mut result := "Functions:\n";
+    unsafe {
+        mut keys := typechecker_get_sorted_keys_func(&(*env).function_registry, ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut key := keys[i];
+            mut lookup := (*env).function_registry.Get(key);
+            if lookup.Ok {
+                mut sig := lookup.Val;
+                result = std.Concat(result, "  ");
+                result = std.Concat(result, key);
+                result = std.Concat(result, "(");
+                
+                mut params_str := "";
+                mut j := 0;
+                while j < len(sig.param_names) {
+                    if j > 0 {
+                        params_str = std.Concat(params_str, ", ");
+                    }
+                    mut p_name := sig.param_names[j];
+                    mut p_type := sig.params[j];
+                    mut p_type_str := ast.serialize_type(p_type, ctx);
+                    params_str = std.Concat(params_str, p_name);
+                    params_str = std.Concat(params_str, ": ");
+                    params_str = std.Concat(params_str, p_type_str);
+                    j = j + 1;
+                }
+                
+                result = std.Concat(result, params_str);
+                result = std.Concat(result, ") -> ");
+                mut ret_str := ast.serialize_type(sig.return_type, ctx);
+                result = std.Concat(result, ret_str);
+                result = std.Concat(result, "\n");
+            }
+            i = i + 1;
+        }
+    }
+    return std.Clone(ctx, result);
+}

@@ -152,4 +152,11 @@ func main() {
 
     mut serialized_enums := typechecker.typechecker_serialize_enums(&env, ctx);
     os.LogStr(serialized_enums);
+
+    // 7. Test Complex Category Formatters (Step 2.4 Verification)
+    mut serialized_structs := typechecker.typechecker_serialize_structures(&env, ctx);
+    os.LogStr(serialized_structs);
+
+    mut serialized_funcs := typechecker.typechecker_serialize_functions(&env, ctx);
+    os.LogStr(serialized_funcs);
 }
