@@ -62,7 +62,10 @@ func main() {
         guard ok_layout := env.struct_registry.Get(ok_variant_t.Struct.struct_name) else {
             return;
         }
-        os.LogStr(std.Concat("Ok variant field type tag: ", std.FormatInt(ok_layout.fields.Get("val").Val.tag)));
+        guard val_field_t := ok_layout.fields.Get("val") else {
+            return;
+        }
+        os.LogStr(std.Concat("Ok variant field type tag: ", std.FormatInt(val_field_t.tag)));
     } else {
         os.LogStr("Result monomorphization failed");
     }
