@@ -610,6 +610,7 @@ impl TypeChecker {
                             self.resolve_type_namespacing(&resolved_field_type)?;
 
                         if let Type::Struct(ref struct_name, _) = resolved_field_type
+                            && !self.enum_registry.contains_key(struct_name)
                             && let Some(layout) = self.struct_registry.get(struct_name)
                             && layout.fields.len() > 2
                         {

@@ -881,6 +881,258 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
     }
 }
 
+func monomorphize(env: *TypeEnvironment[ctx], template_name: str, args: std.Vector[ast.Type[ctx], ctx], ctx: &Arena) errors.Result[ast.Type[ctx], ctx] { 
+    unsafe {
+        mut old_prefix := (*env).current_prefix;
+        mut old_imports := (*env).imports;
+
+        mut template_prefix := "";
+        mut pos := std.str_find(template_name, "__");
+        if pos != 0 - 1 {
+            template_prefix = std.str_slice(template_name, 0, pos + 2);
+        }
+
+        if std.str_eq(template_prefix, "") == false {
+            (*env).current_prefix = std.Clone(ctx, template_prefix);
+        }
+
+        mut res := monomorphize_impl(env, template_name, args, ctx);
+
+        (*env).current_prefix = old_prefix;
+        (*env).imports = old_imports;
+
+        return res;
+    }
+}
+
+func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std.Vector[ast.Type[ctx], ctx], ctx: &Arena) errors.Result[ast.Type[ctx], ctx] {
+    unsafe {
+        mut res: errors.Result[ast.Type[ctx], ctx];
+        res.tag = 0; // Ok
+
+        // 1. Check Enum Templates
+        mut enum_lookup := (*env).enum_templates.Get(template_name);
+        if enum_lookup.Ok {
+            mut template := enum_lookup.Val;
+            mut generics_vec := &ctx[template.generics] as *std.Vector[str, ctx];
+            if len(*generics_vec) != len(args) {
+                mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[err].kind.tag = 2; // TypeError
+                ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Template '", template_name));
+                ctx[err].message = std.Concat(ctx[err].message, "' expects ");
+                ctx[err].message = std.Concat(ctx[err].message, std.FormatInt(len(*generics_vec)));
+                ctx[err].message = std.Concat(ctx[err].message, " generic arguments but got ");
+                ctx[err].message = std.Concat(ctx[err].message, std.FormatInt(len(args)));
+                res.tag = 1; // Err
+                res.Err.error = err;
+                return res;
+            }
+
+            mut substitution_map: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+            mut i := 0;
+            while i < len(*generics_vec) {
+                substitution_map.Insert(std.Clone(ctx, (*generics_vec)[i]), args[i]);
+                i = i + 1;
+            }
+
+            mut args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[args_idx] = args;
+            mut concrete_name := get_monomorphized_name(template_name, args_idx, ctx);
+
+            mut brand: Index[str, ctx] := empty[Index[str, ctx]];
+            mut j := 0;
+            while j < len(*generics_vec) {
+                mut g_name := (*generics_vec)[j];
+                if std.str_eq(g_name, "ctx") || std.str_eq(g_name, "connCtx") || std.str_eq(g_name, "arena") || std.str_eq(g_name, "a") {
+                    mut arg := args[j];
+                    if arg.tag == 8 { // Struct
+                        brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                        mut ptr := &ctx[brand] as *str;
+                        *ptr = std.Clone(ctx, arg.Struct.struct_name);
+                    }
+                }
+                j = j + 1;
+            }
+
+            mut existing := (*env).struct_registry.Get(concrete_name);
+            if existing.Ok == 0 {
+                mut placeholder: StructLayout[ctx];
+                placeholder.brand = brand;
+                placeholder.fields = std.HashMapNew(ctx);
+                (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
+
+                mut enum_fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+                mut t_int: ast.Type[ctx];
+                t_int.tag = 0; // Int
+                enum_fields.Insert(std.Clone(ctx, "tag"), t_int);
+
+                mut variants_vec := &ctx[template.variants] as *std.Vector[ast.VariantDef[ctx], ctx];
+                mut v_idx := 0;
+                while v_idx < len(*variants_vec) {
+                    mut variant := (*variants_vec)[v_idx];
+                    mut concrete_variant_struct_name := std.Concat(concrete_name, "_");
+                    concrete_variant_struct_name = std.Concat(concrete_variant_struct_name, variant.name);
+
+                    mut variant_fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+                    mut vfields_vec := &ctx[variant.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+                    mut f_idx := 0;
+                    while f_idx < len(*vfields_vec) {
+                        mut field := (*vfields_vec)[f_idx];
+                        mut substituted_type := substitute_generics(env, field.field_type, substitution_map, ctx);
+                        mut resolved_field_type := env_resolve_type(env, substituted_type, ctx);
+
+                        if resolved_field_type.tag == 8 { // Struct
+                            mut sub_layout_lookup := (*env).struct_registry.Get(resolved_field_type.Struct.struct_name);
+                            if sub_layout_lookup.Ok {
+                                if sub_layout_lookup.Val.fields.len > 2 {
+                                    // Skip check if the target struct is an enum (which has a "tag" field)
+                                    if sub_layout_lookup.Val.fields.Get("tag").Ok == 0 {
+                                        mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                                        ctx[err].kind.tag = 2; // TypeError
+                                        ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Variant '", variant.name));
+                                        ctx[err].message = std.Concat(ctx[err].message, "' contains a large enum variant payload struct '");
+                                        ctx[err].message = std.Concat(ctx[err].message, resolved_field_type.Struct.struct_name);
+                                        ctx[err].message = std.Concat(ctx[err].message, "' (3 fields). Use Index, or pointer indirection to avoid memory bloat.");
+                                        res.tag = 1; // Err
+                                        res.Err.error = err;
+                                        return res;
+                                    }
+                                }
+                            }
+                        }
+
+                        variant_fields.Insert(std.Clone(ctx, field.name), resolved_field_type);
+                        f_idx = f_idx + 1;
+                    }
+
+                    mut variant_layout: StructLayout[ctx];
+                    variant_layout.brand = brand;
+                    variant_layout.fields = variant_fields;
+                    (*env).struct_registry.Insert(std.Clone(ctx, concrete_variant_struct_name), variant_layout);
+
+                    mut t_variant: ast.Type[ctx];
+                    t_variant.tag = 8; // Struct
+                    t_variant.Struct.struct_name = std.Clone(ctx, concrete_variant_struct_name);
+                    t_variant.Struct.brand = brand;
+                    enum_fields.Insert(std.Clone(ctx, variant.name), t_variant);
+
+                    v_idx = v_idx + 1;
+                }
+
+                mut layout_update := (*env).struct_registry.Get(concrete_name).Val;
+                layout_update.fields = enum_fields;
+                (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), layout_update);
+            }
+
+            res.Ok.val.tag = 8; // Struct
+            res.Ok.val.Struct.struct_name = std.Clone(ctx, concrete_name);
+            res.Ok.val.Struct.brand = brand;
+            return res;
+        }
+
+        // 2. Check Struct Templates
+        mut struct_lookup := (*env).struct_templates.Get(template_name);
+        if struct_lookup.Ok {
+            mut template := struct_lookup.Val;
+            mut generics_vec := &ctx[template.generics] as *std.Vector[str, ctx];
+            if len(*generics_vec) != len(args) {
+                mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[err].kind.tag = 2; // TypeError
+                ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Template '", template_name));
+                ctx[err].message = std.Concat(ctx[err].message, "' expects ");
+                ctx[err].message = std.Concat(ctx[err].message, std.FormatInt(len(*generics_vec)));
+                ctx[err].message = std.Concat(ctx[err].message, " generic arguments but got ");
+                ctx[err].message = std.Concat(ctx[err].message, std.FormatInt(len(args)));
+                res.tag = 1; // Err
+                res.Err.error = err;
+                return res;
+            }
+
+            mut substitution_map: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+            mut i := 0;
+            while i < len(*generics_vec) {
+                substitution_map.Insert(std.Clone(ctx, (*generics_vec)[i]), args[i]);
+                i = i + 1;
+            }
+
+            mut args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[args_idx] = args;
+            mut concrete_name := get_monomorphized_name(template_name, args_idx, ctx);
+
+            mut brand: Index[str, ctx] := empty[Index[str, ctx]];
+            mut j := 0;
+            while j < len(*generics_vec) {
+                mut g_name := (*generics_vec)[j];
+                if std.str_eq(g_name, "ctx") || std.str_eq(g_name, "connCtx") || std.str_eq(g_name, "arena") || std.str_eq(g_name, "a") {
+                    mut arg := args[j];
+                    if arg.tag == 8 { // Struct
+                        brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                        mut ptr := &ctx[brand] as *str;
+                        *ptr = std.Clone(ctx, arg.Struct.struct_name);
+                    }
+                }
+                j = j + 1;
+            }
+
+            mut existing := (*env).struct_registry.Get(concrete_name);
+            if existing.Ok == 0 {
+                mut placeholder: StructLayout[ctx];
+                placeholder.brand = brand;
+                placeholder.fields = std.HashMapNew(ctx);
+                (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
+
+                mut concrete_fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+                mut fields_vec := &ctx[template.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+                mut f_idx := 0;
+                while f_idx < len(*fields_vec) {
+                    mut field := (*fields_vec)[f_idx];
+                    mut substituted_type := substitute_generics(env, field.field_type, substitution_map, ctx);
+                    mut resolved_field_type := env_resolve_type(env, substituted_type, ctx);
+                    concrete_fields.Insert(std.Clone(ctx, field.name), resolved_field_type);
+                    f_idx = f_idx + 1;
+                }
+
+                mut layout_update := (*env).struct_registry.Get(concrete_name).Val;
+                layout_update.fields = concrete_fields;
+                (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), layout_update);
+
+                // Ephemeral view checking for unbranded monomorphization
+                if brand == empty[Index[str, ctx]] {
+                    mut f := 0;
+                    while f < len(*fields_vec) {
+                        mut field := (*fields_vec)[f];
+                        mut field_type := concrete_fields.Get(field.name).Val;
+                        if env_type_is_ephemeral_view(field_type, ctx) == 1 {
+                            mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[err].kind.tag = 2; // TypeError
+                            ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Unbranded monomorphized struct '", concrete_name));
+                            ctx[err].message = std.Concat(ctx[err].message, "' cannot contain ephemeral slice or view field '");
+                            ctx[err].message = std.Concat(ctx[err].message, field.name);
+                            ctx[err].message = std.Concat(ctx[err].message, "'");
+                            res.tag = 1; // Err
+                            res.Err.error = err;
+                            return res;
+                        }
+                        f = f + 1;
+                    }
+                }
+            }
+
+            res.Ok.val.tag = 8; // Struct
+            res.Ok.val.Struct.struct_name = std.Clone(ctx, concrete_name);
+            res.Ok.val.Struct.brand = brand;
+            return res;
+        }
+
+        mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[err].kind.tag = 2; // TypeError
+        ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Generic template not found: ", template_name));
+        res.tag = 1; // Err
+        res.Err.error = err;
+        return res;
+    }
+}
+
 func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
     unsafe {
         mut t_int := make_type_int();
@@ -1328,7 +1580,7 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                         ctx[res_idx].Slice.inner = inner_idx;
                     } else {
                         if t.tag == 10 { // Generic
-                            ctx[res_idx].Generic.name = env_resolve_namespaced_ident(env, t.Generic.name, ctx);
+                            mut name := env_resolve_namespaced_ident(env, t.Generic.name, ctx);
                             mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
                             mut new_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
                             mut i := 0;
@@ -1337,9 +1589,16 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                                 new_args.Push(env_resolve_type(env, arg, ctx));
                                 i = i + 1;
                             }
-                            ctx[res_idx].Generic.args = os.ArenaAlloc(ctx);
-                            mut dest_args := &ctx[ctx[res_idx].Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-                            *dest_args = new_args;
+                            
+                            mut mono_res := monomorphize(env, name, new_args, ctx);
+                            if mono_res.tag == 0 { // Ok
+                                return mono_res.Ok.val;
+                            } else {
+                                (*env).errors.Push(ctx[mono_res.Err.error]);
+                                mut dummy: ast.Type[ctx];
+                                dummy.tag = 3; // Void
+                                return dummy;
+                            }
                         }
                     }
                 }
@@ -2028,7 +2287,7 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
                 report_error(2, msg, get_expression_span(val_idx, ctx), env, ctx);
             }
 
-            // Scratchpad storage restriction check
+            // Scratchpad storage restriction check (Step 3 verification)
             if left.tag == 11 { // Selector
                 mut parent_type := check_expression(left.Selector.left, env, scope, ctx);
                 mut parent_brand := get_type_brand(parent_type, ctx);
@@ -2047,7 +2306,7 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
             if is_ptr_write == 0 {
                 mut root_name := get_root_variable(left_idx, ctx);
                 if std.str_eq(root_name, "") == 0 {
-                    // Invalidate any active views that borrow from the root variable
+                    // Invalidate any active views that borrow from the root variable being modified
                     mut var_origins_keys := (*env).variable_origins.Keys(ctx);
                     mut m := 0;
                     while m < len(var_origins_keys) {
