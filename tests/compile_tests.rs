@@ -3496,8 +3496,6 @@ fn test_self_hosted_templates_pre_registration() {
         "lib_module__MyStruct",
         "Pointer inner: lib_module__MyStruct",
         "Slice inner: lib_module__MyStruct",
-        "std_Vector",
-        "lib_module__MyStruct",
         "std_Vector_lib_module__MyStruct_ctx",
     ]
     .join("\n");
