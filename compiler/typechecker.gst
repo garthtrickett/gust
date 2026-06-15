@@ -3130,7 +3130,7 @@ func typechecker_serialize_variables(env: *TypeEnvironment[ctx], ctx: &Arena) st
             i = i + 1;
         }
     }
-    return result;
+    return std.Clone(ctx, result);
 }
 
 func typechecker_serialize_enums(env: *TypeEnvironment[ctx], ctx: &Arena) str {
@@ -3160,7 +3160,7 @@ func typechecker_serialize_enums(env: *TypeEnvironment[ctx], ctx: &Arena) str {
             i = i + 1;
         }
     }
-    return result;
+    return std.Clone(ctx, result);
 }
 
 func typechecker_serialize_structures(env: *TypeEnvironment[ctx], ctx: &Arena) str {
@@ -3203,7 +3203,7 @@ func typechecker_serialize_structures(env: *TypeEnvironment[ctx], ctx: &Arena) s
             i = i + 1;
         }
     }
-    return result;
+    return std.Clone(ctx, result);
 }
 
 func typechecker_serialize_functions(env: *TypeEnvironment[ctx], ctx: &Arena) str {
@@ -3244,7 +3244,7 @@ func typechecker_serialize_functions(env: *TypeEnvironment[ctx], ctx: &Arena) st
             i = i + 1;
         }
     }
-    return result;
+    return std.Clone(ctx, result);
 }
 
 func typechecker_serialize_type_environment(env: *TypeEnvironment[ctx], ctx: &Arena) str {
@@ -3252,5 +3252,5 @@ func typechecker_serialize_type_environment(env: *TypeEnvironment[ctx], ctx: &Ar
     result = std.Concat(result, typechecker_serialize_structures(env, ctx));
     result = std.Concat(result, typechecker_serialize_enums(env, ctx));
     result = std.Concat(result, typechecker_serialize_functions(env, ctx));
-    return result;
+    return std.Clone(ctx, result);
 }
