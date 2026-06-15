@@ -428,6 +428,127 @@ impl TypeChecker {
         );
 
         self.function_registry.insert(
+            "os.Arena.New".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec![],
+                params: vec![],
+                return_type: Type::Arena,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os_Arena.New".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec![],
+                params: vec![],
+                return_type: Type::Arena,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os_Arena_New".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec![],
+                params: vec![],
+                return_type: Type::Arena,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "os.ReadFile".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::Str],
+                return_type: Type::Str,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os_ReadFile".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string(), "arg1".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena)), Type::Str],
+                return_type: Type::Str,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "os.VectorNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("std_Vector_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os_VectorNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("std_Vector_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std.VectorNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("std_Vector_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_VectorNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("std_Vector_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "os.HashMapNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("std_HashMap_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os_HashMapNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("std_HashMap_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std.HashMapNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("std_HashMap_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "std_HashMapNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("std_HashMap_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
             "std.MutexNew".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["arg0".to_string()],
@@ -445,7 +566,6 @@ impl TypeChecker {
                 return_origins: std::collections::HashSet::new(),
             },
         );
-
         self.function_registry.insert(
             "std.ChannelNew".to_string(),
             super::types::FunctionSignature {
@@ -3144,13 +3264,17 @@ impl TypeChecker {
                     {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
-                            message: "Semantic Error: ChannelNew argument must be an Arena allocator"
-                                .to_string(),
+                            message:
+                                "Semantic Error: ChannelNew argument must be an Arena allocator"
+                                    .to_string(),
                             span: None,
                         });
                     }
                     let brand_name = expression_to_string(&arguments[0]);
-                    return Ok(Type::Struct("std_Channel_Any".to_string(), Some(brand_name)));
+                    return Ok(Type::Struct(
+                        "std_Channel_Any".to_string(),
+                        Some(brand_name),
+                    ));
                 }
 
                 if func_path == "std.RcNew" || func_path == "std_RcNew" {
