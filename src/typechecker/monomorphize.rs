@@ -417,12 +417,17 @@ impl TypeChecker {
                                 }
                             }
 
-                            if let Err(ref err) = self.monomorphize(&template, &args) {
-                                tracing::error!(
-                                    "❌ Fallback monomorphization of '{}' failed: {:?}",
-                                    template,
-                                    err
-                                );
+                            match self.monomorphize(&template, &args) {
+                                Ok(monomorphized_type) => {
+                                    return Ok(monomorphized_type);
+                                }
+                                Err(ref err) => {
+                                    tracing::error!(
+                                        "❌ Fallback monomorphization of '{}' failed: {:?}",
+                                        template,
+                                        err
+                                    );
+                                }
                             }
                         }
                     }
@@ -1243,6 +1248,36 @@ mod tests {
                 "std_Vector_lib_module__MyNode_ctx_ctx".to_string(),
                 Some("ctx".to_string())
             )
+        );
+    }
+
+    #[test]
+    fn test_fallback_monomorphization_brand_propagation() {
+        let mut checker = TypeChecker::new();
+        checker.current_prefix = "my_module__".to_string();
+        checker
+            .imports
+            .insert("std".to_string(), "std_".to_string());
+
+        // Register a template my_module__FieldDef with generics
+        checker.struct_templates.insert(
+            "my_module__FieldDef".to_string(),
+            crate::typechecker::StructTemplate {
+                generics: vec!["ctx".to_string()],
+                fields: vec![],
+            },
+        );
+
+        // Resolve Type::Struct("std_Vector_my_module__FieldDef_ctx", Some("ctx"))
+        // It is not in struct_registry, so fallback monomorphization should trigger,
+        // and return std_Vector_my_module__FieldDef_ctx_ctx!
+        let t = Type::Struct("std_Vector_my_module__FieldDef_ctx".to_string(), Some("ctx".to_string()));
+        let resolved = checker.resolve_type(&t);
+        assert!(resolved.is_ok());
+        let res_type = resolved.unwrap();
+        assert_eq!(
+            res_type,
+            Type::Struct("std_Vector_my_module__FieldDef_ctx_ctx".to_string(), Some("ctx".to_string()))
         );
     }
 }
