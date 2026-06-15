@@ -936,7 +936,10 @@ fn test_nested_scoping_definite_checks_accepted() {
     ";
     let res = check_program(source);
     if let Err(err) = res {
-        panic!("test_nested_scoping_definite_checks_accepted FAILED with: {}", err.message);
+        panic!(
+            "test_nested_scoping_definite_checks_accepted FAILED with: {}",
+            err.message
+        );
     }
 }
 
@@ -964,9 +967,12 @@ fn test_nested_scoping_definite_checks_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     if err.kind != TypeErrorKind::TypeMismatch {
-        panic!("test_nested_scoping_definite_checks_rejected FAILED with unexpected error: {} (kind: {:?})", err.message, err.kind);
+        panic!(
+            "test_nested_scoping_definite_checks_rejected FAILED with unexpected error: {} (kind: {:?})",
+            err.message, err.kind
+        );
     }
-}
+
     assert!(
         err.message.contains(
             "Accessing the .Val payload of an unchecked result wrapper 'outer.Val.inner'"

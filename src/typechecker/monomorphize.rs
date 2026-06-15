@@ -308,23 +308,7 @@ impl TypeChecker {
                         let brand = extract_brand_from_suffix(&target_struct);
                         Type::Struct(target_struct, brand)
                     };
-                    let _resolved_v_type = self.resolve_type(&v_type)?;
-                }
-
-                if clean_name.starts_with("CastResult_") && !self.struct_registry.contains_key(name)
-                {
-                    let target_struct = clean_name
-                        .strip_prefix("CastResult_")
-                        .unwrap_or(clean_name)
-                        .to_string();
-                    let v_type = if target_struct == "int" {
-                        Type::Int
-                    } else {
-                        let brand = extract_brand_from_suffix(&target_struct);
-                        Type::RawPointer(Box::new(Type::Struct(target_struct, brand)))
-                    };
                     let resolved_v_type = self.resolve_type(&v_type)?;
-
                     let mut fields = HashMap::new();
                     fields.insert("Ok".to_string(), Type::Int);
                     fields.insert("Val".to_string(), resolved_v_type);
@@ -346,7 +330,8 @@ impl TypeChecker {
                     let v_type = if target_struct == "int" {
                         Type::Int
                     } else {
-                        Type::RawPointer(Box::new(Type::Struct(target_struct, None)))
+                        let brand = extract_brand_from_suffix(&target_struct);
+                        Type::RawPointer(Box::new(Type::Struct(target_struct, brand)))
                     };
                     let resolved_v_type = self.resolve_type(&v_type)?;
                     let mut fields = HashMap::new();
