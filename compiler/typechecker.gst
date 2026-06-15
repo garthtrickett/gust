@@ -330,7 +330,7 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
                         return t;
                     }
                     if std.str_eq(expr.Selector.right, "Val") {
-                        if (*env).checked_results.Get(left_str).Ok == false {
+                        if (*env).checked_results.Get(left_str).Ok == 0 {
                             mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper ";
                             msg = std.Concat(msg, left_str);
                             report_error(2, msg, expr.Selector.span, env, ctx);
@@ -955,7 +955,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             }
 
             mut existing := (*env).struct_registry.Get(concrete_name);
-            if existing.Ok == false {
+            if existing.Ok == 0 {
                 mut placeholder: StructLayout[ctx];
                 placeholder.brand = brand;
                 placeholder.fields = std.HashMapNew(ctx);
@@ -1075,7 +1075,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             }
 
             mut existing := (*env).struct_registry.Get(concrete_name);
-            if existing.Ok == false {
+            if existing.Ok == 0 {
                 mut placeholder: StructLayout[ctx];
                 placeholder.brand = brand;
                 placeholder.fields = std.HashMapNew(ctx);
@@ -2476,7 +2476,7 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
                 mut n := 0;
                 while n < len(alt_keys) {
                     mut key := alt_keys[n];
-                    if consequence_origins.Get(key).Ok == false {
+                    if consequence_origins.Get(key).Ok == 0 {
                         mut lookup_alt := alternative_origins.Get(key);
                         if lookup_alt.Ok {
                             mut orig_alt := lookup_alt.Val;
