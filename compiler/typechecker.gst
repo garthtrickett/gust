@@ -443,7 +443,9 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 if len(*args_vec) == 1 {
                     mut arg_expr := (*args_vec)[0];
-                    mut arg_name := get_root_variable(arg_expr, ctx);
+                    mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[arg_idx] = arg_expr;
+                    mut arg_name := get_root_variable(arg_idx, ctx);
                     if std.str_eq(arg_name, "") == 0 {
                         (*env).open_directories.Remove(arg_name);
                     }
