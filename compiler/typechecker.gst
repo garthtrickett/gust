@@ -892,7 +892,7 @@ func monomorphize(env: *TypeEnvironment[ctx], template_name: str, args: std.Vect
             template_prefix = std.str_slice(template_name, 0, pos + 2);
         }
 
-        if std.str_eq(template_prefix, "") == false {
+        if std.str_eq(template_prefix, "") == 0 {
             (*env).current_prefix = std.Clone(ctx, template_prefix);
         }
 

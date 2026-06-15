@@ -1,7 +1,7 @@
 use super::TypeChecker;
 use super::types::{
     StructLayout, Type, TypeError, TypeErrorKind, expression_to_string, strip_brand_prefix,
-    types_match,
+    types_match, extract_brand_from_suffix,
 };
 use crate::ast::{Expression, Program, Statement};
 use std::collections::{HashMap, HashSet};
@@ -2743,22 +2743,11 @@ impl TypeChecker {
                                 return Ok(Type::Int);
                             }
                             if let Some(suffix) = target_struct.strip_prefix("Index_") {
-                                let brand = if suffix.ends_with("_ctx") {
-                                    Some("ctx".to_string())
-                                } else if suffix.ends_with("_connCtx") {
-                                    Some("connCtx".to_string())
-                                } else if suffix.ends_with("_arena") {
-                                    Some("arena".to_string())
-                                } else if suffix.ends_with("_a") {
-                                    Some("a".to_string())
-                                } else if suffix.ends_with("_Any") {
-                                    Some("Any".to_string())
-                                } else {
-                                    None
-                                };
+                                let brand = extract_brand_from_suffix(&suffix);
                                 return Ok(Type::Index(suffix.to_string(), brand));
                             }
-                            return Ok(Type::Struct(target_struct, None));
+                            let brand = extract_brand_from_suffix(&target_struct);
+                            return Ok(Type::Struct(target_struct, brand));
                         }
                     }
                     if let Some(layout) = self.struct_registry.get(struct_name) {

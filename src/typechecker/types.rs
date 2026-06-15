@@ -432,3 +432,22 @@ pub fn format_diagnostic(source: &str, error: &TypeError) -> String {
         format!("Error [{:?}]: {}\n", error.kind, error.message)
     }
 }
+
+pub fn extract_brand_from_suffix(suffix: &str) -> Option<String> {
+    let brands = [
+        "ctx", "connCtx", "arena", "a", "Any", 
+        "ctx1", "ctx2", "innerCtx", "outerCtx", 
+        "current_ctx", "next_ctx"
+    ];
+    if brands.contains(&suffix) {
+        return Some(suffix.to_string());
+    }
+    for brand in &brands {
+        let pattern1 = format!("_{}", brand);
+        let pattern2_str = format!("__{}", brand);
+        if suffix.ends_with(&pattern1) || suffix.ends_with(&pattern2_str) {
+            return Some(brand.to_string());
+        }
+    }
+    None
+}
