@@ -534,6 +534,8 @@ type TypeEnvironment[ctx] struct {
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
+    variable_types: std.HashMap[str, ast.Type[ctx], ctx],
+    enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
     current_prefix: str,
     imports: std.HashMap[str, str, ctx],
     variable_origins: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx],
@@ -968,9 +970,11 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                 enum_fields.Insert(std.Clone(ctx, "tag"), t_int);
 
                 mut variants_vec := &ctx[template.variants] as *std.Vector[ast.VariantDef[ctx], ctx];
+                mut concrete_variants: std.Vector[str, ctx] := std.VectorNew(ctx);
                 mut v_idx := 0;
                 while v_idx < len(*variants_vec) {
                     mut variant := (*variants_vec)[v_idx];
+                    concrete_variants.Push(std.Clone(ctx, variant.name));
                     mut concrete_variant_struct_name := std.Concat(concrete_name, "_");
                     concrete_variant_struct_name = std.Concat(concrete_variant_struct_name, variant.name);
 
@@ -1023,6 +1027,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
                 placeholder.fields = enum_fields;
                 (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
+                (*env).enum_registry.Insert(std.Clone(ctx, concrete_name), concrete_variants);
             }
 
             res.Ok.val.tag = 8; // Struct
@@ -1460,6 +1465,8 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].struct_templates = std.HashMapNew(ctx);
         ctx[env_idx].enum_templates = std.HashMapNew(ctx);
         ctx[env_idx].function_registry = std.HashMapNew(ctx);
+        ctx[env_idx].variable_types = std.HashMapNew(ctx);
+        ctx[env_idx].enum_registry = std.HashMapNew(ctx);
         ctx[env_idx].current_prefix = "";
         ctx[env_idx].imports = std.HashMapNew(ctx);
         ctx[env_idx].imports.Insert(std.Clone(ctx, "std"), std.Clone(ctx, "std_"));
@@ -1696,11 +1703,13 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             t_int.tag = 0; // Int
             enum_layout.fields.Insert(std.Clone(ctx, "tag"), t_int);
 
+            mut variants_list: std.Vector[str, ctx] := std.VectorNew(ctx);
             unsafe {
                 mut variants_vec := &ctx[stmt.EnumDecl.variants] as *std.Vector[ast.VariantDef[ctx], ctx];
                 mut i := 0;
                 while i < len(*variants_vec) {
                     mut v := (*variants_vec)[i];
+                    variants_list.Push(std.Clone(ctx, v.name));
                     mut variant_struct_name := std.Concat(namespaced_name, "_");
                     variant_struct_name = std.Concat(variant_struct_name, v.name);
 
@@ -1730,6 +1739,9 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             }
 
             env_register_struct(env, namespaced_name, enum_layout, ctx);
+            unsafe {
+                (*env).enum_registry.Insert(std.Clone(ctx, namespaced_name), variants_list);
+            }
         }
     }
     if stmt.tag == 3 { // FunctionDecl
@@ -2241,8 +2253,10 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
                     report_error(2, msg, val_span, env, ctx);
                 }
                 scope_insert(scope, name, resolved_explicit, ctx);
+                (*env).variable_types.Insert(std.Clone(ctx, name), resolved_explicit);
             } else {
                 scope_insert(scope, name, val_type, ctx);
+                (*env).variable_types.Insert(std.Clone(ctx, name), val_type);
             }
 
             if val_type.tag == 8 { // Struct

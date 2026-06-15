@@ -69,4 +69,52 @@ func main() {
     } else {
         os.LogStr("Result monomorphization failed");
     }
+
+    // 3. Parse and typecheck a small mock program with variable declarations and an enum
+    mut l3: lexer.Lexer[ctx];
+    lexer.init_lexer(&l3, "type Status enum { Active, Inactive } func main() { mut x: int := 10; }");
+
+    mut p3: parser.Parser[ctx];
+    parser.init_parser(&p3, &l3, ctx);
+
+    mut prog3 := parser.parse_program(&p3, ctx);
+    if len(p3.errors) > 0 {
+        os.LogStr("ParserError in step 3");
+        os.Exit(1);
+    }
+
+    mut scope3 := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+    unsafe {
+        mut statements_vec := &ctx[prog3.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        
+        mut i := 0;
+        while i < len(*statements_vec) {
+            typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+            i = i + 1;
+        }
+
+        mut j := 0;
+        while j < len(*statements_vec) {
+            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[stmt_idx] = (*statements_vec)[j];
+            typechecker.check_statement(stmt_idx, &env, scope3, ctx);
+            j = j + 1;
+        }
+    }
+
+    // Verify lookup of variables and enums inside registries
+    mut lookup_var := env.variable_types.Get("x");
+    if lookup_var.Ok {
+        os.LogStr(std.Concat("variable_types lookup ok, type tag: ", std.FormatInt(lookup_var.Val.tag)));
+    } else {
+        os.LogStr("variable_types lookup failed");
+    }
+
+    mut lookup_enum := env.enum_registry.Get("Status");
+    if lookup_enum.Ok {
+        os.LogStr(std.Concat("enum_registry lookup ok, variants count: ", std.FormatInt(len(lookup_enum.Val))));
+    } else {
+        os.LogStr("enum_registry lookup failed");
+    }
 }
