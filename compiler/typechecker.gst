@@ -4,33 +4,35 @@ type OriginSet[ctx] struct {
     map: std.HashMap[str, int, ctx]
 }
 
-func set_init(ctx: &Arena) OriginSet[ctx] {
-    mut s: OriginSet[ctx];
-    s.map = std.HashMapNew(ctx);
-    return s;
-}
-
-func set_add(set: *OriginSet[ctx], element: str, ctx: &Arena) {
+func set_init(ctx: &Arena) Index[OriginSet[ctx], ctx] {
+    mut s_idx: Index[OriginSet[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        (*set).map.Insert(std.Clone(ctx, element), 1);
+        ctx[s_idx].map = std.HashMapNew(ctx);
+        return s_idx;
     }
 }
 
-func set_union(dest: *OriginSet[ctx], src: *OriginSet[ctx], ctx: &Arena) {
+func set_add(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) {
     unsafe {
-        mut keys := (*src).map.Keys(ctx);
+        ctx[set].map.Insert(std.Clone(ctx, element), 1);
+    }
+}
+
+func set_union(dest: Index[OriginSet[ctx], ctx], src: Index[OriginSet[ctx], ctx], ctx: &Arena) {
+    unsafe {
+        mut keys := ctx[src].map.Keys(ctx);
         mut i := 0;
         while i < len(keys) {
             mut key := keys[i];
-            (*dest).map.Insert(std.Clone(ctx, key), 1);
+            ctx[dest].map.Insert(std.Clone(ctx, key), 1);
             i = i + 1;
         }
     }
 }
 
-func set_contains(set: *OriginSet[ctx], element: str) bool {
+func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) bool {
     unsafe {
-        return (*set).map.Get(element).Ok;
+        return ctx[set].map.Get(element).Ok;
     }
 }
 
@@ -87,7 +89,7 @@ type TypeEnvironment[ctx] struct {
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     current_prefix: str,
     imports: std.HashMap[str, str, ctx],
-    variable_origins: std.HashMap[str, Index[std.HashMap[str, int, ctx], ctx], ctx],
+    variable_origins: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx],
     moved_vars: std.HashMap[str, int, ctx],
     open_directories: std.HashMap[str, int, ctx]
 }
