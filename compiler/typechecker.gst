@@ -1268,7 +1268,7 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
                     mut val_span: token.Span;
                     if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
                         val_span = get_expression_span(val_idx, ctx);
-                    } else {
+                    } else { 
                         val_span = stmt.VarDecl.span;
                     }
                     report_error(2, msg, val_span, env, ctx);
@@ -1279,8 +1279,8 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
             }
 
             if val_type.tag == 8 { // Struct
-                mut struct_name := val_type.Struct.struct_name;
-                if len(struct_name) >= 7 && std.str_eq(std.str_slice(struct_name, 0, 7), "os_Dir_") {
+                mut decl_struct_name := val_type.Struct.struct_name;
+                if len(decl_struct_name) >= 7 && std.str_eq(std.str_slice(decl_struct_name, 0, 7), "os_Dir_") {
                     (*env).open_directories.Insert(std.Clone(ctx, name), 1);
                 }
             }
@@ -1384,8 +1384,8 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
                     (*env).moved_vars.Remove(root_name); // Re-initialized!
 
                     if val_type.tag == 8 { // Struct
-                        mut struct_name := val_type.Struct.struct_name;
-                        if len(struct_name) >= 7 && std.str_eq(std.str_slice(struct_name, 0, 7), "os_Dir_") {
+                        mut assign_struct_name := val_type.Struct.struct_name;
+                        if len(assign_struct_name) >= 7 && std.str_eq(std.str_slice(assign_struct_name, 0, 7), "os_Dir_") {
                             (*env).open_directories.Insert(std.Clone(ctx, root_name), 1);
                         }
                     }
