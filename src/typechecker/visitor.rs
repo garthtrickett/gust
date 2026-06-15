@@ -3107,6 +3107,52 @@ impl TypeChecker {
                     return Ok(Type::Struct("Pool_Any".to_string(), Some(brand_name)));
                 }
 
+                if func_path == "std.MutexNew" || func_path == "std_MutexNew" {
+                    if arguments.len() != 1 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "MutexNew expects exactly 1 argument".to_string(),
+                            span: None,
+                        });
+                    }
+                    let arg_type = self.check_expression(&arguments[0])?;
+                    if arg_type != Type::Arena
+                        && !matches!(arg_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: "Semantic Error: MutexNew argument must be an Arena allocator"
+                                .to_string(),
+                            span: None,
+                        });
+                    }
+                    let brand_name = expression_to_string(&arguments[0]);
+                    return Ok(Type::Struct("std_Mutex_Any".to_string(), Some(brand_name)));
+                }
+
+                if func_path == "std.ChannelNew" || func_path == "std_ChannelNew" {
+                    if arguments.len() != 1 {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::ArgumentMismatch,
+                            message: "ChannelNew expects exactly 1 argument".to_string(),
+                            span: None,
+                        });
+                    }
+                    let arg_type = self.check_expression(&arguments[0])?;
+                    if arg_type != Type::Arena
+                        && !matches!(arg_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: "Semantic Error: ChannelNew argument must be an Arena allocator"
+                                .to_string(),
+                            span: None,
+                        });
+                    }
+                    let brand_name = expression_to_string(&arguments[0]);
+                    return Ok(Type::Struct("std_Channel_Any".to_string(), Some(brand_name)));
+                }
+
                 if func_path == "std.RcNew" || func_path == "std_RcNew" {
                     if arguments.len() != 2 {
                         return Err(TypeError {

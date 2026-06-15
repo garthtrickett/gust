@@ -441,6 +441,34 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
                 }
             }
 
+            if std.str_eq(resolved_func, "std_ChannelNew") || std.str_eq(resolved_func, "std.ChannelNew") ||
+               std.str_eq(resolved_func, "std_MutexNew") || std.str_eq(resolved_func, "std.MutexNew") ||
+               std.str_eq(resolved_func, "std_VectorNew") || std.str_eq(resolved_func, "std.VectorNew") ||
+               std.str_eq(resolved_func, "std_HashMapNew") || std.str_eq(resolved_func, "std.HashMapNew") ||
+               std.str_eq(resolved_func, "std_PoolNew") || std.str_eq(resolved_func, "std.PoolNew") ||
+               std.str_eq(resolved_func, "std_GraphNew") || std.str_eq(resolved_func, "std.GraphNew") {
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec) == 1 {
+                    mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[arg0_idx] = (*args_vec)[0];
+                    mut brand_name := get_root_variable(arg0_idx, ctx);
+                    
+                    mut ret_name := "std_Channel_Any";
+                    if std.str_eq(resolved_func, "std_MutexNew") || std.str_eq(resolved_func, "std.MutexNew") {
+                        ret_name = "std_Mutex_Any";
+                    } else if std.str_eq(resolved_func, "std_VectorNew") || std.str_eq(resolved_func, "std.VectorNew") {
+                        ret_name = "Vector_Any";
+                    } else if std.str_eq(resolved_func, "std_HashMapNew") || std.str_eq(resolved_func, "std.HashMapNew") {
+                        ret_name = "HashMap_Any";
+                    } else if std.str_eq(resolved_func, "std_PoolNew") || std.str_eq(resolved_func, "std.PoolNew") {
+                        ret_name = "Pool_Any";
+                    } else if std.str_eq(resolved_func, "std_GraphNew") || std.str_eq(resolved_func, "std.GraphNew") {
+                        ret_name = "std_Graph_Any";
+                    }
+                    return make_type_struct(ret_name, brand_name, ctx);
+                }
+            }
+
             mut sig_lookup := (*env).function_registry.Get(resolved_func);
             if sig_lookup.Ok {
                 return sig_lookup.Val.return_type;
