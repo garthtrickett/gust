@@ -1600,8 +1600,8 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
 
                 mut i := 0;
                 while i < len(*cases_vec) {
-                    mut case := (*cases_vec)[i];
-                    mut variant_name := case.variant_name;
+                    mut m_case := (*cases_vec)[i];
+                    mut variant_name := m_case.variant_name;
 
                     matched_variants.Insert(std.Clone(ctx, variant_name), 1);
 
@@ -1611,11 +1611,11 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
 
                     mut child_scope := scope_new(scope, ctx);
 
-                    if len(ctx[case.fields]) > 0 {
+                    if len(ctx[m_case.fields]) > 0 {
                         mut variant_struct_name := std.Concat(std.Concat(enum_name, "_"), variant_name);
                         mut lookup_variant := (*env).struct_registry.Get(variant_struct_name);
                         if lookup_variant.Ok {
-                            mut fields_vec := &ctx[case.fields] as *std.Vector[str, ctx];
+                            mut fields_vec := &ctx[m_case.fields] as *std.Vector[str, ctx];
                             mut f := 0;
                             while f < len(*fields_vec) {
                                 mut field_name := (*fields_vec)[f];
@@ -1644,8 +1644,8 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
                         }
                     }
 
-                    if case.body != empty[Index[ast.BlockStatement[ctx], ctx]] {
-                        mut body := ctx[case.body];
+                    if m_case.body != empty[Index[ast.BlockStatement[ctx], ctx]] {
+                        mut body := ctx[m_case.body];
                         mut statements_vec := &ctx[body.statements] as *std.Vector[ast.Statement[ctx], ctx];
                         mut j := 0;
                         while j < len(*statements_vec) {
