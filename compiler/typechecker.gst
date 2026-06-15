@@ -985,9 +985,9 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                             mut sub_layout_lookup := (*env).struct_registry.Get(resolved_field_type.Struct.struct_name);
                             if sub_layout_lookup.Ok {
                                 if sub_layout_lookup.Val.fields.len > 2 {
-                                    // Skip check if the target struct is an enum (which has a "tag" field)
-                                    if sub_layout_lookup.Val.fields.Get("tag").Ok == 0 {
-                                        mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                                // Skip check if the target struct is an enum (which has a "tag" field)
+                                if sub_layout_lookup.Val.fields.Get("tag").Ok == 0 {
+                                    mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
                                         ctx[err].kind.tag = 2; // TypeError
                                         ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Variant '", variant.name));
                                         ctx[err].message = std.Concat(ctx[err].message, "' contains a large enum variant payload struct '");
