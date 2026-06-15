@@ -124,22 +124,23 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
                 mut s := set_init(ctx);
                 set_add(s, "scratch", ctx);
                 return s;
-            }
-            mut sig_lookup := (*env).function_registry.Get(resolved_func);
-            if sig_lookup.Ok {
-                mut sig := sig_lookup.Val;
-                if env_type_is_ephemeral_view(sig.return_type, ctx) == 1 {
-                    mut s := set_init(ctx);
-                    mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                    mut i := 0;
-                    while i < len(*args_vec) {
-                        mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg_idx] = (*args_vec)[i];
-                        mut arg_origins := get_expression_origins(arg_idx, env, ctx);
-                        set_union(s, arg_origins, ctx);
-                        i = i + 1;
+            } else {
+                mut sig_lookup := (*env).function_registry.Get(resolved_func);
+                if sig_lookup.Ok {
+                    mut sig := sig_lookup.Val;
+                    if env_type_is_ephemeral_view(sig.return_type, ctx) == 1 {
+                        mut s := set_init(ctx);
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut i := 0;
+                        while i < len(*args_vec) {
+                            mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg_idx] = (*args_vec)[i];
+                            mut arg_origins := get_expression_origins(arg_idx, env, ctx);
+                            set_union(s, arg_origins, ctx);
+                            i = i + 1;
+                        }
+                        return s;
                     }
-                    return s;
                 }
             }
         }
@@ -205,7 +206,7 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
                 }
             }
 
-            if !std.str_eq(brand_name, "") {
+            if std.str_eq(brand_name, "") == false {
                 if (*env).moved_vars.Get(brand_name).Ok {
                     mut err: errors.CompilerError[ctx];
                     err.kind.tag = 2; // TypeError
