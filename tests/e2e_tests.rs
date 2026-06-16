@@ -4558,6 +4558,14 @@ fn test_e2e_sync_primitives() {
     run_e2e_test(&source, "10");
 }
 
+#[test]
+fn test_e2e_collections_methods() {
+    let source = std::fs::read_to_string("tests/e2e_collections_methods.gst")
+        .expect("Failed to read tests/e2e_collections_methods.gst");
+    run_e2e_test(&source, "3\n30\n30
+2\n0\n2\n100\n200\n0\n2\napple\nbanana\n1\n0");
+}
+
 // #[test]
 // fn test_self_hosted_type_dump_diff() {
 //     gust_lexer::init_logging();

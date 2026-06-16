@@ -440,13 +440,22 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 } 
                 mut is_mutex := 0;
                 mut is_channel := 0;
+                mut is_vec := 0;
+                mut is_map := 0;
+                mut s_name := "";
                 if left_type.tag == 8 { // Struct
-                    mut s_name := left_type.Struct.struct_name;
-                    if std.str_find(s_name, "Mutex_") != 0 - 1 || std.str_find(s_name, "std_Mutex_") != 0 - 1 {
+                    s_name = left_type.Struct.struct_name;
+                    if std.str_find(s_name, "Mutex_") != 0 - 1 || std.str_find(s_name, "std_Mutex_") != 0 - 1 { 
                         is_mutex = 1;
                     }
-                    if std.str_find(s_name, "Channel_") != 0 - 1 || std.str_find(s_name, "std_Channel_") != 0 - 1 {
+                    if std.str_find(s_name, "Channel_") != 0 - 1 || std.str_find(s_name, "std_Channel_") != 0 - 1 { 
                         is_channel = 1;
+                    }
+                    if std.str_find(s_name, "Vector_") != 0 - 1 || std.str_find(s_name, "std_Vector_") != 0 - 1 { 
+                        is_vec = 1;
+                    }
+                    if std.str_find(s_name, "HashMap_") != 0 - 1 || std.str_find(s_name, "std_HashMap_") != 0 - 1 { 
+                        is_map = 1;
                     }
                 }
 
@@ -501,6 +510,203 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         res = std.Concat(res, left_str);
                         res = std.Concat(res, arrow_or_dot);
                         res = std.Concat(res, "capacity, &_val); _val; }))");
+                        return std.Clone(ctx, res);
+                    }
+                }
+
+                if is_vec == 1 {
+                    mut left_str := codegen_generate_expression(left_expr_idx, env, ctx);
+                    mut ref_prefix := "&";
+                    if is_ptr == 1 {
+                        ref_prefix = "";
+                    }
+                    if std.str_eq(right_name, "Push") {
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                        mut res := std.Concat("os_VectorPush(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, arg_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Pop") {
+                        mut res := std.Concat("os_VectorPop(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Clear") {
+                        mut res := std.Concat("os_VectorClear(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Back") {
+                        mut res := std.Concat("os_VectorBack(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                }
+
+                if is_map == 1 {
+                    mut left_str := codegen_generate_expression(left_expr_idx, env, ctx);
+                    mut is_str_key := 0;
+                    mut lookup_struct := (*env).struct_registry.Get(s_name);
+                    if lookup_struct.Ok {
+                        mut layout := lookup_struct.Val;
+                        mut keys_type_lookup := layout.fields.Get("keys");
+                        if keys_type_lookup.Ok {
+                            mut keys_type := keys_type_lookup.Val;
+                            if keys_type.tag == 9 { // RawPointer
+                                mut key_elem_type := ctx[keys_type.RawPointer.inner];
+                                if key_elem_type.tag == 5 { // Str
+                                    is_str_key = 1;
+                                }
+                            }
+                        }
+                    }
+
+                    mut ref_prefix := "&";
+                    if is_ptr == 1 {
+                        ref_prefix = "";
+                    }
+                    mut is_str_key_str := "0";
+                    if is_str_key == 1 {
+                        is_str_key_str = "1";
+                    }
+
+                    if std.str_eq(right_name, "Insert") {
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut k_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                        mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg1_idx] = (*args_vec)[1];
+                        mut v_str := codegen_generate_expression(arg1_idx, env, ctx);
+                        
+                        mut res := std.Concat("*os_HashMapRef(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, k_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, is_str_key_str);
+                        res = std.Concat(res, ") = ");
+                        res = std.Concat(res, v_str);
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Get") { 
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut k_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                        mut val_type_ident := "int";
+                        if lookup_struct.Ok {
+                            mut layout := lookup_struct.Val;
+                            mut val_type_lookup := layout.fields.Get("values");
+                            if val_type_lookup.Ok {
+                                mut val_type := val_type_lookup.Val;
+                                if val_type.tag == 9 { // RawPointer
+                                    mut val_elem_type := ctx[val_type.RawPointer.inner];
+                                    val_type_ident = codegen_get_c_type_ident(val_elem_type, env, ctx);
+                                } 
+                            }
+                        }
+                        
+                        mut lookup_struct_name := std.Concat("LookupResult_", val_type_ident);
+                        
+                        mut res := std.Concat("({ ", lookup_struct_name);
+                        res = std.Concat(res, " res = {0}; res.Ok = os_HashMapContains(");
+                        res = std.Concat(res, ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, k_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, is_str_key_str);
+                        res = std.Concat(res, "); if (res.Ok) { res.Val = *os_HashMapRef(");
+                        res = std.Concat(res, ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, k_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, is_str_key_str);
+                        res = std.Concat(res, "); } res; })");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Remove") {
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut k_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                        mut res := std.Concat("os_HashMapRemove(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, k_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, is_str_key_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Clear") {
+                        mut res := std.Concat("os_HashMapClear(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Keys") {
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut ctx_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                        mut expr_type := codegen_get_expression_type(expr_idx, env, ctx);
+                        mut vec_type_str := codegen_get_c_type(expr_type, env, ctx);
+                        
+                        mut is_ctx_ptr := 0;
+                        mut arg0_expr := ctx[arg0_idx];
+                        if arg0_expr.tag == 0 { // Identifier
+                            mut arg0_name := arg0_expr.Identifier.name;
+                            mut var_type_lookup := (*env).variable_types.Get(arg0_name);
+                            if var_type_lookup.Ok { 
+                                mut t := var_type_lookup.Val;
+                                if t.tag == 9 { // RawPointer
+                                    is_ctx_ptr = 1;
+                                }
+                            }
+                        }
+                        
+                        mut arena_expr := std.Concat("&", ctx_str);
+                        if is_ctx_ptr == 1 { 
+                            arena_expr = ctx_str;
+                        }
+                        
+                        mut arrow_or_dot := ".";
+                        if is_ptr == 1 {
+                            arrow_or_dot = "->";
+                        }
+                        
+                        mut res := std.Concat("(({ ", vec_type_str);
+                        res = std.Concat(res, " _v = (");
+                        res = std.Concat(res, vec_type_str);
+                        res = std.Concat(res, "){ .data = NULL, .len = 0, .capacity = 0, .arena = ");
+                        res = std.Concat(res, arena_expr);
+                        res = std.Concat(res, " }; for (int _i = 0; _i < (");
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, arrow_or_dot);
+                        res = std.Concat(res, "capacity); _i++) { if ((");
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, arrow_or_dot);
+                        res = std.Concat(res, "occupied)[_i] == 1) { os_VectorPush(&_v, (");
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, arrow_or_dot);
+                        res = std.Concat(res, "keys)[_i]); } } _v; }))");
                         return std.Clone(ctx, res);
                     }
                 }
