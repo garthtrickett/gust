@@ -2607,7 +2607,7 @@ if expected.tag == 7 { // Index
                         mut brand2 := get_type_brand(actual, ctx);
                         mut clean_b1 := strip_brand_prefix(brand1, ctx);
                         mut clean_b2 := strip_brand_prefix(brand2, ctx);
-                        if std.str_eq(clean_b1, clean_b2) {
+                        if std.str_eq(clean_b1, clean_b2) || std.str_eq(clean_b1, "Any") || std.str_eq(clean_b2, "Any") || std.str_eq(clean_b1, "") || std.str_eq(clean_b2, "") {
                             return 1;
                         }
                     }
