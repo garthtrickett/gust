@@ -1404,10 +1404,30 @@ func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment
     unsafe {
         codegen_log_trace("⚙️", "codegen_generate: commencing code generation pass", ctx);
         mut c_code := "// Transpiled C Code\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <pthread.h>\n\ntypedef void Any;\n\n";
-        
-        // 1. Structures Declarations
-        c_code = std.Concat(c_code, "// Structures\n");
+
+        // 1. Generate Slice structure definitions
+        c_code = std.Concat(c_code, "typedef struct Slice_unsigned_char Slice_unsigned_char;\n");
+        c_code = std.Concat(c_code, "struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
+        c_code = std.Concat(c_code, "typedef struct Slice_int Slice_int;\n");
+        c_code = std.Concat(c_code, "struct Slice_int {\n    int* data;\n    int len;\n};\n\n");
+
+        // 2. Generate forward declarations for all structs
+        c_code = std.Concat(c_code, "// Forward Declarations\n");
         mut struct_keys := typechecker.typechecker_get_sorted_keys_layout(&(*env).struct_registry, ctx);
+        mut i_fwd := 0;
+        while i_fwd < len(struct_keys) {
+            mut key := struct_keys[i_fwd];
+            mut fwd := std.Concat("typedef struct ", key);
+            fwd = std.Concat(fwd, " ");
+            fwd = std.Concat(fwd, key);
+            fwd = std.Concat(fwd, ";\n");
+            c_code = std.Concat(c_code, fwd);
+            i_fwd = i_fwd + 1;
+        }
+        c_code = std.Concat(c_code, "\n");
+
+        // 3. Structures Declarations
+        c_code = std.Concat(c_code, "// Structures\n");
         mut i := 0;
         while i < len(struct_keys) {
             mut key := struct_keys[i];
