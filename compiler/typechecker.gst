@@ -207,7 +207,8 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if std.str_eq(brand_name, "") == 0 {
-                if (*env).moved_vars.Get(brand_name).Ok {
+                mut clean_brand := strip_brand_prefix(brand_name, ctx);
+                if (*env).moved_vars.Get(clean_brand).Ok {
                     mut err: errors.CompilerError[ctx];
                     err.kind.tag = 2; // TypeError
                     err.message = std.Clone(ctx, std.Concat("Semantic Error: Allocator moved or freed: ", brand_name));
@@ -252,7 +253,8 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut var_name := var_origins_keys[m];
                         mut var_type_lookup := scope_lookup(scope, var_name, ctx);
                         mut brand := get_type_brand(var_type_lookup, ctx);
-                        if std.str_eq(brand, name) == 1 {
+                        mut clean_brand := strip_brand_prefix(brand, ctx);
+                        if std.str_eq(clean_brand, name) == 1 {
                             (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
                             (*env).open_directories.Remove(var_name);
                         }
@@ -910,7 +912,7 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
                     mut new_brand := t.Struct.brand;
                     if t.Struct.brand != empty[Index[str, ctx]] {
                         mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
-                        mut brand_lookup := map.Get(*brand_str_ptr);
+                        mut brand_lookup := map.Get(strip_brand_prefix(*brand_str_ptr, ctx));
                         if brand_lookup.Ok {
                             mut b_type := brand_lookup.Val;
                             if b_type.tag == 8 { // Struct
@@ -973,7 +975,7 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
                 mut brand_str_ptr := &ctx[t.Index.brand] as *str;
                 mut brand_name := *brand_str_ptr;
                 typechecker_log_trace('🔍', 'substitute_generics Index: before brand map lookup', ctx);
-                mut brand_lookup := map.Get(brand_name);
+                mut brand_lookup := map.Get(strip_brand_prefix(brand_name, ctx));
                 typechecker_log_trace('🔍', 'substitute_generics Index: after brand map lookup', ctx);
                 if brand_lookup.Ok {
                     mut b_type := brand_lookup.Val;
@@ -2589,7 +2591,9 @@ if expected.tag == 7 { // Index
                     if is_prefix1 == 1 && is_prefix2 == 1 {
                         mut brand1 := get_type_brand(expected, ctx);
                         mut brand2 := get_type_brand(actual, ctx);
-                        if std.str_eq(brand1, brand2) {
+                        mut clean_b1 := strip_brand_prefix(brand1, ctx);
+                        mut clean_b2 := strip_brand_prefix(brand2, ctx);
+                        if std.str_eq(clean_b1, clean_b2) {
                             return 1;
                         }
                     }
