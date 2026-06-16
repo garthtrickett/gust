@@ -2041,7 +2041,10 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
     }
 }
 
-func report_error(kind_tag: int, message: str, span: token.Span, env: *TypeEnvironment[ctx], ctx: &Arena) {
+func report_error(kind_tag: int, message: str, span: token.Span, env: *TypeEnvironment[ctx], ctx: &Arena) { 
+    mut err_msg := std.Format("TypeError at line %d:%d: %s", span.start.line, span.start.column, message);
+    typechecker_log_trace("❌", err_msg, ctx);
+
     unsafe {
         mut err: errors.CompilerError[ctx];
         err.kind.tag = kind_tag; // 2 for TypeError
@@ -2413,6 +2416,31 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
 }
 
 func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) errors.Result[int, ctx] {
+    unsafe {
+        mut res: errors.Result[int, ctx];
+        res.tag = 0; // Ok
+        res.Ok.val = 0;
+
+        if stmt_idx == empty[Index[ast.Statement[ctx], ctx]] {
+            return res;
+        }
+
+        mut stmt := ctx[stmt_idx];
+        mut err_count := len((*env).errors);
+        mut start_msg := std.Format("check_statement: start for stmt tag %d", stmt.tag);
+        typechecker_log_trace("📥", start_msg, ctx);
+
+        res = check_statement_impl(stmt_idx, env, scope, ctx);
+
+        if len((*env).errors) == err_count {
+            mut success_msg := std.Format("check_statement: successfully verified stmt tag %d", stmt.tag);
+            typechecker_log_trace("✅", success_msg, ctx);
+        }
+        return res;
+    }
+}
+
+func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) errors.Result[int, ctx] {
     unsafe {
         mut res: errors.Result[int, ctx];
         res.tag = 0; // Ok

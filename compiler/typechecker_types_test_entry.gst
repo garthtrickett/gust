@@ -103,6 +103,38 @@ func main() {
         }
     }
 
+    // 3.5 Intentionally trigger a type violation to verify the ❌ trace
+    mut l4_error: lexer.Lexer[ctx];
+    lexer.init_lexer(&l4_error, "func main() { mut y: int := \"not_an_int\"; }");
+
+    mut p4_error: parser.Parser[ctx];
+    parser.init_parser(&p4_error, &l4_error, ctx);
+
+    mut prog4_error := parser.parse_program(&p4_error, ctx);
+    if len(p4_error.errors) > 0 {
+        os.LogStr("ParserError in error test");
+        os.Exit(1);
+    }
+
+    mut scope4_error := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog4_error.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        
+        mut i := 0;
+        while i < len(*statements_vec) {
+            typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+            i = i + 1;
+        }
+
+        mut j := 0;
+        while j < len(*statements_vec) {
+            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[stmt_idx] = (*statements_vec)[j];
+            typechecker.check_statement(stmt_idx, &env, scope4_error, ctx);
+            j = j + 1;
+        }
+    }
+
     // Verify lookup of variables and enums inside registries
     mut lookup_var := env.variable_types.Get("x");
     if lookup_var.Ok {
