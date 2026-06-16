@@ -1,0 +1,10 @@
+{
+  "summary": "fix: resolve bootstrap failures by correcting namespaced type generation in codegen and prepending runtime headers during v3 compilation",
+  "files": [
+    {
+      "file_path": "compiler/codegen.gst",
+      "code_diff": "<<<<<<< SEARCH\n                if tag == 4 { // VarDecl\n                    mut t_var: ast.Type[ctx];\n                    if ctx[stmt_idx].VarDecl.var_type == empty[Index[ast.Type[ctx], ctx]] {\n                        mut var_name := ctx[stmt_idx].VarDecl.name;\n                        mut lookup := (*env).variable_types.Get(var_name);\n                        if lookup.Ok {\n                            t_var = lookup.Val;\n                        } else {\n                            t_var.tag = 3; // Void\n                        }\n                    } else {\n                        t_var = ctx[ctx[stmt_idx].VarDecl.var_type];\n                    }\n                    mut c_type := codegen_get_c_type(t_var, env, ctx);\n                    mut init_val := \"\";\n=======\n                if tag == 4 { // VarDecl\n                    mut t_var: ast.Type[ctx];\n                    mut var_name := ctx[stmt_idx].VarDecl.name;\n                    mut lookup := (*env).variable_types.Get(var_name);\n                    if lookup.Ok {\n                        t_var = lookup.Val;\n                    } else {\n                        t_var.tag = 3; // Void\n                    }\n                    mut c_type := codegen_get_c_type(t_var, env, ctx);\n                    mut init_val := \"\";\n>>>>>>> REPLACE"
+    }
+    
+  ]
+}
