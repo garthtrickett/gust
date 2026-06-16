@@ -104,11 +104,15 @@ func read_string(l: *Lexer[ctx]) str {
         mut loop := 1;
         while loop == 1 {
             read_char(l);
-            if (*l).ch == delimiter {
-                loop = 0;
+            if (*l).ch == 92 { // '\' = 92
+                read_char(l); // skip the escaped character
             } else {
-                if (*l).ch == 0 { // EOF
+                if (*l).ch == delimiter {
                     loop = 0;
+                } else {
+                    if (*l).ch == 0 { // EOF
+                        loop = 0;
+                    }
                 }
             }
         }

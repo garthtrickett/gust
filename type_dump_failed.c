@@ -448,8 +448,12 @@ void os_Arena_Validate(os_Arena* arena);
 
 os_Arena os_Arena_New() {
     os_Arena arena;
-    arena.Capacity = 1073741824; // 1GB Initial Arena Capacity
+    arena.Capacity = 4294967296ULL; // 4GB Non-moving Virtual Arena Capacity
     arena.BaseAddress = malloc(arena.Capacity);
+    if (arena.BaseAddress == NULL) {
+        printf("Fatal Error: Failed to allocate arena base memory!\n");
+        exit(1);
+    }
     arena.Offset = 0;
     return arena;
 }
@@ -507,10 +511,8 @@ int os_ArenaAlloc(os_Arena* arena, size_t size) {
     os_Arena_Validate(arena);
     size_t total_size = 8 + 8 + size + 8;
     if (arena->Offset + total_size > arena->Capacity) {
-        while (arena->Offset + total_size > arena->Capacity) {
-            arena->Capacity *= 2;
-        }
-        arena->BaseAddress = realloc(arena->BaseAddress, arena->Capacity);
+        printf("Fatal Error: Out of Arena Capacity (exceeded 4GB Limit)!\n");
+        abort();
     }
     size_t header_offset = arena->Offset;
     size_t pre_canary_offset = header_offset + 8;
@@ -525,10 +527,8 @@ int os_ArenaAlloc(os_Arena* arena, size_t size) {
     return (int)payload_offset;
 #else
     if (arena->Offset + size > arena->Capacity) {
-        while (arena->Offset + size > arena->Capacity) {
-            arena->Capacity *= 2;
-        }
-        arena->BaseAddress = realloc(arena->BaseAddress, arena->Capacity);
+        printf("Fatal Error: Out of Arena Capacity (exceeded 4GB Limit)!\n");
+        abort();
     }
     size_t assigned_offset = arena->Offset;
     arena->Offset += size;
@@ -602,126 +602,126 @@ void os_ScratchReset() {
 // ====================================================
 // FORWARD DECLARATIONS
 // ====================================================
-typedef struct token__TokenType_Asterisk token__TokenType_Asterisk;
-typedef struct std_Vector_ast__Statement std_Vector_ast__Statement;
+typedef struct ast__Statement_Defer ast__Statement_Defer;
+typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
+typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
+typedef struct token__TokenType_Guard token__TokenType_Guard;
+typedef struct ast__Type_Byte ast__Type_Byte;
+typedef struct ast__Expression_String ast__Expression_String;
+typedef struct token__TokenType_Take token__TokenType_Take;
+typedef struct ast__Expression_Take ast__Expression_Take;
+typedef struct ast__Statement_Guard ast__Statement_Guard;
+typedef struct ast__Statement_Import ast__Statement_Import;
 typedef struct token__TokenType_Semicolon token__TokenType_Semicolon;
-typedef struct std_Vector_token__Token std_Vector_token__Token;
+typedef struct token__TokenType_Colon token__TokenType_Colon;
+typedef struct token__TokenType_Slash token__TokenType_Slash;
+typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
+typedef struct ast__FieldDef ast__FieldDef;
+typedef struct token__TokenType_Move token__TokenType_Move;
+typedef struct token__TokenType_While token__TokenType_While;
+typedef struct token__TokenType_True token__TokenType_True;
+typedef struct token__TokenType_Struct token__TokenType_Struct;
+typedef struct ast__VariantDef ast__VariantDef;
+typedef struct std_Vector_ast__Expression std_Vector_ast__Expression;
+typedef struct token__TokenType_Func token__TokenType_Func;
+typedef struct errors__ErrorKind errors__ErrorKind;
+typedef struct ast__Expression_Binary ast__Expression_Binary;
+typedef struct token__TokenType_Eof token__TokenType_Eof;
+typedef struct token__TokenType_Return token__TokenType_Return;
+typedef struct token__TokenType_Plus token__TokenType_Plus;
+typedef struct ast__Expression_Selector ast__Expression_Selector;
+typedef struct ast__Expression_Move ast__Expression_Move;
+typedef struct token__TokenType_Eq token__TokenType_Eq;
+typedef struct token__TokenType_Lt token__TokenType_Lt;
+typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
+typedef struct token__TokenType_Else token__TokenType_Else;
+typedef struct ast__Statement_If ast__Statement_If;
+typedef struct parser__Parser parser__Parser;
+typedef struct ast__Expression_Call ast__Expression_Call;
+typedef struct token__TokenType_Ident token__TokenType_Ident;
+typedef struct errors__ErrorKind_ParserError errors__ErrorKind_ParserError;
+typedef struct ast__Expression_Dereference ast__Expression_Dereference;
+typedef struct token__TokenType_LBrace token__TokenType_LBrace;
+typedef struct token__TokenType_As token__TokenType_As;
+typedef struct ast__Parameter ast__Parameter;
+typedef struct token__TokenType_Bool token__TokenType_Bool;
+typedef struct ast__Expression_Integer ast__Expression_Integer;
+typedef struct std_Vector_ast__Type std_Vector_ast__Type;
+typedef struct token__TokenType_Unsafe token__TokenType_Unsafe;
+typedef struct token__TokenType_Asterisk token__TokenType_Asterisk;
+typedef struct token__TokenType_Comma token__TokenType_Comma;
+typedef struct token__TokenType_False token__TokenType_False;
+typedef struct SessionNode SessionNode;
+typedef struct ast__Expression ast__Expression;
+typedef struct ast__Type ast__Type;
+typedef struct token__TokenType token__TokenType;
+typedef struct token__TokenType_Defer token__TokenType_Defer;
+typedef struct ast__Type_Int ast__Type_Int;
+typedef struct token__TokenType_Empty token__TokenType_Empty;
+typedef struct ast__Type_Arena ast__Type_Arena;
+typedef struct errors__ErrorKind_TypeError errors__ErrorKind_TypeError;
+typedef struct ast__Type_Slice ast__Type_Slice;
+typedef struct token__TokenType_RBracket token__TokenType_RBracket;
+typedef struct token__TokenType_Gt token__TokenType_Gt;
+typedef struct ast__Expression_AddressOf ast__Expression_AddressOf;
+typedef struct token__TokenType_Mut token__TokenType_Mut;
+typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
+typedef struct ast__Statement_Expression ast__Statement_Expression;
+typedef struct ast__Expression_AsCast ast__Expression_AsCast;
+typedef struct lexer__Lexer lexer__Lexer;
+typedef struct ast__Statement_Assignment ast__Statement_Assignment;
+typedef struct std_Vector_ast__Statement std_Vector_ast__Statement;
+typedef struct ast__Type_Index ast__Type_Index;
+typedef struct token__TokenType_Ampersand token__TokenType_Ampersand;
+typedef struct ast__Statement ast__Statement;
+typedef struct ast__Type_Bool ast__Type_Bool;
+typedef struct ast__Type_Void ast__Type_Void;
+typedef struct token__TokenType_EqEq token__TokenType_EqEq;
+typedef struct ast__Type_Str ast__Type_Str;
+typedef struct token__TokenType_RParen token__TokenType_RParen;
 typedef struct token__TokenType_RBrace token__TokenType_RBrace;
+typedef struct ast__MatchCase ast__MatchCase;
+typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
+typedef struct ast__Type_RawPointer ast__Type_RawPointer;
+typedef struct token__TokenType_Match token__TokenType_Match;
+typedef struct token__TokenType_Assign token__TokenType_Assign;
+typedef struct token__TokenType_Int token__TokenType_Int;
+typedef struct token__TokenType_Type token__TokenType_Type;
+typedef struct ast__Type_Struct ast__Type_Struct;
+typedef struct std_Vector_ast__MatchCase std_Vector_ast__MatchCase;
+typedef struct token__TokenType_LBracket token__TokenType_LBracket;
+typedef struct token__TokenType_FatArrow token__TokenType_FatArrow;
+typedef struct errors__ErrorKind_LexerError errors__ErrorKind_LexerError;
+typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
+typedef struct ast__BlockStatement ast__BlockStatement;
+typedef struct APIRequest APIRequest;
+typedef struct token__TokenType_Import token__TokenType_Import;
 typedef struct token__TokenType_NotEq token__TokenType_NotEq;
-typedef struct ast__Expression_Bool ast__Expression_Bool;
+typedef struct token__TokenType_Minus token__TokenType_Minus;
+typedef struct token__TokenType_Dot token__TokenType_Dot;
+typedef struct token__TokenType_If token__TokenType_If;
+typedef struct token__TokenType_String token__TokenType_String;
+typedef struct ast__Program ast__Program;
+typedef struct errors__ErrorKind_CodegenError errors__ErrorKind_CodegenError;
+typedef struct std_Vector_token__Token std_Vector_token__Token;
+typedef struct parser__ParseResult parser__ParseResult;
 typedef struct std_Vector_ast__FieldDef std_Vector_ast__FieldDef;
 typedef struct token__TokenType_LParen token__TokenType_LParen;
-typedef struct token__TokenType_Plus token__TokenType_Plus;
-typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
-typedef struct ast__Type_Struct ast__Type_Struct;
-typedef struct ast__Statement_If ast__Statement_If;
-typedef struct ast__Type_Int ast__Type_Int;
-typedef struct ast__Expression_Move ast__Expression_Move;
-typedef struct ast__VariantDef ast__VariantDef;
-typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
-typedef struct ast__Expression_AsCast ast__Expression_AsCast;
-typedef struct token__TokenType_Colon token__TokenType_Colon;
-typedef struct token__TokenType_Struct token__TokenType_Struct;
-typedef struct ast__MatchCase ast__MatchCase;
-typedef struct token__TokenType_Slash token__TokenType_Slash;
-typedef struct parser__ParseResult parser__ParseResult;
-typedef struct ast__Statement ast__Statement;
-typedef struct token__TokenType_Ident token__TokenType_Ident;
-typedef struct ast__Parameter ast__Parameter;
-typedef struct token__TokenType_Func token__TokenType_Func;
-typedef struct token__TokenType_Return token__TokenType_Return;
-typedef struct std_Vector_ast__MatchCase std_Vector_ast__MatchCase;
-typedef struct ast__Statement_Import ast__Statement_Import;
-typedef struct ast__Type ast__Type;
-typedef struct token__TokenType_Mut token__TokenType_Mut;
-typedef struct ast__Statement_Expression ast__Statement_Expression;
-typedef struct ast__Expression_AddressOf ast__Expression_AddressOf;
-typedef struct token__TokenType_Unsafe token__TokenType_Unsafe;
-typedef struct errors__ErrorKind_LexerError errors__ErrorKind_LexerError;
-typedef struct ast__Statement_Assignment ast__Statement_Assignment;
-typedef struct token__TokenType_Dot token__TokenType_Dot;
-typedef struct token__TokenType_RParen token__TokenType_RParen;
-typedef struct ast__Type_Index ast__Type_Index;
-typedef struct token__TokenType_Eq token__TokenType_Eq;
-typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
-typedef struct token__TokenType_Empty token__TokenType_Empty;
-typedef struct ast__Statement_Return ast__Statement_Return;
-typedef struct ast__Type_Arena ast__Type_Arena;
-typedef struct token__TokenType_Eof token__TokenType_Eof;
-typedef struct token__TokenType_Gt token__TokenType_Gt;
-typedef struct token__TokenType_Enum token__TokenType_Enum;
-typedef struct ast__Type_Byte ast__Type_Byte;
-typedef struct token__TokenType_LBracket token__TokenType_LBracket;
-typedef struct token__TokenType_Import token__TokenType_Import;
-typedef struct ast__Expression_Take ast__Expression_Take;
-typedef struct ast__Expression_Identifier ast__Expression_Identifier;
-typedef struct errors__ErrorKind_CodegenError errors__ErrorKind_CodegenError;
-typedef struct ast__Type_Void ast__Type_Void;
-typedef struct ast__Expression ast__Expression;
-typedef struct ast__Type_Slice ast__Type_Slice;
-typedef struct token__TokenType_EqEq token__TokenType_EqEq;
-typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
-typedef struct ast__Type_Bool ast__Type_Bool;
-typedef struct ast__Statement_Defer ast__Statement_Defer;
-typedef struct token__TokenType_Bool token__TokenType_Bool;
-typedef struct token__TokenType_Illegal token__TokenType_Illegal;
-typedef struct token__TokenType_LBrace token__TokenType_LBrace;
-typedef struct token__TokenType_Minus token__TokenType_Minus;
-typedef struct std_Vector_ast__Expression std_Vector_ast__Expression;
-typedef struct token__TokenType_RBracket token__TokenType_RBracket;
-typedef struct token__TokenType_Defer token__TokenType_Defer;
-typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
-typedef struct token__Span token__Span;
-typedef struct token__TokenType_FatArrow token__TokenType_FatArrow;
-typedef struct token__TokenType_True token__TokenType_True;
-typedef struct ast__Expression_Call ast__Expression_Call;
-typedef struct ast__Expression_Binary ast__Expression_Binary;
-typedef struct token__TokenType_Match token__TokenType_Match;
-typedef struct token__TokenType_Take token__TokenType_Take;
-typedef struct token__TokenType_Guard token__TokenType_Guard;
-typedef struct token__TokenType_Comma token__TokenType_Comma;
-typedef struct errors__ErrorKind_TypeError errors__ErrorKind_TypeError;
-typedef struct ast__Expression_String ast__Expression_String;
-typedef struct ast__Statement_Match ast__Statement_Match;
-typedef struct token__TokenType token__TokenType;
-typedef struct ast__Statement_While ast__Statement_While;
-typedef struct ast__BlockStatement ast__BlockStatement;
 typedef struct errors__CompilerError errors__CompilerError;
-typedef struct token__TokenType_Assign token__TokenType_Assign;
-typedef struct ast__Type_RawPointer ast__Type_RawPointer;
-typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
-typedef struct errors__ErrorKind errors__ErrorKind;
-typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
-typedef struct APIRequest APIRequest;
-typedef struct ast__Expression_Selector ast__Expression_Selector;
-typedef struct ast__Type_Generic ast__Type_Generic;
-typedef struct SessionNode SessionNode;
-typedef struct std_Vector_ast__Type std_Vector_ast__Type;
-typedef struct ast__FieldDef ast__FieldDef;
-typedef struct lexer__Lexer lexer__Lexer;
-typedef struct ast__Type_Str ast__Type_Str;
-typedef struct token__Token token__Token;
-typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
-typedef struct ast__Program ast__Program;
-typedef struct token__Position token__Position;
-typedef struct errors__ErrorKind_ParserError errors__ErrorKind_ParserError;
-typedef struct token__TokenType_If token__TokenType_If;
-typedef struct ast__Expression_Integer ast__Expression_Integer;
-typedef struct token__TokenType_Ampersand token__TokenType_Ampersand;
-typedef struct token__TokenType_Type token__TokenType_Type;
-typedef struct token__TokenType_Lt token__TokenType_Lt;
+typedef struct ast__Statement_Return ast__Statement_Return;
 typedef struct std_Vector_errors__CompilerError std_Vector_errors__CompilerError;
-typedef struct token__TokenType_String token__TokenType_String;
-typedef struct ast__Expression_Dereference ast__Expression_Dereference;
-typedef struct token__TokenType_Move token__TokenType_Move;
-typedef struct token__TokenType_Int token__TokenType_Int;
-typedef struct token__TokenType_Else token__TokenType_Else;
-typedef struct token__TokenType_False token__TokenType_False;
+typedef struct token__TokenType_Enum token__TokenType_Enum;
+typedef struct ast__Type_Generic ast__Type_Generic;
+typedef struct token__Position token__Position;
+typedef struct ast__Expression_Bool ast__Expression_Bool;
 typedef struct ast__Expression_Empty ast__Expression_Empty;
-typedef struct ast__Statement_Guard ast__Statement_Guard;
-typedef struct token__TokenType_As token__TokenType_As;
-typedef struct parser__Parser parser__Parser;
-typedef struct token__TokenType_While token__TokenType_While;
+typedef struct ast__Expression_Identifier ast__Expression_Identifier;
+typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
+typedef struct token__Token token__Token;
+typedef struct token__Span token__Span;
+typedef struct ast__Statement_Match ast__Statement_Match;
+typedef struct ast__Statement_While ast__Statement_While;
+typedef struct token__TokenType_Illegal token__TokenType_Illegal;
 
 // ====================================================
 // DYNAMICALLY GENERATED SLICE STRUCTURE FORWARD DECLARATIONS
@@ -1766,102 +1766,102 @@ Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char fi
 // ====================================================
 // FUNCTION FORWARD DECLARATIONS
 // ====================================================
-void os_CloseDir(os_Dir arg0);
-void* os_CloseDir_pthread_wrapper(void* arg);
-void os_SetThreadScratch(os_Arena* arg0);
-void* os_SetThreadScratch_pthread_wrapper(void* arg);
-int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int indent, os_Arena* ctx);
-void lexer__skip_whitespace(lexer__Lexer* l);
-void* lexer__skip_whitespace_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_char sep, os_Arena* ctx);
-void os_SetThreadScratch(os_Arena* arg0);
-void* os_SetThreadScratch_pthread_wrapper(void* arg);
-token__TokenType lexer__lookup_ident(Slice_unsigned_char literal);
-void* lexer__lookup_ident_pthread_wrapper(void* arg);
-Slice_unsigned_char lexer__read_string(lexer__Lexer* l);
-void* lexer__read_string_pthread_wrapper(void* arg);
-unsigned char lexer__peek_char(lexer__Lexer* l);
-void* lexer__peek_char_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os_Arena* ctx);
-LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
-int parser__cur_token_precedence(parser__Parser* p);
-void* parser__cur_token_precedence_pthread_wrapper(void* arg);
-token__Span parser__get_expression_span(int expr, os_Arena* ctx);
 void std_Yield(void);
-int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx);
-void parser__init_parser(parser__Parser* p, lexer__Lexer* l, os_Arena* ctx);
+Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
+void* std_Format_pthread_wrapper(void* arg);
+unsigned char lexer__is_letter(unsigned char b);
+void* lexer__is_letter_pthread_wrapper(void* arg);
 void lexer__read_char(lexer__Lexer* l);
 void* lexer__read_char_pthread_wrapper(void* arg);
+int parser__parse_expression(parser__Parser* p, int precedence, os_Arena* ctx);
+os_Arena os_Arena_New(void);
+int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
+int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
+int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char lexer__read_number(lexer__Lexer* l);
+void* lexer__read_number_pthread_wrapper(void* arg);
+int parser__Parser_ctx_IsValid(parser__Parser* req);
+void* parser__Parser_ctx_IsValid_pthread_wrapper(void* arg);
+LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
+int parser__parse_function_decl(parser__Parser* p, os_Arena* ctx);
+unsigned char lexer__peek_char(lexer__Lexer* l);
+void* lexer__peek_char_pthread_wrapper(void* arg);
+int parser__cur_token_precedence(parser__Parser* p);
+void* parser__cur_token_precedence_pthread_wrapper(void* arg);
+int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
+int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
+void* lexer__Lexer_ctx_IsValid_pthread_wrapper(void* arg);
 void os_CloseDir(os_Dir arg0);
 void* os_CloseDir_pthread_wrapper(void* arg);
-unsigned char parser__peek_token_is(parser__Parser* p, int tag);
-int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Arena* ctx);
+int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
+void os_SetThreadScratch(os_Arena* arg0);
+void* os_SetThreadScratch_pthread_wrapper(void* arg);
 int parser__parse_unsafe_block(parser__Parser* p, os_Arena* ctx);
+unsigned char lexer__is_digit(unsigned char b);
+void* lexer__is_digit_pthread_wrapper(void* arg);
+int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx);
+void lexer__skip_whitespace(lexer__Lexer* l);
+void* lexer__skip_whitespace_pthread_wrapper(void* arg);
+Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
+Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
+void* std_Format_pthread_wrapper(void* arg);
+void os_SetThreadScratch(os_Arena* arg0);
+void* os_SetThreadScratch_pthread_wrapper(void* arg);
+int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx);
+void os_CloseDir(os_Dir arg0);
+void* os_CloseDir_pthread_wrapper(void* arg);
+int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char lexer__read_string(lexer__Lexer* l);
+void* lexer__read_string_pthread_wrapper(void* arg);
+token__TokenType lexer__lookup_ident(Slice_unsigned_char literal);
+void* lexer__lookup_ident_pthread_wrapper(void* arg);
+int parser__parse_defer_statement(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int indent, os_Arena* ctx);
+void parser__error_at_current(parser__Parser* p, Slice_unsigned_char message);
+Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os_Arena* ctx);
+LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
 token__Position lexer__current_position(lexer__Lexer* l);
 void* lexer__current_position_pthread_wrapper(void* arg);
 void parser__next_token(parser__Parser* p);
 void* parser__next_token_pthread_wrapper(void* arg);
-int parser__parse_defer_statement(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx);
-int parser__parse_function_decl(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
-void* std_Format_pthread_wrapper(void* arg);
-int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
 Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
-int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx);
-void lexer__init_lexer(lexer__Lexer* l, Slice_unsigned_char input);
-int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
-int parser__is_at_end(parser__Parser* p);
-void* parser__is_at_end_pthread_wrapper(void* arg);
 token__Span parser__merge_spans(token__Span start, token__Span end);
+Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena* ctx);
+int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx);
 Slice_unsigned_char ast__serialize_variant_def(ast__VariantDef v, int indent, os_Arena* ctx);
-int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
 os_Arena os_Arena_New(void);
-int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
-LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
-void parser__synchronize(parser__Parser* p);
-void* parser__synchronize_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int indent, os_Arena* ctx);
-unsigned char lexer__is_digit(unsigned char b);
-void* lexer__is_digit_pthread_wrapper(void* arg);
-Slice_unsigned_char lexer__read_number(lexer__Lexer* l);
-void* lexer__read_number_pthread_wrapper(void* arg);
-int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
-void* lexer__Lexer_ctx_IsValid_pthread_wrapper(void* arg);
-int parser__parse_type_signature(parser__Parser* p, os_Arena* ctx);
-LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
-int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
-void parser__error_at_current(parser__Parser* p, Slice_unsigned_char message);
-Slice_unsigned_char lexer__read_identifier(lexer__Lexer* l);
-void* lexer__read_identifier_pthread_wrapper(void* arg);
-Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
-unsigned char lexer__is_letter(unsigned char b);
-void* lexer__is_letter_pthread_wrapper(void* arg);
-Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
-void* std_Format_pthread_wrapper(void* arg);
+Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Arena* ctx);
 Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena* ctx);
-void lexer__next_token(lexer__Lexer* l, token__Token* tok);
-os_Arena os_Arena_New(void);
-LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
+parser__ParseResult parser__expect_peek(parser__Parser* p, int tag, os_Arena* ctx);
 int parser__peek_token_precedence(parser__Parser* p);
 void* parser__peek_token_precedence_pthread_wrapper(void* arg);
-ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx);
-void std_Yield(void);
+Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_char sep, os_Arena* ctx);
+int parser__parse_statement(parser__Parser* p, os_Arena* ctx);
+LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
 int lexer__Lexer_Any_IsValid(lexer__Lexer* req);
 void* lexer__Lexer_Any_IsValid_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int indent, os_Arena* ctx);
-Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx);
-parser__ParseResult parser__expect_peek(parser__Parser* p, int tag, os_Arena* ctx);
-int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx);
 os_Arena os_Arena_New(void);
-int parser__parse_statement(parser__Parser* p, os_Arena* ctx);
+int parser__is_at_end(parser__Parser* p);
+void* parser__is_at_end_pthread_wrapper(void* arg);
+token__Span parser__get_expression_span(int expr, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int indent, os_Arena* ctx);
+void lexer__init_lexer(lexer__Lexer* l, Slice_unsigned_char input);
+int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
+ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char lexer__read_identifier(lexer__Lexer* l);
+void* lexer__read_identifier_pthread_wrapper(void* arg);
+unsigned char parser__peek_token_is(parser__Parser* p, int tag);
+void parser__synchronize(parser__Parser* p);
+void* parser__synchronize_pthread_wrapper(void* arg);
+void std_Yield(void);
+Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int indent, os_Arena* ctx);
+void lexer__next_token(lexer__Lexer* l, token__Token* tok);
+void parser__init_parser(parser__Parser* p, lexer__Lexer* l, os_Arena* ctx);
 unsigned char parser__cur_token_is(parser__Parser* p, int tag);
-int parser__parse_expression(parser__Parser* p, int precedence, os_Arena* ctx);
-int parser__Parser_ctx_IsValid(parser__Parser* req);
-void* parser__Parser_ctx_IsValid_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena* ctx);
+int parser__parse_type_signature(parser__Parser* p, os_Arena* ctx);
+LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
 
 // ====================================================
 // DYNAMICALLY TRANSPILED USER STRUCTS
@@ -3394,20 +3394,20 @@ struct CastResult_std_Vector_ast__VariantDef {
 // ====================================================
 // INVARIANT VALIDATION HELPER FORWARD DECLARATIONS
 // ====================================================
-int lexer__Lexer_IsValid(lexer__Lexer* req);
 int parser__Parser_IsValid(parser__Parser* req);
+int lexer__Lexer_IsValid(lexer__Lexer* req);
 
 // ====================================================
 // INVARIANT VALIDATION HELPERS
 // ====================================================
-int lexer__Lexer_IsValid(lexer__Lexer* req) {
+int parser__Parser_IsValid(parser__Parser* req) {
     if (req == NULL) return 0;
-    if (req->ch != 0x00 && req->ch != 0x01) return 0;
     return 1;
 }
 
-int parser__Parser_IsValid(parser__Parser* req) {
+int lexer__Lexer_IsValid(lexer__Lexer* req) {
     if (req == NULL) return 0;
+    if (req->ch != 0x00 && req->ch != 0x01) return 0;
     return 1;
 }
 
@@ -7432,534 +7432,544 @@ int parser__parse_statement(parser__Parser* p, os_Arena* ctx) {
     token__Span start_span = (*(p)).cur_token.span;
 #line 1362 "/home/garth/files/code/gust/compiler/parser.gst"
     int left_expr = parser__parse_expression(p, 1, ctx);
+#line 1363 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (left_expr == 0xFFFFFFFF) {
 #line 1364 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 6)) {
-#line 1365 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-#line 1366 "/home/garth/files/code/gust/compiler/parser.gst"
-    int right_expr = parser__parse_expression(p, 1, ctx);
+    return 0xFFFFFFFF;
+    }
 #line 1367 "/home/garth/files/code/gust/compiler/parser.gst"
-    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+    if (parser__cur_token_is(p, 6)) {
 #line 1368 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 5;
+    parser__next_token(p);
 #line 1369 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Assignment.left = left_expr;
+    int right_expr = parser__parse_expression(p, 1, ctx);
 #line 1370 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Assignment.value = right_expr;
+    if (right_expr == 0xFFFFFFFF) {
 #line 1371 "/home/garth/files/code/gust/compiler/parser.gst"
+    return 0xFFFFFFFF;
+    }
+#line 1373 "/home/garth/files/code/gust/compiler/parser.gst"
+    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+#line 1374 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 5;
+#line 1375 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Assignment.left = left_expr;
+#line 1376 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Assignment.value = right_expr;
+#line 1377 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Assignment.span = parser__merge_spans(start_span, (*(p)).cur_token.span);
-#line 1372 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1378 "/home/garth/files/code/gust/compiler/parser.gst"
     return stmt_idx;
     }
-#line 1375 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1381 "/home/garth/files/code/gust/compiler/parser.gst"
     int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-#line 1376 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1382 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 13;
-#line 1377 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1383 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Expression.expr = left_expr;
-#line 1378 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1384 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Expression.span = parser__merge_spans(start_span, (*(p)).cur_token.span);
-#line 1379 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1385 "/home/garth/files/code/gust/compiler/parser.gst"
     return stmt_idx;
     }
 }
 
-#line 1383 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1389 "/home/garth/files/code/gust/compiler/parser.gst"
 int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx) {
-#line 1384 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1390 "/home/garth/files/code/gust/compiler/parser.gst"
     token__Span start_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
-#line 1385 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1391 "/home/garth/files/code/gust/compiler/parser.gst"
     {
-#line 1386 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1392 "/home/garth/files/code/gust/compiler/parser.gst"
     start_span = (*(p)).cur_token.span;
-#line 1387 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1393 "/home/garth/files/code/gust/compiler/parser.gst"
     if (is_mut == 1) {
-#line 1388 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1394 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
     }
-#line 1392 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1398 "/home/garth/files/code/gust/compiler/parser.gst"
     if (parser__cur_token_is(p, 2)) {
     } else {
-#line 1394 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1400 "/home/garth/files/code/gust/compiler/parser.gst"
     return 0xFFFFFFFF;
     }
-#line 1397 "/home/garth/files/code/gust/compiler/parser.gst"
-    Slice_unsigned_char name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 1398 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1399 "/home/garth/files/code/gust/compiler/parser.gst"
-    name = (*(p)).cur_token.literal;
-#line 1400 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-    }
 #line 1403 "/home/garth/files/code/gust/compiler/parser.gst"
-    int var_type = 0xFFFFFFFF;
+    Slice_unsigned_char name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
 #line 1404 "/home/garth/files/code/gust/compiler/parser.gst"
     {
 #line 1405 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 9)) {
+    name = (*(p)).cur_token.literal;
 #line 1406 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
-#line 1407 "/home/garth/files/code/gust/compiler/parser.gst"
+    }
+#line 1409 "/home/garth/files/code/gust/compiler/parser.gst"
+    int var_type = 0xFFFFFFFF;
+#line 1410 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1411 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 9)) {
+#line 1412 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+#line 1413 "/home/garth/files/code/gust/compiler/parser.gst"
     var_type = parser__parse_type_signature(p, ctx);
     }
     }
-#line 1411 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1417 "/home/garth/files/code/gust/compiler/parser.gst"
     int value = 0xFFFFFFFF;
-#line 1412 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1418 "/home/garth/files/code/gust/compiler/parser.gst"
     {
-#line 1413 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1419 "/home/garth/files/code/gust/compiler/parser.gst"
     if (parser__cur_token_is(p, 5)) {
-#line 1414 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1420 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
-#line 1415 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1421 "/home/garth/files/code/gust/compiler/parser.gst"
     value = parser__parse_expression(p, 1, ctx);
     }
     }
-#line 1419 "/home/garth/files/code/gust/compiler/parser.gst"
-    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-#line 1420 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1421 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 4;
-#line 1422 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).VarDecl.name = name;
-#line 1423 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).VarDecl.is_mut = is_mut;
-#line 1424 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).VarDecl.value = value;
 #line 1425 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).VarDecl.var_type = var_type;
+    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
 #line 1426 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1427 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 4;
+#line 1428 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).VarDecl.name = name;
+#line 1429 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).VarDecl.is_mut = is_mut;
+#line 1430 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).VarDecl.value = value;
+#line 1431 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).VarDecl.var_type = var_type;
+#line 1432 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).VarDecl.span = parser__merge_spans(start_span, (*(p)).cur_token.span);
     }
-#line 1428 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1434 "/home/garth/files/code/gust/compiler/parser.gst"
     return stmt_idx;
 }
 
-#line 1431 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1437 "/home/garth/files/code/gust/compiler/parser.gst"
 int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx) {
-#line 1432 "/home/garth/files/code/gust/compiler/parser.gst"
-    int block_idx = os_ArenaAlloc(ctx, sizeof(ast__BlockStatement));
-#line 1433 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1434 "/home/garth/files/code/gust/compiler/parser.gst"
-    std_Vector_ast__Statement statements_vec = (struct std_Vector_ast__Statement){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 1435 "/home/garth/files/code/gust/compiler/parser.gst"
-    std_Vector_ast__Statement* dest_ptr = &(statements_vec);
-#line 1436 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx))).span = (*(p)).cur_token.span;
 #line 1438 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
+    int block_idx = os_ArenaAlloc(ctx, sizeof(ast__BlockStatement));
+#line 1439 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
 #line 1440 "/home/garth/files/code/gust/compiler/parser.gst"
-    while (parser__is_at_end(p) == 0) {
+    std_Vector_ast__Statement statements_vec = (struct std_Vector_ast__Statement){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 1441 "/home/garth/files/code/gust/compiler/parser.gst"
-    int before_errors = (*(p)).errors.len;
+    std_Vector_ast__Statement* dest_ptr = &(statements_vec);
 #line 1442 "/home/garth/files/code/gust/compiler/parser.gst"
-    int stmt = parser__parse_statement(p, ctx);
-#line 1443 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (stmt != 0xFFFFFFFF) {
+    (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx))).span = (*(p)).cur_token.span;
 #line 1444 "/home/garth/files/code/gust/compiler/parser.gst"
-    os_VectorPush(&(*(dest_ptr)), (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt))));
-#line 1445 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 10)) {
+    parser__next_token(p);
 #line 1446 "/home/garth/files/code/gust/compiler/parser.gst"
+    while (parser__is_at_end(p) == 0) {
+#line 1447 "/home/garth/files/code/gust/compiler/parser.gst"
+    int before_errors = (*(p)).errors.len;
+#line 1448 "/home/garth/files/code/gust/compiler/parser.gst"
+    int stmt = parser__parse_statement(p, ctx);
+#line 1449 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (stmt != 0xFFFFFFFF) {
+#line 1450 "/home/garth/files/code/gust/compiler/parser.gst"
+    os_VectorPush(&(*(dest_ptr)), (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt))));
+#line 1451 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 10)) {
+#line 1452 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
     } else {
-#line 1449 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1455 "/home/garth/files/code/gust/compiler/parser.gst"
     if ((*(p)).errors.len == before_errors) {
-#line 1450 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1456 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Expected valid statement inside block", 37 }));
     }
-#line 1452 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1458 "/home/garth/files/code/gust/compiler/parser.gst"
     int before_sync = (*(p)).cur_token.token_type.tag;
-#line 1453 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1459 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__synchronize(p);
-#line 1454 "/home/garth/files/code/gust/compiler/parser.gst"
-    if ((*(p)).cur_token.token_type.tag == before_sync) {
-#line 1455 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-    }
-    }
-    }
 #line 1460 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx))).statements = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Statement));
+    if ((*(p)).cur_token.token_type.tag == before_sync) {
 #line 1461 "/home/garth/files/code/gust/compiler/parser.gst"
-    std_Vector_ast__Statement* dest_arena_ptr = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx))).statements)))));
-#line 1462 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(dest_arena_ptr)) = statements_vec;
-#line 1464 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx))).span = parser__merge_spans((*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx))).span, (*(p)).cur_token.span);
-#line 1465 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 14)) {
-#line 1466 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
     }
-#line 1469 "/home/garth/files/code/gust/compiler/parser.gst"
+    }
+#line 1466 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx))).statements = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Statement));
+#line 1467 "/home/garth/files/code/gust/compiler/parser.gst"
+    std_Vector_ast__Statement* dest_arena_ptr = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx))).statements)))));
+#line 1468 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(dest_arena_ptr)) = statements_vec;
+#line 1470 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx))).span = parser__merge_spans((*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx))).span, (*(p)).cur_token.span);
+#line 1471 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 14)) {
+#line 1472 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+    }
+    }
+#line 1475 "/home/garth/files/code/gust/compiler/parser.gst"
     return block_idx;
 }
 
-#line 1472 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1478 "/home/garth/files/code/gust/compiler/parser.gst"
 int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx) {
-#line 1473 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1479 "/home/garth/files/code/gust/compiler/parser.gst"
     token__Span start_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
-#line 1474 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1480 "/home/garth/files/code/gust/compiler/parser.gst"
     {
-#line 1475 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1481 "/home/garth/files/code/gust/compiler/parser.gst"
     start_span = (*(p)).cur_token.span;
-#line 1476 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1482 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
-#line 1479 "/home/garth/files/code/gust/compiler/parser.gst"
-    int condition = parser__parse_expression(p, 1, ctx);
-#line 1481 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 13) == 0) {
-#line 1482 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1483 "/home/garth/files/code/gust/compiler/parser.gst"
-    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
-#line 1484 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.kind.tag = 1;
 #line 1485 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected '{' after while condition", 34 });
-#line 1486 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.span = (*(p)).cur_token.span;
+    int condition = parser__parse_expression(p, 1, ctx);
 #line 1487 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 13) == 0) {
+#line 1488 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1489 "/home/garth/files/code/gust/compiler/parser.gst"
+    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+#line 1490 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.kind.tag = 1;
+#line 1491 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected '{' after while condition", 34 });
+#line 1492 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.span = (*(p)).cur_token.span;
+#line 1493 "/home/garth/files/code/gust/compiler/parser.gst"
     os_VectorPush(&(*(p)).errors, err);
     }
-#line 1489 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1495 "/home/garth/files/code/gust/compiler/parser.gst"
     return 0xFFFFFFFF;
     }
-#line 1492 "/home/garth/files/code/gust/compiler/parser.gst"
-    int body = parser__parse_block_statement(p, ctx);
-#line 1494 "/home/garth/files/code/gust/compiler/parser.gst"
-    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-#line 1495 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1496 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 6;
-#line 1497 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).While.condition = condition;
 #line 1498 "/home/garth/files/code/gust/compiler/parser.gst"
+    int body = parser__parse_block_statement(p, ctx);
+#line 1500 "/home/garth/files/code/gust/compiler/parser.gst"
+    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+#line 1501 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1502 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 6;
+#line 1503 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).While.condition = condition;
+#line 1504 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).While.body = body;
-#line 1499 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1505 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).While.span = parser__merge_spans(start_span, (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + body))).span);
     }
-#line 1501 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1507 "/home/garth/files/code/gust/compiler/parser.gst"
     return stmt_idx;
 }
 
-#line 1504 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1510 "/home/garth/files/code/gust/compiler/parser.gst"
 int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx) {
-#line 1505 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1511 "/home/garth/files/code/gust/compiler/parser.gst"
     token__Span start_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
-#line 1506 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1512 "/home/garth/files/code/gust/compiler/parser.gst"
     {
-#line 1507 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1513 "/home/garth/files/code/gust/compiler/parser.gst"
     start_span = (*(p)).cur_token.span;
-#line 1508 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1514 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
-#line 1511 "/home/garth/files/code/gust/compiler/parser.gst"
-    int condition = parser__parse_expression(p, 1, ctx);
-#line 1513 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 13) == 0) {
-#line 1514 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1515 "/home/garth/files/code/gust/compiler/parser.gst"
-    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
-#line 1516 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.kind.tag = 1;
 #line 1517 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected '{' after if condition", 31 });
-#line 1518 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.span = (*(p)).cur_token.span;
+    int condition = parser__parse_expression(p, 1, ctx);
 #line 1519 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 13) == 0) {
+#line 1520 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1521 "/home/garth/files/code/gust/compiler/parser.gst"
+    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+#line 1522 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.kind.tag = 1;
+#line 1523 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected '{' after if condition", 31 });
+#line 1524 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.span = (*(p)).cur_token.span;
+#line 1525 "/home/garth/files/code/gust/compiler/parser.gst"
     os_VectorPush(&(*(p)).errors, err);
     }
-#line 1521 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1527 "/home/garth/files/code/gust/compiler/parser.gst"
     return 0xFFFFFFFF;
     }
-#line 1524 "/home/garth/files/code/gust/compiler/parser.gst"
-    int consequence = parser__parse_block_statement(p, ctx);
-#line 1526 "/home/garth/files/code/gust/compiler/parser.gst"
-    int alternative = 0xFFFFFFFF;
-#line 1527 "/home/garth/files/code/gust/compiler/parser.gst"
-    token__Span end_span = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + consequence))).span;
-#line 1529 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
 #line 1530 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 36)) {
-#line 1531 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
+    int consequence = parser__parse_block_statement(p, ctx);
 #line 1532 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 13)) {
+    int alternative = 0xFFFFFFFF;
 #line 1533 "/home/garth/files/code/gust/compiler/parser.gst"
+    token__Span end_span = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + consequence))).span;
+#line 1535 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1536 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 36)) {
+#line 1537 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+#line 1538 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 13)) {
+#line 1539 "/home/garth/files/code/gust/compiler/parser.gst"
     alternative = parser__parse_block_statement(p, ctx);
-#line 1534 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1540 "/home/garth/files/code/gust/compiler/parser.gst"
     end_span = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + alternative))).span;
     }
     }
     }
-#line 1539 "/home/garth/files/code/gust/compiler/parser.gst"
-    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-#line 1540 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1541 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 7;
-#line 1542 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.condition = condition;
-#line 1543 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.consequence = consequence;
-#line 1544 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.alternative = alternative;
 #line 1545 "/home/garth/files/code/gust/compiler/parser.gst"
+    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+#line 1546 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1547 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 7;
+#line 1548 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.condition = condition;
+#line 1549 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.consequence = consequence;
+#line 1550 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.alternative = alternative;
+#line 1551 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.span = parser__merge_spans(start_span, (*(p)).cur_token.span);
     }
-#line 1547 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1553 "/home/garth/files/code/gust/compiler/parser.gst"
     return stmt_idx;
 }
 
-#line 1550 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1556 "/home/garth/files/code/gust/compiler/parser.gst"
 int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx) {
-#line 1551 "/home/garth/files/code/gust/compiler/parser.gst"
-    token__Span start_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
-#line 1552 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1553 "/home/garth/files/code/gust/compiler/parser.gst"
-    start_span = (*(p)).cur_token.span;
-#line 1554 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-    }
 #line 1557 "/home/garth/files/code/gust/compiler/parser.gst"
-    int is_mut = 0;
+    token__Span start_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
 #line 1558 "/home/garth/files/code/gust/compiler/parser.gst"
     {
 #line 1559 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 29)) {
+    start_span = (*(p)).cur_token.span;
 #line 1560 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+    }
+#line 1563 "/home/garth/files/code/gust/compiler/parser.gst"
+    int is_mut = 0;
+#line 1564 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1565 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 29)) {
+#line 1566 "/home/garth/files/code/gust/compiler/parser.gst"
     is_mut = 1;
-#line 1561 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1567 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
     }
-#line 1565 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1571 "/home/garth/files/code/gust/compiler/parser.gst"
     if (parser__cur_token_is(p, 2)) {
     } else {
-#line 1567 "/home/garth/files/code/gust/compiler/parser.gst"
-    return 0xFFFFFFFF;
-    }
-#line 1570 "/home/garth/files/code/gust/compiler/parser.gst"
-    Slice_unsigned_char name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 1571 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1572 "/home/garth/files/code/gust/compiler/parser.gst"
-    name = (*(p)).cur_token.literal;
 #line 1573 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
+    return 0xFFFFFFFF;
     }
 #line 1576 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
+    Slice_unsigned_char name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
 #line 1577 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 5)) {
+    {
 #line 1578 "/home/garth/files/code/gust/compiler/parser.gst"
+    name = (*(p)).cur_token.literal;
+#line 1579 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
-    } else {
-#line 1580 "/home/garth/files/code/gust/compiler/parser.gst"
-    return 0xFFFFFFFF;
     }
-    }
+#line 1582 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1583 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 5)) {
 #line 1584 "/home/garth/files/code/gust/compiler/parser.gst"
-    int value = parser__parse_expression(p, 1, ctx);
-#line 1586 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1587 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 36)) {
-#line 1588 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     } else {
-#line 1590 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1586 "/home/garth/files/code/gust/compiler/parser.gst"
     return 0xFFFFFFFF;
     }
     }
-#line 1594 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 13) == 0) {
-#line 1595 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1590 "/home/garth/files/code/gust/compiler/parser.gst"
+    int value = parser__parse_expression(p, 1, ctx);
+#line 1592 "/home/garth/files/code/gust/compiler/parser.gst"
     {
+#line 1593 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 36)) {
+#line 1594 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+    } else {
 #line 1596 "/home/garth/files/code/gust/compiler/parser.gst"
-    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
-#line 1597 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.kind.tag = 1;
-#line 1598 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected '{' after else", 23 });
-#line 1599 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.span = (*(p)).cur_token.span;
+    return 0xFFFFFFFF;
+    }
+    }
 #line 1600 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 13) == 0) {
+#line 1601 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1602 "/home/garth/files/code/gust/compiler/parser.gst"
+    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+#line 1603 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.kind.tag = 1;
+#line 1604 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected '{' after else", 23 });
+#line 1605 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.span = (*(p)).cur_token.span;
+#line 1606 "/home/garth/files/code/gust/compiler/parser.gst"
     os_VectorPush(&(*(p)).errors, err);
     }
-#line 1602 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1608 "/home/garth/files/code/gust/compiler/parser.gst"
     return 0xFFFFFFFF;
     }
-#line 1605 "/home/garth/files/code/gust/compiler/parser.gst"
-    int else_body = parser__parse_block_statement(p, ctx);
-#line 1607 "/home/garth/files/code/gust/compiler/parser.gst"
-    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-#line 1608 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1609 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 9;
-#line 1610 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.name = name;
 #line 1611 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.is_mut = is_mut;
-#line 1612 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.value = value;
+    int else_body = parser__parse_block_statement(p, ctx);
 #line 1613 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.else_body = else_body;
+    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
 #line 1614 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1615 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 9;
+#line 1616 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.name = name;
+#line 1617 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.is_mut = is_mut;
+#line 1618 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.value = value;
+#line 1619 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.else_body = else_body;
+#line 1620 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.span = parser__merge_spans(start_span, (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + else_body))).span);
     }
-#line 1616 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1622 "/home/garth/files/code/gust/compiler/parser.gst"
     return stmt_idx;
 }
 
-#line 1619 "/home/garth/files/code/gust/compiler/parser.gst"
-ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx) {
-#line 1620 "/home/garth/files/code/gust/compiler/parser.gst"
-    ast__Program prog = ((ast__Program){ .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }), .statements = 0xFFFFFFFF });
-#line 1621 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1622 "/home/garth/files/code/gust/compiler/parser.gst"
-    std_Vector_ast__Statement statements_vec = (struct std_Vector_ast__Statement){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 1623 "/home/garth/files/code/gust/compiler/parser.gst"
-    std_Vector_ast__Statement* dest_ptr = &(statements_vec);
 #line 1625 "/home/garth/files/code/gust/compiler/parser.gst"
-    token__Span start_span = (*(p)).cur_token.span;
+ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx) {
+#line 1626 "/home/garth/files/code/gust/compiler/parser.gst"
+    ast__Program prog = ((ast__Program){ .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }), .statements = 0xFFFFFFFF });
 #line 1627 "/home/garth/files/code/gust/compiler/parser.gst"
-    while ((*(p)).cur_token.token_type.tag != 0) {
+    {
 #line 1628 "/home/garth/files/code/gust/compiler/parser.gst"
-    int before_errors = (*(p)).errors.len;
+    std_Vector_ast__Statement statements_vec = (struct std_Vector_ast__Statement){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 1629 "/home/garth/files/code/gust/compiler/parser.gst"
-    int stmt = parser__parse_statement(p, ctx);
-#line 1630 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (stmt != 0xFFFFFFFF) {
+    std_Vector_ast__Statement* dest_ptr = &(statements_vec);
 #line 1631 "/home/garth/files/code/gust/compiler/parser.gst"
-    os_VectorPush(&(*(dest_ptr)), (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt))));
-#line 1632 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 10)) {
+    token__Span start_span = (*(p)).cur_token.span;
 #line 1633 "/home/garth/files/code/gust/compiler/parser.gst"
+    while ((*(p)).cur_token.token_type.tag != 0) {
+#line 1634 "/home/garth/files/code/gust/compiler/parser.gst"
+    int before_errors = (*(p)).errors.len;
+#line 1635 "/home/garth/files/code/gust/compiler/parser.gst"
+    int stmt = parser__parse_statement(p, ctx);
+#line 1636 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (stmt != 0xFFFFFFFF) {
+#line 1637 "/home/garth/files/code/gust/compiler/parser.gst"
+    os_VectorPush(&(*(dest_ptr)), (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt))));
+#line 1638 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 10)) {
+#line 1639 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
     } else {
-#line 1636 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1642 "/home/garth/files/code/gust/compiler/parser.gst"
     if ((*(p)).errors.len == before_errors) {
-#line 1637 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1643 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: unexpected token or malformed statement", 53 }));
     }
-#line 1639 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1645 "/home/garth/files/code/gust/compiler/parser.gst"
     int before_sync = (*(p)).cur_token.token_type.tag;
-#line 1640 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1646 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__synchronize(p);
-#line 1641 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1647 "/home/garth/files/code/gust/compiler/parser.gst"
     if ((*(p)).cur_token.token_type.tag == before_sync) {
-#line 1642 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1648 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
     }
     }
-#line 1647 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1653 "/home/garth/files/code/gust/compiler/parser.gst"
     prog.statements = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Statement));
-#line 1648 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1654 "/home/garth/files/code/gust/compiler/parser.gst"
     std_Vector_ast__Statement* dest_arena_ptr = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + prog.statements)))));
-#line 1649 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1655 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(dest_arena_ptr)) = statements_vec;
-#line 1651 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1657 "/home/garth/files/code/gust/compiler/parser.gst"
     prog.span = parser__merge_spans(start_span, (*(p)).cur_token.span);
     }
-#line 1653 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1659 "/home/garth/files/code/gust/compiler/parser.gst"
     return prog;
 }
 
-#line 1656 "/home/garth/files/code/gust/compiler/parser.gst"
-int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx) {
-#line 1657 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1658 "/home/garth/files/code/gust/compiler/parser.gst"
-    token__Span start_span = (*(p)).cur_token.span;
-#line 1659 "/home/garth/files/code/gust/compiler/parser.gst"
-    if ((*(p)).has_non_import_statement == 1) {
-#line 1660 "/home/garth/files/code/gust/compiler/parser.gst"
-    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
-#line 1661 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.kind.tag = 1;
 #line 1662 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.message = ((Slice_unsigned_char){ (unsigned char*)"Imports must be at the beginning of the program", 47 });
+int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx) {
 #line 1663 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.span = (*(p)).cur_token.span;
+    {
 #line 1664 "/home/garth/files/code/gust/compiler/parser.gst"
-    os_VectorPush(&(*(p)).errors, err);
-    }
+    token__Span start_span = (*(p)).cur_token.span;
+#line 1665 "/home/garth/files/code/gust/compiler/parser.gst"
+    if ((*(p)).has_non_import_statement == 1) {
+#line 1666 "/home/garth/files/code/gust/compiler/parser.gst"
+    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
 #line 1667 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
+    err.kind.tag = 1;
+#line 1668 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.message = ((Slice_unsigned_char){ (unsigned char*)"Imports must be at the beginning of the program", 47 });
 #line 1669 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 4) == 0) {
+    err.span = (*(p)).cur_token.span;
 #line 1670 "/home/garth/files/code/gust/compiler/parser.gst"
-    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
-#line 1671 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.kind.tag = 1;
-#line 1672 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected string literal specifying the import path", 50 });
+    os_VectorPush(&(*(p)).errors, err);
+    }
 #line 1673 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.span = (*(p)).cur_token.span;
-#line 1674 "/home/garth/files/code/gust/compiler/parser.gst"
-    os_VectorPush(&(*(p)).errors, err);
+    parser__next_token(p);
 #line 1675 "/home/garth/files/code/gust/compiler/parser.gst"
-    return 0xFFFFFFFF;
-    }
-#line 1678 "/home/garth/files/code/gust/compiler/parser.gst"
-    Slice_unsigned_char path = (*(p)).cur_token.literal;
-#line 1679 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-#line 1681 "/home/garth/files/code/gust/compiler/parser.gst"
-    Slice_unsigned_char alias = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 1682 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 37)) {
-#line 1683 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-#line 1684 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 2) == 0) {
-#line 1685 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 4) == 0) {
+#line 1676 "/home/garth/files/code/gust/compiler/parser.gst"
     errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
-#line 1686 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1677 "/home/garth/files/code/gust/compiler/parser.gst"
     err.kind.tag = 1;
-#line 1687 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected identifier alias after 'as'", 36 });
-#line 1688 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1678 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected string literal specifying the import path", 50 });
+#line 1679 "/home/garth/files/code/gust/compiler/parser.gst"
     err.span = (*(p)).cur_token.span;
-#line 1689 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1680 "/home/garth/files/code/gust/compiler/parser.gst"
     os_VectorPush(&(*(p)).errors, err);
-#line 1690 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1681 "/home/garth/files/code/gust/compiler/parser.gst"
     return 0xFFFFFFFF;
     }
+#line 1684 "/home/garth/files/code/gust/compiler/parser.gst"
+    Slice_unsigned_char path = (*(p)).cur_token.literal;
+#line 1685 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+#line 1687 "/home/garth/files/code/gust/compiler/parser.gst"
+    Slice_unsigned_char alias = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 1688 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 37)) {
+#line 1689 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+#line 1690 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 2) == 0) {
+#line 1691 "/home/garth/files/code/gust/compiler/parser.gst"
+    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
 #line 1692 "/home/garth/files/code/gust/compiler/parser.gst"
-    alias = (*(p)).cur_token.literal;
+    err.kind.tag = 1;
 #line 1693 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected identifier alias after 'as'", 36 });
+#line 1694 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.span = (*(p)).cur_token.span;
+#line 1695 "/home/garth/files/code/gust/compiler/parser.gst"
+    os_VectorPush(&(*(p)).errors, err);
+#line 1696 "/home/garth/files/code/gust/compiler/parser.gst"
+    return 0xFFFFFFFF;
+    }
+#line 1698 "/home/garth/files/code/gust/compiler/parser.gst"
+    alias = (*(p)).cur_token.literal;
+#line 1699 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
-#line 1696 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1702 "/home/garth/files/code/gust/compiler/parser.gst"
     int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-#line 1697 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1703 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 0;
-#line 1698 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1704 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Import.path = path;
-#line 1699 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1705 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Import.alias = alias;
-#line 1700 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1706 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Import.span = parser__merge_spans(start_span, (*(p)).cur_token.span);
-#line 1701 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1707 "/home/garth/files/code/gust/compiler/parser.gst"
     return stmt_idx;
     }
 }

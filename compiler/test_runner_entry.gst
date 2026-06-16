@@ -56,12 +56,20 @@ func main() {
         mut p: parser.Parser[ctx];
         parser.init_parser(&p, &l, ctx);
 
-        mut prog := parser.parse_program(&p, ctx);
-        if len(p.errors) > 0 {
-            os.LogStr("ParserError in file: ");
-            os.LogStr(path);
-            os.Exit(1);
-        }
+ mut prog := parser.parse_program(&p, ctx);
+            if len(p.errors) > 0 {
+                os.LogStr("ParserError in file: ");
+                os.LogStr(path);
+                mut err_idx := 0;
+                while err_idx < len(p.errors) {
+                    mut err := p.errors[err_idx];
+                    os.LogStr(err.message);
+                    os.LogInt(err.span.start.line);
+                    os.LogInt(err.span.start.column);
+                    err_idx = err_idx + 1;
+                }
+                os.Exit(1);
+            }
 
         programs.Push(prog);
 
