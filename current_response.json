@@ -1,9 +1,0 @@
-{
-  "summary": "fix: resolve syntax error in typechecker.gst IndexAccess parsing",
-  "files": [
-    {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n        if expr.tag == 8 { // IndexAccess\n            mut alloc_t := check_expression(expr.IndexAccess.allocator, env, scope, ctx);\n        if tag == 8 { // IndexAccess\n            mut alloc_t := check_expression(expr_idx.IndexAccess.allocator, env, scope, ctx);\n            mut idx_t := check_expression(expr_idx.IndexAccess.index, env, scope, ctx);\n            if alloc_t.tag == 6 { // Slice\n                return ctx[alloc_t.Slice.inner];\n            }\n=======\n        if expr.tag == 8 { // IndexAccess\n            mut alloc_t := check_expression(expr.IndexAccess.allocator, env, scope, ctx);\n            mut idx_t := check_expression(expr.IndexAccess.index, env, scope, ctx);\n            if alloc_t.tag == 6 { // Slice\n                return ctx[alloc_t.Slice.inner];\n            }\n>>>>>>> REPLACE"
-    }
-  ]
-}
