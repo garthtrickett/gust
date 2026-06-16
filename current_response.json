@@ -1,0 +1,9 @@
+{
+  "summary": "debug: add targeted tracing logs around struct/enum template map lookups in env_resolve_type",
+  "files": [
+    {
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\n                if t.Struct.brand != empty[Index[str, ctx]] {\n                    mut has_template := 0;\n                    if (*env).struct_templates.Get(namespaced_name).Ok {\n                        has_template = 1;\n                    } else {\n                        if (*env).enum_templates.Get(namespaced_name).Ok {\n                            has_template = 1;\n                        }\n                    }\n=======\n                if t.Struct.brand != empty[Index[str, ctx]] {\n                    mut has_template := 0;\n                    \n                    typechecker_log_trace('🔍', 'env_resolve_type: before struct_templates.Get', ctx);\n                    mut is_struct_tmpl := (*env).struct_templates.Get(namespaced_name).Ok;\n                    typechecker_log_trace('🔍', 'env_resolve_type: after struct_templates.Get', ctx);\n                    \n                    if is_struct_tmpl == 1 {\n                        has_template = 1;\n                    } else {\n                        typechecker_log_trace('🔍', 'env_resolve_type: before enum_templates.Get', ctx);\n                        mut is_enum_tmpl := (*env).enum_templates.Get(namespaced_name).Ok;\n                        typechecker_log_trace('🔍', 'env_resolve_type: after enum_templates.Get', ctx);\n                        if is_enum_tmpl == 1 {\n                            has_template = 1;\n                        }\n                    }\n>>>>>>> REPLACE"
+    }
+  ]
+}

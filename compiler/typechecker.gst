@@ -1993,10 +1993,18 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                 
                 if t.Struct.brand != empty[Index[str, ctx]] {
                     mut has_template := 0;
-                    if (*env).struct_templates.Get(namespaced_name).Ok {
+                    
+                    typechecker_log_trace('🔍', 'env_resolve_type: before struct_templates.Get', ctx);
+                    mut is_struct_tmpl := (*env).struct_templates.Get(namespaced_name).Ok;
+                    typechecker_log_trace('🔍', 'env_resolve_type: after struct_templates.Get', ctx);
+                    
+                    if is_struct_tmpl == 1 {
                         has_template = 1;
                     } else {
-                        if (*env).enum_templates.Get(namespaced_name).Ok {
+                        typechecker_log_trace('🔍', 'env_resolve_type: before enum_templates.Get', ctx);
+                        mut is_enum_tmpl := (*env).enum_templates.Get(namespaced_name).Ok;
+                        typechecker_log_trace('🔍', 'env_resolve_type: after enum_templates.Get', ctx);
+                        if is_enum_tmpl == 1 {
                             has_template = 1;
                         }
                     }
