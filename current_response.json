@@ -2,8 +2,9 @@
   "summary": "fix: enforce strict name-based Arena overrides in both codegen backends to eliminate Span-collision SEGVs",
   "files": [
     {
-      "file_path": "compiler/codegen.gst",
-      "code_diff": "<<<<<<< SEARCH\n            mut alloc_str := codegen_generate_expression(alloc_idx, env, ctx);\n            mut index_str := codegen_generate_expression(index_idx, env, ctx);\n\n            if std.str_eq(alloc_str, \"ctx\") || std.str_eq(alloc_str, \"arena\") || std.str_eq(alloc_str, \"connCtx\") || std.str_eq(alloc_str, \"a\") {\n                is_arena = 1;\n            }\n\n            if is_arena == 1 {\n=======\n            mut alloc_str := codegen_generate_expression(alloc_idx, env, ctx);\n            mut index_str := codegen_generate_expression(index_idx, env, ctx);\n\n            mut is_name_match := 0;\n            if std.str_eq(alloc_str, \"ctx\") || std.str_eq(alloc_str, \"arena\") || std.str_eq(alloc_str, \"connCtx\") || std.str_eq(alloc_str, \"a\") {\n                is_name_match = 1;\n            }\n            if std.str_find(alloc_str, \".ctx\") != 0 - 1 || std.str_find(alloc_str, \".arena\") != 0 - 1 || std.str_find(alloc_str, \".connCtx\") != 0 - 1 || std.str_find(alloc_str, \".a\") != 0 - 1 {\n                is_name_match = 1;\n            }\n            if std.str_find(alloc_str, \"->ctx\") != 0 - 1 || std.str_find(alloc_str, \"->arena\") != 0 - 1 || std.str_find(alloc_str, \"->connCtx\") != 0 - 1 || std.str_find(alloc_str, \"->a\") != 0 - 1 {\n                is_name_match = 1;\n            }\n            \n            if is_name_match == 1 {\n                is_arena = 1;\n            }\n\n            if is_arena == 1 {\n>>>>>>> REPLACE"
+      "file_path": "src/codegen.rs",
+      "code_diff": "<<<<<<< SEARCH\n            let alloc_type = self.get_expr_type(allocator).unwrap_or(Type::Void);\n            let is_slice = matches!(alloc_type, Type::Slice(_)) || alloc_type == Type::Str;\n\n            let mut is_vector = false;\n=======\n            let alloc_type = self.get_expr_type(allocator).unwrap_or(Type::Void);\n            let mut is_slice = matches!(alloc_type, Type::Slice(_)) || alloc_type == Type::Str;\n\n            let mut is_vector = false;\n>>>>>>> REPLACE"
     }
+    
   ]
 }

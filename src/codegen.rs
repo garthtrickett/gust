@@ -1697,7 +1697,7 @@ impl Codegen {
                 let index_str = self.gen_expression(index);
 
                 let alloc_type = self.get_expr_type(allocator).unwrap_or(Type::Void);
-                let is_slice = matches!(alloc_type, Type::Slice(_)) || alloc_type == Type::Str;
+                let mut is_slice = matches!(alloc_type, Type::Slice(_)) || alloc_type == Type::Str;
 
                 let mut is_vector = false;
                 let mut is_hashmap = false;
