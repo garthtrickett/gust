@@ -392,6 +392,19 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         if expr.tag == 12 { // Call
             mut func_name := expression_to_string(expr.Call.function, ctx);
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
+
+            if std.str_eq(resolved_func, "os_ArenaAlloc") || std.str_eq(resolved_func, "os.ArenaAlloc") {
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec) != 1 {
+                    mut msg := "Semantic Error: os_ArenaAlloc expects exactly 1 argument (the allocator variable)";
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                }
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+                mut brand_name := get_root_variable(arg0_idx, ctx);
+                return make_type_index("Any", brand_name, ctx);
+            }
             
             // Spawn / Concurrency Checks
             if std.str_eq(resolved_func, "std_Spawn") || std.str_eq(resolved_func, "std.Spawn") {

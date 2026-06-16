@@ -418,7 +418,27 @@ impl TypeChecker {
         );
 
         self.function_registry.insert(
+            "std_PoolNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("std_Pool_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
             "os.PoolNew".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::RawPointer(Box::new(Type::Arena))],
+                return_type: Type::Struct("std_Pool_Any".to_string(), Some("ctx".to_string())),
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+
+        self.function_registry.insert(
+            "os_PoolNew".to_string(),
             super::types::FunctionSignature {
                 param_names: vec!["arg0".to_string()],
                 params: vec![Type::RawPointer(Box::new(Type::Arena))],

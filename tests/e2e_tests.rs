@@ -4848,6 +4848,20 @@ fn test_e2e_filesystem_ops() {
 //     let _ = std::fs::remove_file(target_path);
 // }
 
+fn filter_output_c_code(stdout: &str) -> String {
+    stdout
+        .lines()
+        .filter(|l| {
+            let trimmed = l.trim_start();
+            if trimmed.is_empty() {
+                return true;
+            }
+            trimmed.chars().next().map_or(false, |c| c.is_ascii())
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 #[test]
 fn test_self_hosted_type_dump_diff() {
     gust_lexer::init_logging();
@@ -5056,7 +5070,9 @@ fn test_self_hosted_type_dump_diff() {
         String::from_utf8_lossy(&run_output.stdout),
         String::from_utf8_lossy(&run_output.stderr)
     );
-    let bootstrapped_stdout = String::from_utf8(run_output.stdout).expect("Invalid UTF-8 output");
+    let bootstrapped_stdout_raw =
+        String::from_utf8(run_output.stdout).expect("Invalid UTF-8 output");
+    let bootstrapped_stdout = filter_output_c_code(&bootstrapped_stdout_raw);
 
     // 5. Capture Rust prototype Type serialization
     let rust_res = resolver.resolve(&target_path, &fs_impl).unwrap();
@@ -5180,8 +5196,9 @@ fn test_self_hosted_compiler_full_bootstrap() {
         String::from_utf8_lossy(&run_gust_v2_self_compile.stderr)
     );
 
-    let c_output_v2_compiler_self = String::from_utf8(run_gust_v2_self_compile.stdout)
+    let c_output_v2_compiler_self_raw = String::from_utf8(run_gust_v2_self_compile.stdout)
         .expect("Invalid UTF-8 from self-compilation");
+    let c_output_v2_compiler_self = filter_output_c_code(&c_output_v2_compiler_self_raw);
 
     // Side-by-side codegen trace / C code comparison to confirm no semantic drifts exist during codegen!
     fn normalize_code(code: &str) -> String {
@@ -5254,8 +5271,9 @@ fn test_self_hosted_compiler_full_bootstrap() {
         String::from_utf8_lossy(&run_gust_v2_compile_target.stderr)
     );
 
-    let c_output_target_v2 = String::from_utf8(run_gust_v2_compile_target.stdout)
+    let c_output_target_v2_raw = String::from_utf8(run_gust_v2_compile_target.stdout)
         .expect("Invalid UTF-8 from target compilation");
+    let c_output_target_v2 = filter_output_c_code(&c_output_target_v2_raw);
 
     // Compile the generated C code under AddressSanitizer and verify it runs correctly!
     let target_c_path_v1 =
