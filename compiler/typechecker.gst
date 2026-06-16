@@ -155,7 +155,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
         if expr.tag == 0 { // Identifier
             mut name := expr.Identifier.name;
-            mut resolved_name := env_resolve_namespaced_ident(env, name, ctx);
+            mut resolved_name := name;
+            mut is_local := scope_contains(scope, name, ctx);
+            if is_local == 0 {
+                resolved_name = env_resolve_namespaced_ident(env, name, ctx);
+            }
             mut t := scope_lookup(scope, resolved_name, ctx);
 
             // Check if resolved_name is moved
@@ -596,6 +600,19 @@ func scope_insert(scope: Index[Scope[ctx], ctx], name: str, t: ast.Type[ctx], ct
     mut t_str := ast.serialize_type(t, ctx);
     mut msg := std.Format("scope_insert: bound variable '%s' to type %s", name, t_str);
     typechecker_log_trace("🗄️", msg, ctx);
+}
+
+func scope_contains(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) int {
+    mut curr_scope := scope;
+    while curr_scope != empty[Index[Scope[ctx], ctx]] {
+        unsafe {
+            if ctx[curr_scope].bindings.Get(name).Ok {
+                return 1;
+            }
+            curr_scope = ctx[curr_scope].parent;
+        }
+    }
+    return 0;
 }
 
 func scope_lookup(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) ast.Type[ctx] {
@@ -2748,7 +2765,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut left := ctx[left_idx];
             if left.tag == 0 { // Identifier
                 mut name := left.Identifier.name;
-                mut resolved_name := env_resolve_namespaced_ident(env, name, ctx);
+                mut resolved_name := name;
+                mut is_local := scope_contains(scope, name, ctx);
+                if is_local == 0 {
+                    resolved_name = env_resolve_namespaced_ident(env, name, ctx);
+                }
                 left_type = scope_lookup(scope, resolved_name, ctx);
                 if left_type.tag == 3 {
                     mut msg := std.Concat("Semantic Error: Undefined variable '", name);
