@@ -872,6 +872,12 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
         mut res_type: ast.Type[ctx];
         if t.tag == 8 { // Struct
             mut name := t.Struct.struct_name;
+            
+            mut map_keys := map.Keys(ctx);
+            mut joined_keys := ast.ast_join_strings(map_keys, ', ', ctx);
+            mut log_msg := std.Format('substitute_generics Struct: name=%s, map_keys=[%s]', name, joined_keys);
+            typechecker_log_trace('👁', log_msg, ctx);
+            
             mut lookup := map.Get(name);
             if lookup.Ok {
                 res_type = lookup.Val;
