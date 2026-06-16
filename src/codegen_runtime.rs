@@ -1021,20 +1021,32 @@ Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char fi
 pub const COLLECTIONS_RUNTIME: &str = r#"// ====================================================
 // GUST NATIVE COLLECTIONS RUNTIME (VECTOR & HASHMAP)
 // ====================================================
+static inline int os_is_key_corrupted(Slice_unsigned_char s) {
+    if (s.len < 0 || s.len > 1000 || s.data == NULL) {
+        return 1;
+    }
+    for (int i = 0; i < s.len; i++) {
+        unsigned char c = s.data[i];
+        if (c == 0xA5) return 1;
+        if (c < 32 && c != '\n' && c != '\t' && c != '\r' && c != '\0') return 1;
+        if (c > 126) return 1;
+    }
+    return 0;
+}
+
 static inline uint32_t os_hash_key(void* key_ptr, int is_str_key) {
     if (is_str_key) {
         Slice_unsigned_char s = *(Slice_unsigned_char*)key_ptr;
-        if (s.len < 0 || s.len > 10000 || s.data == NULL) {
-            fprintf(stderr, "👁️ os_hash_key: SUSPICIOUS STRING KEY! len=%d, data=%p\n", s.len, (void*)s.data);
-            fflush(stderr);
-        } else {
-            fprintf(stderr, "👁️ os_hash_key: len=%d, data=%p, val=\"", s.len, (void*)s.data);
-            for (int i = 0; i < s.len && i < 20; i++) {
-                unsigned char c = s.data[i];
-                if (c >= 32 && c <= 126) fputc(c, stderr);
-                else fprintf(stderr, "\\x%02X", c);
+        if (os_is_key_corrupted(s)) {
+            fprintf(stderr, "⚠️ os_hash_key: CORRUPTED STRING KEY! len=%d, data=%p, val=\"", s.len, (void*)s.data);
+            if (s.data != NULL && s.len >= 0) {
+                for (int i = 0; i < s.len && i < 100; i++) {
+                    unsigned char c = s.data[i];
+                    if (c >= 32 && c <= 126) fputc(c, stderr);
+                    else fprintf(stderr, "\\x%02X", c);
+                }
+                if (s.len > 100) fprintf(stderr, "...");
             }
-            if (s.len > 20) fprintf(stderr, "...");
             fprintf(stderr, "\"\n");
             fflush(stderr);
         }
@@ -1052,24 +1064,25 @@ static inline int os_key_eq(void* k1_ptr, void* k2_ptr, int is_str_key) {
     if (is_str_key) {
         Slice_unsigned_char s1 = *(Slice_unsigned_char*)k1_ptr;
         Slice_unsigned_char s2 = *(Slice_unsigned_char*)k2_ptr;
-        if (s1.len < 0 || s1.len > 10000 || s1.data == NULL || s2.len < 0 || s2.len > 10000 || s2.data == NULL) {
-            fprintf(stderr, "👁️ os_key_eq: SUSPICIOUS STRING KEYS! s1.len=%d, s1.data=%p, s2.len=%d, s2.data=%p\n", s1.len, (void*)s1.data, s2.len, (void*)s2.data);
-            fflush(stderr);
-        } else {
-            fprintf(stderr, "👁️ os_key_eq: comparing: s1.len=%d, s2.len=%d, s1=\"", s1.len, s2.len);
-            for (int i = 0; i < s1.len && i < 20; i++) {
-                unsigned char c = s1.data[i];
-                if (c >= 32 && c <= 126) fputc(c, stderr);
-                else fprintf(stderr, "\\x%02X", c);
+        if (os_is_key_corrupted(s1) || os_is_key_corrupted(s2)) {
+            fprintf(stderr, "⚠️ os_key_eq: CORRUPTED KEY DETECTED! s1_len=%d, s2_len=%d, s1=\"", s1.len, s2.len);
+            if (s1.data != NULL && s1.len >= 0) {
+                for (int i = 0; i < s1.len && i < 100; i++) {
+                    unsigned char c = s1.data[i];
+                    if (c >= 32 && c <= 126) fputc(c, stderr);
+                    else fprintf(stderr, "\\x%02X", c);
+                }
+                if (s1.len > 100) fprintf(stderr, "...");
             }
-            if (s1.len > 20) fprintf(stderr, "...");
             fprintf(stderr, "\", s2=\"");
-            for (int i = 0; i < s2.len && i < 20; i++) {
-                unsigned char c = s2.data[i];
-                if (c >= 32 && c <= 126) fputc(c, stderr);
-                else fprintf(stderr, "\\x%02X", c);
+            if (s2.data != NULL && s2.len >= 0) {
+                for (int i = 0; i < s2.len && i < 100; i++) {
+                    unsigned char c = s2.data[i];
+                    if (c >= 32 && c <= 126) fputc(c, stderr);
+                    else fprintf(stderr, "\\x%02X", c);
+                }
+                if (s2.len > 100) fprintf(stderr, "...");
             }
-            if (s2.len > 20) fprintf(stderr, "...");
             fprintf(stderr, "\"\n");
             fflush(stderr);
         }
