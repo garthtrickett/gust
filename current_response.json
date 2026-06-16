@@ -1,0 +1,9 @@
+{
+  "summary": "chore: add Rust build artifacts, transpiled C files, and compiled native binaries to .gitignore",
+  "files": [
+    {
+      "file_path": ".gitignore",
+      "code_diff": "<<<<<<< SEARCH\n=======\n# Rust build artifacts\n/target/\n/temp_gust_e2e_dir/\n/test_e2e_file_io_evaluation_output.txt\n\n# Transpiled C files\n/gust_output.c\n/gust_unsafe.c\n/gust_v2.c\n/bootstrapped_compiler.c\n/bootstrapped_compiler_v3.c\n/type_dump_failed.c\n\n# Compiled native binaries\n/gust_program\n/gust_unsafe_program\n/gust_v2\n/gust_v3\n\n# Aggregator output\n/a.txt\n\n/to.log\n>>>>>>> REPLACE"
+    }
+  ]
+}

@@ -15,3 +15,26 @@
 /a.txt
 
 /to.log
+# Rust build artifacts
+/target/
+/temp_gust_e2e_dir/
+/test_e2e_file_io_evaluation_output.txt
+
+# Transpiled C files
+/gust_output.c
+/gust_unsafe.c
+/gust_v2.c
+/bootstrapped_compiler.c
+/bootstrapped_compiler_v3.c
+/type_dump_failed.c
+
+# Compiled native binaries
+/gust_program
+/gust_unsafe_program
+/gust_v2
+/gust_v3
+
+# Aggregator output
+/a.txt
+
+/to.log
