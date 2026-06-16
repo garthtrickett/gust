@@ -2461,34 +2461,41 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
         if expected.tag == 9 { // RawPointer
             return types_match(ctx[expected.RawPointer.inner], ctx[actual.RawPointer.inner], ctx);
         }
-        if expected.tag == 7 { // Index
-            mut name1 := expected.Index.struct_name;
-            mut name2 := actual.Index.struct_name;
-            if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
-                return 1;
-            }
-            return 0;
-        }
 
-        if expected.tag == 8 { // Struct
-                mut name1 := expected.Struct.struct_name;
-                mut name2 := actual.Struct.struct_name;
+if expected.tag == 7 { // Index
+                mut name1 := expected.Index.struct_name;
+                mut name2 := actual.Index.struct_name;
+                name1 = strip_brand_prefix(name1, ctx);
+                name2 = strip_brand_prefix(name2, ctx);
                 if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
                     return 1;
                 }
+                return 0;
+            }
 
-                if len(name1) >= 4 {
-                    if std.str_eq(std.str_slice(name1, 0, 4), "std_") {
-                        name1 = std.str_slice(name1, 4, len(name1));
+            if expected.tag == 8 { // Struct
+                    mut name1 := expected.Struct.struct_name;
+                    mut name2 := actual.Struct.struct_name;
+                    if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
+                        return 1;
                     }
-                }
-                if len(name2) >= 4 {
-                    if std.str_eq(std.str_slice(name2, 0, 4), "std_") {
-                        name2 = std.str_slice(name2, 4, len(name2));
-                    }
-                }
 
-                mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
+                    if len(name1) >= 4 {
+                        if std.str_eq(std.str_slice(name1, 0, 4), "std_") {
+                            name1 = std.str_slice(name1, 4, len(name1));
+                        }
+                    }
+                    if len(name2) >= 4 {
+                        if std.str_eq(std.str_slice(name2, 0, 4), "std_") {
+                            name2 = std.str_slice(name2, 4, len(name2));
+                        }
+                    }
+
+                    name1 = strip_brand_prefix(name1, ctx);
+                    name2 = strip_brand_prefix(name2, ctx);
+
+                    mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
+        
                 prefixes.Push("Vector_");
                 prefixes.Push("HashMap_");
                 prefixes.Push("Pool_");
