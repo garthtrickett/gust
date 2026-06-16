@@ -1,13 +1,9 @@
 {
-  "summary": "fix: initialize thread scratchpad in typechecker types test entry to prevent scratchpad exhaustion",
+  "summary": "fix: fully typecheck second argument of std.Clone in visitor to preserve original branded types",
   "files": [
     {
-      "file_path": "compiler/typechecker_types_test_entry.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut env := typechecker.env_new(ctx);\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    os.SetThreadScratch(ctx);\n\n    mut env := typechecker.env_new(ctx);\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/e2e_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    // Assert that the output contains the dispatch and verification traces in sequence, and the error trace!\n    if !stdout_str.contains(\"📥 check_statement: start for stmt tag 3\") {\n        panic!(\"DEBUG STDOUT:\\n{}\", stdout_str);\n    }\n    assert!(stdout_str.contains(\"📥 check_statement: start for stmt tag 3\")); // FuncDecl\n    assert!(stdout_str.contains(\"✅ check_statement: successfully verified stmt tag 3\"));\n    assert!(stdout_str.contains(\"❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str\") || stdout_str.contains(\"❌ TypeError at line 1:\"));\n}\n=======\n    // Assert that the output contains the dispatch and verification traces in sequence, and the error trace!\n    assert!(stdout_str.contains(\"📥 check_statement: start for stmt tag 3\")); // FuncDecl\n    assert!(stdout_str.contains(\"✅ check_statement: successfully verified stmt tag 3\"));\n    assert!(stdout_str.contains(\"❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str\") || stdout_str.contains(\"❌ TypeError at line 1:\"));\n}\n>>>>>>> REPLACE"
+      "file_path": "src/typechecker/visitor.rs",
+      "code_diff": "<<<<<<< SEARCH\n                    let src_type = self.get_expr_type(&arguments[1]).unwrap_or(Type::Void);\n                    let dest_brand = expression_to_string(&arguments[0]);\n                    let src_brand = self\n                        .get_type_brand(&src_type)\n                        .unwrap_or_else(|| \"Any\".to_string());\n\n                    let mut brand_map = HashMap::new();\n                    brand_map.insert(src_brand, dest_brand);\n\n                    let cloned_type = self.substitute_brand_names(&src_type, &brand_map);\n                    let cloned_type = self.resolve_type(&cloned_type)?;\n                    return Ok(cloned_type);\n                }\n=======\n                    let src_type = self.check_expression(&arguments[1])?;\n                    let dest_brand = expression_to_string(&arguments[0]);\n                    let src_brand = self\n                        .get_type_brand(&src_type)\n                        .unwrap_or_else(|| \"Any\".to_string());\n\n                    let mut brand_map = HashMap::new();\n                    brand_map.insert(src_brand, dest_brand);\n\n                    let cloned_type = self.substitute_brand_names(&src_type, &brand_map);\n                    let cloned_type = self.resolve_type(&cloned_type)?;\n                    return Ok(cloned_type);\n                }\n>>>>>>> REPLACE"
     }
   ]
 }

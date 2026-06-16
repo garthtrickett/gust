@@ -3077,6 +3077,7 @@ impl TypeChecker {
                         });
                     }
                     let src_type = self.check_expression(&arguments[1])?;
+                    let src_type = self.check_expression(&arguments[1])?;
                     let dest_brand = expression_to_string(&arguments[0]);
                     let src_brand = self
                         .get_type_brand(&src_type)
