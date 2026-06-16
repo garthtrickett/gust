@@ -7272,3 +7272,33 @@ fn test_adt_payload_struct_and_union_emission() {
     assert!(idx_active < idx_parent, "Status_Active must be defined before Status");
     assert!(idx_failed < idx_parent, "Status_Failed must be defined before Status");
 }
+
+#[test]
+fn test_adt_variant_constructor_and_initializer_logic() {
+    let source = "\n        type Status enum {\n            Pending,\n            Active { since: int },\n            Failed\n        }\n        func main() {\n            mut s: Status;\n            s.tag = 1;\n            s.Active.since = 0;\n        }\n    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    // Verify correct local variables initialization
+    assert!(c_output.contains("Status s = ((Status){ .tag = 0 });"), "Missing status initialization");
+    // Verify assignments are generated correctly
+    assert!(c_output.contains("s.tag = 1;"), "Missing tag assignment");
+    assert!(c_output.contains("s.Active.since = 0;"), "Missing union field assignment");
+}
