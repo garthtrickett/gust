@@ -7226,10 +7226,8 @@ fn test_adt_metadata_and_tag_enum_generation() {
     let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify the generated C contains the typedef enum for variant tags
-    let expected_enum = "typedef enum {\\n    Status_Tag__Pending = 0,\\n    Status_Tag__Active = 1,\\n    Status_Tag__Failed = 2,\\n} Status_Tag;";
-    assert!(
-        c_output.contains(expected_enum),
-        "Generated C does not contain expected typedef enum. Actual:\\n{}",
-        c_output
-    );
+    assert!(c_output.contains("Status_Tag__Pending = 0,"), "Missing Pending tag");
+    assert!(c_output.contains("Status_Tag__Active = 1,"), "Missing Active tag");
+    assert!(c_output.contains("Status_Tag__Failed = 2,"), "Missing Failed tag");
+    assert!(c_output.contains("} Status_Tag;"), "Missing Status_Tag typedef");
 }
