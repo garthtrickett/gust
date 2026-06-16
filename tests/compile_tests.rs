@@ -7889,7 +7889,27 @@ fn test_e2e_self_hosted_codegen_tracing() {
         .output()
         .expect("GCC command failed");
 
-    assert!(compile_output.status.success());
+    if !compile_output.status.success() {
+        eprintln!("====================================================");
+        eprintln!("❌ C COMPILATION FAILED IN TRACING TEST!");
+        eprintln!("====================================================");
+        eprintln!("--- GENERATED C CODE ---");
+        for (idx, line) in c_output.lines().enumerate() {
+            eprintln!("{:4} | {}", idx + 1, line);
+        }
+        eprintln!("------------------------");
+        eprintln!(
+            "STDERR:\n{}",
+            String::from_utf8_lossy(&compile_output.stderr)
+        );
+        eprintln!("====================================================");
+    }
+
+    assert!(
+        compile_output.status.success(),
+        "Compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
 
     let temp_gst_path = temp_dir.join("temp_tracing_test.gst");
     let temp_gst_content = "
