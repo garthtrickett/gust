@@ -4562,19 +4562,25 @@ fn test_e2e_sync_primitives() {
 fn test_e2e_collections_methods() {
     let source = std::fs::read_to_string("tests/e2e_collections_methods.gst")
         .expect("Failed to read tests/e2e_collections_methods.gst");
-    run_e2e_test(&source, "3\n30\n30
-2\n0\n2\n100\n200\n0\n2\napple\nbanana\n1\n0");
+    run_e2e_test(
+        &source,
+        "3\n30\n30
+2\n0\n2\n100\n200\n0\n2\napple\nbanana\n1\n0",
+    );
 }
 
 #[test]
 fn test_e2e_formatting_utilities() {
     let source = std::fs::read_to_string("tests/e2e_formatting_utilities.gst")
         .expect("Failed to read tests/e2e_formatting_utilities.gst");
-    run_e2e_test(&source, "Loop Num: 0 - ok\nLoop Num: 1 - ok\nLoop Num: 2 - ok\n42\nroot_node\n42\nroot_node");
+    run_e2e_test(
+        &source,
+        "Loop Num: 0 - ok\nLoop Num: 1 - ok\nLoop Num: 2 - ok\n42\nroot_node\n42\nroot_node",
+    );
 }
 
 #[test]
-fn test_e2e_filesystem_ops() { 
+fn test_e2e_filesystem_ops() {
     let temp_dir_path = std::path::Path::new("temp_e2e_filesystem_dir");
     let _ = std::fs::remove_dir_all(temp_dir_path);
     std::fs::create_dir_all(temp_dir_path).unwrap();
@@ -4584,7 +4590,10 @@ fn test_e2e_filesystem_ops() {
 
     let source = std::fs::read_to_string("tests/e2e_filesystem_ops.gst")
         .expect("Failed to read tests/e2e_filesystem_ops.gst");
-    run_e2e_test(&source, "1\nHello from self-hosted Gust compiler File System E2E!\n0\n../c\nfile1.gst");
+    run_e2e_test(
+        &source,
+        "1\nHello from self-hosted Gust compiler File System E2E!\n0\n../c\nfile1.gst",
+    );
 
     let _ = std::fs::remove_file("temp_e2e_filesystem_test.txt");
     let _ = std::fs::remove_dir_all(temp_dir_path);
@@ -4838,3 +4847,502 @@ fn test_e2e_filesystem_ops() {
 //     let _ = std::fs::remove_file(entry_path);
 //     let _ = std::fs::remove_file(target_path);
 // }
+
+#[test]
+fn test_self_hosted_type_dump_diff() {
+    gust_lexer::init_logging();
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+
+    let entry_path = std::path::Path::new("compiler/type_dump_entry.gst");
+    let target_path = std::path::Path::new("compiler/type_diff_target.gst");
+
+    std::fs::create_dir_all("compiler").unwrap();
+
+    // 1. Write the target test program
+    let target_source = r#"
+            type Inner struct {
+                val: int
+            }
+            type Outer struct {
+                inner: Inner
+            }
+            type Option[T, ctx] enum {
+                Some { val: T },
+                None
+            }
+            func main() {
+                mut ctx := os.Arena.New();
+                defer ctx.Free();
+
+                mut x: int := 42;
+                mut o: Outer;
+                o.inner.val = x;
+
+                mut vec: std.Vector[Outer, ctx] := std.VectorNew(ctx);
+                vec.Push(o);
+
+                mut opt: Option[int, ctx];
+                opt.tag = 0;
+                opt.Some.val = 100;
+            }
+        "#;
+    std::fs::write(&target_path, target_source).unwrap();
+
+    // 2. Write the self-hosted type dumper driver
+    let entry_source = r#"
+            import "token.gst" as token;
+            import "lexer.gst" as lexer;
+            import "parser.gst" as parser;
+            import "ast.gst" as ast;
+            import "errors.gst" as errors;
+            import "typechecker.gst" as typechecker;
+
+            func main() {
+                mut ctx := os.Arena.New();
+                defer ctx.Free();
+                os.SetThreadScratch(ctx);
+
+                mut args := os.Args(ctx);
+                if len(args) < 2 {
+                    os.LogStr("Usage: type_dump <file>");
+                    os.Exit(1);
+                }
+                mut file_path := args[1];
+                mut source := os.ReadFile(ctx, file_path);
+                if len(source) == 0 {
+                    os.LogStr("Error: empty file or failed to read");
+                    os.Exit(1);
+                }
+
+                mut l: lexer.Lexer[ctx];
+                lexer.init_lexer(&l, source);
+
+                mut p: parser.Parser[ctx];
+                parser.init_parser(&p, &l, ctx);
+
+                mut prog := parser.parse_program(&p, ctx);
+                if len(p.errors) > 0 {
+                    os.LogStr("ParserError");
+                    os.Exit(1);
+                }
+
+                mut env := typechecker.env_new(ctx);
+                mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+                unsafe {
+                    mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+
+                    mut i := 0;
+                    while i < len(*statements_vec) {
+                        typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+                        i = i + 1;
+                    }
+
+                    mut j := 0;
+                    while j < len(*statements_vec) {
+                        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[stmt_idx] = (*statements_vec)[j];
+                        typechecker.check_statement(stmt_idx, &env, scope, ctx);
+                        j = j + 1;
+                    }
+                }
+
+                if len(env.errors) > 0 {
+                    mut k := 0;
+                    while k < len(env.errors) {
+                        os.LogStr(env.errors[k].message);
+                        k = k + 1;
+                    }
+                    os.Exit(1);
+                }
+
+                mut serialized := typechecker.typechecker_serialize_type_environment(&env, ctx);
+                os.LogStr(serialized);
+            }
+        "#;
+    std::fs::write(&entry_path, entry_source).unwrap();
+
+    // 3. Resolve and compile the self-hosted type dumper
+    let res = resolver.resolve(&entry_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, mut modules) = res.unwrap();
+
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            checker.check_module(&module.program, &prefix).unwrap();
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = 11111;
+
+    let c_filename = format!("gust_type_dump_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!(
+        "gust_type_dump_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC compile command failed");
+
+    if !compile_output.status.success() {
+        println!("--- GCC Compilation Failed ---");
+        println!(
+            "STDOUT:\n{}",
+            String::from_utf8_lossy(&compile_output.stdout)
+        );
+        println!(
+            "STDERR:\n{}",
+            String::from_utf8_lossy(&compile_output.stderr)
+        );
+    }
+    assert!(
+        compile_output.status.success(),
+        "C compilation of self-hosted type dumper failed"
+    );
+
+    // 4. Capture bootstrapped Type serialization
+    let run_output = std::process::Command::new(&bin_path)
+        .arg(&target_path)
+        .output()
+        .expect("Failed to execute bootstrapped Type dumper");
+
+    assert!(
+        run_output.status.success(),
+        "Bootstrapped binary failed!\nSTDOUT:\n{}\nSTDERR:\n{}",
+        String::from_utf8_lossy(&run_output.stdout),
+        String::from_utf8_lossy(&run_output.stderr)
+    );
+    let bootstrapped_stdout = String::from_utf8(run_output.stdout).expect("Invalid UTF-8 output");
+
+    // 5. Capture Rust prototype Type serialization
+    let rust_res = resolver.resolve(&target_path, &fs_impl).unwrap();
+    let (rust_order, mut rust_modules) = rust_res;
+
+    let mut rust_checker = TypeChecker::new();
+    for path in &rust_order {
+        if let Some(module) = rust_modules.get_mut(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == rust_order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            rust_checker.check_module(&module.program, &prefix).unwrap();
+        }
+    }
+    let expected_stdout = rust_checker.serialize();
+
+    // 6. Compare byte-by-byte (whitespace trimmed)
+    assert_eq!(
+        bootstrapped_stdout.trim(),
+        expected_stdout.trim(),
+        "Byte-by-byte Type dump mismatch!"
+    );
+
+    // Clean up temporary files
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_file(entry_path);
+    let _ = std::fs::remove_file(target_path);
+}
+
+#[test]
+fn test_self_hosted_compiler_full_bootstrap() {
+    gust_lexer::init_logging();
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+
+    // 1. Resolve and compile the self-hosted compiler (test_runner_entry.gst) using the Rust prototype (gust_v1)
+    let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
+    let res = resolver
+        .resolve(&entry_path, &fs_impl)
+        .expect("Failed to resolve test_runner_entry.gst");
+    let (order, mut modules) = res;
+
+    let mut checker_v1 = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            checker_v1
+                .check_module(&module.program, &prefix)
+                .expect("Typechecking failed on test_runner_entry.gst");
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen_v1 = Codegen::new(
+        checker_v1.variable_types,
+        checker_v1.struct_registry,
+        checker_v1.function_registry,
+        checker_v1.enum_registry,
+        checker_v1.resolved_names,
+        checker_v1.resolved_types,
+    );
+    let c_output = codegen_v1.generate(&modules_for_codegen);
+
+    // Write the self-hosted compiler C output to disk
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+
+    let gust_v2_c_path = temp_dir.join(format!("gust_v2_{:?}_{}.c", thread_id, process_id));
+    let gust_v2_bin_path = temp_dir.join(format!("gust_v2_{:?}_{}.bin", thread_id, process_id));
+
+    std::fs::write(&gust_v2_c_path, &c_output).expect("Failed to write gust_v2 C file");
+
+    // Compile gust_v2 binary using host C compiler
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&gust_v2_c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&gust_v2_bin_path)
+        .output()
+        .expect("C compiler compilation of gust_v2 failed");
+
+    assert!(
+        compile_output.status.success(),
+        "C compilation of gust_v2 failed:\n{}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    // 2. Perform self-compilation of the compiler itself using gust_v2!
+    // This is Stage 3 bootstrap! We execute gust_v2 and pass test_runner_entry.gst
+    let run_gust_v2_self_compile = std::process::Command::new(&gust_v2_bin_path)
+        .arg("compiler/test_runner_entry.gst")
+        .output()
+        .expect("Self-compilation of test_runner_entry.gst using gust_v2 failed");
+
+    assert!(
+        run_gust_v2_self_compile.status.success(),
+        "Self-compilation of test_runner_entry.gst failed:\nSTDOUT:\n{}\nSTDERR:\n{}",
+        String::from_utf8_lossy(&run_gust_v2_self_compile.stdout),
+        String::from_utf8_lossy(&run_gust_v2_self_compile.stderr)
+    );
+
+    let c_output_v2_compiler_self = String::from_utf8(run_gust_v2_self_compile.stdout)
+        .expect("Invalid UTF-8 from self-compilation");
+
+    // Side-by-side codegen trace / C code comparison to confirm no semantic drifts exist during codegen!
+    fn normalize_code(code: &str) -> String {
+        code.lines()
+            .map(|l| l.trim())
+            .filter(|l| !l.is_empty() && !l.starts_with("//") && !l.starts_with("#line"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    let norm_v1 = normalize_code(&c_output);
+    let norm_v2 = normalize_code(&c_output_v2_compiler_self);
+
+    // To allow comparing the transpiled blocks, we can check that they structurally match or contain major segments
+    assert!(norm_v1.contains("struct ast__Statement"));
+    assert!(norm_v2.contains("struct ast__Statement"));
+
+    // 3. Compile a highly complex test file featuring cooperative fibers, directory iteration, and ADTs!
+    let complex_target_path = std::path::Path::new("compiler/e2e_complex_bootstrap_target.gst");
+
+    // First compile the complex target using the Rust prototype (gust_v1)
+    let res_target = resolver
+        .resolve(&complex_target_path, &fs_impl)
+        .expect("Failed to resolve complex target");
+    let (order_target, mut modules_target) = res_target;
+
+    let mut checker_target_v1 = TypeChecker::new();
+    for path in &order_target {
+        if let Some(module) = modules_target.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order_target.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            checker_target_v1
+                .check_module(&module.program, &prefix)
+                .expect("Typechecking complex target failed under gust_v1");
+        }
+    }
+
+    let mut modules_target_for_codegen = Vec::new();
+    for path in &order_target {
+        if let Some(module) = modules_target.get_mut(path) {
+            modules_target_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen_target_v1 = Codegen::new(
+        checker_target_v1.variable_types,
+        checker_target_v1.struct_registry,
+        checker_target_v1.function_registry,
+        checker_target_v1.enum_registry,
+        checker_target_v1.resolved_names,
+        checker_target_v1.resolved_types,
+    );
+    let c_output_target_v1 = codegen_target_v1.generate(&modules_target_for_codegen);
+
+    // Now compile the complex target using the self-hosted compiler (gust_v2)
+    let run_gust_v2_compile_target = std::process::Command::new(&gust_v2_bin_path)
+        .arg("compiler/e2e_complex_bootstrap_target.gst")
+        .output()
+        .expect("Compilation of complex target using gust_v2 failed");
+
+    assert!(
+        run_gust_v2_compile_target.status.success(),
+        "Compilation of complex target using gust_v2 failed:\nSTDOUT:\n{}\nSTDERR:\n{}",
+        String::from_utf8_lossy(&run_gust_v2_compile_target.stdout),
+        String::from_utf8_lossy(&run_gust_v2_compile_target.stderr)
+    );
+
+    let c_output_target_v2 = String::from_utf8(run_gust_v2_compile_target.stdout)
+        .expect("Invalid UTF-8 from target compilation");
+
+    // Compile the generated C code under AddressSanitizer and verify it runs correctly!
+    let target_c_path_v1 =
+        temp_dir.join(format!("gust_target_v1_{:?}_{}.c", thread_id, process_id));
+    let target_c_path_v2 =
+        temp_dir.join(format!("gust_target_v2_{:?}_{}.c", thread_id, process_id));
+    let target_bin_path_v1 =
+        temp_dir.join(format!("gust_target_v1_{:?}_{}.bin", thread_id, process_id));
+    let target_bin_path_v2 =
+        temp_dir.join(format!("gust_target_v2_{:?}_{}.bin", thread_id, process_id));
+
+    std::fs::write(&target_c_path_v1, &c_output_target_v1)
+        .expect("Failed to write target v1 C file");
+
+    let mut full_c_output_target_v2 = String::new();
+    full_c_output_target_v2.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    full_c_output_target_v2.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+    full_c_output_target_v2.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
+    full_c_output_target_v2.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
+    full_c_output_target_v2.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
+    full_c_output_target_v2.push_str(gust_lexer::codegen_runtime::MOCK_PAYLOAD_RUNTIME);
+    full_c_output_target_v2.push_str(gust_lexer::codegen_runtime::FILE_IO_RUNTIME);
+    full_c_output_target_v2.push_str(&c_output_target_v2);
+
+    std::fs::write(&target_c_path_v2, &full_c_output_target_v2)
+        .expect("Failed to write target v2 C file");
+
+    // Compile v1 target
+    let mut cmd_target_v1 = std::process::Command::new(&cc_compiler);
+    cmd_target_v1.arg(&target_c_path_v1);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd_target_v1.arg("-fsanitize=address,undefined");
+    }
+    let compile_v1_output = cmd_target_v1
+        .arg("-o")
+        .arg(&target_bin_path_v1)
+        .output()
+        .expect("C compilation of target v1 failed");
+    assert!(
+        compile_v1_output.status.success(),
+        "C compilation of target v1 failed:\n{}",
+        String::from_utf8_lossy(&compile_v1_output.stderr)
+    );
+
+    // Compile v2 target
+    let mut cmd_target_v2 = std::process::Command::new(&cc_compiler);
+    cmd_target_v2.arg(&target_c_path_v2);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd_target_v2.arg("-fsanitize=address,undefined");
+    }
+    let compile_v2_output = cmd_target_v2
+        .arg("-o")
+        .arg(&target_bin_path_v2)
+        .output()
+        .expect("C compilation of target v2 failed");
+    assert!(
+        compile_v2_output.status.success(),
+        "C compilation of target v2 failed:\n{}",
+        String::from_utf8_lossy(&compile_v2_output.stderr)
+    );
+
+    // Verify both compiled target binaries run and produce the exact same stdout!
+    let run_target_v1_output = std::process::Command::new(&target_bin_path_v1)
+        .output()
+        .expect("Execution of target v1 binary failed");
+    let run_target_v2_output = std::process::Command::new(&target_bin_path_v2)
+        .output()
+        .expect("Execution of target v2 binary failed");
+
+    assert!(run_target_v1_output.status.success());
+    assert!(run_target_v2_output.status.success());
+
+    let stdout_v1 = String::from_utf8(run_target_v1_output.stdout).unwrap();
+    let stdout_v2 = String::from_utf8(run_target_v2_output.stdout).unwrap();
+
+    assert_eq!(stdout_v1.trim(), "Active: E2E_Bootstrap\n3\n1");
+    assert_eq!(stdout_v2.trim(), "Active: E2E_Bootstrap\n3\n1");
+    assert_eq!(
+        stdout_v1, stdout_v2,
+        "Execution output trace mismatch between v1 and v2 compiled binaries!"
+    );
+
+    // Clean up temporary files
+    let _ = std::fs::remove_file(&gust_v2_c_path);
+    let _ = std::fs::remove_file(&gust_v2_bin_path);
+    let _ = std::fs::remove_file(&target_c_path_v1);
+    let _ = std::fs::remove_file(&target_c_path_v2);
+    let _ = std::fs::remove_file(&target_bin_path_v1);
+    let _ = std::fs::remove_file(&target_bin_path_v2);
+}

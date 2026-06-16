@@ -2373,7 +2373,9 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
             return types_match(ctx[expected.RawPointer.inner], ctx[actual.RawPointer.inner], ctx);
         }
         if expected.tag == 7 { // Index
-            if std.str_eq(expected.Index.struct_name, actual.Index.struct_name) {
+            mut name1 := expected.Index.struct_name;
+            mut name2 := actual.Index.struct_name;
+            if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
                 return 1;
             }
             return 0;
@@ -2382,7 +2384,7 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
         if expected.tag == 8 { // Struct
                 mut name1 := expected.Struct.struct_name;
                 mut name2 := actual.Struct.struct_name;
-                if std.str_eq(name1, name2) {
+                if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
                     return 1;
                 }
 
