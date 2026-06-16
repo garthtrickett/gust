@@ -2009,14 +2009,17 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                         }
                     }
                     
+                    typechecker_log_trace('🔍', 'env_resolve_type: determined has_template', ctx);
                     if has_template == 1 {
                         mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
                         args.Push(make_type_struct(brand_name, "", ctx));
                         
                         mut mono_res := monomorphize(env, namespaced_name, args, ctx);
                         if mono_res.tag == 0 { // Ok
+                            typechecker_log_trace('🔍', 'env_resolve_type: monomorphize returned Ok', ctx);
                             return mono_res.Ok.val;
                         } else {
+                            typechecker_log_trace('🔍', 'env_resolve_type: monomorphize returned Err', ctx);
                             (*env).errors.Push(ctx[mono_res.Err.error]);
                         }
                     }
@@ -2058,9 +2061,10 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                             }
                         }
                     } 
-                }
+                } 
             }
         }
+        typechecker_log_trace('🔍', 'env_resolve_type: returning ctx[res_idx]', ctx);
         return ctx[res_idx];
     }
 }
@@ -2788,8 +2792,15 @@ if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
             if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
                 mut resolved_explicit := env_resolve_type(env, ctx[var_type_idx], ctx);
                 
+                typechecker_log_trace('🔍', 'VarDecl: before serializing resolved_explicit', ctx);
                 mut t_explicit := ast.serialize_type(resolved_explicit, ctx);
+                typechecker_log_trace('🔍', 'VarDecl: after serializing resolved_explicit', ctx);
+                
+                typechecker_log_trace('🔍', 'VarDecl: before serializing val_type', ctx);
                 mut t_val := ast.serialize_type(val_type, ctx);
+                typechecker_log_trace('🔍', 'VarDecl: after serializing val_type', ctx);
+                
+                typechecker_log_trace('🔍', 'VarDecl: before std.Format', ctx);
                 mut log_msg := std.Format('VarDecl: before types_match for variable %s (explicit=%s, value=%s)', name, t_explicit, t_val);
                 typechecker_log_trace('🔍', log_msg, ctx);
                 
