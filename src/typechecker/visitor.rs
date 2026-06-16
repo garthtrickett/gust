@@ -1450,19 +1450,17 @@ impl TypeChecker {
                     });
                 }
 
-                // Restore parent scope after checks inside else_body
                 self.symbol_table = parent_scope;
                 self.variable_origins = parent_origins;
                 self.moved_vars = parent_moved;
 
-                // 4. Bind the <identifier> to the active symbol table using the type of the .Val field
                 self.symbol_table.insert(name.clone(), payload_type.clone());
                 self.variable_types
                     .insert(name.clone(), payload_type.clone());
                 self.resolved_types.insert(*span, payload_type.clone());
 
-                // 5. Track memory origins
                 let origins = self.get_expression_origins(value);
+
                 let is_cast_result = if let Type::Struct(ref struct_name, _) = resolved_val_type {
                     struct_name.starts_with("CastResult_")
                 } else {
