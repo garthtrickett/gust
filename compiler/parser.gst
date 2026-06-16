@@ -633,7 +633,7 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
             return left;
         }
 
-        while precedence < cur_token_precedence(p) {
+        while precedence < peek_token_precedence(p) {
             if cur_token_is(p, 10) { // Semicolon = 10
                 return left;
             }
