@@ -399,8 +399,76 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             return std.Clone(ctx, res);
         }
         if tag == 8 { // IndexAccess
-            mut alloc_str := codegen_generate_expression(ctx[expr_idx].IndexAccess.allocator, env, ctx);
-            mut index_str := codegen_generate_expression(ctx[expr_idx].IndexAccess.index, env, ctx);
+            mut alloc_idx := ctx[expr_idx].IndexAccess.allocator;
+            mut index_idx := ctx[expr_idx].IndexAccess.index;
+
+            mut alloc_t := codegen_get_expression_type(alloc_idx, env, ctx);
+            mut idx_t := codegen_get_expression_type(index_idx, env, ctx);
+
+            mut is_arena := 0;
+            if alloc_t.tag == 4 { // Arena
+                is_arena = 1;
+            } else {
+                if alloc_t.tag == 9 { // RawPointer
+                    mut inner := ctx[alloc_t.RawPointer.inner];
+                    if inner.tag == 4 { // Arena
+                        is_arena = 1;
+                    }
+                }
+            }
+
+            mut alloc_str := codegen_generate_expression(alloc_idx, env, ctx);
+            mut index_str := codegen_generate_expression(index_idx, env, ctx);
+
+            if is_arena == 1 {
+                mut target_struct := "SessionNode";
+                if idx_t.tag == 7 { // Index
+                    target_struct = idx_t.Index.struct_name;
+                }
+
+                mut dummy_t: ast.Type[ctx];
+                if std.str_eq(target_struct, "int") {
+                    dummy_t.tag = 0;
+                } else {
+                    if std.str_eq(target_struct, "byte") {
+                        dummy_t.tag = 1;
+                    } else {
+                        if std.str_eq(target_struct, "bool") {
+                            dummy_t.tag = 2;
+                        } else {
+                            if std.str_eq(target_struct, "str") {
+                                dummy_t.tag = 5;
+                            } else {
+                                if std.str_eq(target_struct, "Any") {
+                                    dummy_t.tag = 8;
+                                    dummy_t.Struct.struct_name = "SessionNode";
+                                    dummy_t.Struct.brand = empty[Index[str, ctx]];
+                                } else {
+                                    dummy_t.tag = 8;
+                                    dummy_t.Struct.struct_name = target_struct;
+                                    dummy_t.Struct.brand = empty[Index[str, ctx]];
+                                }
+                            }
+                        } 
+                    }
+                }
+                mut c_target := codegen_get_c_type(dummy_t, env, ctx);
+
+                mut arrow_or_dot := ".";
+                if alloc_t.tag == 9 { // RawPointer
+                    arrow_or_dot = "->";
+                }
+
+                mut res := std.Concat("(*((", c_target);
+                res = std.Concat(res, "*)((char*)");
+                res = std.Concat(res, alloc_str);
+                res = std.Concat(res, arrow_or_dot);
+                res = std.Concat(res, "BaseAddress + ");
+                res = std.Concat(res, index_str);
+                res = std.Concat(res, ")))");
+                return std.Clone(ctx, res);
+            }
+
             mut res := std.Concat(alloc_str, "[");
             res = std.Concat(res, index_str);
             res = std.Concat(res, "]");
@@ -1239,23 +1307,41 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 i = i + 1;
             }
 
-            mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-            mut args_str := "";
-            mut j := 0;
-            while j < len(*args_vec) {
-                if j > 0 {
-                    args_str = std.Concat(args_str, ", ");
+        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_str := "";
+                mut j := 0;
+                while j < len(*args_vec) {
+                    if j > 0 {
+                        args_str = std.Concat(args_str, ", ");
+                    }
+                    mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[arg_idx] = (*args_vec)[j];
+                    mut arg_str := codegen_generate_expression(arg_idx, env, ctx);
+
+                    mut is_arena := 0;
+                    mut arg_expr := ctx[arg_idx];
+                    if arg_expr.tag == 0 { // Identifier
+                        mut var_name := arg_expr.Identifier.name;
+                        mut var_type_lookup := (*env).variable_types.Get(var_name);
+                        if var_type_lookup.Ok {
+                            mut t := var_type_lookup.Val;
+                            if t.tag == 4 { // Arena
+                                is_arena = 1;
+                            }
+                        }
+                    }
+                    if is_arena == 1 {
+                        arg_str = std.Concat("&", arg_str);
+                    }
+
+                    args_str = std.Concat(args_str, arg_str);
+                    j = j + 1;
                 }
-                mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg_idx] = (*args_vec)[j];
-                mut arg_str := codegen_generate_expression(arg_idx, env, ctx);
-                args_str = std.Concat(args_str, arg_str);
-                j = j + 1;
-            }
-            mut res := std.Concat(c_func, "(");
-            res = std.Concat(res, args_str);
-            res = std.Concat(res, ")");
-            return std.Clone(ctx, res);
+                mut res := std.Concat(c_func, "(");
+                res = std.Concat(res, args_str);
+                res = std.Concat(res, ")");
+                return std.Clone(ctx, res);
+
         }
         if tag == 13 { // Empty
             return codegen_gen_type_aware_initializer(ctx[ctx[expr_idx].Empty.target_type], env, ctx);
