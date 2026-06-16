@@ -64,6 +64,7 @@ void gust_fiber_entry_wrapper(void);
 #if defined(__x86_64__)
 #if defined(__APPLE__)
 __asm__(
+".text\n"
 ".global _gust_context_switch\n"
 "_gust_context_switch:\n"
 "    pushq %rbp\n"
@@ -84,6 +85,7 @@ __asm__(
 );
 #else
 __asm__(
+".text\n"
 ".global gust_context_switch\n"
 "gust_context_switch:\n"
 "    pushq %rbp\n"
@@ -107,6 +109,7 @@ __asm__(
 #elif defined(__aarch64__)
 #if defined(__APPLE__)
 __asm__(
+".text\n"
 ".global _gust_context_switch\n"
 "_gust_context_switch:\n"
 "    stp x29, x30, [sp, #-16]!\n"
@@ -128,6 +131,7 @@ __asm__(
 );
 #else
 __asm__(
+".text\n"
 ".global gust_context_switch\n"
 "gust_context_switch:\n"
 "    stp x29, x30, [sp, #-16]!\n"
@@ -161,6 +165,7 @@ void gust_fiber_switch(gust_Fiber* from, gust_Fiber* to);
 #if defined(__x86_64__)
 #if defined(__APPLE__)
 __asm__(
+".text\n"
 ".global _gust_fiber_entry_wrapper\n"
 "_gust_fiber_entry_wrapper:\n"
 "    movq %r13, %rdi\n"
@@ -170,6 +175,7 @@ __asm__(
 );
 #else
 __asm__(
+".text\n"
 ".global gust_fiber_entry_wrapper\n"
 "gust_fiber_entry_wrapper:\n"
 "    movq %r13, %rdi\n"
@@ -182,6 +188,7 @@ __asm__(
 #elif defined(__aarch64__)
 #if defined(__APPLE__)
 __asm__(
+".text\n"
 ".global _gust_fiber_entry_wrapper\n"
 "_gust_fiber_entry_wrapper:\n"
 "    mov x0, x20\n"
@@ -191,6 +198,7 @@ __asm__(
 );
 #else
 __asm__(
+".text\n"
 ".global gust_fiber_entry_wrapper\n"
 "gust_fiber_entry_wrapper:\n"
 "    mov x0, x20\n"
