@@ -15,6 +15,7 @@ pub struct Codegen {
     current_file_path: RefCell<Option<std::path::PathBuf>>,
     pub resolved_names: HashMap<crate::token::Span, String>,
     pub resolved_types: HashMap<crate::token::Span, Type>,
+    pub original_resolved_types: HashMap<crate::token::Span, Type>,
     clone_helpers_needed: RefCell<std::collections::HashSet<String>>,
 }
 
@@ -397,6 +398,7 @@ impl Codegen {
             erased_enum_registry.insert(erased_name, variants);
         }
 
+        let original_resolved_types = resolved_types.clone();
         let mut erased_resolved_types = HashMap::new();
         for (span, t) in resolved_types {
             erased_resolved_types.insert(span, erase_type_with_registry(&t, &struct_registry));
@@ -413,6 +415,7 @@ impl Codegen {
             current_file_path: RefCell::new(None),
             resolved_names,
             resolved_types: erased_resolved_types,
+            original_resolved_types,
             clone_helpers_needed: RefCell::new(std::collections::HashSet::new()),
         }
     }
@@ -468,6 +471,16 @@ impl Codegen {
             _ => "unknown".to_string(),
         };
         base.replace(".", "_")
+    }
+
+    fn get_original_expr_type(&self, expr: &Expression) -> Option<Type> {
+        if let Some(t) = self.original_resolved_types.get(&expr.span()) {
+            return Some(t.clone());
+        }
+        match expr {
+            Expression::Identifier(name, _) => self.original_symbol_table.get(name).cloned(),
+            _ => None,
+        }
     }
 
     fn get_expr_type(&self, expr: &Expression) -> Option<Type> {
@@ -2081,7 +2094,7 @@ impl Codegen {
                     let mut src_brand = "current_ctx".to_string();
                     let mut found = false;
 
-                    if let Some(Type::Index(s_name, Some(brand))) = self.get_expr_type(&arguments[1]) {
+                    if let Some(Type::Index(s_name, Some(brand))) = self.get_original_expr_type(&arguments[1]) {
                         struct_name = erase_struct_name_with_registry(
                             &s_name,
                             &Some(brand.clone()),
