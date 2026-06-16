@@ -221,6 +221,49 @@ func codegen_has_boolean_fields(t: ast.Type[ctx], env: &typechecker.TypeEnvironm
     }
 }
 
+func codegen_gen_is_valid_helper(struct_name: str, layout: typechecker.StructLayout[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        mut res := std.Concat("int ", struct_name);
+        res = std.Concat(res, "_IsValid(");
+        res = std.Concat(res, struct_name);
+        res = std.Concat(res, "* req) {\n");
+        res = std.Concat(res, "    if (req == NULL) return 0;\n");
+        
+        mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+        mut i := 0;
+        while i < len(f_keys) {
+            mut f_key := f_keys[i];
+            mut f_lookup := layout.fields.Get(f_key);
+            if f_lookup.Ok {
+                mut f_type := f_lookup.Val;
+                if f_type.tag == 1 || f_type.tag == 2 { // Byte or Bool
+                    mut check_line := std.Concat("    if (req->", f_key);
+                    check_line = std.Concat(check_line, " != 0x00 && req->");
+                    check_line = std.Concat(check_line, f_key);
+                    check_line = std.Concat(check_line, " != 0x01) return 0;\n");
+                    res = std.Concat(res, check_line);
+                } else {
+                    if f_type.tag == 8 { // Struct
+                        mut has_bool := codegen_has_boolean_fields(f_type, env, ctx);
+                        if has_bool == 1 {
+                            mut nested_name := f_type.Struct.struct_name;
+                            mut check_line := std.Concat("    if (!", nested_name);
+                            check_line = std.Concat(check_line, "_IsValid(&req->");
+                            check_line = std.Concat(check_line, f_key);
+                            check_line = std.Concat(check_line, ")) return 0;\n");
+                            res = std.Concat(res, check_line);
+                        }
+                    }
+                }
+            }
+            i = i + 1;
+        }
+        res = std.Concat(res, "    return 1;\n");
+        res = std.Concat(res, "}\n");
+        return std.Clone(ctx, res);
+    }
+}
+
 func codegen_gen_type_aware_initializer(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         if t.tag == 0 || t.tag == 1 || t.tag == 2 { // Int, Byte, Bool

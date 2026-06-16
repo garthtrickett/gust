@@ -3507,6 +3507,11 @@ fn test_self_hosted_codegen_initializers() {
         "0",
         "1",
         "1",
+        "int Node_IsValid(Node* req) {",
+        "    if (req == NULL) return 0;",
+        "    if (req->active != 0x00 && req->active != 0x01) return 0;",
+        "    return 1;",
+        "}",
     ]
     .join("\n");
 

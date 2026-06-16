@@ -105,4 +105,11 @@ func main() {
 
     mut has_bool_parent := codegen.codegen_has_boolean_fields(t_parent, &env, ctx);
     os.LogInt(has_bool_parent); // Expected: 1
+
+    // 6. Test codegen_gen_is_valid_helper
+    mut lookup_node := env.struct_registry.Get("Node");
+    if lookup_node.Ok {
+        mut is_valid_str := codegen.codegen_gen_is_valid_helper("Node", lookup_node.Val, &env, ctx);
+        os.LogStr(is_valid_str);
+    }
 }
