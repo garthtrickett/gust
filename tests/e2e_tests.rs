@@ -4030,7 +4030,7 @@ fn test_e2e_self_hosted_registries() {
 
     let filtered_stdout: String = stdout_str
         .lines()
-        .filter(|line| !line.starts_with("🗄️"))
+        .filter(|line| !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️"))
         .collect::<Vec<_>>()
         .join("\n");
     assert_eq!(
@@ -4127,7 +4127,7 @@ fn test_e2e_self_hosted_origins() {
 
     let filtered_stdout: String = stdout_str
         .lines()
-        .filter(|line| !line.starts_with("🗄️"))
+        .filter(|line| !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️"))
         .collect::<Vec<_>>()
         .join("\n");
     assert_eq!( 

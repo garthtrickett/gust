@@ -772,13 +772,17 @@ func get_monomorphized_name(template_name: str, args_idx: Index[std.Vector[ast.T
 }
 
 func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.HashMap[str, ast.Type[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
-    unsafe {
+    unsafe { 
         mut res_type: ast.Type[ctx];
         if t.tag == 8 { // Struct
             mut name := t.Struct.struct_name;
             mut lookup := map.Get(name);
             if lookup.Ok {
                 res_type = lookup.Val;
+                mut before_str := name;
+                mut after_str := ast.serialize_type(res_type, ctx);
+                mut subst_msg := std.Format("substitute_generics: replaced placeholder '%s' with %s", before_str, after_str);
+                typechecker_log_trace("👁️", subst_msg, ctx);
             } else {
                 mut parts := std.str_split(name, "_", ctx);
                 mut changed := 0;
@@ -830,6 +834,10 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
                 } else {
                     new_struct = get_type_ident(b_type, ctx);
                 }
+                mut before_str := name;
+                mut after_str := ast.serialize_type(b_type, ctx);
+                mut subst_msg := std.Format("substitute_generics: replaced placeholder '%s' with %s", before_str, after_str);
+                typechecker_log_trace("👁️", subst_msg, ctx);
             } else {
                 mut parts := std.str_split(name, "_", ctx);
                 mut changed := 0;
@@ -931,6 +939,12 @@ func monomorphize(env: *TypeEnvironment[ctx], template_name: str, args: std.Vect
 
 func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std.Vector[ast.Type[ctx], ctx], ctx: &Arena) errors.Result[ast.Type[ctx], ctx] {
     unsafe {
+        mut args_idx_start: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[args_idx_start] = args;
+        mut start_args_name := get_monomorphized_name(template_name, args_idx_start, ctx);
+        mut start_msg := std.Format("monomorphize_impl: start for %s", start_args_name);
+        typechecker_log_trace("🔄", start_msg, ctx);
+
         mut res: errors.Result[ast.Type[ctx], ctx];
         res.tag = 0; // Ok
 
@@ -1050,6 +1064,9 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                 placeholder.fields = enum_fields;
                 (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
                 (*env).enum_registry.Insert(std.Clone(ctx, concrete_name), concrete_variants);
+
+                mut success_msg := std.Format("monomorphize_impl: successfully instantiated enum '%s'", concrete_name);
+                typechecker_log_trace("🔄", success_msg, ctx);
             }
 
             res.Ok.val.tag = 8; // Struct
@@ -1123,6 +1140,9 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
                 placeholder.fields = concrete_fields;
                 (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
+
+                mut success_msg := std.Format("monomorphize_impl: successfully instantiated struct '%s'", concrete_name);
+                typechecker_log_trace("🔄", success_msg, ctx);
 
                 // Ephemeral view checking for unbranded monomorphization
                 if brand == empty[Index[str, ctx]] {
