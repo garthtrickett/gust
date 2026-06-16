@@ -1789,6 +1789,19 @@ impl Codegen {
                     )
                 } else {
                     // Arena indexing (Value-Branded)
+                let is_arena = alloc_type == Type::Arena
+                    || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                    || alloc_str == "ctx"
+                    || alloc_str == "arena"
+                    || alloc_str == "connCtx"
+                    || alloc_str == "a"
+                    || alloc_str.ends_with(".ctx")
+                    || alloc_str.ends_with(".arena")
+                    || alloc_str.ends_with(".connCtx")
+                    || alloc_str.ends_with(".a")
+                    || alloc_str.ends_with(".current_ctx")
+                    || alloc_str.ends_with(".next_ctx");
+                if is_arena {
                     let mut target_struct = "SessionNode".to_string();
                     if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index)
                         && struct_name != "Any"
@@ -1807,6 +1820,19 @@ impl Codegen {
                         && *inner == Type::Arena
                     {
                         use_arrow = true;
+                    }
+                    if !use_arrow {
+                        if alloc_str == "ctx"
+                            || alloc_str == "arena"
+                            || alloc_str == "connCtx"
+                            || alloc_str == "a"
+                            || alloc_str.ends_with(".ctx")
+                            || alloc_str.ends_with(".arena")
+                            || alloc_str.ends_with(".connCtx")
+                            || alloc_str.ends_with(".a")
+                        {
+                            use_arrow = true;
+                        }
                     }
 
                     if use_arrow {

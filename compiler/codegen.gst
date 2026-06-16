@@ -420,6 +420,10 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut alloc_str := codegen_generate_expression(alloc_idx, env, ctx);
             mut index_str := codegen_generate_expression(index_idx, env, ctx);
 
+            if std.str_eq(alloc_str, "ctx") || std.str_eq(alloc_str, "arena") || std.str_eq(alloc_str, "connCtx") || std.str_eq(alloc_str, "a") {
+                is_arena = 1;
+            }
+
             if is_arena == 1 {
                 mut target_struct := "SessionNode";
                 if idx_t.tag == 7 { // Index
@@ -443,19 +447,22 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                                     dummy_t.tag = 8;
                                     dummy_t.Struct.struct_name = "SessionNode";
                                     dummy_t.Struct.brand = empty[Index[str, ctx]];
-                                } else {
+                                } else { 
                                     dummy_t.tag = 8;
                                     dummy_t.Struct.struct_name = target_struct;
                                     dummy_t.Struct.brand = empty[Index[str, ctx]];
                                 }
                             }
-                        } 
+                        }
                     }
                 }
                 mut c_target := codegen_get_c_type(dummy_t, env, ctx);
 
                 mut arrow_or_dot := ".";
                 if alloc_t.tag == 9 { // RawPointer
+                    arrow_or_dot = "->";
+                }
+                if std.str_eq(alloc_str, "ctx") || std.str_eq(alloc_str, "arena") || std.str_eq(alloc_str, "connCtx") || std.str_eq(alloc_str, "a") {
                     arrow_or_dot = "->";
                 }
 
