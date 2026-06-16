@@ -1,9 +1,0 @@
-{
-  "summary": "fix: resolve assertion mismatch in self-hosted monomorphize argument mismatch test",
-  "files": [
-    {
-      "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    let _ = std::fs::remove_file(&c_path);\n    let _ = std::fs::remove_file(&bin_path);\n    let _ = std::fs::remove_file(entry_path);\n\n    let filtered_stdout: String = stdout_str\n        .lines()\n        .filter(|line| {\n            !line.starts_with(\"🗄️\") && !line.starts_with(\"🔄\") && !line.starts_with(\"👁️\")\n        })\n        .collect::<Vec<_>>()\n        .join(\"\\n\");\n    assert_eq!(\n        filtered_stdout.trim(),\n        \"set1 has origin_a\\nset1 missing origin_c\\nset1 now has origin_c\\nset1 now has origin_d\\nexpr1 correctly resolved to my_root\\nexpr2 correctly identified scratch\\nexpr3 correctly flagged origin_x invalidation\\nexpr4 correctly flagged ctx_brand invalidation\\nexpr5 correctly flagged var_c move\"\n    );\n}\n=======\n    let _ = std::fs::remove_file(&c_path);\n    let _ = std::fs::remove_file(&bin_path);\n    let _ = std::fs::remove_file(entry_path);\n\n    let filtered_stdout: String = stdout_str\n        .lines()\n        .filter(|line| {\n            !line.starts_with(\"🗄️\") && !line.starts_with(\"🔄\") && !line.starts_with(\"👁️\")\n        })\n        .collect::<Vec<_>>()\n        .join(\"\\n\");\n    assert_eq!(\n        filtered_stdout.trim(),\n        \"Argument mismatch correctly detected!\\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1\"\n    );\n}\n>>>>>>> REPLACE"
-    }
-  ]
-}
