@@ -310,6 +310,27 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 t.Struct.brand = idx_t.Index.brand;
                 return t;
             }
+            if alloc_t.tag == 8 { // Struct
+                mut s_name := alloc_t.Struct.struct_name;
+                mut lookup := (*env).struct_registry.Get(s_name);
+                if lookup.Ok {
+                    mut layout := lookup.Val;
+                    mut data_lookup := layout.fields.Get("data");
+                    if data_lookup.Ok {
+                        mut data_type := data_lookup.Val;
+                        if data_type.tag == 9 { // RawPointer
+                            return ctx[data_type.RawPointer.inner];
+                        } 
+                    }
+                    mut val_lookup := layout.fields.Get("values");
+                    if val_lookup.Ok {
+                        mut val_type := val_lookup.Val;
+                        if val_type.tag == 9 { // RawPointer
+                            return ctx[val_type.RawPointer.inner];
+                        } 
+                    }
+                }
+            }
             mut t: ast.Type[ctx];
             t.tag = 0; // Int
             return t;
