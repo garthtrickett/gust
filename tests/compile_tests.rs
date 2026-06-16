@@ -7302,3 +7302,33 @@ fn test_adt_variant_constructor_and_initializer_logic() {
     assert!(c_output.contains("s.tag = 1;"), "Missing tag assignment");
     assert!(c_output.contains("s.Active.since = 0;"), "Missing union field assignment");
 }
+
+#[test]
+fn test_refined_match_statement_codegen() {
+    let source = "\n        type Status enum {\n            Pending,\n            Active,\n            Failed\n        }\n        func process(s: Status) int {\n            match s {\n                Pending => {\n                    return 1;\n                }\n                Active => {\n                    return 2;\n                }\n                Failed => {\n                    return 3;\n                }\n            }\n        }\n    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    // Verify the match statement is translated to C switch with named tag constants
+    assert!(c_output.contains("switch (s.tag) {"), "Missing switch on s.tag");
+    assert!(c_output.contains("case Status_Tag__Pending:"), "Missing case for Pending");
+    assert!(c_output.contains("case Status_Tag__Active:"), "Missing case for Active");
+    assert!(c_output.contains("case Status_Tag__Failed:"), "Missing case for Failed");
+}
