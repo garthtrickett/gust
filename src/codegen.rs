@@ -392,8 +392,12 @@ impl Codegen {
             );
         }
 
+        let mut sorted_enum_registry_keys: Vec<String> = enum_registry.keys().cloned().collect();
+        sorted_enum_registry_keys.sort();
+
         let mut erased_enum_registry = HashMap::new();
-        for (enum_name, variants) in enum_registry {
+        for enum_name in sorted_enum_registry_keys {
+            let variants = enum_registry.get(&enum_name).unwrap().clone();
             let erased_name = erase_struct_name_with_registry(&enum_name, &None, &struct_registry);
             erased_enum_registry.insert(erased_name, variants);
         }

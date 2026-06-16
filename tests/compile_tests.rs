@@ -7201,3 +7201,35 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
         "Argument mismatch correctly detected!\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1"
     );
 }
+
+#[test]
+fn test_adt_metadata_and_tag_enum_generation() {
+    let source = "\n        type Status enum {\n            Pending,\n            Active,\n            Failed\n        }\n        func main() {\n            mut s: Status;\n        }\n    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    // Verify the generated C contains the typedef enum for variant tags
+    let expected_enum = "typedef enum {\\n    Status_Tag__Pending = 0,\\n    Status_Tag__Active = 1,\\n    Status_Tag__Failed = 2,\\n} Status_Tag;";
+    assert!(
+        c_output.contains(expected_enum),
+        "Generated C does not contain expected typedef enum. Actual:\\n{}",
+        c_output
+    );
+}
