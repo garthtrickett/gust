@@ -387,6 +387,73 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
         }
         if tag == 12 { // Call
             mut func_str := codegen_generate_expression(ctx[expr_idx].Call.function, env, ctx);
+
+            if std.str_eq(func_str, "std.Spawn") || std.str_eq(func_str, "std_Spawn") {
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut task_func_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[task_func_expr_idx] = (*args_vec)[0];
+                mut raw_func_name := codegen_generate_expression(task_func_expr_idx, env, ctx);
+                
+                mut thread_func_name := "";
+                mut i := 0;
+                while i < len(raw_func_name) {
+                    mut b := std.str_byte_at(raw_func_name, i);
+                    if b == 46 { // '.'
+                        thread_func_name = std.Concat(thread_func_name, "_");
+                    } else {
+                        mut char_slice := std.str_slice(raw_func_name, i, i + 1);
+                        thread_func_name = std.Concat(thread_func_name, char_slice);
+                    }
+                    i = i + 1;
+                }
+                
+                mut task_arg_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[task_arg_expr_idx] = (*args_vec)[1];
+                mut arg_str := codegen_generate_expression(task_arg_expr_idx, env, ctx);
+                
+                mut is_ptr := 0;
+                mut arg_expr := ctx[task_arg_expr_idx];
+                if arg_expr.tag == 6 { // AddressOf
+                    is_ptr = 1;
+                }
+                if arg_expr.tag == 0 { // Identifier
+                    mut var_type_lookup := env.variable_types.Get(arg_expr.Identifier.name);
+                    if var_type_lookup.Ok {
+                        mut t := var_type_lookup.Val;
+                        if t.tag == 9 { // RawPointer
+                            is_ptr = 1;
+                        }
+                    }
+                }
+                
+                mut cast_expr := "";
+                if is_ptr == 1 {
+                    cast_expr = std.Concat("(void*)", arg_str);
+                } else {
+                    cast_expr = std.Concat("(void*)(uintptr_t)", arg_str);
+                }
+                
+                mut res := std.Concat("gust_scheduler_spawn(8388608, (void (*)(void*))", thread_func_name);
+                res = std.Concat(res, "_pthread_wrapper, ");
+                res = std.Concat(res, cast_expr);
+                res = std.Concat(res, ")");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "std.Yield") || std.str_eq(func_str, "std_Yield") {
+                return std.Clone(ctx, "gust_yield()");
+            }
+
+            if std.str_eq(func_str, "os.Exit") || std.str_eq(func_str, "os_Exit") {
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg_idx] = (*args_vec)[0];
+                mut arg_str := codegen_generate_expression(arg_idx, env, ctx);
+                mut res := std.Concat("exit(", arg_str);
+                res = std.Concat(res, ")");
+                return std.Clone(ctx, res);
+            }
+
             mut c_func := "";
             mut i := 0;
             while i < len(func_str) {
@@ -504,6 +571,49 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 j = j + 1;
             }
             res = std.Concat(res, "}\n\n");
+
+            if len(*params_vec) == 1 {
+                mut param := (*params_vec)[0];
+                mut p_c_type := codegen_get_c_type(param.param_type, env, ctx);
+                
+                mut is_ptr := 0;
+                if param.param_type.tag == 9 { // RawPointer
+                    is_ptr = 1;
+                }
+                
+                mut is_struct := 0;
+                if param.param_type.tag == 8 || param.param_type.tag == 10 || param.param_type.tag == 6 || param.param_type.tag == 5 {
+                    is_struct = 1;
+                }
+                
+                mut cast_str := "";
+                if is_ptr == 1 {
+                    cast_str = std.Concat("(", p_c_type);
+                    cast_str = std.Concat(cast_str, ")arg");
+                } else {
+                    if is_struct == 1 {
+                        cast_str = std.Concat("*(", p_c_type);
+                        cast_str = std.Concat(cast_str, "*)arg");
+                    } else {
+                        cast_str = std.Concat("(", p_c_type);
+                        cast_str = std.Concat(cast_str, ")(uintptr_t)arg");
+                    }
+                }
+                
+                mut wrapper_decl := std.Concat("void* ", ctx[stmt_idx].FunctionDecl.name);
+                wrapper_decl = std.Concat(wrapper_decl, "_pthread_wrapper(void* arg) {\n");
+                
+                mut wrapper_call := std.Concat("    ", ctx[stmt_idx].FunctionDecl.name);
+                wrapper_call = std.Concat(wrapper_call, "(");
+                wrapper_call = std.Concat(wrapper_call, cast_str);
+                wrapper_call = std.Concat(wrapper_call, ");\n");
+                
+                wrapper_decl = std.Concat(wrapper_decl, wrapper_call);
+                wrapper_decl = std.Concat(wrapper_decl, "    return NULL;\n}\n\n");
+                
+                res = std.Concat(res, wrapper_decl);
+            }
+
             return std.Clone(ctx, res);
         }
     }
@@ -551,7 +661,25 @@ func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment
             i = i + 1;
         }
         
-        // 2. _IsValid Invariant Validator forward declarations
+        // 2. pthread_wrapper forward declarations
+        c_code = std.Concat(c_code, "// pthread_wrapper forward declarations\n");
+        mut statements_vec := &ctx[(*prog).statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut s_idx := 0;
+        while s_idx < len(*statements_vec) {
+            mut stmt := (*statements_vec)[s_idx];
+            if stmt.tag == 3 { // FunctionDecl
+                mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
+                if len(*params_vec) == 1 {
+                    mut decl := std.Concat("void* ", stmt.FunctionDecl.name);
+                    decl = std.Concat(decl, "_pthread_wrapper(void* arg);\n");
+                    c_code = std.Concat(c_code, decl);
+                }
+            }
+            s_idx = s_idx + 1;
+        }
+        c_code = std.Concat(c_code, "\n");
+        
+        // 3. _IsValid Invariant Validator forward declarations
         c_code = std.Concat(c_code, "// Invariant Validator forward declarations\n");
         mut k := 0;
         while k < len(struct_keys) {
