@@ -2698,7 +2698,17 @@ impl TypeChecker {
                             actual_struct = "SessionNode".to_string();
                         }
 
-                        Ok(Type::Struct(actual_struct, Some(brand_name)))
+                        if actual_struct == "int" {
+                            Ok(Type::Int)
+                        } else if actual_struct == "byte" {
+                            Ok(Type::Byte)
+                        } else if actual_struct == "bool" {
+                            Ok(Type::Bool)
+                        } else if actual_struct == "str" {
+                            Ok(Type::Str)
+                        } else {
+                            Ok(Type::Struct(actual_struct, Some(brand_name)))
+                        }
                     } else {
                         Err(TypeError {
                             kind: TypeErrorKind::InvalidIndexTarget,

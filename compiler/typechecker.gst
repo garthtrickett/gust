@@ -278,15 +278,38 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
         }
         if expr.tag == 8 { // IndexAccess
             mut alloc_t := check_expression(expr.IndexAccess.allocator, env, scope, ctx);
-            mut idx_t := check_expression(expr.IndexAccess.index, env, scope, ctx);
+        if tag == 8 { // IndexAccess
+            mut alloc_t := check_expression(expr_idx.IndexAccess.allocator, env, scope, ctx);
+            mut idx_t := check_expression(expr_idx.IndexAccess.index, env, scope, ctx);
             if alloc_t.tag == 6 { // Slice
                 return ctx[alloc_t.Slice.inner];
             }
-            if alloc_t.tag == 7 { // Index
+            if idx_t.tag == 7 { // Index
+                mut name := idx_t.Index.struct_name;
+                if std.str_eq(name, "int") {
+                    mut t: ast.Type[ctx];
+                    t.tag = 0; // Int
+                    return t;
+                }
+                if std.str_eq(name, "byte") {
+                    mut t: ast.Type[ctx];
+                    t.tag = 1; // Byte
+                    return t;
+                }
+                if std.str_eq(name, "bool") {
+                    mut t: ast.Type[ctx];
+                    t.tag = 2; // Bool
+                    return t;
+                }
+                if std.str_eq(name, "str") {
+                    mut t: ast.Type[ctx];
+                    t.tag = 5; // Str
+                    return t;
+                }
                 mut t: ast.Type[ctx];
                 t.tag = 8; // Struct
-                t.Struct.struct_name = std.Clone(ctx, alloc_t.Index.struct_name);
-                t.Struct.brand = alloc_t.Index.brand;
+                t.Struct.struct_name = std.Clone(ctx, name);
+                t.Struct.brand = idx_t.Index.brand;
                 return t;
             }
             mut t: ast.Type[ctx];
