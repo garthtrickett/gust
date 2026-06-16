@@ -1024,6 +1024,20 @@ pub const COLLECTIONS_RUNTIME: &str = r#"// ====================================
 static inline uint32_t os_hash_key(void* key_ptr, int is_str_key) {
     if (is_str_key) {
         Slice_unsigned_char s = *(Slice_unsigned_char*)key_ptr;
+        if (s.len < 0 || s.len > 10000 || s.data == NULL) {
+            fprintf(stderr, "👁️ os_hash_key: SUSPICIOUS STRING KEY! len=%d, data=%p\n", s.len, (void*)s.data);
+            fflush(stderr);
+        } else {
+            fprintf(stderr, "👁️ os_hash_key: len=%d, data=%p, val=\"", s.len, (void*)s.data);
+            for (int i = 0; i < s.len && i < 20; i++) {
+                unsigned char c = s.data[i];
+                if (c >= 32 && c <= 126) fputc(c, stderr);
+                else fprintf(stderr, "\\x%02X", c);
+            }
+            if (s.len > 20) fprintf(stderr, "...");
+            fprintf(stderr, "\"\n");
+            fflush(stderr);
+        }
         uint32_t hash = 5381;
         for (int i = 0; i < s.len; i++) {
             hash = ((hash << 5) + hash) + s.data[i];
@@ -1038,8 +1052,29 @@ static inline int os_key_eq(void* k1_ptr, void* k2_ptr, int is_str_key) {
     if (is_str_key) {
         Slice_unsigned_char s1 = *(Slice_unsigned_char*)k1_ptr;
         Slice_unsigned_char s2 = *(Slice_unsigned_char*)k2_ptr;
+        if (s1.len < 0 || s1.len > 10000 || s1.data == NULL || s2.len < 0 || s2.len > 10000 || s2.data == NULL) {
+            fprintf(stderr, "👁️ os_key_eq: SUSPICIOUS STRING KEYS! s1.len=%d, s1.data=%p, s2.len=%d, s2.data=%p\n", s1.len, (void*)s1.data, s2.len, (void*)s2.data);
+            fflush(stderr);
+        } else {
+            fprintf(stderr, "👁️ os_key_eq: comparing: s1.len=%d, s2.len=%d, s1=\"", s1.len, s2.len);
+            for (int i = 0; i < s1.len && i < 20; i++) {
+                unsigned char c = s1.data[i];
+                if (c >= 32 && c <= 126) fputc(c, stderr);
+                else fprintf(stderr, "\\x%02X", c);
+            }
+            if (s1.len > 20) fprintf(stderr, "...");
+            fprintf(stderr, "\", s2=\"");
+            for (int i = 0; i < s2.len && i < 20; i++) {
+                unsigned char c = s2.data[i];
+                if (c >= 32 && c <= 126) fputc(c, stderr);
+                else fprintf(stderr, "\\x%02X", c);
+            }
+            if (s2.len > 20) fprintf(stderr, "...");
+            fprintf(stderr, "\"\n");
+            fflush(stderr);
+        }
         if (s1.len != s2.len) return 0;
-        for (int i = 0; i < s1.len; i++) {
+        for (int i = 0; i < s1.len; i++) { 
             if (s1.data[i] != s2.data[i]) return 0;
         }
         return 1;

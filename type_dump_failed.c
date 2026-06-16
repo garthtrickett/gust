@@ -602,126 +602,126 @@ void os_ScratchReset() {
 // ====================================================
 // FORWARD DECLARATIONS
 // ====================================================
-typedef struct ast__Statement_Defer ast__Statement_Defer;
-typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
-typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
-typedef struct token__TokenType_Guard token__TokenType_Guard;
-typedef struct ast__Type_Byte ast__Type_Byte;
-typedef struct ast__Expression_String ast__Expression_String;
-typedef struct token__TokenType_Take token__TokenType_Take;
-typedef struct ast__Expression_Take ast__Expression_Take;
-typedef struct ast__Statement_Guard ast__Statement_Guard;
-typedef struct ast__Statement_Import ast__Statement_Import;
-typedef struct token__TokenType_Semicolon token__TokenType_Semicolon;
-typedef struct token__TokenType_Colon token__TokenType_Colon;
-typedef struct token__TokenType_Slash token__TokenType_Slash;
-typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
-typedef struct ast__FieldDef ast__FieldDef;
-typedef struct token__TokenType_Move token__TokenType_Move;
-typedef struct token__TokenType_While token__TokenType_While;
-typedef struct token__TokenType_True token__TokenType_True;
-typedef struct token__TokenType_Struct token__TokenType_Struct;
-typedef struct ast__VariantDef ast__VariantDef;
-typedef struct std_Vector_ast__Expression std_Vector_ast__Expression;
-typedef struct token__TokenType_Func token__TokenType_Func;
-typedef struct errors__ErrorKind errors__ErrorKind;
-typedef struct ast__Expression_Binary ast__Expression_Binary;
-typedef struct token__TokenType_Eof token__TokenType_Eof;
-typedef struct token__TokenType_Return token__TokenType_Return;
-typedef struct token__TokenType_Plus token__TokenType_Plus;
-typedef struct ast__Expression_Selector ast__Expression_Selector;
-typedef struct ast__Expression_Move ast__Expression_Move;
-typedef struct token__TokenType_Eq token__TokenType_Eq;
-typedef struct token__TokenType_Lt token__TokenType_Lt;
-typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
-typedef struct token__TokenType_Else token__TokenType_Else;
-typedef struct ast__Statement_If ast__Statement_If;
 typedef struct parser__Parser parser__Parser;
-typedef struct ast__Expression_Call ast__Expression_Call;
-typedef struct token__TokenType_Ident token__TokenType_Ident;
-typedef struct errors__ErrorKind_ParserError errors__ErrorKind_ParserError;
-typedef struct ast__Expression_Dereference ast__Expression_Dereference;
-typedef struct token__TokenType_LBrace token__TokenType_LBrace;
-typedef struct token__TokenType_As token__TokenType_As;
-typedef struct ast__Parameter ast__Parameter;
-typedef struct token__TokenType_Bool token__TokenType_Bool;
-typedef struct ast__Expression_Integer ast__Expression_Integer;
-typedef struct std_Vector_ast__Type std_Vector_ast__Type;
-typedef struct token__TokenType_Unsafe token__TokenType_Unsafe;
-typedef struct token__TokenType_Asterisk token__TokenType_Asterisk;
-typedef struct token__TokenType_Comma token__TokenType_Comma;
-typedef struct token__TokenType_False token__TokenType_False;
-typedef struct SessionNode SessionNode;
-typedef struct ast__Expression ast__Expression;
-typedef struct ast__Type ast__Type;
-typedef struct token__TokenType token__TokenType;
-typedef struct token__TokenType_Defer token__TokenType_Defer;
-typedef struct ast__Type_Int ast__Type_Int;
 typedef struct token__TokenType_Empty token__TokenType_Empty;
-typedef struct ast__Type_Arena ast__Type_Arena;
-typedef struct errors__ErrorKind_TypeError errors__ErrorKind_TypeError;
-typedef struct ast__Type_Slice ast__Type_Slice;
-typedef struct token__TokenType_RBracket token__TokenType_RBracket;
-typedef struct token__TokenType_Gt token__TokenType_Gt;
-typedef struct ast__Expression_AddressOf ast__Expression_AddressOf;
-typedef struct token__TokenType_Mut token__TokenType_Mut;
-typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
-typedef struct ast__Statement_Expression ast__Statement_Expression;
-typedef struct ast__Expression_AsCast ast__Expression_AsCast;
-typedef struct lexer__Lexer lexer__Lexer;
-typedef struct ast__Statement_Assignment ast__Statement_Assignment;
-typedef struct std_Vector_ast__Statement std_Vector_ast__Statement;
-typedef struct ast__Type_Index ast__Type_Index;
-typedef struct token__TokenType_Ampersand token__TokenType_Ampersand;
-typedef struct ast__Statement ast__Statement;
-typedef struct ast__Type_Bool ast__Type_Bool;
-typedef struct ast__Type_Void ast__Type_Void;
-typedef struct token__TokenType_EqEq token__TokenType_EqEq;
-typedef struct ast__Type_Str ast__Type_Str;
-typedef struct token__TokenType_RParen token__TokenType_RParen;
-typedef struct token__TokenType_RBrace token__TokenType_RBrace;
-typedef struct ast__MatchCase ast__MatchCase;
-typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
-typedef struct ast__Type_RawPointer ast__Type_RawPointer;
-typedef struct token__TokenType_Match token__TokenType_Match;
-typedef struct token__TokenType_Assign token__TokenType_Assign;
-typedef struct token__TokenType_Int token__TokenType_Int;
-typedef struct token__TokenType_Type token__TokenType_Type;
-typedef struct ast__Type_Struct ast__Type_Struct;
+typedef struct token__TokenType_Defer token__TokenType_Defer;
+typedef struct token__TokenType_Colon token__TokenType_Colon;
+typedef struct ast__Expression_String ast__Expression_String;
 typedef struct std_Vector_ast__MatchCase std_Vector_ast__MatchCase;
-typedef struct token__TokenType_LBracket token__TokenType_LBracket;
-typedef struct token__TokenType_FatArrow token__TokenType_FatArrow;
-typedef struct errors__ErrorKind_LexerError errors__ErrorKind_LexerError;
-typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
-typedef struct ast__BlockStatement ast__BlockStatement;
-typedef struct APIRequest APIRequest;
-typedef struct token__TokenType_Import token__TokenType_Import;
-typedef struct token__TokenType_NotEq token__TokenType_NotEq;
-typedef struct token__TokenType_Minus token__TokenType_Minus;
-typedef struct token__TokenType_Dot token__TokenType_Dot;
-typedef struct token__TokenType_If token__TokenType_If;
-typedef struct token__TokenType_String token__TokenType_String;
-typedef struct ast__Program ast__Program;
-typedef struct errors__ErrorKind_CodegenError errors__ErrorKind_CodegenError;
-typedef struct std_Vector_token__Token std_Vector_token__Token;
-typedef struct parser__ParseResult parser__ParseResult;
-typedef struct std_Vector_ast__FieldDef std_Vector_ast__FieldDef;
-typedef struct token__TokenType_LParen token__TokenType_LParen;
-typedef struct errors__CompilerError errors__CompilerError;
-typedef struct ast__Statement_Return ast__Statement_Return;
-typedef struct std_Vector_errors__CompilerError std_Vector_errors__CompilerError;
-typedef struct token__TokenType_Enum token__TokenType_Enum;
-typedef struct ast__Type_Generic ast__Type_Generic;
-typedef struct token__Position token__Position;
-typedef struct ast__Expression_Bool ast__Expression_Bool;
-typedef struct ast__Expression_Empty ast__Expression_Empty;
-typedef struct ast__Expression_Identifier ast__Expression_Identifier;
-typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
-typedef struct token__Token token__Token;
+typedef struct token__TokenType_RBrace token__TokenType_RBrace;
+typedef struct ast__Expression_Binary ast__Expression_Binary;
 typedef struct token__Span token__Span;
-typedef struct ast__Statement_Match ast__Statement_Match;
-typedef struct ast__Statement_While ast__Statement_While;
+typedef struct ast__Expression_Take ast__Expression_Take;
+typedef struct token__TokenType_Plus token__TokenType_Plus;
+typedef struct ast__Type_Str ast__Type_Str;
+typedef struct token__TokenType_EqEq token__TokenType_EqEq;
+typedef struct ast__Type_Index ast__Type_Index;
+typedef struct errors__ErrorKind_LexerError errors__ErrorKind_LexerError;
+typedef struct ast__BlockStatement ast__BlockStatement;
+typedef struct token__TokenType_False token__TokenType_False;
+typedef struct token__TokenType_Func token__TokenType_Func;
+typedef struct token__TokenType_Semicolon token__TokenType_Semicolon;
+typedef struct token__TokenType_Ampersand token__TokenType_Ampersand;
+typedef struct ast__Expression_Move ast__Expression_Move;
+typedef struct SessionNode SessionNode;
+typedef struct ast__Type_Struct ast__Type_Struct;
+typedef struct token__TokenType_Guard token__TokenType_Guard;
+typedef struct ast__Parameter ast__Parameter;
+typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
+typedef struct token__TokenType_NotEq token__TokenType_NotEq;
+typedef struct ast__Type_Byte ast__Type_Byte;
+typedef struct std_Vector_ast__Expression std_Vector_ast__Expression;
 typedef struct token__TokenType_Illegal token__TokenType_Illegal;
+typedef struct token__TokenType_Take token__TokenType_Take;
+typedef struct token__TokenType_Asterisk token__TokenType_Asterisk;
+typedef struct token__TokenType_Mut token__TokenType_Mut;
+typedef struct errors__ErrorKind_CodegenError errors__ErrorKind_CodegenError;
+typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
+typedef struct ast__VariantDef ast__VariantDef;
+typedef struct ast__Statement ast__Statement;
+typedef struct token__TokenType_LParen token__TokenType_LParen;
+typedef struct ast__FieldDef ast__FieldDef;
+typedef struct token__TokenType_Match token__TokenType_Match;
+typedef struct token__TokenType_Move token__TokenType_Move;
+typedef struct ast__Statement_Assignment ast__Statement_Assignment;
+typedef struct ast__Type_Int ast__Type_Int;
+typedef struct ast__Statement_Defer ast__Statement_Defer;
+typedef struct ast__MatchCase ast__MatchCase;
+typedef struct ast__Statement_Guard ast__Statement_Guard;
+typedef struct token__TokenType_Struct token__TokenType_Struct;
+typedef struct std_Vector_ast__FieldDef std_Vector_ast__FieldDef;
+typedef struct errors__ErrorKind_TypeError errors__ErrorKind_TypeError;
+typedef struct lexer__Lexer lexer__Lexer;
+typedef struct token__TokenType_Import token__TokenType_Import;
+typedef struct token__TokenType_Else token__TokenType_Else;
+typedef struct ast__Expression_Empty ast__Expression_Empty;
+typedef struct token__TokenType_LBrace token__TokenType_LBrace;
+typedef struct token__TokenType_LBracket token__TokenType_LBracket;
+typedef struct token__Position token__Position;
+typedef struct token__TokenType_Ident token__TokenType_Ident;
+typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
+typedef struct token__TokenType_Unsafe token__TokenType_Unsafe;
+typedef struct token__TokenType_Slash token__TokenType_Slash;
+typedef struct ast__Type_Void ast__Type_Void;
+typedef struct errors__ErrorKind errors__ErrorKind;
+typedef struct ast__Expression_Call ast__Expression_Call;
+typedef struct token__TokenType_Assign token__TokenType_Assign;
+typedef struct ast__Expression_AsCast ast__Expression_AsCast;
+typedef struct ast__Statement_If ast__Statement_If;
+typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
+typedef struct ast__Type_Arena ast__Type_Arena;
+typedef struct parser__ParseResult parser__ParseResult;
+typedef struct ast__Statement_Return ast__Statement_Return;
+typedef struct ast__Type_Slice ast__Type_Slice;
+typedef struct token__TokenType_Int token__TokenType_Int;
+typedef struct errors__CompilerError errors__CompilerError;
+typedef struct token__TokenType_Lt token__TokenType_Lt;
+typedef struct ast__Expression_Bool ast__Expression_Bool;
+typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
+typedef struct token__TokenType_As token__TokenType_As;
+typedef struct token__Token token__Token;
+typedef struct token__TokenType_If token__TokenType_If;
+typedef struct token__TokenType_RParen token__TokenType_RParen;
+typedef struct std_Vector_ast__Type std_Vector_ast__Type;
+typedef struct token__TokenType_Dot token__TokenType_Dot;
+typedef struct std_Vector_errors__CompilerError std_Vector_errors__CompilerError;
+typedef struct ast__Expression_Identifier ast__Expression_Identifier;
+typedef struct token__TokenType_True token__TokenType_True;
+typedef struct std_Vector_token__Token std_Vector_token__Token;
+typedef struct ast__Type_Bool ast__Type_Bool;
+typedef struct ast__Expression_Selector ast__Expression_Selector;
+typedef struct token__TokenType token__TokenType;
+typedef struct token__TokenType_RBracket token__TokenType_RBracket;
+typedef struct ast__Type_Generic ast__Type_Generic;
+typedef struct token__TokenType_Enum token__TokenType_Enum;
+typedef struct token__TokenType_Minus token__TokenType_Minus;
+typedef struct token__TokenType_Return token__TokenType_Return;
+typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
+typedef struct ast__Expression_AddressOf ast__Expression_AddressOf;
+typedef struct token__TokenType_Bool token__TokenType_Bool;
+typedef struct ast__Statement_While ast__Statement_While;
+typedef struct token__TokenType_String token__TokenType_String;
+typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
+typedef struct std_Vector_ast__Statement std_Vector_ast__Statement;
+typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
+typedef struct token__TokenType_Gt token__TokenType_Gt;
+typedef struct APIRequest APIRequest;
+typedef struct ast__Expression_Integer ast__Expression_Integer;
+typedef struct token__TokenType_Comma token__TokenType_Comma;
+typedef struct token__TokenType_Eq token__TokenType_Eq;
+typedef struct token__TokenType_While token__TokenType_While;
+typedef struct errors__ErrorKind_ParserError errors__ErrorKind_ParserError;
+typedef struct ast__Statement_Match ast__Statement_Match;
+typedef struct ast__Expression ast__Expression;
+typedef struct ast__Program ast__Program;
+typedef struct ast__Type_RawPointer ast__Type_RawPointer;
+typedef struct ast__Statement_Import ast__Statement_Import;
+typedef struct ast__Expression_Dereference ast__Expression_Dereference;
+typedef struct token__TokenType_FatArrow token__TokenType_FatArrow;
+typedef struct token__TokenType_Type token__TokenType_Type;
+typedef struct ast__Statement_Expression ast__Statement_Expression;
+typedef struct token__TokenType_Eof token__TokenType_Eof;
+typedef struct ast__Type ast__Type;
 
 // ====================================================
 // DYNAMICALLY GENERATED SLICE STRUCTURE FORWARD DECLARATIONS
@@ -1766,102 +1766,102 @@ Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char fi
 // ====================================================
 // FUNCTION FORWARD DECLARATIONS
 // ====================================================
-void std_Yield(void);
-Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
-void* std_Format_pthread_wrapper(void* arg);
-unsigned char lexer__is_letter(unsigned char b);
-void* lexer__is_letter_pthread_wrapper(void* arg);
-void lexer__read_char(lexer__Lexer* l);
-void* lexer__read_char_pthread_wrapper(void* arg);
-int parser__parse_expression(parser__Parser* p, int precedence, os_Arena* ctx);
-os_Arena os_Arena_New(void);
-int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
-int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
-int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char lexer__read_number(lexer__Lexer* l);
-void* lexer__read_number_pthread_wrapper(void* arg);
-int parser__Parser_ctx_IsValid(parser__Parser* req);
-void* parser__Parser_ctx_IsValid_pthread_wrapper(void* arg);
-LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
-int parser__parse_function_decl(parser__Parser* p, os_Arena* ctx);
-unsigned char lexer__peek_char(lexer__Lexer* l);
-void* lexer__peek_char_pthread_wrapper(void* arg);
-int parser__cur_token_precedence(parser__Parser* p);
-void* parser__cur_token_precedence_pthread_wrapper(void* arg);
-int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
-int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
-void* lexer__Lexer_ctx_IsValid_pthread_wrapper(void* arg);
-void os_CloseDir(os_Dir arg0);
-void* os_CloseDir_pthread_wrapper(void* arg);
-int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
-void os_SetThreadScratch(os_Arena* arg0);
-void* os_SetThreadScratch_pthread_wrapper(void* arg);
-int parser__parse_unsafe_block(parser__Parser* p, os_Arena* ctx);
-unsigned char lexer__is_digit(unsigned char b);
-void* lexer__is_digit_pthread_wrapper(void* arg);
-int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx);
-void lexer__skip_whitespace(lexer__Lexer* l);
-void* lexer__skip_whitespace_pthread_wrapper(void* arg);
-Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
-Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
-void* std_Format_pthread_wrapper(void* arg);
-void os_SetThreadScratch(os_Arena* arg0);
-void* os_SetThreadScratch_pthread_wrapper(void* arg);
-int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx);
-void os_CloseDir(os_Dir arg0);
-void* os_CloseDir_pthread_wrapper(void* arg);
-int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char lexer__read_string(lexer__Lexer* l);
-void* lexer__read_string_pthread_wrapper(void* arg);
-token__TokenType lexer__lookup_ident(Slice_unsigned_char literal);
-void* lexer__lookup_ident_pthread_wrapper(void* arg);
-int parser__parse_defer_statement(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int indent, os_Arena* ctx);
-void parser__error_at_current(parser__Parser* p, Slice_unsigned_char message);
-Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os_Arena* ctx);
-LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
-token__Position lexer__current_position(lexer__Lexer* l);
-void* lexer__current_position_pthread_wrapper(void* arg);
-void parser__next_token(parser__Parser* p);
-void* parser__next_token_pthread_wrapper(void* arg);
-Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
-token__Span parser__merge_spans(token__Span start, token__Span end);
-Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena* ctx);
-int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx);
 Slice_unsigned_char ast__serialize_variant_def(ast__VariantDef v, int indent, os_Arena* ctx);
-os_Arena os_Arena_New(void);
-Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Arena* ctx);
+int parser__parse_defer_statement(parser__Parser* p, os_Arena* ctx);
 Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena* ctx);
-parser__ParseResult parser__expect_peek(parser__Parser* p, int tag, os_Arena* ctx);
-int parser__peek_token_precedence(parser__Parser* p);
-void* parser__peek_token_precedence_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_char sep, os_Arena* ctx);
-int parser__parse_statement(parser__Parser* p, os_Arena* ctx);
-LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
-int lexer__Lexer_Any_IsValid(lexer__Lexer* req);
-void* lexer__Lexer_Any_IsValid_pthread_wrapper(void* arg);
-os_Arena os_Arena_New(void);
-int parser__is_at_end(parser__Parser* p);
-void* parser__is_at_end_pthread_wrapper(void* arg);
-token__Span parser__get_expression_span(int expr, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int indent, os_Arena* ctx);
-void lexer__init_lexer(lexer__Lexer* l, Slice_unsigned_char input);
-int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
-ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char lexer__read_identifier(lexer__Lexer* l);
-void* lexer__read_identifier_pthread_wrapper(void* arg);
-unsigned char parser__peek_token_is(parser__Parser* p, int tag);
 void parser__synchronize(parser__Parser* p);
 void* parser__synchronize_pthread_wrapper(void* arg);
-void std_Yield(void);
-Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int indent, os_Arena* ctx);
+int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
+void os_SetThreadScratch(os_Arena* arg0);
+void* os_SetThreadScratch_pthread_wrapper(void* arg);
+Slice_unsigned_char lexer__read_number(lexer__Lexer* l);
+void* lexer__read_number_pthread_wrapper(void* arg);
+int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
+Slice_unsigned_char lexer__read_string(lexer__Lexer* l);
+void* lexer__read_string_pthread_wrapper(void* arg);
+int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Arena* ctx);
+int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
+int parser__parse_unsafe_block(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena* ctx);
+Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
+void os_CloseDir(os_Dir arg0);
+void* os_CloseDir_pthread_wrapper(void* arg);
 void lexer__next_token(lexer__Lexer* l, token__Token* tok);
-void parser__init_parser(parser__Parser* p, lexer__Lexer* l, os_Arena* ctx);
-unsigned char parser__cur_token_is(parser__Parser* p, int tag);
+void lexer__read_char(lexer__Lexer* l);
+void* lexer__read_char_pthread_wrapper(void* arg);
+Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int indent, os_Arena* ctx);
+unsigned char lexer__is_digit(unsigned char b);
+void* lexer__is_digit_pthread_wrapper(void* arg);
+os_Arena os_Arena_New(void);
+int parser__cur_token_precedence(parser__Parser* p);
+void* parser__cur_token_precedence_pthread_wrapper(void* arg);
+LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
+Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
+void* std_Format_pthread_wrapper(void* arg);
 int parser__parse_type_signature(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_char sep, os_Arena* ctx);
+token__TokenType lexer__lookup_ident(Slice_unsigned_char literal);
+void* lexer__lookup_ident_pthread_wrapper(void* arg);
+void os_CloseDir(os_Dir arg0);
+void* os_CloseDir_pthread_wrapper(void* arg);
+int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx);
+int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
+void* lexer__Lexer_ctx_IsValid_pthread_wrapper(void* arg);
+int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
+unsigned char lexer__is_letter(unsigned char b);
+void* lexer__is_letter_pthread_wrapper(void* arg);
+Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os_Arena* ctx);
 LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
+unsigned char lexer__peek_char(lexer__Lexer* l);
+void* lexer__peek_char_pthread_wrapper(void* arg);
+token__Span parser__merge_spans(token__Span start, token__Span end);
+void std_Yield(void);
+LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
+int parser__peek_token_precedence(parser__Parser* p);
+void* parser__peek_token_precedence_pthread_wrapper(void* arg);
+void std_Yield(void);
+Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx);
+Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int indent, os_Arena* ctx);
+LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
+Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx);
+int lexer__Lexer_Any_IsValid(lexer__Lexer* req);
+void* lexer__Lexer_Any_IsValid_pthread_wrapper(void* arg);
+int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx);
+int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
+void parser__next_token(parser__Parser* p);
+void* parser__next_token_pthread_wrapper(void* arg);
+int parser__is_at_end(parser__Parser* p);
+void* parser__is_at_end_pthread_wrapper(void* arg);
+int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx);
+int parser__parse_expression(parser__Parser* p, int precedence, os_Arena* ctx);
+Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int indent, os_Arena* ctx);
+Slice_unsigned_char lexer__read_identifier(lexer__Lexer* l);
+void* lexer__read_identifier_pthread_wrapper(void* arg);
+void lexer__skip_whitespace(lexer__Lexer* l);
+void* lexer__skip_whitespace_pthread_wrapper(void* arg);
+unsigned char parser__peek_token_is(parser__Parser* p, int tag);
+token__Position lexer__current_position(lexer__Lexer* l);
+void* lexer__current_position_pthread_wrapper(void* arg);
+os_Arena os_Arena_New(void);
+unsigned char parser__cur_token_is(parser__Parser* p, int tag);
+int parser__parse_statement(parser__Parser* p, os_Arena* ctx);
+int parser__parse_function_decl(parser__Parser* p, os_Arena* ctx);
+int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
+ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx);
+void parser__error_at_current(parser__Parser* p, Slice_unsigned_char message);
+Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
+void* std_Format_pthread_wrapper(void* arg);
+void os_SetThreadScratch(os_Arena* arg0);
+void* os_SetThreadScratch_pthread_wrapper(void* arg);
+void lexer__init_lexer(lexer__Lexer* l, Slice_unsigned_char input);
+void parser__init_parser(parser__Parser* p, lexer__Lexer* l, os_Arena* ctx);
+parser__ParseResult parser__expect_peek(parser__Parser* p, int tag, os_Arena* ctx);
+token__Span parser__get_expression_span(int expr, os_Arena* ctx);
+int parser__Parser_ctx_IsValid(parser__Parser* req);
+void* parser__Parser_ctx_IsValid_pthread_wrapper(void* arg);
+os_Arena os_Arena_New(void);
 
 // ====================================================
 // DYNAMICALLY TRANSPILED USER STRUCTS
@@ -3601,22 +3601,28 @@ Slice_unsigned_char lexer__read_string(lexer__Lexer* l) {
 #line 106 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
 #line 107 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == delimiter) {
+    if ((*(l)).ch == 92) {
 #line 108 "/home/garth/files/code/gust/compiler/lexer.gst"
-    loop = 0;
+    lexer__read_char(l);
     } else {
 #line 110 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 0) {
+    if ((*(l)).ch == delimiter) {
 #line 111 "/home/garth/files/code/gust/compiler/lexer.gst"
+    loop = 0;
+    } else {
+#line 113 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if ((*(l)).ch == 0) {
+#line 114 "/home/garth/files/code/gust/compiler/lexer.gst"
     loop = 0;
     }
     }
     }
-#line 115 "/home/garth/files/code/gust/compiler/lexer.gst"
+    }
+#line 119 "/home/garth/files/code/gust/compiler/lexer.gst"
     Slice_unsigned_char out = std_str_slice((*(l)).input, start_pos, (*(l)).position);
-#line 116 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 120 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
-#line 117 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 121 "/home/garth/files/code/gust/compiler/lexer.gst"
     return out;
     }
 }
@@ -3626,160 +3632,160 @@ void* lexer__read_string_pthread_wrapper(void* arg) {
     return NULL;
 }
 
-#line 121 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 125 "/home/garth/files/code/gust/compiler/lexer.gst"
 token__TokenType lexer__lookup_ident(Slice_unsigned_char literal) {
-#line 122 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 126 "/home/garth/files/code/gust/compiler/lexer.gst"
     token__TokenType t = ((token__TokenType){ .tag = 0 });
-#line 123 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 127 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 2;
-#line 125 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 129 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"guard", 5 }))) {
-#line 125 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 129 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 27;
-#line 125 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 129 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 126 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 130 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"import", 6 }))) {
-#line 126 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 130 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 28;
-#line 126 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 130 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 127 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 131 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"mut", 3 }))) {
-#line 127 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 131 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 29;
-#line 127 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 131 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 128 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 132 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"func", 4 }))) {
-#line 128 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 132 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 30;
-#line 128 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 132 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 129 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 133 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"defer", 5 }))) {
-#line 129 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 133 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 31;
-#line 129 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 133 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 130 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 134 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"move", 4 }))) {
-#line 130 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 134 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 32;
-#line 130 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 134 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 131 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 135 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"take", 4 }))) {
-#line 131 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 135 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 33;
-#line 131 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 135 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 132 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 136 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"while", 5 }))) {
-#line 132 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 136 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 34;
-#line 132 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 136 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 133 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 137 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"if", 2 }))) {
-#line 133 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 137 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 35;
-#line 133 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 137 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 134 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 138 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"else", 4 }))) {
-#line 134 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 138 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 36;
-#line 134 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 138 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 135 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 139 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"as", 2 }))) {
-#line 135 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 139 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 37;
-#line 135 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 139 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 136 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 140 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"unsafe", 6 }))) {
-#line 136 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 140 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 38;
-#line 136 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 140 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 137 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 141 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"type", 4 }))) {
-#line 137 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 141 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 39;
-#line 137 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 141 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 138 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 142 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"struct", 6 }))) {
-#line 138 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 142 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 40;
-#line 138 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 142 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 139 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 143 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"enum", 4 }))) {
-#line 139 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 143 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 41;
-#line 139 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 143 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 140 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 144 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"match", 5 }))) {
-#line 140 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 144 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 42;
-#line 140 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 144 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 141 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 145 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"return", 6 }))) {
-#line 141 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 145 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 43;
-#line 141 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 145 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
-#line 142 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 146 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"empty", 5 }))) {
-#line 142 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 146 "/home/garth/files/code/gust/compiler/lexer.gst"
     t.tag = 44;
-#line 142 "/home/garth/files/code/gust/compiler/lexer.gst"
-    return t;
-    }
-#line 143 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"bool", 4 }))) {
-#line 143 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t.tag = 45;
-#line 143 "/home/garth/files/code/gust/compiler/lexer.gst"
-    return t;
-    }
-#line 144 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"true", 4 }))) {
-#line 144 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t.tag = 46;
-#line 144 "/home/garth/files/code/gust/compiler/lexer.gst"
-    return t;
-    }
-#line 145 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"false", 5 }))) {
-#line 145 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t.tag = 47;
-#line 145 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 146 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
     }
 #line 147 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"bool", 4 }))) {
+#line 147 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t.tag = 45;
+#line 147 "/home/garth/files/code/gust/compiler/lexer.gst"
+    return t;
+    }
+#line 148 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"true", 4 }))) {
+#line 148 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t.tag = 46;
+#line 148 "/home/garth/files/code/gust/compiler/lexer.gst"
+    return t;
+    }
+#line 149 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (std_str_eq(literal, ((Slice_unsigned_char){ (unsigned char*)"false", 5 }))) {
+#line 149 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t.tag = 47;
+#line 149 "/home/garth/files/code/gust/compiler/lexer.gst"
+    return t;
+    }
+#line 151 "/home/garth/files/code/gust/compiler/lexer.gst"
     return t;
 }
 
@@ -3788,20 +3794,20 @@ void* lexer__lookup_ident_pthread_wrapper(void* arg) {
     return NULL;
 }
 
-#line 150 "/home/garth/files/code/gust/compiler/lexer.gst"
-token__Position lexer__current_position(lexer__Lexer* l) {
-#line 151 "/home/garth/files/code/gust/compiler/lexer.gst"
-    token__Position pos = ((token__Position){ .column = 0, .line = 0, .offset = 0 });
-#line 152 "/home/garth/files/code/gust/compiler/lexer.gst"
-    {
-#line 153 "/home/garth/files/code/gust/compiler/lexer.gst"
-    pos.line = (*(l)).line;
 #line 154 "/home/garth/files/code/gust/compiler/lexer.gst"
-    pos.column = (*(l)).column;
+token__Position lexer__current_position(lexer__Lexer* l) {
 #line 155 "/home/garth/files/code/gust/compiler/lexer.gst"
+    token__Position pos = ((token__Position){ .column = 0, .line = 0, .offset = 0 });
+#line 156 "/home/garth/files/code/gust/compiler/lexer.gst"
+    {
+#line 157 "/home/garth/files/code/gust/compiler/lexer.gst"
+    pos.line = (*(l)).line;
+#line 158 "/home/garth/files/code/gust/compiler/lexer.gst"
+    pos.column = (*(l)).column;
+#line 159 "/home/garth/files/code/gust/compiler/lexer.gst"
     pos.offset = (*(l)).position;
     }
-#line 157 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 161 "/home/garth/files/code/gust/compiler/lexer.gst"
     return pos;
 }
 
@@ -3810,335 +3816,335 @@ void* lexer__current_position_pthread_wrapper(void* arg) {
     return NULL;
 }
 
-#line 160 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 164 "/home/garth/files/code/gust/compiler/lexer.gst"
 void lexer__next_token(lexer__Lexer* l, token__Token* tok) {
-#line 161 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__skip_whitespace(l);
-#line 163 "/home/garth/files/code/gust/compiler/lexer.gst"
-    token__Position start_pos = lexer__current_position(l);
 #line 165 "/home/garth/files/code/gust/compiler/lexer.gst"
-    {
-#line 166 "/home/garth/files/code/gust/compiler/lexer.gst"
-    token__TokenType t_type = ((token__TokenType){ .tag = 0 });
+    lexer__skip_whitespace(l);
 #line 167 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 1;
+    token__Position start_pos = lexer__current_position(l);
 #line 169 "/home/garth/files/code/gust/compiler/lexer.gst"
-    Slice_unsigned_char literal = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    {
+#line 170 "/home/garth/files/code/gust/compiler/lexer.gst"
+    token__TokenType t_type = ((token__TokenType){ .tag = 0 });
 #line 171 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 58) {
-#line 172 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (lexer__peek_char(l) == 61) {
+    t_type.tag = 1;
 #line 173 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
-#line 174 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 5;
+    Slice_unsigned_char literal = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
 #line 175 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if ((*(l)).ch == 58) {
+#line 176 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (lexer__peek_char(l) == 61) {
+#line 177 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__read_char(l);
+#line 178 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t_type.tag = 5;
+#line 179 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)":=", 2 });
     } else {
-#line 177 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 181 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 9;
-#line 178 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 182 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)":", 1 });
     }
-#line 180 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
-    } else {
-#line 181 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 61) {
-#line 182 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (lexer__peek_char(l) == 61) {
-#line 183 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
 #line 184 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 23;
-#line 185 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)"==", 2 });
+    lexer__read_char(l);
     } else {
+#line 185 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if ((*(l)).ch == 61) {
 #line 186 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (lexer__peek_char(l) == 62) {
+    if (lexer__peek_char(l) == 61) {
 #line 187 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
 #line 188 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 18;
+    t_type.tag = 23;
 #line 189 "/home/garth/files/code/gust/compiler/lexer.gst"
+    literal = ((Slice_unsigned_char){ (unsigned char*)"==", 2 });
+    } else {
+#line 190 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (lexer__peek_char(l) == 62) {
+#line 191 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__read_char(l);
+#line 192 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t_type.tag = 18;
+#line 193 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"=>", 2 });
     } else {
-#line 191 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 195 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 6;
-#line 192 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 196 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"=", 1 });
     }
     }
-#line 194 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 198 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
-#line 195 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 33) {
-#line 196 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (lexer__peek_char(l) == 61) {
-#line 197 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
-#line 198 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 24;
 #line 199 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if ((*(l)).ch == 33) {
+#line 200 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (lexer__peek_char(l) == 61) {
+#line 201 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__read_char(l);
+#line 202 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t_type.tag = 24;
+#line 203 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"!=", 2 });
     } else {
-#line 201 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 205 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 1;
-#line 202 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 206 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"!", 1 });
     }
-#line 204 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
-    } else {
-#line 205 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 47) {
-#line 206 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (lexer__peek_char(l) == 47) {
-#line 207 "/home/garth/files/code/gust/compiler/lexer.gst"
-    while ((*(l)).ch != 10 && (*(l)).ch != 13 && (*(l)).ch != 0) {
 #line 208 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
-    }
+    } else {
+#line 209 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if ((*(l)).ch == 47) {
 #line 210 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__skip_whitespace(l);
+    if (lexer__peek_char(l) == 47) {
 #line 211 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__next_token(l, tok);
+    while ((*(l)).ch != 10 && (*(l)).ch != 13 && (*(l)).ch != 0) {
 #line 212 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__read_char(l);
+    }
+#line 214 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__skip_whitespace(l);
+#line 215 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__next_token(l, tok);
+#line 216 "/home/garth/files/code/gust/compiler/lexer.gst"
     return;
     } else {
-#line 214 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 218 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 22;
-#line 215 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 219 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"/", 1 });
-#line 216 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 220 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     }
-    } else {
-#line 218 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 59) {
-#line 219 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 10;
-#line 220 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)";", 1 });
-#line 221 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
     } else {
 #line 222 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 38) {
+    if ((*(l)).ch == 59) {
 #line 223 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (lexer__peek_char(l) == 38) {
+    t_type.tag = 10;
 #line 224 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
+    literal = ((Slice_unsigned_char){ (unsigned char*)";", 1 });
 #line 225 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 50;
+    lexer__read_char(l);
+    } else {
 #line 226 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if ((*(l)).ch == 38) {
+#line 227 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (lexer__peek_char(l) == 38) {
+#line 228 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__read_char(l);
+#line 229 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t_type.tag = 50;
+#line 230 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"&&", 2 });
     } else {
-#line 228 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 232 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 17;
-#line 229 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 233 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"&", 1 });
     }
-#line 231 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 235 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
-#line 232 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 124) {
-#line 233 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (lexer__peek_char(l) == 124) {
-#line 234 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
-#line 235 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 51;
 #line 236 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if ((*(l)).ch == 124) {
+#line 237 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (lexer__peek_char(l) == 124) {
+#line 238 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__read_char(l);
+#line 239 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t_type.tag = 51;
+#line 240 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"||", 2 });
     } else {
-#line 238 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 242 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 1;
-#line 239 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 243 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"|", 1 });
     }
-#line 241 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
-    } else {
-#line 242 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 43) {
-#line 243 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 19;
-#line 244 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)"+", 1 });
 #line 245 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 246 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 45) {
+    if ((*(l)).ch == 43) {
 #line 247 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 20;
+    t_type.tag = 19;
 #line 248 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)"-", 1 });
+    literal = ((Slice_unsigned_char){ (unsigned char*)"+", 1 });
 #line 249 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 250 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 42) {
+    if ((*(l)).ch == 45) {
 #line 251 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 21;
+    t_type.tag = 20;
 #line 252 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)"*", 1 });
+    literal = ((Slice_unsigned_char){ (unsigned char*)"-", 1 });
 #line 253 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 254 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 60) {
+    if ((*(l)).ch == 42) {
 #line 255 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (lexer__peek_char(l) == 61) {
+    t_type.tag = 21;
 #line 256 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
+    literal = ((Slice_unsigned_char){ (unsigned char*)"*", 1 });
 #line 257 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 48;
+    lexer__read_char(l);
+    } else {
 #line 258 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if ((*(l)).ch == 60) {
+#line 259 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (lexer__peek_char(l) == 61) {
+#line 260 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__read_char(l);
+#line 261 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t_type.tag = 48;
+#line 262 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"<=", 2 });
     } else {
-#line 260 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 264 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 25;
-#line 261 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 265 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"<", 1 });
     }
-#line 263 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 267 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
-#line 264 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 62) {
-#line 265 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (lexer__peek_char(l) == 61) {
-#line 266 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
-#line 267 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 49;
 #line 268 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if ((*(l)).ch == 62) {
+#line 269 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (lexer__peek_char(l) == 61) {
+#line 270 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__read_char(l);
+#line 271 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t_type.tag = 49;
+#line 272 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)">=", 2 });
     } else {
-#line 270 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 274 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 26;
-#line 271 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 275 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)">", 1 });
     }
-#line 273 "/home/garth/files/code/gust/compiler/lexer.gst"
-    lexer__read_char(l);
-    } else {
-#line 274 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 46) {
-#line 275 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 7;
-#line 276 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)".", 1 });
 #line 277 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 278 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 44) {
+    if ((*(l)).ch == 46) {
 #line 279 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 8;
+    t_type.tag = 7;
 #line 280 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)",", 1 });
+    literal = ((Slice_unsigned_char){ (unsigned char*)".", 1 });
 #line 281 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 282 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 40) {
+    if ((*(l)).ch == 44) {
 #line 283 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 11;
+    t_type.tag = 8;
 #line 284 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)"(", 1 });
+    literal = ((Slice_unsigned_char){ (unsigned char*)",", 1 });
 #line 285 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 286 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 41) {
+    if ((*(l)).ch == 40) {
 #line 287 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 12;
+    t_type.tag = 11;
 #line 288 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)")", 1 });
+    literal = ((Slice_unsigned_char){ (unsigned char*)"(", 1 });
 #line 289 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 290 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 123) {
+    if ((*(l)).ch == 41) {
 #line 291 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 13;
+    t_type.tag = 12;
 #line 292 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)"{", 1 });
+    literal = ((Slice_unsigned_char){ (unsigned char*)")", 1 });
 #line 293 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 294 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 125) {
+    if ((*(l)).ch == 123) {
 #line 295 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 14;
+    t_type.tag = 13;
 #line 296 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)"}", 1 });
+    literal = ((Slice_unsigned_char){ (unsigned char*)"{", 1 });
 #line 297 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 298 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 91) {
+    if ((*(l)).ch == 125) {
 #line 299 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 15;
+    t_type.tag = 14;
 #line 300 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)"[", 1 });
+    literal = ((Slice_unsigned_char){ (unsigned char*)"}", 1 });
 #line 301 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 302 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 93) {
+    if ((*(l)).ch == 91) {
 #line 303 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 16;
+    t_type.tag = 15;
 #line 304 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = ((Slice_unsigned_char){ (unsigned char*)"]", 1 });
+    literal = ((Slice_unsigned_char){ (unsigned char*)"[", 1 });
 #line 305 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     } else {
 #line 306 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 0) {
+    if ((*(l)).ch == 93) {
 #line 307 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 0;
+    t_type.tag = 16;
 #line 308 "/home/garth/files/code/gust/compiler/lexer.gst"
+    literal = ((Slice_unsigned_char){ (unsigned char*)"]", 1 });
+#line 309 "/home/garth/files/code/gust/compiler/lexer.gst"
+    lexer__read_char(l);
+    } else {
+#line 310 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if ((*(l)).ch == 0) {
+#line 311 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t_type.tag = 0;
+#line 312 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     } else {
-#line 309 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 34) {
-#line 310 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = lexer__read_string(l);
-#line 311 "/home/garth/files/code/gust/compiler/lexer.gst"
-    t_type.tag = 4;
-    } else {
-#line 312 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if ((*(l)).ch == 39) {
 #line 313 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = lexer__read_string(l);
+    if ((*(l)).ch == 34) {
 #line 314 "/home/garth/files/code/gust/compiler/lexer.gst"
+    literal = lexer__read_string(l);
+#line 315 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 4;
     } else {
 #line 316 "/home/garth/files/code/gust/compiler/lexer.gst"
-    if (lexer__is_letter((*(l)).ch)) {
+    if ((*(l)).ch == 39) {
 #line 317 "/home/garth/files/code/gust/compiler/lexer.gst"
-    literal = lexer__read_identifier(l);
+    literal = lexer__read_string(l);
 #line 318 "/home/garth/files/code/gust/compiler/lexer.gst"
+    t_type.tag = 4;
+    } else {
+#line 320 "/home/garth/files/code/gust/compiler/lexer.gst"
+    if (lexer__is_letter((*(l)).ch)) {
+#line 321 "/home/garth/files/code/gust/compiler/lexer.gst"
+    literal = lexer__read_identifier(l);
+#line 322 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type = lexer__lookup_ident(literal);
     } else {
-#line 319 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 323 "/home/garth/files/code/gust/compiler/lexer.gst"
     if (lexer__is_digit((*(l)).ch)) {
-#line 320 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 324 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = lexer__read_number(l);
-#line 321 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 325 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 3;
     } else {
-#line 323 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 327 "/home/garth/files/code/gust/compiler/lexer.gst"
     literal = ((Slice_unsigned_char){ (unsigned char*)"illegal", 7 });
-#line 324 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 328 "/home/garth/files/code/gust/compiler/lexer.gst"
     t_type.tag = 1;
-#line 325 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 329 "/home/garth/files/code/gust/compiler/lexer.gst"
     lexer__read_char(l);
     }
     }
@@ -4165,13 +4171,13 @@ void lexer__next_token(lexer__Lexer* l, token__Token* tok) {
     }
     }
     }
-#line 329 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 333 "/home/garth/files/code/gust/compiler/lexer.gst"
     (*(tok)).token_type = t_type;
-#line 330 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 334 "/home/garth/files/code/gust/compiler/lexer.gst"
     (*(tok)).literal = literal;
-#line 331 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 335 "/home/garth/files/code/gust/compiler/lexer.gst"
     (*(tok)).span.start = start_pos;
-#line 332 "/home/garth/files/code/gust/compiler/lexer.gst"
+#line 336 "/home/garth/files/code/gust/compiler/lexer.gst"
     (*(tok)).span.end = lexer__current_position(l);
     }
 }
