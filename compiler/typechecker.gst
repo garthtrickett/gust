@@ -377,6 +377,25 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             if left_t.tag == 8 { // Struct
                 mut struct_name := left_t.Struct.struct_name;
                 mut clean_name := struct_name;
+
+                mut lookup_struct := (*env).struct_registry.Get(struct_name);
+                if lookup_struct.Ok {
+                    mut field_lookup := lookup_struct.Val.fields.Get(expr.Selector.right);
+                    if field_lookup.Ok {
+                        if std.str_eq(expr.Selector.right, "Val") {
+                            if (len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_")) ||
+                               (len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_")) {
+                                if (*env).checked_results.Get(left_str).Ok == 0 {
+                                    mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper ";
+                                    msg = std.Concat(msg, left_str);
+                                    report_error(2, msg, expr.Selector.span, env, ctx);
+                                }
+                            }
+                        }
+                        return field_lookup.Val;
+                    }
+                }
+
                 if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") {
                     if std.str_eq(expr.Selector.right, "Ok") {
                         mut t: ast.Type[ctx];
@@ -420,13 +439,6 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         t.Struct.struct_name = std.Clone(ctx, target);
                         t.Struct.brand = left_t.Struct.brand;
                         return t;
-                    }
-                }
-                mut lookup_struct := (*env).struct_registry.Get(struct_name);
-                if lookup_struct.Ok {
-                    mut field_lookup := lookup_struct.Val.fields.Get(expr.Selector.right);
-                    if field_lookup.Ok {
-                        return field_lookup.Val;
                     }
                 }
             }
