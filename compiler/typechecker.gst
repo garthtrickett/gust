@@ -1223,16 +1223,31 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                 placeholder.fields = std.HashMapNew(ctx);
                 (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
 
-                mut concrete_fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
-                mut fields_vec := &ctx[template.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
-                mut f_idx := 0;
-                while f_idx < len(*fields_vec) {
-                    mut field := (*fields_vec)[f_idx];
-                    mut substituted_type := substitute_generics(env, field.field_type, substitution_map, ctx);
-                    mut resolved_field_type := env_resolve_type(env, substituted_type, ctx);
-                    concrete_fields.Insert(std.Clone(ctx, field.name), resolved_field_type);
-                    f_idx = f_idx + 1;
-                }
+                 mut concrete_fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+                       mut fields_vec := &ctx[template.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+                       mut f_idx := 0;
+                       while f_idx < len(*fields_vec) {
+                           mut field := (*fields_vec)[f_idx];
+
+                           mut type_before := ast.serialize_type(field.field_type, ctx);
+                           mut msg_before := std.Format("monomorphize field: %s, type before: %s", field.name, type_before);
+                           typechecker_log_trace("👁", msg_before, ctx);
+
+                           mut substituted_type := substitute_generics(env, field.field_type, substitution_map, ctx);
+
+                           mut type_sub := ast.serialize_type(substituted_type, ctx);
+                           mut msg_sub := std.Format("monomorphize field: %s, type after substitute: %s", field.name, type_sub);
+                           typechecker_log_trace("👁", msg_sub, ctx);
+
+                           mut resolved_field_type := env_resolve_type(env, substituted_type, ctx);
+
+                           mut type_resolved := ast.serialize_type(resolved_field_type, ctx);
+                           mut msg_resolved := std.Format("monomorphize field: %s, type after resolve: %s", field.name, type_resolved);
+                           typechecker_log_trace("👁", msg_resolved, ctx);
+
+                           concrete_fields.Insert(std.Clone(ctx, field.name), resolved_field_type);
+                           f_idx = f_idx + 1;
+                       }
 
                 placeholder.fields = concrete_fields;
                 (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
@@ -1962,10 +1977,15 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                 mut namespaced_name := env_resolve_namespaced_ident(env, t.Struct.struct_name, ctx);
                 ctx[res_idx].Struct.struct_name = namespaced_name;
                 
+                mut brand_name := 'None';
                 if t.Struct.brand != empty[Index[str, ctx]] {
                     mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
-                    mut brand_name := *brand_str_ptr;
-                    
+                    brand_name = *brand_str_ptr;
+                }
+                mut log_msg := std.Format('env_resolve_type Struct: name=%s, brand=%s', namespaced_name, brand_name);
+                typechecker_log_trace('📥', log_msg, ctx);
+                
+                if t.Struct.brand != empty[Index[str, ctx]] {
                     mut has_template := 0;
                     if (*env).struct_templates.Get(namespaced_name).Ok {
                         has_template = 1;
@@ -2000,6 +2020,10 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                     } else {
                         if t.tag == 10 { // Generic
                             mut name := env_resolve_namespaced_ident(env, t.Generic.name, ctx);
+                            
+                            mut log_msg := std.Format('env_resolve_type Generic: name=%s', name);
+                            typechecker_log_trace('📥', log_msg, ctx);
+                            
                             mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
                             mut new_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
                             mut i := 0;
