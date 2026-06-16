@@ -514,7 +514,7 @@ os_Arena os_Arena_New() {
     arena.Capacity = 4294967296ULL; // 4GB Non-moving Virtual Arena Capacity
     arena.BaseAddress = malloc(arena.Capacity);
     if (arena.BaseAddress == NULL) {
-        printf(\"Fatal Error: Failed to allocate arena base memory!\\n\");
+        printf("Fatal Error: Failed to allocate arena base memory!\n");
         exit(1);
     }
     arena.Offset = 0;
@@ -574,7 +574,7 @@ int os_ArenaAlloc(os_Arena* arena, size_t size) {
     os_Arena_Validate(arena);
     size_t total_size = 8 + 8 + size + 8;
     if (arena->Offset + total_size > arena->Capacity) {
-        printf(\"Fatal Error: Out of Arena Capacity (exceeded 4GB Limit)!\\n\");
+        printf("Fatal Error: Out of Arena Capacity (exceeded 4GB Limit)!\n");
         abort();
     }
     size_t header_offset = arena->Offset;
@@ -590,7 +590,7 @@ int os_ArenaAlloc(os_Arena* arena, size_t size) {
     return (int)payload_offset;
 #else
     if (arena->Offset + size > arena->Capacity) {
-        printf(\"Fatal Error: Out of Arena Capacity (exceeded 4GB Limit)!\\n\");
+        printf("Fatal Error: Out of Arena Capacity (exceeded 4GB Limit)!\n");
         abort();
     }
     size_t assigned_offset = arena->Offset;
