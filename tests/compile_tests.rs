@@ -7596,93 +7596,8 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
         .join("\n");
     assert_eq!(
         filtered_stdout.trim(),
-        "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch\nexpr3 correctly flagged origin_x invalidation\nexpr4 correctly flagged ctx_brand invalidation\nexpr5 correctly flagged var_c move"
+        "Argument mismatch correctly detected!\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1"
     );
-}
-
-#[test]
-fn test_e2e_self_hosted_codegen_tracing() {
-    gust_lexer::init_logging();
-    let resolver = gust_lexer::resolver::ModuleResolver::new();
-    let fs_impl = gust_lexer::resolver::RealFileSystem;
-    let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
-
-    let res = resolver.resolve(&entry_path, &fs_impl).unwrap();
-    let (order, mut modules) = res;
-
-    let mut checker = TypeChecker::new();
-    for path in &order {
-        if let Some(module) = modules.get(path) { 
-            let stem = path.file_stem().unwrap().to_str().unwrap();
-            let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry {
-                "".to_string()
-            } else {
-                format!("{}__", stem)
-            };
-            checker.check_module(&module.program, &prefix).unwrap();
-        }
-    }
-
-    let mut modules_for_codegen = Vec::new();
-    for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            modules_for_codegen.push((path.clone(), module.program.clone()));
-        }
-    }
-
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let c_output = codegen.generate(&modules_for_codegen);
-
-    let temp_dir = std::env::temp_dir();
-    let thread_id = std::thread::current().id();
-    let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_codegen_tracing_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_e2e_codegen_tracing_{:?}_{}.bin", thread_id, process_id);
-
-    let c_path = temp_dir.join(&c_filename);
-    let bin_path = temp_dir.join(&bin_filename);
-
-    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
-
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() { 
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(compile_output.status.success());
-
-    let temp_gst_path = temp_dir.join("temp_tracing_test.gst");
-    std::fs::write(&temp_gst_path, "func main() { mut x := std.Format(\"Item %d\", 1); }").expect("Failed to write temp gst file");
-
-    let run_output = std::process::Command::new(&bin_path)
-        .arg(&temp_gst_path)
-        .output()
-        .expect("Execution failed");
-
-    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
-
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
-    let _ = std::fs::remove_file(&temp_gst_path);
-
-    // Verify the presence of codegen tracing emojis
-    assert!(stdout_str.contains("⚙️ codegen_generate: commencing code generation pass"));
-    assert!(stdout_str.contains("👁️ codegen_generate_expression: transpiling std.Format FFI override"));
 }
 
 #[test]
@@ -7905,4 +7820,114 @@ fn test_refined_match_statement_codegen() {
         c_output.contains("case Status_Tag__Failed:"),
         "Missing case for Failed"
     );
+}
+
+#[test]
+fn test_e2e_self_hosted_codegen_tracing() {
+    gust_lexer::init_logging();
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
+
+    let res = resolver.resolve(&entry_path, &fs_impl).unwrap();
+    let (order, mut modules) = res;
+
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            checker.check_module(&module.program, &prefix).unwrap();
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let c_filename = format!("gust_e2e_codegen_tracing_{:?}_{}.c", thread_id, process_id);
+    let bin_filename = format!(
+        "gust_e2e_codegen_tracing_{:?}_{}.bin",
+        thread_id, process_id
+    );
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC command failed");
+
+    assert!(compile_output.status.success());
+
+    let temp_gst_path = temp_dir.join("temp_tracing_test.gst");
+    let temp_gst_content = "
+            type MyNode struct {
+                active: bool
+            }
+            func main() {
+                mut ctx := os.Arena.New();
+                defer ctx.Free();
+                mut vec: std.Vector[MyNode, ctx] := std.VectorNew(ctx);
+            }
+        ";
+    std::fs::write(&temp_gst_path, temp_gst_content).expect("Failed to write temp gst file");
+    let run_output = std::process::Command::new(&bin_path)
+        .arg(&temp_gst_path)
+        .output()
+        .expect("Execution failed");
+
+    let stdout_str = String::from_utf8_lossy(&run_output.stdout).to_string();
+
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_file(&temp_gst_path);
+
+    // If the expected log sequence is missing, dump full diagnostic traces
+    if !stdout_str.contains("codegen_generate: commencing code generation pass") {
+        println!("====================================================");
+        println!("❌ SELF-HOSTED CODEGEN TRACING TEST DIAGNOSTICS");
+        println!("====================================================");
+        println!("STDOUT:\n{}", stdout_str);
+        println!("STDERR:\n{}", String::from_utf8_lossy(&run_output.stderr));
+        println!("====================================================");
+    }
+
+    // Verify the presence of codegen tracing messages (emoji-safe ASCII substrings)
+    assert!(stdout_str.contains("codegen_generate: commencing code generation pass"));
+    assert!(
+        stdout_str.contains("transpiling custom standard template instance std_Vector_MyNode_ctx")
+    );
+    assert!(stdout_str.contains("generating Invariant Validator for MyNode"));
 }
