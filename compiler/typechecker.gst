@@ -2772,14 +2772,24 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 val_type = env_resolve_type(env, val_type, ctx);
                 typechecker_log_trace('🔍', 'VarDecl: after env_resolve_type(val_type) for RHS', ctx);
 
+                typechecker_log_trace('🔍', 'VarDecl: before set_init(ctx)', ctx);
                 mut origs := set_init(ctx);
-                if env_type_is_ephemeral_view(val_type, ctx) == 1 {
+                typechecker_log_trace('🔍', 'VarDecl: after set_init(ctx)', ctx);
+                
+                typechecker_log_trace('🔍', 'VarDecl: before env_type_is_ephemeral_view', ctx);
+                mut is_ephemeral := env_type_is_ephemeral_view(val_type, ctx);
+                typechecker_log_trace('🔍', 'VarDecl: after env_type_is_ephemeral_view', ctx);
+                if is_ephemeral == 1 {
+                    typechecker_log_trace('🔍', 'VarDecl: before get_expression_origins', ctx);
                     origs = get_expression_origins(val_idx, env, ctx);
+                    typechecker_log_trace('🔍', 'VarDecl: after get_expression_origins', ctx);
                     if ctx[origs].map.len == 0 {
                         set_add(origs, name, ctx);
                     }
                 }
+                typechecker_log_trace('🔍', 'VarDecl: before variable_origins.Insert', ctx);
                 (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
+                typechecker_log_trace('🔍', 'VarDecl: after variable_origins.Insert', ctx);
             } else {
                 if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
                     mut origs := set_init(ctx);
