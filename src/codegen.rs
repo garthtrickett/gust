@@ -2081,10 +2081,7 @@ impl Codegen {
                     let mut src_brand = "current_ctx".to_string();
                     let mut found = false;
 
-                    if let Expression::Identifier(name, _) = &arguments[1]
-                        && let Some(Type::Index(s_name, Some(brand))) =
-                            self.original_symbol_table.get(name).cloned()
-                    {
+                    if let Some(Type::Index(s_name, Some(brand))) = self.get_expr_type(&arguments[1]) {
                         struct_name = erase_struct_name_with_registry(
                             &s_name,
                             &Some(brand.clone()),
