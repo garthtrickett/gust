@@ -7666,8 +7666,11 @@ fn test_e2e_self_hosted_codegen_tracing() {
 
     assert!(compile_output.status.success());
 
+    let temp_gst_path = temp_dir.join("temp_tracing_test.gst");
+    std::fs::write(&temp_gst_path, "func main() { mut x := std.Format(\"Item %d\", 1); }").expect("Failed to write temp gst file");
+
     let run_output = std::process::Command::new(&bin_path)
-        .arg("compiler/test_scratch_storage_violation.gst")
+        .arg(&temp_gst_path)
         .output()
         .expect("Execution failed");
 
@@ -7675,6 +7678,7 @@ fn test_e2e_self_hosted_codegen_tracing() {
 
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
+    let _ = std::fs::remove_file(&temp_gst_path);
 
     // Verify the presence of codegen tracing emojis
     assert!(stdout_str.contains("⚙️ codegen_generate: commencing code generation pass"));

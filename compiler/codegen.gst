@@ -13,6 +13,11 @@ func init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx]) {
     }
 }
 
+func codegen_log_trace(emoji: str, message: str, ctx: &Arena) {
+    mut formatted := std.Format("%s %s", emoji, message);
+    os.LogStr(formatted);
+}
+
 func codegen_get_expression_span(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) token.Span {
     mut s: token.Span;
     unsafe {
@@ -264,6 +269,7 @@ func codegen_has_boolean_fields(t: ast.Type[ctx], env: &typechecker.TypeEnvironm
 
 func codegen_gen_is_valid_helper(struct_name: str, layout: typechecker.StructLayout[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
+        codegen_log_trace("👁️", std.Format("codegen_gen_is_valid_helper: generating Invariant Validator for %s", struct_name), ctx);
         mut res := std.Concat("int ", struct_name);
         res = std.Concat(res, "_IsValid(");
         res = std.Concat(res, struct_name);
@@ -466,6 +472,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         arrow_or_dot = "->";
                     }
                     if std.str_eq(right_name, "Lock") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Mutex Lock FFI override for %s", left_str), ctx);
                         mut res := std.Concat("std_Mutex_Lock_impl(", left_str);
                         res = std.Concat(res, arrow_or_dot);
                         res = std.Concat(res, "lock_state, &(");
@@ -475,6 +482,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         return std.Clone(ctx, res);
                     }
                     if std.str_eq(right_name, "Unlock") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Mutex Unlock FFI override for %s", left_str), ctx);
                         mut res := std.Concat("std_Mutex_Unlock_impl(", left_str);
                         res = std.Concat(res, arrow_or_dot);
                         res = std.Concat(res, "lock_state)");
@@ -489,6 +497,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         arrow_or_dot = "->";
                     }
                     if std.str_eq(right_name, "Send") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Channel Send FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx[arg0_idx] = (*args_vec)[0];
@@ -504,6 +513,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         return std.Clone(ctx, res);
                     }
                     if std.str_eq(right_name, "Recv") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Channel Recv FFI override for %s", left_str), ctx);
                         mut type_str := codegen_get_c_type(left_type, env, ctx);
                         mut res := std.Concat("(({ __typeof__(*(((struct ", type_str);
                         res = std.Concat(res, "*)0)->_phantom)) _val; std_Channel_Recv_impl(");
@@ -521,6 +531,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         ref_prefix = "";
                     }
                     if std.str_eq(right_name, "Push") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector Push FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx[arg0_idx] = (*args_vec)[0];
@@ -534,18 +545,21 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         return std.Clone(ctx, res);
                     }
                     if std.str_eq(right_name, "Pop") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector Pop FFI override for %s", left_str), ctx);
                         mut res := std.Concat("os_VectorPop(", ref_prefix);
                         res = std.Concat(res, left_str);
                         res = std.Concat(res, ")");
                         return std.Clone(ctx, res);
                     }
                     if std.str_eq(right_name, "Clear") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector Clear FFI override for %s", left_str), ctx);
                         mut res := std.Concat("os_VectorClear(", ref_prefix);
                         res = std.Concat(res, left_str);
                         res = std.Concat(res, ")");
                         return std.Clone(ctx, res);
                     }
                     if std.str_eq(right_name, "Back") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector Back FFI override for %s", left_str), ctx);
                         mut res := std.Concat("os_VectorBack(", ref_prefix);
                         res = std.Concat(res, left_str);
                         res = std.Concat(res, ")");
@@ -581,6 +595,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
 
                     if std.str_eq(right_name, "Insert") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Insert FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx[arg0_idx] = (*args_vec)[0];
@@ -601,6 +616,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         return std.Clone(ctx, res);
                     }
                     if std.str_eq(right_name, "Get") { 
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Get FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx[arg0_idx] = (*args_vec)[0];
@@ -640,6 +656,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         return std.Clone(ctx, res);
                     }
                     if std.str_eq(right_name, "Remove") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Remove FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx[arg0_idx] = (*args_vec)[0];
@@ -655,12 +672,14 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         return std.Clone(ctx, res);
                     }
                     if std.str_eq(right_name, "Clear") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Clear FFI override for %s", left_str), ctx);
                         mut res := std.Concat("os_HashMapClear(", ref_prefix);
                         res = std.Concat(res, left_str);
                         res = std.Concat(res, ")");
                         return std.Clone(ctx, res);
                     }
                     if std.str_eq(right_name, "Keys") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Keys FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx[arg0_idx] = (*args_vec)[0];
@@ -715,6 +734,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut func_str := codegen_generate_expression(ctx[expr_idx].Call.function, env, ctx);
 
             if std.str_eq(func_str, "std.Format") || std.str_eq(func_str, "std_Format") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.Format FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 if len(*args_vec) == 0 {
                     return std.Clone(ctx, "((Slice_unsigned_char){ NULL, 0 })");
@@ -827,6 +847,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "std.FormatInt") || std.str_eq(func_str, "std_FormatInt") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.FormatInt FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
@@ -838,6 +859,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "std.Concat") || std.str_eq(func_str, "std_Concat") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.Concat FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
@@ -855,6 +877,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "std.GenerationalSwap") || std.str_eq(func_str, "std_GenerationalSwap") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.GenerationalSwap FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
@@ -872,6 +895,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "std.Clone") || std.str_eq(func_str, "std_Clone") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.Clone FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
@@ -954,6 +978,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "std.Spawn") || std.str_eq(func_str, "std_Spawn") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.Spawn FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut task_func_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[task_func_expr_idx] = (*args_vec)[0];
@@ -1006,10 +1031,12 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "std.Yield") || std.str_eq(func_str, "std_Yield") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.Yield FFI override", ctx);
                 return std.Clone(ctx, "gust_yield()");
             }
 
             if std.str_eq(func_str, "os.Exit") || std.str_eq(func_str, "os_Exit") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.Exit FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg_idx] = (*args_vec)[0];
@@ -1020,6 +1047,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "os.ReadFile") || std.str_eq(func_str, "os_ReadFile") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.ReadFile FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
@@ -1055,6 +1083,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "os.WriteFile") || std.str_eq(func_str, "os_WriteFile") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.WriteFile FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
@@ -1072,6 +1101,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "os.OpenDir") || std.str_eq(func_str, "os_OpenDir") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.OpenDir FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
@@ -1107,6 +1137,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "os.ReadDir") || std.str_eq(func_str, "os_ReadDir") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.ReadDir FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
@@ -1142,6 +1173,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "os.CloseDir") || std.str_eq(func_str, "os_CloseDir") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.CloseDir FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
@@ -1153,6 +1185,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             if std.str_eq(func_str, "os.path_join") || std.str_eq(func_str, "os_path_join") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.path_join FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
@@ -1312,6 +1345,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             res = std.Concat(res, "}\n\n");
 
             if len(*params_vec) == 1 {
+                codegen_log_trace("👁️", std.Format("codegen_generate_statement: generating pthread_wrapper for %s", ctx[stmt_idx].FunctionDecl.name), ctx);
                 mut param := (*params_vec)[0];
                 mut p_c_type := codegen_get_c_type(param.param_type, env, ctx);
                 
@@ -1361,6 +1395,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
 
 func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
+        codegen_log_trace("⚙️", "codegen_generate: commencing code generation pass", ctx);
         mut c_code := "// Transpiled C Code\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <pthread.h>\n\ntypedef void Any;\n\n";
         
         // 1. Structures Declarations
@@ -1369,6 +1404,17 @@ func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment
         mut i := 0;
         while i < len(struct_keys) {
             mut key := struct_keys[i];
+            
+            mut is_template_instance := 0;
+            if std.str_find(key, "_") != 0 - 1 {
+                is_template_instance = 1;
+            }
+            if is_template_instance == 1 {
+                codegen_log_trace("👁️", std.Format("codegen_generate: transpiling custom standard template instance %s", key), ctx);
+            } else {
+                codegen_log_trace("👁️", std.Format("codegen_generate: transpiling structure layout for %s", key), ctx);
+            }
+
             mut layout_lookup := (*env).struct_registry.Get(key);
             if layout_lookup.Ok {
                 mut layout := layout_lookup.Val;
