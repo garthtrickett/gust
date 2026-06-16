@@ -162,6 +162,65 @@ func codegen_gen_struct_initializer(name: str, env: &typechecker.TypeEnvironment
     }
 }
 
+func codegen_has_boolean_fields_recursive(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 1 || t.tag == 2 { // Byte, Bool
+            return 1;
+        }
+        if t.tag == 6 { // Slice
+            mut inner_type := ctx[t.Slice.inner];
+            return codegen_has_boolean_fields_recursive(inner_type, env, visited, ctx);
+        }
+        if t.tag == 9 { // RawPointer
+            mut inner_type := ctx[t.RawPointer.inner];
+            return codegen_has_boolean_fields_recursive(inner_type, env, visited, ctx);
+        }
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            mut lookup := (*visited).Get(name);
+            if lookup.Ok {
+                return 0;
+            }
+            (*visited).Insert(std.Clone(ctx, name), 1);
+            
+            mut lookup_struct := env.struct_registry.Get(name);
+            if lookup_struct.Ok {
+                mut layout := lookup_struct.Val;
+                mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                mut i := 0;
+                while i < len(f_keys) {
+                    mut f_key := f_keys[i];
+                    mut f_lookup := layout.fields.Get(f_key);
+                    if f_lookup.Ok {
+                        mut has_bool := codegen_has_boolean_fields_recursive(f_lookup.Val, env, visited, ctx);
+                        if has_bool == 1 {
+                            return 1;
+                        }
+                    }
+                    i = i + 1;
+                }
+            }
+            return 0;
+        }
+        if t.tag == 10 { // Generic
+            mut concrete_name := codegen_get_monomorphized_name(t.Generic.name, t.Generic.args, env, ctx);
+            mut struct_type: ast.Type[ctx];
+            struct_type.tag = 8;
+            struct_type.Struct.struct_name = concrete_name;
+            struct_type.Struct.brand = empty[Index[str, ctx]];
+            return codegen_has_boolean_fields_recursive(struct_type, env, visited, ctx);
+        }
+    }
+    return 0;
+}
+
+func codegen_has_boolean_fields(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+        return codegen_has_boolean_fields_recursive(t, env, &visited, ctx);
+    }
+}
+
 func codegen_gen_type_aware_initializer(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         if t.tag == 0 || t.tag == 1 || t.tag == 2 { // Int, Byte, Bool

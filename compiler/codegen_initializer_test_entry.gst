@@ -58,4 +58,51 @@ func main() {
 
     mut init_point := codegen.codegen_gen_type_aware_initializer(t_point, &env, ctx);
     os.LogStr(init_point); // Expected: ((Point){ .x = 0, .y = 0 }) (alphabetically sorted!)
+
+    // 5. Test codegen_has_boolean_fields
+    // Point has no boolean fields (x: int, y: int)
+    mut has_bool_point := codegen.codegen_has_boolean_fields(t_point, &env, ctx);
+    os.LogInt(has_bool_point); // Expected: 0
+
+    // Register a custom struct Node { val: int, active: bool }
+    mut l2: lexer.Lexer[ctx];
+    lexer.init_lexer(&l2, "type Node struct { val: int, active: bool }");
+
+    mut p2: parser.Parser[ctx];
+    parser.init_parser(&p2, &l2, ctx);
+
+    mut prog2 := parser.parse_program(&p2, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog2.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        typechecker.env_pre_register_statement(&env, (*statements_vec)[0], ctx);
+    }
+
+    mut t_node: ast.Type[ctx];
+    t_node.tag = 8; // Struct
+    t_node.Struct.struct_name = "Node";
+    t_node.Struct.brand = empty[Index[str, ctx]];
+
+    mut has_bool_node := codegen.codegen_has_boolean_fields(t_node, &env, ctx);
+    os.LogInt(has_bool_node); // Expected: 1
+
+    // Register a custom struct ParentNode { child: Node, id: int } (nested bool test)
+    mut l3: lexer.Lexer[ctx];
+    lexer.init_lexer(&l3, "type ParentNode struct { child: Node, id: int }");
+
+    mut p3: parser.Parser[ctx];
+    parser.init_parser(&p3, &l3, ctx);
+
+    mut prog3 := parser.parse_program(&p3, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog3.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        typechecker.env_pre_register_statement(&env, (*statements_vec)[0], ctx);
+    }
+
+    mut t_parent: ast.Type[ctx];
+    t_parent.tag = 8; // Struct
+    t_parent.Struct.struct_name = "ParentNode";
+    t_parent.Struct.brand = empty[Index[str, ctx]];
+
+    mut has_bool_parent := codegen.codegen_has_boolean_fields(t_parent, &env, ctx);
+    os.LogInt(has_bool_parent); // Expected: 1
 }

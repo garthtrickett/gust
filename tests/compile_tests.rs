@@ -3504,6 +3504,9 @@ fn test_self_hosted_codegen_initializers() {
         "0xFFFFFFFF",
         "NULL",
         "((Point){ .x = 0, .y = 0 })",
+        "0",
+        "1",
+        "1",
     ]
     .join("\n");
 
