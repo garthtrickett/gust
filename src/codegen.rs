@@ -217,18 +217,18 @@ impl Codegen {
         }
     }
 
-            fn find_wrapper_type(&self, val_type: &Type) -> String {
-            for (struct_name, layout) in &self.struct_registry {
-                if let Some(ok_t) = layout.fields.get("Ok")
-                    && let Some(val_t) = layout.fields.get("Val")
-                    && (*ok_t == Type::Int || *ok_t == Type::Bool)
-                    && val_t == val_type
-                {
-                    return struct_name.clone();
-                }
+    fn find_wrapper_type(&self, val_type: &Type) -> String {
+        for (struct_name, layout) in &self.struct_registry {
+            if let Some(ok_t) = layout.fields.get("Ok")
+                && let Some(val_t) = layout.fields.get("Val")
+                && (*ok_t == Type::Int || *ok_t == Type::Bool)
+                && val_t == val_type
+            {
+                return struct_name.clone();
             }
-            "LookupResult_int".to_string()
         }
+        "LookupResult_int".to_string()
+    }
 
     pub fn get_c_type(&self, t: &Type) -> String {
         let erased_t = erase_type_with_registry(t, &self.struct_registry);
@@ -1761,8 +1761,27 @@ impl Codegen {
                     }
                 }
 
-                let is_ptr =
+                let mut is_ptr =
                     matches!(alloc_type, Type::RawPointer(ref inner) if **inner != Type::Arena);
+
+                let is_arena_override = alloc_str == "ctx"
+                    || alloc_str == "arena"
+                    || alloc_str == "connCtx"
+                    || alloc_str == "a"
+                    || alloc_str.ends_with(".ctx")
+                    || alloc_str.ends_with(".arena")
+                    || alloc_str.ends_with(".connCtx")
+                    || alloc_str.ends_with(".a")
+                    || alloc_str.ends_with(".current_ctx")
+                    || alloc_str.ends_with(".next_ctx");
+
+                if is_arena_override {
+                    is_slice = false;
+                    is_ptr = false;
+                    is_vector = false;
+                    is_hashmap = false;
+                    is_pool = false;
+                }
 
                 if is_slice {
                     format!(
@@ -1789,72 +1808,73 @@ impl Codegen {
                     )
                 } else {
                     // Arena indexing (Value-Branded)
-                let is_arena = alloc_type == Type::Arena
-                    || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
-                    || alloc_str == "ctx"
-                    || alloc_str == "arena"
-                    || alloc_str == "connCtx"
-                    || alloc_str == "a"
-                    || alloc_str.ends_with(".ctx")
-                    || alloc_str.ends_with(".arena")
-                    || alloc_str.ends_with(".connCtx")
-                    || alloc_str.ends_with(".a")
-                    || alloc_str.ends_with(".current_ctx")
-                    || alloc_str.ends_with(".next_ctx");
-                if is_arena {
-                    let mut target_struct = "SessionNode".to_string();
-                    if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index)
-                        && struct_name != "Any"
-                    {
-                        target_struct = struct_name;
-                    }
-                    let c_target_struct = self.get_c_type_name_by_struct_name(&target_struct);
+                    let is_arena = alloc_type == Type::Arena
+                        || matches!(alloc_type, Type::RawPointer(ref inner) if **inner == Type::Arena)
+                        || alloc_str == "ctx"
+                        || alloc_str == "arena"
+                        || alloc_str == "connCtx"
+                        || alloc_str == "a"
+                        || alloc_str.ends_with(".ctx")
+                        || alloc_str.ends_with(".arena")
+                        || alloc_str.ends_with(".connCtx")
+                        || alloc_str.ends_with(".a")
+                        || alloc_str.ends_with(".current_ctx")
+                        || alloc_str.ends_with(".next_ctx");
+                    if is_arena {
+                        let mut target_struct = "SessionNode".to_string();
+                        if let Some(Type::Index(struct_name, _)) = self.get_expr_type(index)
+                            && struct_name != "Any"
+                        {
+                            target_struct = struct_name;
+                        }
+                        let c_target_struct = self.get_c_type_name_by_struct_name(&target_struct);
 
-                    let mut use_arrow = false;
-                    if let Expression::Identifier(name, span) = &**allocator
-                        && let Some(Type::RawPointer(inner)) = self
-                            .resolved_types
-                            .get(span)
-                            .cloned()
-                            .or_else(|| self.symbol_table.borrow().get(name).cloned())
-                        && *inner == Type::Arena
-                    {
-                        use_arrow = true;
-                    }
-                    if !use_arrow {
-                        let is_pointer_name = if let Some(t) = self.symbol_table.borrow().get(&alloc_str) {
-                            matches!(t, Type::RawPointer(inner) if **inner == Type::Arena)
-                        } else {
-                            alloc_str == "ctx"
-                                || alloc_str == "arena"
-                                || alloc_str == "connCtx"
-                                || alloc_str == "a"
-                                || alloc_str.ends_with(".ctx")
-                                || alloc_str.ends_with(".arena")
-                                || alloc_str.ends_with(".connCtx")
-                                || alloc_str.ends_with(".a")
-                        };
-                        if is_pointer_name {
+                        let mut use_arrow = false;
+                        if let Expression::Identifier(name, span) = &**allocator
+                            && let Some(Type::RawPointer(inner)) = self
+                                .resolved_types
+                                .get(span)
+                                .cloned()
+                                .or_else(|| self.symbol_table.borrow().get(name).cloned())
+                            && *inner == Type::Arena
+                        {
                             use_arrow = true;
                         }
-                    }
+                        if !use_arrow {
+                            let is_pointer_name =
+                                if let Some(t) = self.symbol_table.borrow().get(&alloc_str) {
+                                    matches!(t, Type::RawPointer(inner) if **inner == Type::Arena)
+                                } else {
+                                    alloc_str == "ctx"
+                                        || alloc_str == "arena"
+                                        || alloc_str == "connCtx"
+                                        || alloc_str == "a"
+                                        || alloc_str.ends_with(".ctx")
+                                        || alloc_str.ends_with(".arena")
+                                        || alloc_str.ends_with(".connCtx")
+                                        || alloc_str.ends_with(".a")
+                                };
+                            if is_pointer_name {
+                                use_arrow = true;
+                            }
+                        }
 
-                    if use_arrow {
-                        format!(
-                            "(*(( {}*)((char*){}->BaseAddress + {})))",
-                            c_target_struct, alloc_str, index_str
-                        )
+                        if use_arrow {
+                            format!(
+                                "(*(( {}*)((char*){}->BaseAddress + {})))",
+                                c_target_struct, alloc_str, index_str
+                            )
+                        } else {
+                            format!(
+                                "(*(( {}*)((char*){}.BaseAddress + {})))",
+                                c_target_struct, alloc_str, index_str
+                            )
+                        }
                     } else {
-                        format!(
-                            "(*(( {}*)((char*){}.BaseAddress + {})))",
-                            c_target_struct, alloc_str, index_str
-                        )
+                        format!("({}[{}])", alloc_str, index_str)
                     }
-                } else {
-                    format!("({}[{}])", alloc_str, index_str)
                 }
             }
-        }
             Expression::Binary {
                 op, left, right, ..
             } => {
@@ -2131,7 +2151,9 @@ impl Codegen {
                     let mut src_brand = "current_ctx".to_string();
                     let mut found = false;
 
-                    if let Some(Type::Index(s_name, Some(brand))) = self.get_original_expr_type(&arguments[1]) {
+                    if let Some(Type::Index(s_name, Some(brand))) =
+                        self.get_original_expr_type(&arguments[1])
+                    {
                         struct_name = erase_struct_name_with_registry(
                             &s_name,
                             &Some(brand.clone()),
