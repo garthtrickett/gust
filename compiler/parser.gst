@@ -1430,13 +1430,13 @@ func parse_var_decl(p: *Parser[ctx], is_mut: int, ctx: &Arena) Index[ast.Stateme
 
 func parse_block_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.BlockStatement[ctx], ctx] {
     mut block_idx: Index[ast.BlockStatement[ctx], ctx] := os.ArenaAlloc(ctx);
-    unsafe { 
+    unsafe {
         mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
         mut dest_ptr := &statements_vec;
         ctx[block_idx].span = (*p).cur_token.span;
-        
-        next_token(p); // consume '{'
-        
+
+        next_token(p);
+
         while is_at_end(p) == 0 {
             mut before_errors := len((*p).errors);
             mut stmt := parse_statement(p, ctx);
