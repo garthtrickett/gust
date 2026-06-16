@@ -762,6 +762,16 @@ func strip_brand_prefix(brand: str, ctx: &Arena) str {
     return std.str_slice(brand, last_double_underscore + 2, len(brand));
 }
 
+func typechecker_ends_with(s: str, suffix: str) int {
+    mut len_s := len(s);
+    mut len_suffix := len(suffix);
+    if len_s < len_suffix {
+        return 0;
+    }
+    mut end_part := std.str_slice(s, len_s - len_suffix, len_s);
+    return std.str_eq(end_part, suffix);
+}
+
 func get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
     unsafe {
         mut base := "";
@@ -785,16 +795,20 @@ func get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
             if t.Index.brand != empty[Index[str, ctx]] {
                 mut brand_str_ptr := &ctx[t.Index.brand] as *str;
                 mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
-                base = std.Concat(base, "_");
-                base = std.Concat(base, clean_b);
+                mut suffix := std.Concat("_", clean_b);
+                if typechecker_ends_with(t.Index.struct_name, suffix) == 0 {
+                    base = std.Concat(base, suffix);
+                }
             }
         } else if t.tag == 8 { // Struct
             base = t.Struct.struct_name;
             if t.Struct.brand != empty[Index[str, ctx]] {
                 mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
                 mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
-                base = std.Concat(base, "_");
-                base = std.Concat(base, clean_b);
+                mut suffix := std.Concat("_", clean_b);
+                if typechecker_ends_with(base, suffix) == 0 {
+                    base = std.Concat(base, suffix);
+                }
             }
         } else if t.tag == 9 { // RawPointer
             mut inner_t := ctx[t.RawPointer.inner];
