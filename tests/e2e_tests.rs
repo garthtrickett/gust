@@ -4465,6 +4465,85 @@ fn test_self_hosted_typechecker_violations() {
     let _ = std::fs::remove_file(&bin_path);
 }
 
+#[test]
+fn test_final_e2e_adt_pressure_test() {
+    let source = "
+        type MyResult[T, E, ctx] enum {
+            Ok { val: T },
+            Err { error: E }
+        }
+
+        type MyOption[T, ctx] enum {
+            Some { val: T },
+            None
+        }
+
+        func create_vector(ctx: &Arena) std.Vector[MyOption[MyResult[int, str, ctx], ctx], ctx] {
+            mut vec: std.Vector[MyOption[MyResult[int, str, ctx], ctx], ctx] := std.VectorNew(ctx);
+
+            mut r1: MyResult[int, str, ctx];
+            r1.tag = 0; // Ok
+            r1.Ok.val = 42;
+
+            mut o1: MyOption[MyResult[int, str, ctx], ctx];
+            o1.tag = 0; // Some
+            o1.Some.val = r1;
+
+            vec.Push(o1);
+
+            mut r2: MyResult[int, str, ctx];
+            r2.tag = 1; // Err
+            r2.Err.error = \"something went wrong\";
+
+            mut o2: MyOption[MyResult[int, str, ctx], ctx];
+            o2.tag = 0; // Some
+            o2.Some.val = r2;
+
+            vec.Push(o2);
+
+            mut o3: MyOption[MyResult[int, str, ctx], ctx];
+            o3.tag = 1; // None
+
+            vec.Push(o3);
+
+            return vec;
+        }
+
+        func process_vector(vec: std.Vector[MyOption[MyResult[int, str, ctx], ctx], ctx]) {
+            mut i := 0;
+            while i < len(vec) {
+                mut opt := vec[i];
+                match opt {
+                    Some => {
+                        mut res := opt.Some.val;
+                        match res {
+                            Ok => {
+                                os.LogInt(res.Ok.val);
+                            }
+                            Err => {
+                                os.LogStr(res.Err.error);
+                            }
+                        }
+                    }
+                    None => {
+                        os.LogStr(\"None\");
+                    }
+                }
+                i = i + 1;
+            }
+        }
+
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+
+            mut vec := create_vector(ctx);
+            process_vector(vec);
+        }
+    ";
+    run_e2e_test(source, "42\nsomething went wrong\nNone");
+}
+
 // #[test]
 // fn test_self_hosted_type_dump_diff() {
 //     gust_lexer::init_logging();
