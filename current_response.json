@@ -1,9 +1,0 @@
-{
-  "summary": "fix: wrap raw pointer dereferences in unsafe blocks for e2e_sync_primitives test",
-  "files": [
-    {
-      "file_path": "tests/e2e_sync_primitives.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc producer(p: *Pipeline[ctx]) {\n    mut i := 0;\n    while i < 5 {\n        (*p).chan.Send(i);\n        i = i + 1;\n    } \n}\n\nfunc consumer(p: *Pipeline[ctx]) {\n    mut i := 0;\n    while i < 5 {\n        mut val := (*p).chan.Recv();\n        unsafe {\n            mut val_ptr := (*p).mutex.Lock();\n            (*val_ptr).count = (*val_ptr).count + val;\n            (*p).mutex.Unlock();\n        }\n        i = i + 1;\n    }\n}\n=======\nfunc producer(p: *Pipeline[ctx]) { \n    mut i := 0;\n    while i < 5 {\n        unsafe {\n            (*p).chan.Send(i);\n        }\n        i = i + 1;\n    } \n}\n\nfunc consumer(p: *Pipeline[ctx]) {\n    mut i := 0;\n    while i < 5 {\n        mut val := 0;\n        unsafe {\n            val = (*p).chan.Recv();\n            mut val_ptr := (*p).mutex.Lock();\n            (*val_ptr).count = (*val_ptr).count + val;\n            (*p).mutex.Unlock();\n        }\n        i = i + 1;\n    }\n}\n>>>>>>> REPLACE"
-    }
-  ]
-}
