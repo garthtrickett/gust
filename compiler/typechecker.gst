@@ -2506,6 +2506,17 @@ func get_type_brand(t: ast.Type[ctx], ctx: &Arena) str {
     }
 }
 
+func typechecker_strip_module_prefix(name: str, ctx: &Arena) str {
+    mut d_idx := std.str_find(name, "__");
+    if d_idx != 0 - 1 {
+        mut s_idx := std.str_find(name, "_");
+        if s_idx == d_idx {
+            return std.str_slice(name, d_idx + 2, len(name));
+        }
+    }
+    return name;
+}
+
 func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) int {
     unsafe {
         mut t_expected := ast.serialize_type(expected, ctx);
@@ -2533,8 +2544,8 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
 if expected.tag == 7 { // Index
                 mut name1 := expected.Index.struct_name;
                 mut name2 := actual.Index.struct_name;
-                name1 = strip_brand_prefix(name1, ctx);
-                name2 = strip_brand_prefix(name2, ctx);
+                name1 = typechecker_strip_module_prefix(name1, ctx);
+                name2 = typechecker_strip_module_prefix(name2, ctx);
                 if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
                     return 1;
                 }
@@ -2559,8 +2570,8 @@ if expected.tag == 7 { // Index
                         }
                     }
 
-                    name1 = strip_brand_prefix(name1, ctx);
-                    name2 = strip_brand_prefix(name2, ctx);
+                    name1 = typechecker_strip_module_prefix(name1, ctx);
+                    name2 = typechecker_strip_module_prefix(name2, ctx);
 
                     mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
         
