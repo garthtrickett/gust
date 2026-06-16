@@ -144,6 +144,24 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
     }
 }
 
+func typechecker_get_template_elem_type(struct_name: str, field_name: str, env: *TypeEnvironment[ctx], ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        mut lookup := (*env).struct_registry.Get(struct_name);
+        if lookup.Ok {
+            mut layout := lookup.Val;
+            mut f_lookup := layout.fields.Get(field_name);
+            if f_lookup.Ok {
+                mut t := f_lookup.Val;
+                if t.tag == 9 { // RawPointer
+                    return ctx[t.RawPointer.inner];
+                }
+            }
+        }
+        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+        return t_void;
+    }
+}
+
 func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
         mut dummy: ast.Type[ctx];
@@ -417,6 +435,315 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             return t;
         }
         if expr.tag == 12 { // Call
+            // Intercept standard template methods (Vector, HashMap, Pool, Mutex, Channel, Rc, Graph)
+            mut func_expr := ctx[expr.Call.function];
+            if func_expr.tag == 11 { // Selector
+                mut left_expr_idx := func_expr.Selector.left;
+                mut right_name := func_expr.Selector.right;
+                mut left_type := check_expression(left_expr_idx, env, scope, ctx);
+                mut is_ptr := 0;
+                if left_type.tag == 9 { // RawPointer
+                    left_type = ctx[left_type.RawPointer.inner];
+                    is_ptr = 1;
+                }
+                
+                mut is_mutex := 0;
+                mut is_channel := 0;
+                mut is_vec := 0;
+                mut is_map := 0;
+                mut is_pool := 0;
+                mut is_rc := 0;
+                mut is_graph := 0;
+                mut is_gen_arena := 0;
+                mut s_name := "";
+                if left_type.tag == 8 { // Struct
+                    s_name = left_type.Struct.struct_name;
+                    if std.str_find(s_name, "Mutex_") != 0 - 1 || std.str_find(s_name, "std_Mutex_") != 0 - 1 {
+                        is_mutex = 1;
+                    } else if std.str_find(s_name, "Channel_") != 0 - 1 || std.str_find(s_name, "std_Channel_") != 0 - 1 {
+                        is_channel = 1;
+                    } else if std.str_find(s_name, "Vector_") != 0 - 1 || std.str_find(s_name, "std_Vector_") != 0 - 1 {
+                        is_vec = 1;
+                    } else if std.str_find(s_name, "HashMap_") != 0 - 1 || std.str_find(s_name, "std_HashMap_") != 0 - 1 {
+                        is_map = 1;
+                    } else if std.str_find(s_name, "Pool_") != 0 - 1 || std.str_find(s_name, "std_Pool_") != 0 - 1 {
+                        is_pool = 1;
+                    } else if std.str_find(s_name, "Rc_") != 0 - 1 || std.str_find(s_name, "std_Rc_") != 0 - 1 {
+                        is_rc = 1;
+                    } else if std.str_find(s_name, "Graph_") != 0 - 1 || std.str_find(s_name, "std_Graph_") != 0 - 1 {
+                        is_graph = 1;
+                    } else if std.str_find(s_name, "GenerationalArena_") != 0 - 1 || std.str_find(s_name, "std_GenerationalArena_") != 0 - 1 {
+                        is_gen_arena = 1;
+                    }
+                }
+
+                if is_gen_arena == 1 && (std.str_eq(right_name, "Step") || std.str_eq(right_name, "step") || std.str_eq(right_name, "Swap") || std.str_eq(right_name, "swap")) {
+                    mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                    return t_void;
+                }
+
+                if is_mutex == 1 {
+                    if std.str_eq(right_name, "Lock") {
+                        unsafe {
+                            mut lookup := (*env).struct_registry.Get(s_name);
+                            if lookup.Ok {
+                                mut val_t_lookup := lookup.Val.fields.Get("value");
+                                if val_t_lookup.Ok {
+                                    return make_type_pointer(val_t_lookup.Val, ctx);
+                                } 
+                            }
+                        }
+                    }
+                    if std.str_eq(right_name, "Unlock") {
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                }
+
+                if is_channel == 1 {
+                    if std.str_eq(right_name, "Send") {
+                        // Typecheck argument
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec) == 1 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                        }
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                    if std.str_eq(right_name, "Recv") {
+                        return typechecker_get_template_elem_type(s_name, "_phantom", env, ctx);
+                    }
+                }
+
+                if is_vec == 1 {
+                    if std.str_eq(right_name, "Push") {
+                        // Typecheck argument
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec) == 1 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                        }
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                    if std.str_eq(right_name, "Pop") {
+                        return typechecker_get_template_elem_type(s_name, "data", env, ctx);
+                    }
+                    if std.str_eq(right_name, "Clear") {
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                    if std.str_eq(right_name, "Back") {
+                        mut elem_t := typechecker_get_template_elem_type(s_name, "data", env, ctx);
+                        return make_type_pointer(elem_t, ctx);
+                    }
+                }
+
+                if is_map == 1 {
+                    if std.str_eq(right_name, "Insert") {
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec) == 2 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                            
+                            mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg1_idx] = (*args_vec)[1];
+                            check_expression(arg1_idx, env, scope, ctx);
+                        }
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                    if std.str_eq(right_name, "Get") {
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec) == 1 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                        }
+                        
+                        mut v_type := typechecker_get_template_elem_type(s_name, "values", env, ctx);
+                        mut val_type_ident := get_type_ident(v_type, ctx);
+                        mut lookup_struct_name := std.Concat("LookupResult_", val_type_ident);
+                        
+                        unsafe {
+                            mut existing_lookup := (*env).struct_registry.Get(lookup_struct_name);
+                            if existing_lookup.Ok == 0 {
+                                mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+                                mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
+                                fields.Insert("Ok", t_int);
+                                fields.Insert("Val", v_type);
+                                
+                                mut layout: StructLayout[ctx];
+                                layout.brand = empty[Index[str, ctx]];
+                                layout.fields = fields;
+                                env_register_struct(env, lookup_struct_name, layout, ctx);
+                            }
+                        }
+                        return make_type_struct(lookup_struct_name, "", ctx);
+                    }
+                    if std.str_eq(right_name, "Remove") {
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec) == 1 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                        }
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                    if std.str_eq(right_name, "Clear") {
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                    if std.str_eq(right_name, "Keys") {
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut brand_name := "ctx";
+                        if len(*args_vec) == 1 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                            brand_name = get_root_variable(arg0_idx, ctx);
+                        }
+                        
+                        mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
+                        mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                        args.Push(k_type);
+                        args.Push(make_type_struct(brand_name, "", ctx));
+                        return make_type_generic("std.Vector", args, ctx);
+                    }
+                }
+
+                if is_pool == 1 {
+                    if std.str_eq(right_name, "Alloc") {
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec) == 1 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                        }
+                        
+                        mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
+                        mut elem_struct_name := "SessionNode";
+                        if elem_type.tag == 8 { // Struct
+                            elem_struct_name = elem_type.Struct.struct_name;
+                        }
+                        mut brand_name := "";
+                        if left_type.tag == 8 { // Struct
+                            if left_type.Struct.brand != empty[Index[str, ctx]] {
+                                unsafe {
+                                    mut brand_str_ptr := &ctx[left_type.Struct.brand] as *str;
+                                    brand_name = *brand_str_ptr;
+                                }
+                            }
+                        }
+                        return make_type_index(elem_struct_name, brand_name, ctx);
+                    }
+                    if std.str_eq(right_name, "Free") {
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec) == 1 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                        }
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                }
+
+                if is_rc == 1 {
+                    if std.str_eq(right_name, "Clone") {
+                        return left_type;
+                    } 
+                    if std.str_eq(right_name, "Release") {
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                    if std.str_eq(right_name, "Get") {
+                        unsafe {
+                            mut lookup := (*env).struct_registry.Get(s_name);
+                            if lookup.Ok {
+                                mut node_idx_t_lookup := lookup.Val.fields.Get("node_index");
+                                if node_idx_t_lookup.Ok {
+                                    mut node_idx_t := node_idx_t_lookup.Val;
+                                    if node_idx_t.tag == 7 { // Index
+                                        mut rcnode_name := node_idx_t.Index.struct_name;
+                                        mut rcnode_lookup := (*env).struct_registry.Get(rcnode_name);
+                                        if rcnode_lookup.Ok {
+                                            mut val_t_lookup := rcnode_lookup.Val.fields.Get("value");
+                                            if val_t_lookup.Ok {
+                                                return make_type_pointer(val_t_lookup.Val, ctx);
+                                            } 
+                                        } 
+                                    } 
+                                } 
+                            }
+                        }
+                    }
+                }
+
+                if is_graph == 1 {
+                    if std.str_eq(right_name, "AddNode") {
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec) == 1 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                        }
+                        mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
+                        return t_int;
+                    }
+                    if std.str_eq(right_name, "AddEdge") {
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec) == 2 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                            
+                            mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg1_idx] = (*args_vec)[1];
+                            check_expression(arg1_idx, env, scope, ctx);
+                        }
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                    if std.str_eq(right_name, "GetNode") {
+                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec) == 1 {
+                            mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx); 
+                            ctx[arg0_idx] = (*args_vec)[0];
+                            check_expression(arg0_idx, env, scope, ctx);
+                        }
+                        unsafe {
+                            mut lookup := (*env).struct_registry.Get(s_name);
+                            if lookup.Ok {
+                                mut nodes_t_lookup := lookup.Val.fields.Get("nodes");
+                                if nodes_t_lookup.Ok {
+                                    mut nodes_t := nodes_t_lookup.Val;
+                                    if nodes_t.tag == 8 { // Struct
+                                        mut pool_name := nodes_t.Struct.struct_name;
+                                        mut data_t := typechecker_get_template_elem_type(pool_name, "data", env, ctx);
+                                        if data_t.tag == 8 { // Struct
+                                            mut gnode_name := data_t.Struct.struct_name;
+                                            mut gnode_lookup := (*env).struct_registry.Get(gnode_name);
+                                            if gnode_lookup.Ok {
+                                                mut val_t_lookup := gnode_lookup.Val.fields.Get("value");
+                                                if val_t_lookup.Ok {
+                                                    return make_type_pointer(val_t_lookup.Val, ctx);
+                                                } 
+                                            } 
+                                        } 
+                                    } 
+                                } 
+                            }
+                        }
+                    }
+                }
+            }
+
             mut func_name := expression_to_string(expr.Call.function, ctx);
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
 
