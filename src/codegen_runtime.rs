@@ -1163,11 +1163,25 @@ static inline void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str
 
     uint32_t h = os_hash_key(key_ptr, is_str_key);
     int idx = h % m->capacity;
+    int probes = 0;
     while (m->occupied[idx]) {
         if (os_key_eq(m->keys + idx * key_size, key_ptr, is_str_key)) {
             return m->values + idx * val_size;
         }
         idx = (idx + 1) % m->capacity;
+        probes++;
+        if (probes > m->capacity + 10) {
+            fprintf(stderr, "🚨 HASHMAP INFINITE LOOP DETECTED!\n");
+            fprintf(stderr, "  Capacity: %d, Length: %d, Key Size: %zu, Val Size: %zu\n", m->capacity, m->len, key_size, val_size);
+            if (is_str_key) {
+                Slice_unsigned_char s = *(Slice_unsigned_char*)key_ptr;
+                fprintf(stderr, "  String Key: '%.*s' (len: %d)\n", s.len, (char*)s.data, s.len);
+            } else {
+                fprintf(stderr, "  Int Key: %d\n", *(int*)key_ptr);
+            }
+            fflush(stderr);
+            abort();
+        }
     }
 
     memcpy(m->keys + idx * key_size, key_ptr, key_size);
