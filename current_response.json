@@ -1,0 +1,9 @@
+{
+  "summary": "fix: increase initial Arena capacity to 1GB to prevent pointer invalidation on reallocation",
+  "files": [
+    {
+      "file_path": "src/codegen_runtime.rs",
+      "code_diff": "<<<<<<< SEARCH\nos_Arena os_Arena_New() {\n    os_Arena arena;\n    arena.Capacity = 268435456; // 64MB Initial Arena Capacity\n    arena.BaseAddress = malloc(arena.Capacity);\n    arena.Offset = 0;\n    return arena;\n}\n=======\nos_Arena os_Arena_New() {\n    os_Arena arena;\n    arena.Capacity = 1073741824; // 1GB Initial Arena Capacity\n    arena.BaseAddress = malloc(arena.Capacity);\n    arena.Offset = 0;\n    return arena;\n}\n>>>>>>> REPLACE"
+    }
+  ]
+}

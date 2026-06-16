@@ -511,7 +511,7 @@ void os_Arena_Validate(os_Arena* arena);
 
 os_Arena os_Arena_New() {
     os_Arena arena;
-    arena.Capacity = 268435456; // 64MB Initial Arena Capacity
+    arena.Capacity = 1073741824; // 1GB Initial Arena Capacity
     arena.BaseAddress = malloc(arena.Capacity);
     arena.Offset = 0;
     return arena;
