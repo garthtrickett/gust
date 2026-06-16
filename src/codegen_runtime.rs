@@ -8,6 +8,8 @@ pub const CORE_HEADERS: &str = r#"#define _GNU_SOURCE
 #include <sys/types.h>
 #include <dirent.h>
 
+typedef void Any;
+
 "#;
 
 pub const FIBER_RUNTIME: &str = r#"// ====================================================

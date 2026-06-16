@@ -622,7 +622,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
 
 func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
-        mut c_code := "// Transpiled C Code\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <pthread.h>\n\n";
+        mut c_code := "// Transpiled C Code\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <pthread.h>\n\ntypedef void Any;\n\n";
         
         // 1. Structures Declarations
         c_code = std.Concat(c_code, "// Structures\n");
