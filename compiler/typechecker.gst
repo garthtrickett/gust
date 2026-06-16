@@ -2787,6 +2787,12 @@ if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
 
             if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
                 mut resolved_explicit := env_resolve_type(env, ctx[var_type_idx], ctx);
+                
+                mut t_explicit := ast.serialize_type(resolved_explicit, ctx);
+                mut t_val := ast.serialize_type(val_type, ctx);
+                mut log_msg := std.Format('VarDecl: before types_match for variable %s (explicit=%s, value=%s)', name, t_explicit, t_val);
+                typechecker_log_trace('🔍', log_msg, ctx);
+                
                 if types_match(resolved_explicit, val_type, ctx) == 0 {
                     mut msg := "Semantic Error: Explicit Type Annotation Mismatch. Declared ";
                     msg = std.Concat(msg, ast.serialize_type(resolved_explicit, ctx));
