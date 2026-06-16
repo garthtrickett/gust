@@ -278,9 +278,7 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
         }
         if expr.tag == 8 { // IndexAccess
             mut alloc_t := check_expression(expr.IndexAccess.allocator, env, scope, ctx);
-        if tag == 8 { // IndexAccess
-            mut alloc_t := check_expression(expr_idx.IndexAccess.allocator, env, scope, ctx);
-            mut idx_t := check_expression(expr_idx.IndexAccess.index, env, scope, ctx);
+            mut idx_t := check_expression(expr.IndexAccess.index, env, scope, ctx);
             if alloc_t.tag == 6 { // Slice
                 return ctx[alloc_t.Slice.inner];
             }
