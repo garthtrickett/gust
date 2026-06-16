@@ -517,6 +517,11 @@ func scope_new(parent: Index[Scope[ctx], ctx], ctx: &Arena) Index[Scope[ctx], ct
         ctx[scope_idx].parent = parent;
         ctx[scope_idx].bindings = std.HashMapNew(ctx);
     }
+    if parent == empty[Index[Scope[ctx], ctx]] {
+        typechecker_log_trace("🗄️", "scope_new: spawned root scope", ctx);
+    } else {
+        typechecker_log_trace("🗄️", "scope_new: spawned child scope under parent", ctx);
+    }
     return scope_idx;
 }
 
@@ -524,6 +529,9 @@ func scope_insert(scope: Index[Scope[ctx], ctx], name: str, t: ast.Type[ctx], ct
     unsafe {
         ctx[scope].bindings.Insert(std.Clone(ctx, name), t);
     }
+    mut t_str := ast.serialize_type(t, ctx);
+    mut msg := std.Format("scope_insert: bound variable '%s' to type %s", name, t_str);
+    typechecker_log_trace("🗄️", msg, ctx);
 }
 
 func scope_lookup(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) ast.Type[ctx] {
@@ -1778,12 +1786,16 @@ func env_register_struct(env: *TypeEnvironment[ctx], name: str, layout: StructLa
     unsafe {
         (*env).struct_registry.Insert(std.Clone(ctx, name), layout);
     }
+    mut msg := std.Format("env_register_struct: registered struct '%s' with %d fields", name, layout.fields.len);
+    typechecker_log_trace("🗄️", msg, ctx);
 }
 
 func env_register_function(env: *TypeEnvironment[ctx], name: str, sig: FunctionSignature[ctx], ctx: &Arena) {
     unsafe {
         (*env).function_registry.Insert(std.Clone(ctx, name), sig);
     }
+    mut msg := std.Format("env_register_function: registered function '%s' with %d parameters", name, sig.params.len);
+    typechecker_log_trace("🗄️", msg, ctx);
 }
 
 func typechecker_get_file_stem(path: str, ctx: &Arena) str {
@@ -2017,6 +2029,11 @@ func report_error(kind_tag: int, message: str, span: token.Span, env: *TypeEnvir
         err.span = span;
         (*env).errors.Push(err);
     }
+}
+
+func typechecker_log_trace(emoji: str, message: str, ctx: &Arena) {
+    mut formatted := std.Format("%s %s", emoji, message);
+    os.LogStr(formatted);
 }
 
 func get_expression_span(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) token.Span {

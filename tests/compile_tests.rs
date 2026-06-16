@@ -3511,7 +3511,13 @@ fn test_self_hosted_templates_pre_registration() {
         "std_Vector_lib_module__MyStruct_ctx",
     ]
     .join("\n");
-    assert_eq!(stdout_str.trim(), expected.trim());
+
+    let filtered_stdout: String = stdout_str
+        .lines()
+        .filter(|line| !line.starts_with("🗄️"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert_eq!(filtered_stdout.trim(), expected.trim());
 }
 
 #[test]
@@ -7181,8 +7187,13 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
     let _ = std::fs::remove_file(&bin_path);
     let _ = std::fs::remove_file(entry_path);
 
+    let filtered_stdout: String = stdout_str
+        .lines()
+        .filter(|line| !line.starts_with("🗄️"))
+        .collect::<Vec<_>>()
+        .join("\n");
     assert_eq!(
-        stdout_str.trim(),
+        filtered_stdout.trim(),
         "Argument mismatch correctly detected!\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1"
     );
 }

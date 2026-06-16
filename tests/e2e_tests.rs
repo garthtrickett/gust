@@ -3927,7 +3927,19 @@ fn test_e2e_self_hosted_scope_resolution() {
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
 
-    assert_eq!(stdout_str.trim(), "0\n3\n1\n2");
+    let expected = vec![
+        "🗄️ scope_new: spawned root scope",
+        "🗄️ scope_insert: bound variable 'x' to type Int",
+        "🗄️ scope_new: spawned child scope under parent",
+        "🗄️ scope_insert: bound variable 'y' to type Bool",
+        "🗄️ scope_insert: bound variable 'x' to type Byte",
+        "0",
+        "3",
+        "1",
+        "2",
+    ]
+    .join("\n");
+    assert_eq!(stdout_str.trim(), expected.trim());
 }
 
 #[test]
@@ -4016,8 +4028,13 @@ fn test_e2e_self_hosted_registries() {
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
 
+    let filtered_stdout: String = stdout_str
+        .lines()
+        .filter(|line| !line.starts_with("🗄️"))
+        .collect::<Vec<_>>()
+        .join("\n");
     assert_eq!(
-        stdout_str.trim(),
+        filtered_stdout.trim(),
         "lib__Helper\nlib__add\nmain__local_var\nint\nLookupResult_lib__Helper"
     );
 }
@@ -4108,8 +4125,13 @@ fn test_e2e_self_hosted_origins() {
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
 
-    assert_eq!(
-        stdout_str.trim(),
+    let filtered_stdout: String = stdout_str
+        .lines()
+        .filter(|line| !line.starts_with("🗄️"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert_eq!( 
+        filtered_stdout.trim(),
         "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch\nexpr3 correctly flagged origin_x invalidation\nexpr4 correctly flagged ctx_brand invalidation\nexpr5 correctly flagged var_c move"
     );
 }
