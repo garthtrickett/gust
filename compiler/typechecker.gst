@@ -2497,6 +2497,11 @@ func get_type_brand(t: ast.Type[ctx], ctx: &Arena) str {
 
 func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) int {
     unsafe {
+        mut t_expected := ast.serialize_type(expected, ctx);
+        mut t_actual := ast.serialize_type(actual, ctx);
+        mut log_msg := std.Format('types_match: expected=%s, actual=%s', t_expected, t_actual);
+        typechecker_log_trace('⚖', log_msg, ctx);
+
         if expected.tag != actual.tag {
             // Handle Int/Byte match
             if (expected.tag == 0 && actual.tag == 1) || (expected.tag == 1 && actual.tag == 0) {
