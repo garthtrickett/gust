@@ -3512,9 +3512,9 @@ fn test_self_hosted_templates_pre_registration() {
     ]
     .join("\n");
 
-    assert!(stdout_str.contains("🔄 monomorphize_impl: start for std_Vector_lib_module__MyStruct_ctx"));
+    assert!(stdout_str.contains("🔄 monomorphize_impl: start for std_Vector_lib_module__MyStruct_main__ctx"));
     assert!(stdout_str.contains("👁️ substitute_generics: replaced placeholder 'T' with Struct(\"lib_module__MyStruct\", None)"));
-    assert!(stdout_str.contains("🔄 monomorphize_impl: successfully instantiated struct 'std_Vector_lib_module__MyStruct_ctx'"));
+    assert!(stdout_str.contains("🔄 monomorphize_impl: successfully instantiated struct 'std_Vector_lib_module__MyStruct_main__ctx'"));
 
     let filtered_stdout: String = stdout_str
         .lines()
