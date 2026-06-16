@@ -1566,6 +1566,9 @@ impl TypeChecker {
                 if let Some(ref mut local_vars) = self.current_function_local_vars {
                     local_vars.insert(name.clone());
                 }
+
+                self.resolved_types
+                    .insert(*span, self.variable_types.get(name).unwrap().clone());
             }
             Statement::Assignment { left, value, .. } => {
                 let left_type = match left {

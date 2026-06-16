@@ -217,18 +217,18 @@ impl Codegen {
         }
     }
 
-    fn find_wrapper_type(&self, val_type: &Type) -> String {
-        for (struct_name, layout) in &self.struct_registry {
-            if let Some(ok_t) = layout.fields.get("Ok")
-                && let Some(val_t) = layout.fields.get("Val")
-                && (*ok_t == Type::Int || *ok_t == Type::Bool)
-                && self.get_c_type(val_t) == self.get_c_type(val_type)
-            {
-                return struct_name.clone();
+            fn find_wrapper_type(&self, val_type: &Type) -> String {
+            for (struct_name, layout) in &self.struct_registry {
+                if let Some(ok_t) = layout.fields.get("Ok")
+                    && let Some(val_t) = layout.fields.get("Val")
+                    && (*ok_t == Type::Int || *ok_t == Type::Bool)
+                    && val_t == val_type
+                {
+                    return struct_name.clone();
+                }
             }
+            "LookupResult_int".to_string()
         }
-        "LookupResult_int".to_string()
-    }
 
     pub fn get_c_type(&self, t: &Type) -> String {
         let erased_t = erase_type_with_registry(t, &self.struct_registry);
