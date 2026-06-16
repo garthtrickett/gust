@@ -4021,10 +4021,10 @@ fn test_e2e_self_hosted_typechecker_tracing() {
     let _ = std::fs::remove_file(&bin_path);
 
     // Assert the presence of all 5 structured tracing emojis with expected payloads!
-    assert!(stdout_str.contains("🗄️ env_register_struct: registered struct 'main__BrandedNode_ctx'"));
-    assert!(stdout_str.contains("🔄 monomorphize_impl: start for main__BrandedNode_ctx"));
-    assert!(stdout_str.contains("👁️ substitute_generics: replaced placeholder 'ctx' with Struct(\"main__ctx\", None)"));
-    assert!(stdout_str.contains("🔄 monomorphize_impl: successfully instantiated struct 'main__BrandedNode_ctx'"));
+    assert!(stdout_str.contains("🗄️ env_register_struct: registered struct 'BrandedNode_ctx'"));
+    assert!(stdout_str.contains("🔄 monomorphize_impl: start for BrandedNode_ctx"));
+    assert!(stdout_str.contains("👁️ substitute_generics: replaced placeholder 'ctx' with Struct(\"ctx\", None)"));
+    assert!(stdout_str.contains("🔄 monomorphize_impl: successfully instantiated struct 'BrandedNode_ctx'"));
     assert!(stdout_str.contains("📥 check_statement: start for stmt tag 3")); // FunctionDecl main
     assert!(stdout_str.contains("📥 check_statement: start for stmt tag 4")); // VarDecl ctx
     assert!(stdout_str.contains("✅ check_statement: successfully verified stmt tag 4"));
