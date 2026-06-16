@@ -663,10 +663,10 @@ func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment
         
         // 2. pthread_wrapper forward declarations
         c_code = std.Concat(c_code, "// pthread_wrapper forward declarations\n");
-        mut statements_vec := &ctx[(*prog).statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut s_idx := 0;
-        while s_idx < len(*statements_vec) {
-            mut stmt := (*statements_vec)[s_idx];
+        mut fwd_statements_vec := &ctx[(*prog).statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut fwd_s_idx := 0;
+        while fwd_s_idx < len(*fwd_statements_vec) {
+            mut stmt := (*fwd_statements_vec)[fwd_s_idx];
             if stmt.tag == 3 { // FunctionDecl
                 mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
                 if len(*params_vec) == 1 {
@@ -675,7 +675,7 @@ func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment
                     c_code = std.Concat(c_code, decl);
                 }
             }
-            s_idx = s_idx + 1;
+            fwd_s_idx = fwd_s_idx + 1;
         }
         c_code = std.Concat(c_code, "\n");
         

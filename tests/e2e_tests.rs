@@ -4544,6 +4544,13 @@ fn test_final_e2e_adt_pressure_test() {
     run_e2e_test(source, "42\nsomething went wrong\nNone");
 }
 
+#[test]
+fn test_e2e_spawn_yield() {
+    let source = std::fs::read_to_string("tests/e2e_spawn_yield.gst")
+        .expect("Failed to read tests/e2e_spawn_yield.gst");
+    run_e2e_test(&source, "30");
+}
+
 // #[test]
 // fn test_self_hosted_type_dump_diff() {
 //     gust_lexer::init_logging();

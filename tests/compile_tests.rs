@@ -3500,8 +3500,10 @@ fn test_self_hosted_codegen_initializers() {
     let _ = std::fs::remove_file(&bin_path);
 
     let filtered_stdout: String = stdout_str
-        .lines() 
-        .filter(|line| !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️"))
+        .lines()
+        .filter(|line| {
+            !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️")
+        })
         .collect::<Vec<_>>()
         .join("\n");
 
@@ -3542,7 +3544,11 @@ fn test_e2e_sentinel_verification_self_hosted() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed: {:?}",
+                check_res.err()
+            );
         }
     }
 
@@ -3566,8 +3572,14 @@ fn test_e2e_sentinel_verification_self_hosted() {
     let temp_dir = std::env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_sentinel_self_hosted_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_e2e_sentinel_self_hosted_{:?}_{}.bin", thread_id, process_id);
+    let c_filename = format!(
+        "gust_e2e_sentinel_self_hosted_{:?}_{}.c",
+        thread_id, process_id
+    );
+    let bin_filename = format!(
+        "gust_e2e_sentinel_self_hosted_{:?}_{}.bin",
+        thread_id, process_id
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -3577,7 +3589,7 @@ fn test_e2e_sentinel_verification_self_hosted() {
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
     cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() { 
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
     let compile_output = cmd
@@ -3626,7 +3638,11 @@ fn test_e2e_recursive_invariant_safety_self_hosted() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed: {:?}",
+                check_res.err()
+            );
         }
     }
 
@@ -3650,8 +3666,14 @@ fn test_e2e_recursive_invariant_safety_self_hosted() {
     let temp_dir = std::env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_invariant_self_hosted_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_e2e_invariant_self_hosted_{:?}_{}.bin", thread_id, process_id);
+    let c_filename = format!(
+        "gust_e2e_invariant_self_hosted_{:?}_{}.c",
+        thread_id, process_id
+    );
+    let bin_filename = format!(
+        "gust_e2e_invariant_self_hosted_{:?}_{}.bin",
+        thread_id, process_id
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -3661,7 +3683,7 @@ fn test_e2e_recursive_invariant_safety_self_hosted() {
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
     cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() { 
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
     let compile_output = cmd
@@ -3677,7 +3699,7 @@ fn test_e2e_recursive_invariant_safety_self_hosted() {
     );
 
     let run_output = std::process::Command::new(&bin_path)
-        .output() 
+        .output()
         .expect("Execution failed");
 
     let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
@@ -3710,7 +3732,11 @@ fn test_e2e_bootstrapped_self_test() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!(check_res.is_ok(), "Typechecking failed: {:?}", check_res.err());
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed: {:?}",
+                check_res.err()
+            );
         }
     }
 
@@ -3734,8 +3760,14 @@ fn test_e2e_bootstrapped_self_test() {
     let temp_dir = std::env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_bootstrapped_self_test_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_e2e_bootstrapped_self_test_{:?}_{}.bin", thread_id, process_id);
+    let c_filename = format!(
+        "gust_e2e_bootstrapped_self_test_{:?}_{}.c",
+        thread_id, process_id
+    );
+    let bin_filename = format!(
+        "gust_e2e_bootstrapped_self_test_{:?}_{}.bin",
+        thread_id, process_id
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -3745,7 +3777,7 @@ fn test_e2e_bootstrapped_self_test() {
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
     cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() { 
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
     let compile_output = cmd
@@ -3871,13 +3903,18 @@ fn test_self_hosted_templates_pre_registration() {
     ]
     .join("\n");
 
-    assert!(stdout_str.contains("🔄 monomorphize_impl: start for std_Vector_lib_module__MyStruct_main__ctx"));
+    assert!(
+        stdout_str
+            .contains("🔄 monomorphize_impl: start for std_Vector_lib_module__MyStruct_main__ctx")
+    );
     assert!(stdout_str.contains("👁️ substitute_generics: replaced placeholder 'T' with Struct(\"lib_module__MyStruct\", None)"));
     assert!(stdout_str.contains("🔄 monomorphize_impl: successfully instantiated struct 'std_Vector_lib_module__MyStruct_main__ctx'"));
 
     let filtered_stdout: String = stdout_str
         .lines()
-        .filter(|line| !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️"))
+        .filter(|line| {
+            !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️")
+        })
         .collect::<Vec<_>>()
         .join("\n");
     assert_eq!(filtered_stdout.trim(), expected.trim());
@@ -7552,7 +7589,9 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
 
     let filtered_stdout: String = stdout_str
         .lines()
-        .filter(|line| !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️"))
+        .filter(|line| {
+            !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️")
+        })
         .collect::<Vec<_>>()
         .join("\n");
     assert_eq!(
@@ -7567,11 +7606,19 @@ fn test_adt_metadata_and_tag_enum_generation() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_res = checker.check_program(&program);
-    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+    assert!(
+        check_res.is_ok(),
+        "Typechecker error: {:?}",
+        check_res.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -7585,10 +7632,22 @@ fn test_adt_metadata_and_tag_enum_generation() {
     let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify the generated C contains the typedef enum for variant tags
-    assert!(c_output.contains("Status_Tag__Pending = 0,"), "Missing Pending tag");
-    assert!(c_output.contains("Status_Tag__Active = 1,"), "Missing Active tag");
-    assert!(c_output.contains("Status_Tag__Failed = 2,"), "Missing Failed tag");
-    assert!(c_output.contains("} Status_Tag;"), "Missing Status_Tag typedef");
+    assert!(
+        c_output.contains("Status_Tag__Pending = 0,"),
+        "Missing Pending tag"
+    );
+    assert!(
+        c_output.contains("Status_Tag__Active = 1,"),
+        "Missing Active tag"
+    );
+    assert!(
+        c_output.contains("Status_Tag__Failed = 2,"),
+        "Missing Failed tag"
+    );
+    assert!(
+        c_output.contains("} Status_Tag;"),
+        "Missing Status_Tag typedef"
+    );
 }
 
 #[test]
@@ -7597,11 +7656,19 @@ fn test_adt_payload_struct_and_union_emission() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_res = checker.check_program(&program);
-    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+    assert!(
+        check_res.is_ok(),
+        "Typechecker error: {:?}",
+        check_res.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -7615,21 +7682,50 @@ fn test_adt_payload_struct_and_union_emission() {
     let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify payload structs and union are emitted
-    assert!(c_output.contains("struct Status_Pending {"), "Missing Status_Pending struct");
-    assert!(c_output.contains("struct Status_Active {"), "Missing Status_Active struct");
-    assert!(c_output.contains("struct Status_Failed {"), "Missing Status_Failed struct");
-    assert!(c_output.contains("struct Status {"), "Missing Status parent struct");
+    assert!(
+        c_output.contains("struct Status_Pending {"),
+        "Missing Status_Pending struct"
+    );
+    assert!(
+        c_output.contains("struct Status_Active {"),
+        "Missing Status_Active struct"
+    );
+    assert!(
+        c_output.contains("struct Status_Failed {"),
+        "Missing Status_Failed struct"
+    );
+    assert!(
+        c_output.contains("struct Status {"),
+        "Missing Status parent struct"
+    );
     assert!(c_output.contains("union {"), "Missing anonymous union");
 
     // Verify correct topological order (variants defined before the parent union container)
-    let idx_pending = c_output.find("struct Status_Pending {").expect("Status_Pending index");
-    let idx_active = c_output.find("struct Status_Active {").expect("Status_Active index");
-    let idx_failed = c_output.find("struct Status_Failed {").expect("Status_Failed index");
-    let idx_parent = c_output.find("struct Status {").expect("Status parent index");
+    let idx_pending = c_output
+        .find("struct Status_Pending {")
+        .expect("Status_Pending index");
+    let idx_active = c_output
+        .find("struct Status_Active {")
+        .expect("Status_Active index");
+    let idx_failed = c_output
+        .find("struct Status_Failed {")
+        .expect("Status_Failed index");
+    let idx_parent = c_output
+        .find("struct Status {")
+        .expect("Status parent index");
 
-    assert!(idx_pending < idx_parent, "Status_Pending must be defined before Status");
-    assert!(idx_active < idx_parent, "Status_Active must be defined before Status");
-    assert!(idx_failed < idx_parent, "Status_Failed must be defined before Status");
+    assert!(
+        idx_pending < idx_parent,
+        "Status_Pending must be defined before Status"
+    );
+    assert!(
+        idx_active < idx_parent,
+        "Status_Active must be defined before Status"
+    );
+    assert!(
+        idx_failed < idx_parent,
+        "Status_Failed must be defined before Status"
+    );
 }
 
 #[test]
@@ -7638,11 +7734,19 @@ fn test_adt_variant_constructor_and_initializer_logic() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_res = checker.check_program(&program);
-    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+    assert!(
+        check_res.is_ok(),
+        "Typechecker error: {:?}",
+        check_res.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -7656,10 +7760,16 @@ fn test_adt_variant_constructor_and_initializer_logic() {
     let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify correct local variables initialization
-    assert!(c_output.contains("Status s = ((Status){ .tag = 0 });"), "Missing status initialization");
+    assert!(
+        c_output.contains("Status s = ((Status){ .tag = 0 });"),
+        "Missing status initialization"
+    );
     // Verify assignments are generated correctly
     assert!(c_output.contains("s.tag = 1;"), "Missing tag assignment");
-    assert!(c_output.contains("s.Active.since = 0;"), "Missing union field assignment");
+    assert!(
+        c_output.contains("s.Active.since = 0;"),
+        "Missing union field assignment"
+    );
 }
 
 #[test]
@@ -7668,11 +7778,19 @@ fn test_refined_match_statement_codegen() {
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
-    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+    assert!(
+        parser.errors.is_empty(),
+        "Parser errors: {:?}",
+        parser.errors
+    );
 
     let mut checker = TypeChecker::new();
     let check_res = checker.check_program(&program);
-    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+    assert!(
+        check_res.is_ok(),
+        "Typechecker error: {:?}",
+        check_res.err()
+    );
 
     let codegen = Codegen::new(
         checker.variable_types,
@@ -7686,8 +7804,20 @@ fn test_refined_match_statement_codegen() {
     let c_output = codegen.generate(&modules_for_codegen);
 
     // Verify the match statement is translated to C switch with named tag constants
-    assert!(c_output.contains("switch (s.tag) {"), "Missing switch on s.tag");
-    assert!(c_output.contains("case Status_Tag__Pending:"), "Missing case for Pending");
-    assert!(c_output.contains("case Status_Tag__Active:"), "Missing case for Active");
-    assert!(c_output.contains("case Status_Tag__Failed:"), "Missing case for Failed");
+    assert!(
+        c_output.contains("switch (s.tag) {"),
+        "Missing switch on s.tag"
+    );
+    assert!(
+        c_output.contains("case Status_Tag__Pending:"),
+        "Missing case for Pending"
+    );
+    assert!(
+        c_output.contains("case Status_Tag__Active:"),
+        "Missing case for Active"
+    );
+    assert!(
+        c_output.contains("case Status_Tag__Failed:"),
+        "Missing case for Failed"
+    );
 }
