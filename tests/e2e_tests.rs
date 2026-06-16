@@ -4573,6 +4573,23 @@ fn test_e2e_formatting_utilities() {
     run_e2e_test(&source, "Loop Num: 0 - ok\nLoop Num: 1 - ok\nLoop Num: 2 - ok\n42\nroot_node\n42\nroot_node");
 }
 
+#[test]
+fn test_e2e_filesystem_ops() { 
+    let temp_dir_path = std::path::Path::new("temp_e2e_filesystem_dir");
+    let _ = std::fs::remove_dir_all(temp_dir_path);
+    std::fs::create_dir_all(temp_dir_path).unwrap();
+
+    std::fs::write(temp_dir_path.join("file1.gst"), "func main() {}").unwrap();
+    std::fs::write(temp_dir_path.join("file2.txt"), "plain text").unwrap();
+
+    let source = std::fs::read_to_string("tests/e2e_filesystem_ops.gst")
+        .expect("Failed to read tests/e2e_filesystem_ops.gst");
+    run_e2e_test(&source, "1\nHello from self-hosted Gust compiler File System E2E!\n0\n../c\nfile1.gst");
+
+    let _ = std::fs::remove_file("temp_e2e_filesystem_test.txt");
+    let _ = std::fs::remove_dir_all(temp_dir_path);
+}
+
 // #[test]
 // fn test_self_hosted_type_dump_diff() {
 //     gust_lexer::init_logging();
