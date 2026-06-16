@@ -4,6 +4,7 @@ import "parser.gst" as parser;
 import "ast.gst" as ast;
 import "errors.gst" as errors;
 import "typechecker.gst" as typechecker;
+import "codegen.gst" as codegen;
 
 func main() {
     mut ctx := os.Arena.New();
@@ -56,13 +57,15 @@ func main() {
     }
 
     if len(env.errors) > 0 {
+    if len(env.errors) > 0 { 
         mut k := 0;
         while k < len(env.errors) {
             os.LogStr(env.errors[k].message);
             k = k + 1;
         }
         os.Exit(1);
-    } else {
-        os.LogStr("OK");
+    } else { 
+        mut c_code := codegen.codegen_generate(&prog, &env, ctx); 
+        os.LogStr(c_code);
     }
 }

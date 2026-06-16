@@ -112,4 +112,8 @@ func main() {
         mut is_valid_str := codegen.codegen_gen_is_valid_helper("Node", lookup_node.Val, &env, ctx);
         os.LogStr(is_valid_str);
     }
+
+    // 7. Test codegen_generate
+    mut full_c := codegen.codegen_generate(&prog2, &env, ctx);
+    os.LogStr(full_c);
 }
