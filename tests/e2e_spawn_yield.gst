@@ -1,34 +1,33 @@
-type TaskArg[ctx] struct {
+type TaskArg[arena] struct {
     val: int,
-    flag: Index[int, ctx],
-    ctx: &Arena
+    flag: Index[int, arena]
 }
 
-func task(arg: *TaskArg[ctx]) {
+func task(arg: *TaskArg[arena]) { 
     unsafe {
         mut idx := (*arg).flag;
-        mut ptr := &(*arg).ctx[idx] as *int;
+        mut tl := os.GetThreadScratch();
+        mut arena: &Arena := tl.arena;
+        mut ptr := &arena[idx] as *int;
         *ptr = *ptr + (*arg).val;
     }
 }
 
 func main() {
-    mut ctx := os.Arena.New();
-    defer ctx.Free();
-    os.SetThreadScratch(ctx);
+    mut arena := os.Arena.New();
+    defer arena.Free();
+    os.SetThreadScratch(arena);
 
-    mut flag_idx: Index[int, ctx] := os.ArenaAlloc(ctx);
-    ctx[flag_idx] = 0;
+    mut flag_idx: Index[int, arena] := os.ArenaAlloc(arena);
+    arena[flag_idx] = 0;
 
-    mut arg1: TaskArg[ctx];
+    mut arg1: TaskArg[arena];
     arg1.val = 10;
     arg1.flag = flag_idx;
-    arg1.ctx = ctx;
 
-    mut arg2: TaskArg[ctx];
+    mut arg2: TaskArg[arena];
     arg2.val = 20;
     arg2.flag = flag_idx;
-    arg2.ctx = ctx;
 
     std.Spawn(task, &arg1);
     std.Spawn(task, &arg2);
@@ -36,10 +35,10 @@ func main() {
     mut loop_active := 1;
     while loop_active == 1 {
         std.Yield();
-        if ctx[flag_idx] == 30 {
+        if arena[flag_idx] == 30 {
             loop_active = 0;
         }
     }
 
-    os.LogInt(ctx[flag_idx]);
+    os.LogInt(arena[flag_idx]);
 }
