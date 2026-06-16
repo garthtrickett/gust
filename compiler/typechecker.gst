@@ -533,7 +533,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             return t;
         }
         if expr.tag == 13 { // Empty
-            return ctx[expr.Empty.target_type];
+            return env_resolve_type(env, ctx[expr.Empty.target_type], ctx);
         }
         return dummy;
     }
@@ -1915,9 +1915,47 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
         ctx[res_idx] = t;
         if t.tag == 7 { // Index
             ctx[res_idx].Index.struct_name = env_resolve_namespaced_ident(env, t.Index.struct_name, ctx);
+            
+            mut brand_name := "";
+            if t.Index.brand != empty[Index[str, ctx]] {
+                mut brand_str_ptr := &ctx[t.Index.brand] as *str;
+                brand_name = *brand_str_ptr;
+            }
+            mut temp_struct := make_type_struct(t.Index.struct_name, brand_name, ctx);
+            mut resolved_inner := env_resolve_type(env, temp_struct, ctx);
+            if resolved_inner.tag == 8 { // Struct
+                ctx[res_idx].Index.struct_name = std.Clone(ctx, resolved_inner.Struct.struct_name);
+            }
         } else {
             if t.tag == 8 { // Struct
-                ctx[res_idx].Struct.struct_name = env_resolve_namespaced_ident(env, t.Struct.struct_name, ctx);
+                mut namespaced_name := env_resolve_namespaced_ident(env, t.Struct.struct_name, ctx);
+                ctx[res_idx].Struct.struct_name = namespaced_name;
+                
+                if t.Struct.brand != empty[Index[str, ctx]] {
+                    mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
+                    mut brand_name := *brand_str_ptr;
+                    
+                    mut has_template := 0;
+                    if (*env).struct_templates.Get(namespaced_name).Ok {
+                        has_template = 1;
+                    } else {
+                        if (*env).enum_templates.Get(namespaced_name).Ok {
+                            has_template = 1;
+                        }
+                    }
+                    
+                    if has_template == 1 {
+                        mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                        args.Push(make_type_struct(brand_name, "", ctx));
+                        
+                        mut mono_res := monomorphize(env, namespaced_name, args, ctx);
+                        if mono_res.tag == 0 { // Ok
+                            return mono_res.Ok.val;
+                        } else {
+                            (*env).errors.Push(ctx[mono_res.Err.error]);
+                        }
+                    }
+                }
             } else {
                 if t.tag == 9 { // RawPointer
                     mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx); 
@@ -1950,7 +1988,7 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                                 return dummy;
                             }
                         }
-                    }
+                    } 
                 }
             }
         }
