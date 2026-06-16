@@ -1846,8 +1846,11 @@ impl Codegen {
                             c_target_struct, alloc_str, index_str
                         )
                     }
+                } else {
+                    format!("({}[{}])", alloc_str, index_str)
                 }
             }
+        }
             Expression::Binary {
                 op, left, right, ..
             } => {
