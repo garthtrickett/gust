@@ -1360,10 +1360,16 @@ func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx
         
         mut start_span := (*p).cur_token.span;
         mut left_expr := parse_expression(p, 1, ctx);
+        if left_expr == empty[Index[ast.Expression[ctx], ctx]] {
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
         
         if cur_token_is(p, 6) { // Eq = 6 ("=")
             next_token(p); // consume '=' 
             mut right_expr := parse_expression(p, 1, ctx);
+            if right_expr == empty[Index[ast.Expression[ctx], ctx]] {
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx[stmt_idx].tag = 5; // Assignment = 5
             ctx[stmt_idx].Assignment.left = left_expr;
