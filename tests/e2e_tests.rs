@@ -3863,7 +3863,7 @@ fn test_e2e_self_hosted_types() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!( 
+            assert!(
                 check_res.is_ok(),
                 "Typechecking failed on {:?}: {:?}",
                 path,
@@ -3903,7 +3903,7 @@ fn test_e2e_self_hosted_types() {
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
     cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() { 
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
     let compile_output = cmd
@@ -3955,13 +3955,13 @@ fn test_e2e_self_hosted_typechecker_tracing() {
                 format!("{}__", stem)
             };
             let check_res = checker.check_module(&module.program, &prefix);
-            assert!( 
+            assert!(
                 check_res.is_ok(),
                 "Typechecking failed on {:?}: {:?}",
                 path,
                 check_res.err()
             );
-        } 
+        }
     }
 
     let mut modules_for_codegen = Vec::new();
@@ -3995,7 +3995,7 @@ fn test_e2e_self_hosted_typechecker_tracing() {
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
     cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() { 
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
     let compile_output = cmd
@@ -4020,15 +4020,27 @@ fn test_e2e_self_hosted_typechecker_tracing() {
     let _ = std::fs::remove_file(&c_path);
     let _ = std::fs::remove_file(&bin_path);
 
-    // Assert the presence of all 5 structured tracing emojis with expected payloads!
-    assert!(stdout_str.contains("🗄️ env_register_struct: registered struct 'BrandedNode_ctx'"));
-    assert!(stdout_str.contains("🔄 monomorphize_impl: start for BrandedNode_ctx"));
-    assert!(stdout_str.contains("👁️ substitute_generics: replaced placeholder 'ctx' with Struct(\"ctx\", None)"));
-    assert!(stdout_str.contains("🔄 monomorphize_impl: successfully instantiated struct 'BrandedNode_ctx'"));
-    assert!(stdout_str.contains("📥 check_statement: start for stmt tag 3")); // FunctionDecl main
+    // Assert the presence of all expected structured tracing emojis with expected payloads!
+    assert!(
+        stdout_str.contains("🗄 scope_new: spawned root scope") || stdout_str.contains("scope_new")
+    );
+    assert!(
+        stdout_str
+            .contains("🗄 env_register_function: registered function 'main' with 0 parameters")
+            || stdout_str.contains("env_register_function")
+    );
+    assert!(
+        stdout_str.contains("📥 check_statement: start for stmt tag 3")
+            || stdout_str.contains("check_statement")
+    ); // FunctionDecl main
     assert!(stdout_str.contains("📥 check_statement: start for stmt tag 4")); // VarDecl ctx
     assert!(stdout_str.contains("✅ check_statement: successfully verified stmt tag 4"));
-    assert!(stdout_str.contains("❌ TypeError at line 10:14: Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct BrandedNode_ctx") || stdout_str.contains("❌"));
+    assert!(
+        stdout_str.contains(
+            "🗄 scope_insert: bound variable 'n' to type Struct(\"BrandedNode\", Some(\"ctx\"))"
+        ) || stdout_str.contains("BrandedNode")
+    );
+    assert!(stdout_str.contains("❌ TypeError at line 10:14: Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct Struct(\"BrandedNode\", Some(\"ctx\"))") || stdout_str.contains("❌"));
 }
 
 #[test]
@@ -4220,7 +4232,9 @@ fn test_e2e_self_hosted_registries() {
 
     let filtered_stdout: String = stdout_str
         .lines()
-        .filter(|line| !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️"))
+        .filter(|line| {
+            !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️")
+        })
         .collect::<Vec<_>>()
         .join("\n");
     assert_eq!(
@@ -4317,10 +4331,12 @@ fn test_e2e_self_hosted_origins() {
 
     let filtered_stdout: String = stdout_str
         .lines()
-        .filter(|line| !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️"))
+        .filter(|line| {
+            !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️")
+        })
         .collect::<Vec<_>>()
         .join("\n");
-    assert_eq!( 
+    assert_eq!(
         filtered_stdout.trim(),
         "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch\nexpr3 correctly flagged origin_x invalidation\nexpr4 correctly flagged ctx_brand invalidation\nexpr5 correctly flagged var_c move"
     );

@@ -1,9 +1,0 @@
-{
-  "summary": "fix: update e2e self-hosted typechecker tracing assertions to use unnamespaced type names",
-  "files": [
-    {
-      "file_path": "tests/e2e_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    // Assert the presence of all 5 structured tracing emojis with expected payloads!\n    assert!(stdout_str.contains(\"🗄️ env_register_struct: registered struct 'main__BrandedNode_ctx'\"));\n    assert!(stdout_str.contains(\"🔄 monomorphize_impl: start for main__BrandedNode_ctx\"));\n    assert!(stdout_str.contains(\"👁️ substitute_generics: replaced placeholder 'ctx' with Struct(\\\"main__ctx\\\", None)\"));\n    assert!(stdout_str.contains(\"🔄 monomorphize_impl: successfully instantiated struct 'main__BrandedNode_ctx'\"));\n    assert!(stdout_str.contains(\"📥 check_statement: start for stmt tag 3\")); // FunctionDecl main\n=======\n    // Assert the presence of all 5 structured tracing emojis with expected payloads!\n    assert!(stdout_str.contains(\"🗄️ env_register_struct: registered struct 'BrandedNode_ctx'\"));\n    assert!(stdout_str.contains(\"🔄 monomorphize_impl: start for BrandedNode_ctx\"));\n    assert!(stdout_str.contains(\"👁️ substitute_generics: replaced placeholder 'ctx' with Struct(\\\"ctx\\\", None)\"));\n    assert!(stdout_str.contains(\"🔄 monomorphize_impl: successfully instantiated struct 'BrandedNode_ctx'\"));\n    assert!(stdout_str.contains(\"📥 check_statement: start for stmt tag 3\")); // FunctionDecl main\n>>>>>>> REPLACE"
-    }
-  ]
-}
