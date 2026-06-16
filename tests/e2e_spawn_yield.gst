@@ -1,12 +1,13 @@
 type TaskArg[ctx] struct {
     val: int,
-    flag: Index[int, ctx]
+    flag: Index[int, ctx],
+    ctx: &Arena
 }
 
 func task(arg: *TaskArg[ctx]) {
     unsafe {
         mut idx := (*arg).flag;
-        mut ptr := &ctx[idx] as *int;
+        mut ptr := &(*arg).ctx[idx] as *int;
         *ptr = *ptr + (*arg).val;
     }
 }
@@ -22,10 +23,12 @@ func main() {
     mut arg1: TaskArg[ctx];
     arg1.val = 10;
     arg1.flag = flag_idx;
+    arg1.ctx = ctx;
 
     mut arg2: TaskArg[ctx];
     arg2.val = 20;
     arg2.flag = flag_idx;
+    arg2.ctx = ctx;
 
     std.Spawn(task, &arg1);
     std.Spawn(task, &arg2);
