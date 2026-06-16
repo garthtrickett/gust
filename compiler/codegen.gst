@@ -318,9 +318,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             return std.Clone(ctx, std.FormatInt(expr.Integer.val));
         }
         if expr.tag == 2 { // String
-            mut quote := '"';
-            mut res := std.Concat(std.Format("%c", quote), expr.String.val);
-            res = std.Concat(res, std.Format("%c", quote));
+            mut res := std.Concat("\"\\\"\"", expr.String.val);
+            res = std.Concat(res, "\"\\\"\"");
             mut len_str := std.FormatInt(len(expr.String.val));
             mut sl := std.Concat("((Slice_unsigned_char){ (unsigned char*)", res);
             sl = std.Concat(sl, ", ");
