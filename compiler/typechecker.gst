@@ -969,14 +969,21 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
 
             mut new_brand := t.Index.brand;
             if t.Index.brand != empty[Index[str, ctx]] {
+                typechecker_log_trace('🔍', 'substitute_generics Index: before reading brand', ctx);
                 mut brand_str_ptr := &ctx[t.Index.brand] as *str;
-                mut brand_lookup := map.Get(*brand_str_ptr);
+                mut brand_name := *brand_str_ptr;
+                typechecker_log_trace('🔍', 'substitute_generics Index: before brand map lookup', ctx);
+                mut brand_lookup := map.Get(brand_name);
+                typechecker_log_trace('🔍', 'substitute_generics Index: after brand map lookup', ctx);
                 if brand_lookup.Ok {
                     mut b_type := brand_lookup.Val;
                     if b_type.tag == 8 { // Struct
+                        typechecker_log_trace('🔍', 'substitute_generics Index: before ArenaAlloc for new_brand', ctx);
                         new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                        typechecker_log_trace('🔍', 'substitute_generics Index: after ArenaAlloc for new_brand', ctx);
                         mut ptr := &ctx[new_brand] as *str;
                         *ptr = std.Clone(ctx, b_type.Struct.struct_name);
+                        typechecker_log_trace('🔍', 'substitute_generics Index: successfully cloned new_brand', ctx);
                     }
                 }
             }
@@ -1235,23 +1242,16 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                        while f_idx < len(*fields_vec) {
                            mut field := (*fields_vec)[f_idx];
 
-                           mut type_before := ast.serialize_type(field.field_type, ctx);
-                           mut msg_before := std.Format("monomorphize field: %s, type before: %s", field.name, type_before);
-                           typechecker_log_trace("👁", msg_before, ctx);
+                           mut log_start := std.Format('monomorphize_impl field: %s - start', field.name);
+                           typechecker_log_trace('⚙', log_start, ctx);
 
                            mut substituted_type := substitute_generics(env, field.field_type, substitution_map, ctx);
-
-                           mut type_sub := ast.serialize_type(substituted_type, ctx);
-                           mut msg_sub := std.Format("monomorphize field: %s, type after substitute: %s", field.name, type_sub);
-                           typechecker_log_trace("👁", msg_sub, ctx);
-
                            mut resolved_field_type := env_resolve_type(env, substituted_type, ctx);
-
-                           mut type_resolved := ast.serialize_type(resolved_field_type, ctx);
-                           mut msg_resolved := std.Format("monomorphize field: %s, type after resolve: %s", field.name, type_resolved);
-                           typechecker_log_trace("👁", msg_resolved, ctx);
-
                            concrete_fields.Insert(std.Clone(ctx, field.name), resolved_field_type);
+
+                           mut log_end := std.Format('monomorphize_impl field: %s - end', field.name);
+                           typechecker_log_trace('⚙', log_end, ctx);
+
                            f_idx = f_idx + 1;
                        }
 
@@ -1970,8 +1970,10 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
             
             mut brand_name := "";
             if t.Index.brand != empty[Index[str, ctx]] {
+                typechecker_log_trace('🔍', 'env_resolve_type Index: before reading brand', ctx);
                 mut brand_str_ptr := &ctx[t.Index.brand] as *str;
                 brand_name = *brand_str_ptr;
+                typechecker_log_trace('🔍', 'env_resolve_type Index: successfully read brand', ctx);
             }
             mut temp_struct := make_type_struct(t.Index.struct_name, brand_name, ctx);
             mut resolved_inner := env_resolve_type(env, temp_struct, ctx);
