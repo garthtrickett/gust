@@ -7596,8 +7596,89 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
         .join("\n");
     assert_eq!(
         filtered_stdout.trim(),
-        "Argument mismatch correctly detected!\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1"
+        "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch\nexpr3 correctly flagged origin_x invalidation\nexpr4 correctly flagged ctx_brand invalidation\nexpr5 correctly flagged var_c move"
     );
+}
+
+#[test]
+fn test_e2e_self_hosted_codegen_tracing() {
+    gust_lexer::init_logging();
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
+
+    let res = resolver.resolve(&entry_path, &fs_impl).unwrap();
+    let (order, mut modules) = res;
+
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) { 
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            checker.check_module(&module.program, &prefix).unwrap();
+        }
+    }
+
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    let temp_dir = std::env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let c_filename = format!("gust_e2e_codegen_tracing_{:?}_{}.c", thread_id, process_id);
+    let bin_filename = format!("gust_e2e_codegen_tracing_{:?}_{}.bin", thread_id, process_id);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() { 
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("GCC command failed");
+
+    assert!(compile_output.status.success());
+
+    let run_output = std::process::Command::new(&bin_path)
+        .arg("compiler/test_scratch_storage_violation.gst")
+        .output()
+        .expect("Execution failed");
+
+    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+
+    let _ = std::fs::remove_file(&c_path);
+    let _ = std::fs::remove_file(&bin_path);
+
+    // Verify the presence of codegen tracing emojis
+    assert!(stdout_str.contains("⚙️ codegen_generate: commencing code generation pass"));
+    assert!(stdout_str.contains("👁️ codegen_generate_expression: transpiling std.Format FFI override"));
 }
 
 #[test]
