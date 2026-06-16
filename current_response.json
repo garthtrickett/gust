@@ -1,9 +1,13 @@
 {
-  "summary": "debug: dump stdout on e2e types test failure to identify mismatch",
+  "summary": "fix: initialize thread scratchpad in typechecker types test entry to prevent scratchpad exhaustion",
   "files": [
     {
+      "file_path": "compiler/typechecker_types_test_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut env := typechecker.env_new(ctx);\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    os.SetThreadScratch(ctx);\n\n    mut env := typechecker.env_new(ctx);\n>>>>>>> REPLACE"
+    },
+    {
       "file_path": "tests/e2e_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    // Assert that the output contains the dispatch and verification traces in sequence, and the error trace!\n    assert!(stdout_str.contains(\"📥 check_statement: start for stmt tag 3\")); // FuncDecl\n    assert!(stdout_str.contains(\"✅ check_statement: successfully verified stmt tag 3\"));\n    assert!(stdout_str.contains(\"❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str\") || stdout_str.contains(\"❌ TypeError at line 1:\"));\n}\n=======\n    // Assert that the output contains the dispatch and verification traces in sequence, and the error trace!\n    if !stdout_str.contains(\"📥 check_statement: start for stmt tag 3\") {\n        panic!(\"DEBUG STDOUT:\\n{}\", stdout_str);\n    }\n    assert!(stdout_str.contains(\"📥 check_statement: start for stmt tag 3\")); // FuncDecl\n    assert!(stdout_str.contains(\"✅ check_statement: successfully verified stmt tag 3\"));\n    assert!(stdout_str.contains(\"❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str\") || stdout_str.contains(\"❌ TypeError at line 1:\"));\n}\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    // Assert that the output contains the dispatch and verification traces in sequence, and the error trace!\n    if !stdout_str.contains(\"📥 check_statement: start for stmt tag 3\") {\n        panic!(\"DEBUG STDOUT:\\n{}\", stdout_str);\n    }\n    assert!(stdout_str.contains(\"📥 check_statement: start for stmt tag 3\")); // FuncDecl\n    assert!(stdout_str.contains(\"✅ check_statement: successfully verified stmt tag 3\"));\n    assert!(stdout_str.contains(\"❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str\") || stdout_str.contains(\"❌ TypeError at line 1:\"));\n}\n=======\n    // Assert that the output contains the dispatch and verification traces in sequence, and the error trace!\n    assert!(stdout_str.contains(\"📥 check_statement: start for stmt tag 3\")); // FuncDecl\n    assert!(stdout_str.contains(\"✅ check_statement: successfully verified stmt tag 3\"));\n    assert!(stdout_str.contains(\"❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str\") || stdout_str.contains(\"❌ TypeError at line 1:\"));\n}\n>>>>>>> REPLACE"
     }
   ]
 }

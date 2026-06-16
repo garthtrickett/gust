@@ -6,6 +6,7 @@ import "parser.gst" as parser;
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
+    os.SetThreadScratch(ctx);
 
     mut env := typechecker.env_new(ctx);
 

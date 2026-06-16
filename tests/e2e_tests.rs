@@ -3928,9 +3928,6 @@ fn test_e2e_self_hosted_types() {
     let _ = std::fs::remove_file(&bin_path);
 
     // Assert that the output contains the dispatch and verification traces in sequence, and the error trace!
-    if !stdout_str.contains("📥 check_statement: start for stmt tag 3") {
-        panic!("DEBUG STDOUT:\n{}", stdout_str);
-    }
     assert!(stdout_str.contains("📥 check_statement: start for stmt tag 3")); // FuncDecl
     assert!(stdout_str.contains("✅ check_statement: successfully verified stmt tag 3"));
     assert!(stdout_str.contains("❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str") || stdout_str.contains("❌ TypeError at line 1:"));
