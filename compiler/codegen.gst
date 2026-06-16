@@ -420,7 +420,18 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut alloc_str := codegen_generate_expression(alloc_idx, env, ctx);
             mut index_str := codegen_generate_expression(index_idx, env, ctx);
 
+            mut is_name_match := 0;
             if std.str_eq(alloc_str, "ctx") || std.str_eq(alloc_str, "arena") || std.str_eq(alloc_str, "connCtx") || std.str_eq(alloc_str, "a") {
+                is_name_match = 1;
+            }
+            if std.str_find(alloc_str, ".ctx") != 0 - 1 || std.str_find(alloc_str, ".arena") != 0 - 1 || std.str_find(alloc_str, ".connCtx") != 0 - 1 || std.str_find(alloc_str, ".a") != 0 - 1 {
+                is_name_match = 1;
+            }
+            if std.str_find(alloc_str, "->ctx") != 0 - 1 || std.str_find(alloc_str, "->arena") != 0 - 1 || std.str_find(alloc_str, "->connCtx") != 0 - 1 || std.str_find(alloc_str, "->a") != 0 - 1 {
+                is_name_match = 1;
+            }
+            
+            if is_name_match == 1 {
                 is_arena = 1;
             }
 
