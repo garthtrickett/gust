@@ -4566,6 +4566,13 @@ fn test_e2e_collections_methods() {
 2\n0\n2\n100\n200\n0\n2\napple\nbanana\n1\n0");
 }
 
+#[test]
+fn test_e2e_formatting_utilities() {
+    let source = std::fs::read_to_string("tests/e2e_formatting_utilities.gst")
+        .expect("Failed to read tests/e2e_formatting_utilities.gst");
+    run_e2e_test(&source, "Loop Num: 0 - ok\nLoop Num: 1 - ok\nLoop Num: 2 - ok\n42\nroot_node\n42\nroot_node");
+}
+
 // #[test]
 // fn test_self_hosted_type_dump_diff() {
 //     gust_lexer::init_logging();

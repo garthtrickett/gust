@@ -714,6 +714,245 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             mut func_str := codegen_generate_expression(ctx[expr_idx].Call.function, env, ctx);
 
+            if std.str_eq(func_str, "std.Format") || std.str_eq(func_str, "std_Format") {
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec) == 0 {
+                    return std.Clone(ctx, "((Slice_unsigned_char){ NULL, 0 })");
+                }
+                
+                mut format_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[format_expr_idx] = (*args_vec)[0];
+                mut format_expr := ctx[format_expr_idx];
+                
+                mut format_str := "";
+                if format_expr.tag == 2 { // String
+                    format_str = format_expr.String.val;
+                }
+                
+                mut size_expr := std.FormatInt(len(format_str));
+                mut eval_statements := "";
+                mut snprintf_args := "";
+                mut c_format_string := "";
+                
+                mut idx := 0;
+                mut spec_count := 0;
+                while idx < len(format_str) {
+                    mut b := std.str_byte_at(format_str, idx);
+                    if b == 37 { // '%'
+                        if idx + 1 < len(format_str) {
+                            mut next_char := std.str_byte_at(format_str, idx + 1);
+                            if next_char == 37 { // '%'
+                                c_format_string = std.Concat(c_format_string, "%%");
+                                idx = idx + 2;
+                            } else {
+                                spec_count = spec_count + 1;
+                                mut arg_idx := spec_count;
+                                mut arg_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                                ctx[arg_expr_idx] = (*args_vec)[arg_idx];
+                                mut arg_str := codegen_generate_expression(arg_expr_idx, env, ctx);
+                                
+                                if next_char == 115 { // 's'
+                                    c_format_string = std.Concat(c_format_string, "%.*s");
+                                    
+                                    mut arg_def := std.Concat("        Slice_unsigned_char _arg", std.FormatInt(arg_idx));
+                                    arg_def = std.Concat(arg_def, " = ");
+                                    arg_def = std.Concat(arg_def, arg_str);
+                                    arg_def = std.Concat(arg_def, ";\n");
+                                    eval_statements = std.Concat(eval_statements, arg_def);
+                                    
+                                    size_expr = std.Concat(size_expr, " + _arg");
+                                    size_expr = std.Concat(size_expr, std.FormatInt(arg_idx));
+                                    size_expr = std.Concat(size_expr, ".len");
+                                    
+                                    if std.str_eq(snprintf_args, "") == 0 {
+                                        snprintf_args = std.Concat(snprintf_args, ", ");
+                                    }
+                                    snprintf_args = std.Concat(snprintf_args, "_arg");
+                                    snprintf_args = std.Concat(snprintf_args, std.FormatInt(arg_idx));
+                                    snprintf_args = std.Concat(snprintf_args, ".len, (char*)_arg");
+                                    snprintf_args = std.Concat(snprintf_args, std.FormatInt(arg_idx));
+                                    snprintf_args = std.Concat(snprintf_args, ".data");
+                                } else { // treat as 'd'
+                                    c_format_string = std.Concat(c_format_string, "%d");
+                                    
+                                    mut arg_def := std.Concat("        __typeof__(", arg_str);
+                                    arg_def = std.Concat(arg_def, ") _arg");
+                                    arg_def = std.Concat(arg_def, std.FormatInt(arg_idx));
+                                    arg_def = std.Concat(arg_def, " = ");
+                                    arg_def = std.Concat(arg_def, arg_str);
+                                    arg_def = std.Concat(arg_def, ";\n");
+                                    eval_statements = std.Concat(eval_statements, arg_def);
+                                    
+                                    size_expr = std.Concat(size_expr, " + 20");
+                                    
+                                    if std.str_eq(snprintf_args, "") == 0 {
+                                        snprintf_args = std.Concat(snprintf_args, ", ");
+                                    }
+                                    snprintf_args = std.Concat(snprintf_args, "_arg");
+                                    snprintf_args = std.Concat(snprintf_args, std.FormatInt(arg_idx));
+                                }
+                                idx = idx + 2;
+                            } 
+                        } else {
+                            c_format_string = std.Concat(c_format_string, "%");
+                            idx = idx + 1;
+                        }
+                    } else {
+                        mut char_slice := std.str_slice(format_str, idx, idx + 1);
+                        c_format_string = std.Concat(c_format_string, char_slice);
+                        idx = idx + 1;
+                    }
+                }
+                
+                mut block := "(({ \n";
+                block = std.Concat(block, eval_statements);
+                block = std.Concat(block, "        int _alloc_size = ");
+                block = std.Concat(block, size_expr);
+                block = std.Concat(block, " + 1;\n");
+                block = std.Concat(block, "        char* _buf = (char*)os_ScratchAlloc(_alloc_size);\n");
+                
+                mut snprintf_args_str := "";
+                if std.str_eq(snprintf_args, "") == 0 {
+                    snprintf_args_str = std.Concat(", ", snprintf_args);
+                }
+                
+                block = std.Concat(block, "        int _len = snprintf(_buf, _alloc_size, \"");
+                block = std.Concat(block, c_format_string);
+                block = std.Concat(block, "\"");
+                block = std.Concat(block, snprintf_args_str);
+                block = std.Concat(block, ");\n");
+                block = std.Concat(block, "        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });\n");
+                block = std.Concat(block, "    }))");
+                return std.Clone(ctx, block);
+            }
+
+            if std.str_eq(func_str, "std.FormatInt") || std.str_eq(func_str, "std_FormatInt") {
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut val_expr := codegen_generate_expression(arg0_idx, env, ctx);
+                
+                mut res := std.Concat("(({ int _val = ", val_expr);
+                res = std.Concat(res, "; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, \"%d\", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); }))");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "std.Concat") || std.str_eq(func_str, "std_Concat") {
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut s1_expr := codegen_generate_expression(arg0_idx, env, ctx);
+                
+                mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg1_idx] = (*args_vec)[1];
+                mut s2_expr := codegen_generate_expression(arg1_idx, env, ctx);
+                
+                mut res := std.Concat("(({ Slice_unsigned_char _s1 = ", s1_expr);
+                res = std.Concat(res, "; Slice_unsigned_char _s2 = ");
+                res = std.Concat(res, s2_expr);
+                res = std.Concat(res, "; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }))");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "std.GenerationalSwap") || std.str_eq(func_str, "std_GenerationalSwap") {
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg0_str := codegen_generate_expression(arg0_idx, env, ctx);
+                
+                mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg1_idx] = (*args_vec)[1];
+                mut arg1_str := codegen_generate_expression(arg1_idx, env, ctx);
+                
+                mut res := std.Concat("std_GenerationalSwap(&", arg0_str);
+                res = std.Concat(res, ", &");
+                res = std.Concat(res, arg1_str);
+                res = std.Concat(res, ")");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "std.Clone") || std.str_eq(func_str, "std_Clone") {
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut dest_arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+                
+                mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg1_idx] = (*args_vec)[1];
+                mut src_arg_str := codegen_generate_expression(arg1_idx, env, ctx);
+                
+                mut dest_is_ptr := 0;
+                mut arg0_expr := ctx[arg0_idx];
+                if arg0_expr.tag == 0 { // Identifier
+                    mut name := arg0_expr.Identifier.name;
+                    mut var_type_lookup := (*env).variable_types.Get(name);
+                    if var_type_lookup.Ok {
+                        mut t := var_type_lookup.Val;
+                        if t.tag == 9 { // RawPointer
+                            dest_is_ptr = 1;
+                        }
+                    }
+                }
+                
+                mut dest_arena_expr := std.Concat("&", dest_arg_str);
+                if dest_is_ptr == 1 { 
+                    dest_arena_expr = dest_arg_str;
+                }
+                
+                mut dest_base := std.Concat(dest_arg_str, ".BaseAddress");
+                if dest_is_ptr == 1 {
+                    dest_base = std.Concat(dest_arg_str, "->BaseAddress");
+                }
+                
+                mut struct_name := "Node";
+                mut src_brand := "current_ctx";
+                mut found := 0;
+                
+                mut src_type := codegen_get_expression_type(arg1_idx, env, ctx);
+                if src_type.tag == 7 { // Index
+                    struct_name = src_type.Index.struct_name;
+                    if src_type.Index.brand != empty[Index[str, ctx]] {
+                        mut brand_str_ptr := &ctx[src_type.Index.brand] as *str;
+                        src_brand = *brand_str_ptr;
+                        found = 1;
+                    }
+                }
+                
+                if found == 1 {
+                    mut src_is_ptr := 0;
+                    mut src_type_lookup := (*env).variable_types.Get(src_brand);
+                    if src_type_lookup.Ok { 
+                        mut t := src_type_lookup.Val;
+                        if t.tag == 9 { // RawPointer
+                            src_is_ptr = 1;
+                        }
+                    }
+                    
+                    mut src_base := std.Concat(src_brand, ".BaseAddress");
+                    if src_is_ptr == 1 {
+                        src_base = std.Concat(src_brand, "->BaseAddress");
+                    }
+                    
+                    mut res := std.Concat("({ int _src_idx = ", src_arg_str);
+                    res = std.Concat(res, "; int _dest_idx = os_ArenaAlloc(");
+                    res = std.Concat(res, dest_arena_expr);
+                    res = std.Concat(res, ", sizeof(");
+                    res = std.Concat(res, struct_name);
+                    res = std.Concat(res, ")); *(struct ");
+                    res = std.Concat(res, struct_name);
+                    res = std.Concat(res, "*)((char*)");
+                    res = std.Concat(res, dest_base);
+                    res = std.Concat(res, " + _dest_idx) = *(struct ");
+                    res = std.Concat(res, struct_name);
+                    res = std.Concat(res, "*)((char*)");
+                    res = std.Concat(res, src_base);
+                    res = std.Concat(res, " + _src_idx); _dest_idx; })");
+                    return std.Clone(ctx, res);
+                } else {
+                    return std.Clone(ctx, src_arg_str);
+                }
+            }
+
             if std.str_eq(func_str, "std.Spawn") || std.str_eq(func_str, "std_Spawn") {
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut task_func_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
