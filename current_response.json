@@ -1,9 +1,0 @@
-{
-  "summary": "fix: resolve memory corruption in ast.serialize_type by aligning arg_strs vector type to str",
-  "files": [
-    {
-      "file_path": "compiler/ast.gst",
-      "code_diff": "<<<<<<< SEARCH\n        if t.tag == 10 { // Generic\n            mut quote := '\"';\n            mut name := t.Generic.name;\n            mut args_vec := &ctx[t.Generic.args] as *std.Vector[Type[ctx], ctx];\n            mut arg_strs: std.Vector[Type[ctx], ctx] := std.VectorNew(ctx);\n            mut i := 0;\n            while i < len(*args_vec) {\n                mut arg_str := serialize_type((*args_vec)[i], ctx);\n                arg_strs.Push(arg_str);\n                i = i + 1;\n            }\n            mut joined := ast_join_strings(arg_strs, \", \", ctx);\n=======\n        if t.tag == 10 { // Generic\n            mut quote := '\"';\n            mut name := t.Generic.name;\n            mut args_vec := &ctx[t.Generic.args] as *std.Vector[Type[ctx], ctx];\n            mut arg_strs: std.Vector[str, ctx] := std.VectorNew(ctx);\n            mut i := 0;\n            while i < len(*args_vec) {\n                mut arg_str := serialize_type((*args_vec)[i], ctx);\n                arg_strs.Push(arg_str);\n                i = i + 1;\n            }\n            mut joined := ast_join_strings(arg_strs, \", \", ctx);\n>>>>>>> REPLACE"
-    }
-  ]
-}
