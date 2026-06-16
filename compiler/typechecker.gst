@@ -2700,10 +2700,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut val_type: ast.Type[ctx];
             val_type.tag = 3; // Void
 
-            if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
+if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
                 val_type = check_expression(val_idx, env, scope, ctx);
                 val_type = env_resolve_type(env, val_type, ctx);
-                
+
                 mut origs := set_init(ctx);
                 if env_type_is_ephemeral_view(val_type, ctx) == 1 {
                     origs = get_expression_origins(val_idx, env, ctx);
