@@ -1173,6 +1173,12 @@ static inline void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str
         if (probes > m->capacity + 10) {
             fprintf(stderr, "🚨 HASHMAP INFINITE LOOP DETECTED!\n");
             fprintf(stderr, "  Capacity: %d, Length: %d, Key Size: %zu, Val Size: %zu\n", m->capacity, m->len, key_size, val_size);
+            fprintf(stderr, "  Occupied array states:\n  ");
+            for (int i = 0; i < m->capacity; i++) {
+                fprintf(stderr, "%d ", m->occupied[i]);
+                if ((i + 1) % 32 == 0) fprintf(stderr, "\n  ");
+            }
+            fprintf(stderr, "\n");
             if (is_str_key) {
                 Slice_unsigned_char s = *(Slice_unsigned_char*)key_ptr;
                 fprintf(stderr, "  String Key: '%.*s' (len: %d)\n", s.len, (char*)s.data, s.len);
