@@ -7231,3 +7231,44 @@ fn test_adt_metadata_and_tag_enum_generation() {
     assert!(c_output.contains("Status_Tag__Failed = 2,"), "Missing Failed tag");
     assert!(c_output.contains("} Status_Tag;"), "Missing Status_Tag typedef");
 }
+
+#[test]
+fn test_adt_payload_struct_and_union_emission() {
+    let source = "\n        type Status enum {\n            Pending,\n            Active,\n            Failed\n        }\n        func main() {\n            mut s: Status;\n        }\n    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
+
+    let mut checker = TypeChecker::new();
+    let check_res = checker.check_program(&program);
+    assert!(check_res.is_ok(), "Typechecker error: {:?}", check_res.err());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_output = codegen.generate(&modules_for_codegen);
+
+    // Verify payload structs and union are emitted
+    assert!(c_output.contains("struct Status_Pending {"), "Missing Status_Pending struct");
+    assert!(c_output.contains("struct Status_Active {"), "Missing Status_Active struct");
+    assert!(c_output.contains("struct Status_Failed {"), "Missing Status_Failed struct");
+    assert!(c_output.contains("struct Status {"), "Missing Status parent struct");
+    assert!(c_output.contains("union {"), "Missing anonymous union");
+
+    // Verify correct topological order (variants defined before the parent union container)
+    let idx_pending = c_output.find("struct Status_Pending {").expect("Status_Pending index");
+    let idx_active = c_output.find("struct Status_Active {").expect("Status_Active index");
+    let idx_failed = c_output.find("struct Status_Failed {").expect("Status_Failed index");
+    let idx_parent = c_output.find("struct Status {").expect("Status parent index");
+
+    assert!(idx_pending < idx_parent, "Status_Pending must be defined before Status");
+    assert!(idx_active < idx_parent, "Status_Active must be defined before Status");
+    assert!(idx_failed < idx_parent, "Status_Failed must be defined before Status");
+}
