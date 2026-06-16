@@ -2629,7 +2629,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut old_inout_params := (*env).current_function_inout_params;
             mut old_local_vars := (*env).current_function_local_vars;
 
-            (*env).expected_return_type = return_type_idx;
+            mut resolved_ret_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[resolved_ret_idx] = env_resolve_type(env, ctx[return_type_idx], ctx);
+            (*env).expected_return_type = resolved_ret_idx;
             (*env).current_function_return_origins = set_init(ctx);
             
             mut inout_params_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
@@ -2705,18 +2707,20 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut origs := set_init(ctx);
                 if env_type_is_ephemeral_view(val_type, ctx) == 1 {
                     origs = get_expression_origins(val_idx, env, ctx);
-                }
-                if ctx[origs].map.len == 0 {
-                    set_add(origs, name, ctx);
+                    if ctx[origs].map.len == 0 {
+                        set_add(origs, name, ctx);
+                    }
                 }
                 (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
             } else {
                 if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
                     mut origs := set_init(ctx);
-                    set_add(origs, name, ctx);
-                    (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
                     mut resolved := env_resolve_type(env, ctx[var_type_idx], ctx);
                     val_type = resolved;
+                    if env_type_is_ephemeral_view(val_type, ctx) == 1 {
+                        set_add(origs, name, ctx);
+                    }
+                    (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
                 } else {
                     mut msg := std.Concat("Semantic Error: Uninitialized variable '", name);
                     msg = std.Concat(msg, "' must have an explicit type annotation");
