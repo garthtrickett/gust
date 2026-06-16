@@ -144,7 +144,7 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
     }
 }
 
-func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
+func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
         mut dummy: ast.Type[ctx];
         dummy.tag = 3; // Void
@@ -505,6 +505,15 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
     }
 }
 
+func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
+    mut t := check_expression_internal(expr_idx, env, scope, ctx);
+    unsafe {
+        mut final_span := get_expression_span(expr_idx, ctx);
+        (*env).resolved_types.Insert(final_span.start.offset, t);
+    }
+    return t;
+}
+
 type StructLayout[ctx] struct {
     brand: Index[str, ctx],
     fields: std.HashMap[str, ast.Type[ctx], ctx]
@@ -578,6 +587,7 @@ type TypeEnvironment[ctx] struct {
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
+    resolved_types: std.HashMap[int, ast.Type[ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
     current_prefix: str,
     imports: std.HashMap[str, str, ctx],
@@ -1750,6 +1760,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].enum_templates = std.HashMapNew(ctx);
         ctx[env_idx].function_registry = std.HashMapNew(ctx);
         ctx[env_idx].variable_types = std.HashMapNew(ctx);
+        ctx[env_idx].resolved_types = std.HashMapNew(ctx);
         ctx[env_idx].enum_registry = std.HashMapNew(ctx);
         ctx[env_idx].current_prefix = "";
         ctx[env_idx].imports = std.HashMapNew(ctx);

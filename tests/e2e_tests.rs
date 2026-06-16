@@ -4551,6 +4551,13 @@ fn test_e2e_spawn_yield() {
     run_e2e_test(&source, "30");
 }
 
+#[test]
+fn test_e2e_sync_primitives() {
+    let source = std::fs::read_to_string("tests/e2e_sync_primitives.gst")
+        .expect("Failed to read tests/e2e_sync_primitives.gst");
+    run_e2e_test(&source, "10");
+}
+
 // #[test]
 // fn test_self_hosted_type_dump_diff() {
 //     gust_lexer::init_logging();

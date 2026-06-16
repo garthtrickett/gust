@@ -13,6 +13,47 @@ func init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx]) {
     }
 }
 
+func codegen_get_expression_span(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) token.Span {
+    mut s: token.Span;
+    unsafe {
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] { 
+            return s;
+        }
+        mut expr := ctx[expr_idx];
+        if expr.tag == 0 { s = expr.Identifier.span; }
+        if expr.tag == 1 { s = expr.Integer.span; }
+        if expr.tag == 2 { s = expr.String.span; }
+        if expr.tag == 3 { s = expr.Bool.span; }
+        if expr.tag == 4 { s = expr.Move.span; }
+        if expr.tag == 5 { s = expr.Take.span; }
+        if expr.tag == 6 { s = expr.AddressOf.span; }
+        if expr.tag == 7 { s = expr.Dereference.span; }
+        if expr.tag == 8 { s = expr.IndexAccess.span; }
+        if expr.tag == 9 { s = expr.AsCast.span; }
+        if expr.tag == 10 { s = expr.Binary.span; }
+        if expr.tag == 11 { s = expr.Selector.span; }
+        if expr.tag == 12 { s = expr.Call.span; }
+        if expr.tag == 13 { s = expr.Empty.span; }
+    } 
+    return s;
+}
+
+func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) ast.Type[ctx] { 
+    unsafe {
+        mut dummy: ast.Type[ctx];
+        dummy.tag = 3; // Void
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return dummy;
+        }
+        mut span := codegen_get_expression_span(expr_idx, ctx);
+        mut lookup := (*env).resolved_types.Get(span.start.offset);
+        if lookup.Ok {
+            return lookup.Val;
+        }
+        return dummy;
+    }
+}
+
 func codegen_get_c_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
         if t.tag == 0 { // Int
@@ -386,6 +427,85 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             return std.Clone(ctx, res);
         }
         if tag == 12 { // Call
+            // Intercept Mutex & Channel methods
+            mut func_expr := ctx[ctx[expr_idx].Call.function];
+            if func_expr.tag == 11 { // Selector
+                mut left_expr_idx := func_expr.Selector.left;
+                mut right_name := func_expr.Selector.right;
+                mut left_type := codegen_get_expression_type(left_expr_idx, env, ctx);
+                mut is_ptr := 0;
+                if left_type.tag == 9 { // RawPointer
+                    left_type = ctx[left_type.RawPointer.inner];
+                    is_ptr = 1;
+                } 
+                mut is_mutex := 0;
+                mut is_channel := 0;
+                if left_type.tag == 8 { // Struct
+                    mut s_name := left_type.Struct.struct_name;
+                    if std.str_find(s_name, "Mutex_") != 0 - 1 || std.str_find(s_name, "std_Mutex_") != 0 - 1 {
+                        is_mutex = 1;
+                    }
+                    if std.str_find(s_name, "Channel_") != 0 - 1 || std.str_find(s_name, "std_Channel_") != 0 - 1 {
+                        is_channel = 1;
+                    }
+                }
+
+                if is_mutex == 1 {
+                    mut left_str := codegen_generate_expression(left_expr_idx, env, ctx);
+                    mut arrow_or_dot := ".";
+                    if is_ptr == 1 {
+                        arrow_or_dot = "->";
+                    }
+                    if std.str_eq(right_name, "Lock") {
+                        mut res := std.Concat("std_Mutex_Lock_impl(", left_str);
+                        res = std.Concat(res, arrow_or_dot);
+                        res = std.Concat(res, "lock_state, &(");
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, arrow_or_dot);
+                        res = std.Concat(res, "value))");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Unlock") {
+                        mut res := std.Concat("std_Mutex_Unlock_impl(", left_str);
+                        res = std.Concat(res, arrow_or_dot);
+                        res = std.Concat(res, "lock_state)");
+                        return std.Clone(ctx, res);
+                    }
+                }
+
+                if is_channel == 1 {
+                    mut left_str := codegen_generate_expression(left_expr_idx, env, ctx);
+                    mut arrow_or_dot := ".";
+                    if is_ptr == 1 {
+                        arrow_or_dot = "->";
+                    }
+                    if std.str_eq(right_name, "Send") {
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+
+                        mut res := std.Concat("(({ __typeof__(", arg_str);
+                        res = std.Concat(res, ") _tmp = ");
+                        res = std.Concat(res, arg_str);
+                        res = std.Concat(res, "; std_Channel_Send_impl(");
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, arrow_or_dot);
+                        res = std.Concat(res, "capacity, &_tmp); }))");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Recv") {
+                        mut type_str := codegen_get_c_type(left_type, env, ctx);
+                        mut res := std.Concat("(({ __typeof__(*(((struct ", type_str);
+                        res = std.Concat(res, "*)0)->_phantom)) _val; std_Channel_Recv_impl(");
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, arrow_or_dot);
+                        res = std.Concat(res, "capacity, &_val); _val; }))");
+                        return std.Clone(ctx, res);
+                    }
+                }
+            }
+
             mut func_str := codegen_generate_expression(ctx[expr_idx].Call.function, env, ctx);
 
             if std.str_eq(func_str, "std.Spawn") || std.str_eq(func_str, "std_Spawn") {
