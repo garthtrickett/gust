@@ -7,10 +7,12 @@ type Pipeline[ctx] struct {
     chan: std.Channel[int, ctx]
 }
 
-func producer(p: *Pipeline[ctx]) {
+func producer(p: *Pipeline[ctx]) { 
     mut i := 0;
     while i < 5 {
-        (*p).chan.Send(i);
+        unsafe {
+            (*p).chan.Send(i);
+        }
         i = i + 1;
     } 
 }
@@ -18,8 +20,9 @@ func producer(p: *Pipeline[ctx]) {
 func consumer(p: *Pipeline[ctx]) {
     mut i := 0;
     while i < 5 {
-        mut val := (*p).chan.Recv();
+        mut val := 0;
         unsafe {
+            val = (*p).chan.Recv();
             mut val_ptr := (*p).mutex.Lock();
             (*val_ptr).count = (*val_ptr).count + val;
             (*p).mutex.Unlock();
