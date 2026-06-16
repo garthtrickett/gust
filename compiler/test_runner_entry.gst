@@ -56,7 +56,6 @@ func main() {
         }
     }
 
-    if len(env.errors) > 0 {
     if len(env.errors) > 0 { 
         mut k := 0;
         while k < len(env.errors) {

@@ -307,87 +307,86 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
             return "";
         }
-        mut expr := ctx[expr_idx];
-        if expr.tag == 0 { // Identifier
-            if std.str_eq(expr.Identifier.name, "null") {
+        mut tag := ctx[expr_idx].tag;
+        if tag == 0 { // Identifier
+            mut name := ctx[expr_idx].Identifier.name;
+            if std.str_eq(name, "null") {
                 return "0xFFFFFFFF";
             }
-            return std.Clone(ctx, expr.Identifier.name);
+            return std.Clone(ctx, name);
         }
-        if expr.tag == 1 { // Integer
-            return std.Clone(ctx, std.FormatInt(expr.Integer.val));
+        if tag == 1 { // Integer
+            return std.Clone(ctx, std.FormatInt(ctx[expr_idx].Integer.val));
         }
-        if expr.tag == 2 { // String
-            mut res := std.Concat("\"\\\"\"", expr.String.val);
-            res = std.Concat(res, "\"\\\"\"");
-            mut len_str := std.FormatInt(len(expr.String.val));
+        if tag == 2 { // String
+            mut val := ctx[expr_idx].String.val;
+            mut res := std.Concat("\"", val);
+            res = std.Concat(res, "\"");
+            mut len_str := std.FormatInt(len(val));
             mut sl := std.Concat("((Slice_unsigned_char){ (unsigned char*)", res);
             sl = std.Concat(sl, ", ");
             sl = std.Concat(sl, len_str);
             sl = std.Concat(sl, " })");
             return std.Clone(ctx, sl);
         }
-        if expr.tag == 3 { // Bool
-            if expr.Bool.val == 1 {
+        if tag == 3 { // Bool
+            if ctx[expr_idx].Bool.val == 1 {
                 return "1";
             }
             return "0";
         }
-        if expr.tag == 4 { // Move
-            return codegen_generate_expression(expr.Move.expr, env, ctx);
+        if tag == 4 { // Move
+            return codegen_generate_expression(ctx[expr_idx].Move.expr, env, ctx);
         }
-        if expr.tag == 5 { // Take
-            return codegen_generate_expression(expr.Take.expr, env, ctx);
+        if tag == 5 { // Take
+            return codegen_generate_expression(ctx[expr_idx].Take.expr, env, ctx);
         }
-        if expr.tag == 6 { // AddressOf
-            mut inner := codegen_generate_expression(expr.AddressOf.expr, env, ctx);
-            mut res := std.Concat("&(", inner);
+        if tag == 6 { // AddressOf
+            mut res := std.Concat("&(", codegen_generate_expression(ctx[expr_idx].AddressOf.expr, env, ctx));
             res = std.Concat(res, ")");
             return std.Clone(ctx, res);
         }
-        if expr.tag == 7 { // Dereference
-            mut inner := codegen_generate_expression(expr.Dereference.expr, env, ctx);
-            mut res := std.Concat("(*(", inner);
+        if tag == 7 { // Dereference
+            mut res := std.Concat("(*(", codegen_generate_expression(ctx[expr_idx].Dereference.expr, env, ctx));
             res = std.Concat(res, "))");
             return std.Clone(ctx, res);
         }
-        if expr.tag == 8 { // IndexAccess
-            mut alloc_str := codegen_generate_expression(expr.IndexAccess.allocator, env, ctx);
-            mut index_str := codegen_generate_expression(expr.IndexAccess.index, env, ctx);
+        if tag == 8 { // IndexAccess
+            mut alloc_str := codegen_generate_expression(ctx[expr_idx].IndexAccess.allocator, env, ctx);
+            mut index_str := codegen_generate_expression(ctx[expr_idx].IndexAccess.index, env, ctx);
             mut res := std.Concat(alloc_str, "[");
             res = std.Concat(res, index_str);
             res = std.Concat(res, "]");
             return std.Clone(ctx, res);
         }
-        if expr.tag == 9 { // AsCast
-            mut left_str := codegen_generate_expression(expr.AsCast.left, env, ctx);
-            mut target_type := ctx[expr.AsCast.target_type];
-            mut target_str := codegen_get_c_type(target_type, env, ctx);
+        if tag == 9 { // AsCast
+            mut left_str := codegen_generate_expression(ctx[expr_idx].AsCast.left, env, ctx);
+            mut target_str := codegen_get_c_type(ctx[ctx[expr_idx].AsCast.target_type], env, ctx);
             mut res := std.Concat("((", target_str);
             res = std.Concat(res, ")");
             res = std.Concat(res, left_str);
             res = std.Concat(res, ")");
             return std.Clone(ctx, res);
         }
-        if expr.tag == 10 { // Binary
-            mut left_str := codegen_generate_expression(expr.Binary.left, env, ctx);
-            mut right_str := codegen_generate_expression(expr.Binary.right, env, ctx);
+        if tag == 10 { // Binary
+            mut left_str := codegen_generate_expression(ctx[expr_idx].Binary.left, env, ctx);
+            mut right_str := codegen_generate_expression(ctx[expr_idx].Binary.right, env, ctx);
             mut res := std.Concat("(", left_str);
             res = std.Concat(res, " ");
-            res = std.Concat(res, expr.Binary.op);
+            res = std.Concat(res, ctx[expr_idx].Binary.op);
             res = std.Concat(res, " ");
             res = std.Concat(res, right_str);
             res = std.Concat(res, ")");
             return std.Clone(ctx, res);
         }
-        if expr.tag == 11 { // Selector
-            mut left_str := codegen_generate_expression(expr.Selector.left, env, ctx);
+        if tag == 11 { // Selector
+            mut left_str := codegen_generate_expression(ctx[expr_idx].Selector.left, env, ctx);
             mut res := std.Concat(left_str, ".");
-            res = std.Concat(res, expr.Selector.right);
+            res = std.Concat(res, ctx[expr_idx].Selector.right);
             return std.Clone(ctx, res);
         }
-        if expr.tag == 12 { // Call
-            mut func_str := codegen_generate_expression(expr.Call.function, env, ctx);
+        if tag == 12 { // Call
+            mut func_str := codegen_generate_expression(ctx[expr_idx].Call.function, env, ctx);
             mut c_func := "";
             mut i := 0;
             while i < len(func_str) {
@@ -400,8 +399,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 }
                 i = i + 1;
             }
-            
-            mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+
+            mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
             mut args_str := "";
             mut j := 0;
             while j < len(*args_vec) {
@@ -419,9 +418,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             res = std.Concat(res, ")");
             return std.Clone(ctx, res);
         }
-        if expr.tag == 13 { // Empty
-            mut target_type := ctx[expr.Empty.target_type];
-            return codegen_gen_type_aware_initializer(target_type, env, ctx);
+        if tag == 13 { // Empty
+            return codegen_gen_type_aware_initializer(ctx[ctx[expr_idx].Empty.target_type], env, ctx);
         }
     }
     return "0";
@@ -432,56 +430,53 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
         if stmt_idx == empty[Index[ast.Statement[ctx], ctx]] {
             return "";
         }
-        mut stmt := ctx[stmt_idx];
-        if stmt.tag == 4 { // VarDecl
-            mut t_var := ctx[stmt.VarDecl.var_type];
+        mut tag := ctx[stmt_idx].tag;
+        if tag == 4 { // VarDecl
+            mut t_var := ctx[ctx[stmt_idx].VarDecl.var_type];
             mut c_type := codegen_get_c_type(t_var, env, ctx);
             mut init_val := "";
-            if stmt.VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] {
-                init_val = codegen_generate_expression(stmt.VarDecl.value, env, ctx);
+            if ctx[stmt_idx].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] {
+                init_val = codegen_generate_expression(ctx[stmt_idx].VarDecl.value, env, ctx);
             } else {
                 init_val = codegen_gen_type_aware_initializer(t_var, env, ctx);
             }
             mut res := std.Concat("    ", c_type);
             res = std.Concat(res, " ");
-            res = std.Concat(res, stmt.VarDecl.name);
+            res = std.Concat(res, ctx[stmt_idx].VarDecl.name);
             res = std.Concat(res, " = ");
             res = std.Concat(res, init_val);
             res = std.Concat(res, ";\n");
             return std.Clone(ctx, res);
         }
-        if stmt.tag == 5 { // Assignment
-            mut left_str := codegen_generate_expression(stmt.Assignment.left, env, ctx);
-            mut val_str := codegen_generate_expression(stmt.Assignment.value, env, ctx);
-            mut res := std.Concat("    ", left_str);
+        if tag == 5 { // Assignment
+            mut res := std.Concat("    ", codegen_generate_expression(ctx[stmt_idx].Assignment.left, env, ctx));
             res = std.Concat(res, " = ");
-            res = std.Concat(res, val_str);
+            res = std.Concat(res, codegen_generate_expression(ctx[stmt_idx].Assignment.value, env, ctx));
             res = std.Concat(res, ";\n");
             return std.Clone(ctx, res);
         }
-        if stmt.tag == 12 { // Return
+        if tag == 12 { // Return
             mut expr_str := "";
-            if stmt.Return.expr != empty[Index[ast.Expression[ctx], ctx]] {
-                expr_str = codegen_generate_expression(stmt.Return.expr, env, ctx);
+            if ctx[stmt_idx].Return.expr != empty[Index[ast.Expression[ctx], ctx]] {
+                expr_str = codegen_generate_expression(ctx[stmt_idx].Return.expr, env, ctx);
             }
             mut res := std.Concat("    return ", expr_str);
             res = std.Concat(res, ";\n");
             return std.Clone(ctx, res);
         }
-        if stmt.tag == 13 { // Expression
-            mut expr_str := codegen_generate_expression(stmt.Expression.expr, env, ctx);
-            mut res := std.Concat("    ", expr_str);
+        if tag == 13 { // Expression
+            mut res := std.Concat("    ", codegen_generate_expression(ctx[stmt_idx].Expression.expr, env, ctx));
             res = std.Concat(res, ";\n");
             return std.Clone(ctx, res);
         }
-        if stmt.tag == 3 { // FunctionDecl
-            mut t_ret := ctx[stmt.FunctionDecl.return_type];
+        if tag == 3 { // FunctionDecl
+            mut t_ret := ctx[ctx[stmt_idx].FunctionDecl.return_type];
             mut c_ret := codegen_get_c_type(t_ret, env, ctx);
             mut res := std.Concat(c_ret, " ");
-            res = std.Concat(res, stmt.FunctionDecl.name);
+            res = std.Concat(res, ctx[stmt_idx].FunctionDecl.name);
             res = std.Concat(res, "(");
-            
-            mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
+
+            mut params_vec := &ctx[ctx[stmt_idx].FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
             mut params_str := "";
             mut i := 0;
             while i < len(*params_vec) {
@@ -497,9 +492,9 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             }
             res = std.Concat(res, params_str);
             res = std.Concat(res, ") {\n");
-            
-            mut body := ctx[stmt.FunctionDecl.body];
-            mut body_statements := &ctx[body.statements] as *std.Vector[ast.Statement[ctx], ctx];
+
+            mut body_idx := ctx[stmt_idx].FunctionDecl.body;
+            mut body_statements := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
             mut j := 0;
             while j < len(*body_statements) {
                 mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);

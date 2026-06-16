@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve JSON parsing syntax error by correctly escaping the double-quote string literal in the patch",
+  "summary": "fix: remove duplicated if-statement in compiler/test_runner_entry.gst to resolve syntax error",
   "files": [
     {
-      "file_path": "compiler/codegen.gst",
-      "code_diff": "<<<<<<< SEARCH\n        if expr.tag == 2 { // String\n            mut quote := '\"';\n            mut res := std.Concat(std.Format(\"%c\", quote), expr.String.val);\n            res = std.Concat(res, std.Format(\"%c\", quote));\n            mut len_str := std.FormatInt(len(expr.String.val));\n=======\n        if expr.tag == 2 { // String\n            mut res := std.Concat(\"\\\"\\\\\\\"\\\"\", expr.String.val);\n            res = std.Concat(res, \"\\\"\\\\\\\"\\\"\");\n            mut len_str := std.FormatInt(len(expr.String.val));\n>>>>>>> REPLACE"
+      "file_path": "compiler/test_runner_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n    if len(env.errors) > 0 {\n    if len(env.errors) > 0 { \n        mut k := 0;\n        while k < len(env.errors) {\n            os.LogStr(env.errors[k].message);\n            k = k + 1;\n        }\n        os.Exit(1);\n    } else { \n        mut c_code := codegen.codegen_generate(&prog, &env, ctx); \n        os.LogStr(c_code);\n    }\n}\n=======\n    if len(env.errors) > 0 { \n        mut k := 0;\n        while k < len(env.errors) {\n            os.LogStr(env.errors[k].message);\n            k = k + 1;\n        }\n        os.Exit(1);\n    } else { \n        mut c_code := codegen.codegen_generate(&prog, &env, ctx); \n        os.LogStr(c_code);\n    }\n}\n>>>>>>> REPLACE"
     }
   ]
 }
