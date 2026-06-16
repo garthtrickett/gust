@@ -4952,10 +4952,11 @@ fn test_self_hosted_compiler_full_bootstrap() {
 
     let mut full_c_output_v3 = String::new();
     full_c_output_v3.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
-        
+
     // Forward declare Slice structures so COLLECTIONS_RUNTIME can utilize them
     full_c_output_v3.push_str("typedef struct Slice_unsigned_char Slice_unsigned_char;\n");
-    full_c_output_v3.push_str("struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
+    full_c_output_v3
+        .push_str("struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
     full_c_output_v3.push_str("typedef struct Slice_int Slice_int;\n");
     full_c_output_v3.push_str("struct Slice_int {\n    int* data;\n    int len;\n};\n\n");
 
