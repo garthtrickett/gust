@@ -4950,11 +4950,20 @@ fn test_self_hosted_compiler_full_bootstrap() {
         String::from_utf8(run_gust_v2.stdout).expect("Invalid UTF-8 from gust_v2 compilation");
     let c_output_v3 = filter_output_c_code(&c_output_v3_raw);
 
+    let mut full_c_output_v3 = String::new();
+    full_c_output_v3.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    full_c_output_v3.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+    full_c_output_v3.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
+    full_c_output_v3.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
+    full_c_output_v3.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
+    full_c_output_v3.push_str(gust_lexer::codegen_runtime::MOCK_PAYLOAD_RUNTIME);
+    full_c_output_v3.push_str(gust_lexer::codegen_runtime::FILE_IO_RUNTIME);
+    full_c_output_v3.push_str(&c_output_v3);
+
     let gust_v3_c_path = temp_dir.join(format!("gust_v3_{:?}_{}.c", thread_id, process_id));
     let gust_v3_bin_path = temp_dir.join(format!("gust_v3_{:?}_{}.bin", thread_id, process_id));
 
-    std::fs::write(&gust_v3_c_path, &c_output_v3).expect("Failed to write gust_v3 C file");
-
+    std::fs::write(&gust_v3_c_path, &full_c_output_v3).expect("Failed to write gust_v3 C file");
     // Compile gust_v3 binary using host C compiler
     let mut cmd3 = std::process::Command::new(&cc_compiler);
     cmd3.arg(&gust_v3_c_path);

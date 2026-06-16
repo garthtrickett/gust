@@ -1271,17 +1271,16 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
         }
         mut tag := ctx[stmt_idx].tag;
         if tag == 4 { // VarDecl
-                if tag == 4 { // VarDecl
-                    mut t_var: ast.Type[ctx];
-                    mut var_name := ctx[stmt_idx].VarDecl.name;
-                    mut lookup := (*env).variable_types.Get(var_name);
-                    if lookup.Ok {
-                        t_var = lookup.Val;
-                    } else {
-                        t_var.tag = 3; // Void
-                    }
-                    mut c_type := codegen_get_c_type(t_var, env, ctx);
-                    mut init_val := "";
+            mut t_var: ast.Type[ctx];
+            mut var_name := ctx[stmt_idx].VarDecl.name;
+            mut lookup := (*env).variable_types.Get(var_name);
+            if lookup.Ok {
+                t_var = lookup.Val;
+            } else {
+                t_var.tag = 3; // Void
+            }
+            mut c_type := codegen_get_c_type(t_var, env, ctx);
+            mut init_val := "";
             if ctx[stmt_idx].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] {
                 init_val = codegen_generate_expression(ctx[stmt_idx].VarDecl.value, env, ctx);
             } else {
