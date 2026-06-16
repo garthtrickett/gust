@@ -1822,15 +1822,19 @@ impl Codegen {
                         use_arrow = true;
                     }
                     if !use_arrow {
-                        if alloc_str == "ctx"
-                            || alloc_str == "arena"
-                            || alloc_str == "connCtx"
-                            || alloc_str == "a"
-                            || alloc_str.ends_with(".ctx")
-                            || alloc_str.ends_with(".arena")
-                            || alloc_str.ends_with(".connCtx")
-                            || alloc_str.ends_with(".a")
-                        {
+                        let is_pointer_name = if let Some(t) = self.symbol_table.borrow().get(&alloc_str) {
+                            matches!(t, Type::RawPointer(inner) if **inner == Type::Arena)
+                        } else {
+                            alloc_str == "ctx"
+                                || alloc_str == "arena"
+                                || alloc_str == "connCtx"
+                                || alloc_str == "a"
+                                || alloc_str.ends_with(".ctx")
+                                || alloc_str.ends_with(".arena")
+                                || alloc_str.ends_with(".connCtx")
+                                || alloc_str.ends_with(".a")
+                        };
+                        if is_pointer_name {
                             use_arrow = true;
                         }
                     }

@@ -461,9 +461,20 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut arrow_or_dot := ".";
                 if alloc_t.tag == 9 { // RawPointer
                     arrow_or_dot = "->";
-                }
-                if std.str_eq(alloc_str, "ctx") || std.str_eq(alloc_str, "arena") || std.str_eq(alloc_str, "connCtx") || std.str_eq(alloc_str, "a") {
-                    arrow_or_dot = "->";
+                } else {
+                    mut lookup_var := (*env).variable_types.Get(alloc_str);
+                    if lookup_var.Ok {
+                        mut t := lookup_var.Val;
+                        if t.tag == 9 { // RawPointer
+                            arrow_or_dot = "->";
+                        } else {
+                            arrow_or_dot = ".";
+                        }
+                    } else {
+                        if std.str_eq(alloc_str, "ctx") || std.str_eq(alloc_str, "arena") || std.str_eq(alloc_str, "connCtx") || std.str_eq(alloc_str, "a") {
+                            arrow_or_dot = "->";
+                        }
+                    }
                 }
 
                 mut res := std.Concat("(*((", c_target);
