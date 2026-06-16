@@ -2655,9 +2655,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut body_idx := stmt.FunctionDecl.body;
 
             // Save parent states
-            mut parent_moved := (*env).moved_vars;
-            mut parent_checked := (*env).checked_results;
-            mut parent_open_dirs := (*env).open_directories;
+            mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
+            mut parent_checked := typechecker_clone_int_map((*env).checked_results, ctx);
+            mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
 
             // Clear states
             (*env).moved_vars = std.HashMapNew(ctx);
@@ -2973,8 +2973,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 report_error(2, msg, get_expression_span(cond_idx, ctx), env, ctx);
             }
 
-            mut parent_moved := (*env).moved_vars;
-            mut parent_origins := (*env).variable_origins;
+            mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
+            mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
 
             if body_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
                 mut body := ctx[body_idx];
@@ -3005,9 +3005,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 report_error(2, msg, get_expression_span(cond_idx, ctx), env, ctx);
             }
 
-            mut pre_origins := (*env).variable_origins;
-            mut pre_moved := (*env).moved_vars;
-            mut pre_checked := (*env).checked_results;
+            mut pre_origins := typechecker_clone_origins((*env).variable_origins, ctx);
+            mut pre_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
+            mut pre_checked := typechecker_clone_int_map((*env).checked_results, ctx);
 
             mut checked_var := extract_ok_checked_variable(cond_idx, ctx);
             if std.str_eq(checked_var, "") == 0 {
@@ -3175,7 +3175,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                     // Typecheck the case body in its own scope
                     mut parent_scope := scope;
-                    mut parent_origins := (*env).variable_origins;
+                    mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
 
                     mut child_scope := scope_new(scope, ctx);
 
@@ -3593,4 +3593,34 @@ func typechecker_serialize_type_environment(env: *TypeEnvironment[ctx], ctx: &Ar
     result = std.Concat(result, typechecker_serialize_enums(env, ctx));
     result = std.Concat(result, typechecker_serialize_functions(env, ctx));
     return std.Clone(ctx, result);
+}
+
+func typechecker_clone_origins(src: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx], ctx: &Arena) std.HashMap[str, Index[OriginSet[ctx], ctx], ctx] {
+    mut dest: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx] := std.HashMapNew(ctx);
+    mut keys := src.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        mut key := keys[i];
+        mut lookup := src.Get(key);
+        if lookup.Ok {
+            dest.Insert(std.Clone(ctx, key), lookup.Val);
+        }
+        i = i + 1;
+    }
+    return dest;
+}
+
+func typechecker_clone_int_map(src: std.HashMap[str, int, ctx], ctx: &Arena) std.HashMap[str, int, ctx] {
+    mut dest: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+    mut keys := src.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        mut key := keys[i];
+        mut lookup := src.Get(key);
+        if lookup.Ok {
+            dest.Insert(std.Clone(ctx, key), lookup.Val);
+        }
+        i = i + 1;
+    }
+    return dest;
 }
