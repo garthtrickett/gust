@@ -1781,7 +1781,7 @@ typedef void Any;
             }
             fwd_p_idx = fwd_p_idx + 1;
         }
-        env.current_prefix = "";
+        (*env).current_prefix = "";
         c_code = std.Concat(c_code, "\n");
         
         // 3. _IsValid Invariant Validator forward declarations

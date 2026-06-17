@@ -1,9 +1,0 @@
-{
-  "summary": "refactor: explicitly dereference env pointer on current_prefix assignments in codegen",
-  "files": [
-    {
-      "file_path": "compiler/codegen.gst",
-      "code_diff": "<<<<<<< SEARCH\n        // 2. pthread_wrapper forward declarations\n        c_code = std.Concat(c_code, \"// pthread_wrapper forward declarations\\n\");\n        mut fwd_p_idx := 0;\n        while fwd_p_idx < len(programs) {\n            mut prog := programs[fwd_p_idx];\n            env.current_prefix = prefixes[fwd_p_idx];\n=======\n        // 2. pthread_wrapper forward declarations\n        c_code = std.Concat(c_code, \"// pthread_wrapper forward declarations\\n\");\n        mut fwd_p_idx := 0;\n        while fwd_p_idx < len(programs) {\n            mut prog := programs[fwd_p_idx];\n            (*env).current_prefix = prefixes[fwd_p_idx];\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n        // 4. Statements in program (transpiled C)\n        c_code = std.Concat(c_code, \"// Program Statements\\n\");\n        mut p_idx2 := 0;\n        while p_idx2 < len(programs) {\n            mut prog := programs[p_idx2];\n            env.current_prefix = prefixes[p_idx2];\n=======\n        // 4. Statements in program (transpiled C)\n        c_code = std.Concat(c_code, \"// Program Statements\\n\");\n        mut p_idx2 := 0;\n        while p_idx2 < len(programs) {\n            mut prog := programs[p_idx2];\n            (*env).current_prefix = prefixes[p_idx2];\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n            p_idx2 = p_idx2 + 1;\n        }\n        env.current_prefix = \"\";\n        \n        return std.Clone(ctx, c_code);\n=======\n            p_idx2 = p_idx2 + 1;\n        }\n        (*env).current_prefix = \"\";\n        \n        return std.Clone(ctx, c_code);\n>>>>>>> REPLACE"
-    }
-  ]
-}
