@@ -1193,13 +1193,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut arg0_expr := ctx[arg0_idx];
                 if arg0_expr.tag == 0 { // Identifier
                     mut name := arg0_expr.Identifier.name;
-                    mut var_type_lookup := (*env).variable_types.Get(name);
-                    if var_type_lookup.Ok {
-                        mut t := var_type_lookup.Val;
-                        if t.tag == 9 { // RawPointer
-                            dest_is_ptr = 1;
-                        }
-                    }
+                    dest_is_ptr = codegen_is_arena_ptr(name, env, ctx);
                 }
                 
                 mut dest_arena_expr := std.Concat("&", dest_arg_str);
@@ -1226,15 +1220,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                 }
                 
-                if found == 1 {
-                    mut src_is_ptr := 0;
-                    mut src_type_lookup := (*env).variable_types.Get(src_brand);
-                    if src_type_lookup.Ok { 
-                        mut t := src_type_lookup.Val;
-                        if t.tag == 9 { // RawPointer
-                            src_is_ptr = 1;
-                        }
-                    }
+                if found == 1 { 
+                    mut src_is_ptr := codegen_is_arena_ptr(src_brand, env, ctx);
                     
                     mut src_base := std.Concat(src_brand, ".BaseAddress");
                     if src_is_ptr == 1 {
@@ -1531,7 +1518,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 i = i + 1;
             }
 
-        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut args_str := "";
                 mut j := 0;
                 while j < len(*args_vec) {
@@ -1546,15 +1533,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     mut arg_expr := ctx[arg_idx];
                     if arg_expr.tag == 0 { // Identifier
                         mut var_name := arg_expr.Identifier.name;
-                        mut var_type_lookup := (*env).variable_types.Get(var_name);
-                        if var_type_lookup.Ok {
-                            mut t := var_type_lookup.Val;
-                            if t.tag == 4 { // Arena
-                                is_arena = 1;
-                            }
-                        }
+                        is_arena = codegen_is_arena_val(var_name, env, ctx);
                     }
-                    if is_arena == 1 {
+                    if (is_arena == 1) {
                         arg_str = std.Concat("&", arg_str);
                     }
 
