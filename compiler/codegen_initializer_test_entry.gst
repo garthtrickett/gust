@@ -21,6 +21,29 @@ func main() {
     }
     os.LogInt(len(c.current_params)); // Expected: 0
 
+    // Test Step 2: Statement Traversal Tracking
+    // Parse a function declaration with parameters
+    mut l_func_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_func_test, "func my_test_func(param_a: int, param_b: bool) {}");
+    mut p_func_test: parser.Parser[ctx];
+    parser.init_parser(&p_func_test, &l_func_test, ctx);
+    mut prog_func_test := parser.parse_program(&p_func_test, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog_func_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        typechecker.env_pre_register_statement(&env, (*statements_vec)[0], ctx);
+        
+        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[stmt_idx] = (*statements_vec)[0];
+        
+        // Execute statement generation
+        mut _discard := codegen.codegen_generate_statement(stmt_idx, &env, ctx);
+        
+        // Verify that the parameters were populated during the traversal
+        os.LogInt(len(env.current_params)); // Expected: 2 (param_a and param_b)
+        os.LogStr(env.current_params[0]); // Expected: param_a
+        os.LogStr(env.current_params[1]); // Expected: param_b
+    }
+
     // 1. Test primitive types
     mut t_int: ast.Type[ctx];
     t_int.tag = 0; // Int

@@ -1551,7 +1551,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     }
                     
                     mut found := 0;
-                    if found_idx != 0 - 1 {
+                    if found_idx != 0 - 1 { 
                         mut entry_ref := &(*env).resolved_types_nested[found_idx];
                         mut j := 0;
                         while j < len((*entry_ref).types) {
@@ -1568,12 +1568,25 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                         t_var.tag = 3; // Void
                     }
                     mut c_type := codegen_get_c_type(t_var, env, ctx);
+                    
+                    mut struct_name := "";
+                    if t_var.tag == 8 { // Struct
+                        struct_name = t_var.Struct.struct_name;
+                    } else {
+                        if t_var.tag == 7 { // Index
+                            struct_name = t_var.Index.struct_name;
+                        }
+                    }
+                    (*env).current_alloc_struct = struct_name;
+
             mut init_val := "";
             if ctx[stmt_idx].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] {
                 init_val = codegen_generate_expression(ctx[stmt_idx].VarDecl.value, env, ctx);
-            } else {
+            } else { 
                 init_val = codegen_gen_type_aware_initializer(t_var, env, ctx);
             }
+            (*env).current_alloc_struct = "";
+
             mut res := std.Concat("    ", c_type);
             res = std.Concat(res, " ");
             res = std.Concat(res, ctx[stmt_idx].VarDecl.name);
@@ -1583,9 +1596,25 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             return std.Clone(ctx, res);
         }
         if tag == 5 { // Assignment
-            mut res := std.Concat("    ", codegen_generate_expression(ctx[stmt_idx].Assignment.left, env, ctx));
+            mut lhs_type := codegen_get_expression_type(ctx[stmt_idx].Assignment.left, env, ctx);
+            mut struct_name := "";
+            if lhs_type.tag == 8 { // Struct
+                struct_name = lhs_type.Struct.struct_name;
+            } else {
+                if lhs_type.tag == 7 { // Index
+                    struct_name = lhs_type.Index.struct_name;
+                }
+            }
+            (*env).current_alloc_struct = struct_name;
+
+            mut left_str := codegen_generate_expression(ctx[stmt_idx].Assignment.left, env, ctx);
+            mut val_str := codegen_generate_expression(ctx[stmt_idx].Assignment.value, env, ctx);
+            
+            (*env).current_alloc_struct = "";
+
+            mut res := std.Concat("    ", left_str);
             res = std.Concat(res, " = ");
-            res = std.Concat(res, codegen_generate_expression(ctx[stmt_idx].Assignment.value, env, ctx));
+            res = std.Concat(res, val_str);
             res = std.Concat(res, ";\n");
             return std.Clone(ctx, res);
         }
@@ -1630,15 +1659,18 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             res = std.Concat(res, "(");
 
             mut params_vec := &ctx[ctx[stmt_idx].FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
+            
+            (*env).current_params.Clear();
             mut params_str := "";
             mut i := 0;
-            while i < len(*params_vec) {
+            while i < len(*params_vec) { 
                 if i > 0 {
                     params_str = std.Concat(params_str, ", ");
                 }
                 mut p := (*params_vec)[i];
+                (*env).current_params.Push(p.name);
                 mut p_type := p.param_type;
-                if sig_lookup.Ok {
+                if sig_lookup.Ok { 
                     p_type = sig_lookup.Val.params[i];
                 }
                 mut p_c_type := codegen_get_c_type(p_type, env, ctx);

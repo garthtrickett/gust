@@ -1041,7 +1041,9 @@ type TypeEnvironment[ctx] struct {
     current_function_local_vars: Index[OriginSet[ctx], ctx],
     checked_results: std.HashMap[str, int, ctx],
     in_unsafe_block: int,
-    active_monomorphizations: std.HashMap[str, int, ctx]
+    active_monomorphizations: std.HashMap[str, int, ctx],
+    current_alloc_struct: str,
+    current_params: std.Vector[str, ctx]
 }
 
 func make_type_int() ast.Type[ctx] {
@@ -2430,6 +2432,8 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].checked_results = std.HashMapNew(ctx);
         ctx[env_idx].in_unsafe_block = 0;
         ctx[env_idx].active_monomorphizations = std.HashMapNew(ctx);
+        ctx[env_idx].current_alloc_struct = "";
+        ctx[env_idx].current_params = std.VectorNew(ctx);
 
         env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
         env_register_std_structs(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
