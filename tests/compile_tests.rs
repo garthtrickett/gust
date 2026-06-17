@@ -911,6 +911,49 @@ fn test_definite_check_lookup_inside_if_accepted() {
     assert!(check_program(source).is_ok());
 }
 
+#[test]
+fn test_definite_check_compound_and_accepted() {
+    let source = "
+        type CustomNode struct {
+            SessionID: int
+        }
+        func main() {
+            mut payload := os.MockPayload();
+            mut result := payload as &CustomNode;
+            mut cond := true;
+            if cond && result.Ok {
+                os.LogInt(result.Val.SessionID); // OK: result is checked via &&
+            }
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
+fn test_definite_check_compound_or_rejected() {
+    let source = "
+        type CustomNode struct {
+            SessionID: int
+        }
+        func main() {
+            mut payload := os.MockPayload();
+            mut result := payload as &CustomNode;
+            mut cond := false;
+            if cond || result.Ok {
+                os.LogInt(result.Val.SessionID); // Error: result is NOT guaranteed checked via ||
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(
+        err.message
+            .contains("Accessing the .Val payload of an unchecked result wrapper")
+    );
+}
+
 // === NEW PRESSURE TESTS FOR STEP 3: NESTED STRUCTURES & COMPLEX SCOPING ===
 
 #[test]

@@ -220,46 +220,49 @@ impl TypeChecker {
         self.has_boolean_fields_recursive(t, &mut visited)
     }
 
-    fn extract_ok_checked_variable(&self, expr: &Expression) -> Option<String> {
-        match expr {
-            Expression::Selector { left, right, .. } => {
-                if right == "Ok" {
-                    return Some(expression_to_string(left));
-                }
-                None
+    fn extract_ok_checked_variable(expr: &Expression) -> HashSet<String> {
+    let mut results = HashSet::new();
+    match expr {
+        Expression::Selector { left, right, .. } => {
+            if right == "Ok" {
+                results.insert(expression_to_string(left));
             }
-            Expression::Binary {
-                op, left, right, ..
-            } => {
-                if op == "==" {
-                    // Case: path.Ok == 1
-                    if let Expression::Selector {
-                        left: sel_left,
-                        right: sel_right,
-                        ..
-                    } = &**left
-                        && sel_right == "Ok"
-                        && let Expression::Integer(1, _) = &**right
-                    {
-                        return Some(expression_to_string(sel_left));
-                    }
-                    // Case: 1 == path.Ok
-                    if let Expression::Selector {
-                        left: sel_left,
-                        right: sel_right,
-                        ..
-                    } = &**right
-                        && sel_right == "Ok"
-                        && let Expression::Integer(1, _) = &**left
-                    {
-                        return Some(expression_to_string(sel_left));
-                    }
-                }
-                None
-            }
-            _ => None,
         }
+        Expression::Binary {
+            op, left, right, ..
+        } => {
+            if op == "&&" {
+                results.extend(extract_ok_checked_variable(left));
+                results.extend(extract_ok_checked_variable(right));
+            } else if op == "==" {
+                // Case: path.Ok == 1
+                if let Expression::Selector {
+                    left: sel_left,
+                    right: sel_right,
+                    ..
+                } = &**left
+                    && sel_right == "Ok"
+                    && let Expression::Integer(1, _) = &**right
+                {
+                    results.insert(expression_to_string(sel_left));
+                }
+                // Case: 1 == path.Ok
+                if let Expression::Selector {
+                    left: sel_left,
+                    right: sel_right,
+                    ..
+                } = &**right
+                    && sel_right == "Ok"
+                    && let Expression::Integer(1, _) = &**left
+                {
+                    results.insert(expression_to_string(sel_left));
+                }
+            }
+        }
+        _ => {}
     }
+    results
+}
 
     pub fn pre_register_std_functions(&mut self) {
         self.function_registry.insert(
@@ -1713,9 +1716,9 @@ impl TypeChecker {
                 let pre_moved = self.moved_vars.clone();
                 let pre_checked = self.checked_results.clone();
 
-                let checked_var = self.extract_ok_checked_variable(condition);
-                if let Some(ref var) = checked_var {
-                    self.checked_results.insert(var.clone());
+                let checked_vars = extract_ok_checked_variable(condition);
+                for var in checked_vars {
+                    self.checked_results.insert(var);
                 }
 
                 let parent_scope = self.symbol_table.clone();
