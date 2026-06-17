@@ -2251,10 +2251,31 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     j = j + 1;
                 }
 
-                mut res := std.Concat("    if (!", temp_name);
+                mut res := std.Concat("    ", wrapper_c_type);
+                res = std.Concat(res, " ");
+                res = std.Concat(res, temp_name);
+                res = std.Concat(res, " = {0};\n");
+
+                res = std.Concat(res, "    ");
+                res = std.Concat(res, temp_name);
+                res = std.Concat(res, " = ");
+                res = std.Concat(res, val_expr_str);
+                res = std.Concat(res, ";\n");
+
+                res = std.Concat(res, "    if (!");
+                res = std.Concat(res, temp_name);
                 res = std.Concat(res, ".Ok) {\n");
                 res = std.Concat(res, else_c);
                 res = std.Concat(res, "    }\n");
+
+                res = std.Concat(res, "    ");
+                res = std.Concat(res, var_c_type);
+                res = std.Concat(res, " ");
+                res = std.Concat(res, name);
+                res = std.Concat(res, " = ");
+                res = std.Concat(res, temp_name);
+                res = std.Concat(res, ".Val;\n");
+
                 return std.Clone(ctx, res);
             }
         }

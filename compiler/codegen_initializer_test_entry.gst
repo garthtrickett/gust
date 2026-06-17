@@ -61,9 +61,13 @@ func main() {
         env.variable_types.Insert("x", payload_type);
 
         mut guard_c := codegen.codegen_generate_statement(guard_stmt_idx, &env, ctx);
-        os.LogStr(guard_c); // Expected: if (!_guard_res_x_1_1.Ok) { 
-                            //              return; 
-                            //          }
+        os.LogStr(guard_c); // Expected:
+                            //     LookupResult_os_Dir_ctx _guard_res_x_1_1 = {0};
+                            //     _guard_res_x_1_1 = map_Get(42);
+                            //     if (!_guard_res_x_1_1.Ok) {
+                            //         return;
+                            //     }
+                            //     os_Dir_ctx x = _guard_res_x_1_1.Val;
     }
 
     // Test Step 1 Skip List
