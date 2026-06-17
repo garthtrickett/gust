@@ -37,6 +37,94 @@ func codegen_is_arena_ptr(var_name: str, env: &typechecker.TypeEnvironment[ctx],
     return 0;
 }
 
+func codegen_should_skip_fwd_decl(name: str) int {
+    if std.str_eq(name, "std.Clone") { return 1; }
+    if std.str_eq(name, "std_Clone") { return 1; }
+    if std.str_eq(name, "std.GenerationalSwap") { return 1; }
+    if std.str_eq(name, "std_GenerationalSwap") { return 1; }
+    if std.str_eq(name, "std.PoolNew") { return 1; }
+    if std.str_eq(name, "std_PoolNew") { return 1; }
+    if std.str_eq(name, "os.PoolNew") { return 1; }
+    if std.str_eq(name, "os_PoolNew") { return 1; }
+    if std.str_eq(name, "std.VectorNew") { return 1; }
+    if std.str_eq(name, "std_VectorNew") { return 1; }
+    if std.str_eq(name, "os.VectorNew") { return 1; }
+    if std.str_eq(name, "os_VectorNew") { return 1; }
+    if std.str_eq(name, "std.HashMapNew") { return 1; }
+    if std.str_eq(name, "std_HashMapNew") { return 1; }
+    if std.str_eq(name, "os.HashMapNew") { return 1; }
+    if std.str_eq(name, "os_HashMapNew") { return 1; }
+    if std.str_eq(name, "std.GraphNew") { return 1; }
+    if std.str_eq(name, "std_GraphNew") { return 1; }
+    if std.str_eq(name, "os_GraphNew") { return 1; }
+    if std.str_eq(name, "os.GraphNew") { return 1; }
+    if std.str_eq(name, "os.ArenaAlloc") { return 1; }
+    if std.str_eq(name, "os_ArenaAlloc") { return 1; }
+    if std.str_eq(name, "os.ArenaValidate") { return 1; }
+    if std.str_eq(name, "os_ArenaValidate") { return 1; }
+    if std.str_eq(name, "os.ScratchAlloc") { return 1; }
+    if std.str_eq(name, "os_ScratchAlloc") { return 1; }
+    if std.str_eq(name, "os.ScratchReset") { return 1; }
+    if std.str_eq(name, "os_ScratchReset") { return 1; }
+    if std.str_eq(name, "std.FormatInt") { return 1; }
+    if std.str_eq(name, "std_FormatInt") { return 1; }
+    if std.str_eq(name, "std.Concat") { return 1; }
+    if std.str_eq(name, "std_Concat") { return 1; }
+    if std.str_eq(name, "std.MutexNew") { return 1; }
+    if std.str_eq(name, "std_MutexNew") { return 1; }
+    if std.str_eq(name, "std.ChannelNew") { return 1; }
+    if std.str_eq(name, "std_ChannelNew") { return 1; }
+    if std.str_eq(name, "os.Args") { return 1; }
+    if std.str_eq(name, "os_Args") { return 1; }
+    if std.str_eq(name, "os.Exit") { return 1; }
+    if std.str_eq(name, "os_Exit") { return 1; }
+    if std.str_eq(name, "os.ReadFile") { return 1; }
+    if std.str_eq(name, "os_ReadFile") { return 1; }
+    if std.str_eq(name, "os.WriteFile") { return 1; }
+    if std.str_eq(name, "os_WriteFile") { return 1; }
+    if std.str_eq(name, "os.path_join") { return 1; }
+    if std.str_eq(name, "os_path_join") { return 1; }
+    if std.str_eq(name, "os.LogInt") { return 1; }
+    if std.str_eq(name, "os_LogInt") { return 1; }
+    if std.str_eq(name, "os.LogStr") { return 1; }
+    if std.str_eq(name, "os_LogStr") { return 1; }
+    if std.str_eq(name, "os.MockPayload") { return 1; }
+    if std.str_eq(name, "os_MockPayload") { return 1; }
+    if std.str_eq(name, "std.str_eq") { return 1; }
+    if std.str_eq(name, "std_str_eq") { return 1; }
+    if std.str_eq(name, "std.str_slice") { return 1; }
+    if std.str_eq(name, "std_str_slice") { return 1; }
+    if std.str_eq(name, "std.str_byte_at") { return 1; }
+    if std.str_eq(name, "std_str_byte_at") { return 1; }
+    if std.str_eq(name, "std.str_find") { return 1; }
+    if std.str_eq(name, "std_str_find") { return 1; }
+    if std.str_eq(name, "std.str_trim") { return 1; }
+    if std.str_eq(name, "std_str_trim") { return 1; }
+    if std.str_eq(name, "std.str_split") { return 1; }
+    if std.str_eq(name, "std_str_split") { return 1; }
+    if std.str_eq(name, "std.Spawn") { return 1; }
+    if std.str_eq(name, "std_Spawn") { return 1; }
+    if std.str_eq(name, "std.is_alpha") { return 1; }
+    if std.str_eq(name, "std_is_alpha") { return 1; }
+    if std.str_eq(name, "std.is_digit") { return 1; }
+    if std.str_eq(name, "std_is_digit") { return 1; }
+    if std.str_eq(name, "std.is_whitespace") { return 1; }
+    if std.str_eq(name, "std_is_whitespace") { return 1; }
+    if std.str_eq(name, "std.parse_int") { return 1; }
+    if std.str_eq(name, "std_parse_int") { return 1; }
+    if std.str_eq(name, "os.GetThreadScratch") { return 1; }
+    if std.str_eq(name, "os_GetThreadScratch") { return 1; }
+    if std.str_eq(name, "std.Format") { return 1; }
+    if std.str_eq(name, "std_Format") { return 1; }
+    if std.str_eq(name, "os.OpenDir") { return 1; }
+    if std.str_eq(name, "os_OpenDir") { return 1; }
+    if std.str_eq(name, "os.ReadDir") { return 1; }
+    if std.str_eq(name, "os_ReadDir") { return 1; }
+    if std.str_eq(name, "os.CloseDir") { return 1; }
+    if std.str_eq(name, "os_CloseDir") { return 1; }
+    return 0;
+}
+
 func codegen_is_arena_val(var_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut i := 0;
