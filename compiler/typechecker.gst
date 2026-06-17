@@ -1644,6 +1644,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             res.Ok.val.tag = 8; // Struct
             res.Ok.val.Struct.struct_name = std.Clone(ctx, concrete_name);
             res.Ok.val.Struct.brand = brand;
+            (*env).active_monomorphizations.Remove(template_name);
             return res;
         }
 
@@ -1652,6 +1653,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
         ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Generic template not found: ", template_name));
         res.tag = 1; // Err
         res.Err.error = err;
+        (*env).active_monomorphizations.Remove(template_name);
         return res;
     }
 }

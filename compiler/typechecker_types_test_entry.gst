@@ -182,4 +182,46 @@ func main() {
     // 6. Test Complete Environment Serializer (Step 2.5 Verification)
     mut full_dump := typechecker.typechecker_serialize_type_environment(&env, ctx);
     os.LogStr(full_dump);
+
+    // 7. Test Recursive Monomorphization Cycle Detection
+    mut l6: lexer.Lexer[ctx];
+    lexer.init_lexer(&l6, "type Loop1[ctx] struct { val: Loop1[ctx] }");
+
+    mut p6: parser.Parser[ctx];
+    parser.init_parser(&p6, &l6, ctx);
+
+    mut prog6 := parser.parse_program(&p6, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog6.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        typechecker.env_pre_register_statement(&env, (*statements_vec)[0], ctx);
+    }
+
+    mut loop_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    loop_args.Push(typechecker.make_type_struct("ctx", "", ctx));
+
+    mut loop_res := typechecker.monomorphize(&env, "Loop1", loop_args, ctx);
+    if loop_res.tag == 1 { // Err
+        os.LogStr("Cycle Detection OK: Loop1 directly by-value rejected");
+    } else {
+        os.LogStr("Cycle Detection FAIL: Loop1 directly by-value accepted");
+    }
+
+    mut l7: lexer.Lexer[ctx];
+    lexer.init_lexer(&l7, "type Loop2[ctx] struct { next: *Loop2[ctx] }");
+
+    mut p7: parser.Parser[ctx];
+    parser.init_parser(&p7, &l7, ctx);
+
+    mut prog7 := parser.parse_program(&p7, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog7.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        typechecker.env_pre_register_statement(&env, (*statements_vec)[0], ctx);
+    }
+
+    mut loop2_res := typechecker.monomorphize(&env, "Loop2", loop_args, ctx);
+    if loop2_res.tag == 0 { // Ok
+        os.LogStr("Cycle Detection OK: Pointer-indirected Loop2 accepted");
+    } else {
+        os.LogStr("Cycle Detection FAIL: Pointer-indirected Loop2 rejected");
+    }
 }
