@@ -1871,7 +1871,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                         mut j := 0;
                         while j < len((*entry_ref).types) {
                             mut t_entry := (*entry_ref).types[j];
-                            if t_entry.offset == span.start.offset {
+                            if t_entry.start_offset == span.start.offset && t_entry.end_offset == span.end.offset {
                                 t_var = t_entry.val_type;
                                 found = 1;
                                 j = len((*entry_ref).types);
