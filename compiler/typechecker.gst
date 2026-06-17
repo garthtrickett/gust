@@ -1008,9 +1008,14 @@ func scope_lookup(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) ast.Typ
     }
 }
 
+type ResolvedTypeEntry[ctx] struct {
+    offset: int,
+    val_type: ast.Type[ctx]
+}
+
 type PrefixMapEntry[ctx] struct {
     prefix: str,
-    map_idx: Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]
+    types: std.Vector[ResolvedTypeEntry[ctx], ctx]
 }
 
 type TypeEnvironment[ctx] struct {
