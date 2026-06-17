@@ -1,9 +1,0 @@
-{
-  "summary": "refactor: update codegen_initializer_test_entry to use the new codegen_generate signature",
-  "files": [
-    {
-      "file_path": "compiler/codegen_initializer_test_entry.gst",
-      "code_diff": "<<<<<<< SEARCH\n    // 7. Test codegen_generate\n    mut full_c := codegen.codegen_generate(&prog2, &env, ctx);\n    os.LogStr(full_c);\n=======\n    // 7. Test codegen_generate\n    mut test_programs: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);\n    test_programs.Push(prog2);\n    mut test_prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);\n    test_prefixes.Push(\"\");\n    mut full_c := codegen.codegen_generate(test_programs, test_prefixes, &env, ctx);\n    os.LogStr(full_c);\n>>>>>>> REPLACE"
-    }
-  ]
-}
