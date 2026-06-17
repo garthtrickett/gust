@@ -246,4 +246,32 @@ func main() {
     } else {
         os.LogStr("Cycle Detection FAIL: Pointer-indirected Loop2 rejected");
     }
+
+    // 8. Test Dynamic Fallback Monomorphization for Nested Templates std.Graph[int, ctx] (Phase 2 Step 3 Fix)
+    mut graph_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    graph_args.Push(typechecker.make_type_int());
+    graph_args.Push(typechecker.make_type_struct("ctx", "", ctx));
+
+    mut graph_res := typechecker.monomorphize(&env, "std.Graph", graph_args, ctx);
+    if graph_res.tag == 0 {
+        mut concrete_t := graph_res.Ok.val;
+        os.LogStr(std.Concat("Monomorphized Graph name: ", concrete_t.Struct.struct_name));
+
+        mut layout_graph_lookup := env.struct_registry.Get(concrete_t.Struct.struct_name);
+        if layout_graph_lookup.Ok {
+            os.LogStr("std_Graph_int_ctx successfully registered!");
+        } else {
+            os.LogStr("std_Graph_int_ctx registration failed!");
+        }
+
+        // Check if the nested std_GraphNode_int_ctx was dynamically monomorphized and registered!
+        mut layout_node_lookup := env.struct_registry.Get("std_GraphNode_int_ctx");
+        if layout_node_lookup.Ok {
+            os.LogStr("std_GraphNode_int_ctx successfully registered dynamically!");
+        } else {
+            os.LogStr("std_GraphNode_int_ctx dynamic registration failed!");
+        }
+    } else {
+        os.LogStr("Graph monomorphization failed!");
+    }
 }
