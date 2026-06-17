@@ -1956,6 +1956,25 @@ typedef void Any;
         }
         c_code = std.Concat(c_code, "\n");
 
+        // Function Forward Declarations
+        c_code = std.Concat(c_code, "// Function Forward Declarations\n");
+        mut func_keys := typechecker.typechecker_get_sorted_keys_func(&((*env).function_registry), ctx);
+        mut f_idx := 0;
+        while f_idx < len(func_keys) {
+            mut key := func_keys[f_idx];
+            if std.str_eq(key, "main") == 0 {
+                if codegen_should_skip_fwd_decl(key) == 0 {
+                    mut sig_lookup := (*env).function_registry.Get(key);
+                    if sig_lookup.Ok {
+                        mut fwd_decl := codegen_gen_function_fwd_decl(key, sig_lookup.Val, env, ctx);
+                        c_code = std.Concat(c_code, fwd_decl);
+                    }
+                }
+            }
+            f_idx = f_idx + 1;
+        }
+        c_code = std.Concat(c_code, "\n");
+
         // 3. Structures Declarations
         c_code = std.Concat(c_code, "// Structures\n");
         mut i := 0;
