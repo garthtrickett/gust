@@ -31,6 +31,7 @@
             rustfmt
             clippy
             python3
+            ripgrep
           ];
 
           shellHook = ''

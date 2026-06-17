@@ -2914,6 +2914,17 @@ func typechecker_strip_module_prefix(name: str, ctx: &Arena) str {
     return std.Clone(ctx, clean);
 }
 
+func typechecker_rfind_char(s: str, ch: int, end_idx: int) int {
+    mut j := end_idx - 1;
+    while j >= 0 {
+        if std.str_byte_at(s, j) == ch {
+            return j;
+        }
+        j = j - 1;
+    }
+    return 0 - 1;
+}
+
 func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
     mut erased := name;
     mut changed := 1;
@@ -2925,34 +2936,51 @@ func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
         brand_bases.Push("ctx");
         brand_bases.Push("Any");
         brand_bases.Push("a");
-        
+
         mut i := 0;
         while i < len(brand_bases) {
             mut base := brand_bases[i];
             mut ns_suffix := std.Concat("__", base);
+            mut ns_mid := std.Concat(ns_suffix, "_");
+            mut flat_suffix := std.Concat("_", base);
+            mut flat_mid := std.Concat(flat_suffix, "_");
+
             if typechecker_ends_with(erased, ns_suffix) == 1 {
                 mut pos := len(erased) - len(ns_suffix);
-                mut start_pos := 0 - 1;
-                mut j := pos - 1;
-                while j >= 0 {
-                    mut b := std.str_byte_at(erased, j);
-                    if b == 95 { // '_'
-                        start_pos = j;
-                        j = 0 - 1; // break
-                    }
-                    j = j - 1;
-                }
+                mut start_pos := typechecker_rfind_char(erased, 95, pos);
                 if start_pos != 0 - 1 {
-                    erased = std.str_slice(erased, 0, start_pos);
-                    changed = 1;
-                    i = len(brand_bases); // break inner loop
+                    if typechecker_ends_with(std.str_slice(erased, 0, pos), "__") == 0 {
+                        erased = std.str_slice(erased, 0, start_pos);
+                        changed = 1;
+                        i = len(brand_bases); // break inner loop
+                    }
                 }
             } else {
-                mut flat_suffix := std.Concat("_", base);
-                if typechecker_ends_with(erased, flat_suffix) == 1 {
+                mut pos := std.str_find(erased, ns_mid);
+                if pos != 0 - 1 {
+                    mut start_pos := typechecker_rfind_char(erased, 95, pos);
+                    if start_pos != 0 - 1 {
+                        if typechecker_ends_with(std.str_slice(erased, 0, pos), "__") == 0 {
+                            mut left := std.str_slice(erased, 0, start_pos);
+                            mut right := std.str_slice(erased, pos + len(ns_mid) - 1, len(erased));
+                            erased = std.Concat(left, right);
+                            changed = 1;
+                            i = len(brand_bases); // break inner loop
+                        }
+                    }
+                } else if typechecker_ends_with(erased, flat_suffix) == 1 {
                     erased = std.str_slice(erased, 0, len(erased) - len(flat_suffix));
                     changed = 1;
                     i = len(brand_bases); // break inner loop
+                } else {
+                    mut pos2 := std.str_find(erased, flat_mid);
+                    if pos2 != 0 - 1 {
+                        mut left := std.str_slice(erased, 0, pos2);
+                        mut right := std.str_slice(erased, pos2 + len(flat_mid) - 1, len(erased));
+                        erased = std.Concat(left, right);
+                        changed = 1;
+                        i = len(brand_bases); // break inner loop
+                    }
                 }
             }
             i = i + 1;

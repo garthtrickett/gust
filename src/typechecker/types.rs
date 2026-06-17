@@ -67,18 +67,22 @@ pub fn clean_monomorphized_name(name: &str) -> String {
             if erased.ends_with(&ns_suffix) {
                 let pos = erased.len() - ns_suffix.len();
                 if let Some(start_pos) = erased[..pos].rfind('_') {
-                    erased.truncate(start_pos);
-                    changed = true;
-                    break;
+                    if !erased[..pos].ends_with("__") {
+                        erased.truncate(start_pos);
+                        changed = true;
+                        break;
+                    }
                 }
             }
             let ns_mid = format!("__{}_", base);
             if let Some(pos) = erased.find(&ns_mid)
                 && let Some(start_pos) = erased[..pos].rfind('_')
             {
-                erased.replace_range(start_pos..pos + ns_mid.len() - 1, "");
-                changed = true;
-                break;
+                if !erased[..pos].ends_with("__") {
+                    erased.replace_range(start_pos..pos + ns_mid.len() - 1, "");
+                    changed = true;
+                    break;
+                }
             }
             let flat_suffix = format!("_{}", base);
             if erased.ends_with(&flat_suffix) {
