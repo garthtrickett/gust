@@ -5885,6 +5885,23 @@ fn test_codegen_emits_multi_file_line_directives() {
 }
 
 #[test]
+fn test_nested_generic_type_mismatch_rejected() {
+    let source = "
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            mut v1: std.Vector[std.Vector[int, ctx], ctx] := os.VectorNew(ctx);
+            mut v2: std.Vector[std.Vector[bool, ctx], ctx] := os.VectorNew(ctx);
+            v1 = v2;
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+}
+
+#[test]
 fn test_cross_module_template_namespacing_isolation() {
     use std::fs;
     let temp_dir = std::env::temp_dir().join("gust_test_namespaced_isolation");

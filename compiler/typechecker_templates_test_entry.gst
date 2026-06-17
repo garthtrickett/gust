@@ -159,4 +159,28 @@ func main() {
     os.LogStr(typechecker.typechecker_clean_monomorphized_name("lib_module__MyNode_ctx", ctx)); // Expected: lib_module__MyNode
     os.LogStr(typechecker.typechecker_clean_monomorphized_name("std_Vector_lib_module__ctx_MyNode", ctx)); // Expected: std_Vector_lib_MyNode
     os.LogStr(typechecker.typechecker_clean_monomorphized_name("std_Vector_ctx_MyNode", ctx)); // Expected: std_Vector_MyNode
+
+    // Test 8: Verify recursive generic type matching
+    mut inner_args_int: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    inner_args_int.Push(typechecker.make_type_int());
+    inner_args_int.Push(typechecker.make_type_struct("ctx", "", ctx));
+    mut t_inner_int := typechecker.make_type_generic("std.Vector", inner_args_int, ctx);
+
+    mut outer_args_int: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    outer_args_int.Push(t_inner_int);
+    outer_args_int.Push(typechecker.make_type_struct("ctx", "", ctx));
+    mut t_outer_int := typechecker.make_type_generic("std.Vector", outer_args_int, ctx);
+
+    mut inner_args_bool: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    inner_args_bool.Push(typechecker.make_type_bool());
+    inner_args_bool.Push(typechecker.make_type_struct("ctx", "", ctx));
+    mut t_inner_bool := typechecker.make_type_generic("std.Vector", inner_args_bool, ctx);
+
+    mut outer_args_bool: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    outer_args_bool.Push(t_inner_bool);
+    outer_args_bool.Push(typechecker.make_type_struct("ctx", "", ctx));
+    mut t_outer_bool := typechecker.make_type_generic("std.Vector", outer_args_bool, ctx);
+
+    mut is_match := typechecker.types_match(t_outer_int, t_outer_bool, ctx);
+    os.LogInt(is_match); // Expected: 0
 }

@@ -3107,10 +3107,22 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
         }
         
         if expected.tag == 10 { // Generic
-            if std.str_eq(expected.Generic.name, actual.Generic.name) {
-                return 1;
+            if std.str_eq(expected.Generic.name, actual.Generic.name) == 0 {
+                return 0;
             }
-            return 0;
+            mut e_args := &ctx[expected.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            mut a_args := &ctx[actual.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            if len(*e_args) != len(*a_args) {
+                return 0;
+            }
+            mut idx := 0;
+            while idx < len(*e_args) {
+                if types_match((*e_args)[idx], (*a_args)[idx], ctx) == 0 {
+                    return 0;
+                }
+                idx = idx + 1;
+            }
+            return 1;
         }
         return 0;
     }
