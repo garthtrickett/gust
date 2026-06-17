@@ -1751,6 +1751,7 @@ typedef void Any;
         mut fwd_p_idx := 0;
         while fwd_p_idx < len(programs) {
             mut prog := programs[fwd_p_idx];
+            env.current_prefix = prefixes[fwd_p_idx];
             mut fwd_statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
             mut fwd_s_idx := 0;
             while fwd_s_idx < len(*fwd_statements_vec) {
@@ -1758,7 +1759,20 @@ typedef void Any;
                 if stmt.tag == 3 { // FunctionDecl
                     mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
                     if len(*params_vec) == 1 {
-                        mut decl := std.Concat("void* ", stmt.FunctionDecl.name);
+                        mut f_name := stmt.FunctionDecl.name;
+                        mut namespaced_name := typechecker.env_resolve_namespaced_ident(env, f_name, ctx);
+                        mut c_func_name := "";
+                        mut char_idx := 0;
+                        while char_idx < len(namespaced_name) {
+                            mut b := std.str_byte_at(namespaced_name, char_idx);
+                            if b == 46 { // '.'
+                                c_func_name = std.Concat(c_func_name, "_");
+                            } else {
+                                c_func_name = std.Concat(c_func_name, std.str_slice(namespaced_name, char_idx, char_idx + 1));
+                            }
+                            char_idx = char_idx + 1;
+                        }
+                        mut decl := std.Concat("void* ", c_func_name);
                         decl = std.Concat(decl, "_pthread_wrapper(void* arg);\n");
                         c_code = std.Concat(c_code, decl);
                     }
@@ -1767,6 +1781,7 @@ typedef void Any;
             }
             fwd_p_idx = fwd_p_idx + 1;
         }
+        env.current_prefix = "";
         c_code = std.Concat(c_code, "\n");
         
         // 3. _IsValid Invariant Validator forward declarations
@@ -1818,6 +1833,7 @@ typedef void Any;
         mut p_idx2 := 0;
         while p_idx2 < len(programs) {
             mut prog := programs[p_idx2];
+            env.current_prefix = prefixes[p_idx2];
             mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
             mut s_idx := 0;
             while s_idx < len(*statements_vec) {
@@ -1829,6 +1845,7 @@ typedef void Any;
             }
             p_idx2 = p_idx2 + 1;
         }
+        env.current_prefix = "";
         
         return std.Clone(ctx, c_code);
     }
