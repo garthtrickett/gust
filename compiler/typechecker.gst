@@ -2892,6 +2892,53 @@ func typechecker_strip_module_prefix(name: str, ctx: &Arena) str {
     return name;
 }
 
+func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
+    mut erased := name;
+    mut changed := 1;
+    while changed == 1 {
+        changed = 0;
+        mut brand_bases: std.Vector[str, ctx] := std.VectorNew(ctx);
+        brand_bases.Push("connCtx");
+        brand_bases.Push("arena");
+        brand_bases.Push("ctx");
+        brand_bases.Push("Any");
+        brand_bases.Push("a");
+        
+        mut i := 0;
+        while i < len(brand_bases) {
+            mut base := brand_bases[i];
+            mut ns_suffix := std.Concat("__", base);
+            if typechecker_ends_with(erased, ns_suffix) == 1 {
+                mut pos := len(erased) - len(ns_suffix);
+                mut start_pos := 0 - 1;
+                mut j := pos - 1;
+                while j >= 0 {
+                    mut b := std.str_byte_at(erased, j);
+                    if b == 95 { // '_'
+                        start_pos = j;
+                        j = 0 - 1; // break
+                    }
+                    j = j - 1;
+                }
+                if start_pos != 0 - 1 {
+                    erased = std.str_slice(erased, 0, start_pos);
+                    changed = 1;
+                    i = len(brand_bases); // break inner loop
+                }
+            } else {
+                mut flat_suffix := std.Concat("_", base);
+                if typechecker_ends_with(erased, flat_suffix) == 1 {
+                    erased = std.str_slice(erased, 0, len(erased) - len(flat_suffix));
+                    changed = 1;
+                    i = len(brand_bases); // break inner loop
+                }
+            }
+            i = i + 1;
+        }
+    }
+    return std.Clone(ctx, erased);
+}
+
 func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) int {
     unsafe {
         mut t_expected := ast.serialize_type(expected, ctx);
@@ -2916,80 +2963,89 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
             return types_match(ctx[expected.RawPointer.inner], ctx[actual.RawPointer.inner], ctx);
         }
 
-if expected.tag == 7 { // Index
-                mut name1 := expected.Index.struct_name;
-                mut name2 := actual.Index.struct_name;
-                name1 = typechecker_strip_module_prefix(name1, ctx);
-                name2 = typechecker_strip_module_prefix(name2, ctx);
-                if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
-                    return 1;
-                }
-                return 0;
+        if expected.tag == 7 { // Index
+            mut name1 := expected.Index.struct_name;
+            mut name2 := actual.Index.struct_name;
+            name1 = typechecker_strip_module_prefix(name1, ctx);
+            name2 = typechecker_strip_module_prefix(name2, ctx);
+            name1 = typechecker_clean_monomorphized_name(name1, ctx);
+            name2 = typechecker_clean_monomorphized_name(name2, ctx);
+            if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
+                return 1;
+            }
+            return 0;
+        }
+
+        if expected.tag == 8 { // Struct
+            mut name1 := expected.Struct.struct_name;
+            mut name2 := actual.Struct.struct_name;
+            if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
+                return 1;
             }
 
-            if expected.tag == 8 { // Struct
-                    mut name1 := expected.Struct.struct_name;
-                    mut name2 := actual.Struct.struct_name;
-                    if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
+            if len(name1) >= 4 {
+                if std.str_eq(std.str_slice(name1, 0, 4), "std_") {
+                    name1 = std.str_slice(name1, 4, len(name1));
+                }
+            }
+            if len(name2) >= 4 {
+                if std.str_eq(std.str_slice(name2, 0, 4), "std_") {
+                    name2 = std.str_slice(name2, 4, len(name2));
+                }
+            }
+
+            name1 = typechecker_strip_module_prefix(name1, ctx);
+            name2 = typechecker_strip_module_prefix(name2, ctx);
+
+            name1 = typechecker_clean_monomorphized_name(name1, ctx);
+            name2 = typechecker_clean_monomorphized_name(name2, ctx);
+
+            if std.str_eq(name1, name2) {
+                return 1;
+            }
+
+            mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
+    
+            prefixes.Push("Vector_");
+            prefixes.Push("HashMap_");
+            prefixes.Push("Pool_");
+            prefixes.Push("Rc_");
+            prefixes.Push("Graph_");
+            prefixes.Push("Mutex_");
+            prefixes.Push("Channel_");
+            prefixes.Push("GenerationalArena_");
+            prefixes.Push("os_Dir_");
+            prefixes.Push("os_DirEntry_");
+
+            mut p := 0;
+            while p < len(prefixes) {
+                mut prefix := prefixes[p];
+                mut is_prefix1 := 0;
+                if len(name1) >= len(prefix) { 
+                    if std.str_eq(std.str_slice(name1, 0, len(prefix)), prefix) {
+                        is_prefix1 = 1;
+                    }
+                }
+                mut is_prefix2 := 0;
+                if len(name2) >= len(prefix) {
+                    if std.str_eq(std.str_slice(name2, 0, len(prefix)), prefix) {
+                        is_prefix2 = 1;
+                    }
+                }
+
+                if is_prefix1 == 1 && is_prefix2 == 1 {
+                    mut brand1 := get_type_brand(expected, ctx);
+                    mut brand2 := get_type_brand(actual, ctx);
+                    mut clean_b1 := strip_brand_prefix(brand1, ctx);
+                    mut clean_b2 := strip_brand_prefix(brand2, ctx);
+                    if std.str_eq(clean_b1, clean_b2) || std.str_eq(clean_b1, "Any") || std.str_eq(clean_b2, "Any") || std.str_eq(clean_b1, "") || std.str_eq(clean_b2, "") {
                         return 1;
                     }
-
-                    if len(name1) >= 4 {
-                        if std.str_eq(std.str_slice(name1, 0, 4), "std_") {
-                            name1 = std.str_slice(name1, 4, len(name1));
-                        }
-                    }
-                    if len(name2) >= 4 {
-                        if std.str_eq(std.str_slice(name2, 0, 4), "std_") {
-                            name2 = std.str_slice(name2, 4, len(name2));
-                        }
-                    }
-
-                    name1 = typechecker_strip_module_prefix(name1, ctx);
-                    name2 = typechecker_strip_module_prefix(name2, ctx);
-
-                    mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
-        
-                prefixes.Push("Vector_");
-                prefixes.Push("HashMap_");
-                prefixes.Push("Pool_");
-                prefixes.Push("Rc_");
-                prefixes.Push("Graph_");
-                prefixes.Push("Mutex_");
-                prefixes.Push("Channel_");
-                prefixes.Push("GenerationalArena_");
-                prefixes.Push("os_Dir_");
-                prefixes.Push("os_DirEntry_");
-
-                mut p := 0;
-                while p < len(prefixes) {
-                    mut prefix := prefixes[p];
-                    mut is_prefix1 := 0;
-                    if len(name1) >= len(prefix) {
-                        if std.str_eq(std.str_slice(name1, 0, len(prefix)), prefix) {
-                            is_prefix1 = 1;
-                        }
-                    }
-                    mut is_prefix2 := 0;
-                    if len(name2) >= len(prefix) {
-                        if std.str_eq(std.str_slice(name2, 0, len(prefix)), prefix) {
-                            is_prefix2 = 1;
-                        }
-                    }
-
-                    if is_prefix1 == 1 && is_prefix2 == 1 {
-                        mut brand1 := get_type_brand(expected, ctx);
-                        mut brand2 := get_type_brand(actual, ctx);
-                        mut clean_b1 := strip_brand_prefix(brand1, ctx);
-                        mut clean_b2 := strip_brand_prefix(brand2, ctx);
-                        if std.str_eq(clean_b1, clean_b2) || std.str_eq(clean_b1, "Any") || std.str_eq(clean_b2, "Any") || std.str_eq(clean_b1, "") || std.str_eq(clean_b2, "") {
-                            return 1;
-                        }
-                    }
-                    p = p + 1;
                 }
-                return 0;
+                p = p + 1;
             }
+            return 0;
+        }
         
         if expected.tag == 10 { // Generic
             if std.str_eq(expected.Generic.name, actual.Generic.name) {
