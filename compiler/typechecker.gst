@@ -2980,39 +2980,47 @@ func expression_to_string(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena
     }
 }
 
-func extract_ok_checked_variable(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) str {
+func typechecker_extract_ok_checked_variables(expr_idx: Index[ast.Expression[ctx], ctx], checked_map: *std.HashMap[str, int, ctx], ctx: &Arena) {
     unsafe {
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
-            return "";
+            return;
         }
         mut expr_ptr := &ctx[expr_idx] as *ast.Expression[ctx];
         if (*expr_ptr).tag == 11 { // Selector
             if std.str_eq((*expr_ptr).Selector.right, "Ok") {
-                return expression_to_string((*expr_ptr).Selector.left, ctx);
+                mut var_name := expression_to_string((*expr_ptr).Selector.left, ctx);
+                (*checked_map).Insert(std.Clone(ctx, var_name), 1);
             }
         }
         if (*expr_ptr).tag == 10 { // Binary
-            if std.str_eq((*expr_ptr).Binary.op, "==") {
-                // Case: path.Ok == 1
-                mut left_idx := (*expr_ptr).Binary.left;
-                mut right_idx := (*expr_ptr).Binary.right;
-                if left_idx != empty[Index[ast.Expression[ctx], ctx]] && right_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                    mut left_ptr := &ctx[left_idx] as *ast.Expression[ctx];
-                    mut right_ptr := &ctx[right_idx] as *ast.Expression[ctx];
-                    if (*left_ptr).tag == 11 { // Selector
-                        if std.str_eq((*left_ptr).Selector.right, "Ok") {
-                            if (*right_ptr).tag == 1 { // Integer
-                                if (*right_ptr).Integer.val == 1 {
-                                    return expression_to_string((*left_ptr).Selector.left, ctx);
+            if std.str_eq((*expr_ptr).Binary.op, "&&") {
+                typechecker_extract_ok_checked_variables((*expr_ptr).Binary.left, checked_map, ctx);
+                typechecker_extract_ok_checked_variables((*expr_ptr).Binary.right, checked_map, ctx);
+            } else {
+                if std.str_eq((*expr_ptr).Binary.op, "==") {
+                    // Case: path.Ok == 1
+                    mut left_idx := (*expr_ptr).Binary.left;
+                    mut right_idx := (*expr_ptr).Binary.right;
+                    if left_idx != empty[Index[ast.Expression[ctx], ctx]] && right_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                        mut left_ptr := &ctx[left_idx] as *ast.Expression[ctx];
+                        mut right_ptr := &ctx[right_idx] as *ast.Expression[ctx];
+                        if (*left_ptr).tag == 11 { // Selector
+                            if std.str_eq((*left_ptr).Selector.right, "Ok") {
+                                if (*right_ptr).tag == 1 { // Integer
+                                    if (*right_ptr).Integer.val == 1 {
+                                        mut var_name := expression_to_string((*left_ptr).Selector.left, ctx);
+                                        (*checked_map).Insert(std.Clone(ctx, var_name), 1);
+                                    }
                                 }
                             }
                         }
-                    }
-                    if (*right_ptr).tag == 11 { // Selector
-                        if std.str_eq((*right_ptr).Selector.right, "Ok") {
-                            if (*left_ptr).tag == 1 { // Integer
-                                if (*left_ptr).Integer.val == 1 {
-                                    return expression_to_string((*right_ptr).Selector.left, ctx);
+                        if (*right_ptr).tag == 11 { // Selector
+                            if std.str_eq((*right_ptr).Selector.right, "Ok") {
+                                if (*left_ptr).tag == 1 { // Integer
+                                    if (*left_ptr).Integer.val == 1 {
+                                        mut var_name := expression_to_string((*right_ptr).Selector.left, ctx);
+                                        (*checked_map).Insert(std.Clone(ctx, var_name), 1);
+                                    }
                                 }
                             }
                         }
@@ -3020,7 +3028,6 @@ func extract_ok_checked_variable(expr_idx: Index[ast.Expression[ctx], ctx], ctx:
                 }
             }
         }
-        return "";
     }
 }
 
@@ -3876,10 +3883,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut pre_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
             mut pre_checked := typechecker_clone_int_map((*env).checked_results, ctx);
 
-            mut checked_var := extract_ok_checked_variable(cond_idx, ctx);
-            if std.str_eq(checked_var, "") == 0 {
-                (*env).checked_results.Insert(std.Clone(ctx, checked_var), 1);
-            }
+            typechecker_extract_ok_checked_variables(cond_idx, &(*env).checked_results, ctx);
 
             // Evaluate consequence
             if cons_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
