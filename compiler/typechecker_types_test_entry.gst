@@ -291,14 +291,65 @@ func main() {
             os.LogStr("std_Graph_int_ctx registration failed!");
         }
 
-        // Check if the nested std_GraphNode_int_ctx was dynamically monomorphized and registered!
-        mut layout_node_lookup := env.struct_registry.Get("std_GraphNode_int_ctx");
-        if layout_node_lookup.Ok {
-            os.LogStr("std_GraphNode_int_ctx successfully registered dynamically!");
+// Check if the nested std_GraphNode_int_ctx was dynamically monomorphized and registered!
+            mut layout_node_lookup := env.struct_registry.Get("std_GraphNode_int_ctx");
+            if layout_node_lookup.Ok {
+                os.LogStr("std_GraphNode_int_ctx successfully registered dynamically!");
+            } else {
+                os.LogStr("std_GraphNode_int_ctx dynamic registration failed!");
+            }
         } else {
-            os.LogStr("std_GraphNode_int_ctx dynamic registration failed!");
+            os.LogStr("Graph monomorphization failed!");
         }
-    } else {
-        os.LogStr("Graph monomorphization failed!");
+
+        // 9. Test Function Parameter Registration in variable_types
+        mut l_func: lexer.Lexer[ctx];
+        lexer.init_lexer(&l_func, "func process(ctx: &Arena) {}");
+
+        mut p_func: parser.Parser[ctx];
+        parser.init_parser(&p_func, &l_func, ctx);
+
+        mut prog_func := parser.parse_program(&p_func, ctx);
+        if len(p_func.errors) > 0 {
+            os.LogStr("ParserError in step 9");
+            os.Exit(1);
+        }
+
+        mut scope_func := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+        unsafe {
+            mut statements_vec := &ctx[prog_func.statements] as *std.Vector[ast.Statement[ctx], ctx];
+
+            mut i := 0;
+            while i < len(*statements_vec) {
+                typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+                i = i + 1;
+            }
+
+            mut j := 0;
+            while j < len(*statements_vec) {
+                mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[stmt_idx] = (*statements_vec)[j];
+                typechecker.check_statement(stmt_idx, &env, scope_func, ctx);
+                j = j + 1;
+            }
+        }
+
+        mut lookup_param := env.variable_types.Get("ctx");
+        if lookup_param.Ok {
+            mut t_param := lookup_param.Val;
+            if t_param.tag == 9 {
+                unsafe {
+                    mut inner_t := ctx[t_param.RawPointer.inner];
+                    if inner_t.tag == 4 {
+                        os.LogStr("Parameter ctx registered in variable_types correctly!");
+                    } else {
+                        os.LogStr("Parameter ctx registered in variable_types with incorrect inner type!");
+                    }
+                }
+            } else {
+                os.LogStr("Parameter ctx registered in variable_types with incorrect tag!");
+            }
+        } else {
+            os.LogStr("Parameter ctx lookup in variable_types failed!");
+        }
     }
-}
