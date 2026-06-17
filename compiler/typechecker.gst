@@ -3076,6 +3076,180 @@ func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
     return std.Clone(ctx, erased);
 }
 
+func typechecker_substitute_brand(t: ast.Type[ctx], new_brand: Index[str, ctx], ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        if t.tag == 7 { // Index
+            mut struct_name := t.Index.struct_name;
+            if t.Index.brand != empty[Index[str, ctx]] && new_brand != empty[Index[str, ctx]] {
+                mut old_b_ptr := &ctx[t.Index.brand] as *str;
+                mut old_b := *old_b_ptr;
+                mut new_b_ptr := &ctx[new_brand] as *str;
+                mut new_b := *new_b_ptr;
+                
+                mut old_b_clean := strip_brand_prefix(old_b, ctx);
+                mut new_b_clean := strip_brand_prefix(new_b, ctx);
+                
+                mut suffix := std.Concat("_", old_b_clean);
+                mut new_suffix := std.Concat("_", new_b_clean);
+                
+                if typechecker_ends_with(struct_name, suffix) == 1 {
+                    mut stripped := std.str_slice(struct_name, 0, len(struct_name) - len(suffix));
+                    struct_name = std.Concat(stripped, new_suffix);
+                } else {
+                    mut suffix_full := std.Concat("_", old_b);
+                    mut new_suffix_full := std.Concat("_", new_b);
+                    if typechecker_ends_with(struct_name, suffix_full) == 1 {
+                        mut stripped := std.str_slice(struct_name, 0, len(struct_name) - len(suffix_full));
+                        struct_name = std.Concat(stripped, new_suffix_full);
+                    }
+                }
+            }
+            mut res_t: ast.Type[ctx];
+            res_t.tag = 7;
+            res_t.Index.struct_name = std.Clone(ctx, struct_name);
+            res_t.Index.brand = new_brand;
+            return res_t;
+        }
+        if t.tag == 8 { // Struct
+            mut struct_name := t.Struct.struct_name;
+            if t.Struct.brand != empty[Index[str, ctx]] && new_brand != empty[Index[str, ctx]] {
+                mut old_b_ptr := &ctx[t.Struct.brand] as *str;
+                mut old_b := *old_b_ptr;
+                mut new_b_ptr := &ctx[new_brand] as *str;
+                mut new_b := *new_b_ptr;
+                
+                mut old_b_clean := strip_brand_prefix(old_b, ctx);
+                mut new_b_clean := strip_brand_prefix(new_b, ctx);
+                
+                mut suffix := std.Concat("_", old_b_clean);
+                mut new_suffix := std.Concat("_", new_b_clean);
+                
+                if typechecker_ends_with(struct_name, suffix) == 1 {
+                    mut stripped := std.str_slice(struct_name, 0, len(struct_name) - len(suffix));
+                    struct_name = std.Concat(stripped, new_suffix);
+                } else {
+                    mut suffix_full := std.Concat("_", old_b);
+                    mut new_suffix_full := std.Concat("_", new_b);
+                    if typechecker_ends_with(struct_name, suffix_full) == 1 {
+                        mut stripped := std.str_slice(struct_name, 0, len(struct_name) - len(suffix_full));
+                        struct_name = std.Concat(stripped, new_suffix_full);
+                    }
+                }
+            }
+            mut res_t: ast.Type[ctx];
+            res_t.tag = 8;
+            res_t.Struct.struct_name = std.Clone(ctx, struct_name);
+            res_t.Struct.brand = new_brand;
+            return res_t;
+        }
+        if t.tag == 9 { // RawPointer
+            mut inner := ctx[t.RawPointer.inner];
+            mut sub_inner := typechecker_substitute_brand(inner, new_brand, ctx);
+            mut res_t: ast.Type[ctx];
+            res_t.tag = 9;
+            res_t.RawPointer.inner = os.ArenaAlloc(ctx);
+            ctx[res_t.RawPointer.inner] = sub_inner;
+            return res_t;
+        }
+        if t.tag == 6 { // Slice
+            mut inner := ctx[t.Slice.inner];
+            mut sub_inner := typechecker_substitute_brand(inner, new_brand, ctx);
+            mut res_t: ast.Type[ctx];
+            res_t.tag = 6;
+            res_t.Slice.inner = os.ArenaAlloc(ctx);
+            ctx[res_t.Slice.inner] = sub_inner;
+            return res_t;
+        }
+        if t.tag == 10 { // Generic
+            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            mut new_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+            mut i := 0;
+            while i < len(*args_vec) { 
+                new_args.Push(typechecker_substitute_brand((*args_vec)[i], new_brand, ctx));
+                i = i + 1;
+            }
+            return make_type_generic(t.Generic.name, new_args, ctx);
+        }
+        return t;
+    }
+}
+
+func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[str, ctx], parent_path: str, layout: StructLayout[ctx], ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        if t.tag == 7 { // Index
+            if t.Index.brand != empty[Index[str, ctx]] {
+                mut original_brand_ptr := &ctx[t.Index.brand] as *str;
+                mut original_brand := *original_brand_ptr;
+                if layout.fields.Get(original_brand).Ok == 1 {
+                    mut res := std.Concat(parent_path, ".");
+                    res = std.Concat(res, original_brand);
+                    
+                    mut new_brand: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+                    mut ptr := &ctx[new_brand] as *str;
+                    *ptr = std.Clone(ctx, res);
+                    
+                    mut res_t: ast.Type[ctx];
+                    res_t.tag = 7;
+                    res_t.Index.struct_name = std.Clone(ctx, t.Index.struct_name);
+                    res_t.Index.brand = new_brand;
+                    return res_t;
+                } else {
+                    mut res_t: ast.Type[ctx];
+                    res_t.tag = 7;
+                    res_t.Index.struct_name = std.Clone(ctx, t.Index.struct_name);
+                    res_t.Index.brand = struct_brand;
+                    return res_t;
+                }
+            }
+        }
+        if t.tag == 8 { // Struct
+            if t.Struct.brand != empty[Index[str, ctx]] {
+                mut original_brand_ptr := &ctx[t.Struct.brand] as *str; 
+                mut original_brand := *original_brand_ptr;
+                if layout.fields.Get(original_brand).Ok == 1 {
+                    mut res := std.Concat(parent_path, ".");
+                    res = std.Concat(res, original_brand);
+                    
+                    mut new_brand: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+                    mut ptr := &ctx[new_brand] as *str;
+                    *ptr = std.Clone(ctx, res);
+                    
+                    mut res_t: ast.Type[ctx];
+                    res_t.tag = 8;
+                    res_t.Struct.struct_name = std.Clone(ctx, t.Struct.struct_name);
+                    res_t.Struct.brand = new_brand;
+                    return res_t;
+                } else {
+                    mut res_t: ast.Type[ctx];
+                    res_t.tag = 8;
+                    res_t.Struct.struct_name = std.Clone(ctx, t.Struct.struct_name);
+                    res_t.Struct.brand = struct_brand;
+                    return res_t;
+                }
+            }
+        }
+        if t.tag == 9 { // RawPointer
+            mut inner := ctx[t.RawPointer.inner];
+            mut sub_inner := typechecker_substitute_field_brand(inner, struct_brand, parent_path, layout, ctx);
+            mut res_t: ast.Type[ctx];
+            res_t.tag = 9;
+            res_t.RawPointer.inner = os.ArenaAlloc(ctx);
+            ctx[res_t.RawPointer.inner] = sub_inner;
+            return res_t;
+        }
+        if t.tag == 6 { // Slice
+            mut inner := ctx[t.Slice.inner];
+            mut sub_inner := typechecker_substitute_field_brand(inner, struct_brand, parent_path, layout, ctx);
+            mut res_t: ast.Type[ctx];
+            res_t.tag = 6;
+            res_t.Slice.inner = os.ArenaAlloc(ctx);
+            ctx[res_t.Slice.inner] = sub_inner;
+            return res_t;
+        }
+        return typechecker_substitute_brand(t, struct_brand, ctx);
+    }
+}
+
 func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) int {
     unsafe {
         mut t_expected := ast.serialize_type(expected, ctx);
