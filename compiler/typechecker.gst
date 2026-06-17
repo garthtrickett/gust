@@ -377,11 +377,23 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             if left_t.tag == 8 { // Struct
                 mut struct_name := left_t.Struct.struct_name;
                 mut clean_name := struct_name;
+                mut d_idx := std.str_find(struct_name, "__");
+                if d_idx != 0 - 1 {
+                    mut after_pfx := std.str_slice(struct_name, d_idx + 2, len(struct_name));
+                    if (len(after_pfx) >= 11 && std.str_eq(std.str_slice(after_pfx, 0, 11), "CastResult_")) ||
+                       (len(after_pfx) >= 13 && std.str_eq(std.str_slice(after_pfx, 0, 13), "LookupResult_")) {
+                        clean_name = after_pfx;
+                    }
+                }
 
                 mut lookup_struct := (*env).struct_registry.Get(struct_name);
                 if lookup_struct.Ok {
                     mut field_lookup := lookup_struct.Val.fields.Get(expr.Selector.right);
                     if field_lookup.Ok {
+                        mut field_type := field_lookup.Val;
+                        mut substituted := typechecker_substitute_field_brand(field_type, left_t.Struct.brand, left_str, lookup_struct.Val, ctx);
+                        mut resolved := env_resolve_type(env, substituted, ctx);
+
                         if std.str_eq(expr.Selector.right, "Val") {
                             if (len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_")) ||
                                (len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_")) {
@@ -392,7 +404,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 }
                             }
                         }
-                        return field_lookup.Val;
+                        return resolved;
                     }
                 }
 
