@@ -6,6 +6,68 @@ type OriginSet[ctx] struct {
     map: std.HashMap[str, int, ctx]
 }
 
+type StructLayout[ctx] struct {
+    brand: Index[str, ctx],
+    fields: std.HashMap[str, ast.Type[ctx], ctx]
+}
+
+type FunctionSignature[ctx] struct {
+    param_names: std.Vector[str, ctx],
+    params: std.Vector[ast.Type[ctx], ctx],
+    return_type: ast.Type[ctx],
+    return_origins: Index[OriginSet[ctx], ctx]
+}
+
+type Scope[ctx] struct {
+    parent: Index[Scope[ctx], ctx],
+    bindings: std.HashMap[str, ast.Type[ctx], ctx]
+}
+
+type StructTemplate[ctx] struct {
+    generics: Index[std.Vector[str, ctx], ctx],
+    fields: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx]
+}
+
+type EnumTemplate[ctx] struct {
+    generics: Index[std.Vector[str, ctx], ctx],
+    variants: Index[std.Vector[ast.VariantDef[ctx], ctx], ctx]
+}
+
+type ResolvedTypeEntry[ctx] struct {
+    offset: int,
+    val_type: ast.Type[ctx]
+}
+
+type PrefixMapEntry[ctx] struct {
+    prefix: str,
+    types: std.Vector[ResolvedTypeEntry[ctx], ctx]
+}
+
+type TypeEnvironment[ctx] struct {
+    struct_registry: std.HashMap[str, StructLayout[ctx], ctx],
+    struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
+    enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
+    function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
+    variable_types: std.HashMap[str, ast.Type[ctx], ctx],
+    resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
+    enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
+    current_prefix: str,
+    imports: std.HashMap[str, str, ctx],
+    variable_origins: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx],
+    moved_vars: std.HashMap[str, int, ctx],
+    open_directories: std.HashMap[str, int, ctx],
+    errors: std.Vector[errors.CompilerError[ctx], ctx],
+    expected_return_type: Index[ast.Type[ctx], ctx],
+    current_function_return_origins: Index[OriginSet[ctx], ctx],
+    current_function_inout_params: Index[std.Vector[str, ctx], ctx],
+    current_function_local_vars: Index[OriginSet[ctx], ctx],
+    checked_results: std.HashMap[str, int, ctx],
+    in_unsafe_block: int,
+    active_monomorphizations: std.HashMap[str, int, ctx],
+    current_alloc_struct: str,
+    current_params: std.Vector[str, ctx]
+}
+
 func set_init(ctx: &Arena) Index[OriginSet[ctx], ctx] {
     mut s_idx: Index[OriginSet[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
@@ -931,33 +993,6 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
     return t;
 }
 
-type StructLayout[ctx] struct {
-    brand: Index[str, ctx],
-    fields: std.HashMap[str, ast.Type[ctx], ctx]
-}
-
-type FunctionSignature[ctx] struct {
-    param_names: std.Vector[str, ctx],
-    params: std.Vector[ast.Type[ctx], ctx],
-    return_type: ast.Type[ctx],
-    return_origins: Index[OriginSet[ctx], ctx]
-}
-
-type Scope[ctx] struct {
-    parent: Index[Scope[ctx], ctx],
-    bindings: std.HashMap[str, ast.Type[ctx], ctx]
-}
-
-type StructTemplate[ctx] struct {
-    generics: Index[std.Vector[str, ctx], ctx],
-    fields: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx]
-}
-
-type EnumTemplate[ctx] struct {
-    generics: Index[std.Vector[str, ctx], ctx],
-    variants: Index[std.Vector[ast.VariantDef[ctx], ctx], ctx]
-}
-
 func scope_new(parent: Index[Scope[ctx], ctx], ctx: &Arena) Index[Scope[ctx], ctx] {
     mut scope_idx: Index[Scope[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
@@ -1009,41 +1044,6 @@ func scope_lookup(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) ast.Typ
         ctx[dummy].tag = 3; // Void
         return ctx[dummy];
     }
-}
-
-type ResolvedTypeEntry[ctx] struct {
-    offset: int,
-    val_type: ast.Type[ctx]
-}
-
-type PrefixMapEntry[ctx] struct {
-    prefix: str,
-    types: std.Vector[ResolvedTypeEntry[ctx], ctx]
-}
-
-type TypeEnvironment[ctx] struct {
-    struct_registry: std.HashMap[str, StructLayout[ctx], ctx],
-    struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
-    enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
-    function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
-    variable_types: std.HashMap[str, ast.Type[ctx], ctx],
-    resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
-    enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
-    current_prefix: str,
-    imports: std.HashMap[str, str, ctx],
-    variable_origins: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx],
-    moved_vars: std.HashMap[str, int, ctx],
-    open_directories: std.HashMap[str, int, ctx],
-    errors: std.Vector[errors.CompilerError[ctx], ctx],
-    expected_return_type: Index[ast.Type[ctx], ctx],
-    current_function_return_origins: Index[OriginSet[ctx], ctx],
-    current_function_inout_params: Index[std.Vector[str, ctx], ctx],
-    current_function_local_vars: Index[OriginSet[ctx], ctx],
-    checked_results: std.HashMap[str, int, ctx],
-    in_unsafe_block: int,
-    active_monomorphizations: std.HashMap[str, int, ctx],
-    current_alloc_struct: str,
-    current_params: std.Vector[str, ctx]
 }
 
 func make_type_int() ast.Type[ctx] {
