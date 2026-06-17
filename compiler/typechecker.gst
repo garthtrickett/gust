@@ -2215,7 +2215,6 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
 
 
 
-
 func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
     // 1. Handle LookupResult_ and CastResult_ prefixes
     if len(name) >= 13 && std.str_eq(std.str_slice(name, 0, 13), "LookupResult_") {
@@ -2256,7 +2255,7 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
                         mut parts := std.str_split(suffix, "_", ctx);
                         mut resolved_parts: std.Vector[str, ctx] := std.VectorNew(ctx);
                         mut active_prefix := (*env).current_prefix;
-                        
+
                         mut i := 0;
                         while i < len(parts) {
                             mut part := parts[i];
@@ -2296,11 +2295,12 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
                                 resolved_parts.Push(temp_resolved);
                                 active_prefix = (*env).current_prefix;
                             }
+                            i = i + 1;
                         }
-                        
+
                         mut joined := ast.ast_join_strings(resolved_parts, "_", ctx);
                         mut res := std.Concat(prefix, joined);
-                        
+
                         mut triple_idx := std.str_find(res, "___");
                         while triple_idx != 0 - 1 {
                             mut left := std.str_slice(res, 0, triple_idx);

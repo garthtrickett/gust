@@ -301,6 +301,12 @@ impl TypeChecker {
                         .to_string();
                     let v_type = if target_struct == "int" {
                         Type::Int
+                    } else if target_struct == "byte" {
+                        Type::Byte
+                    } else if target_struct == "bool" {
+                        Type::Bool
+                    } else if target_struct == "str" {
+                        Type::Str
                     } else if let Some(suffix) = target_struct.strip_prefix("Index_") {
                         let brand = extract_brand_from_suffix(suffix);
                         Type::Index(suffix.to_string(), brand)
@@ -329,6 +335,12 @@ impl TypeChecker {
                         .to_string();
                     let v_type = if target_struct == "int" {
                         Type::Int
+                    } else if target_struct == "byte" {
+                        Type::Byte
+                    } else if target_struct == "bool" {
+                        Type::Bool
+                    } else if target_struct == "str" {
+                        Type::Str
                     } else {
                         let brand = extract_brand_from_suffix(&target_struct);
                         Type::RawPointer(Box::new(Type::Struct(target_struct, brand)))
