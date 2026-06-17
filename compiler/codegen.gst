@@ -2163,7 +2163,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             res = std.Concat(res, "}\n\n");
 
 
-              if len(*params_vec) == 1 {
+  if len(*params_vec) == 1 {
                     codegen_log_trace("👁", std.Format("codegen_generate_statement: generating pthread_wrapper for %s", namespaced_name), ctx);
                     mut param := (*params_vec)[0];
                     mut wrapper_p_type := param.param_type;
@@ -2196,7 +2196,8 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                         }
                     }
 
-                    mut wrapper_decl := std.Concat(wrapper_decl, "_pthread_wrapper(void* arg) {\n");
+                    mut wrapper_decl := std.Concat("void* ", c_func_name);
+                    wrapper_decl = std.Concat(wrapper_decl, "_pthread_wrapper(void* arg) {\n");
 
                     mut wrapper_call := std.Concat("    ", c_func_name);
                     wrapper_call = std.Concat(wrapper_call, "(");
