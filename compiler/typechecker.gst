@@ -902,28 +902,31 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
     unsafe {
         mut final_span := get_expression_span(expr_idx, ctx);
         mut prefix := (*env).current_prefix;
-        
-        mut inner_map_idx : Index[std.HashMap[int, ast.Type[ctx], ctx], ctx] := empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]];
+
+        mut found_idx := 0 - 1;
         mut i := 0;
         while i < len((*env).resolved_types_nested) {
             mut entry := (*env).resolved_types_nested[i];
             if std.str_eq(entry.prefix, prefix) {
-                inner_map_idx = entry.map_idx;
+                found_idx = i;
                 i = len((*env).resolved_types_nested);
             }
             i = i + 1;
         }
-        
-        if inner_map_idx == empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]] {
-            inner_map_idx = os.ArenaAlloc(ctx) as Index[std.HashMap[int, ast.Type[ctx], ctx], ctx];
-            ctx[inner_map_idx] = std.HashMapNew(ctx);
-            
-            mut entry: PrefixMapEntry[ctx];
-            entry.prefix = std.Clone(ctx, prefix);
-            entry.map_idx = inner_map_idx;
-            (*env).resolved_types_nested.Push(entry);
+
+        if found_idx == 0 - 1 {
+            mut new_entry: PrefixMapEntry[ctx];
+            new_entry.prefix = std.Clone(ctx, prefix);
+            new_entry.types = std.VectorNew(ctx);
+            (*env).resolved_types_nested.Push(new_entry);
+            found_idx = len((*env).resolved_types_nested) - 1;
         }
-        ctx[inner_map_idx].Insert(final_span.start.offset, t);
+
+        mut entry_ref := &(*env).resolved_types_nested[found_idx];
+        mut type_entry: ResolvedTypeEntry[ctx];
+        type_entry.offset = final_span.start.offset;
+        type_entry.val_type = t;
+        (*entry_ref).types.Push(type_entry);
     }
     return t;
 }

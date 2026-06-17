@@ -175,21 +175,26 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
         mut span := codegen_get_expression_span(expr_idx, ctx);
         mut prefix := (*env).current_prefix;
         
-        mut inner_map_idx : Index[std.HashMap[int, ast.Type[ctx], ctx], ctx] := empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]];
+        mut found_idx := 0 - 1;
         mut i := 0;
         while i < len((*env).resolved_types_nested) {
             mut entry := (*env).resolved_types_nested[i];
             if std.str_eq(entry.prefix, prefix) {
-                inner_map_idx = entry.map_idx;
+                found_idx = i;
                 i = len((*env).resolved_types_nested);
             }
             i = i + 1;
         }
         
-        if inner_map_idx != empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]] {
-            mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
-            if inner_lookup.Ok {
-                return inner_lookup.Val;
+        if found_idx != 0 - 1 {
+            mut entry_ref := &(*env).resolved_types_nested[found_idx];
+            mut j := 0;
+            while j < len((*entry_ref).types) {
+                mut t_entry := (*entry_ref).types[j];
+                if t_entry.offset == span.start.offset {
+                    return t_entry.val_type;
+                }
+                j = j + 1;
             }
         }
         return dummy;
@@ -1530,23 +1535,29 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     mut span := ctx[stmt_idx].VarDecl.span;
                     mut prefix := (*env).current_prefix;
                     
-                    mut inner_map_idx : Index[std.HashMap[int, ast.Type[ctx], ctx], ctx] := empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]];
+                    mut found_idx := 0 - 1;
                     mut i := 0;
                     while i < len((*env).resolved_types_nested) {
                         mut entry := (*env).resolved_types_nested[i];
                         if std.str_eq(entry.prefix, prefix) {
-                            inner_map_idx = entry.map_idx;
+                            found_idx = i;
                             i = len((*env).resolved_types_nested);
                         }
                         i = i + 1;
                     }
                     
                     mut found := 0;
-                    if inner_map_idx != empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]] {
-                        mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
-                        if inner_lookup.Ok {
-                            t_var = inner_lookup.Val;
-                            found = 1;
+                    if found_idx != 0 - 1 {
+                        mut entry_ref := &(*env).resolved_types_nested[found_idx];
+                        mut j := 0;
+                        while j < len((*entry_ref).types) {
+                            mut t_entry := (*entry_ref).types[j];
+                            if t_entry.offset == span.start.offset {
+                                t_var = t_entry.val_type;
+                                found = 1;
+                                j = len((*entry_ref).types);
+                            }
+                            j = j + 1;
                         }
                     }
                     if found == 0 {
