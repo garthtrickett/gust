@@ -1,9 +1,0 @@
-{
-  "summary": "fix: align VarDecl type lookup in codegen.gst with ResolvedTypeEntry schema",
-  "files": [
-    {
-      "file_path": "compiler/codegen.gst",
-      "code_diff": "<<<<<<< SEARCH\n                    mut found := 0;\n                    if found_idx != 0 - 1 { \n                        mut entry_ref := &(*env).resolved_types_nested[found_idx];\n                        mut j := 0;\n                        while j < len((*entry_ref).types) {\n                            mut t_entry := (*entry_ref).types[j];\n                            if t_entry.offset == span.start.offset {\n                                t_var = t_entry.val_type;\n                                found = 1;\n                                j = len((*entry_ref).types);\n                            }\n                            j = j + 1;\n                        }\n                    }\n=======\n                    mut found := 0;\n                    if found_idx != 0 - 1 { \n                        mut entry_ref := &(*env).resolved_types_nested[found_idx];\n                        mut j := 0;\n                        while j < len((*entry_ref).types) {\n                            mut t_entry := (*entry_ref).types[j];\n                            if t_entry.start_offset == span.start.offset && t_entry.end_offset == span.end.offset {\n                                t_var = t_entry.val_type;\n                                found = 1;\n                                j = len((*entry_ref).types);\n                            }\n                            j = j + 1;\n                        }\n                    }\n>>>>>>> REPLACE"
-    }
-  ]
-}
