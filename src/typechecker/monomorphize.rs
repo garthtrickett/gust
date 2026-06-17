@@ -1353,4 +1353,21 @@ mod tests {
             "std_Vector_MyNode"
         );
     }
+
+    #[test]
+    fn test_namespaced_identifier_resolution() {
+        let mut checker = TypeChecker::new();
+        checker.current_prefix = "main__".to_string();
+        checker
+            .imports
+            .insert("lib".to_string(), "lib__".to_string());
+
+        let res = checker.resolve_namespaced_ident("LookupResult_lib.Helper");
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), "LookupResult_lib__Helper");
+
+        let res_std = checker.resolve_namespaced_ident("std_Vector_lib_Helper_ctx");
+        assert!(res_std.is_ok());
+        assert_eq!(res_std.unwrap(), "std_Vector_lib__Helper_ctx");
+    }
 }

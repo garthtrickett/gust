@@ -2252,14 +2252,14 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
             if std.str_eq(std.str_slice(name, 0, len(prefix)), prefix) {
                 mut suffix := std.str_slice(name, len(prefix), len(name));
                 if std.str_find(suffix, "__") == 0 - 1 {
-                    mut parts := std.str_split(suffix, "_", ctx);
-                    mut resolved_parts: std.Vector[str, ctx] := std.VectorNew(ctx);
-                    mut active_prefix := (*env).current_prefix;
-                    
-                    mut i := 0;
-                    while i < len(parts) {
-                        mut part := parts[i];
-                        unsafe {
+                    unsafe {
+                        mut parts := std.str_split(suffix, "_", ctx);
+                        mut resolved_parts: std.Vector[str, ctx] := std.VectorNew(ctx);
+                        mut active_prefix := (*env).current_prefix;
+                        
+                        mut i := 0;
+                        while i < len(parts) {
+                            mut part := parts[i];
                             mut lookup := (*env).imports.Get(part);
                             if lookup.Ok {
                                 active_prefix = lookup.Val;
@@ -2283,21 +2283,21 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
                                 resolved_parts.Push(temp_resolved);
                                 active_prefix = (*env).current_prefix;
                             }
+                            i = i + 1;
                         }
-                        i = i + 1;
+                        
+                        mut joined := ast.ast_join_strings(resolved_parts, "_", ctx);
+                        mut res := std.Concat(prefix, joined);
+                        
+                        mut triple_idx := std.str_find(res, "___");
+                        while triple_idx != 0 - 1 {
+                            mut left := std.str_slice(res, 0, triple_idx);
+                            mut right := std.str_slice(res, triple_idx + 1, len(res));
+                            res = std.Concat(left, right);
+                            triple_idx = std.str_find(res, "___");
+                        }
+                        return std.Clone(ctx, res);
                     }
-                    
-                    mut joined := ast.ast_join_strings(resolved_parts, "_", ctx);
-                    mut res := std.Concat(prefix, joined);
-                    
-                    mut triple_idx := std.str_find(res, "___");
-                    while triple_idx != 0 - 1 {
-                        mut left := std.str_slice(res, 0, triple_idx);
-                        mut right := std.str_slice(res, triple_idx + 1, len(res));
-                        res = std.Concat(left, right);
-                        triple_idx = std.str_find(res, "___");
-                    }
-                    return std.Clone(ctx, res);
                 }
             }
         }
