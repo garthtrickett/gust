@@ -1,9 +1,0 @@
-{
-  "summary": "fix: resolve variable redefinition conflict in codegen topological sort test case",
-  "files": [
-    {
-      "file_path": "compiler/codegen_initializer_test_entry.gst",
-      "code_diff": "<<<<<<< SEARCH\n    // Find positions of \"Outer\" and \"Inner\" in the sorted structs\n    mut outer_idx := 0 - 1;\n    mut inner_idx := 0 - 1;\n    mut s_idx := 0;\n    while s_idx < len(sorted_structs) {\n        mut name := sorted_structs[s_idx];\n        if std.str_eq(name, \"Outer\") {\n            outer_idx = s_idx;\n        }\n        if std.str_eq(name, \"Inner\") {\n            inner_idx = s_idx;\n        }\n        s_idx = s_idx + 1;\n    }\n\n    if inner_idx != 0 - 1 && outer_idx != 0 - 1 {\n        if inner_idx < outer_idx {\n            os.LogStr(\"Topological Sort OK: Inner precedes Outer\");\n        } else {\n            os.LogStr(\"Topological Sort FAIL: Outer precedes Inner\");\n        }\n    } else {\n        os.LogStr(\"Topological Sort FAIL: Missing structs\");\n    }\n=======\n    // Find positions of \"Outer\" and \"Inner\" in the sorted structs\n    mut topo_outer_idx := 0 - 1;\n    mut topo_inner_idx := 0 - 1;\n    mut topo_s_idx := 0;\n    while topo_s_idx < len(sorted_structs) {\n        mut name := sorted_structs[topo_s_idx];\n        if std.str_eq(name, \"Outer\") {\n            topo_outer_idx = topo_s_idx;\n        }\n        if std.str_eq(name, \"Inner\") {\n            topo_inner_idx = topo_s_idx;\n        }\n        topo_s_idx = topo_s_idx + 1;\n    }\n\n    if topo_inner_idx != 0 - 1 && topo_outer_idx != 0 - 1 {\n        if topo_inner_idx < topo_outer_idx {\n            os.LogStr(\"Topological Sort OK: Inner precedes Outer\");\n        } else {\n            os.LogStr(\"Topological Sort FAIL: Outer precedes Inner\");\n        }\n    } else {\n        os.LogStr(\"Topological Sort FAIL: Missing structs\");\n    }\n>>>>>>> REPLACE"
-    }
-  ]
-}
