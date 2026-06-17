@@ -173,9 +173,14 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
             return dummy;
         }
         mut span := codegen_get_expression_span(expr_idx, ctx);
-        mut lookup := (*env).resolved_types.Get(span.start.offset);
-        if lookup.Ok {
-            return lookup.Val;
+        mut prefix := (*env).current_prefix;
+        mut outer_lookup := (*env).resolved_types_nested.Get(prefix);
+        if outer_lookup.Ok {
+            mut inner_map_idx := outer_lookup.Val;
+            mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
+            if inner_lookup.Ok {
+                return inner_lookup.Val;
+            }
         }
         return dummy;
     }
@@ -1513,10 +1518,18 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
         if tag == 4 { // VarDecl
                     mut t_var: ast.Type[ctx];
                     mut span := ctx[stmt_idx].VarDecl.span;
-                    mut lookup := (*env).resolved_types.Get(span.start.offset);
-                    if lookup.Ok {
-                        t_var = lookup.Val;
-                    } else {
+                    mut prefix := (*env).current_prefix;
+                    mut outer_lookup := (*env).resolved_types_nested.Get(prefix);
+                    mut found := 0;
+                    if outer_lookup.Ok {
+                        mut inner_map_idx := outer_lookup.Val;
+                        mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
+                        if inner_lookup.Ok {
+                            t_var = inner_lookup.Val;
+                            found = 1;
+                        }
+                    }
+                    if found == 0 {
                         t_var.tag = 3; // Void
                     }
                     mut c_type := codegen_get_c_type(t_var, env, ctx);
