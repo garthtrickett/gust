@@ -3791,6 +3791,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
                 
                 scope_insert(child_scope, param.name, resolved_param_type, ctx);
+                (*env).variable_types.Insert(std.Clone(ctx, param.name), resolved_param_type);
                 
                 mut param_origins := set_init(ctx);
                 set_add(param_origins, param.name, ctx);

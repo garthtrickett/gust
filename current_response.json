@@ -1,0 +1,9 @@
+{
+  "summary": "fix: register function parameters in variable_types database in self-hosted typechecker",
+  "files": [
+    {
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\n                if resolved_param_type.tag == 9 { // RawPointer\n                    inout_params.Push(std.Clone(ctx, param.name));\n                }\n                \n                scope_insert(child_scope, param.name, resolved_param_type, ctx);\n                \n                mut param_origins := set_init(ctx);\n=======\n                if resolved_param_type.tag == 9 { // RawPointer\n                    inout_params.Push(std.Clone(ctx, param.name));\n                }\n                \n                scope_insert(child_scope, param.name, resolved_param_type, ctx);\n                (*env).variable_types.Insert(std.Clone(ctx, param.name), resolved_param_type);\n                \n                mut param_origins := set_init(ctx);\n>>>>>>> REPLACE"
+    }
+  ]
+}
