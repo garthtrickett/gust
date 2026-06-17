@@ -5025,6 +5025,36 @@ fn test_self_hosted_compiler_full_bootstrap() {
 }
 
 #[test]
+fn test_e2e_unordered_adt_compilation() {
+    let source = "
+        type AOuter enum {
+            VariantA { val: ZInner }
+        }
+        type ZInner struct {
+            x: int
+        }
+        type ZOuter enum {
+            VariantA { val: AInner }
+        }
+        type AInner struct {
+            x: int
+        }
+        func main() {
+            mut o1: AOuter;
+            o1.tag = 0; // VariantA
+            o1.VariantA.val.x = 42;
+            os.LogInt(o1.VariantA.val.x);
+
+            mut o2: ZOuter;
+            o2.tag = 0; // VariantA
+            o2.VariantA.val.x = 84;
+            os.LogInt(o2.VariantA.val.x);
+        }
+    ";
+    run_e2e_test(source, "42\n84");
+}
+
+#[test]
 fn test_e2e_recursive_branded_linked_list() {
     let source = "
         type ListNode[ctx] struct {
