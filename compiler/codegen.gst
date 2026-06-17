@@ -17,6 +17,46 @@ func init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx], ctx:
     }
 }
 
+func codegen_is_arena_ptr(var_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut i := 0;
+        while i < len((*env).current_params) {
+            if std.str_eq((*env).current_params[i], var_name) {
+                return 1;
+            }
+            i = i + 1;
+        }
+        mut lookup := (*env).variable_types.Get(var_name);
+        if lookup.Ok {
+            mut t := lookup.Val;
+            if t.tag == 9 { // RawPointer
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func codegen_is_arena_val(var_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut i := 0;
+        while i < len((*env).current_params) {
+            if std.str_eq((*env).current_params[i], var_name) {
+                return 0;
+            }
+            i = i + 1;
+        }
+        mut lookup := (*env).variable_types.Get(var_name);
+        if lookup.Ok {
+            mut t := lookup.Val;
+            if t.tag == 4 { // Arena
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 func codegen_get_by_value_dependencies_recursive(t: ast.Type[ctx], deps: *std.HashMap[str, int, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) {
     unsafe {
         if t.tag == 8 { // Struct
@@ -1306,13 +1346,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut arg0_expr := ctx[arg0_idx];
                 if arg0_expr.tag == 0 { // Identifier
                     mut name := arg0_expr.Identifier.name;
-                    mut var_type_lookup := (*env).variable_types.Get(name);
-                    if var_type_lookup.Ok { 
-                        mut t := var_type_lookup.Val;
-                        if t.tag == 9 { // RawPointer
-                            is_ptr = 1;
-                        }
-                    }
+                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
                 }
 
                 mut arena_expr := std.Concat("&", arg_arena);
@@ -1360,13 +1394,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut arg0_expr := ctx[arg0_idx];
                 if arg0_expr.tag == 0 { // Identifier
                     mut name := arg0_expr.Identifier.name;
-                    mut var_type_lookup := (*env).variable_types.Get(name);
-                    if var_type_lookup.Ok { 
-                        mut t := var_type_lookup.Val;
-                        if t.tag == 9 { // RawPointer
-                            is_ptr = 1;
-                        }
-                    }
+                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
                 }
 
                 mut arena_expr := std.Concat("&", arg_arena);
@@ -1396,13 +1424,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut arg0_expr := ctx[arg0_idx];
                 if arg0_expr.tag == 0 { // Identifier
                     mut name := arg0_expr.Identifier.name;
-                    mut var_type_lookup := (*env).variable_types.Get(name);
-                    if var_type_lookup.Ok { 
-                        mut t := var_type_lookup.Val;
-                        if t.tag == 9 { // RawPointer
-                            is_ptr = 1;
-                        }
-                    }
+                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
                 }
 
                 mut arena_expr := std.Concat("&", arg_arena);
@@ -1440,13 +1462,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut arg0_expr := ctx[arg0_idx];
                 if arg0_expr.tag == 0 { // Identifier
                     mut name := arg0_expr.Identifier.name;
-                    mut var_type_lookup := (*env).variable_types.Get(name);
-                    if var_type_lookup.Ok { 
-                        mut t := var_type_lookup.Val;
-                        if t.tag == 9 { // RawPointer
-                            is_ptr = 1;
-                        } 
-                    }
+                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
                 }
 
                 mut arena_expr := std.Concat("&", arg_arena);
@@ -1484,13 +1500,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut arg2_expr := ctx[arg2_idx];
                 if arg2_expr.tag == 0 { // Identifier
                     mut name := arg2_expr.Identifier.name;
-                    mut var_type_lookup := (*env).variable_types.Get(name);
-                    if var_type_lookup.Ok { 
-                        mut t := var_type_lookup.Val;
-                        if t.tag == 9 { // RawPointer
-                            is_ptr = 1;
-                        }
-                    }
+                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
                 }
 
                 mut arena_expr := std.Concat("&", arg2);
