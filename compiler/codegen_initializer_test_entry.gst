@@ -30,9 +30,39 @@ func main() {
 
     if codegen.codegen_should_skip_fwd_decl("my_user_func") == 0 {
         os.LogStr("my_user_func correctly not flagged as intrinsic");
-    } else {
+    } else { 
         os.LogStr("my_user_func incorrectly flagged as intrinsic");
     }
+
+    // Test Step 2 Forward Declaration Generation
+    mut sig_test: typechecker.FunctionSignature[ctx];
+    sig_test.param_names = std.VectorNew(ctx);
+    sig_test.params = std.VectorNew(ctx);
+
+    sig_test.return_type.tag = 2; // Bool -> unsigned char
+
+    // Param 1: x: int
+    sig_test.param_names.Push("x");
+    mut t_param_int: ast.Type[ctx];
+    t_param_int.tag = 0;
+    sig_test.params.Push(t_param_int);
+
+    // Param 2: arena_ptr: &Arena
+    sig_test.param_names.Push("arena_ptr");
+    mut t_param_arena_ptr: ast.Type[ctx];
+    t_param_arena_ptr.tag = 9; // RawPointer
+    t_param_arena_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_param_arena_ptr.RawPointer.inner].tag = 4; // Arena
+    sig_test.params.Push(t_param_arena_ptr);
+
+    // Param 3: arena_val: Arena
+    sig_test.param_names.Push("arena_val");
+    mut t_param_arena: ast.Type[ctx];
+    t_param_arena.tag = 4; // Arena
+    sig_test.params.Push(t_param_arena);
+
+    mut fwd_decl := codegen.codegen_gen_function_fwd_decl("lib.my_awesome_func", sig_test, &env, ctx);
+    os.LogStr(fwd_decl);
 
     // Test Step 2: Statement Traversal Tracking
     // Parse a function declaration with parameters

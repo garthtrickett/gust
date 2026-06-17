@@ -125,6 +125,65 @@ func codegen_should_skip_fwd_decl(name: str) int {
     return 0;
 }
 
+func codegen_gen_function_fwd_decl(name: str, sig: typechecker.FunctionSignature[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        mut ret_c_type := codegen_get_c_type(sig.return_type, env, ctx);
+        
+        mut c_func_name := "";
+        mut char_idx := 0;
+        while char_idx < len(name) {
+            mut b := std.str_byte_at(name, char_idx);
+            if b == 46 { // '.'
+                c_func_name = std.Concat(c_func_name, "_");
+            } else {
+                c_func_name = std.Concat(c_func_name, std.str_slice(name, char_idx, char_idx + 1));
+            }
+            char_idx = char_idx + 1;
+        }
+
+        mut params_str := "";
+        mut i := 0;
+        while i < len(sig.params) {
+            if i > 0 {
+                params_str = std.Concat(params_str, ", ");
+            }
+            mut param_type := sig.params[i];
+            mut p_name := sig.param_names[i];
+
+            mut is_arena_ptr := 0;
+            if param_type.tag == 9 { // RawPointer
+                mut inner := ctx[param_type.RawPointer.inner];
+                if inner.tag == 4 { // Arena
+                    is_arena_ptr = 1;
+                }
+            }
+
+            mut p_c_type := "";
+            if is_arena_ptr == 1 || param_type.tag == 4 { // Arena or RawPointer(Arena)
+                p_c_type = "os_Arena*";
+            } else {
+                p_c_type = codegen_get_c_type(param_type, env, ctx);
+            }
+
+            mut p_decl := std.Concat(p_c_type, " ");
+            p_decl = std.Concat(p_decl, p_name);
+            params_str = std.Concat(params_str, p_decl);
+            i = i + 1;
+        }
+
+            if len(sig.params) == 0 {
+                params_str = "void";
+            }
+
+        mut res := std.Concat(ret_c_type, " ");
+        res = std.Concat(res, c_func_name);
+        res = std.Concat(res, "(");
+        res = std.Concat(res, params_str);
+        res = std.Concat(res, ");\n");
+        return std.Clone(ctx, res);
+    }
+}
+
 func codegen_is_arena_val(var_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut i := 0;
