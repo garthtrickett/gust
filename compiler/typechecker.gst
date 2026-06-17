@@ -1117,6 +1117,108 @@ func strip_brand_prefix(brand: str, ctx: &Arena) str {
     return std.str_slice(brand, last_double_underscore + 2, len(brand));
 }
 
+func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str, ctx], start_idx: *int, ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        mut idx := *start_idx;
+        mut part := parts[idx];
+        *start_idx = idx + 1;
+
+        if std.str_eq(part, "int") {
+            return make_type_int();
+        }
+        if std.str_eq(part, "byte") {
+            return make_type_byte();
+        }
+        if std.str_eq(part, "bool") {
+            return make_type_bool();
+        }
+        if std.str_eq(part, "str") {
+            return make_type_str();
+        }
+        if std.str_eq(part, "Arena") || std.str_eq(part, "os_Arena") {
+            return make_type_arena();
+        }
+        if std.str_eq(part, "void") {
+            mut t: ast.Type[ctx]; t.tag = 3; // Void
+            return t;
+        }
+
+        mut template_name := part;
+        if (std.str_eq(part, "std") || std.str_eq(part, "os")) && idx + 1 < len(parts) {
+            mut next_part := parts[idx + 1];
+            mut joined_underscore := std.Concat(part, "_");
+            joined_underscore = std.Concat(joined_underscore, next_part);
+            
+            mut joined_dot := std.Concat(part, ".");
+            joined_dot = std.Concat(joined_dot, next_part);
+
+            mut is_tmpl := (*env).struct_templates.Get(joined_underscore).Ok;
+            if is_tmpl == 0 {
+                is_tmpl = (*env).struct_templates.Get(joined_dot).Ok;
+            }
+            if is_tmpl == 0 {
+                is_tmpl = (*env).enum_templates.Get(joined_underscore).Ok;
+            }
+            if is_tmpl == 0 {
+                is_tmpl = (*env).enum_templates.Get(joined_dot).Ok;
+            }
+
+            if is_tmpl == 1 {
+                template_name = joined_underscore;
+                *start_idx = idx + 2;
+            }
+        }
+
+        mut is_struct_tmpl := (*env).struct_templates.Get(template_name).Ok;
+        mut is_enum_tmpl := (*env).enum_templates.Get(template_name).Ok;
+        
+        mut normalized_template_name := template_name;
+        if is_struct_tmpl == 0 && is_enum_tmpl == 0 {
+            if len(template_name) >= 4 && std.str_eq(std.str_slice(template_name, 0, 4), "std_") {
+                normalized_template_name = std.Concat("std.", std.str_slice(template_name, 4, len(template_name)));
+            } else if len(template_name) >= 3 && std.str_eq(std.str_slice(template_name, 0, 3), "os_") {
+                normalized_template_name = std.Concat("os.", std.str_slice(template_name, 3, len(template_name)));
+            }
+            is_struct_tmpl = (*env).struct_templates.Get(normalized_template_name).Ok;
+            is_enum_tmpl = (*env).enum_templates.Get(normalized_template_name).Ok;
+        }
+
+        if is_struct_tmpl == 1 || is_enum_tmpl == 1 {
+            mut num_args := 0;
+            if is_struct_tmpl == 1 {
+                mut tmpl := (*env).struct_templates.Get(normalized_template_name).Val;
+                num_args = len(ctx[tmpl.generics]);
+            } else {
+                mut tmpl := (*env).enum_templates.Get(normalized_template_name).Val;
+                num_args = len(ctx[tmpl.generics]);
+            }
+
+            mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+            mut i := 0;
+            while i < num_args {
+                mut arg := parse_one_type_from_parts(env, parts, start_idx, ctx);
+                args.Push(arg);
+                i = i + 1;
+            }
+
+            return make_type_generic(normalized_template_name, args, ctx);
+        }
+
+        return make_type_struct(part, "", ctx);
+    }
+}
+
+func parse_types_from_suffix(env: *TypeEnvironment[ctx], suffix: str, ctx: &Arena) std.Vector[ast.Type[ctx], ctx] {
+    mut parts := std.str_split(suffix, "_", ctx);
+    mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    mut idx := 0;
+    while idx < len(parts) {
+        mut t := parse_one_type_from_parts(env, parts, &idx, ctx);
+        args.Push(t);
+    }
+    return args;
+}
+
 func typechecker_ends_with(s: str, suffix: str) int {
     mut len_s := len(s);
     mut len_suffix := len(suffix);

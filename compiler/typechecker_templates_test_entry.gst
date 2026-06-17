@@ -194,6 +194,12 @@ func main() {
             mut field_type := field_lookup.Val;
             mut sub_field := typechecker.typechecker_substitute_field_brand(field_type, t_parent.Struct.brand, "n", layout, ctx);
             os.LogStr(ast.serialize_type(sub_field, ctx)); // Expected: Index("SessionNode", Some("my_brand"))
-        }
+        } 
     }
+
+    // Test 10: Verify parse_types_from_suffix (Phase 2 Step 1 Fix)
+    mut parsed_args := typechecker.parse_types_from_suffix(&env, "int_ctx", ctx);
+    os.LogInt(len(parsed_args)); // Expected: 2
+    os.LogStr(ast.serialize_type(parsed_args[0], ctx)); // Expected: Int
+    os.LogStr(ast.serialize_type(parsed_args[1], ctx)); // Expected: Struct("ctx", None)
 }
