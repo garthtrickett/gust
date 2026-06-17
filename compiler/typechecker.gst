@@ -3138,11 +3138,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
             mut parent_checked := typechecker_clone_int_map((*env).checked_results, ctx);
             mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
+            mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
 
             // Clear states
             (*env).moved_vars = std.HashMapNew(ctx);
             (*env).checked_results = std.HashMapNew(ctx);
             (*env).open_directories = std.HashMapNew(ctx);
+            (*env).variable_origins = std.HashMapNew(ctx);
 
             mut child_scope := scope_new(scope, ctx);
 
@@ -3227,6 +3229,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).moved_vars = parent_moved;
             (*env).checked_results = parent_checked;
             (*env).open_directories = parent_open_dirs;
+            (*env).variable_origins = parent_origins;
             (*env).expected_return_type = old_expected;
             (*env).current_function_return_origins = old_return_origins;
             (*env).current_function_inout_params = old_inout_params;
