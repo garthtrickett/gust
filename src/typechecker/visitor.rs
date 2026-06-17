@@ -1716,7 +1716,7 @@ impl TypeChecker {
                 let pre_moved = self.moved_vars.clone();
                 let pre_checked = self.checked_results.clone();
 
-                let checked_vars = extract_ok_checked_variable(condition);
+                let checked_vars = Self::extract_ok_checked_variable(condition);
                 for var in checked_vars {
                     self.checked_results.insert(var);
                 }
