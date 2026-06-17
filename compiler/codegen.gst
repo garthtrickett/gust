@@ -13,6 +13,115 @@ func init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx]) {
     }
 }
 
+func codegen_get_by_value_dependencies_recursive(t: ast.Type[ctx], deps: *std.HashMap[str, int, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) {
+    unsafe {
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            mut lookup_struct := env.struct_registry.Get(name);
+            if lookup_struct.Ok {
+                mut inserted := 0;
+                if (*deps).Get(name).Ok == 0 {
+                    (*deps).Insert(std.Clone(ctx, name), 1);
+                    inserted = 1;
+                }
+                if inserted == 1 {
+                    mut layout := lookup_struct.Val;
+                    mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                    mut j := 0;
+                    while j < len(f_keys) {
+                        mut f_key := f_keys[j];
+                        mut f_lookup := layout.fields.Get(f_key);
+                        if f_lookup.Ok {
+                            codegen_get_by_value_dependencies_recursive(f_lookup.Val, deps, env, ctx);
+                        }
+                        j = j + 1;
+                    }
+                }
+            }
+        } else {
+            if t.tag == 6 { // Slice
+                mut inner := ctx[t.Slice.inner];
+                codegen_get_by_value_dependencies_recursive(inner, deps, env, ctx);
+            } else {
+                if t.tag == 10 { // Generic
+                    mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+                    mut i := 0;
+                    while i < len(*args_vec) {
+                        codegen_get_by_value_dependencies_recursive((*args_vec)[i], deps, env, ctx);
+                        i = i + 1;
+                    }
+                }
+            }
+        }
+    }
+}
+
+func codegen_topological_visit(name: str, visited: *std.HashMap[str, int, ctx], temp_visited: *std.HashMap[str, int, ctx], ordered: *std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if (*visited).Get(name).Ok == 1 {
+            return 1;
+        }
+        if (*temp_visited).Get(name).Ok == 1 {
+            return 0;
+        }
+        (*temp_visited).Insert(std.Clone(ctx, name), 1);
+
+        mut lookup_struct := env.struct_registry.Get(name);
+        if lookup_struct.Ok {
+            mut layout := lookup_struct.Val;
+            mut deps_map: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+            
+            mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+            mut j := 0;
+            while j < len(f_keys) {
+                mut f_key := f_keys[j];
+                mut f_lookup := layout.fields.Get(f_key);
+                if f_lookup.Ok {
+                    codegen_get_by_value_dependencies_recursive(f_lookup.Val, &deps_map, env, ctx);
+                }
+                j = j + 1;
+            }
+
+            mut sorted_deps := typechecker.typechecker_get_sorted_keys_int(&deps_map, ctx);
+            mut d_idx := 0;
+            while d_idx < len(sorted_deps) {
+                mut dep := sorted_deps[d_idx];
+                mut ok := codegen_topological_visit(dep, visited, temp_visited, ordered, env, ctx);
+                if ok == 0 {
+                    return 0;
+                }
+                d_idx = d_idx + 1;
+            }
+        }
+
+        (*temp_visited).Remove(name);
+        (*visited).Insert(std.Clone(ctx, name), 1);
+        (*ordered).Push(std.Clone(ctx, name));
+        return 1;
+    }
+}
+
+func codegen_get_topologically_sorted_structs(env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) std.Vector[str, ctx] { 
+    unsafe {
+        mut ordered: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+        mut temp_visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+
+        mut all_structs := typechecker.typechecker_get_sorted_keys_layout(&(*env).struct_registry, ctx);
+        mut i := 0;
+        while i < len(all_structs) {
+            mut name := all_structs[i];
+            mut ok := codegen_topological_visit(name, &visited, &temp_visited, &ordered, env, ctx);
+            if ok == 0 {
+                os.LogStr("Fatal Error: Value-embedding cycle detected during topological sort");
+                os.Exit(1);
+            }
+            i = i + 1;
+        }
+        return ordered;
+    }
+}
+
 func codegen_log_trace(emoji: str, message: str, ctx: &Arena) {
     mut formatted := std.Format("%s %s", emoji, message);
     os.LogStr(formatted);
