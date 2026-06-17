@@ -1,9 +1,9 @@
 {
-  "summary": "refactor: implement suffix denormalization in parse_one_type_from_parts to restore brand prefixes",
+  "summary": "refactor: declare and initialize nested resolved_types_nested map in typechecker",
   "files": [
     {
       "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str, ctx], start_idx: *int, ctx: &Arena) ast.Type[ctx] {\n    unsafe {\n        mut idx := *start_idx;\n        mut part := parts[idx];\n        *start_idx = idx + 1;\n\n        if std.str_eq(part, \"int\") {\n=======\nfunc parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str, ctx], start_idx: *int, ctx: &Arena) ast.Type[ctx] {\n    unsafe {\n        mut idx := *start_idx;\n        mut part := parts[idx];\n        *start_idx = idx + 1;\n\n        mut clean_part := part;\n        mut at_idx := std.str_find(clean_part, \"@\");\n        while at_idx != 0 - 1 {\n            mut left := std.str_slice(clean_part, 0, at_idx);\n            mut right := std.str_slice(clean_part, at_idx + 1, len(clean_part));\n            clean_part = std.Concat(std.Concat(left, \"__\"), right);\n            at_idx = std.str_find(clean_part, \"@\");\n        }\n        part = clean_part;\n\n        if std.str_eq(part, \"int\") {\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    variable_types: std.HashMap[str, ast.Type[ctx], ctx],\n    resolved_types: std.HashMap[int, ast.Type[ctx], ctx],\n    enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],\n=======\n    variable_types: std.HashMap[str, ast.Type[ctx], ctx],\n    resolved_types_nested: std.HashMap[str, Index[std.HashMap[int, ast.Type[ctx], ctx], ctx], ctx],\n    enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n        ctx[env_idx].variable_types = std.HashMapNew(ctx);\n        ctx[env_idx].resolved_types = std.HashMapNew(ctx);\n        ctx[env_idx].enum_registry = std.HashMapNew(ctx);\n=======\n        ctx[env_idx].variable_types = std.HashMapNew(ctx);\n        ctx[env_idx].resolved_types_nested = std.HashMapNew(ctx);\n        ctx[env_idx].enum_registry = std.HashMapNew(ctx);\n>>>>>>> REPLACE"
     }
   ]
 }

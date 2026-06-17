@@ -992,7 +992,7 @@ type TypeEnvironment[ctx] struct {
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
-    resolved_types: std.HashMap[int, ast.Type[ctx], ctx],
+    resolved_types_nested: std.HashMap[str, Index[std.HashMap[int, ast.Type[ctx], ctx], ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
     current_prefix: str,
     imports: std.HashMap[str, str, ctx],
@@ -2378,7 +2378,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].enum_templates = std.HashMapNew(ctx);
         ctx[env_idx].function_registry = std.HashMapNew(ctx);
         ctx[env_idx].variable_types = std.HashMapNew(ctx);
-        ctx[env_idx].resolved_types = std.HashMapNew(ctx);
+        ctx[env_idx].resolved_types_nested = std.HashMapNew(ctx);
         ctx[env_idx].enum_registry = std.HashMapNew(ctx);
         ctx[env_idx].current_prefix = "";
         ctx[env_idx].imports = std.HashMapNew(ctx);
