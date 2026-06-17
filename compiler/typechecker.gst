@@ -3968,13 +3968,38 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
 
                 if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
-                    mut local_vars := (*env).current_function_local_vars;
-                    set_add(local_vars, name, ctx);
-                }
+                                mut local_vars := (*env).current_function_local_vars;
+                                set_add(local_vars, name, ctx);
+                            }
 
-                (*env).resolved_types.Insert(stmt.VarDecl.span.start.offset, val_type);
+                            mut prefix := (*env).current_prefix;
+                            mut found_idx := 0 - 1;
+                            mut i := 0;
+                            while i < len((*env).resolved_types_nested) {
+                                mut entry := (*env).resolved_types_nested[i];
+                                if std.str_eq(entry.prefix, prefix) {
+                                    found_idx = i;
+                                    i = len((*env).resolved_types_nested);
+                                }
+                                i = i + 1;
+                            }
 
-                return res;
+                            if found_idx == 0 - 1 {
+                                mut new_entry: PrefixMapEntry[ctx];
+                                new_entry.prefix = std.Clone(ctx, prefix);
+                                new_entry.types = std.VectorNew(ctx);
+                                (*env).resolved_types_nested.Push(new_entry);
+                                found_idx = len((*env).resolved_types_nested) - 1;
+                            }
+
+                            mut entry_ref := &(*env).resolved_types_nested[found_idx];
+                            mut type_entry: ResolvedTypeEntry[ctx];
+                            type_entry.offset = stmt.VarDecl.span.start.offset;
+                            type_entry.val_type = val_type;
+                            (*entry_ref).types.Push(type_entry);
+
+                 return res;
+
             
         }
 
