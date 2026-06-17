@@ -126,33 +126,10 @@ func main() {
         os.Exit(1);
     }
 
-    // 6. Consolidate all statements into a single unified ast.Program for codegen
-    mut unified_statements: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
-    mut m := 0;
-    while m < len(order) {
-        mut prog := programs[m];
-        unsafe {
-            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
-            mut n := 0;
-            while n < len(*statements_vec) {
-                unified_statements.Push((*statements_vec)[n]);
-                n = n + 1;
-            }
-        }
-        m = m + 1;
-    }
+ // Reset current_prefix to entry module for main call matching
+        env.current_prefix = "";
 
-    mut unified_prog: ast.Program[ctx];
-    unified_prog.statements = os.ArenaAlloc(ctx);
-    unsafe {
-        mut dest_statements := &ctx[unified_prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        *dest_statements = unified_statements;
-    }
-
-    // Reset current_prefix to entry module for main call matching
-    env.current_prefix = "";
-
-    // 7. Generate Code
-    mut c_code := codegen.codegen_generate(&unified_prog, &env, ctx);
-    os.LogStr(c_code);
+        // 7. Generate Code
+        mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);
+        os.LogStr(c_code);
 }

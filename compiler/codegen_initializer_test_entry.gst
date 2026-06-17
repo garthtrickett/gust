@@ -114,7 +114,11 @@ func main() {
     }
 
     // 7. Test codegen_generate
-    mut full_c := codegen.codegen_generate(&prog2, &env, ctx);
+    mut test_programs: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);
+    test_programs.Push(prog2);
+    mut test_prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
+    test_prefixes.Push("");
+    mut full_c := codegen.codegen_generate(test_programs, test_prefixes, &env, ctx);
     os.LogStr(full_c);
 
     // 8. Test Topological Sorting in Codegen
