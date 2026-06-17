@@ -1185,7 +1185,25 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut ctx_expr := codegen_generate_expression(arg2_idx, env, ctx);
 
                 mut expr_type := codegen_get_expression_type(expr_idx, env, ctx);
-                mut vec_type_str := codegen_get_c_type(expr_type, env, ctx);
+                mut vec_type_str := "";
+                if expr_type.tag == 3 { // Void - fallback
+                    mut arg2_type := codegen_get_expression_type(arg2_idx, env, ctx);
+                    mut brand_name := "ctx";
+                    if arg2_type.tag == 8 { // Struct
+                        brand_name = arg2_type.Struct.struct_name;
+                    } else if arg2_type.tag == 9 { // RawPointer
+                        mut inner_t := ctx[arg2_type.RawPointer.inner];
+                        if inner_t.tag == 8 {
+                            brand_name = inner_t.Struct.struct_name;
+                        }
+                    }
+                    if std.str_eq(brand_name, "Arena") == 1 || std.str_eq(brand_name, "os_Arena") == 1 {
+                        brand_name = "ctx";
+                    }
+                    vec_type_str = std.Concat("std_Vector_str_", brand_name);
+                } else {
+                    vec_type_str = codegen_get_c_type(expr_type, env, ctx);
+                }
 
                 mut is_ctx_ptr := 0;
                 mut arg2_expr := ctx[arg2_idx];
@@ -1218,7 +1236,25 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut ctx_expr := codegen_generate_expression(arg0_idx, env, ctx);
 
                 mut expr_type := codegen_get_expression_type(expr_idx, env, ctx);
-                mut vec_type_str := codegen_get_c_type(expr_type, env, ctx);
+                mut vec_type_str := "";
+                if expr_type.tag == 3 { // Void - fallback
+                    mut arg0_type := codegen_get_expression_type(arg0_idx, env, ctx);
+                    mut brand_name := "ctx";
+                    if arg0_type.tag == 8 { // Struct
+                        brand_name = arg0_type.Struct.struct_name;
+                    } else if arg0_type.tag == 9 { // RawPointer
+                        mut inner_t := ctx[arg0_type.RawPointer.inner];
+                        if inner_t.tag == 8 {
+                            brand_name = inner_t.Struct.struct_name;
+                        }
+                    }
+                    if std.str_eq(brand_name, "Arena") == 1 || std.str_eq(brand_name, "os_Arena") == 1 {
+                        brand_name = "ctx";
+                    }
+                    vec_type_str = std.Concat("std_Vector_str_", brand_name);
+                } else {
+                    vec_type_str = codegen_get_c_type(expr_type, env, ctx);
+                }
 
                 mut is_ctx_ptr := 0;
                 mut arg0_expr := ctx[arg0_idx];
