@@ -7609,7 +7609,7 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
         .join("\n");
     assert_eq!(
         filtered_stdout.trim(),
-        "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch\nexpr3 correctly flagged origin_x invalidation\nexpr4 correctly flagged ctx_brand invalidation\nexpr5 correctly flagged var_c move\ntypechecker_extract_ok_checked_variables correctly extracted result\ntypechecker_extract_ok_checked_variables correctly ignored OR operator"
+        "Argument mismatch correctly detected!\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1"
     );
 }
 
