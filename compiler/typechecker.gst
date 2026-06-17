@@ -1428,18 +1428,6 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
         mut start_err_len := len((*env).errors);
 
-        mut lookup_active := (*env).active_monomorphizations.Get(template_name);
-        if lookup_active.Ok {
-            mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[err].kind.tag = 2; // TypeError
-            mut msg := std.Concat("Semantic Error: Recursive monomorphization cycle detected: ", template_name);
-            ctx[err].message = std.Clone(ctx, msg);
-            res.tag = 1; // Err
-            res.Err.error = err;
-            return res;
-        }
-        (*env).active_monomorphizations.Insert(std.Clone(ctx, template_name), 1);
-
         // 1. Check Enum Templates
         mut enum_lookup := (*env).enum_templates.Get(template_name);
             if enum_lookup.Ok {
@@ -1488,6 +1476,18 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
             mut existing := (*env).struct_registry.Get(concrete_name);
             if existing.Ok == 0 {
+                mut lookup_active := (*env).active_monomorphizations.Get(template_name);
+                if lookup_active.Ok {
+                    mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[err].kind.tag = 2; // TypeError
+                    mut msg := std.Concat("Semantic Error: Recursive monomorphization cycle detected: ", template_name);
+                    ctx[err].message = std.Clone(ctx, msg);
+                    res.tag = 1; // Err
+                    res.Err.error = err;
+                    return res;
+                }
+                (*env).active_monomorphizations.Insert(std.Clone(ctx, template_name), 1);
+
                 mut placeholder: StructLayout[ctx];
                 placeholder.brand = brand;
                 placeholder.fields = std.HashMapNew(ctx);
@@ -1561,12 +1561,13 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
                 mut success_msg := std.Format("monomorphize_impl: successfully instantiated enum '%s'", concrete_name);
                 typechecker_log_trace("🔄", success_msg, ctx);
+
+                (*env).active_monomorphizations.Remove(template_name);
             }
 
             res.Ok.val.tag = 8; // Struct
             res.Ok.val.Struct.struct_name = std.Clone(ctx, concrete_name);
             res.Ok.val.Struct.brand = brand;
-            (*env).active_monomorphizations.Remove(template_name);
 
             if len((*env).errors) > start_err_len {
                 res.tag = 1; // Err
@@ -1626,6 +1627,18 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
             mut existing := (*env).struct_registry.Get(concrete_name);
             if existing.Ok == 0 {
+                mut lookup_active := (*env).active_monomorphizations.Get(template_name);
+                if lookup_active.Ok {
+                    mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[err].kind.tag = 2; // TypeError
+                    mut msg := std.Concat("Semantic Error: Recursive monomorphization cycle detected: ", template_name);
+                    ctx[err].message = std.Clone(ctx, msg);
+                    res.tag = 1; // Err
+                    res.Err.error = err;
+                    return res;
+                }
+                (*env).active_monomorphizations.Insert(std.Clone(ctx, template_name), 1);
+
                 mut placeholder: StructLayout[ctx];
                 placeholder.brand = brand;
                 placeholder.fields = std.HashMapNew(ctx);
@@ -1681,12 +1694,13 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                         f = f + 1;
                     }
                 }
+
+                (*env).active_monomorphizations.Remove(template_name);
             }
 
             res.Ok.val.tag = 8; // Struct
             res.Ok.val.Struct.struct_name = std.Clone(ctx, concrete_name);
             res.Ok.val.Struct.brand = brand;
-            (*env).active_monomorphizations.Remove(template_name);
 
             if len((*env).errors) > start_err_len {
                 res.tag = 1; // Err

@@ -1232,8 +1232,8 @@ static inline void os_HashMapRemove_impl(void* map_void, void* key_ptr, int is_s
 
     GenericHashMap* m = (GenericHashMap*)map_void;
 
-    fprintf(stderr, "[REMOVE] map_void=%p, arena=%p, capacity=%d, len=%d, occupied=%p, keys=%p, is_str=%d\\n",
-        map_void, m ? (void*)m->arena : NULL, m ? m->capacity : 0, m ? m->len : 0, m ? (void*)m->occupied : NULL, m ? (void*)m->keys : NULL, is_str_key);
+    // fprintf(stderr, "[REMOVE] map_void=%p, arena=%p, capacity=%d, len=%d, occupied=%p, keys=%p, is_str=%d\\n",
+        // map_void, m ? (void*)m->arena : NULL, m ? m->capacity : 0, m ? m->len : 0, m ? (void*)m->occupied : NULL, m ? (void*)m->keys : NULL, is_str_key);
     if (m && m->capacity > 0) {
         if (is_str_key) {
             Slice_unsigned_char s = *(Slice_unsigned_char*)key_ptr;
