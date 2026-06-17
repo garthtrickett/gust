@@ -44,6 +44,20 @@ func main() {
         os.LogStr(env.current_params[1]); // Expected: param_b
     }
 
+    // Test Step 3: os.ArenaAlloc Transpilation
+    // Parse an os.ArenaAlloc(ctx) call expression
+    mut l_alloc_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_alloc_test, "os.ArenaAlloc(ctx)");
+    mut p_alloc_test: parser.Parser[ctx];
+    parser.init_parser(&p_alloc_test, &l_alloc_test, ctx);
+    mut expr_alloc_test := parser.parse_expression(&p_alloc_test, 1, ctx);
+    unsafe {
+        env.current_alloc_struct = "MyTestStruct";
+        mut output_c := codegen.codegen_generate_expression(expr_alloc_test, &env, ctx);
+        os.LogStr(output_c); // Expected: os_ArenaAlloc(&ctx, sizeof(MyTestStruct))
+        env.current_alloc_struct = "";
+    }
+
     // 1. Test primitive types
     mut t_int: ast.Type[ctx];
     t_int.tag = 0; // Int

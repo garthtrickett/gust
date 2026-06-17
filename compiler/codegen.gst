@@ -1429,6 +1429,42 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 return std.Clone(ctx, res);
             }
 
+            if std.str_eq(func_str, "os.ArenaAlloc") || std.str_eq(func_str, "os_ArenaAlloc") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.ArenaAlloc FFI override", ctx);
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg_arena := codegen_generate_expression(arg0_idx, env, ctx);
+
+                mut is_ptr := 0;
+                mut arg0_expr := ctx[arg0_idx];
+                if arg0_expr.tag == 0 { // Identifier
+                    mut name := arg0_expr.Identifier.name;
+                    mut var_type_lookup := (*env).variable_types.Get(name);
+                    if var_type_lookup.Ok { 
+                        mut t := var_type_lookup.Val;
+                        if t.tag == 9 { // RawPointer
+                            is_ptr = 1;
+                        } 
+                    }
+                }
+
+                mut arena_expr := std.Concat("&", arg_arena);
+                if is_ptr == 1 { 
+                    arena_expr = arg_arena;}
+
+                mut struct_name := (*env).current_alloc_struct;
+                if std.str_eq(struct_name, "") {
+                    struct_name = "SessionNode";
+                }
+
+                mut res := std.Concat("os_ArenaAlloc(", arena_expr);
+                res = std.Concat(res, ", sizeof(");
+                res = std.Concat(res, struct_name);
+                res = std.Concat(res, "))");
+                return std.Clone(ctx, res);
+            }
+
             if std.str_eq(func_str, "os.path_join") || std.str_eq(func_str, "os_path_join") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.path_join FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
