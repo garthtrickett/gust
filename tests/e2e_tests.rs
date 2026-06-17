@@ -4582,35 +4582,31 @@ fn test_e2e_formatting_utilities() {
 }
 
 #[test]
-    #[test]
-    fn test_e2e_filesystem_ops() {
-        let temp_dir_path = std::path::Path::new("temp_e2e_filesystem_dir");
-        let _ = std::fs::remove_dir_all(temp_dir_path);
-        std::fs::create_dir_all(temp_dir_path).unwrap();
+fn test_e2e_filesystem_ops() {
+    let temp_dir_path = std::path::Path::new("temp_e2e_filesystem_dir");
+    let _ = std::fs::remove_dir_all(temp_dir_path);
+    std::fs::create_dir_all(temp_dir_path).unwrap();
 
-        std::fs::write(temp_dir_path.join("file1.gst"), "func main() {}").unwrap();
-        std::fs::write(temp_dir_path.join("file2.txt"), "plain text").unwrap();
+    std::fs::write(temp_dir_path.join("file1.gst"), "func main() {}").unwrap();
+    std::fs::write(temp_dir_path.join("file2.txt"), "plain text").unwrap();
 
-        let source = std::fs::read_to_string("tests/e2e_filesystem_ops.gst")
-            .expect("Failed to read tests/e2e_filesystem_ops.gst");
-        run_e2e_test(
-            &source,
-            "1\nHello from self-hosted Gust compiler File System E2E!\n0\n../c\nfile1.gst",
-        );
+    let source = std::fs::read_to_string("tests/e2e_filesystem_ops.gst")
+        .expect("Failed to read tests/e2e_filesystem_ops.gst");
+    run_e2e_test(
+        &source,
+        "1\nHello from self-hosted Gust compiler File System E2E!\n0\n../c\nfile1.gst",
+    );
 
-        let _ = std::fs::remove_file("temp_e2e_filesystem_test.txt");
-        let _ = std::fs::remove_dir_all(temp_dir_path);
-    }
+    let _ = std::fs::remove_file("temp_e2e_filesystem_test.txt");
+    let _ = std::fs::remove_dir_all(temp_dir_path);
+}
 
-    #[test]
-    fn test_e2e_definite_check_compound_evaluation() { 
-        let source = std::fs::read_to_string("tests/e2e_definite_check_compound.gst")
-            .expect("Failed to read tests/e2e_definite_check_compound.gst");
-        run_e2e_test(
-            &source,
-            "1337",
-        );
-    }
+#[test]
+fn test_e2e_definite_check_compound_evaluation() {
+    let source = std::fs::read_to_string("tests/e2e_definite_check_compound.gst")
+        .expect("Failed to read tests/e2e_definite_check_compound.gst");
+    run_e2e_test(&source, "1337");
+}
 
 fn filter_output_c_code(stdout: &str) -> String {
     stdout
