@@ -1214,7 +1214,16 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
 }
 
 func parse_types_from_suffix(env: *TypeEnvironment[ctx], suffix: str, ctx: &Arena) std.Vector[ast.Type[ctx], ctx] {
-    mut parts := std.str_split(suffix, "_", ctx);
+    mut normalized := suffix;
+    mut d_idx := std.str_find(normalized, "__");
+    while d_idx != 0 - 1 {
+        mut left := std.str_slice(normalized, 0, d_idx);
+        mut right := std.str_slice(normalized, d_idx + 2, len(normalized));
+        normalized = std.Concat(std.Concat(left, "@"), right);
+        d_idx = std.str_find(normalized, "__");
+    }
+
+    mut parts := std.str_split(normalized, "_", ctx);
     mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     mut idx := 0;
     while idx < len(parts) {

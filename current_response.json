@@ -1,0 +1,9 @@
+{
+  "summary": "refactor: implement suffix normalization in parse_types_from_suffix",
+  "files": [
+    {
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\nfunc parse_types_from_suffix(env: *TypeEnvironment[ctx], suffix: str, ctx: &Arena) std.Vector[ast.Type[ctx], ctx] {\n    mut parts := std.str_split(suffix, \"_\", ctx);\n    mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);\n    mut idx := 0;\n    while idx < len(parts) {\n        mut t := parse_one_type_from_parts(env, parts, &idx, ctx);\n        args.Push(t);\n    }\n    return args;\n}\n=======\nfunc parse_types_from_suffix(env: *TypeEnvironment[ctx], suffix: str, ctx: &Arena) std.Vector[ast.Type[ctx], ctx] {\n    mut normalized := suffix;\n    mut d_idx := std.str_find(normalized, \"__\");\n    while d_idx != 0 - 1 {\n        mut left := std.str_slice(normalized, 0, d_idx);\n        mut right := std.str_slice(normalized, d_idx + 2, len(normalized));\n        normalized = std.Concat(std.Concat(left, \"@\"), right);\n        d_idx = std.str_find(normalized, \"__\");\n    }\n\n    mut parts := std.str_split(normalized, \"_\", ctx);\n    mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);\n    mut idx := 0;\n    while idx < len(parts) {\n        mut t := parse_one_type_from_parts(env, parts, &idx, ctx);\n        args.Push(t);\n    }\n    return args;\n}\n>>>>>>> REPLACE"
+    }
+  ]
+}
