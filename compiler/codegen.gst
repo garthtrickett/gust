@@ -395,44 +395,45 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
 func codegen_get_c_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
-        if t.tag == 0 { // Int
+        mut resolved_t := typechecker.env_resolve_type(env, t, ctx);
+        if resolved_t.tag == 0 { // Int
             return "int";
         }
-        if t.tag == 1 { // Byte
+        if resolved_t.tag == 1 { // Byte
             return "unsigned char";
         }
-        if t.tag == 2 { // Bool
+        if resolved_t.tag == 2 { // Bool
             return "unsigned char";
         }
-        if t.tag == 3 { // Void
+        if resolved_t.tag == 3 { // Void
             return "void";
         }
-        if t.tag == 4 { // Arena
+        if resolved_t.tag == 4 { // Arena
             return "os_Arena";
         }
-        if t.tag == 5 { // Str
+        if resolved_t.tag == 5 { // Str
             return "Slice_unsigned_char";
         }
-        if t.tag == 6 { // Slice
-            mut inner_type := ctx[t.Slice.inner];
+        if resolved_t.tag == 6 { // Slice
+            mut inner_type := ctx[resolved_t.Slice.inner];
             mut inner_ident := codegen_get_c_type_ident(inner_type, env, ctx);
             mut res := std.Concat("Slice_", inner_ident);
             return std.Clone(ctx, res);
         }
-        if t.tag == 7 { // Index
+        if resolved_t.tag == 7 { // Index
             return "int";
         }
-        if t.tag == 8 { // Struct
-            return std.Clone(ctx, t.Struct.struct_name);
+        if resolved_t.tag == 8 { // Struct
+            return std.Clone(ctx, resolved_t.Struct.struct_name);
         }
-        if t.tag == 9 { // RawPointer
-            mut inner_type := ctx[t.RawPointer.inner];
+        if resolved_t.tag == 9 { // RawPointer
+            mut inner_type := ctx[resolved_t.RawPointer.inner];
             mut inner_c := codegen_get_c_type(inner_type, env, ctx);
             mut res := std.Concat(inner_c, "*");
             return std.Clone(ctx, res);
         }
-        if t.tag == 10 { // Generic
-            mut mono_name := codegen_get_monomorphized_name(t.Generic.name, t.Generic.args, env, ctx);
+        if resolved_t.tag == 10 { // Generic
+            mut mono_name := codegen_get_monomorphized_name(resolved_t.Generic.name, resolved_t.Generic.args, env, ctx);
             return std.Clone(ctx, mono_name);
         }
     }
@@ -1468,6 +1469,158 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 res = std.Concat(res, ", &");
                 res = std.Concat(res, arg1_str);
                 res = std.Concat(res, ")");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "os.VectorNew") || std.str_eq(func_str, "os_VectorNew") ||
+               std.str_eq(func_str, "std.VectorNew") || std.str_eq(func_str, "std_VectorNew") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling VectorNew FFI override", ctx);
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+
+                mut type_str := "std_Vector_int";
+                if std.str_eq((*env).current_alloc_struct, "") == 0 {
+                    type_str = (*env).current_alloc_struct;
+                }
+
+                mut is_ptr := 0;
+                mut arg0_expr := ctx[arg0_idx];
+                if arg0_expr.tag == 0 { // Identifier
+                    mut arg0_name := arg0_expr.Identifier.name;
+                    is_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
+                }
+
+                mut arena_expr := std.Concat("&", arg_str);
+                if is_ptr == 1 { 
+                    arena_expr = arg_str;
+                }
+
+                mut res := std.Concat("((struct ", type_str);
+                res = std.Concat(res, "){ .data = NULL, .len = 0, .capacity = 0, .arena = ");
+                res = std.Concat(res, arena_expr);
+                res = std.Concat(res, " })");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "os.HashMapNew") || std.str_eq(func_str, "os_HashMapNew") ||
+               std.str_eq(func_str, "std.HashMapNew") || std.str_eq(func_str, "std_HashMapNew") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling HashMapNew FFI override", ctx);
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+
+                mut type_str := "std_HashMap_int_int";
+                if std.str_eq((*env).current_alloc_struct, "") == 0 {
+                    type_str = (*env).current_alloc_struct;
+                }
+
+                mut is_ptr := 0;
+                mut arg0_expr := ctx[arg0_idx];
+                if arg0_expr.tag == 0 { // Identifier
+                    mut arg0_name := arg0_expr.Identifier.name;
+                    is_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
+                }
+
+                mut arena_expr := std.Concat("&", arg_str);
+                if is_ptr == 1 { 
+                    arena_expr = arg_str;
+                }
+
+                mut res := std.Concat("((struct ", type_str);
+                res = std.Concat(res, "){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ");
+                res = std.Concat(res, arena_expr);
+                res = std.Concat(res, " })");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "os.PoolNew") || std.str_eq(func_str, "os_PoolNew") ||
+               std.str_eq(func_str, "std.PoolNew") || std.str_eq(func_str, "std_PoolNew") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling PoolNew FFI override", ctx);
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+
+                mut type_str := "std_Pool_int";
+                if std.str_eq((*env).current_alloc_struct, "") == 0 {
+                    type_str = (*env).current_alloc_struct;
+                }
+
+                mut is_ptr := 0;
+                mut arg0_expr := ctx[arg0_idx];
+                if arg0_expr.tag == 0 { // Identifier
+                    mut arg0_name := arg0_expr.Identifier.name;
+                    is_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
+                }
+
+                mut arena_expr := std.Concat("&", arg_str);
+                if is_ptr == 1 { 
+                    arena_expr = arg_str;
+                }
+
+                mut res := std.Concat("((struct ", type_str);
+                res = std.Concat(res, "){ .arena = ");
+                res = std.Concat(res, arena_expr);
+                res = std.Concat(res, ", .capacity = 0, .data = NULL, .free_len = 0, .free_list = NULL, .len = 0, .occupied = NULL })");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "std.MutexNew") || std.str_eq(func_str, "std_MutexNew") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling MutexNew FFI override", ctx);
+                mut type_str := "std_Mutex_Any";
+                if std.str_eq((*env).current_alloc_struct, "") == 0 {
+                    type_str = (*env).current_alloc_struct;
+                }
+                mut res := std.Concat("((struct ", type_str);
+                res = std.Concat(res, "){ .lock_state = std_Mutex_Alloc() })");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "std.ChannelNew") || std.str_eq(func_str, "std_ChannelNew") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling ChannelNew FFI override", ctx);
+                mut type_str := "std_Channel_Any";
+                if std.str_eq((*env).current_alloc_struct, "") == 0 {
+                    type_str = (*env).current_alloc_struct;
+                }
+                mut res := std.Concat("((struct ", type_str);
+                res = std.Concat(res, "){ .capacity = std_Channel_Alloc(16, sizeof(*(((struct ");
+                res = std.Concat(res, type_str);
+                res = std.Concat(res, "*)0)->_phantom))), .len = 0 })");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "os.GraphNew") || std.str_eq(func_str, "os_GraphNew") ||
+               std.str_eq(func_str, "std.GraphNew") || std.str_eq(func_str, "std_GraphNew") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling GraphNew FFI override", ctx);
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+
+                mut type_str := "std_Graph_Any";
+                if std.str_eq((*env).current_alloc_struct, "") == 0 {
+                    type_str = (*env).current_alloc_struct;
+                }
+
+                mut is_ptr := 0;
+                mut arg0_expr := ctx[arg0_idx];
+                if arg0_expr.tag == 0 { // Identifier
+                    mut arg0_name := arg0_expr.Identifier.name;
+                    is_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
+                }
+
+                mut arena_expr := std.Concat("&", arg_str);
+                if is_ptr == 1 { 
+                    arena_expr = arg_str;
+                }
+
+                mut res := std.Concat("((struct ", type_str);
+                res = std.Concat(res, "){ .nodes = { .arena = ");
+                res = std.Concat(res, arena_expr);
+                res = std.Concat(res, ", .capacity = 0, .data = NULL, .free_len = 0, .free_list = NULL, .len = 0, .occupied = NULL } })");
                 return std.Clone(ctx, res);
             }
 
