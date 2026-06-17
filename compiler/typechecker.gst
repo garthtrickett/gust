@@ -2266,24 +2266,36 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
                             } else {
                                 mut temp_resolved := part;
                                 mut is_primitive := 0;
-                                if std.str_eq(part, "len") || std.str_eq(part, "int") || std.str_eq(part, "byte") ||
-                                   std.str_eq(part, "bool") || std.str_eq(part, "str") || std.str_eq(part, "Arena") ||
-                                   std.str_eq(part, "os_Arena") || std.str_eq(part, "os.Arena") || std.str_eq(part, "void") ||
-                                   std.str_eq(part, "Any") || std.str_eq(part, "SessionNode") || std.str_eq(part, "APIRequest") ||
-                                   std.str_eq(part, "Vector_Any") || std.str_eq(part, "HashMap_Any") ||
-                                   std.str_eq(part, "Pool_Any") || std.str_eq(part, "Mutex_Any") || std.str_eq(part, "Channel_Any") ||
-                                   std.str_eq(part, "ThreadLocalContext_Any") || std.str_eq(part, "std_ThreadLocalContext_Any") ||
-                                   std.str_eq(part, "ctx") || std.str_eq(part, "connCtx") || std.str_eq(part, "arena") ||
-                                   std.str_eq(part, "a") {
-                                    is_primitive = 1;
-                                }
+                                if std.str_eq(part, "len") { is_primitive = 1; }
+                                if std.str_eq(part, "int") { is_primitive = 1; }
+                                if std.str_eq(part, "byte") { is_primitive = 1; }
+                                if std.str_eq(part, "bool") { is_primitive = 1; }
+                                if std.str_eq(part, "str") { is_primitive = 1; }
+                                if std.str_eq(part, "Arena") { is_primitive = 1; }
+                                if std.str_eq(part, "os_Arena") { is_primitive = 1; }
+                                if std.str_eq(part, "os.Arena") { is_primitive = 1; }
+                                if std.str_eq(part, "void") { is_primitive = 1; }
+                                if std.str_eq(part, "Any") { is_primitive = 1; }
+                                if std.str_eq(part, "SessionNode") { is_primitive = 1; }
+                                if std.str_eq(part, "APIRequest") { is_primitive = 1; }
+                                if std.str_eq(part, "Vector_Any") { is_primitive = 1; }
+                                if std.str_eq(part, "HashMap_Any") { is_primitive = 1; }
+                                if std.str_eq(part, "Pool_Any") { is_primitive = 1; }
+                                if std.str_eq(part, "Mutex_Any") { is_primitive = 1; }
+                                if std.str_eq(part, "Channel_Any") { is_primitive = 1; }
+                                if std.str_eq(part, "ThreadLocalContext_Any") { is_primitive = 1; }
+                                if std.str_eq(part, "std_ThreadLocalContext_Any") { is_primitive = 1; }
+                                if std.str_eq(part, "ctx") { is_primitive = 1; }
+                                if std.str_eq(part, "connCtx") { is_primitive = 1; }
+                                if std.str_eq(part, "arena") { is_primitive = 1; }
+                                if std.str_eq(part, "a") { is_primitive = 1; }
+
                                 if is_primitive == 0 {
                                     temp_resolved = std.Concat(active_prefix, part);
                                 }
                                 resolved_parts.Push(temp_resolved);
                                 active_prefix = (*env).current_prefix;
                             }
-                            i = i + 1;
                         }
                         
                         mut joined := ast.ast_join_strings(resolved_parts, "_", ctx);
