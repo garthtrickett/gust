@@ -2162,58 +2162,69 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             }
             res = std.Concat(res, "}\n\n");
 
-            if len(*params_vec) == 1 {
-                codegen_log_trace("👁️", std.Format("codegen_generate_statement: generating pthread_wrapper for %s", namespaced_name), ctx);
-                mut param := (*params_vec)[0];
-                mut wrapper_p_type := param.param_type;
-                if sig_lookup.Ok {
-                    wrapper_p_type = sig_lookup.Val.params[0];
-                }
-                mut wrapper_p_c_type := codegen_get_c_type(wrapper_p_type, env, ctx);
-                
-                mut is_ptr := 0;
-                if wrapper_p_type.tag == 9 { // RawPointer
-                    is_ptr = 1;
-                }
-                
-                mut is_struct := 0;
-                if wrapper_p_type.tag == 8 || wrapper_p_type.tag == 10 || wrapper_p_type.tag == 6 || wrapper_p_type.tag == 5 { 
-                    is_struct = 1;
-                }
-                
-                mut cast_str := "";
-                if is_ptr == 1 {
-                    cast_str = std.Concat("(", wrapper_p_c_type);
-                    cast_str = std.Concat(cast_str, ")arg");
-                } else {
-                    if is_struct == 1 {
-                        cast_str = std.Concat("*(", wrapper_p_c_type);
-                        cast_str = std.Concat(cast_str, "*)arg");
-                    } else {
-                        cast_str = std.Concat("(", wrapper_p_c_type);
-                        cast_str = std.Concat(cast_str, ")(uintptr_t)arg");
-                    }
-                }
-                
-                mut wrapper_decl := std.Concat("void* ", c_func_name);
-                wrapper_decl = std.Concat(wrapper_decl, "_pthread_wrapper(void* arg) {\n");
-                
-                mut wrapper_call := std.Concat("    ", c_func_name);
-                wrapper_call = std.Concat(wrapper_call, "(");
-                wrapper_call = std.Concat(wrapper_call, cast_str);
-                wrapper_call = std.Concat(wrapper_call, ");\n");
-                
-                wrapper_decl = std.Concat(wrapper_decl, wrapper_call);
-                wrapper_decl = std.Concat(wrapper_decl, "    return NULL;\n}\n\n");
-                
-                res = std.Concat(res, wrapper_decl);
-            }
 
-            return std.Clone(ctx, res);
+              if len(*params_vec) == 1 {
+                    codegen_log_trace("👁", std.Format("codegen_generate_statement: generating pthread_wrapper for %s", namespaced_name), ctx);
+                    mut param := (*params_vec)[0];
+                    mut wrapper_p_type := param.param_type;
+                    if sig_lookup.Ok {
+                        wrapper_p_type = sig_lookup.Val.params[0];
+                    }
+                    mut wrapper_p_c_type := codegen_get_c_type(wrapper_p_type, env, ctx);
+
+                    mut is_ptr := 0;
+                    if wrapper_p_type.tag == 9 { // RawPointer
+                        is_ptr = 1;
+                    }
+
+                    mut is_struct := 0;
+                    if wrapper_p_type.tag == 8 || wrapper_p_type.tag == 10 || wrapper_p_type.tag == 6 || wrapper_p_type.tag == 5 {
+                        is_struct = 1;
+                    }
+
+                    mut cast_str := "";
+                    if is_ptr == 1 {
+                        cast_str = std.Concat("(", wrapper_p_c_type);
+                        cast_str = std.Concat(cast_str, ")arg");
+                    } else {
+                        if is_struct == 1 {
+                            cast_str = std.Concat("*(", wrapper_p_c_type);
+                            cast_str = std.Concat(cast_str, "*)arg");
+                        } else {
+                            cast_str = std.Concat("(", wrapper_p_c_type);
+                            cast_str = std.Concat(cast_str, ")(uintptr_t)arg");
+                        }
+                    }
+
+                    mut wrapper_decl := std.Concat(wrapper_decl, "_pthread_wrapper(void* arg) {\n");
+
+                    mut wrapper_call := std.Concat("    ", c_func_name);
+                    wrapper_call = std.Concat(wrapper_call, "(");
+                    wrapper_call = std.Concat(wrapper_call, cast_str);
+                    wrapper_call = std.Concat(wrapper_call, ");\n");
+
+                    wrapper_decl = std.Concat(wrapper_decl, wrapper_call);
+                    wrapper_decl = std.Concat(wrapper_decl, "    return NULL;\n}\n\n");
+
+                    res = std.Concat(res, wrapper_decl);
+                }
+
+                return std.Clone(ctx, res);
+            }
+            if tag == 9 { // Guard
+                mut name := ctx[stmt_idx].Guard.name;
+                mut is_mut := ctx[stmt_idx].Guard.is_mut;
+                mut value := ctx[stmt_idx].Guard.value;
+                mut else_body := ctx[stmt_idx].Guard.else_body;
+                mut span := ctx[stmt_idx].Guard.span;
+
+                mut res := "/* Guard Placeholder */\n";
+                return std.Clone(ctx, res);
+            }
         }
+        return "";
     }
-    return "";
-}
+
 
 func codegen_generate(programs: std.Vector[ast.Program[ctx], ctx], prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {

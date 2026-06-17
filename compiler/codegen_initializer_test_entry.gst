@@ -21,6 +21,21 @@ func main() {
     }
     os.LogInt(len(c.current_params)); // Expected: 0
 
+    // Test Step 1: Guard Statement Transpilation Routing
+    mut l_guard_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_guard_test, "guard mut x := map.Get(42) else { return; }");
+    mut p_guard_test: parser.Parser[ctx];
+    parser.init_parser(&p_guard_test, &l_guard_test, ctx);
+    mut prog_guard_test := parser.parse_program(&p_guard_test, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog_guard_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[guard_stmt_idx] = (*statements_vec)[0];
+        
+        mut guard_c := codegen.codegen_generate_statement(guard_stmt_idx, &env, ctx);
+        os.LogStr(guard_c); // Expected: /* Guard Placeholder */
+    }
+
     // Test Step 1 Skip List
     if codegen.codegen_should_skip_fwd_decl("std.Clone") == 1 {
         os.LogStr("std.Clone correctly flagged as intrinsic");
