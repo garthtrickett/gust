@@ -1554,10 +1554,29 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             return std.Clone(ctx, res);
         }
         if tag == 3 { // FunctionDecl
+            mut f_name := ctx[stmt_idx].FunctionDecl.name;
+            mut namespaced_name := typechecker.env_resolve_namespaced_ident(env, f_name, ctx);
+            mut sig_lookup := (*env).function_registry.Get(namespaced_name);
+
             mut t_ret := ctx[ctx[stmt_idx].FunctionDecl.return_type];
+            if sig_lookup.Ok {
+                t_ret = sig_lookup.Val.return_type;
+            }
             mut c_ret := codegen_get_c_type(t_ret, env, ctx);
             mut res := std.Concat(c_ret, " ");
-            res = std.Concat(res, ctx[stmt_idx].FunctionDecl.name);
+
+            mut c_func_name := "";
+            mut char_idx := 0;
+            while char_idx < len(namespaced_name) {
+                mut b := std.str_byte_at(namespaced_name, char_idx);
+                if b == 46 { // '.'
+                    c_func_name = std.Concat(c_func_name, "_");
+                } else {
+                    c_func_name = std.Concat(c_func_name, std.str_slice(namespaced_name, char_idx, char_idx + 1));
+                }
+                char_idx = char_idx + 1;
+            }
+            res = std.Concat(res, c_func_name);
             res = std.Concat(res, "(");
 
             mut params_vec := &ctx[ctx[stmt_idx].FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
@@ -1568,7 +1587,11 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     params_str = std.Concat(params_str, ", ");
                 }
                 mut p := (*params_vec)[i];
-                mut p_c_type := codegen_get_c_type(p.param_type, env, ctx);
+                mut p_type := p.param_type;
+                if sig_lookup.Ok {
+                    p_type = sig_lookup.Val.params[i];
+                }
+                mut p_c_type := codegen_get_c_type(p_type, env, ctx);
                 mut p_decl := std.Concat(p_c_type, " ");
                 p_decl = std.Concat(p_decl, p.name);
                 params_str = std.Concat(params_str, p_decl);
