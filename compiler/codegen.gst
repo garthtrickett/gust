@@ -1665,10 +1665,18 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
     return "";
 }
 
-func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+func codegen_generate(programs: std.Vector[ast.Program[ctx], ctx], prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         codegen_log_trace("⚙️", "codegen_generate: commencing code generation pass", ctx);
-        mut c_code := "// Transpiled C Code\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <pthread.h>\n\ntypedef void Any;\n\n";
+        mut c_code := "// Transpiled C Code
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+
+typedef void Any;
+
+";
 
         // 1. Generate Slice structure definitions
         c_code = std.Concat(c_code, "typedef struct Slice_unsigned_char Slice_unsigned_char;\n");
@@ -1740,19 +1748,24 @@ func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment
         
         // 2. pthread_wrapper forward declarations
         c_code = std.Concat(c_code, "// pthread_wrapper forward declarations\n");
-        mut fwd_statements_vec := &ctx[(*prog).statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut fwd_s_idx := 0;
-        while fwd_s_idx < len(*fwd_statements_vec) {
-            mut stmt := (*fwd_statements_vec)[fwd_s_idx];
-            if stmt.tag == 3 { // FunctionDecl
-                mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
-                if len(*params_vec) == 1 {
-                    mut decl := std.Concat("void* ", stmt.FunctionDecl.name);
-                    decl = std.Concat(decl, "_pthread_wrapper(void* arg);\n");
-                    c_code = std.Concat(c_code, decl);
+        mut fwd_p_idx := 0;
+        while fwd_p_idx < len(programs) {
+            mut prog := programs[fwd_p_idx];
+            mut fwd_statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+            mut fwd_s_idx := 0;
+            while fwd_s_idx < len(*fwd_statements_vec) {
+                mut stmt := (*fwd_statements_vec)[fwd_s_idx];
+                if stmt.tag == 3 { // FunctionDecl
+                    mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
+                    if len(*params_vec) == 1 {
+                        mut decl := std.Concat("void* ", stmt.FunctionDecl.name);
+                        decl = std.Concat(decl, "_pthread_wrapper(void* arg);\n");
+                        c_code = std.Concat(c_code, decl);
+                    }
                 }
+                fwd_s_idx = fwd_s_idx + 1;
             }
-            fwd_s_idx = fwd_s_idx + 1;
+            fwd_p_idx = fwd_p_idx + 1;
         }
         c_code = std.Concat(c_code, "\n");
         
@@ -1802,14 +1815,19 @@ func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment
         
         // 4. Statements in program (transpiled C)
         c_code = std.Concat(c_code, "// Program Statements\n");
-        mut statements_vec := &ctx[(*prog).statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut s_idx := 0;
-        while s_idx < len(*statements_vec) {
-            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = (*statements_vec)[s_idx];
-            mut stmt_c := codegen_generate_statement(stmt_idx, env, ctx);
-            c_code = std.Concat(c_code, stmt_c);
-            s_idx = s_idx + 1;
+        mut p_idx2 := 0;
+        while p_idx2 < len(programs) {
+            mut prog := programs[p_idx2];
+            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+            mut s_idx := 0;
+            while s_idx < len(*statements_vec) {
+                mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[stmt_idx] = (*statements_vec)[s_idx];
+                mut stmt_c := codegen_generate_statement(stmt_idx, env, ctx);
+                c_code = std.Concat(c_code, stmt_c);
+                s_idx = s_idx + 1;
+            }
+            p_idx2 = p_idx2 + 1;
         }
         
         return std.Clone(ctx, c_code);
