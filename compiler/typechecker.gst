@@ -901,7 +901,17 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
     mut t := check_expression_internal(expr_idx, env, scope, ctx);
     unsafe {
         mut final_span := get_expression_span(expr_idx, ctx);
-        (*env).resolved_types.Insert(final_span.start.offset, t);
+        mut prefix := (*env).current_prefix;
+        mut inner_lookup := (*env).resolved_types_nested.Get(prefix);
+        mut inner_map_idx : Index[std.HashMap[int, ast.Type[ctx], ctx], ctx] := empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]];
+        if inner_lookup.Ok {
+            inner_map_idx = inner_lookup.Val;
+        } else {
+            inner_map_idx = os.ArenaAlloc(ctx) as Index[std.HashMap[int, ast.Type[ctx], ctx], ctx];
+            ctx[inner_map_idx] = std.HashMapNew(ctx);
+            (*env).resolved_types_nested.Insert(std.Clone(ctx, prefix), inner_map_idx);
+        }
+        ctx[inner_map_idx].Insert(final_span.start.offset, t);
     }
     return t;
 }
