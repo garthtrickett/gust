@@ -1,0 +1,9 @@
+{
+  "summary": "test: add self-hosted typechecker local variable type registration test",
+  "files": [
+    {
+      "file_path": "compiler/typechecker_types_test_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nimport std;\nimport os;\nimport lexer;\nimport parser;\nimport ast;\nimport typechecker;\nimport token;\nimport errors;\n\nfunc main() {\n    mut ctx := os.Arena_New();\n    os.SetThreadScratch(&ctx);\n\n    mut l: lexer.Lexer;\n    lexer.init_lexer(&l, \"mut x: int := 10;\");\n\n    mut p: parser.Parser;\n    parser.init_parser(&p, &l, &ctx);\n\n    mut stmt_idx := parser.parse_statement(&p, &ctx);\n    mut stmt := ctx[stmt_idx];\n\n    mut env := typechecker.env_new(&ctx);\n    mut scope := typechecker.scope_new(0xFFFFFFFF, &ctx);\n\n    mut res := typechecker.check_statement(stmt_idx, &env, scope, &ctx);\n    if res.Ok == 0 {\n        os.LogStr(\"Failed to typecheck statement\\n\");\n        return;\n    }\n\n    mut span := stmt.VarDecl.span;\n    mut lookup := env.resolved_types.Get(span.start.offset);\n\n    if lookup.Ok == 0 {\n        os.LogStr(\"Type not registered in resolved_types!\\n\");\n        return;\n    }\n\n    mut expected_type := typechecker.make_type_int();\n    if typechecker.types_match(expected_type, lookup.Val, &ctx) == 0 {\n        os.LogStr(\"Registered type is not int!\\n\");\n        return;\n    }\n\n    os.LogStr(\"Typechecker local variable registration test passed!\\n\");\n}\n>>>>>>> REPLACE"
+    }
+  ]
+}

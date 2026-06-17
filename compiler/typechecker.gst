@@ -3713,26 +3713,32 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     }
                     report_error(2, msg, val_span, env, ctx);
                 }
-                scope_insert(scope, name, resolved_explicit, ctx);
-                (*env).variable_types.Insert(std.Clone(ctx, name), resolved_explicit);
-            } else {
-                scope_insert(scope, name, val_type, ctx);
-                (*env).variable_types.Insert(std.Clone(ctx, name), val_type);
-            }
 
-            if val_type.tag == 8 { // Struct
-                mut decl_struct_name := val_type.Struct.struct_name;
-                if len(decl_struct_name) >= 7 && std.str_eq(std.str_slice(decl_struct_name, 0, 7), "os_Dir_") {
-                    (*env).open_directories.Insert(std.Clone(ctx, name), 1);
+
+         scope_insert(scope, name, resolved_explicit, ctx);
+                    (*env).variable_types.Insert(std.Clone(ctx, name), resolved_explicit);
+                    val_type = resolved_explicit;
+                } else {
+                    scope_insert(scope, name, val_type, ctx);
+                    (*env).variable_types.Insert(std.Clone(ctx, name), val_type);
                 }
-            }
 
-            if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
-                mut local_vars := (*env).current_function_local_vars;
-                set_add(local_vars, name, ctx);
-            }
+                if val_type.tag == 8 { // Struct
+                    mut decl_struct_name := val_type.Struct.struct_name;
+                    if len(decl_struct_name) >= 7 && std.str_eq(std.str_slice(decl_struct_name, 0, 7), "os_Dir_") {
+                        (*env).open_directories.Insert(std.Clone(ctx, name), 1);
+                    }
+                }
 
-            return res;
+                if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
+                    mut local_vars := (*env).current_function_local_vars;
+                    set_add(local_vars, name, ctx);
+                }
+
+                (*env).resolved_types.Insert(stmt.VarDecl.span.start.offset, val_type);
+
+                return res;
+            
         }
 
         if stmt.tag == 5 { // Assignment

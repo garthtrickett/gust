@@ -225,3 +225,50 @@ func main() {
         os.LogStr("Cycle Detection FAIL: Pointer-indirected Loop2 rejected");
     }
 }
+import std;
+import os;
+import lexer;
+import parser;
+import ast;
+import typechecker;
+import token;
+import errors;
+
+func main() {
+    mut ctx := os.Arena_New();
+    os.SetThreadScratch(&ctx);
+
+    mut l: lexer.Lexer;
+    lexer.init_lexer(&l, "mut x: int := 10;");
+
+    mut p: parser.Parser;
+    parser.init_parser(&p, &l, &ctx);
+
+    mut stmt_idx := parser.parse_statement(&p, &ctx);
+    mut stmt := ctx[stmt_idx];
+
+    mut env := typechecker.env_new(&ctx);
+    mut scope := typechecker.scope_new(0xFFFFFFFF, &ctx);
+
+    mut res := typechecker.check_statement(stmt_idx, &env, scope, &ctx);
+    if res.Ok == 0 {
+        os.LogStr("Failed to typecheck statement\n");
+        return;
+    }
+
+    mut span := stmt.VarDecl.span;
+    mut lookup := env.resolved_types.Get(span.start.offset);
+
+    if lookup.Ok == 0 {
+        os.LogStr("Type not registered in resolved_types!\n");
+        return;
+    }
+
+    mut expected_type := typechecker.make_type_int();
+    if typechecker.types_match(expected_type, lookup.Val, &ctx) == 0 {
+        os.LogStr("Registered type is not int!\n");
+        return;
+    }
+
+    os.LogStr("Typechecker local variable registration test passed!\n");
+}
