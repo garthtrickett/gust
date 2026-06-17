@@ -152,7 +152,8 @@ func codegen_gen_function_fwd_decl(name: str, sig: typechecker.FunctionSignature
 
             mut is_arena_ptr := 0;
             if param_type.tag == 9 { // RawPointer
-                mut inner := ctx[param_type.RawPointer.inner];
+                mut inner_idx := param_type.RawPointer.inner as Index[ast.Type[ctx], ctx];
+                mut inner := ctx[inner_idx];
                 if inner.tag == 4 { // Arena
                     is_arena_ptr = 1;
                 }
