@@ -116,4 +116,48 @@ func main() {
     // 7. Test codegen_generate
     mut full_c := codegen.codegen_generate(&prog2, &env, ctx);
     os.LogStr(full_c);
+
+    // 8. Test Topological Sorting in Codegen
+    mut l4: lexer.Lexer[ctx];
+    lexer.init_lexer(&l4, "type Outer struct { inner: Inner } type Inner struct { val: int }");
+
+    mut p4: parser.Parser[ctx];
+    parser.init_parser(&p4, &l4, ctx);
+
+    mut prog4 := parser.parse_program(&p4, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog4.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut i := 0;
+        while i < len(*statements_vec) {
+            typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+            i = i + 1;
+        }
+    }
+
+    mut sorted_structs := codegen.codegen_get_topologically_sorted_structs(&env, ctx);
+    
+    // Find positions of "Outer" and "Inner" in the sorted structs
+    mut outer_idx := 0 - 1;
+    mut inner_idx := 0 - 1;
+    mut s_idx := 0;
+    while s_idx < len(sorted_structs) {
+        mut name := sorted_structs[s_idx];
+        if std.str_eq(name, "Outer") {
+            outer_idx = s_idx;
+        }
+        if std.str_eq(name, "Inner") {
+            inner_idx = s_idx;
+        }
+        s_idx = s_idx + 1;
+    }
+
+    if inner_idx != 0 - 1 && outer_idx != 0 - 1 {
+        if inner_idx < outer_idx {
+            os.LogStr("Topological Sort OK: Inner precedes Outer");
+        } else {
+            os.LogStr("Topological Sort FAIL: Outer precedes Inner");
+        }
+    } else {
+        os.LogStr("Topological Sort FAIL: Missing structs");
+    }
 }

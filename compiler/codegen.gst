@@ -1529,7 +1529,7 @@ func codegen_generate(prog: *ast.Program[ctx], env: &typechecker.TypeEnvironment
 
         // 2. Generate forward declarations for all structs
         c_code = std.Concat(c_code, "// Forward Declarations\n");
-        mut struct_keys := typechecker.typechecker_get_sorted_keys_layout(&(*env).struct_registry, ctx);
+        mut struct_keys := codegen_get_topologically_sorted_structs(env, ctx);
         mut i_fwd := 0;
         while i_fwd < len(struct_keys) {
             mut key := struct_keys[i_fwd];
