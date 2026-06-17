@@ -807,18 +807,10 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 if alloc_t.tag == 9 { // RawPointer
                     arrow_or_dot = "->";
                 } else {
-                    mut lookup_var := (*env).variable_types.Get(alloc_str);
-                    if lookup_var.Ok {
-                        mut t := lookup_var.Val;
-                        if t.tag == 9 { // RawPointer
-                            arrow_or_dot = "->";
-                        } else {
-                            arrow_or_dot = ".";
-                        }
+                    if codegen_is_arena_ptr(alloc_str, env, ctx) == 1 {
+                        arrow_or_dot = "->";
                     } else {
-                        if std.str_eq(alloc_str, "ctx") || std.str_eq(alloc_str, "arena") || std.str_eq(alloc_str, "connCtx") || std.str_eq(alloc_str, "a") {
-                            arrow_or_dot = "->";
-                        }
+                        arrow_or_dot = ".";
                     }
                 }
 
@@ -1124,13 +1116,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         mut arg0_expr := ctx[arg0_idx];
                         if arg0_expr.tag == 0 { // Identifier
                             mut arg0_name := arg0_expr.Identifier.name;
-                            mut var_type_lookup := (*env).variable_types.Get(arg0_name);
-                            if var_type_lookup.Ok { 
-                                mut t := var_type_lookup.Val;
-                                if t.tag == 9 { // RawPointer
-                                    is_ctx_ptr = 1;
-                                }
-                            }
+                            is_ctx_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
                         }
                         
                         mut arena_expr := std.Concat("&", ctx_str);
@@ -1205,13 +1191,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut arg2_expr := ctx[arg2_idx];
                 if arg2_expr.tag == 0 { // Identifier
                     mut arg2_name := arg2_expr.Identifier.name;
-                    mut var_type_lookup := (*env).variable_types.Get(arg2_name);
-                    if var_type_lookup.Ok {
-                        mut t := var_type_lookup.Val;
-                        if t.tag == 9 { // RawPointer
-                            is_ctx_ptr = 1;
-                        }
-                    }
+                    is_ctx_ptr = codegen_is_arena_ptr(arg2_name, env, ctx);
                 }
                 
                 mut arena_expr := std.Concat("&", ctx_expr);
@@ -1244,13 +1224,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut arg0_expr := ctx[arg0_idx];
                 if arg0_expr.tag == 0 { // Identifier
                     mut arg0_name := arg0_expr.Identifier.name;
-                    mut var_type_lookup := (*env).variable_types.Get(arg0_name);
-                    if var_type_lookup.Ok {
-                        mut t := var_type_lookup.Val;
-                        if t.tag == 9 { // RawPointer
-                            is_ctx_ptr = 1;
-                        }
-                    }
+                    is_ctx_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
                 }
                 
                 mut arena_expr := std.Concat("&", ctx_expr);
@@ -1527,13 +1501,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     is_ptr = 1;
                 }
                 if arg_expr.tag == 0 { // Identifier
-                    mut var_type_lookup := env.variable_types.Get(arg_expr.Identifier.name);
-                    if var_type_lookup.Ok {
-                        mut t := var_type_lookup.Val;
-                        if t.tag == 9 { // RawPointer
-                            is_ptr = 1;
-                        }
-                    }
+                    mut var_name := arg_expr.Identifier.name;
+                    is_ptr = codegen_is_arena_ptr(var_name, env, ctx);
                 }
                 
                 mut cast_expr := "";
