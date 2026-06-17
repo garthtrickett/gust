@@ -469,7 +469,7 @@ func codegen_get_monomorphized_name(template_name: str, args_idx: Index[std.Vect
             if i > 0 {
                 arg_names = std.Concat(arg_names, "_");
             }
-            mut arg_name := codegen_get_c_type_ident((*args_vec)[i], env, ctx);
+            mut arg_name := typechecker.get_type_ident((*args_vec)[i], ctx);
             arg_names = std.Concat(arg_names, arg_name);
             i = i + 1;
         }
