@@ -548,16 +548,17 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut s_name := "";
                 if left_type.tag == 8 { // Struct
                     s_name = left_type.Struct.struct_name;
-                    if std.str_find(s_name, "Mutex_") != 0 - 1 || std.str_find(s_name, "std_Mutex_") != 0 - 1 { 
+                    mut clean := typechecker.typechecker_strip_module_prefix(s_name, ctx);
+                    if std.str_find(clean, "Mutex_") == 0 || std.str_find(clean, "std_Mutex_") == 0 { 
                         is_mutex = 1;
                     }
-                    if std.str_find(s_name, "Channel_") != 0 - 1 || std.str_find(s_name, "std_Channel_") != 0 - 1 { 
+                    if std.str_find(clean, "Channel_") == 0 || std.str_find(clean, "std_Channel_") == 0 { 
                         is_channel = 1;
                     }
-                    if std.str_find(s_name, "Vector_") != 0 - 1 || std.str_find(s_name, "std_Vector_") != 0 - 1 { 
+                    if std.str_find(clean, "Vector_") == 0 || std.str_find(clean, "std_Vector_") == 0 { 
                         is_vec = 1;
                     }
-                    if std.str_find(s_name, "HashMap_") != 0 - 1 || std.str_find(s_name, "std_HashMap_") != 0 - 1 { 
+                    if std.str_find(clean, "HashMap_") == 0 || std.str_find(clean, "std_HashMap_") == 0 { 
                         is_map = 1;
                     }
                 }
