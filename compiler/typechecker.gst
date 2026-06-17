@@ -2229,6 +2229,81 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
         return std.Clone(ctx, std.Concat("CastResult_", resolved));
     }
 
+    // Standard collections prefix matching
+    mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
+    prefixes.Push("std_Vector_");
+    prefixes.Push("std_HashMap_");
+    prefixes.Push("std_Pool_");
+    prefixes.Push("std_RcNode_");
+    prefixes.Push("std_Rc_");
+    prefixes.Push("std_GraphNode_");
+    prefixes.Push("std_Graph_");
+    prefixes.Push("std_Mutex_");
+    prefixes.Push("std_Channel_");
+    prefixes.Push("std_GenerationalArena_");
+    prefixes.Push("std_ThreadLocalContext_");
+    prefixes.Push("os_Dir_");
+    prefixes.Push("os_DirEntry_");
+
+    mut p := 0;
+    while p < len(prefixes) {
+        mut prefix := prefixes[p];
+        if len(name) >= len(prefix) {
+            if std.str_eq(std.str_slice(name, 0, len(prefix)), prefix) {
+                mut suffix := std.str_slice(name, len(prefix), len(name));
+                if std.str_find(suffix, "__") == 0 - 1 {
+                    mut parts := std.str_split(suffix, "_", ctx);
+                    mut resolved_parts: std.Vector[str, ctx] := std.VectorNew(ctx);
+                    mut active_prefix := (*env).current_prefix;
+                    
+                    mut i := 0;
+                    while i < len(parts) {
+                        mut part := parts[i];
+                        unsafe {
+                            mut lookup := (*env).imports.Get(part);
+                            if lookup.Ok {
+                                active_prefix = lookup.Val;
+                            } else {
+                                mut temp_resolved := part;
+                                mut is_primitive := 0;
+                                if std.str_eq(part, "len") || std.str_eq(part, "int") || std.str_eq(part, "byte") ||
+                                   std.str_eq(part, "bool") || std.str_eq(part, "str") || std.str_eq(part, "Arena") ||
+                                   std.str_eq(part, "os_Arena") || std.str_eq(part, "os.Arena") || std.str_eq(part, "void") ||
+                                   std.str_eq(part, "Any") || std.str_eq(part, "SessionNode") || std.str_eq(part, "APIRequest") ||
+                                   std.str_eq(part, "Vector_Any") || std.str_eq(part, "HashMap_Any") ||
+                                   std.str_eq(part, "Pool_Any") || std.str_eq(part, "Mutex_Any") || std.str_eq(part, "Channel_Any") ||
+                                   std.str_eq(part, "ThreadLocalContext_Any") || std.str_eq(part, "std_ThreadLocalContext_Any") ||
+                                   std.str_eq(part, "ctx") || std.str_eq(part, "connCtx") || std.str_eq(part, "arena") ||
+                                   std.str_eq(part, "a") {
+                                    is_primitive = 1;
+                                }
+                                if is_primitive == 0 {
+                                    temp_resolved = std.Concat(active_prefix, part);
+                                }
+                                resolved_parts.Push(temp_resolved);
+                                active_prefix = (*env).current_prefix;
+                            }
+                        }
+                        i = i + 1;
+                    }
+                    
+                    mut joined := ast.ast_join_strings(resolved_parts, "_", ctx);
+                    mut res := std.Concat(prefix, joined);
+                    
+                    mut triple_idx := std.str_find(res, "___");
+                    while triple_idx != 0 - 1 {
+                        mut left := std.str_slice(res, 0, triple_idx);
+                        mut right := std.str_slice(res, triple_idx + 1, len(res));
+                        res = std.Concat(left, right);
+                        triple_idx = std.str_find(res, "___");
+                    }
+                    return std.Clone(ctx, res);
+                }
+            }
+        }
+        p = p + 1;
+    }
+
     // 2. Handle dot-separated namespaced alias (e.g. lib.Helper)
     mut dot_idx := std.str_find(name, ".");
     if dot_idx != 0 - 1 {

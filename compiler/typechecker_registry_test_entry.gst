@@ -40,4 +40,7 @@ func main() {
 
     mut res5 := typechecker.env_resolve_namespaced_ident(&env, "LookupResult_lib.Helper", ctx);
     os.LogStr(res5);
+
+    mut res6 := typechecker.env_resolve_namespaced_ident(&env, "std_Vector_lib_Helper_ctx", ctx);
+    os.LogStr(res6);
 }

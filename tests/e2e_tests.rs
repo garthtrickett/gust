@@ -4239,7 +4239,7 @@ fn test_e2e_self_hosted_registries() {
         .join("\n");
     assert_eq!(
         filtered_stdout.trim(),
-        "lib__Helper\nlib__add\nmain__local_var\nint\nLookupResult_lib__Helper"
+        "lib__Helper\nlib__add\nmain__local_var\nint\nLookupResult_lib__Helper\nstd_Vector_lib__Helper_ctx"
     );
 }
 
