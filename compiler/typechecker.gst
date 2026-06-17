@@ -2220,6 +2220,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].current_function_local_vars = empty[Index[OriginSet[ctx], ctx]];
         ctx[env_idx].checked_results = std.HashMapNew(ctx);
         ctx[env_idx].in_unsafe_block = 0;
+        ctx[env_idx].active_monomorphizations = std.HashMapNew(ctx);
 
         env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
         env_register_std_structs(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);

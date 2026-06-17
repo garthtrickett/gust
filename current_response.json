@@ -1,13 +1,9 @@
 {
-  "summary": "debug: add verbose C-level diagnostic traces to os_HashMapRef_impl and os_HashMapRemove_impl",
-  "files": [
-    {
-      "file_path": "src/codegen_runtime.rs",
-      "code_diff": "<<<<<<< SEARCH\nstatic inline void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {\n    typedef struct {\n        os_Arena* arena;\n        int capacity;\n        char* keys;\n        int len;\n        int* occupied;\n        char* values;\n    } GenericHashMap;\n\n    GenericHashMap* m = (GenericHashMap*)map_void;\n\n    if (m->capacity == 0) {\n=======\nstatic inline void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {\n    typedef struct {\n        os_Arena* arena;\n        int capacity;\n        char* keys;\n        int len;\n        int* occupied;\n        char* values;\n    } GenericHashMap;\n\n    GenericHashMap* m = (GenericHashMap*)map_void;\n\n    fprintf(stderr, \"[REF] map_void=%p, arena=%p, capacity=%d, len=%d, occupied=%p, keys=%p, is_str=%d\\\\n\",\n        map_void, m ? (void*)m->arena : NULL, m ? m->capacity : 0, m ? m->len : 0, m ? (void*)m->occupied : NULL, m ? (void*)m->keys : NULL, is_str_key);\n    if (m && m->capacity > 0) {\n        if (is_str_key) {\n            Slice_unsigned_char s = *(Slice_unsigned_char*)key_ptr;\n            fprintf(stderr, \"  key_str: len=%d, data=%p\\\\n\", s.len, (void*)s.data);\n        } else {\n            fprintf(stderr, \"  key_int: %d\\\\n\", *(int*)key_ptr);\n        }\n    }\n    fflush(stderr);\n\n    if (m->capacity == 0) {\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "src/codegen_runtime.rs",
-      "code_diff": "<<<<<<< SEARCH\nstatic inline void os_HashMapRemove_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {\n    typedef struct {\n        os_Arena* arena;\n        int capacity;\n        char* keys;\n        int len;\n        int* occupied;\n        char* values;\n    } GenericHashMap;\n\n    GenericHashMap* m = (GenericHashMap*)map_void;\n    if (m->capacity == 0) return;\n=======\nstatic inline void os_HashMapRemove_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {\n    typedef struct {\n        os_Arena* arena;\n        int capacity;\n        char* keys;\n        int len;\n        int* occupied;\n        char* values;\n    } GenericHashMap;\n\n    GenericHashMap* m = (GenericHashMap*)map_void;\n\n    fprintf(stderr, \"[REMOVE] map_void=%p, arena=%p, capacity=%d, len=%d, occupied=%p, keys=%p, is_str=%d\\\\n\",\n        map_void, m ? (void*)m->arena : NULL, m ? m->capacity : 0, m ? m->len : 0, m ? (void*)m->occupied : NULL, m ? (void*)m->keys : NULL, is_str_key);\n    if (m && m->capacity > 0) {\n        if (is_str_key) {\n            Slice_unsigned_char s = *(Slice_unsigned_char*)key_ptr;\n            fprintf(stderr, \"  key_str: len=%d, data=%p\\\\n\", s.len, (void*)s.data);\n        } else {\n            fprintf(stderr, \"  key_int: %d\\\\n\", *(int*)key_ptr);\n        }\n    }\n    fflush(stderr);\n\n    if (m->capacity == 0) return;\n>>>>>>> REPLACE"
-    }
-  ]
+"summary": "fix(typechecker): initialize active_monomorphizations in TypeEnvironment constructor",
+"files": [
+{
+"file_path": "compiler/typechecker.gst",
+"code_diff": "<<<<<<< SEARCH\n ctx[env_idx].checked_results = std.HashMapNew(ctx);\n ctx[env_idx].in_unsafe_block = 0;\n\n env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);\n=======\n ctx[env_idx].checked_results = std.HashMapNew(ctx);\n ctx[env_idx].in_unsafe_block = 0;\n ctx[env_idx].active_monomorphizations = std.HashMapNew(ctx);\n\n env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);\n>>>>>>> REPLACE"
+}
+]
 }
