@@ -3931,6 +3931,8 @@ fn test_e2e_self_hosted_types() {
     assert!(stdout_str.contains("📥 check_statement: start for stmt tag 3")); // FuncDecl
     assert!(stdout_str.contains("✅ check_statement: successfully verified stmt tag 3"));
     assert!(stdout_str.contains("❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str") || stdout_str.contains("❌ TypeError at line 1:"));
+    assert!(stdout_str.contains("Cycle Detection OK: Loop1 directly by-value rejected"));
+    assert!(stdout_str.contains("Cycle Detection OK: Pointer-indirected Loop2 accepted"));
 }
 
 #[test]
@@ -5152,7 +5154,7 @@ fn test_namespaced_template_cross_module_matching() {
                 path,
                 check_res.err()
             );
-        } 
+        }
     }
 
     // Group statements for codegen
@@ -5160,7 +5162,7 @@ fn test_namespaced_template_cross_module_matching() {
     for path in &order {
         if let Some(module) = modules.get_mut(path) {
             modules_for_codegen.push((path.clone(), module.program.clone()));
-        } 
+        }
     }
 
     let codegen = Codegen::new(
@@ -5184,7 +5186,7 @@ fn test_namespaced_template_cross_module_matching() {
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = Command::new(&cc_compiler);
     cmd.arg(&c_path);
-    if env::var("GUST_NO_SANITIZERS").is_err() { 
+    if env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
     let compile_output = cmd

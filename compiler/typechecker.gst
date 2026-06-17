@@ -1005,7 +1005,8 @@ type TypeEnvironment[ctx] struct {
     current_function_inout_params: Index[std.Vector[str, ctx], ctx],
     current_function_local_vars: Index[OriginSet[ctx], ctx],
     checked_results: std.HashMap[str, int, ctx],
-    in_unsafe_block: int
+    in_unsafe_block: int,
+    active_monomorphizations: std.HashMap[str, int, ctx]
 }
 
 func make_type_int() ast.Type[ctx] {
@@ -1413,22 +1414,23 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
         // 1. Check Enum Templates
         mut enum_lookup := (*env).enum_templates.Get(template_name);
-        if enum_lookup.Ok {
-            mut template := enum_lookup.Val;
-            mut generics_vec := &ctx[template.generics] as *std.Vector[str, ctx];
-            if len(*generics_vec) != len(args) {
-                mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[err].kind.tag = 2; // TypeError
-                mut msg := std.Concat("Semantic Error: Template '", template_name);
-                msg = std.Concat(msg, "' expects ");
-                msg = std.Concat(msg, std.FormatInt(len(*generics_vec)));
-                msg = std.Concat(msg, " generic arguments but got ");
-                msg = std.Concat(msg, std.FormatInt(len(args)));
-                ctx[err].message = std.Clone(ctx, msg);
-                res.tag = 1; // Err
-                res.Err.error = err;
-                return res;
-            }
+            if enum_lookup.Ok {
+                mut template := enum_lookup.Val;
+                mut generics_vec := &ctx[template.generics] as *std.Vector[str, ctx];
+                if len(*generics_vec) != len(args) {
+                    mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[err].kind.tag = 2; // TypeError
+                    mut msg := std.Concat("Semantic Error: Template '", template_name);
+                    msg = std.Concat(msg, "' expects ");
+                    msg = std.Concat(msg, std.FormatInt(len(*generics_vec)));
+                    msg = std.Concat(msg, " generic arguments but got ");
+                    msg = std.Concat(msg, std.FormatInt(len(args)));
+                    ctx[err].message = std.Clone(ctx, msg);
+                    res.tag = 1; // Err
+                    res.Err.error = err;
+                    (*env).active_monomorphizations.Remove(template_name);
+                    return res;
+                }
 
             mut substitution_map: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
             mut i := 0;
