@@ -1,9 +1,0 @@
-{
-  "summary": "test(e2e): add test_e2e_unordered_adt_compilation to verify topological sorting of enums and structs",
-  "files": [
-    {
-      "file_path": "tests/e2e_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    // Clean up temporary files\n    let _ = std::fs::remove_file(&gust_v2_c_path);\n    let _ = std::fs::remove_file(&gust_v2_bin_path);\n    let _ = std::fs::remove_file(&gust_v3_c_path);\n    let _ = std::fs::remove_file(&gust_v3_bin_path);\n}\n=======\n    // Clean up temporary files\n    let _ = std::fs::remove_file(&gust_v2_c_path);\n    let _ = std::fs::remove_file(&gust_v2_bin_path);\n    let _ = std::fs::remove_file(&gust_v3_c_path);\n    let _ = std::fs::remove_file(&gust_v3_bin_path);\n}\n\n#[test]\nfn test_e2e_unordered_adt_compilation() {\n    let source = \"\n        type AOuter enum {\n            VariantA { val: ZInner }\n        }\n        type ZInner struct {\n            x: int\n        }\n        type ZOuter enum {\n            VariantA { val: AInner }\n        }\n        type AInner struct {\n            x: int\n        }\n        func main() {\n            mut o1: AOuter;\n            o1.tag = 0; // VariantA\n            o1.VariantA.val.x = 42;\n            os.LogInt(o1.VariantA.val.x);\n\n            mut o2: ZOuter;\n            o2.tag = 0; // VariantA\n            o2.VariantA.val.x = 84;\n            os.LogInt(o2.VariantA.val.x);\n        }\n    \";\n    run_e2e_test(source, \"42\\n84\");\n}\n>>>>>>> REPLACE"
-    }
-  ]
-}
