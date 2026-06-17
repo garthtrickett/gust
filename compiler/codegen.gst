@@ -1203,15 +1203,16 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut task_func_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[task_func_expr_idx] = (*args_vec)[0];
                 mut raw_func_name := codegen_generate_expression(task_func_expr_idx, env, ctx);
+                mut resolved_raw_func_name := typechecker.env_resolve_namespaced_ident(env, raw_func_name, ctx);
                 
                 mut thread_func_name := "";
                 mut i := 0;
-                while i < len(raw_func_name) {
-                    mut b := std.str_byte_at(raw_func_name, i);
+                while i < len(resolved_raw_func_name) {
+                    mut b := std.str_byte_at(resolved_raw_func_name, i);
                     if b == 46 { // '.'
                         thread_func_name = std.Concat(thread_func_name, "_");
                     } else {
-                        mut char_slice := std.str_slice(raw_func_name, i, i + 1);
+                        mut char_slice := std.str_slice(resolved_raw_func_name, i, i + 1);
                         thread_func_name = std.Concat(thread_func_name, char_slice);
                     }
                     i = i + 1;
@@ -1446,14 +1447,15 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 return std.Clone(ctx, res);
             }
 
+            mut resolved_func := typechecker.env_resolve_namespaced_ident(env, func_str, ctx);
             mut c_func := "";
             mut i := 0;
-            while i < len(func_str) {
-                mut b := std.str_byte_at(func_str, i);
+            while i < len(resolved_func) {
+                mut b := std.str_byte_at(resolved_func, i);
                 if b == 46 { // '.'
                     c_func = std.Concat(c_func, "_");
                 } else {
-                    mut char_slice := std.str_slice(func_str, i, i + 1);
+                    mut char_slice := std.str_slice(resolved_func, i, i + 1);
                     c_func = std.Concat(c_func, char_slice);
                 }
                 i = i + 1;
