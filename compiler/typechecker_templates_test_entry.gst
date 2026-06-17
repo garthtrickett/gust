@@ -202,4 +202,16 @@ func main() {
     os.LogInt(len(parsed_args)); // Expected: 2
     os.LogStr(ast.serialize_type(parsed_args[0], ctx)); // Expected: Int
     os.LogStr(ast.serialize_type(parsed_args[1], ctx)); // Expected: Struct("ctx", None)
+
+    // Test 11: Verify fallback monomorphization on env_resolve_type (Phase 2 Step 2 Fix)
+    mut t_test := typechecker.make_type_struct("std_GraphNode_int_ctx", "", ctx);
+    mut resolved_test := typechecker.env_resolve_type(&env, t_test, ctx);
+    os.LogStr(resolved_test.Struct.struct_name); // Expected: std_GraphNode_int_ctx
+    
+    mut layout_test_lookup := env.struct_registry.Get("std_GraphNode_int_ctx");
+    if layout_test_lookup.Ok {
+        os.LogStr("std_GraphNode_int_ctx successfully registered!");
+    } else {
+        os.LogStr("std_GraphNode_int_ctx registration failed!");
+    }
 }

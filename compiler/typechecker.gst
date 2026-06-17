@@ -2598,6 +2598,82 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                 }
                 mut log_msg := std.Format('env_resolve_type Struct: name=%s, brand=%s', namespaced_name, brand_name);
                 typechecker_log_trace('📥', log_msg, ctx);
+
+                mut exists := (*env).struct_registry.Get(namespaced_name).Ok;
+                if exists == 0 {
+                    mut s_keys := (*env).struct_templates.Keys(ctx);
+                    mut matched := 0;
+                    mut matched_val: ast.Type[ctx];
+                    
+                    mut k_idx := 0;
+                    while k_idx < len(s_keys) && matched == 0 {
+                        mut tmpl_name := s_keys[k_idx];
+                        mut prefix := "";
+                        mut j := 0;
+                        while j < len(tmpl_name) {
+                            mut b := std.str_byte_at(tmpl_name, j);
+                            if b == 46 { // '.'
+                                prefix = std.Concat(prefix, "_");
+                            } else {
+                                prefix = std.Concat(prefix, std.str_slice(tmpl_name, j, j + 1));
+                            }
+                            j = j + 1;
+                        }
+                        prefix = std.Concat(prefix, "_");
+                        
+                        if len(namespaced_name) >= len(prefix) {
+                            mut pfx_part := std.str_slice(namespaced_name, 0, len(prefix));
+                            if std.str_eq(pfx_part, prefix) {
+                                mut suffix := std.str_slice(namespaced_name, len(prefix), len(namespaced_name));
+                                mut parsed_args := parse_types_from_suffix(env, suffix, ctx);
+                                mut mono_res := monomorphize(env, tmpl_name, parsed_args, ctx);
+                                if mono_res.tag == 0 { // Ok
+                                    matched_val = mono_res.Ok.val;
+                                    matched = 1;
+                                }
+                            }
+                        }
+                        k_idx = k_idx + 1;
+                    }
+                    
+                    if matched == 0 {
+                        mut e_keys := (*env).enum_templates.Keys(ctx);
+                        mut ek_idx := 0;
+                        while ek_idx < len(e_keys) && matched == 0 {
+                            mut tmpl_name := e_keys[ek_idx];
+                            mut prefix := "";
+                            mut j := 0;
+                            while j < len(tmpl_name) {
+                                mut b := std.str_byte_at(tmpl_name, j);
+                                if b == 46 { // '.'
+                                    prefix = std.Concat(prefix, "_");
+                                } else {
+                                    prefix = std.Concat(prefix, std.str_slice(tmpl_name, j, j + 1));
+                                }
+                                j = j + 1;
+                            }
+                            prefix = std.Concat(prefix, "_");
+                            
+                            if len(namespaced_name) >= len(prefix) {
+                                if std.str_eq(std.str_slice(namespaced_name, 0, len(prefix)), prefix) {
+                                    mut suffix := std.str_slice(namespaced_name, len(prefix), len(namespaced_name));
+                                    mut parsed_args := parse_types_from_suffix(env, suffix, ctx);
+                                    mut mono_res := monomorphize(env, tmpl_name, parsed_args, ctx);
+                                    if mono_res.tag == 0 { // Ok
+                                        matched_val = mono_res.Ok.val;
+                                        matched = 1;
+                                    }
+                                }
+                            }
+                            ek_idx = ek_idx + 1;
+                        }
+                    }
+                    
+                    if matched == 1 {
+                        matched_val.Struct.brand = t.Struct.brand;
+                        return matched_val;
+                    }
+                }
                 
                 if t.Struct.brand != empty[Index[str, ctx]] {
                     mut has_template := 0;
