@@ -1123,6 +1123,16 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
         mut part := parts[idx];
         *start_idx = idx + 1;
 
+        mut clean_part := part;
+        mut at_idx := std.str_find(clean_part, "@");
+        while at_idx != 0 - 1 {
+            mut left := std.str_slice(clean_part, 0, at_idx);
+            mut right := std.str_slice(clean_part, at_idx + 1, len(clean_part));
+            clean_part = std.Concat(std.Concat(left, "__"), right);
+            at_idx = std.str_find(clean_part, "@");
+        }
+        part = clean_part;
+
         if std.str_eq(part, "int") {
             return make_type_int();
         }
