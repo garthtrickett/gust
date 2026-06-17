@@ -3020,17 +3020,26 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
             mut p := 0;
             while p < len(prefixes) {
                 mut prefix := prefixes[p];
+                mut base_name := std.str_slice(prefix, 0, len(prefix) - 1);
+                
                 mut is_prefix1 := 0;
                 if len(name1) >= len(prefix) { 
                     if std.str_eq(std.str_slice(name1, 0, len(prefix)), prefix) {
                         is_prefix1 = 1;
                     }
                 }
+                if std.str_eq(name1, base_name) {
+                    is_prefix1 = 1;
+                }
+                
                 mut is_prefix2 := 0;
                 if len(name2) >= len(prefix) {
                     if std.str_eq(std.str_slice(name2, 0, len(prefix)), prefix) {
                         is_prefix2 = 1;
                     }
+                }
+                if std.str_eq(name2, base_name) {
+                    is_prefix2 = 1;
                 }
 
                 if is_prefix1 == 1 && is_prefix2 == 1 {
