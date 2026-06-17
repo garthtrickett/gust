@@ -21,6 +21,19 @@ func main() {
     }
     os.LogInt(len(c.current_params)); // Expected: 0
 
+    // Test Step 1 Skip List
+    if codegen.codegen_should_skip_fwd_decl("std.Clone") == 1 {
+        os.LogStr("std.Clone correctly flagged as intrinsic");
+    } else {
+        os.LogStr("std.Clone NOT flagged as intrinsic");
+    }
+
+    if codegen.codegen_should_skip_fwd_decl("my_user_func") == 0 {
+        os.LogStr("my_user_func correctly not flagged as intrinsic");
+    } else {
+        os.LogStr("my_user_func incorrectly flagged as intrinsic");
+    }
+
     // Test Step 2: Statement Traversal Tracking
     // Parse a function declaration with parameters
     mut l_func_test: lexer.Lexer[ctx];
