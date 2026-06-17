@@ -13,7 +13,13 @@ func main() {
     mut env := typechecker.env_new(ctx);
     
     mut c: codegen.Codegen[ctx];
-    codegen.init_codegen(&c, &env);
+    codegen.init_codegen(&c, &env, ctx);
+
+    // Assert empty state for Step 1
+    if std.str_eq(c.current_alloc_struct, "") {
+        os.LogStr("current_alloc_struct is initialized empty");
+    }
+    os.LogInt(len(c.current_params)); // Expected: 0
 
     // 1. Test primitive types
     mut t_int: ast.Type[ctx];

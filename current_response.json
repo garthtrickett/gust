@@ -1,0 +1,13 @@
+{
+  "summary": "refactor: add state tracking fields to self-hosted Codegen struct (Step 1)",
+  "files": [
+    {
+      "file_path": "compiler/codegen.gst",
+      "code_diff": "<<<<<<< SEARCH\ntype Codegen[ctx] struct {\n    env: &typechecker.TypeEnvironment[ctx]\n}\n\nfunc init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx]) {\n    unsafe {\n        (*c).env = env;\n    }\n}\n=======\ntype Codegen[ctx] struct {\n    env: &typechecker.TypeEnvironment[ctx],\n    current_alloc_struct: str,\n    current_params: std.Vector[str, ctx]\n}\n\nfunc init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) {\n    unsafe {\n        (*c).env = env;\n        (*c).current_alloc_struct = \"\";\n        (*c).current_params = std.VectorNew(ctx);\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "compiler/codegen_initializer_test_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    os.SetThreadScratch(ctx);\n\n    mut env := typechecker.env_new(ctx);\n    \n    mut c: codegen.Codegen[ctx];\n    codegen.init_codegen(&c, &env);\n\n    // 1. Test primitive types\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    os.SetThreadScratch(ctx);\n\n    mut env := typechecker.env_new(ctx);\n    \n    mut c: codegen.Codegen[ctx];\n    codegen.init_codegen(&c, &env, ctx);\n\n    // Assert empty state for Step 1\n    if std.str_eq(c.current_alloc_struct, \"\") {\n        os.LogStr(\"current_alloc_struct is initialized empty\");\n    }\n    os.LogInt(len(c.current_params)); // Expected: 0\n\n    // 1. Test primitive types\n>>>>>>> REPLACE"
+    }
+  ]
+}

@@ -4,12 +4,16 @@ import "errors.gst" as errors;
 import "typechecker.gst" as typechecker;
 
 type Codegen[ctx] struct {
-    env: &typechecker.TypeEnvironment[ctx]
+    env: &typechecker.TypeEnvironment[ctx],
+    current_alloc_struct: str,
+    current_params: std.Vector[str, ctx]
 }
 
-func init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx]) {
+func init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) {
     unsafe {
         (*c).env = env;
+        (*c).current_alloc_struct = "";
+        (*c).current_params = std.VectorNew(ctx);
     }
 }
 
