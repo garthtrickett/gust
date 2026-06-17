@@ -5061,6 +5061,162 @@ fn test_e2e_recursive_branded_linked_list() {
 }
 
 #[test]
+fn test_namespaced_template_cross_module_matching() {
+    gust_lexer::init_logging();
+    use std::fs;
+    let temp_dir = env::temp_dir().join("gust_test_e2e_transitive_matching");
+    let _ = fs::remove_dir_all(&temp_dir);
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    let app_path = temp_dir.join("app.gst");
+    let lib_path = temp_dir.join("lib.gst");
+    let core_path = temp_dir.join("core.gst");
+
+    // Write core.gst
+    fs::write(
+        &core_path,
+        "
+        type CoreNode[ctx] struct {
+            id: int
+        }
+        func make_core_node(ctx: &Arena) Index[CoreNode, ctx] {
+            mut n: Index[CoreNode, ctx] := os.ArenaAlloc(ctx);
+            ctx[n].id = 100;
+            return n;
+        }
+        ",
+    )
+    .unwrap();
+
+    // Write lib.gst
+    fs::write(
+        &lib_path,
+        "
+        import \"core.gst\" as core;
+        type Container[T, ctx] struct {
+            val: T,
+            node: Index[core.CoreNode, ctx]
+        }
+        func make_container(ctx: &Arena, val: int) Container[int, ctx] {
+            mut c: Container[int, ctx];
+            c.val = val;
+            c.node = core.make_core_node(ctx);
+            return c;
+        }
+        ",
+    )
+    .unwrap();
+
+    // Write app.gst
+    fs::write(
+        &app_path,
+        "
+        import \"lib.gst\" as lib;
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            os.SetThreadScratch(ctx);
+
+            mut c: lib.Container[int, ctx] := lib.make_container(ctx, 42);
+            os.LogInt(c.val);
+            os.LogInt(ctx[c.node].id);
+        }
+        ",
+    )
+    .unwrap();
+
+    // Resolve modules recursively
+    let resolver = gust_lexer::resolver::ModuleResolver::new();
+    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    let res = resolver.resolve(&app_path, &fs_impl);
+    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+
+    let (order, mut modules) = res.unwrap();
+    assert_eq!(order.len(), 3);
+
+    // Namespaced typechecking
+    let mut checker = TypeChecker::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            let stem = path.file_stem().unwrap().to_str().unwrap();
+            let is_entry = path == order.last().unwrap();
+            let prefix = if is_entry {
+                "".to_string()
+            } else {
+                format!("{}__", stem)
+            };
+            let check_res = checker.check_module(&module.program, &prefix);
+            assert!(
+                check_res.is_ok(),
+                "Typechecking failed on {:?}: {:?}",
+                path,
+                check_res.err()
+            );
+        } 
+    }
+
+    // Group statements for codegen
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get_mut(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        } 
+    }
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let c_code = codegen.generate(&modules_for_codegen);
+
+    // Compile and run C code
+    let c_filename = "gust_e2e_transitive_output.c";
+    let bin_filename = "gust_e2e_transitive_output.bin";
+    let c_path = temp_dir.join(c_filename);
+    let bin_path = temp_dir.join(bin_filename);
+
+    fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() { 
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Failed to run compiler command");
+
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = Command::new(&bin_path)
+        .output()
+        .expect("Failed to run output binary");
+
+    // Clean up temporary files
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+    let _ = fs::remove_file(&app_path);
+    let _ = fs::remove_file(&lib_path);
+    let _ = fs::remove_file(&core_path);
+    let _ = fs::remove_dir_all(temp_dir);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert_eq!(stdout_str.trim(), "42\n100");
+}
+
+#[test]
 fn test_self_hosted_type_dump_consistency() {
     gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();
