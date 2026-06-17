@@ -58,6 +58,25 @@ func main() {
         env.current_alloc_struct = "";
     }
 
+    // Test Step 4: Refit ctx Pointer-vs-Value Resolution
+    unsafe {
+        // Case A: ctx is a parameter (should transpile to "ctx" without "&")
+        env.current_params.Clear();
+        env.current_params.Push("ctx");
+        
+        mut output_c_param := codegen.codegen_generate_expression(expr_alloc_test, &env, ctx);
+        os.LogStr(output_c_param); // Expected: os_ArenaAlloc(ctx, sizeof(SessionNode))
+        
+        // Case B: ctx is NOT a parameter, but a global/local variable of type Arena (should transpile to "&ctx")
+        env.current_params.Clear();
+        mut t_arena: ast.Type[ctx];
+        t_arena.tag = 4; // Arena
+        env.variable_types.Insert("ctx", t_arena);
+        
+        mut output_c_val := codegen.codegen_generate_expression(expr_alloc_test, &env, ctx);
+        os.LogStr(output_c_val); // Expected: os_ArenaAlloc(&ctx, sizeof(SessionNode))
+    }
+
     // 1. Test primitive types
     mut t_int: ast.Type[ctx];
     t_int.tag = 0; // Int
