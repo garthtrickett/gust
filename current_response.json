@@ -1,9 +1,0 @@
-{
-  "summary": "feat(typechecker): temporarily suspend monomorphization cycle checks during pointer/slice generic substitutions",
-  "files": [
-    {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n        } else if t.tag == 9 { // RawPointer\n            mut inner := ctx[t.RawPointer.inner];\n            mut sub_inner := substitute_generics(env, inner, map, ctx);\n            res_type = make_type_pointer(sub_inner, ctx);\n        } else if t.tag == 6 { // Slice\n            mut inner := ctx[t.Slice.inner];\n            mut sub_inner := substitute_generics(env, inner, map, ctx);\n            mut s: ast.Type[ctx];\n            s.tag = 6; // Slice\n            s.Slice.inner = os.ArenaAlloc(ctx);\n            ctx[s.Slice.inner] = sub_inner;\n            res_type = s;\n        } else if t.tag == 10 { // Generic\n=======\n        } else if t.tag == 9 { // RawPointer\n            mut inner := ctx[t.RawPointer.inner];\n\n            mut temp_active := (*env).active_monomorphizations;\n            (*env).active_monomorphizations = std.HashMapNew(ctx);\n\n            mut sub_inner := substitute_generics(env, inner, map, ctx);\n\n            (*env).active_monomorphizations = temp_active;\n\n            res_type = make_type_pointer(sub_inner, ctx);\n        } else if t.tag == 6 { // Slice\n            mut inner := ctx[t.Slice.inner];\n\n            mut temp_active := (*env).active_monomorphizations;\n            (*env).active_monomorphizations = std.HashMapNew(ctx);\n\n            mut sub_inner := substitute_generics(env, inner, map, ctx);\n\n            (*env).active_monomorphizations = temp_active;\n\n            mut s: ast.Type[ctx];\n            s.tag = 6; // Slice\n            s.Slice.inner = os.ArenaAlloc(ctx);\n            ctx[s.Slice.inner] = sub_inner;\n            res_type = s;\n        } else if t.tag == 10 { // Generic\n>>>>>>> REPLACE"
-    }
-  ]
-}
