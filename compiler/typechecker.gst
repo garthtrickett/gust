@@ -902,14 +902,26 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
     unsafe {
         mut final_span := get_expression_span(expr_idx, ctx);
         mut prefix := (*env).current_prefix;
-        mut inner_lookup := (*env).resolved_types_nested.Get(prefix);
+        
         mut inner_map_idx : Index[std.HashMap[int, ast.Type[ctx], ctx], ctx] := empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]];
-        if inner_lookup.Ok {
-            inner_map_idx = inner_lookup.Val;
-        } else {
+        mut i := 0;
+        while i < len((*env).resolved_types_nested) {
+            mut entry := (*env).resolved_types_nested[i];
+            if std.str_eq(entry.prefix, prefix) {
+                inner_map_idx = entry.map_idx;
+                i = len((*env).resolved_types_nested);
+            }
+            i = i + 1;
+        }
+        
+        if inner_map_idx == empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]] {
             inner_map_idx = os.ArenaAlloc(ctx) as Index[std.HashMap[int, ast.Type[ctx], ctx], ctx];
             ctx[inner_map_idx] = std.HashMapNew(ctx);
-            (*env).resolved_types_nested.Insert(std.Clone(ctx, prefix), inner_map_idx);
+            
+            mut entry: PrefixMapEntry[ctx];
+            entry.prefix = std.Clone(ctx, prefix);
+            entry.map_idx = inner_map_idx;
+            (*env).resolved_types_nested.Push(entry);
         }
         ctx[inner_map_idx].Insert(final_span.start.offset, t);
     }
@@ -996,13 +1008,18 @@ func scope_lookup(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) ast.Typ
     }
 }
 
+type PrefixMapEntry[ctx] struct {
+    prefix: str,
+    map_idx: Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]
+}
+
 type TypeEnvironment[ctx] struct {
     struct_registry: std.HashMap[str, StructLayout[ctx], ctx],
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
-    resolved_types_nested: std.HashMap[str, Index[std.HashMap[int, ast.Type[ctx], ctx], ctx], ctx],
+    resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
     current_prefix: str,
     imports: std.HashMap[str, str, ctx],
@@ -2388,7 +2405,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].enum_templates = std.HashMapNew(ctx);
         ctx[env_idx].function_registry = std.HashMapNew(ctx);
         ctx[env_idx].variable_types = std.HashMapNew(ctx);
-        ctx[env_idx].resolved_types_nested = std.HashMapNew(ctx);
+        ctx[env_idx].resolved_types_nested = std.VectorNew(ctx);
         ctx[env_idx].enum_registry = std.HashMapNew(ctx);
         ctx[env_idx].current_prefix = "";
         ctx[env_idx].imports = std.HashMapNew(ctx);

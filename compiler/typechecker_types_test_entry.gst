@@ -153,28 +153,24 @@ func main() {
         mut var_decl := (*body_stmts)[0];
         
         mut span := var_decl.VarDecl.span;
-        mut outer_lookup := env.resolved_types_nested.Get("");
-        mut lookup_resolved_ok := 0;
-        mut lookup_resolved_val: ast.Type[ctx];
-        if outer_lookup.Ok {
-            mut inner_map_idx := outer_lookup.Val;
-            mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
-            if inner_lookup.Ok {
-                t_var = inner_lookup.Val; // Wait! Local variable name is lookup_resolved or t_var? Let's assign lookup_resolved.Val directly below
-                lookup_resolved_val := inner_lookup.Val;
-                lookup_resolved_ok := 1;
+        
+        mut inner_map_idx : Index[std.HashMap[int, ast.Type[ctx], ctx], ctx] := empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]];
+        mut i := 0;
+        while i < len(env.resolved_types_nested) {
+            mut entry := env.resolved_types_nested[i];
+            if std.str_eq(entry.prefix, "") {
+                inner_map_idx = entry.map_idx;
+                i = len(env.resolved_types_nested);
             }
+            i = i + 1;
         }
         
         mut lookup_resolved_ok := 0;
         mut lookup_resolved_val: ast.Type[ctx];
-        mut outer_lookup := env.resolved_types_nested.Get("");
-        if outer_lookup.Ok {
-            mut inner_map_idx := outer_lookup.Val;
+        if inner_map_idx != empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]] {
             mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
             if inner_lookup.Ok {
                 lookup_resolved_val = inner_lookup.Val;
-                for_comparison_resolved_types := lookup_resolved_val;
                 lookup_resolved_ok = 1;
             }
         }

@@ -174,9 +174,19 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
         }
         mut span := codegen_get_expression_span(expr_idx, ctx);
         mut prefix := (*env).current_prefix;
-        mut outer_lookup := (*env).resolved_types_nested.Get(prefix);
-        if outer_lookup.Ok {
-            mut inner_map_idx := outer_lookup.Val;
+        
+        mut inner_map_idx : Index[std.HashMap[int, ast.Type[ctx], ctx], ctx] := empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]];
+        mut i := 0;
+        while i < len((*env).resolved_types_nested) {
+            mut entry := (*env).resolved_types_nested[i];
+            if std.str_eq(entry.prefix, prefix) {
+                inner_map_idx = entry.map_idx;
+                i = len((*env).resolved_types_nested);
+            }
+            i = i + 1;
+        }
+        
+        if inner_map_idx != empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]] {
             mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
             if inner_lookup.Ok {
                 return inner_lookup.Val;
@@ -1519,10 +1529,20 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     mut t_var: ast.Type[ctx];
                     mut span := ctx[stmt_idx].VarDecl.span;
                     mut prefix := (*env).current_prefix;
-                    mut outer_lookup := (*env).resolved_types_nested.Get(prefix);
+                    
+                    mut inner_map_idx : Index[std.HashMap[int, ast.Type[ctx], ctx], ctx] := empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]];
+                    mut i := 0;
+                    while i < len((*env).resolved_types_nested) {
+                        mut entry := (*env).resolved_types_nested[i];
+                        if std.str_eq(entry.prefix, prefix) {
+                            inner_map_idx = entry.map_idx;
+                            i = len((*env).resolved_types_nested);
+                        }
+                        i = i + 1;
+                    }
+                    
                     mut found := 0;
-                    if outer_lookup.Ok {
-                        mut inner_map_idx := outer_lookup.Val;
+                    if inner_map_idx != empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]] {
                         mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
                         if inner_lookup.Ok {
                             t_var = inner_lookup.Val;
