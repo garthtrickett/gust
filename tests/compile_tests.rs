@@ -5902,6 +5902,44 @@ fn test_nested_generic_type_mismatch_rejected() {
 }
 
 #[test]
+fn test_recursive_branded_linked_list_propagation() {
+    let source = "
+        type ListNode[ctx] struct {
+            val: int,
+            next: Index[ListNode, ctx]
+        }
+
+        func process_list(ctx: &Arena, head: Index[ListNode, ctx]) int {
+            mut curr := head;
+            mut sum := 0;
+            while curr != null {
+                sum = sum + ctx[curr].val;
+                curr = ctx[curr].next;
+            }
+            return sum;
+        }
+
+        func main() {
+            mut c := os.Arena.New();
+            defer c.Free();
+
+            mut n1: Index[ListNode, c] := os.ArenaAlloc(c);
+            c[n1].val = 10;
+
+            mut n2: Index[ListNode, c] := os.ArenaAlloc(c);
+            c[n2].val = 20;
+
+            c[n1].next = n2;
+            c[n2].next = null;
+
+            mut total := process_list(c, n1);
+            os.LogInt(total);
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
+
+#[test]
 fn test_cross_module_template_namespacing_isolation() {
     use std::fs;
     let temp_dir = std::env::temp_dir().join("gust_test_namespaced_isolation");

@@ -5008,6 +5008,7 @@ fn test_self_hosted_compiler_full_bootstrap() {
     let c_output_v4 = filter_output_c_code(&c_output_v4_raw);
 
     // 4. Assert that c_output_v3 and c_output_v4 are 100% byte-for-byte identical (Fixed-Point Convergence!)
+    // Assert that c_output_v3 and c_output_v4 are 100% byte-for-byte identical (Fixed-Point Convergence!)
     assert_eq!(
         c_output_v3.trim(),
         c_output_v4.trim(),
@@ -5019,6 +5020,44 @@ fn test_self_hosted_compiler_full_bootstrap() {
     let _ = std::fs::remove_file(&gust_v2_bin_path);
     let _ = std::fs::remove_file(&gust_v3_c_path);
     let _ = std::fs::remove_file(&gust_v3_bin_path);
+}
+
+#[test]
+fn test_e2e_recursive_branded_linked_list() {
+    let source = "
+        type ListNode[ctx] struct {
+            val: int,
+            next: Index[ListNode, ctx]
+        }
+
+        func process_list(ctx: &Arena, head: Index[ListNode, ctx]) int {
+            mut curr := head;
+            mut sum := 0;
+            while curr != null {
+                sum = sum + ctx[curr].val;
+                curr = ctx[curr].next;
+            }
+            return sum;
+        }
+
+        func main() {
+            mut c := os.Arena.New();
+            defer c.Free();
+
+            mut n1: Index[ListNode, c] := os.ArenaAlloc(c);
+            c[n1].val = 10;
+
+            mut n2: Index[ListNode, c] := os.ArenaAlloc(c);
+            c[n2].val = 20;
+
+            c[n1].next = n2;
+            c[n2].next = null;
+
+            mut total := process_list(c, n1);
+            os.LogInt(total);
+        }
+    ";
+    run_e2e_test(source, "30");
 }
 
 #[test]

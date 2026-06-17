@@ -183,4 +183,17 @@ func main() {
 
     mut is_match := typechecker.types_match(t_outer_int, t_outer_bool, ctx);
     os.LogInt(is_match); // Expected: 0
+
+    // Test 9: Verify field brand propagation
+    mut t_parent := typechecker.make_type_struct("SessionNode", "my_brand", ctx);
+    mut layout_lookup := env.struct_registry.Get("SessionNode");
+    if layout_lookup.Ok {
+        mut layout := layout_lookup.Val;
+        mut field_lookup := layout.fields.Get("Next");
+        if field_lookup.Ok {
+            mut field_type := field_lookup.Val;
+            mut sub_field := typechecker.typechecker_substitute_field_brand(field_type, t_parent.Struct.brand, "n", layout, ctx);
+            os.LogStr(ast.serialize_type(sub_field, ctx)); // Expected: Index("SessionNode", Some("my_brand"))
+        }
+    }
 }
