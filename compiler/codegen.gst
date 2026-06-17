@@ -383,7 +383,7 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut j := 0;
             while j < len((*entry_ref).types) {
                 mut t_entry := (*entry_ref).types[j];
-                if t_entry.offset == span.start.offset {
+                if t_entry.start_offset == span.start.offset && t_entry.end_offset == span.end.offset {
                     return t_entry.val_type;
                 }
                 j = j + 1;
@@ -1102,15 +1102,50 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         res = std.Concat(res, ")");
                         return std.Clone(ctx, res);
                     }
+
+
                     if std.str_eq(right_name, "Keys") {
-                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Keys FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx[arg0_idx] = (*args_vec)[0];
                         mut ctx_str := codegen_generate_expression(arg0_idx, env, ctx);
-                        
+
                         mut expr_type := codegen_get_expression_type(expr_idx, env, ctx);
-                        mut vec_type_str := codegen_get_c_type(expr_type, env, ctx);
+                        mut vec_type_str := "";
+                        if expr_type.tag == 3 { // Void - fallback
+                            mut key_type_ident := "int";
+                            if lookup_struct.Ok {
+                                mut layout := lookup_struct.Val;
+                                mut keys_type_lookup := layout.fields.Get("keys");
+                                if keys_type_lookup.Ok {
+                                    mut keys_type := keys_type_lookup.Val;
+                                    if keys_type.tag == 9 { // RawPointer
+                                        mut key_elem_type := ctx[keys_type.RawPointer.inner];
+                                        key_type_ident = codegen_get_c_type_ident(key_elem_type, env, ctx);
+                                    }
+                                }
+                            }
+                            mut brand_name := "ctx";
+                            mut arg0_type := codegen_get_expression_type(arg0_idx, env, ctx);
+                            if arg0_type.tag == 8 { // Struct
+                                brand_name = arg0_type.Struct.struct_name;
+                            } else if arg0_type.tag == 9 { // RawPointer
+                                mut inner_t := ctx[arg0_type.RawPointer.inner];
+                                if inner_t.tag == 8 {
+                                    brand_name = inner_t.Struct.struct_name;
+                                }
+                            }
+                            if std.str_eq(brand_name, "Arena") == 1 || std.str_eq(brand_name, "os_Arena") == 1 {
+                                brand_name = "ctx";
+                            }
+                            vec_type_str = std.Concat("std_Vector_", key_type_ident);
+                            vec_type_str = std.Concat(vec_type_str, "_");
+                            vec_type_str = std.Concat(vec_type_str, brand_name);
+                        } else {
+                            vec_type_str = codegen_get_c_type(expr_type, env, ctx);
+                        }
+
+                    
                         
                         mut is_ctx_ptr := 0;
                         mut arg0_expr := ctx[arg0_idx];

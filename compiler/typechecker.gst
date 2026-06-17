@@ -34,7 +34,8 @@ type EnumTemplate[ctx] struct {
 }
 
 type ResolvedTypeEntry[ctx] struct {
-    offset: int,
+    start_offset: int,
+    end_offset: int,
     val_type: ast.Type[ctx]
 }
 
@@ -986,7 +987,8 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
 
         mut entry_ref := &(*env).resolved_types_nested[found_idx];
         mut type_entry: ResolvedTypeEntry[ctx];
-        type_entry.offset = final_span.start.offset;
+        type_entry.start_offset = final_span.start.offset;
+        type_entry.end_offset = final_span.end.offset;
         type_entry.val_type = t;
         (*entry_ref).types.Push(type_entry);
     }
@@ -3999,7 +4001,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                             mut entry_ref := &(*env).resolved_types_nested[found_idx];
                             mut type_entry: ResolvedTypeEntry[ctx];
-                            type_entry.offset = stmt.VarDecl.span.start.offset;
+                            type_entry.start_offset = stmt.VarDecl.span.start.offset;
+                            type_entry.end_offset = stmt.VarDecl.span.end.offset;
                             type_entry.val_type = val_type;
                             (*entry_ref).types.Push(type_entry);
 
