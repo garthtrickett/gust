@@ -154,12 +154,12 @@ func main() {
         
         mut span := var_decl.VarDecl.span;
         
-        mut inner_map_idx : Index[std.HashMap[int, ast.Type[ctx], ctx], ctx] := empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]];
+        mut found_idx := 0 - 1;
         mut i := 0;
         while i < len(env.resolved_types_nested) {
             mut entry := env.resolved_types_nested[i];
             if std.str_eq(entry.prefix, "") {
-                inner_map_idx = entry.map_idx;
+                found_idx = i;
                 i = len(env.resolved_types_nested);
             }
             i = i + 1;
@@ -167,11 +167,17 @@ func main() {
         
         mut lookup_resolved_ok := 0;
         mut lookup_resolved_val: ast.Type[ctx];
-        if inner_map_idx != empty[Index[std.HashMap[int, ast.Type[ctx], ctx], ctx]] {
-            mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
-            if inner_lookup.Ok {
-                lookup_resolved_val = inner_lookup.Val;
-                lookup_resolved_ok = 1;
+        if found_idx != 0 - 1 {
+            mut entry_ref := &env.resolved_types_nested[found_idx];
+            mut j := 0;
+            while j < len((*entry_ref).types) {
+                mut t_entry := (*entry_ref).types[j];
+                if t_entry.offset == span.start.offset { 
+                    lookup_resolved_val = t_entry.val_type;
+                    lookup_resolved_ok = 1;
+                    j = len((*entry_ref).types);
+                }
+                j = j + 1;
             }
         }
         
