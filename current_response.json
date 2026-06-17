@@ -1,9 +1,0 @@
-{
-  "summary": "test: create e2e_definite_check_compound.gst for compound definite-check E2E validation",
-  "files": [
-    {
-      "file_path": "tests/e2e_definite_check_compound.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype CustomNode struct {\n    SessionID: int\n}\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    os.SetThreadScratch(ctx);\n\n    mut map: std.HashMap[int, CustomNode, ctx] := std.HashMapNew(ctx);\n    \n    mut node: CustomNode;\n    node.SessionID = 1337;\n    map.Insert(42, node);\n\n    mut lookup := map.Get(42);\n    mut cond := true;\n    if cond && lookup.Ok {\n        os.LogInt(lookup.Val.SessionID);\n    } else {\n        os.LogInt(0);\n    }\n}\n>>>>>>> REPLACE"
-    }
-  ]
-}
