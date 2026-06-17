@@ -144,6 +144,28 @@ func main() {
         os.LogStr("variable_types lookup failed");
     }
 
+    // Verify that the variable declaration is registered in resolved_types (Phase 1 Fix)
+    unsafe {
+        mut statements_vec := &ctx[prog3.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut main_decl := (*statements_vec)[1];
+        mut body_idx := main_decl.FunctionDecl.body;
+        mut body_stmts := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut var_decl := (*body_stmts)[0];
+        
+        mut span := var_decl.VarDecl.span;
+        mut lookup_resolved := env.resolved_types.Get(span.start.offset);
+        if lookup_resolved.Ok {
+            os.LogStr("resolved_types lookup ok!");
+            if typechecker.types_match(typechecker.make_type_int(), lookup_resolved.Val, ctx) == 1 {
+                os.LogStr("resolved_types type is Int ok!");
+            } else {
+                os.LogStr("resolved_types type mismatch!");
+            }
+        } else {
+            os.LogStr("resolved_types lookup failed!");
+        }
+    }
+
     mut lookup_enum := env.enum_registry.Get("Status");
     if lookup_enum.Ok {
         os.LogStr(std.Concat("enum_registry lookup ok, variants count: ", std.FormatInt(len(lookup_enum.Val))));
@@ -224,51 +246,4 @@ func main() {
     } else {
         os.LogStr("Cycle Detection FAIL: Pointer-indirected Loop2 rejected");
     }
-}
-import std;
-import os;
-import lexer;
-import parser;
-import ast;
-import typechecker;
-import token;
-import errors;
-
-func main() {
-    mut ctx := os.Arena_New();
-    os.SetThreadScratch(&ctx);
-
-    mut l: lexer.Lexer;
-    lexer.init_lexer(&l, "mut x: int := 10;");
-
-    mut p: parser.Parser;
-    parser.init_parser(&p, &l, &ctx);
-
-    mut stmt_idx := parser.parse_statement(&p, &ctx);
-    mut stmt := ctx[stmt_idx];
-
-    mut env := typechecker.env_new(&ctx);
-    mut scope := typechecker.scope_new(0xFFFFFFFF, &ctx);
-
-    mut res := typechecker.check_statement(stmt_idx, &env, scope, &ctx);
-    if res.Ok == 0 {
-        os.LogStr("Failed to typecheck statement\n");
-        return;
-    }
-
-    mut span := stmt.VarDecl.span;
-    mut lookup := env.resolved_types.Get(span.start.offset);
-
-    if lookup.Ok == 0 {
-        os.LogStr("Type not registered in resolved_types!\n");
-        return;
-    }
-
-    mut expected_type := typechecker.make_type_int();
-    if typechecker.types_match(expected_type, lookup.Val, &ctx) == 0 {
-        os.LogStr("Registered type is not int!\n");
-        return;
-    }
-
-    os.LogStr("Typechecker local variable registration test passed!\n");
 }
