@@ -221,48 +221,48 @@ impl TypeChecker {
     }
 
     fn extract_ok_checked_variable(expr: &Expression) -> HashSet<String> {
-    let mut results = HashSet::new();
-    match expr {
-        Expression::Selector { left, right, .. } => {
-            if right == "Ok" {
-                results.insert(expression_to_string(left));
-            }
-        }
-        Expression::Binary {
-            op, left, right, ..
-        } => {
-            if op == "&&" {
-                results.extend(extract_ok_checked_variable(left));
-                results.extend(extract_ok_checked_variable(right));
-            } else if op == "==" {
-                // Case: path.Ok == 1
-                if let Expression::Selector {
-                    left: sel_left,
-                    right: sel_right,
-                    ..
-                } = &**left
-                    && sel_right == "Ok"
-                    && let Expression::Integer(1, _) = &**right
-                {
-                    results.insert(expression_to_string(sel_left));
-                }
-                // Case: 1 == path.Ok
-                if let Expression::Selector {
-                    left: sel_left,
-                    right: sel_right,
-                    ..
-                } = &**right
-                    && sel_right == "Ok"
-                    && let Expression::Integer(1, _) = &**left
-                {
-                    results.insert(expression_to_string(sel_left));
+        let mut results = HashSet::new();
+        match expr {
+            Expression::Selector { left, right, .. } => {
+                if right == "Ok" {
+                    results.insert(expression_to_string(left));
                 }
             }
+            Expression::Binary {
+                op, left, right, ..
+            } => {
+                if op == "&&" {
+                    results.extend(Self::extract_ok_checked_variable(left));
+                    results.extend(Self::extract_ok_checked_variable(right));
+                } else if op == "==" {
+                    // Case: path.Ok == 1
+                    if let Expression::Selector {
+                        left: sel_left,
+                        right: sel_right,
+                        ..
+                    } = &**left
+                        && sel_right == "Ok"
+                        && let Expression::Integer(1, _) = &**right
+                    {
+                        results.insert(expression_to_string(sel_left));
+                    }
+                    // Case: 1 == path.Ok
+                    if let Expression::Selector {
+                        left: sel_left,
+                        right: sel_right,
+                        ..
+                    } = &**right
+                        && sel_right == "Ok"
+                        && let Expression::Integer(1, _) = &**left
+                    {
+                        results.insert(expression_to_string(sel_left));
+                    }
+                }
+            }
+            _ => {}
         }
-        _ => {}
+        results
     }
-    results
-}
 
     pub fn pre_register_std_functions(&mut self) {
         self.function_registry.insert(
