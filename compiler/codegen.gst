@@ -1620,6 +1620,14 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     p_type = sig_lookup.Val.params[0];
                 }
                 mut p_c_type := codegen_get_c_type(p_type, env, ctx);
+            if len(*params_vec) == 1 {
+                codegen_log_trace("👁️", std.Format("codegen_generate_statement: generating pthread_wrapper for %s", namespaced_name), ctx);
+                mut param := (*params_vec)[0];
+                mut p_type := param.param_type;
+                if sig_lookup.Ok {
+                    p_type = sig_lookup.Val.params[0];
+                }
+                mut p_c_type := codegen_get_c_type(p_type, env, ctx);
                 
                 mut is_ptr := 0;
                 if p_type.tag == 9 { // RawPointer
