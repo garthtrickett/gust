@@ -153,10 +153,35 @@ func main() {
         mut var_decl := (*body_stmts)[0];
         
         mut span := var_decl.VarDecl.span;
-        mut lookup_resolved := env.resolved_types.Get(span.start.offset);
-        if lookup_resolved.Ok {
+        mut outer_lookup := env.resolved_types_nested.Get("");
+        mut lookup_resolved_ok := 0;
+        mut lookup_resolved_val: ast.Type[ctx];
+        if outer_lookup.Ok {
+            mut inner_map_idx := outer_lookup.Val;
+            mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
+            if inner_lookup.Ok {
+                t_var = inner_lookup.Val; // Wait! Local variable name is lookup_resolved or t_var? Let's assign lookup_resolved.Val directly below
+                lookup_resolved_val := inner_lookup.Val;
+                lookup_resolved_ok := 1;
+            }
+        }
+        
+        mut lookup_resolved_ok := 0;
+        mut lookup_resolved_val: ast.Type[ctx];
+        mut outer_lookup := env.resolved_types_nested.Get("");
+        if outer_lookup.Ok {
+            mut inner_map_idx := outer_lookup.Val;
+            mut inner_lookup := ctx[inner_map_idx].Get(span.start.offset);
+            if inner_lookup.Ok {
+                lookup_resolved_val = inner_lookup.Val;
+                for_comparison_resolved_types := lookup_resolved_val;
+                lookup_resolved_ok = 1;
+            }
+        }
+        
+        if lookup_resolved_ok == 1 {
             os.LogStr("resolved_types lookup ok!");
-            if typechecker.types_match(typechecker.make_type_int(), lookup_resolved.Val, ctx) == 1 {
+            if typechecker.types_match(typechecker.make_type_int(), lookup_resolved_val, ctx) == 1 {
                 os.LogStr("resolved_types type is Int ok!");
             } else {
                 os.LogStr("resolved_types type mismatch!");
