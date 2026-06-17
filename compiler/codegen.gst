@@ -1165,6 +1165,24 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             mut func_str := codegen_generate_expression(ctx[expr_idx].Call.function, env, ctx);
 
+            if std.str_eq(func_str, "len") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling len FFI override", ctx);
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                mut arg_type := codegen_get_expression_type(arg0_idx, env, ctx);
+                mut arrow_or_dot := ".";
+                if arg_type.tag == 9 {
+                    arrow_or_dot = "->";
+                }
+                        
+                mut res := std.Concat(arg_str, arrow_or_dot);
+                res = std.Concat(res, "len");
+                return std.Clone(ctx, res);
+            }
+
             if std.str_eq(func_str, "std.Format") || std.str_eq(func_str, "std_Format") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.Format FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
