@@ -1183,6 +1183,88 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 return std.Clone(ctx, res);
             }
 
+            if std.str_eq(func_str, "std.str_split") || std.str_eq(func_str, "std_str_split") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.str_split FFI override", ctx);
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut s_expr := codegen_generate_expression(arg0_idx, env, ctx);
+
+                mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg1_idx] = (*args_vec)[1];
+                mut delim_expr := codegen_generate_expression(arg1_idx, env, ctx);
+
+                mut arg2_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg2_idx] = (*args_vec)[2];
+                mut ctx_expr := codegen_generate_expression(arg2_idx, env, ctx);
+
+                mut expr_type := codegen_get_expression_type(expr_idx, env, ctx);
+                mut vec_type_str := codegen_get_c_type(expr_type, env, ctx);
+
+                mut is_ctx_ptr := 0;
+                mut arg2_expr := ctx[arg2_idx];
+                if arg2_expr.tag == 0 { // Identifier
+                    mut arg2_name := arg2_expr.Identifier.name;
+                    mut var_type_lookup := (*env).variable_types.Get(arg2_name);
+                    if var_type_lookup.Ok {
+                        mut t := var_type_lookup.Val;
+                        if t.tag == 9 { // RawPointer
+                            is_ctx_ptr = 1;
+                        }
+                    }
+                }
+                
+                mut arena_expr := std.Concat("&", ctx_expr);
+                if is_ctx_ptr == 1 { 
+                    arena_expr = ctx_expr;
+                }
+
+                mut res := std.Concat("(({ Slice_unsigned_char _s = ", s_expr);
+                res = std.Concat(res, "; Slice_unsigned_char _delim = ");
+                res = std.Concat(res, delim_expr);
+                res = std.Concat(res, "; os_Arena* _ctx = ");
+                res = std.Concat(res, arena_expr);
+                res = std.Concat(res, "; struct std_Vector_str _tmp = std_str_split(_s, _delim, _ctx); ((");
+                res = std.Concat(res, vec_type_str);
+                res = std.Concat(res, "){ .data = _tmp.data, .len = _tmp.len, .capacity = _tmp.capacity, .arena = _tmp.arena }); }))");
+                return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "os.Args") || std.str_eq(func_str, "os_Args") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.Args FFI override", ctx);
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut ctx_expr := codegen_generate_expression(arg0_idx, env, ctx);
+
+                mut expr_type := codegen_get_expression_type(expr_idx, env, ctx);
+                mut vec_type_str := codegen_get_c_type(expr_type, env, ctx);
+
+                mut is_ctx_ptr := 0;
+                mut arg0_expr := ctx[arg0_idx];
+                if arg0_expr.tag == 0 { // Identifier
+                    mut arg0_name := arg0_expr.Identifier.name;
+                    mut var_type_lookup := (*env).variable_types.Get(arg0_name);
+                    if var_type_lookup.Ok {
+                        mut t := var_type_lookup.Val;
+                        if t.tag == 9 { // RawPointer
+                            is_ctx_ptr = 1;
+                        }
+                    }
+                }
+                
+                mut arena_expr := std.Concat("&", ctx_expr);
+                if is_ctx_ptr == 1 { 
+                    arena_expr = ctx_expr;
+                }
+
+                mut res := std.Concat("(({ os_Arena* _ctx = ", arena_expr);
+                res = std.Concat(res, "; struct std_Vector_str _tmp = os_Args(_ctx); ((");
+                res = std.Concat(res, vec_type_str);
+                res = std.Concat(res, "){ .data = _tmp.data, .len = _tmp.len, .capacity = _tmp.capacity, .arena = _tmp.arena }); }))");
+                return std.Clone(ctx, res);
+            }
+
             if std.str_eq(func_str, "std.Format") || std.str_eq(func_str, "std_Format") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.Format FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
