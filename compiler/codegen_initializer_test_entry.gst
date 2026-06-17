@@ -137,22 +137,22 @@ func main() {
     mut sorted_structs := codegen.codegen_get_topologically_sorted_structs(&env, ctx);
     
     // Find positions of "Outer" and "Inner" in the sorted structs
-    mut outer_idx := 0 - 1;
-    mut inner_idx := 0 - 1;
-    mut s_idx := 0;
-    while s_idx < len(sorted_structs) {
-        mut name := sorted_structs[s_idx];
+    mut topo_outer_idx := 0 - 1;
+    mut topo_inner_idx := 0 - 1;
+    mut topo_s_idx := 0;
+    while topo_s_idx < len(sorted_structs) {
+        mut name := sorted_structs[topo_s_idx];
         if std.str_eq(name, "Outer") {
-            outer_idx = s_idx;
+            topo_outer_idx = topo_s_idx;
         }
         if std.str_eq(name, "Inner") {
-            inner_idx = s_idx;
+            topo_inner_idx = topo_s_idx;
         }
-        s_idx = s_idx + 1;
+        topo_s_idx = topo_s_idx + 1;
     }
 
-    if inner_idx != 0 - 1 && outer_idx != 0 - 1 {
-        if inner_idx < outer_idx {
+    if topo_inner_idx != 0 - 1 && topo_outer_idx != 0 - 1 {
+        if topo_inner_idx < topo_outer_idx {
             os.LogStr("Topological Sort OK: Inner precedes Outer");
         } else {
             os.LogStr("Topological Sort FAIL: Outer precedes Inner");
