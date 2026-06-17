@@ -1169,30 +1169,23 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
             }
         }
 
-        mut is_struct_tmpl := (*env).struct_templates.Get(template_name).Ok;
-        mut is_enum_tmpl := (*env).enum_templates.Get(template_name).Ok;
-        
         mut normalized_template_name := template_name;
-        if is_struct_tmpl == 0 && is_enum_tmpl == 0 {
+        mut struct_lookup := (*env).struct_templates.Get(normalized_template_name);
+        mut enum_lookup := (*env).enum_templates.Get(normalized_template_name);
+
+        if struct_lookup.Ok == 0 && enum_lookup.Ok == 0 {
             if len(template_name) >= 4 && std.str_eq(std.str_slice(template_name, 0, 4), "std_") {
                 normalized_template_name = std.Concat("std.", std.str_slice(template_name, 4, len(template_name)));
             } else if len(template_name) >= 3 && std.str_eq(std.str_slice(template_name, 0, 3), "os_") {
                 normalized_template_name = std.Concat("os.", std.str_slice(template_name, 3, len(template_name)));
             }
-            is_struct_tmpl = (*env).struct_templates.Get(normalized_template_name).Ok;
-            is_enum_tmpl = (*env).enum_templates.Get(normalized_template_name).Ok;
+            struct_lookup = (*env).struct_templates.Get(normalized_template_name);
+            enum_lookup = (*env).enum_templates.Get(normalized_template_name);
         }
 
-        if is_struct_tmpl == 1 || is_enum_tmpl == 1 {
-            mut num_args := 0;
-            if is_struct_tmpl == 1 {
-                mut tmpl := (*env).struct_templates.Get(normalized_template_name).Val;
-                num_args = len(ctx[tmpl.generics]);
-            } else {
-                mut tmpl := (*env).enum_templates.Get(normalized_template_name).Val;
-                num_args = len(ctx[tmpl.generics]);
-            }
-
+        if struct_lookup.Ok {
+            mut tmpl := struct_lookup.Val;
+            mut num_args := len(ctx[tmpl.generics]);
             mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
             mut i := 0;
             while i < num_args {
@@ -1200,7 +1193,19 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
                 args.Push(arg);
                 i = i + 1;
             }
+            return make_type_generic(normalized_template_name, args, ctx);
+        }
 
+        if enum_lookup.Ok {
+            mut tmpl := enum_lookup.Val;
+            mut num_args := len(ctx[tmpl.generics]);
+            mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx); 
+            mut i := 0;
+            while i < num_args {
+                mut arg := parse_one_type_from_parts(env, parts, start_idx, ctx);
+                args.Push(arg);
+                i = i + 1;
+            }
             return make_type_generic(normalized_template_name, args, ctx);
         }
 
