@@ -2228,9 +2228,23 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     var_c_type = codegen_get_c_type(lookup.Val, env, ctx);
                 }
 
+                mut line_str := std.FormatInt(span.start.line);
+                mut col_str := std.FormatInt(span.start.column);
+                mut temp_name := std.Concat("_guard_res_", name);
+                temp_name = std.Concat(temp_name, "_");
+                temp_name = std.Concat(temp_name, line_str);
+                temp_name = std.Concat(temp_name, "_");
+                temp_name = std.Concat(temp_name, col_str);
+
+                mut val_expr_str := codegen_generate_expression(value, env, ctx);
+
                 mut res := std.Concat("/* Guard: wrapper=", wrapper_c_type);
                 res = std.Concat(res, ", payload=");
                 res = std.Concat(res, var_c_type);
+                res = std.Concat(res, ", temp=");
+                res = std.Concat(res, temp_name);
+                res = std.Concat(res, ", rhs=");
+                res = std.Concat(res, val_expr_str);
                 res = std.Concat(res, " */\n");
                 return std.Clone(ctx, res);
             }
