@@ -3264,7 +3264,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 typechecker_log_trace('🔍', 'VarDecl: after env_type_is_ephemeral_view', ctx);
                 if is_ephemeral == 1 {
                     typechecker_log_trace('🔍', 'VarDecl: before get_expression_origins', ctx);
-                    origs = get_expression_origins(val_idx, env, ctx);
+                    mut temp_origs := get_expression_origins(val_idx, env, ctx);
+                    origs = typechecker_clone_origin_set(temp_origs, ctx);
                     typechecker_log_trace('🔍', 'VarDecl: after get_expression_origins', ctx);
                     if ctx[origs].map.len == 0 {
                         set_add(origs, name, ctx);
@@ -3415,7 +3416,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     // Track assignments to variables to update their active memory origins
                     mut origs := set_init(ctx);
                     if env_type_is_ephemeral_view(left_type, ctx) == 1 {
-                        origs = get_expression_origins(val_idx, env, ctx);
+                        mut temp_origs := get_expression_origins(val_idx, env, ctx);
+                        origs = typechecker_clone_origin_set(temp_origs, ctx);
                     }
                     if left.tag == 0 { // Identifier
                         if ctx[origs].map.len == 0 {
@@ -3426,10 +3428,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         if ctx[origs].map.len > 0 {
                             mut existing_lookup := (*env).variable_origins.Get(root_name);
                             if existing_lookup.Ok {
-                                set_union(existing_lookup.Val, origs, ctx);
+                                mut cloned_existing := typechecker_clone_origin_set(existing_lookup.Val, ctx);
+                                set_union(cloned_existing, origs, ctx);
+                                (*env).variable_origins.Insert(std.Clone(ctx, root_name), cloned_existing);
                             } else {
                                 (*env).variable_origins.Insert(std.Clone(ctx, root_name), origs);
-                            }
+                            } 
                         }
                     }
                     (*env).moved_vars.Remove(root_name); // Re-initialized!
@@ -3677,8 +3681,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                     // Flow origins
                                     mut parent_origins_set := get_expression_origins(expr_idx, env, ctx);
                                     mut final_origins := set_init(ctx);
-                                    if env_type_is_ephemeral_view(field_type_lookup.Val, ctx) == 1 {
-                                        final_origins = parent_origins_set;
+                                    if env_type_is_ephemeral_view(field_type_lookup.Val, ctx) == 1 { 
+                                        final_origins = typechecker_clone_origin_set(parent_origins_set, ctx);
                                     }
                                     if set_contains(final_origins, field_name, ctx) == 0 && ctx[final_origins].map.len == 0 {
                                         set_add(final_origins, field_name, ctx);
@@ -4078,6 +4082,19 @@ func typechecker_serialize_type_environment(env: *TypeEnvironment[ctx], ctx: &Ar
     return std.Clone(ctx, result);
 }
 
+func typechecker_clone_origin_set(src: Index[OriginSet[ctx], ctx], ctx: &Arena) Index[OriginSet[ctx], ctx] {
+    mut dest_idx := set_init(ctx);
+    unsafe {
+        mut keys := ctx[src].map.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            set_add(dest_idx, keys[i], ctx);
+            i = i + 1;
+        }
+    }
+    return dest_idx;
+}
+
 func typechecker_clone_origins(src: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx], ctx: &Arena) std.HashMap[str, Index[OriginSet[ctx], ctx], ctx] {
     mut dest: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx] := std.HashMapNew(ctx);
     mut keys := src.Keys(ctx);
@@ -4086,7 +4103,8 @@ func typechecker_clone_origins(src: std.HashMap[str, Index[OriginSet[ctx], ctx],
         mut key := keys[i];
         mut lookup := src.Get(key);
         if lookup.Ok {
-            dest.Insert(std.Clone(ctx, key), lookup.Val);
+            mut cloned_set := typechecker_clone_origin_set(lookup.Val, ctx);
+            dest.Insert(std.Clone(ctx, key), cloned_set);
         }
         i = i + 1;
     }
