@@ -1412,6 +1412,8 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
         mut res: errors.Result[ast.Type[ctx], ctx];
         res.tag = 0; // Ok
 
+        mut start_err_len := len((*env).errors);
+
         mut lookup_active := (*env).active_monomorphizations.Get(template_name);
         if lookup_active.Ok {
             mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
@@ -1551,6 +1553,14 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             res.Ok.val.Struct.struct_name = std.Clone(ctx, concrete_name);
             res.Ok.val.Struct.brand = brand;
             (*env).active_monomorphizations.Remove(template_name);
+
+            if len((*env).errors) > start_err_len {
+                res.tag = 1; // Err
+                mut err_idx := len((*env).errors) - 1;
+                mut err_idx_arena: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[err_idx_arena] = (*env).errors[err_idx];
+                res.Err.error = err_idx_arena;
+            }
             return res;
         }
 
@@ -1663,6 +1673,14 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             res.Ok.val.Struct.struct_name = std.Clone(ctx, concrete_name);
             res.Ok.val.Struct.brand = brand;
             (*env).active_monomorphizations.Remove(template_name);
+
+            if len((*env).errors) > start_err_len {
+                res.tag = 1; // Err
+                mut err_idx := len((*env).errors) - 1;
+                mut err_idx_arena: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[err_idx_arena] = (*env).errors[err_idx];
+                res.Err.error = err_idx_arena;
+            }
             return res;
         }
 
