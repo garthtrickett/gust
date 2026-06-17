@@ -2882,14 +2882,35 @@ func get_type_brand(t: ast.Type[ctx], ctx: &Arena) str {
 }
 
 func typechecker_strip_module_prefix(name: str, ctx: &Arena) str {
-    mut d_idx := std.str_find(name, "__");
+    mut clean := name;
+    mut d_idx := std.str_find(clean, "__");
     if d_idx != 0 - 1 {
-        mut s_idx := std.str_find(name, "_");
+        mut s_idx := std.str_find(clean, "_");
         if s_idx == d_idx {
-            return std.str_slice(name, d_idx + 2, len(name));
+            clean = std.str_slice(clean, d_idx + 2, len(clean));
         }
     }
-    return name;
+    
+    mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
+    prefixes.Push("ast_");
+    prefixes.Push("lexer_");
+    prefixes.Push("parser_");
+    prefixes.Push("errors_");
+    prefixes.Push("token_");
+    
+    mut i := 0;
+    while i < len(prefixes) {
+        mut prefix := prefixes[i];
+        mut pos := std.str_find(clean, prefix);
+        while pos != 0 - 1 {
+            mut left := std.str_slice(clean, 0, pos);
+            mut right := std.str_slice(clean, pos + len(prefix), len(clean));
+            clean = std.Concat(left, right);
+            pos = std.str_find(clean, prefix);
+        }
+        i = i + 1;
+    }
+    return std.Clone(ctx, clean);
 }
 
 func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
