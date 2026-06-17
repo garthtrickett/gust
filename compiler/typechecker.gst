@@ -2764,14 +2764,50 @@ func expression_to_string(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena
         if (*expr_ptr).tag == 0 { // Identifier
             return (*expr_ptr).Identifier.name;
         }
-        if (*expr_ptr).tag == 11 { // Selector
-            mut left_str := expression_to_string((*expr_ptr).Selector.left, ctx);
-            return std.Clone(ctx, std.Concat(std.Concat(left_str, "."), (*expr_ptr).Selector.right));
+        if (*expr_ptr).tag == 4 { // Move
+            return expression_to_string((*expr_ptr).Move.expr, ctx);
+        }
+        if (*expr_ptr).tag == 5 { // Take
+            return expression_to_string((*expr_ptr).Take.expr, ctx);
+        }
+        if (*expr_ptr).tag == 6 { // AddressOf
+            mut inner_str := expression_to_string((*expr_ptr).AddressOf.expr, ctx);
+            return std.Clone(ctx, std.Concat("&", inner_str));
+        }
+        if (*expr_ptr).tag == 7 { // Dereference
+            mut inner_str := expression_to_string((*expr_ptr).Dereference.expr, ctx);
+            return std.Clone(ctx, std.Concat("*", inner_str));
         }
         if (*expr_ptr).tag == 8 { // IndexAccess
             mut alloc_str := expression_to_string((*expr_ptr).IndexAccess.allocator, ctx);
             mut idx_str := expression_to_string((*expr_ptr).IndexAccess.index, ctx);
             return std.Clone(ctx, std.Concat(std.Concat(std.Concat(alloc_str, "["), idx_str), "]"));
+        }
+        if (*expr_ptr).tag == 9 { // AsCast
+            return expression_to_string((*expr_ptr).AsCast.left, ctx);
+        }
+        if (*expr_ptr).tag == 11 { // Selector
+            mut left_str := expression_to_string((*expr_ptr).Selector.left, ctx);
+            return std.Clone(ctx, std.Concat(std.Concat(left_str, "."), (*expr_ptr).Selector.right));
+        }
+        if (*expr_ptr).tag == 12 { // Call
+            mut func_str := expression_to_string((*expr_ptr).Call.function, ctx);
+            mut args_vec := &ctx[(*expr_ptr).Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+            mut args_str := "";
+            mut i := 0;
+            while i < len(*args_vec) {
+                if i > 0 {
+                    args_str = std.Concat(args_str, ", ");
+                }
+                mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg_idx] = (*args_vec)[i];
+                args_str = std.Concat(args_str, expression_to_string(arg_idx, ctx));
+                i = i + 1;
+            }
+            mut res := std.Concat(func_str, "(");
+            res = std.Concat(res, args_str);
+            res = std.Concat(res, ")");
+            return std.Clone(ctx, res);
         }
         return "";
     }
