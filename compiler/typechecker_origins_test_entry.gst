@@ -203,7 +203,7 @@ func main() {
     parser.init_parser(&p6, &l6, ctx);
     mut expr6 := parser.parse_expression(&p6, 1, ctx);
 
-    mut checked_map := std.HashMapNew(ctx);
+    mut checked_map: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
     typechecker.typechecker_extract_ok_checked_variables(expr6, &checked_map, ctx);
 
     if checked_map.Get("result").Ok == 1 {
@@ -219,7 +219,7 @@ func main() {
     parser.init_parser(&p7, &l7, ctx);
     mut expr7 := parser.parse_expression(&p7, 1, ctx);
 
-    mut checked_map2 := std.HashMapNew(ctx);
+    mut checked_map2: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
     typechecker.typechecker_extract_ok_checked_variables(expr7, &checked_map2, ctx);
 
     if checked_map2.Get("result").Ok == 0 {
