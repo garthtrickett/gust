@@ -2238,14 +2238,23 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
 
                 mut val_expr_str := codegen_generate_expression(value, env, ctx);
 
-                mut res := std.Concat("/* Guard: wrapper=", wrapper_c_type);
-                res = std.Concat(res, ", payload=");
-                res = std.Concat(res, var_c_type);
-                res = std.Concat(res, ", temp=");
-                res = std.Concat(res, temp_name);
-                res = std.Concat(res, ", rhs=");
-                res = std.Concat(res, val_expr_str);
-                res = std.Concat(res, " */\n");
+                mut else_statements := &ctx[ctx[else_body].statements] as *std.Vector[ast.Statement[ctx], ctx];
+                mut else_c := "";
+                mut j := 0;
+                while j < len(*else_statements) { 
+                    mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[child_stmt_idx] = (*else_statements)[j];
+                    mut child_c := codegen_generate_statement(child_stmt_idx, env, ctx);
+                    
+                    mut indented_c := std.Concat("    ", child_c);
+                    else_c = std.Concat(else_c, indented_c);
+                    j = j + 1;
+                }
+
+                mut res := std.Concat("    if (!", temp_name);
+                res = std.Concat(res, ".Ok) {\n");
+                res = std.Concat(res, else_c);
+                res = std.Concat(res, "    }\n");
                 return std.Clone(ctx, res);
             }
         }

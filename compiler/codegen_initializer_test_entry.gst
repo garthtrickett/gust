@@ -48,7 +48,7 @@ func main() {
 
         mut pfx_entry: typechecker.PrefixMapEntry[ctx];
         pfx_entry.prefix = "";
-        pfx_entry.types = std.VectorNew(ctx);
+        pfx_entry.types = std.VectorNew(ctx); 
         pfx_entry.types.Push(entry);
 
         env.resolved_types_nested.Push(pfx_entry);
@@ -61,7 +61,9 @@ func main() {
         env.variable_types.Insert("x", payload_type);
 
         mut guard_c := codegen.codegen_generate_statement(guard_stmt_idx, &env, ctx);
-        os.LogStr(guard_c); // Expected: /* Guard: wrapper=LookupResult_os_Dir_ctx, payload=os_Dir_ctx, temp=_guard_res_x_1_1, rhs=map_Get(42) */
+        os.LogStr(guard_c); // Expected: if (!_guard_res_x_1_1.Ok) { 
+                            //              return; 
+                            //          }
     }
 
     // Test Step 1 Skip List
