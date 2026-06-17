@@ -1004,6 +1004,7 @@ impl TypeChecker {
 mod tests {
     use super::*;
     use crate::typechecker::Type;
+    use crate::typechecker::types::clean_monomorphized_name;
     use std::collections::HashMap;
 
     #[test]
@@ -1331,4 +1332,17 @@ mod tests {
             )
         );
     }
+
+    #[test]
+            #[test]
+        fn test_clean_monomorphized_name_alignment() {
+            // End patterns
+            assert_eq!(clean_monomorphized_name("MyNode_ctx"), "MyNode");
+            assert_eq!(clean_monomorphized_name("lib_module__ctx"), "lib");
+            assert_eq!(clean_monomorphized_name("lib_module__MyNode_ctx"), "lib_module__MyNode");
+
+            // Mid patterns
+            assert_eq!(clean_monomorphized_name("std_Vector_lib_module__ctx_MyNode"), "std_Vector_lib_MyNode");
+            assert_eq!(clean_monomorphized_name("std_Vector_ctx_MyNode"), "std_Vector_MyNode");
+        }
 }

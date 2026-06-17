@@ -151,5 +151,12 @@ func main() {
     }
 
     mut mono_name := typechecker.get_monomorphized_name("std.Vector", mono_args_idx, ctx);
-    os.LogStr(mono_name); // Should print: std_Vector_lib_module__MyStruct_ctx
+    os.LogStr(mono_name); // Should print: std_Vector_lib_module__ctx_MyNode
+
+    // Test 7: Verify typechecker_clean_monomorphized_name alignment
+    os.LogStr(typechecker.typechecker_clean_monomorphized_name("MyNode_ctx", ctx)); // Expected: MyNode
+    os.LogStr(typechecker.typechecker_clean_monomorphized_name("lib_module__ctx", ctx)); // Expected: lib
+    os.LogStr(typechecker.typechecker_clean_monomorphized_name("lib_module__MyNode_ctx", ctx)); // Expected: lib_module__MyNode
+    os.LogStr(typechecker.typechecker_clean_monomorphized_name("std_Vector_lib_module__ctx_MyNode", ctx)); // Expected: std_Vector_lib_MyNode
+    os.LogStr(typechecker.typechecker_clean_monomorphized_name("std_Vector_ctx_MyNode", ctx)); // Expected: std_Vector_MyNode
 }
