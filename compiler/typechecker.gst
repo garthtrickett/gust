@@ -1348,11 +1348,25 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
             res_type.Index.brand = new_brand;
         } else if t.tag == 9 { // RawPointer
             mut inner := ctx[t.RawPointer.inner];
+
+            mut temp_active := (*env).active_monomorphizations;
+            (*env).active_monomorphizations = std.HashMapNew(ctx);
+
             mut sub_inner := substitute_generics(env, inner, map, ctx);
+
+            (*env).active_monomorphizations = temp_active;
+
             res_type = make_type_pointer(sub_inner, ctx);
         } else if t.tag == 6 { // Slice
             mut inner := ctx[t.Slice.inner];
+
+            mut temp_active := (*env).active_monomorphizations;
+            (*env).active_monomorphizations = std.HashMapNew(ctx);
+
             mut sub_inner := substitute_generics(env, inner, map, ctx);
+
+            (*env).active_monomorphizations = temp_active;
+
             mut s: ast.Type[ctx];
             s.tag = 6; // Slice
             s.Slice.inner = os.ArenaAlloc(ctx);
@@ -2509,17 +2523,31 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                         }
                     }
                 }
+                 } else {
+            if t.tag == 9 { // RawPointer
+                mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+
+                mut temp_active := (*env).active_monomorphizations;
+                (*env).active_monomorphizations = std.HashMapNew(ctx);
+
+                ctx[inner_idx] = env_resolve_type(env, ctx[t.RawPointer.inner], ctx);
+
+                (*env).active_monomorphizations = temp_active;
+
+                ctx[res_idx].RawPointer.inner = inner_idx;
             } else {
-                if t.tag == 9 { // RawPointer
-                    mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx); 
-                    ctx[inner_idx] = env_resolve_type(env, ctx[t.RawPointer.inner], ctx);
-                    ctx[res_idx].RawPointer.inner = inner_idx;
+                if t.tag == 6 { // Slice
+                    mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+
+                    mut temp_active := (*env).active_monomorphizations;
+                    (*env).active_monomorphizations = std.HashMapNew(ctx);
+
+                    ctx[inner_idx] = env_resolve_type(env, ctx[t.Slice.inner], ctx);
+
+                    (*env).active_monomorphizations = temp_active;
+
+                    ctx[res_idx].Slice.inner = inner_idx;
                 } else {
-                    if t.tag == 6 { // Slice
-                        mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[inner_idx] = env_resolve_type(env, ctx[t.Slice.inner], ctx);
-                        ctx[res_idx].Slice.inner = inner_idx;
-                    } else {
                         if t.tag == 10 { // Generic
                             mut name := env_resolve_namespaced_ident(env, t.Generic.name, ctx);
                             
