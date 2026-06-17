@@ -157,7 +157,51 @@ func main() {
         } else {
             os.LogStr("Topological Sort FAIL: Outer precedes Inner");
         }
-    } else {
+    } else { 
         os.LogStr("Topological Sort FAIL: Missing structs");
+    }
+
+    // 9. Test Topological Sorting of ADT Variants
+    mut l5: lexer.Lexer[ctx];
+    lexer.init_lexer(&l5, "type MyEnum enum { VariantA { val: int }, VariantB }");
+
+    mut p5: parser.Parser[ctx];
+    parser.init_parser(&p5, &l5, ctx);
+
+    mut prog5 := parser.parse_program(&p5, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog5.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut i := 0;
+        while i < len(*statements_vec) {
+            typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+            i = i + 1;
+        }
+    }
+
+    mut sorted_structs2 := codegen.codegen_get_topologically_sorted_structs(&env, ctx);
+    
+    // Find positions of "MyEnum" and "MyEnum_VariantA" in the sorted structs
+    mut enum_idx := 0 - 1;
+    mut variant_idx := 0 - 1;
+    mut s_idx2 := 0;
+    while s_idx2 < len(sorted_structs2) {
+        mut name := sorted_structs2[s_idx2];
+        if std.str_eq(name, "MyEnum") {
+            enum_idx = s_idx2;
+        }
+        if std.str_eq(name, "MyEnum_VariantA") {
+            variant_idx = s_idx2;
+        }
+        s_idx2 = s_idx2 + 1;
+    }
+
+    if variant_idx != 0 - 1 && enum_idx != 0 - 1 {
+        if variant_idx < enum_idx {
+            os.LogStr("Topological Sort ADT OK: Variant precedes Enum");
+        } else {
+            os.LogStr("Topological Sort ADT FAIL: Enum precedes Variant");
+        }
+    } else {
+        os.LogStr("Topological Sort ADT FAIL: Missing structs");
     }
 }

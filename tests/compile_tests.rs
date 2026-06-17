@@ -3515,6 +3515,7 @@ fn test_self_hosted_codegen_initializers() {
     assert!(filtered_stdout.contains("int Node_IsValid(Node* req) {"));
     assert!(filtered_stdout.contains("if (req->active != 0x00 && req->active != 0x01) return 0;"));
     assert!(filtered_stdout.contains("Topological Sort OK: Inner precedes Outer"));
+    assert!(filtered_stdout.contains("Topological Sort ADT OK: Variant precedes Enum"));
 
     // Check generated C program contains full structure definitions and validation helpers
     assert!(filtered_stdout.contains("typedef struct Node Node;"));
