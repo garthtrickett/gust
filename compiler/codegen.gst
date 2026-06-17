@@ -1613,17 +1613,21 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             res = std.Concat(res, "}\n\n");
 
             if len(*params_vec) == 1 {
-                codegen_log_trace("👁️", std.Format("codegen_generate_statement: generating pthread_wrapper for %s", ctx[stmt_idx].FunctionDecl.name), ctx);
+                codegen_log_trace("👁️", std.Format("codegen_generate_statement: generating pthread_wrapper for %s", namespaced_name), ctx);
                 mut param := (*params_vec)[0];
-                mut p_c_type := codegen_get_c_type(param.param_type, env, ctx);
+                mut p_type := param.param_type;
+                if sig_lookup.Ok {
+                    p_type = sig_lookup.Val.params[0];
+                }
+                mut p_c_type := codegen_get_c_type(p_type, env, ctx);
                 
                 mut is_ptr := 0;
-                if param.param_type.tag == 9 { // RawPointer
+                if p_type.tag == 9 { // RawPointer
                     is_ptr = 1;
                 }
                 
                 mut is_struct := 0;
-                if param.param_type.tag == 8 || param.param_type.tag == 10 || param.param_type.tag == 6 || param.param_type.tag == 5 {
+                if p_type.tag == 8 || p_type.tag == 10 || p_type.tag == 6 || p_type.tag == 5 { 
                     is_struct = 1;
                 }
                 
@@ -1641,10 +1645,10 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     }
                 }
                 
-                mut wrapper_decl := std.Concat("void* ", ctx[stmt_idx].FunctionDecl.name);
+                mut wrapper_decl := std.Concat("void* ", c_func_name);
                 wrapper_decl = std.Concat(wrapper_decl, "_pthread_wrapper(void* arg) {\n");
                 
-                mut wrapper_call := std.Concat("    ", ctx[stmt_idx].FunctionDecl.name);
+                mut wrapper_call := std.Concat("    ", c_func_name);
                 wrapper_call = std.Concat(wrapper_call, "(");
                 wrapper_call = std.Concat(wrapper_call, cast_str);
                 wrapper_call = std.Concat(wrapper_call, ");\n");
