@@ -1751,7 +1751,7 @@ typedef void Any;
         mut fwd_p_idx := 0;
         while fwd_p_idx < len(programs) {
             mut prog := programs[fwd_p_idx];
-            env.current_prefix = prefixes[fwd_p_idx];
+            (*env).current_prefix = prefixes[fwd_p_idx];
             mut fwd_statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
             mut fwd_s_idx := 0;
             while fwd_s_idx < len(*fwd_statements_vec) {
@@ -1833,7 +1833,7 @@ typedef void Any;
         mut p_idx2 := 0;
         while p_idx2 < len(programs) {
             mut prog := programs[p_idx2];
-            env.current_prefix = prefixes[p_idx2];
+            (*env).current_prefix = prefixes[p_idx2];
             mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
             mut s_idx := 0;
             while s_idx < len(*statements_vec) {
@@ -1845,7 +1845,7 @@ typedef void Any;
             }
             p_idx2 = p_idx2 + 1;
         }
-        env.current_prefix = "";
+        (*env).current_prefix = "";
         
         return std.Clone(ctx, c_code);
     }
