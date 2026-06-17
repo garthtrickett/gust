@@ -2219,7 +2219,19 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 mut else_body := ctx[stmt_idx].Guard.else_body;
                 mut span := ctx[stmt_idx].Guard.span;
 
-                mut res := "/* Guard Placeholder */\n";
+                mut rhs_type := codegen_get_expression_type(value, env, ctx);
+                mut wrapper_c_type := codegen_get_c_type(rhs_type, env, ctx);
+
+                mut var_c_type := "unknown";
+                mut lookup := (*env).variable_types.Get(name);
+                if lookup.Ok {
+                    var_c_type = codegen_get_c_type(lookup.Val, env, ctx);
+                }
+
+                mut res := std.Concat("/* Guard: wrapper=", wrapper_c_type);
+                res = std.Concat(res, ", payload=");
+                res = std.Concat(res, var_c_type);
+                res = std.Concat(res, " */\n");
                 return std.Clone(ctx, res);
             }
         }
