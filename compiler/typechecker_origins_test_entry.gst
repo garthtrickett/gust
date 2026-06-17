@@ -194,4 +194,37 @@ func main() {
     } else {
         os.LogStr("expr5 failed to flag var_c move");
     }
+
+    // --- PART 4: typechecker_extract_ok_checked_variables Tests ---
+    // Expression: cond && result.Ok
+    mut l6: lexer.Lexer[ctx];
+    lexer.init_lexer(&l6, "cond && result.Ok");
+    mut p6: parser.Parser[ctx];
+    parser.init_parser(&p6, &l6, ctx);
+    mut expr6 := parser.parse_expression(&p6, 1, ctx);
+
+    mut checked_map := std.HashMapNew(ctx);
+    typechecker.typechecker_extract_ok_checked_variables(expr6, &checked_map, ctx);
+
+    if checked_map.Get("result").Ok == 1 {
+        os.LogStr("typechecker_extract_ok_checked_variables correctly extracted result");
+    } else {
+        os.LogStr("typechecker_extract_ok_checked_variables failed to extract result");
+    }
+
+    // Expression: cond || result.Ok
+    mut l7: lexer.Lexer[ctx];
+    lexer.init_lexer(&l7, "cond || result.Ok");
+    mut p7: parser.Parser[ctx];
+    parser.init_parser(&p7, &l7, ctx);
+    mut expr7 := parser.parse_expression(&p7, 1, ctx);
+
+    mut checked_map2 := std.HashMapNew(ctx);
+    typechecker.typechecker_extract_ok_checked_variables(expr7, &checked_map2, ctx);
+
+    if checked_map2.Get("result").Ok == 0 {
+        os.LogStr("typechecker_extract_ok_checked_variables correctly ignored OR operator");
+    } else {
+        os.LogStr("typechecker_extract_ok_checked_variables incorrectly extracted result under OR");
+    }
 }

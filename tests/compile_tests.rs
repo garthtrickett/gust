@@ -954,6 +954,35 @@ fn test_definite_check_compound_or_rejected() {
     );
 }
 
+#[test]
+fn test_definite_check_nested_scoping_cleanliness() {
+    let source = "
+        type CustomNode struct {
+            SessionID: int
+        }
+        func main() {
+            mut payload := os.MockPayload();
+            mut result := payload as &CustomNode;
+            mut cond := true;
+            if cond {
+                if result.Ok {
+                    os.LogInt(result.Val.SessionID); // OK: result is checked here
+                }
+                // Error: result is NOT checked in outer if scope
+                os.LogInt(result.Val.SessionID);
+            }
+        }
+    ";
+    let res = check_program(source);
+    assert!(res.is_err());
+    let err = res.unwrap_err();
+    assert_eq!(err.kind, TypeErrorKind::TypeMismatch);
+    assert!(
+        err.message
+            .contains("Accessing the .Val payload of an unchecked result wrapper")
+    );
+}
+
 // === NEW PRESSURE TESTS FOR STEP 3: NESTED STRUCTURES & COMPLEX SCOPING ===
 
 #[test]
@@ -7580,7 +7609,7 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
         .join("\n");
     assert_eq!(
         filtered_stdout.trim(),
-        "Argument mismatch correctly detected!\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1"
+        "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch\nexpr3 correctly flagged origin_x invalidation\nexpr4 correctly flagged ctx_brand invalidation\nexpr5 correctly flagged var_c move\ntypechecker_extract_ok_checked_variables correctly extracted result\ntypechecker_extract_ok_checked_variables correctly ignored OR operator"
     );
 }
 
