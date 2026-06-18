@@ -3948,8 +3948,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             if val_type.tag == 8 { // Struct
-                mut assign_struct_name := val_type.Struct.struct_name;
-                if len(assign_struct_name) >= 7 && std.str_eq(std.str_slice(assign_struct_name, 0, 7), "os_Dir_") { 
+                mut decl_struct_name := val_type.Struct.struct_name;
+                if len(decl_struct_name) >= 7 && std.str_eq(std.str_slice(decl_struct_name, 0, 7), "os_Dir_") { 
                     (*env).open_directories.Insert(std.Clone(ctx, name), 1);
                 }
             } 
