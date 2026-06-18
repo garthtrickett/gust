@@ -436,6 +436,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         }
         if expr.tag == 11 { // Selector
             mut left_t := check_expression(expr.Selector.left, env, scope, ctx);
+            left_t = env_resolve_type(env, left_t, ctx);
             mut left_str := expression_to_string(expr.Selector.left, ctx);
             if left_t.tag == 8 { // Struct
                 mut struct_name := left_t.Struct.struct_name;
