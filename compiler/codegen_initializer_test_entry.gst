@@ -693,6 +693,24 @@ func main() {
     t_vec_test.Struct.brand = empty[Index[str, ctx]];
     os.LogInt(codegen.codegen_is_vector_type(t_vec_test, &env, ctx)); // Expected: 1
 
+    // Sub-Step 1.1 Verification: Test codegen_is_vector_type and codegen_is_pool_type with RawPointer (tag 9)
+    mut t_vec_ptr: ast.Type[ctx];
+    t_vec_ptr.tag = 9; // RawPointer
+    t_vec_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_vec_ptr.RawPointer.inner] = t_vec_test;
+    os.LogInt(codegen.codegen_is_vector_type(t_vec_ptr, &env, ctx)); // Expected: 1
+
+    mut t_pool_test: ast.Type[ctx];
+    t_pool_test.tag = 8; // Struct
+    t_pool_test.Struct.struct_name = "std_Pool_int_ctx";
+    t_pool_test.Struct.brand = empty[Index[str, ctx]];
+
+    mut t_pool_ptr: ast.Type[ctx];
+    t_pool_ptr.tag = 9; // RawPointer
+    t_pool_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_pool_ptr.RawPointer.inner] = t_pool_test;
+    os.LogInt(codegen.codegen_is_pool_type(t_pool_ptr, &env, ctx)); // Expected: 1
+
     mut t_map_str_test: ast.Type[ctx];
     t_map_str_test.tag = 8; // Struct
     t_map_str_test.Struct.struct_name = "std_HashMap_str_int_ctx";

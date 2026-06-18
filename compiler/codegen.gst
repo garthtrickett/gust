@@ -86,8 +86,12 @@ func codegen_is_ptr_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx
 
 func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
-        if t.tag == 8 { // Struct
-            mut name := t.Struct.struct_name;
+        mut curr := t;
+        while curr.tag == 9 { // RawPointer
+            curr = ctx[curr.RawPointer.inner];
+        }
+        if curr.tag == 8 { // Struct
+            mut name := curr.Struct.struct_name;
             mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
             if std.str_find(erased_name, "Vector_") == 0 {
                 return 1;
@@ -96,8 +100,8 @@ func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[
                 return 1;
             }
         }
-        if t.tag == 10 { // Generic
-            mut name := t.Generic.name;
+        if curr.tag == 10 { // Generic
+            mut name := curr.Generic.name;
             if std.str_eq(name, "Vector") == 1 || std.str_eq(name, "std.Vector") == 1 || std.str_eq(name, "std_Vector") == 1 {
                 return 1;
             }
@@ -108,8 +112,12 @@ func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[
 
 func codegen_is_pool_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
-        if t.tag == 8 { // Struct
-            mut name := t.Struct.struct_name;
+        mut curr := t;
+        while curr.tag == 9 { // RawPointer
+            curr = ctx[curr.RawPointer.inner];
+        }
+        if curr.tag == 8 { // Struct
+            mut name := curr.Struct.struct_name;
             mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
             if std.str_find(erased_name, "Pool_") == 0 {
                 return 1;
@@ -118,8 +126,8 @@ func codegen_is_pool_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ct
                 return 1;
             }
         }
-        if t.tag == 10 { // Generic
-            mut name := t.Generic.name;
+        if curr.tag == 10 { // Generic
+            mut name := curr.Generic.name;
             if std.str_eq(name, "Pool") == 1 || std.str_eq(name, "std.Pool") == 1 || std.str_eq(name, "std_Pool") == 1 {
                 return 1;
             }
