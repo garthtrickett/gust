@@ -2747,7 +2747,36 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                 mut log_msg := std.Format('env_resolve_type Struct: name=%s, brand=%s', namespaced_name, brand_name);
                 typechecker_log_trace('📥', log_msg, ctx);
 
+                mut clean_name := namespaced_name;
+                mut d_idx := std.str_find(namespaced_name, "__");
+                if d_idx != 0 - 1 {
+                    mut after_pfx := std.str_slice(namespaced_name, d_idx + 2, len(namespaced_name));
+                    if typechecker_starts_with(after_pfx, "LookupResult_") == 1 {
+                        clean_name = after_pfx;
+                    }
+                }
+
                 mut exists := (*env).struct_registry.Get(namespaced_name).Ok;
+                if exists == 0 {
+                    if typechecker_starts_with(clean_name, "LookupResult_") == 1 {
+                        mut target_struct := std.str_slice(clean_name, 13, len(clean_name));
+                        mut v_type := typechecker_parse_type_from_string(target_struct, ctx);
+                        mut resolved_v_type := env_resolve_type(env, v_type, ctx);
+                        
+                        mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+                        mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
+                        fields.Insert("Ok", t_int);
+                        fields.Insert("Val", resolved_v_type);
+                        
+                        mut layout: StructLayout[ctx];
+                        layout.brand = empty[Index[str, ctx]];
+                        layout.fields = fields;
+                        
+                        env_register_struct(env, namespaced_name, layout, ctx);
+                        exists = 1;
+                    }
+                }
+
                 if exists == 0 {
                     mut s_keys := (*env).struct_templates.Keys(ctx);
                     mut matched := 0;

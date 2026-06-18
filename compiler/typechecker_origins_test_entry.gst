@@ -426,4 +426,20 @@ func main() {
             os.LogStr("Scenario D check: Err");
         }
     }
+
+    // Test Step 2: Dynamic LookupResult_ Synthesis (Step 2 Fix)
+    mut env_step2 := typechecker.env_new(ctx);
+    mut t_step2 := typechecker.make_type_struct("LookupResult_os_Dir_ctx", "", ctx);
+    mut resolved_step2 := typechecker.env_resolve_type(&env_step2, t_step2, ctx);
+    
+    mut layout_lookup_step2 := env_step2.struct_registry.Get("LookupResult_os_Dir_ctx");
+    if layout_lookup_step2.Ok {
+        os.LogStr("LookupResult_os_Dir_ctx successfully synthesized!");
+        mut val_t_lookup := layout_lookup_step2.Val.fields.Get("Val");
+        if val_t_lookup.Ok {
+            os.LogStr(ast.serialize_type(val_t_lookup.Val, ctx));
+        }
+    } else {
+        os.LogStr("LookupResult_os_Dir_ctx synthesis failed!");
+    }
 }
