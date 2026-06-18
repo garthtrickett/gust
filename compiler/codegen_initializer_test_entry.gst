@@ -760,6 +760,34 @@ func main() {
     os.LogInt(codegen.codegen_is_hashmap_type(t_map_int_test, &env, ctx)); // Expected: 1
     os.LogInt(codegen.codegen_hashmap_is_str_key(t_map_int_test, &env, ctx)); // Expected: 0
 
+    // Step 1 Verification: Test RawPointer dereferencing on Selector
+    mut env_sel_test := typechecker.env_new(ctx);
+    mut scope_sel_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+    // Register a custom struct MyNode { val: bool }
+    mut node_layout_test: typechecker.StructLayout[ctx];
+    node_layout_test.brand = empty[Index[str, ctx]];
+    node_layout_test.fields = std.HashMapNew(ctx);
+    mut t_bool_test: ast.Type[ctx]; t_bool_test.tag = 2; // Bool
+    node_layout_test.fields.Insert("val", t_bool_test);
+    typechecker.env_register_struct(&env_sel_test, "MyNode", node_layout_test, ctx);
+
+    // Variable p_node of type *MyNode
+    mut t_node_struct_test := typechecker.make_type_struct("MyNode", "", ctx);
+    mut t_node_ptr_test := typechecker.make_type_pointer(t_node_struct_test, ctx);
+    typechecker.scope_insert(scope_sel_test, "p_node", t_node_ptr_test, ctx);
+
+    // Parse selector expression: "p_node.val"
+    mut l_sel_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_sel_test, "p_node.val");
+    mut p_sel_test: parser.Parser[ctx];
+    parser.init_parser(&p_sel_test, &l_sel_test, ctx);
+    mut expr_sel_test := parser.parse_expression(&p_sel_test, 1, ctx);
+
+    // Check expression
+    mut evaluated_sel_t := typechecker.check_expression(expr_sel_test, &env_sel_test, scope_sel_test, ctx);
+    os.LogStr(ast.serialize_type(evaluated_sel_t, ctx)); // Expected: Bool
+
     // Step 4: Verification Test for Step 2 Slice, Str, and RawPointer IndexAccess Branches
     mut e_slice_access: ast.Expression[ctx];
     e_slice_access.tag = 8; // IndexAccess

@@ -252,4 +252,13 @@ func main() {
     os.LogStr(output_c_str); // Expected: os_ArenaAlloc(&ctx, sizeof(Slice_unsigned_char))
     env.current_alloc_struct = "";
 
+    // Sub-Step 3.1 Verification: Test codegen_erase_struct_name with namespaced brands
+    mut test_brand: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+    unsafe {
+        mut brand_ptr := &ctx[test_brand] as *str;
+        *brand_ptr = "typechecker__ctx";
+    }
+    mut erased_res := codegen.codegen_erase_struct_name("std_HashMap_str_int_typechecker__ctx", test_brand, &env, ctx);
+    os.LogStr(erased_res); // Expected: std_HashMap_str_int
+
 }
