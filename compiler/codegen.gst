@@ -2680,6 +2680,7 @@ typedef void Any;
 
                 mut layout_lookup := (*env).struct_registry.Get(orig_key);
                 if layout_lookup.Ok {
+                    mut layout := layout_lookup.Val;
                     mut struct_decl := std.Concat("typedef struct ", key);
                     struct_decl = std.Concat(struct_decl, " ");
                     struct_decl = std.Concat(struct_decl, key);
