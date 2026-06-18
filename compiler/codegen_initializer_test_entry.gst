@@ -485,4 +485,20 @@ func main() {
 
     mut init_str := codegen.codegen_gen_type_aware_initializer(t_branded_prog, &env, ctx);
     os.LogStr(init_str);
+
+    // Step 2: Verification Test for branded empty[MyNode[ctx]] expression
+    mut l_empty_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_empty_test, "empty[MyNode[ctx]]");
+    mut p_empty_test: parser.Parser[ctx];
+    parser.init_parser(&p_empty_test, &l_empty_test, ctx);
+    mut expr_empty_test := parser.parse_expression(&p_empty_test, 1, ctx);
+
+    // Register MyNode in the struct registry of env
+    mut mynode_layout: typechecker.StructLayout[ctx];
+    mynode_layout.brand = empty[Index[str, ctx]];
+    mynode_layout.fields = std.HashMapNew(ctx);
+    typechecker.env_register_struct(&env, "MyNode", mynode_layout, ctx);
+
+    mut empty_init_str := codegen.codegen_generate_expression(expr_empty_test, &env, ctx);
+    os.LogStr(empty_init_str);
 }

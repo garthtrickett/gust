@@ -788,21 +788,22 @@ func codegen_get_monomorphized_name(template_name: str, args_idx: Index[std.Vect
     }
 }
 
-func codegen_gen_struct_initializer(name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+func codegen_gen_struct_initializer(name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
-        mut lookup_enum := env.enum_registry.Get(name);
+        mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
+        mut lookup_enum := env.enum_registry.Get(erased_name);
         if lookup_enum.Ok {
-            mut res := std.Concat("((", name);
+            mut res := std.Concat("((", erased_name);
             res = std.Concat(res, "){ .tag = 0 })");
             return std.Clone(ctx, res);
         }
         
-        mut lookup_struct := env.struct_registry.Get(name);
+        mut lookup_struct := env.struct_registry.Get(erased_name);
         if lookup_struct.Ok {
             mut layout := lookup_struct.Val;
             mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
             if len(f_keys) == 0 {
-                mut res := std.Concat("((", name);
+                mut res := std.Concat("((", erased_name);
                 res = std.Concat(res, "){0})");
                 return std.Clone(ctx, res);
             }
@@ -825,14 +826,14 @@ func codegen_gen_struct_initializer(name: str, env: &typechecker.TypeEnvironment
                 i = i + 1;
             }
             
-            mut res := std.Concat("((", name);
+            mut res := std.Concat("((", erased_name);
             res = std.Concat(res, "){ ");
             res = std.Concat(res, fields_init);
             res = std.Concat(res, " })");
             return std.Clone(ctx, res);
         }
         
-        mut res := std.Concat("((", name);
+        mut res := std.Concat("((", erased_name);
         res = std.Concat(res, "){0})");
         return std.Clone(ctx, res);
     }
@@ -2286,7 +2287,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
         }
         if tag == 13 { // Empty
-            return codegen_gen_type_aware_initializer(ctx[ctx[expr_idx].Empty.target_type], env, ctx);
+            mut t_empty := ctx[ctx[expr_idx].Empty.target_type];
+            mut resolved_t := typechecker.env_resolve_type(env, t_empty, ctx);
+            return codegen_gen_type_aware_initializer(resolved_t, env, ctx);
         }
     }
     return "0";
