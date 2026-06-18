@@ -1178,7 +1178,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
         }
         if tag == 2 { // String
             mut val := ctx[expr_idx].String.val;
-            mut res := std.Concat("\"", val);
+            mut escaped := codegen_escape_string(val, ctx);
+            mut res := std.Concat("\"", escaped);
             res = std.Concat(res, "\"");
             mut len_str := std.FormatInt(len(val));
             mut sl := std.Concat("((Slice_unsigned_char){ (unsigned char*)", res);

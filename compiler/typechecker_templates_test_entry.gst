@@ -228,4 +228,9 @@ func main() {
 
     mut parsed_t2 := typechecker.typechecker_parse_type_from_string("int", ctx);
     os.LogInt(parsed_t2.tag); // Expected: 0 (Int)
+
+    // Step 1 Verification: Test codegen_escape_string
+    mut test_raw := "Hello \"World\" \\ !";
+    mut test_escaped := codegen.codegen_escape_string(test_raw, ctx);
+    os.LogStr(test_escaped); // Expected: Hello \"World\" \\ !
 }
