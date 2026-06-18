@@ -169,9 +169,9 @@ func codegen_erase_struct_name(name: str, brand: Index[str, ctx], env: &typechec
                                 }
                             }
                             if check_double == 1 {
-                                mut left := std.str_slice(erased, 0, start_pos);
-                                mut right := std.str_slice(erased, mid_pos + len(ns_mid) - 1, len(erased));
-                                erased = std.Concat(left, right);
+                                mut left_ns := std.str_slice(erased, 0, start_pos);
+                                mut right_ns := std.str_slice(erased, mid_pos + len(ns_mid) - 1, len(erased));
+                                erased = std.Concat(left_ns, right_ns);
                                 changed = 1;
                                 handled = 1;
                             }
@@ -193,9 +193,9 @@ func codegen_erase_struct_name(name: str, brand: Index[str, ctx], env: &typechec
                     flat_mid = std.Concat(flat_mid, "_");
                     mut pos2 := std.str_find(erased, flat_mid);
                     if pos2 != 0 - 1 {
-                        mut left := std.str_slice(erased, 0, pos2);
-                        mut right := std.str_slice(erased, pos2 + len(flat_mid) - 1, len(erased));
-                        erased = std.Concat(left, right);
+                        mut left_flat := std.str_slice(erased, 0, pos2);
+                        mut right_flat := std.str_slice(erased, pos2 + len(flat_mid) - 1, len(erased));
+                        erased = std.Concat(left_flat, right_flat);
                         changed = 1;
                         handled = 1;
                     }
