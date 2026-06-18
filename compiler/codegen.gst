@@ -880,12 +880,30 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
             i = i + 1;
         }
         
+        if std.str_eq(prefix, "") == 0 {
+            mut log_pfx := std.Concat("Prefix match check for: ", prefix);
+            if found_idx != 0 - 1 {
+                log_pfx = std.Concat(log_pfx, " -> MATCH FOUND");
+            } else {
+                log_pfx = std.Concat(log_pfx, " -> MATCH FAILED");
+            }
+            os.LogStr(log_pfx);
+        }
+
         if found_idx != 0 - 1 {
             mut entry_ref := &(*env).resolved_types_nested[found_idx];
             mut j := 0;
-            while j < len((*entry_ref).types) {
+            while j < len((*entry_ref).types) { 
                 mut t_entry := (*entry_ref).types[j];
                 if t_entry.start_offset == span.start.offset && t_entry.end_offset == span.end.offset {
+                    // Successful lookup trace (Step 3)
+                    if std.str_eq(prefix, "") == 0 {
+                        mut type_str := ast.serialize_type(t_entry.val_type, ctx);
+                        mut log_success := std.Concat("Type Resolved for ", prefix);
+                        log_success = std.Concat(log_success, ": ");
+                        log_success = std.Concat(log_success, type_str);
+                        os.LogStr(log_success);
+                    }
                     return t_entry.val_type;
                 }
                 j = j + 1;
