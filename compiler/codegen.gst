@@ -2938,7 +2938,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                                 res = std.Concat(res, bind_line);
                             }
                             f_idx = f_idx + 1;
-                        }PrefixMapEntry
+                        }
                     }
                     
                     mut body_str := codegen_generate_block_statement(case_val.body, env, ctx);
