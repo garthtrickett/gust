@@ -953,6 +953,104 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
             }
 
+            if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std.Format") {
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec) < 1 {
+                    mut msg := "Semantic Error: std.Format expects at least 1 argument (the format string literal)";
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                    mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
+                    return dummy;
+                }
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg0_type := check_expression(arg0_idx, env, scope, ctx);
+                if arg0_type.tag != 5 { // Str
+                    mut msg := "Semantic Error: First argument to std.Format must be a string literal";
+                    report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                }
+
+                mut format_expr := ctx[arg0_idx];
+                mut format_str := "";
+                if format_expr.tag == 2 { // String
+                    format_str = format_expr.String.val;
+                } else {
+                    mut msg := "Semantic Error: First argument to std.Format must be a string literal";
+                    report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                }
+
+                mut specifier_types: std.Vector[int, ctx] := std.VectorNew(ctx);
+                mut idx := 0;
+                while idx < len(format_str) {
+                    mut b := std.str_byte_at(format_str, idx);
+                    if b == 37 { // '%'
+                        if idx + 1 < len(format_str) {
+                            mut next_char := std.str_byte_at(format_str, idx + 1);
+                            if next_char == 37 { // '%'
+                                idx = idx + 2;
+                            } else {
+                                if next_char == 115 { // 's'
+                                    specifier_types.Push(5); // Str
+                                    idx = idx + 2;
+                                } else {
+                                    if next_char == 114 || next_char == 100 { // 'r' or 'd'
+                                        specifier_types.Push(0); // Int
+                                        idx = idx + 2;
+                                    } else {
+                                        idx = idx + 1;
+                                    }
+                                }
+                            }
+                        } else {
+                            idx = idx + 1;
+                        }
+                    } else {
+                        idx = idx + 1;
+                    }
+                }
+
+                mut expected_count := len(specifier_types);
+                mut trailing_args_count := len(*args_vec) - 1;
+                if trailing_args_count != expected_count {
+                    mut msg := std.Format("Semantic Error: std.Format template expected %d arguments, but got %d", expected_count, trailing_args_count);
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                    mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
+                    return dummy;
+                }
+
+                mut j := 0;
+                while j < expected_count {
+                    mut arg_idx := j + 1;
+                    mut expected_t := specifier_types[j];
+                    
+                    mut param_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[param_idx] = (*args_vec)[arg_idx];
+                    mut arg_type := check_expression(param_idx, env, scope, ctx);
+                    mut resolved_arg := env_resolve_type(env, arg_type, ctx);
+
+                    if expected_t == 5 { // Str
+                        if resolved_arg.tag != 5 { // Str
+                            mut msg := std.Format("Semantic Error: std.Format argument %d expected Str, but got %s", arg_idx, ast.serialize_type(resolved_arg, ctx));
+                            report_error(2, msg, get_expression_span(param_idx, ctx), env, ctx);
+                        }
+                    } else {
+                        mut is_compatible := 0;
+                        if resolved_arg.tag == 0 { is_compatible = 1; } // Int
+                        if resolved_arg.tag == 1 { is_compatible = 1; } // Byte
+                        if resolved_arg.tag == 2 { is_compatible = 1; } // Bool
+                        if resolved_arg.tag == 7 { is_compatible = 1; } // Index
+                        
+                        if is_compatible == 0 {
+                            mut msg := std.Format("Semantic Error: std.Format argument %d expected Int, Byte, Bool, or Index, but got %s", arg_idx, ast.serialize_type(resolved_arg, ctx));
+                            report_error(2, msg, get_expression_span(param_idx, ctx), env, ctx);
+                        }
+                    }
+                    j = j + 1;
+                }
+
+                mut t_str: ast.Type[ctx]; t_str.tag = 5; // Str
+                return t_str;
+            }
+
             if std.str_eq(resolved_func, "std_ChannelNew") || std.str_eq(resolved_func, "std.ChannelNew") ||
                std.str_eq(resolved_func, "std_MutexNew") || std.str_eq(resolved_func, "std.MutexNew") ||
                std.str_eq(resolved_func, "std_VectorNew") || std.str_eq(resolved_func, "std.VectorNew") ||
@@ -1519,23 +1617,25 @@ func get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
             mut inner_t := ctx[t.Slice.inner];
             base = std.Concat("Slice_", get_type_ident(inner_t, ctx));
         } else if t.tag == 7 { // Index
-            base = std.Concat("Index_", t.Index.struct_name);
-            if t.Index.brand != empty[Index[str, ctx]] {
-                mut brand_str_ptr := &ctx[t.Index.brand] as *str;
-                mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
-                mut suffix := std.Concat("_", clean_b);
-                if typechecker_ends_with(t.Index.struct_name, suffix) == 0 {
-                    base = std.Concat(base, suffix);
+                base = std.Concat("Index_", t.Index.struct_name);
+                if t.Index.brand != empty[Index[str, ctx]] {
+                    mut brand_str_ptr := &ctx[t.Index.brand] as *str;
+                    mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
+                    mut suffix := std.Concat("_", clean_b);
+                    mut ns_suffix := std.Concat("__", clean_b);
+                    if typechecker_ends_with(t.Index.struct_name, suffix) == 0 && typechecker_ends_with(t.Index.struct_name, ns_suffix) == 0 && std.str_eq(t.Index.struct_name, clean_b) == 0 {
+                        base = std.Concat(base, suffix);
+                    }
                 }
-            }
-        } else if t.tag == 8 { // Struct
-            base = t.Struct.struct_name;
-            if t.Struct.brand != empty[Index[str, ctx]] {
-                mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
-                mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
-                mut suffix := std.Concat("_", clean_b);
-                if typechecker_ends_with(base, suffix) == 0 {
-                    base = std.Concat(base, suffix);
+            } else if t.tag == 8 { // Struct
+                base = t.Struct.struct_name;
+                if t.Struct.brand != empty[Index[str, ctx]] {
+                    mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
+                    mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
+                    mut suffix := std.Concat("_", clean_b);
+                    mut ns_suffix := std.Concat("__", clean_b);
+                    if typechecker_ends_with(base, suffix) == 0 && typechecker_ends_with(base, ns_suffix) == 0 && std.str_eq(base, clean_b) == 0 {
+                        base = std.Concat(base, suffix);
                 }
             }
         } else if t.tag == 9 { // RawPointer

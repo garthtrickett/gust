@@ -3678,12 +3678,14 @@ fn test_e2e_c_std_clone_str() {
     c_program.push_str("#include <assert.h>\n");
     c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
     c_program.push_str("typedef struct Slice_unsigned_char Slice_unsigned_char;\n");
-    c_program.push_str("struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
+    c_program
+        .push_str("struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
     c_program.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
     c_program.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
     c_program.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
 
-    c_program.push_str(r#"
+    c_program.push_str(
+        r#"
         int main() {
             os_Arena arena = os_Arena_New();
 
@@ -3707,15 +3709,22 @@ fn test_e2e_c_std_clone_str() {
             os_Arena_Free(&arena);
             return 0;
         }
-    "#);
+    "#,
+    );
 
     let temp_dir = env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
     let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
 
-    let c_filename = format!("gust_std_clone_str_{:?}_{}_{}.c", thread_id, process_id, count);
-    let bin_filename = format!("gust_std_clone_str_{:?}_{}_{}.bin", thread_id, process_id, count);
+    let c_filename = format!(
+        "gust_std_clone_str_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_std_clone_str_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
@@ -4460,6 +4469,9 @@ Semantic Error: Guard 'else' block must diverge (i.e. end with a return statemen
 📥 env_resolve_type Struct: name=LookupResult_os_Dir_ctx, brand=None
 🔍 env_resolve_type: returning ctx[res_idx]
 📥 check_statement: start for stmt tag 13
+🔍 env_resolve_type: returning ctx[res_idx]
+⚖ types_match: expected=Int, actual=Int
+🔍 env_resolve_type: returning ctx[res_idx]
 ✅ check_statement: successfully verified stmt tag 13
 ✅ check_statement: successfully verified stmt tag 9
 Scenario D check: Ok
