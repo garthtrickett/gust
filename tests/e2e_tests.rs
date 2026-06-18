@@ -4413,6 +4413,21 @@ RawPointer(Struct("MyNode_ctx", Some("ctx")))"#
 }
 
 #[test]
+fn test_e2e_fallible_guard_bootstrap() {
+    let temp_dir_path = std::path::Path::new("temp_e2e_guard_test_dir");
+    let _ = std::fs::remove_dir_all(temp_dir_path);
+    std::fs::create_dir_all(temp_dir_path.join("nested")).unwrap();
+
+    std::fs::write(temp_dir_path.join("nested/file1.gst"), "func main() {}").unwrap();
+
+    let source = std::fs::read_to_string("tests/e2e_fallible_guard_bootstrap.gst")
+        .expect("Failed to read E2E test file");
+    run_e2e_test(&source, "42\n42\nfile1.gst");
+
+    let _ = std::fs::remove_dir_all(temp_dir_path);
+}
+
+#[test]
 fn test_self_hosted_typechecker_violations() {
     gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();
