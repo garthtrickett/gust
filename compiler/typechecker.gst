@@ -3934,7 +3934,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 scope_insert(scope, name, resolved_explicit, ctx);
                 (*env).variable_types.Insert(std.Clone(ctx, name), resolved_explicit);
-                val_type = resolved_explicit;
+                guard lookup_type_explicit := (*env).variable_types.Get(name) else {
+                    return res;
+                }
+                val_type = lookup_type_explicit;
             } else {
                 scope_insert(scope, name, val_type, ctx);
                 (*env).variable_types.Insert(std.Clone(ctx, name), val_type);
