@@ -1,3 +1,4 @@
+import "codegen.gst" as codegen;
 import "ast.gst" as ast;
 import "token.gst" as token;
 import "lexer.gst" as lexer;
@@ -245,6 +246,13 @@ func main() {
     os.LogStr(codegen.codegen_get_c_type_name_by_struct_name("str", ctx)); // Expected: Slice_unsigned_char
     os.LogStr(codegen.codegen_get_c_type_name_by_struct_name("bool", ctx)); // Expected: unsigned char
     os.LogStr(codegen.codegen_get_c_type_name_by_struct_name("MyNode", ctx)); // Expected: MyNode
+
+    // Parse an os.ArenaAlloc(ctx) call expression for use in the Sub-Step 2.2 test
+    mut l_alloc_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_alloc_test, "os.ArenaAlloc(ctx)");
+    mut p_alloc_test: parser.Parser[ctx];
+    parser.init_parser(&p_alloc_test, &l_alloc_test, ctx);
+    mut expr_alloc_test := parser.parse_expression(&p_alloc_test, 1, ctx);
 
     // Sub-Step 2.2 Verification: Test os.ArenaAlloc transpilation with "str" brand
     env.current_alloc_struct = "str";
