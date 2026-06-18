@@ -189,8 +189,9 @@ func codegen_hashmap_is_str_key(t: ast.Type[ctx], env: &typechecker.TypeEnvironm
         if t.tag == 8 { // Struct
             mut name := t.Struct.struct_name;
             mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
-            mut lookup_struct := (*env).struct_registry.Get(erased_name);
-            if lookup_struct.Ok {
+            mut orig_name := codegen_find_original_struct_name(erased_name, env, ctx);
+            mut lookup_struct := (*env).struct_registry.Get(orig_name);
+            if lookup_struct.Ok { 
                 mut layout := lookup_struct.Val;
                 mut keys_type_lookup := layout.fields.Get("keys");
                 if keys_type_lookup.Ok {
@@ -1607,7 +1608,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 if is_map == 1 {
                     mut left_str := codegen_generate_expression(left_expr_idx, env, ctx);
                     mut is_str_key := 0;
-                    mut lookup_struct := (*env).struct_registry.Get(s_name);
+                    mut erased_s_name := codegen_get_erased_struct_name(s_name, env, ctx);
+                    mut orig_s_name := codegen_find_original_struct_name(erased_s_name, env, ctx);
+                    mut lookup_struct := (*env).struct_registry.Get(orig_s_name);
                     if lookup_struct.Ok {
                         mut layout := lookup_struct.Val;
                         mut keys_type_lookup := layout.fields.Get("keys");
