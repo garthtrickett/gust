@@ -2659,7 +2659,10 @@ typedef void Any;
         mut i := 0;
         while i < len(erased_struct_keys) {
             mut key := erased_struct_keys[i];
-            mut orig_key := erased_to_original.Get(key).Val;
+            guard orig_key_res := erased_to_original.Get(key) else {
+                return std.Clone(ctx, "");
+            }
+            mut orig_key := orig_key_res.Val;
             
             mut is_template_instance := 0;
             if std.str_find(key, "_") != 0 - 1 {
@@ -2774,7 +2777,10 @@ typedef void Any;
             
             mut has_bool := codegen_has_boolean_fields(t_struct, env, ctx);
             if has_bool == 1 {
-                mut orig_key := erased_to_original.Get(key).Val;
+                guard orig_key_res := erased_to_original.Get(key) else {
+                    return std.Clone(ctx, "");
+                }
+                mut orig_key := orig_key_res.Val;
                 mut layout_lookup := (*env).struct_registry.Get(orig_key);
                 if layout_lookup.Ok {
                     mut impl := codegen_gen_is_valid_helper(key, layout_lookup.Val, env, ctx);
