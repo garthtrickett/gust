@@ -2523,6 +2523,25 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
     return "0";
 }
 
+func codegen_generate_block_statement(block_idx: Index[ast.BlockStatement[ctx], ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str { 
+    unsafe {
+        if block_idx == empty[Index[ast.BlockStatement[ctx], ctx]] {
+            return "";
+        }
+        mut body_statements := &ctx[ctx[block_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut res := "";
+        mut j := 0;
+        while j < len(*body_statements) {
+            mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[child_stmt_idx] = (*body_statements)[j];
+            mut child_c := codegen_generate_statement(child_stmt_idx, env, ctx);
+            res = std.Concat(res, child_c);
+            j = j + 1;
+        }
+        return std.Clone(ctx, res);
+    }
+}
+
 func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         if stmt_idx == empty[Index[ast.Statement[ctx], ctx]] {
@@ -2636,16 +2655,9 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     (*env).current_params.Clear();
                     mut res := "void gust_user_main(void* _gust_arg) {\n";
                     mut body_idx := ctx[stmt_idx].FunctionDecl.body;
-                    mut body_statements := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
-                mut j := 0;
-                while j < len(*body_statements) {
-                    mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[child_stmt_idx] = (*body_statements)[j];
-                    mut child_c := codegen_generate_statement(child_stmt_idx, env, ctx);
-                    res = std.Concat(res, child_c);
-                    j = j + 1;
-                }
-                res = std.Concat(res, "}\n\n");
+                    mut body_c := codegen_generate_block_statement(body_idx, env, ctx);
+                    res = std.Concat(res, body_c);
+                    res = std.Concat(res, "}\n\n");
                 res = std.Concat(res, "int main(int argc, char** argv) {\n");
                 res = std.Concat(res, "    os_argc = argc;\n");
                 res = std.Concat(res, "    os_argv = argv;\n");
@@ -2703,15 +2715,8 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             res = std.Concat(res, ") {\n");
 
             mut body_idx := ctx[stmt_idx].FunctionDecl.body;
-            mut body_statements := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
-            mut j := 0;
-            while j < len(*body_statements) {
-                mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[child_stmt_idx] = (*body_statements)[j];
-                mut child_c := codegen_generate_statement(child_stmt_idx, env, ctx);
-                res = std.Concat(res, child_c);
-                j = j + 1;
-            }
+            mut body_c := codegen_generate_block_statement(body_idx, env, ctx);
+            res = std.Concat(res, body_c);
             res = std.Concat(res, "}\n\n");
 
 
