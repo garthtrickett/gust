@@ -245,4 +245,11 @@ func main() {
     os.LogStr(codegen.codegen_get_c_type_name_by_struct_name("str", ctx)); // Expected: Slice_unsigned_char
     os.LogStr(codegen.codegen_get_c_type_name_by_struct_name("bool", ctx)); // Expected: unsigned char
     os.LogStr(codegen.codegen_get_c_type_name_by_struct_name("MyNode", ctx)); // Expected: MyNode
+
+    // Sub-Step 2.2 Verification: Test os.ArenaAlloc transpilation with "str" brand
+    env.current_alloc_struct = "str";
+    mut output_c_str := codegen.codegen_generate_expression(expr_alloc_test, &env, ctx);
+    os.LogStr(output_c_str); // Expected: os_ArenaAlloc(&ctx, sizeof(Slice_unsigned_char))
+    env.current_alloc_struct = "";
+
 }
