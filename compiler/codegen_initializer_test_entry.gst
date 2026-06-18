@@ -655,4 +655,87 @@ func main() {
     ctx[expr_ptr_access_idx] = e_ptr_access;
     mut ptr_gen_str := codegen.codegen_generate_expression(expr_ptr_access_idx, &env, ctx);
     os.LogStr(ptr_gen_str); // Expected: (my_ptr[3])
+
+    // Step 5: Verification Test for Step 3 Vector, Pool, and HashMap IndexAccess Branches
+    // 1. Vector indexing test
+    mut e_vec_access: ast.Expression[ctx];
+    e_vec_access.tag = 8; // IndexAccess
+    e_vec_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
+    e_vec_access.IndexAccess.index = os.ArenaAlloc(ctx);
+    
+    // Set allocator as identifier "my_vec"
+    ctx[e_vec_access.IndexAccess.allocator].tag = 0; // Identifier
+    ctx[e_vec_access.IndexAccess.allocator].Identifier.name = "my_vec";
+    ctx[e_vec_access.IndexAccess.allocator].Identifier.span.start.offset = 300;
+    ctx[e_vec_access.IndexAccess.allocator].Identifier.span.end.offset = 306;
+
+    // Set index as integer 4
+    ctx[e_vec_access.IndexAccess.index].tag = 1; // Integer
+    ctx[e_vec_access.IndexAccess.index].Integer.val = 4;
+    ctx[e_vec_access.IndexAccess.index].Integer.span.start.offset = 307;
+    ctx[e_vec_access.IndexAccess.index].Integer.span.end.offset = 308;
+
+    e_vec_access.IndexAccess.span.start.offset = 300;
+    e_vec_access.IndexAccess.span.end.offset = 309;
+
+    mut t_vec: ast.Type[ctx];
+    t_vec.tag = 8; // Struct
+    t_vec.Struct.struct_name = "std_Vector_int_ctx";
+    t_vec.Struct.brand = empty[Index[str, ctx]];
+
+    mut entry_vec: typechecker.ResolvedTypeEntry[ctx];
+    entry_vec.start_offset = 300;
+    entry_vec.end_offset = 306;
+    entry_vec.val_type = t_vec;
+
+    mut pfx_entry_vec: typechecker.PrefixMapEntry[ctx];
+    pfx_entry_vec.prefix = "";
+    pfx_entry_vec.types = std.VectorNew(ctx);
+    pfx_entry_vec.types.Push(entry_vec);
+    env.resolved_types_nested.Push(pfx_entry_vec);
+
+    mut expr_vec_access_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx[expr_vec_access_idx] = e_vec_access;
+    mut vec_gen_str := codegen.codegen_generate_expression(expr_vec_access_idx, &env, ctx);
+    os.LogStr(vec_gen_str); // Expected: (*({ if (4 < 0 || 4 >= my_vec.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(my_slice.data[2]); }))
+
+    // Test RawPointer index access
+    mut e_ptr_access: ast.Expression[ctx];
+    e_ptr_access.tag = 8; // IndexAccess
+    e_ptr_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
+    e_ptr_access.IndexAccess.index = os.ArenaAlloc(ctx);
+
+    ctx[e_ptr_access.IndexAccess.allocator].tag = 0; // Identifier
+    ctx[e_ptr_access.IndexAccess.allocator].Identifier.name = "my_map";
+    ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.start.offset = 400;
+    ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.end.offset = 406;
+
+    ctx[e_ptr_access.IndexAccess.index].tag = 0; // Identifier
+    ctx[e_ptr_access.IndexAccess.index].Identifier.name = "my_key";
+    ctx[e_ptr_access.IndexAccess.index].Identifier.span.start.offset = 407;
+    ctx[e_ptr_access.IndexAccess.index].Identifier.span.end.offset = 413;
+
+    e_ptr_access.IndexAccess.span.start.offset = 400;
+    e_ptr_access.IndexAccess.span.end.offset = 414;
+
+    mut t_map: ast.Type[ctx];
+    t_map.tag = 8; // Struct
+    t_map.Struct.struct_name = "std_HashMap_str_int_ctx";
+    t_map.Struct.brand = empty[Index[str, ctx]];
+
+    mut entry_map: typechecker.ResolvedTypeEntry[ctx];
+    entry_map.start_offset = 400;
+    entry_map.end_offset = 406;
+    entry_map.val_type = t_map;
+
+    mut pfx_entry_map: typechecker.PrefixMapEntry[ctx];
+    pfx_entry_map.prefix = "";
+    pfx_entry_map.types = std.VectorNew(ctx);
+    pfx_entry_map.types.Push(entry_map);
+    env.resolved_types_nested.Push(pfx_entry_map);
+
+    mut expr_map_access_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx[expr_map_access_idx] = e_map_access;
+    mut map_gen_str := codegen.codegen_generate_expression(expr_map_access_idx, &env, ctx);
+    os.LogStr(map_gen_str); // Expected: (*os_HashMapRef(&my_map, my_key, 1))
 }

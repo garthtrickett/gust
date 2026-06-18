@@ -1285,6 +1285,65 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 return std.Clone(ctx, res);
             }
 
+            if codegen_is_vector_type(alloc_t, env, ctx) == 1 {
+                mut arrow_or_dot := ".";
+                if alloc_t.tag == 9 { // RawPointer
+                    arrow_or_dot = "->";
+                }
+                mut res := std.Concat("(*({ if (", index_str);
+                res = std.Concat(res, " < 0 || ");
+                res = std.Concat(res, index_str);
+                res = std.Concat(res, " >= ");
+                res = std.Concat(res, alloc_str);
+                res = std.Concat(res, arrow_or_dot);
+                res = std.Concat(res, "len) { printf(\"Vector bounds check failed at line %d\\n\", __LINE__); exit(1); } &(");
+                res = std.Concat(res, alloc_str);
+                res = std.Concat(res, arrow_or_dot);
+                res = std.Concat(res, "data[");
+                res = std.Concat(res, index_str);
+                res = std.Concat(res, "]); }))");
+                return std.Clone(ctx, res);
+            }
+
+            if codegen_is_pool_type(alloc_t, env, ctx) == 1 {
+                mut arrow_or_dot := ".";
+                if alloc_t.tag == 9 { // RawPointer
+                    arrow_or_dot = "->";
+                }
+                mut res := std.Concat("(*({ if (", index_str);
+                res = std.Concat(res, " < 0 || ");
+                res = std.Concat(res, index_str);
+                res = std.Concat(res, " >= ");
+                res = std.Concat(res, alloc_str);
+                res = std.Concat(res, arrow_or_dot);
+                res = std.Concat(res, "len) { printf(\"Pool bounds check failed at line %d\\n\", __LINE__); exit(1); } &(");
+                res = std.Concat(res, alloc_str);
+                res = std.Concat(res, arrow_or_dot);
+                res = std.Concat(res, "data[");
+                res = std.Concat(res, index_str);
+                res = std.Concat(res, "]); }))");
+                return std.Clone(ctx, res);
+            }
+
+            if codegen_is_hashmap_type(alloc_t, env, ctx) == 1 {
+                mut ref_prefix := "&";
+                if alloc_t.tag == 9 { // RawPointer
+                    ref_prefix = "";
+                }
+                mut is_str_key := "0";
+                if codegen_hashmap_is_str_key(alloc_t, env, ctx) == 1 {
+                    is_str_key = "1";
+                }
+                mut res := std.Concat("(*os_HashMapRef(", ref_prefix);
+                res = std.Concat(res, alloc_str);
+                res = std.Concat(res, ", ");
+                res = std.Concat(res, index_str);
+                res = std.Concat(res, ", ");
+                res = std.Concat(res, is_str_key);
+                res = std.Concat(res, "))");
+                return std.Clone(ctx, res);
+            }
+
             mut res := std.Concat(alloc_str, "[");
             res = std.Concat(res, index_str);
             res = std.Concat(res, "]");
