@@ -1375,7 +1375,6 @@ func typechecker_parse_type_from_string(target_struct: str, ctx: &Arena) ast.Typ
     return make_type_struct(target_struct, brand_name, ctx);
 }
 
-func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
 func get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
     unsafe {
         mut base := "";
