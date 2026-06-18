@@ -241,6 +241,7 @@ func codegen_is_brand_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[c
     return 0;
 }
 
+
 func codegen_erase_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
         mut erased_t := t;
@@ -278,7 +279,7 @@ func codegen_erase_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
             mut name := t.Generic.name;
             mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
             mut erased_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
-            
+
             mut i := 0;
             while i < len(*args_vec) {
                 mut arg := (*args_vec)[i];
@@ -294,6 +295,16 @@ func codegen_erase_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
             return erased_t;
         }
         return t;
+    }
+}
+
+func codegen_get_erased_struct_name(name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        mut lookup := (*env).struct_registry.Get(name);
+        if lookup.Ok {
+            return codegen_erase_struct_name(name, lookup.Val.brand, env, ctx);
+        }
+        return codegen_erase_struct_name(name, empty[Index[str, ctx]], env, ctx);
     }
 }
 
@@ -2706,8 +2717,8 @@ typedef void Any;
         // 3. _IsValid Invariant Validator forward declarations
         c_code = std.Concat(c_code, "// Invariant Validator forward declarations\n");
         mut k := 0;
-        while k < len(struct_keys) {
-            mut key := struct_keys[k];
+        while k < len(erased_struct_keys) {
+            mut key := erased_struct_keys[k];
             mut t_struct: ast.Type[ctx];
             t_struct.tag = 8; // Struct
             t_struct.Struct.struct_name = key;
@@ -2728,8 +2739,8 @@ typedef void Any;
         // 3. _IsValid Invariant Validator implementations
         c_code = std.Concat(c_code, "// Invariant Validator implementations\n");
         mut m := 0;
-        while m < len(struct_keys) {
-            mut key := struct_keys[m];
+        while m < len(erased_struct_keys) {
+            mut key := erased_struct_keys[m];
             mut t_struct: ast.Type[ctx];
             t_struct.tag = 8; // Struct
             t_struct.Struct.struct_name = key;
@@ -2737,7 +2748,8 @@ typedef void Any;
             
             mut has_bool := codegen_has_boolean_fields(t_struct, env, ctx);
             if has_bool == 1 {
-                mut layout_lookup := (*env).struct_registry.Get(key);
+                mut orig_key := erased_to_original.Get(key).Val;
+                mut layout_lookup := (*env).struct_registry.Get(orig_key);
                 if layout_lookup.Ok {
                     mut impl := codegen_gen_is_valid_helper(key, layout_lookup.Val, env, ctx);
                     c_code = std.Concat(c_code, impl);
