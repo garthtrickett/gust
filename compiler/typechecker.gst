@@ -1394,6 +1394,33 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
         }
         part = clean_part;
 
+        if std.str_eq(part, "Index") == 1 {
+            mut target := parse_one_type_from_parts(env, parts, start_idx, ctx);
+            mut target_name := get_type_ident(target, ctx);
+            mut brand_name := "";
+            if *start_idx < len(parts) {
+                mut next_part := parts[*start_idx];
+                mut is_b := 0;
+                if std.str_eq(next_part, "ctx") == 1 { is_b = 1; }
+                if std.str_eq(next_part, "connCtx") == 1 { is_b = 1; }
+                if std.str_eq(next_part, "arena") == 1 { is_b = 1; }
+                if std.str_eq(next_part, "a") == 1 { is_b = 1; }
+                if std.str_eq(next_part, "Any") == 1 { is_b = 1; }
+                if std.str_eq(next_part, "ctx1") == 1 { is_b = 1; }
+                if std.str_eq(next_part, "ctx2") == 1 { is_b = 1; }
+                if std.str_eq(next_part, "innerCtx") == 1 { is_b = 1; }
+                if std.str_eq(next_part, "outerCtx") == 1 { is_b = 1; }
+                if std.str_eq(next_part, "current_ctx") == 1 { is_b = 1; }
+                if std.str_eq(next_part, "next_ctx") == 1 { is_b = 1; }
+                
+                if is_b == 1 {
+                    brand_name = next_part;
+                    *start_idx = *start_idx + 1; 
+                }
+            }
+            return make_type_index(target_name, brand_name, ctx);
+        }
+
         if std.str_eq(part, "int") {
             return make_type_int();
         }
