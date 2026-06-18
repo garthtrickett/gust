@@ -3821,7 +3821,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut dest_ptr := &ctx[inout_params_idx] as *std.Vector[str, ctx];
             *dest_ptr = inout_params;
             (*env).current_function_inout_params = inout_params_idx;
-            (*env).current_function_local_vars = set_init(ctx);
+            (*env).current_function_local_vars = os.ArenaAlloc(ctx) as Index[OriginSet[ctx], ctx];
 
             // Evaluate body statements
             if body_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
@@ -3894,7 +3894,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     mut temp_origs := get_expression_origins(val_idx, env, ctx);
                     origs = typechecker_clone_origin_set(temp_origs, ctx);
                     if ctx[origs].map.len == 0 {
-                        set_add(origs, name, ctx);
+                        set_add(origs, std.Clone(ctx, name), ctx);
                     }
                 }
                 (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
@@ -3904,7 +3904,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     mut resolved := env_resolve_type(env, ctx[var_type_idx], ctx);
                     val_type = resolved;
                     if env_type_is_ephemeral_view(val_type, ctx) == 1 {
-                        set_add(origs, name, ctx);
+                        set_add(origs, std.Clone(ctx, name), ctx);
                     }
                     (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
                 } else {
@@ -3932,14 +3932,14 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     report_error(2, msg, val_span, env, ctx);
                 }
 
-                scope_insert(scope, name, resolved_explicit, ctx);
+                scope_insert(scope, std.Clone(ctx, name), resolved_explicit, ctx);
                 (*env).variable_types.Insert(std.Clone(ctx, name), resolved_explicit);
                 guard lookup_type_explicit := (*env).variable_types.Get(name) else {
                     return res;
                 }
                 val_type = lookup_type_explicit;
             } else {
-                scope_insert(scope, name, val_type, ctx);
+                scope_insert(scope, std.Clone(ctx, name), val_type, ctx);
                 (*env).variable_types.Insert(std.Clone(ctx, name), val_type);
                 guard lookup_type := (*env).variable_types.Get(name) else {
                     return res;
@@ -3949,14 +3949,14 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             if val_type.tag == 8 { // Struct
                 mut assign_struct_name := val_type.Struct.struct_name;
-                if len(assign_struct_name) >= 7 && std.str_eq(std.str_slice(assign_struct_name, 0, 7), "os_Dir_") {
+                if len(assign_struct_name) >= 7 && std.str_eq(std.str_slice(assign_struct_name, 0, 7), "os_Dir_") { 
                     (*env).open_directories.Insert(std.Clone(ctx, name), 1);
                 }
-            }
+            } 
 
-            if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
+            if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] { 
                 mut local_vars := (*env).current_function_local_vars;
-                set_add(local_vars, name, ctx);
+                set_add(local_vars, std.Clone(ctx, name), ctx);
             }
 
             mut prefix := (*env).current_prefix;
