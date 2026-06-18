@@ -389,4 +389,31 @@ func main() {
 
     mut erased_lookup := codegen.codegen_erase_type(t_lookup, &env, ctx);
     os.LogStr(erased_lookup.Struct.struct_name);
+
+    // Step 2: Verification Test for C Type Generation
+    mut t_gen_vector: ast.Type[ctx];
+    t_gen_vector.tag = 10; // Generic
+    t_gen_vector.Generic.name = "std.Vector";
+    
+    mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    
+    mut arg1: ast.Type[ctx];
+    arg1.tag = 5; // Str
+    args.Push(arg1);
+    
+    mut arg2: ast.Type[ctx];
+    arg2.tag = 8; // Struct
+    arg2.Struct.struct_name = "ctx";
+    arg2.Struct.brand = empty[Index[str, ctx]];
+    args.Push(arg2);
+    
+    mut args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    unsafe {
+        mut args_ptr := &ctx[args_idx] as *std.Vector[ast.Type[ctx], ctx];
+        *args_ptr = args;
+    }
+    t_gen_vector.Generic.args = args_idx;
+    
+    mut c_type_str := codegen.codegen_get_c_type(t_gen_vector, &env, ctx);
+    os.LogStr(c_type_str);
 }

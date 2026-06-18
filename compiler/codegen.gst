@@ -676,44 +676,45 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
 func codegen_get_c_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
         mut resolved_t := typechecker.env_resolve_type(env, t, ctx);
-        if resolved_t.tag == 0 { // Int
+        mut erased_t := codegen_erase_type(resolved_t, env, ctx);
+        if erased_t.tag == 0 { // Int
             return "int";
         }
-        if resolved_t.tag == 1 { // Byte
+        if erased_t.tag == 1 { // Byte
             return "unsigned char";
         }
-        if resolved_t.tag == 2 { // Bool
+        if erased_t.tag == 2 { // Bool
             return "unsigned char";
         }
-        if resolved_t.tag == 3 { // Void
+        if erased_t.tag == 3 { // Void
             return "void";
         }
-        if resolved_t.tag == 4 { // Arena
+        if erased_t.tag == 4 { // Arena
             return "os_Arena";
         }
-        if resolved_t.tag == 5 { // Str
+        if erased_t.tag == 5 { // Str
             return "Slice_unsigned_char";
         }
-        if resolved_t.tag == 6 { // Slice
-            mut inner_type := ctx[resolved_t.Slice.inner];
+        if erased_t.tag == 6 { // Slice
+            mut inner_type := ctx[erased_t.Slice.inner];
             mut inner_ident := codegen_get_c_type_ident(inner_type, env, ctx);
             mut res := std.Concat("Slice_", inner_ident);
             return std.Clone(ctx, res);
         }
-        if resolved_t.tag == 7 { // Index
+        if erased_t.tag == 7 { // Index
             return "int";
         }
-        if resolved_t.tag == 8 { // Struct
-            return std.Clone(ctx, resolved_t.Struct.struct_name);
+        if erased_t.tag == 8 { // Struct
+            return std.Clone(ctx, erased_t.Struct.struct_name);
         }
-        if resolved_t.tag == 9 { // RawPointer
-            mut inner_type := ctx[resolved_t.RawPointer.inner];
+        if erased_t.tag == 9 { // RawPointer
+            mut inner_type := ctx[erased_t.RawPointer.inner];
             mut inner_c := codegen_get_c_type(inner_type, env, ctx);
             mut res := std.Concat(inner_c, "*");
             return std.Clone(ctx, res);
         }
-        if resolved_t.tag == 10 { // Generic
-            mut mono_name := codegen_get_monomorphized_name(resolved_t.Generic.name, resolved_t.Generic.args, env, ctx);
+        if erased_t.tag == 10 { // Generic
+            mut mono_name := codegen_get_monomorphized_name(erased_t.Generic.name, erased_t.Generic.args, env, ctx);
             return std.Clone(ctx, mono_name);
         }
     }
@@ -750,7 +751,8 @@ func codegen_get_monomorphized_name(template_name: str, args_idx: Index[std.Vect
             if i > 0 {
                 arg_names = std.Concat(arg_names, "_");
             }
-            mut arg_name := typechecker.get_type_ident((*args_vec)[i], ctx);
+            mut erased_arg := codegen_erase_type((*args_vec)[i], env, ctx);
+            mut arg_name := typechecker.get_type_ident(erased_arg, ctx);
             arg_names = std.Concat(arg_names, arg_name);
             i = i + 1;
         }
