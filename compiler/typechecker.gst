@@ -942,6 +942,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             if std.str_eq(resolved_func, "std_Clone") || std.str_eq(resolved_func, "std.Clone") {
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 if len(*args_vec) == 2 {
+                    mut dest_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[dest_expr_idx] = (*args_vec)[0];
+                    check_expression(dest_expr_idx, env, scope, ctx);
+
                     mut val_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[val_expr_idx] = (*args_vec)[1];
                     mut val_type := check_expression(val_expr_idx, env, scope, ctx);
@@ -959,6 +963,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if len(*args_vec) == 1 {
                     mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[arg0_idx] = (*args_vec)[0];
+                    check_expression(arg0_idx, env, scope, ctx);
                     mut brand_name := get_root_variable(arg0_idx, ctx);
                     
                     mut ret_name := "std_Channel_Any";
@@ -979,7 +984,81 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
             mut sig_lookup := (*env).function_registry.Get(resolved_func);
             if sig_lookup.Ok {
-                return sig_lookup.Val.return_type;
+                mut sig := sig_lookup.Val;
+                (*env).resolved_names.Insert(function, std.Clone(ctx, resolved_func));
+
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut evaluated_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                
+                mut i := 0;
+                while i < len(*args_vec) {
+                    mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[arg_idx] = (*args_vec)[i];
+                    mut arg_type := check_expression(arg_idx, env, scope, ctx);
+                    mut resolved_arg := env_resolve_type(env, arg_type, ctx);
+                    evaluated_args.Push(resolved_arg);
+                    i = i + 1;
+                }
+
+                if len(sig.params) != len(*args_vec) {
+                    mut msg := std.Format("Semantic Error: Function '%s' expects %d arguments but got %d", resolved_func, len(sig.params), len(*args_vec));
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                    mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
+                    return dummy;
+                }
+
+                mut new_brand := empty[Index[str, ctx]];
+                mut j := 0;
+                while j < len(sig.params) {
+                    mut param_type := sig.params[j];
+                    mut is_arena_ptr := 0;
+                    if param_type.tag == 9 {
+                        mut inner := ctx[param_type.RawPointer.inner];
+                        if inner.tag == 4 {
+                            is_arena_ptr = 1;
+                        }
+                    }
+                    if param_type.tag == 4 || is_arena_ptr == 1 {
+                        mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg_idx] = (*args_vec)[j];
+                        mut actual_name := get_root_variable(arg_idx, ctx);
+                        if std.str_eq(actual_name, "") == 0 {
+                            new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                            mut ptr := &ctx[new_brand] as *str;
+                            *ptr = std.Clone(ctx, actual_name);
+                        }
+                        j = len(sig.params);
+                    } else { 
+                        j = j + 1;
+                    }
+                }
+
+                mut k := 0;
+                while k < len(evaluated_args) {
+                    mut resolved_arg := evaluated_args[k];
+                    mut expected_type := sig.params[k];
+                    if new_brand != empty[Index[str, ctx]] {
+                        expected_type = typechecker_substitute_brand(expected_type, new_brand, ctx);
+                    }
+
+                    if types_match(expected_type, resolved_arg, ctx) == 0 {
+                        mut msg := std.Format("Semantic Error: Argument type mismatch for function '%s'. Expected %s but got %s",
+                            resolved_func,
+                            ast.serialize_type(expected_type, ctx),
+                            ast.serialize_type(resolved_arg, ctx));
+                        mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg_idx] = (*args_vec)[k];
+                        report_error(2, msg, get_expression_span(arg_idx, ctx), env, ctx);
+                    }
+                    k = k + 1;
+                }
+
+                mut resolved_return := sig.return_type;
+                if new_brand != empty[Index[str, ctx]] {
+                    resolved_return = typechecker_substitute_brand(resolved_return, new_brand, ctx);
+                }
+                resolved_return = env_resolve_type(env, resolved_return, ctx);
+                return resolved_return;
             }
             mut t: ast.Type[ctx];
             t.tag = 0; // Int
