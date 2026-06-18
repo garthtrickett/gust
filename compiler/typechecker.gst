@@ -4505,7 +4505,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 if resolved_val_type.tag == 8 { // Struct
                     mut struct_name := resolved_val_type.Struct.struct_name;
                     mut lookup_layout := (*env).struct_registry.Get(struct_name);
-                    if lookup_layout.Ok {
+                    if lookup_layout.Ok { 
                         mut layout := lookup_layout.Val;
                         mut ok_field_lookup := layout.fields.Get("Ok");
                         mut val_field_lookup := layout.fields.Get("Val");
@@ -4525,6 +4525,35 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     report_error(2, msg, span, env, ctx);
                 }
 
+                // Step 3: Implement Isolated Else-Block Checking and Divergence Enforcement
+                mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
+                mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
+                mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
+
+                mut child_scope := scope_new(scope, ctx);
+                
+                mut else_block := ctx[else_body];
+                mut else_statements := &ctx[else_block.statements] as *std.Vector[ast.Statement[ctx], ctx];
+                mut i := 0;
+                while i < len(*else_statements) { 
+                    mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[s_idx] = (*else_statements)[i];
+                    check_statement(s_idx, env, child_scope, ctx);
+                    i = i + 1;
+                }
+
+                mut diverges := is_diverging_block(else_body, env, ctx);
+                if diverges == 0 {
+                    mut msg := "Semantic Error: Guard 'else' block must diverge (i.e. end with a return statement or an exit call)";
+                    report_error(2, msg, ctx[else_body].span, env, ctx);
+                }
+
+                (*env).variable_origins = parent_origins;
+                (*env).moved_vars = parent_moved;
+                (*env).open_directories = parent_open_dirs;
+
+                return res;
+            }
                 // Step 3: Implement Isolated Else-Block Checking and Divergence Enforcement
                 mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
                 mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
