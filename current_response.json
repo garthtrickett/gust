@@ -1,9 +1,0 @@
-{
-  "summary": "fix: clone suffix using std.Clone in codegen_erase_struct_name to avoid parent-mutation invalidation",
-  "files": [
-    {
-      "file_path": "compiler/codegen.gst",
-      "code_diff": "<<<<<<< SEARCH\n        mut pos := codegen_rfind_char(erased, 95, len(erased));\n        if pos != 0 - 1 {\n            mut last_part := std.str_slice(erased, pos + 1, len(erased));\n            mut has_upper := 0;\n            if len(last_part) > 0 {\n                mut first_b := std.str_byte_at(last_part, 0);\n                if first_b >= 65 && first_b <= 90 {\n                    has_upper = 1;\n                }\n            }\n            if has_upper == 1 && std.str_eq(last_part, \"Any\") == 0 {\n                suffix = std.str_slice(erased, pos, len(erased));\n                erased = std.str_slice(erased, 0, pos);\n            }\n        }\n=======\n        mut pos := codegen_rfind_char(erased, 95, len(erased));\n        if pos != 0 - 1 {\n            mut last_part := std.str_slice(erased, pos + 1, len(erased));\n            mut has_upper := 0;\n            if len(last_part) > 0 {\n                mut first_b := std.str_byte_at(last_part, 0);\n                if first_b >= 65 && first_b <= 90 {\n                    has_upper = 1;\n                }\n            }\n            if has_upper == 1 && std.str_eq(last_part, \"Any\") == 0 {\n                suffix = std.Clone(ctx, std.str_slice(erased, pos, len(erased)));\n                erased = std.str_slice(erased, 0, pos);\n            }\n        }\n>>>>>>> REPLACE"
-    }
-  ]
-}
