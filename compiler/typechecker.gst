@@ -3821,7 +3821,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut dest_ptr := &ctx[inout_params_idx] as *std.Vector[str, ctx];
             *dest_ptr = inout_params;
             (*env).current_function_inout_params = inout_params_idx;
-            (*env).current_function_local_vars = os.ArenaAlloc(ctx) as Index[OriginSet[ctx], ctx];
+            (*env).current_function_local_vars = set_init(ctx);
 
             // Evaluate body statements
             if body_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
