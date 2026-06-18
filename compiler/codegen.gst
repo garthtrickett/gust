@@ -2914,6 +2914,33 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     res = std.Concat(res, tag_name);
                     res = std.Concat(res, ": {\n");
                     
+                    mut variant_struct_name := std.Concat(erased_enum_name, "_");
+                    variant_struct_name = std.Concat(variant_struct_name, case_val.variant_name);
+                    mut layout_lookup := (*env).struct_registry.Get(variant_struct_name);
+                    if layout_lookup.Ok {
+                        mut fields_vec := &ctx[case_val.fields] as *std.Vector[str, ctx];
+                        mut f_idx := 0;
+                        while f_idx < len(*fields_vec) {
+                            mut field_name := (*fields_vec)[f_idx];
+                            mut f_type_lookup := layout_lookup.Val.fields.Get(field_name);
+                            if f_type_lookup.Ok {
+                                mut field_c_type := codegen_get_c_type(f_type_lookup.Val, env, ctx);
+                                mut bind_line := std.Concat("            ", field_c_type);
+                                bind_line = std.Concat(bind_line, " ");
+                                bind_line = std.Concat(bind_line, field_name);
+                                bind_line = std.Concat(bind_line, " = ");
+                                bind_line = std.Concat(bind_line, expr_str);
+                                bind_line = std.Concat(bind_line, ".");
+                                bind_line = std.Concat(bind_line, case_val.variant_name);
+                                bind_line = std.Concat(bind_line, ".");
+                                bind_line = std.Concat(bind_line, field_name);
+                                bind_line = std.Concat(bind_line, ";\n");
+                                res = std.Concat(res, bind_line);
+                            }
+                            f_idx = f_idx + 1;
+                        }PrefixMapEntry
+                    }
+                    
                     mut body_str := codegen_generate_block_statement(case_val.body, env, ctx);
                     res = std.Concat(res, body_str);
                     

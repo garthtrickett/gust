@@ -1156,4 +1156,74 @@ func main() {
                             //         }
                             //     }
     }
+
+    // Test Step 4.2: Match Statement (Tag 8) local variable destructuring and binding generation
+    mut l_match_test_4_2: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_match_test_4_2, "type Shape enum { Circle { radius: int } }");
+    mut p_match_test_4_2: parser.Parser[ctx];
+    parser.init_parser(&p_match_test_4_2, &l_match_test_4_2, ctx);
+    mut prog_enum_test_4_2 := parser.parse_program(&p_match_test_4_2, ctx);
+    unsafe {
+        mut enum_test_statements_vec := &ctx[prog_enum_test_4_2.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        typechecker.env_pre_register_statement(&env, (*enum_test_statements_vec)[0], ctx);
+    }
+
+    mut l_match_stmt_4_2: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_match_stmt_4_2, "match s { Circle { radius } => { os.LogInt(radius); } }");
+    mut p_match_stmt_4_2: parser.Parser[ctx];
+    parser.init_parser(&p_match_stmt_4_2, &l_match_stmt_4_2, ctx);
+    mut prog_match_test_4_2 := parser.parse_program(&p_match_stmt_4_2, ctx);
+    unsafe {
+        mut match_test_statements_vec := &ctx[prog_match_test_4_2.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut match_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[match_stmt_idx] = (*match_test_statements_vec)[0];
+
+        mut expr_idx := ctx[match_stmt_idx].Match.expression;
+        mut expr_span := parser.get_expression_span(expr_idx, ctx);
+
+        mut t_shape: ast.Type[ctx];
+        t_shape.tag = 8; // Struct
+        t_shape.Struct.struct_name = "Shape";
+        t_shape.Struct.brand = empty[Index[str, ctx]];
+
+        mut match_entry_status_4_2: typechecker.ResolvedTypeEntry[ctx];
+        match_entry_status_4_2.start_offset = expr_span.start.offset;
+        match_entry_status_4_2.end_offset = expr_span.end.offset;
+        match_entry_status_4_2.val_type = t_shape;
+
+        mut found_nested_idx := 0 - 1;
+        mut idx_nested := 0;
+        while idx_nested < len(env.resolved_types_nested) {
+            if std.str_eq(env.resolved_types_nested[idx_nested].prefix, "") == 1 {
+                found_nested_idx = idx_nested;
+            }
+            idx_nested = idx_nested + 1;
+        }
+        if found_nested_idx != 0 - 1 {
+            mut match_entry_ref_4_2 := &env.resolved_types_nested[found_nested_idx];
+            (*match_entry_ref_4_2).types.Push(match_entry_status_4_2);
+        } else {
+            mut pfx_entry: typechecker.PrefixMapEntry[ctx];
+            pfx_entry.prefix = "";
+            pfx_entry.types = std.VectorNew(ctx);
+            pfx_entry.types.Push(match_entry_status_4_2);
+            env.resolved_types_nested.Push(pfx_entry);
+        }
+
+        env.variable_types.Insert("s", t_shape);
+
+        mut t_int: ast.Type[ctx];
+        t_int.tag = 0; // Int
+        env.variable_types.Insert("radius", t_int);
+
+        mut match_c := codegen.codegen_generate_statement(match_stmt_idx, &env, ctx);
+        os.LogStr(match_c); // Expected:
+                            //     switch (s.tag) {
+                            //         case Shape_Tag__Circle: {
+                            //             int radius = s.Circle.radius;
+                            //             os_LogInt(radius);
+                            //             break;
+                            //         }
+                            //     }
+    }
 }
