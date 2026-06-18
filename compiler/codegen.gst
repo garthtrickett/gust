@@ -2334,10 +2334,10 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     
                     mut struct_name := "";
                     if t_var.tag == 8 { // Struct
-                        struct_name = t_var.Struct.struct_name;
+                        struct_name = codegen_get_erased_struct_name(t_var.Struct.struct_name, env, ctx);
                     } else {
                         if t_var.tag == 7 { // Index
-                            struct_name = t_var.Index.struct_name;
+                            struct_name = codegen_get_erased_struct_name(t_var.Index.struct_name, env, ctx);
                         }
                     }
                     (*env).current_alloc_struct = struct_name;
@@ -2362,10 +2362,10 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             mut lhs_type := codegen_get_expression_type(ctx[stmt_idx].Assignment.left, env, ctx);
             mut struct_name := "";
             if lhs_type.tag == 8 { // Struct
-                struct_name = lhs_type.Struct.struct_name;
+                struct_name = codegen_get_erased_struct_name(lhs_type.Struct.struct_name, env, ctx);
             } else {
                 if lhs_type.tag == 7 { // Index
-                    struct_name = lhs_type.Index.struct_name;
+                    struct_name = codegen_get_erased_struct_name(lhs_type.Index.struct_name, env, ctx);
                 }
             }
             (*env).current_alloc_struct = struct_name;
@@ -2659,47 +2659,52 @@ typedef void Any;
         mut i := 0;
         while i < len(erased_struct_keys) {
             mut key := erased_struct_keys[i];
-            guard orig_key := erased_to_original.Get(key) else {
-                return std.Clone(ctx, "");
-            }
-            
-            mut is_template_instance := 0;
-            if std.str_find(key, "_") != 0 - 1 {
-                is_template_instance = 1;
-            }
-            if is_template_instance == 1 {
-                codegen_log_trace("👁️", std.Format("codegen_generate: transpiling custom standard template instance %s", key), ctx);
-            } else {
-                codegen_log_trace("👁️", std.Format("codegen_generate: transpiling structure layout for %s", key), ctx); 
-            }
-
-            mut layout_lookup := (*env).struct_registry.Get(orig_key);
-            if layout_lookup.Ok {
-                mut layout := layout_lookup.Val;
-                mut struct_decl := std.Concat("typedef struct ", key);
-                struct_decl = std.Concat(struct_decl, " ");
-                struct_decl = std.Concat(struct_decl, key);
-                struct_decl = std.Concat(struct_decl, ";\nstruct ");
-                struct_decl = std.Concat(struct_decl, key);
-                struct_decl = std.Concat(struct_decl, " {\n");
-                
-                mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
-                mut j := 0;
-                while j < len(f_keys) {
-                    mut f_key := f_keys[j];
-                    mut f_lookup := layout.fields.Get(f_key);
-                    if f_lookup.Ok { 
-                        mut f_c_type := codegen_get_c_type(f_lookup.Val, env, ctx);
-                        mut f_line := std.Concat("    ", f_c_type);
-                        f_line = std.Concat(f_line, " ");
-                        f_line = std.Concat(f_line, f_key);
-                        f_line = std.Concat(f_line, ";\n");
-                        struct_decl = std.Concat(struct_decl, f_line);
-                    }
-                    j = j + 1;
+            if std.str_eq(key, "std_Vector_str") == 0 &&
+               std.str_eq(key, "os_Dir") == 0 &&
+               std.str_eq(key, "os_DirEntry") == 0 &&
+               std.str_eq(key, "LookupResult_os_Dir") == 0 &&
+               std.str_eq(key, "LookupResult_os_DirEntry") == 0 {
+                guard orig_key := erased_to_original.Get(key) else {
+                    return std.Clone(ctx, "");
                 }
-                struct_decl = std.Concat(struct_decl, "};\n\n");
-                c_code = std.Concat(c_code, struct_decl);
+                
+                mut is_template_instance := 0;
+                if std.str_find(key, "_") != 0 - 1 { 
+                    is_template_instance = 1;
+                }
+                if is_template_instance == 1 {
+                    codegen_log_trace("👁️", std.Format("codegen_generate: transpiling custom standard template instance %s", key), ctx);
+                } else {
+                    codegen_log_trace("👁️", std.Format("codegen_generate: transpiling structure layout for %s", key), ctx); 
+                }
+
+                mut layout_lookup := (*env).struct_registry.Get(orig_key);
+                if layout_lookup.Ok {
+                    mut struct_decl := std.Concat("typedef struct ", key);
+                    struct_decl = std.Concat(struct_decl, " ");
+                    struct_decl = std.Concat(struct_decl, key);
+                    struct_decl = std.Concat(struct_decl, ";\nstruct ");
+                    struct_decl = std.Concat(struct_decl, key);
+                    struct_decl = std.Concat(struct_decl, " {\n");
+                    
+                    mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                    mut j := 0;
+                    while j < len(f_keys) {
+                        mut f_key := f_keys[j];
+                        mut f_lookup := layout.fields.Get(f_key);
+                        if f_lookup.Ok { 
+                            mut f_c_type := codegen_get_c_type(f_lookup.Val, env, ctx);
+                            mut f_line := std.Concat("    ", f_c_type);
+                            f_line = std.Concat(f_line, " ");
+                            f_line = std.Concat(f_line, f_key);
+                            f_line = std.Concat(f_line, ";\n");
+                            struct_decl = std.Concat(struct_decl, f_line);
+                        }
+                        j = j + 1;
+                    }
+                    struct_decl = std.Concat(struct_decl, "};\n\n");
+                    c_code = std.Concat(c_code, struct_decl);
+                }
             }
             i = i + 1;
         }
