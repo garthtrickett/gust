@@ -1157,13 +1157,20 @@ func strip_brand_prefix(brand: str, ctx: &Arena) str {
     return std.str_slice(brand, last_double_underscore + 2, len(brand));
 }
 
-func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str, ctx], start_idx: *int, ctx: &Arena) ast.Type[ctx] {
-    unsafe {
-        mut idx := *start_idx;
-        mut part := parts[idx];
-        *start_idx = idx + 1;
 
-        mut clean_part := part;
+
+func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str, ctx], start_idx: *int, ctx: &Arena) ast.Type[ctx] {
+         unsafe {
+         mut idx := *start_idx;
+         if idx < 0 || idx >= len(parts) {
+         mut t_void: ast.Type[ctx];
+         t_void.tag = 3; // Void
+         return t_void;
+         }
+         mut part := parts[idx];
+         *start_idx = idx + 1;
+
+         mut clean_part := part;
         mut at_idx := std.str_find(clean_part, "@");
         while at_idx != 0 - 1 {
             mut left := std.str_slice(clean_part, 0, at_idx);
