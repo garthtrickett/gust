@@ -2628,14 +2628,15 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             return std.Clone(ctx, res);
         }
         if tag == 3 { // FunctionDecl
-            mut f_name := ctx[stmt_idx].FunctionDecl.name;
-            mut namespaced_name := typechecker.env_resolve_namespaced_ident(env, f_name, ctx);
-            mut sig_lookup := (*env).function_registry.Get(namespaced_name);
+                mut f_name := ctx[stmt_idx].FunctionDecl.name;
+                mut namespaced_name := typechecker.env_resolve_namespaced_ident(env, f_name, ctx);
+                mut sig_lookup := (*env).function_registry.Get(namespaced_name);
 
-            if std.str_eq(namespaced_name, "main") == 1 {
-                mut res := "void gust_user_main(void* _gust_arg) {\n";
-                mut body_idx := ctx[stmt_idx].FunctionDecl.body;
-                mut body_statements := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+                if std.str_eq(namespaced_name, "main") == 1 {
+                    (*env).current_params.Clear();
+                    mut res := "void gust_user_main(void* _gust_arg) {\n";
+                    mut body_idx := ctx[stmt_idx].FunctionDecl.body;
+                    mut body_statements := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
                 mut j := 0;
                 while j < len(*body_statements) {
                     mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
