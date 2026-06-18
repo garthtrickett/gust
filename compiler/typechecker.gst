@@ -4517,6 +4517,33 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut val_type := check_expression(value, env, scope, ctx);
                 mut resolved_val_type := env_resolve_type(env, val_type, ctx);
 
+                mut payload_type: ast.Type[ctx];
+                payload_type.tag = 3; // Void
+
+                mut is_ok := 0;
+                if resolved_val_type.tag == 8 { // Struct
+                    mut struct_name := resolved_val_type.Struct.struct_name;
+                    mut lookup_layout := (*env).struct_registry.Get(struct_name);
+                    if lookup_layout.Ok {
+                        mut layout := lookup_layout.Val;
+                        mut ok_field_lookup := layout.fields.Get("Ok");
+                        mut val_field_lookup := layout.fields.Get("Val");
+                        if ok_field_lookup.Ok && val_field_lookup.Ok {
+                            mut ok_type := ok_field_lookup.Val;
+                            if ok_type.tag == 0 || ok_type.tag == 2 { // Int or Bool
+                                payload_type = val_field_lookup.Val;
+                                is_ok = 1;
+                            }
+                        }
+                    }
+                }
+
+                if is_ok == 0 {
+                    mut msg := "Semantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got ";
+                    msg = std.Concat(msg, ast.serialize_type(resolved_val_type, ctx));
+                    report_error(2, msg, span, env, ctx);
+                }
+
                 return res;
             }
 

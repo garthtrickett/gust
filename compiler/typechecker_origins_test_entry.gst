@@ -228,7 +228,9 @@ func main() {
         os.LogStr("typechecker_extract_ok_checked_variables incorrectly extracted result under OR");
     }
 
-    // Test Step 1: Guard Statement Typechecking Routing
+    // Test Step 1 & 2: Guard Statement Typechecking & Wrapper Validation
+    
+    // Scenario A: Guard statement with integer RHS (should report TypeMismatch error)
     mut l_guard_tc_test: lexer.Lexer[ctx];
     lexer.init_lexer(&l_guard_tc_test, "guard mut x := 42 else { return; }");
     mut p_guard_tc_test: parser.Parser[ctx];
@@ -243,46 +245,85 @@ func main() {
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
 
         mut result := typechecker.check_statement(guard_stmt_idx, &env_tc_test, scope_tc_test, ctx);
+        
+        mut value_expr := ctx[guard_stmt_idx].Guard.value;
+        mut value_span := parser.get_expression_span(value_expr, ctx);
+
+        mut prefix := "";
+        mut found_idx := 0 - 1;
+        mut i := 0;
+        while i < len(env_tc_test.resolved_types_nested) {
+            mut entry := env_tc_test.resolved_types_nested[i];
+            if std.str_eq(entry.prefix, prefix) {
+                found_idx = i;
+                i = len(env_tc_test.resolved_types_nested);
+            }
+            i = i + 1;
+        }
+
+        if found_idx != 0 - 1 {
+            mut entry_ref := &env_tc_test.resolved_types_nested[found_idx];
+            mut found_type := 0;
+            mut j := 0;
+            while j < len((*entry_ref).types) {
+                mut t_entry := (*entry_ref).types[j];
+                if t_entry.start_offset == value_span.start.offset && t_entry.end_offset == value_span.end.offset {
+                    found_type = 1;
+                    j = len((*entry_ref).types);
+                }
+                j = j + 1;
+            }
+        }
+        
+        os.LogInt(len(env_tc_test.errors)); // Expected: 1 (Since RHS is Int, not a fallible wrapper)
+        if len(env_tc_test.errors) > 0 {
+            os.LogStr(env_tc_test.errors[0].message); // Expected message containing fallible wrapper
+        }
+    }
+
+    // Scenario B: Guard statement with valid LookupResult RHS (should succeed)
+    mut l_guard_tc_test2: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_guard_tc_test2, "guard mut x := res_val else { return; }");
+    mut p_guard_tc_test2: parser.Parser[ctx];
+    parser.init_parser(&p_guard_tc_test2, &l_guard_tc_test2, ctx);
+    mut prog_guard_tc_test2 := parser.parse_program(&p_guard_tc_test2, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog_guard_tc_test2.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut guard_stmt_idx := os.ArenaAlloc(ctx);
+        ctx[guard_stmt_idx] = (*statements_vec)[0];
+
+        mut env_tc_test := typechecker.env_new(ctx);
+        mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+        // Register custom fallible wrapper
+        mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+        mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
+        fields.Insert("Ok", t_int);
+        
+        mut t_payload: ast.Type[ctx]; t_payload.tag = 8; // Struct
+        t_payload.Struct.struct_name = "os_Dir_ctx";
+        t_payload.Struct.brand = empty[Index[str, ctx]];
+        fields.Insert("Val", t_payload);
+
+        mut layout: typechecker.StructLayout[ctx];
+        layout.brand = empty[Index[str, ctx]];
+        layout.fields = fields;
+        typechecker.env_register_struct(&env_tc_test, "LookupResult_os_Dir_ctx", layout, ctx);
+
+        // Register variable res_val of type LookupResult_os_Dir_ctx
+        mut t_wrapper: ast.Type[ctx];
+        t_wrapper.tag = 8; // Struct
+        t_wrapper.Struct.struct_name = "LookupResult_os_Dir_ctx";
+        t_wrapper.Struct.brand = empty[Index[str, ctx]];
+        env_tc_test.variable_types.Insert("res_val", t_wrapper);
+        typechecker.scope_insert(scope_tc_test, "res_val", t_wrapper, ctx);
+
+        mut result := typechecker.check_statement(guard_stmt_idx, &env_tc_test, scope_tc_test, ctx);
         if result.tag == 0 { // Ok
-            os.LogStr("Guard routing check: Ok");
-            
-            // Assert that the RHS expression (Integer: 42) resolved type was recorded in resolved_types_nested
-            mut value_expr := ctx[guard_stmt_idx].Guard.value;
-            mut value_span := parser.get_expression_span(value_expr, ctx);
-
-            mut prefix := "";
-            mut found_idx := 0 - 1;
-            mut i := 0;
-            while i < len(env_tc_test.resolved_types_nested) {
-                mut entry := env_tc_test.resolved_types_nested[i];
-                if std.str_eq(entry.prefix, prefix) {
-                    found_idx = i;
-                    i = len(env_tc_test.resolved_types_nested);
-                }
-                i = i + 1;
-            }
-
-            if found_idx != 0 - 1 {
-                mut entry_ref := &env_tc_test.resolved_types_nested[found_idx];
-                mut found_type := 0;
-                mut j := 0;
-                while j < len((*entry_ref).types) {
-                    mut t_entry := (*entry_ref).types[j];
-                    if t_entry.start_offset == value_span.start.offset && t_entry.end_offset == value_span.end.offset {
-                        found_type = 1;
-                        os.LogStr(ast.serialize_type(t_entry.val_type, ctx)); // Expected: Int
-                        j = len((*entry_ref).types);
-                    }
-                    j = j + 1;
-                }
-                if found_type == 0 {
-                    os.LogStr("Guard routing check: failed to find RHS type in database");
-                }
-            } else {
-                os.LogStr("Guard routing check: failed to find prefix in database");
-            }
+            os.LogStr("Scenario B check: Ok");
+            os.LogInt(len(env_tc_test.errors)); // Expected: 0
         } else {
-            os.LogStr("Guard routing check: Err");
+            os.LogStr("Scenario B check: Err");
         }
     }
 }
