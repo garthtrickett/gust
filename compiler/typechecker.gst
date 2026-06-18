@@ -3885,35 +3885,21 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             val_type.tag = 3; // Void
 
             if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                typechecker_log_trace('🔍', 'VarDecl: before check_expression(val_idx)', ctx);
                 val_type = check_expression(val_idx, env, scope, ctx);
-                typechecker_log_trace('🔍', 'VarDecl: after check_expression(val_idx)', ctx);
-                
-                typechecker_log_trace('🔍', 'VarDecl: before env_resolve_type(val_type) for RHS', ctx);
                 val_type = env_resolve_type(env, val_type, ctx);
-                typechecker_log_trace('🔍', 'VarDecl: after env_resolve_type(val_type) for RHS', ctx);
 
-                typechecker_log_trace('🔍', 'VarDecl: before set_init(ctx)', ctx);
                 mut origs := set_init(ctx);
-                typechecker_log_trace('🔍', 'VarDecl: after set_init(ctx)', ctx);
-                
-                typechecker_log_trace('🔍', 'VarDecl: before env_type_is_ephemeral_view', ctx);
                 mut is_ephemeral := env_type_is_ephemeral_view(val_type, ctx);
-                typechecker_log_trace('🔍', 'VarDecl: after env_type_is_ephemeral_view', ctx);
                 if is_ephemeral == 1 {
-                    typechecker_log_trace('🔍', 'VarDecl: before get_expression_origins', ctx);
                     mut temp_origs := get_expression_origins(val_idx, env, ctx);
                     origs = typechecker_clone_origin_set(temp_origs, ctx);
-                    typechecker_log_trace('🔍', 'VarDecl: after get_expression_origins', ctx);
                     if ctx[origs].map.len == 0 {
                         set_add(origs, name, ctx);
                     }
                 }
-                typechecker_log_trace('🔍', 'VarDecl: before variable_origins.Insert', ctx);
                 (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
-                typechecker_log_trace('🔍', 'VarDecl: after variable_origins.Insert', ctx);
             } else {
-                if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
+                if var_type_idx != empty[Index[ast.Type[ctx], ctx]] { 
                     mut origs := set_init(ctx);
                     mut resolved := env_resolve_type(env, ctx[var_type_idx], ctx);
                     val_type = resolved;
@@ -3931,18 +3917,6 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
                 mut resolved_explicit := env_resolve_type(env, ctx[var_type_idx], ctx);
                 
-                typechecker_log_trace('🔍', 'VarDecl: before serializing resolved_explicit', ctx);
-                mut t_explicit := ast.serialize_type(resolved_explicit, ctx);
-                typechecker_log_trace('🔍', 'VarDecl: after serializing resolved_explicit', ctx);
-                
-                typechecker_log_trace('🔍', 'VarDecl: before serializing val_type', ctx);
-                mut t_val := ast.serialize_type(val_type, ctx);
-                typechecker_log_trace('🔍', 'VarDecl: after serializing val_type', ctx);
-                
-                typechecker_log_trace('🔍', 'VarDecl: before std.Format', ctx);
-                mut log_msg := std.Format('VarDecl: before types_match for variable %s (explicit=%s, value=%s)', name, t_explicit, t_val);
-                typechecker_log_trace('🔍', log_msg, ctx);
-                
                 if types_match(resolved_explicit, val_type, ctx) == 0 {
                     mut msg := "Semantic Error: Explicit Type Annotation Mismatch. Declared ";
                     msg = std.Concat(msg, ast.serialize_type(resolved_explicit, ctx));
@@ -3958,6 +3932,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     report_error(2, msg, val_span, env, ctx);
                 }
 
+                scope_insert(scope, name, resolved_explicit, ctx);
+                (*env).variable_types.Insert(std.Clone(ctx, name), resolved_explicit);
+                val_type = resolved_explicit;
+            } else {
+                scope_insert(scope, name, val_type, ctx);
+                (*env).variable_types.Insert(std.Clone(ctx, name), val_type);
+            }
 
          scope_insert(scope, name, resolved_explicit, ctx);
                     (*env).variable_types.Insert(std.Clone(ctx, name), resolved_explicit);

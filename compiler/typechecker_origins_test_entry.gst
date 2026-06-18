@@ -244,6 +244,11 @@ func main() {
         mut env_tc_test := typechecker.env_new(ctx);
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
 
+        // Mock expected return type to allow top-level return statement inside else block
+        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+        env_tc_test.expected_return_type = os.ArenaAlloc(ctx);
+        ctx[env_tc_test.expected_return_type] = t_void;
+
         mut result := typechecker.check_statement(guard_stmt_idx, &env_tc_test, scope_tc_test, ctx);
         
         mut value_expr := ctx[guard_stmt_idx].Guard.value;
@@ -294,6 +299,11 @@ func main() {
 
         mut env_tc_test := typechecker.env_new(ctx);
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+        // Mock expected return type to allow top-level return statement inside else block
+        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+        env_tc_test.expected_return_type = os.ArenaAlloc(ctx);
+        ctx[env_tc_test.expected_return_type] = t_void;
 
         // Register custom fallible wrapper
         mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
