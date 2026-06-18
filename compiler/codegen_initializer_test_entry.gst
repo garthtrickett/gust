@@ -501,4 +501,61 @@ func main() {
 
     mut empty_init_str := codegen.codegen_generate_expression(expr_empty_test, &env, ctx);
     os.LogStr(empty_init_str);
+
+    // Step 3: Verification Test for Step 1 Type & Container Identification Helpers
+    mut t_slice_test: ast.Type[ctx];
+    t_slice_test.tag = 6; // Slice
+    os.LogInt(codegen.codegen_is_slice_type(t_slice_test)); // Expected: 1
+
+    mut t_str_test: ast.Type[ctx];
+    t_str_test.tag = 5; // Str
+    os.LogInt(codegen.codegen_is_slice_type(t_str_test)); // Expected: 1
+
+    mut t_vec_test: ast.Type[ctx];
+    t_vec_test.tag = 8; // Struct
+    t_vec_test.Struct.struct_name = "std_Vector_int_ctx";
+    t_vec_test.Struct.brand = empty[Index[str, ctx]];
+    os.LogInt(codegen.codegen_is_vector_type(t_vec_test, &env, ctx)); // Expected: 1
+
+    mut t_map_str_test: ast.Type[ctx];
+    t_map_str_test.tag = 8; // Struct
+    t_map_str_test.Struct.struct_name = "std_HashMap_str_int_ctx";
+    t_map_str_test.Struct.brand = empty[Index[str, ctx]];
+    
+    // Register the standard std_HashMap_str_int_ctx layout
+    mut map_str_layout: typechecker.StructLayout[ctx];
+    map_str_layout.brand = empty[Index[str, ctx]];
+    map_str_layout.fields = std.HashMapNew(ctx);
+    
+    mut keys_ptr_type: ast.Type[ctx];
+    keys_ptr_type.tag = 9; // RawPointer
+    keys_ptr_type.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[keys_ptr_type.RawPointer.inner].tag = 5; // Str
+    
+    map_str_layout.fields.Insert("keys", keys_ptr_type);
+    typechecker.env_register_struct(&env, "std_HashMap_str_int_ctx", map_str_layout, ctx);
+    
+    os.LogInt(codegen.codegen_is_hashmap_type(t_map_str_test, &env, ctx)); // Expected: 1
+    os.LogInt(codegen.codegen_hashmap_is_str_key(t_map_str_test, &env, ctx)); // Expected: 1
+
+    mut t_map_int_test: ast.Type[ctx];
+    t_map_int_test.tag = 8; // Struct
+    t_map_int_test.Struct.struct_name = "std_HashMap_int_int_ctx";
+    t_map_int_test.Struct.brand = empty[Index[str, ctx]];
+
+    // Register custom std_HashMap_int_int_ctx layout
+    mut map_int_layout: typechecker.StructLayout[ctx];
+    map_int_layout.brand = empty[Index[str, ctx]];
+    map_int_layout.fields = std.HashMapNew(ctx);
+    
+    mut keys_int_ptr_type: ast.Type[ctx];
+    keys_int_ptr_type.tag = 9; // RawPointer
+    keys_int_ptr_type.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[keys_int_ptr_type.RawPointer.inner].tag = 0; // Int
+    
+    map_int_layout.fields.Insert("keys", keys_int_ptr_type);
+    typechecker.env_register_struct(&env, "std_HashMap_int_int_ctx", map_int_layout, ctx);
+
+    os.LogInt(codegen.codegen_is_hashmap_type(t_map_int_test, &env, ctx)); // Expected: 1
+    os.LogInt(codegen.codegen_hashmap_is_str_key(t_map_int_test, &env, ctx)); // Expected: 0
 }

@@ -30,6 +30,130 @@ func codegen_ends_with(s: str, suffix: str) int {
     return 0;
 }
 
+func codegen_is_slice_type(t: ast.Type[ctx]) int {
+    if t.tag == 6 { // Slice
+        return 1;
+    }
+    if t.tag == 5 { // Str
+        return 1;
+    }
+    return 0;
+}
+
+func codegen_is_ptr_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 9 { // RawPointer
+            mut inner := ctx[t.RawPointer.inner];
+            if inner.tag != 4 { // NOT Arena
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
+            if std.str_find(erased_name, "Vector_") == 0 {
+                return 1;
+            }
+            if std.str_find(erased_name, "std_Vector_") == 0 {
+                return 1;
+            }
+        }
+        if t.tag == 10 { // Generic
+            mut name := t.Generic.name;
+            if std.str_eq(name, "Vector") == 1 || std.str_eq(name, "std.Vector") == 1 || std.str_eq(name, "std_Vector") == 1 {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func codegen_is_pool_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
+            if std.str_find(erased_name, "Pool_") == 0 {
+                return 1;
+            }
+            if std.str_find(erased_name, "std_Pool_") == 0 {
+                return 1;
+            }
+        }
+        if t.tag == 10 { // Generic
+            mut name := t.Generic.name;
+            if std.str_eq(name, "Pool") == 1 || std.str_eq(name, "std.Pool") == 1 || std.str_eq(name, "std_Pool") == 1 {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func codegen_is_hashmap_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
+            if std.str_find(erased_name, "HashMap_") == 0 {
+                return 1;
+            }
+            if std.str_find(erased_name, "std_HashMap_") == 0 {
+                return 1;
+            }
+        }
+        if t.tag == 10 { // Generic
+            mut name := t.Generic.name;
+            if std.str_eq(name, "HashMap") == 1 || std.str_eq(name, "std.HashMap") == 1 || std.str_eq(name, "std_HashMap") == 1 {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func codegen_hashmap_is_str_key(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if codegen_is_hashmap_type(t, env, ctx) == 0 {
+            return 0;
+        }
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
+            mut lookup_struct := (*env).struct_registry.Get(erased_name);
+            if lookup_struct.Ok {
+                mut layout := lookup_struct.Val;
+                mut keys_type_lookup := layout.fields.Get("keys");
+                if keys_type_lookup.Ok {
+                    mut keys_type := keys_type_lookup.Val;
+                    if keys_type.tag == 9 { // RawPointer
+                        mut key_elem_type := ctx[keys_type.RawPointer.inner];
+                        if key_elem_type.tag == 5 { // Str
+                            return 1;
+                        }
+                    }
+                }
+            }
+        }
+        if t.tag == 10 { // Generic
+            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            if len(*args_vec) > 0 {
+                mut first_arg := (*args_vec)[0];
+                if first_arg.tag == 5 { // Str
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 func codegen_rfind_char(s: str, ch: int, end_idx: int) int {
     mut j := end_idx - 1;
     while j >= 0 {
@@ -307,6 +431,22 @@ func codegen_get_erased_struct_name(name: str, env: &typechecker.TypeEnvironment
         }
         return std.Clone(ctx, codegen_erase_struct_name(name, empty[Index[str, ctx]], env, ctx));
     }
+}
+
+func codegen_find_original_struct_name(erased_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        mut keys := (*env).struct_registry.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut key := keys[i];
+            mut current_erased := codegen_get_erased_struct_name(key, env, ctx);
+            if std.str_eq(current_erased, erased_name) == 1 {
+                return std.Clone(ctx, key);
+            }
+            i = i + 1;
+        }
+    }
+    return std.Clone(ctx, erased_name);
 }
 
 
@@ -791,14 +931,15 @@ func codegen_get_monomorphized_name(template_name: str, args_idx: Index[std.Vect
 func codegen_gen_struct_initializer(name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
         mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
-        mut lookup_enum := env.enum_registry.Get(erased_name);
+        mut orig_name := codegen_find_original_struct_name(erased_name, env, ctx);
+        mut lookup_enum := env.enum_registry.Get(orig_name);
         if lookup_enum.Ok {
             mut res := std.Concat("((", erased_name);
             res = std.Concat(res, "){ .tag = 0 })");
             return std.Clone(ctx, res);
         }
         
-        mut lookup_struct := env.struct_registry.Get(erased_name);
+        mut lookup_struct := env.struct_registry.Get(orig_name);
         if lookup_struct.Ok {
             mut layout := lookup_struct.Val;
             mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
