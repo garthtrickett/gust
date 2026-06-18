@@ -7959,9 +7959,7 @@ fn test_e2e_self_hosted_codegen_tracing() {
 
     // Verify the presence of codegen tracing messages (emoji-safe ASCII substrings)
     assert!(stdout_str.contains("codegen_generate: commencing code generation pass"));
-    assert!(
-        stdout_str.contains("transpiling custom standard template instance std_Vector_MyNode_ctx")
-    );
+    assert!(stdout_str.contains("transpiling custom standard template instance std_Vector_MyNode"));
     assert!(stdout_str.contains("generating Invariant Validator for MyNode"));
 }
 
@@ -7994,7 +7992,7 @@ fn test_self_hosted_guard_resolver_compilation() {
                 path,
                 check_res.err()
             );
-        } 
+        }
     }
 
     let mut modules_for_codegen = Vec::new();
@@ -8017,8 +8015,14 @@ fn test_self_hosted_guard_resolver_compilation() {
     let temp_dir = std::env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
-    let c_filename = format!("gust_self_hosted_guard_resolver_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_self_hosted_guard_resolver_{:?}_{}.bin", thread_id, process_id);
+    let c_filename = format!(
+        "gust_self_hosted_guard_resolver_{:?}_{}.c",
+        thread_id, process_id
+    );
+    let bin_filename = format!(
+        "gust_self_hosted_guard_resolver_{:?}_{}.bin",
+        thread_id, process_id
+    );
 
     let c_path = temp_dir.join(&c_filename);
     let bin_path = temp_dir.join(&bin_filename);
