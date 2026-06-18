@@ -74,7 +74,7 @@ func codegen_erase_struct_name(name: str, brand: Index[str, ctx], env: &typechec
                 }
             }
             if has_upper == 1 && std.str_eq(last_part, "Any") == 0 {
-                suffix = std.str_slice(erased, pos, len(erased));
+                suffix = std.Clone(ctx, std.str_slice(erased, pos, len(erased)));
                 erased = std.str_slice(erased, 0, pos);
             }
         }
