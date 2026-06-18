@@ -3675,6 +3675,8 @@ fn test_e2e_canonicalized_namespacing_compilation() {
 fn test_e2e_c_std_clone_str() {
     let mut c_program = String::new();
     c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    c_program.push_str("#include <assert.h>\n");
+    c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
     c_program.push_str("typedef struct Slice_unsigned_char Slice_unsigned_char;\n");
     c_program.push_str("struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
     c_program.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
