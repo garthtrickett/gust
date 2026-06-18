@@ -1087,4 +1087,73 @@ func main() {
         mut defer_single_c := codegen.codegen_generate_statement(defer_stmt_idx, &env, ctx);
         os.LogStr(defer_single_c); // Expected: ""
     }
+
+    // Test Step 4.1: Match Statement (Tag 8) switch frame and tag mapping
+    mut l_match_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_match_test, "type Status enum { Pending, Failed }");
+    mut p_match_test: parser.Parser[ctx];
+    parser.init_parser(&p_match_test, &l_match_test, ctx);
+    mut prog_enum_test := parser.parse_program(&p_match_test, ctx);
+    unsafe {
+        mut enum_test_statements_vec := &ctx[prog_enum_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        typechecker.env_pre_register_statement(&env, (*enum_test_statements_vec)[0], ctx);
+    }
+
+    mut l_match_stmt: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_match_stmt, "match s { Pending => { os.Exit(0); }, Failed => { os.Exit(1); } }");
+    mut p_match_stmt: parser.Parser[ctx];
+    parser.init_parser(&p_match_stmt, &l_match_stmt, ctx);
+    mut prog_match_test := parser.parse_program(&p_match_stmt, ctx);
+    unsafe {
+        mut match_test_statements_vec := &ctx[prog_match_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut match_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[match_stmt_idx] = (*match_test_statements_vec)[0];
+
+        mut expr_idx := ctx[match_stmt_idx].Match.expression;
+        mut expr_span := parser.get_expression_span(expr_idx, ctx);
+
+        mut t_status: ast.Type[ctx];
+        t_status.tag = 8; // Struct
+        t_status.Struct.struct_name = "Status";
+        t_status.Struct.brand = empty[Index[str, ctx]];
+
+        mut entry_status: typechecker.ResolvedTypeEntry[ctx];
+        entry_status.start_offset = expr_span.start.offset;
+        entry_status.end_offset = expr_span.end.offset;
+        entry_status.val_type = t_status;
+
+        mut found_nested_idx := 0 - 1;
+        mut idx_nested := 0;
+        while idx_nested < len(env.resolved_types_nested) {
+            if std.str_eq(env.resolved_types_nested[idx_nested].prefix, "") == 1 {
+                found_nested_idx = idx_nested;
+            }
+            idx_nested = idx_nested + 1;
+        }
+        if found_nested_idx != 0 - 1 {
+            mut entry_ref := &env.resolved_types_nested[found_nested_idx];
+            (*entry_ref).types.Push(entry_status);
+        } else {
+            mut pfx_entry: typechecker.PrefixMapEntry[ctx];
+            pfx_entry.prefix = "";
+            pfx_entry.types = std.VectorNew(ctx);
+            pfx_entry.types.Push(entry_status);
+            env.resolved_types_nested.Push(pfx_entry);
+        }
+
+        env.variable_types.Insert("s", t_status);
+
+        mut match_c := codegen.codegen_generate_statement(match_stmt_idx, &env, ctx);
+        os.LogStr(match_c); // Expected:
+                            //     switch (s.tag) {
+                            //         case Status_Tag__Pending: {
+                            //             os_Exit(0);
+                            //             break;
+                            //         }
+                            //         case Status_Tag__Failed: {
+                            //             os_Exit(1);
+                            //             break;
+                            //         }
+                            //     }
+    }
 }

@@ -2889,6 +2889,40 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     return std.Clone(ctx, res);
                 }
             }
+            if tag == 8 { // Match
+                mut expr_idx := ctx[stmt_idx].Match.expression;
+                mut expr_str := codegen_generate_expression(expr_idx, env, ctx);
+                mut expr_t := codegen_get_expression_type(expr_idx, env, ctx);
+                
+                mut enum_name := "Shape";
+                if expr_t.tag == 8 { // Struct
+                    enum_name = expr_t.Struct.struct_name;
+                }
+                mut erased_enum_name := codegen_get_erased_struct_name(enum_name, env, ctx);
+                
+                mut res := std.Concat("    switch (", expr_str);
+                res = std.Concat(res, ".tag) {\n");
+                
+                mut cases_vec := &ctx[ctx[stmt_idx].Match.cases] as *std.Vector[ast.MatchCase[ctx], ctx];
+                mut i := 0;
+                while i < len(*cases_vec) {
+                    mut case_val := (*cases_vec)[i];
+                    mut tag_name := std.Concat(erased_enum_name, "_Tag__");
+                    tag_name = std.Concat(tag_name, case_val.variant_name);
+                    
+                    res = std.Concat(res, "        case ");
+                    res = std.Concat(res, tag_name);
+                    res = std.Concat(res, ": {\n");
+                    
+                    mut body_str := codegen_generate_block_statement(case_val.body, env, ctx);
+                    res = std.Concat(res, body_str);
+                    
+                    res = std.Concat(res, "            break;\n        }\n");
+                    i = i + 1;
+                }
+                res = std.Concat(res, "    }\n");
+                return std.Clone(ctx, res);
+            }
             if tag == 11 { // Defer
                 return "";
             }
