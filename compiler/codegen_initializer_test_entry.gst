@@ -422,8 +422,9 @@ func main() {
     mut env_dup := typechecker.env_new(ctx);
     
     mut layout1: typechecker.StructLayout[ctx];
-    mut brand1: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+    mut brand1: Index[str, ctx] := empty[Index[str, ctx]];
     unsafe {
+        brand1 = os.ArenaAlloc(ctx) as Index[str, ctx];
         mut b_ptr := &ctx[brand1] as *str;
         *b_ptr = "ctx1";
     }
@@ -434,8 +435,9 @@ func main() {
     typechecker.env_register_struct(&env_dup, "MyNode_ctx1", layout1, ctx);
 
     mut layout2: typechecker.StructLayout[ctx];
-    mut brand2: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+    mut brand2: Index[str, ctx] := empty[Index[str, ctx]];
     unsafe {
+        brand2 = os.ArenaAlloc(ctx) as Index[str, ctx];
         mut b_ptr := &ctx[brand2] as *str;
         *b_ptr = "ctx2";
     }
