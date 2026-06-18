@@ -9,6 +9,38 @@ type Codegen[ctx] struct {
     current_params: std.Vector[str, ctx]
 }
 
+func codegen_escape_string(val: str, ctx: &Arena) str {
+    mut res := "";
+    mut i := 0;
+    while i < len(val) {
+        mut b := std.str_byte_at(val, i);
+        if b == 92 {
+            res = std.Concat(res, "\\\\");
+        } else {
+            if b == 34 {
+                res = std.Concat(res, "\\\"");
+            } else {
+                if b == 10 {
+                    res = std.Concat(res, "\\n");
+                } else {
+                    if b == 9 {
+                        res = std.Concat(res, "\\t");
+                    } else {
+                        if b == 13 {
+                            res = std.Concat(res, "\\r");
+                        } else {
+                            mut char_slice := std.str_slice(val, i, i + 1);
+                            res = std.Concat(res, char_slice);
+                        }
+                    }
+                }
+            }
+        }
+        i = i + 1;
+    }
+    return std.Clone(ctx, res);
+}
+
 func init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) {
     unsafe {
         (*c).env = env;
