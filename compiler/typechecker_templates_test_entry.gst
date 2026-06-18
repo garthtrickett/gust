@@ -214,4 +214,18 @@ func main() {
     } else {
         os.LogStr("std_GraphNode_int_ctx registration failed!");
     }
+
+    // Test 12: Verify typechecker_parse_type_from_string (Step 1 Fix)
+    mut parsed_t1 := typechecker.typechecker_parse_type_from_string("Index_MyNode_ctx", ctx);
+    os.LogInt(parsed_t1.tag); // Expected: 7 (Index)
+    os.LogStr(parsed_t1.Index.struct_name); // Expected: MyNode_ctx
+    if parsed_t1.Index.brand != empty[Index[str, ctx]] { 
+        unsafe {
+            mut b_ptr := &ctx[parsed_t1.Index.brand] as *str;
+            os.LogStr(*b_ptr); // Expected: ctx
+        }
+    }
+
+    mut parsed_t2 := typechecker.typechecker_parse_type_from_string("int", ctx);
+    os.LogInt(parsed_t2.tag); // Expected: 0 (Int)
 }

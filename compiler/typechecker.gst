@@ -1292,6 +1292,90 @@ func typechecker_ends_with(s: str, suffix: str) int {
     return std.str_eq(end_part, suffix);
 }
 
+func typechecker_starts_with(s: str, prefix: str) int {
+    mut len_s := len(s);
+    mut len_prefix := len(prefix);
+    if len_s < len_prefix {
+        return 0;
+    }
+    mut start_part := std.str_slice(s, 0, len_prefix);
+    if std.str_eq(start_part, prefix) {
+        return 1;
+    }
+    return 0;
+}
+
+func typechecker_extract_brand_from_suffix(suffix: str, ctx: &Arena) str {
+    mut brands: std.Vector[str, ctx] := std.VectorNew(ctx);
+    brands.Push("ctx");
+    brands.Push("connCtx");
+    brands.Push("arena");
+    brands.Push("a");
+    brands.Push("Any");
+    brands.Push("ctx1");
+    brands.Push("ctx2");
+    brands.Push("innerCtx");
+    brands.Push("outerCtx");
+    brands.Push("current_ctx");
+    brands.Push("next_ctx");
+
+    mut i := 0;
+    while i < len(brands) {
+        if std.str_eq(suffix, brands[i]) {
+            return std.Clone(ctx, brands[i]);
+        }
+        i = i + 1;
+    }
+
+    mut j := 0;
+    while j < len(brands) {
+        mut b := brands[j];
+        mut p1 := std.Concat("_", b);
+        mut p2 := std.Concat("__", b);
+        if typechecker_ends_with(suffix, p1) == 1 {
+            return std.Clone(ctx, b);
+        }
+        if typechecker_ends_with(suffix, p2) == 1 {
+            return std.Clone(ctx, b);
+        }
+        j = j + 1;
+    }
+    return "";
+}
+
+func typechecker_parse_type_from_string(target_struct: str, ctx: &Arena) ast.Type[ctx] {
+    if std.str_eq(target_struct, "int") {
+        mut t: ast.Type[ctx];
+        t.tag = 0; // Int
+        return t;
+    }
+    if std.str_eq(target_struct, "byte") {
+        mut t: ast.Type[ctx];
+        t.tag = 1; // Byte
+        return t;
+    }
+    if std.str_eq(target_struct, "bool") {
+        mut t: ast.Type[ctx];
+        t.tag = 2; // Bool
+        return t;
+    }
+    if std.str_eq(target_struct, "str") {
+        mut t: ast.Type[ctx];
+        t.tag = 5; // Str
+        return t;
+    }
+
+    if typechecker_starts_with(target_struct, "Index_") == 1 {
+        mut suffix := std.str_slice(target_struct, 6, len(target_struct));
+        mut brand_name := typechecker_extract_brand_from_suffix(suffix, ctx);
+        return make_type_index(suffix, brand_name, ctx);
+    }
+
+    mut brand_name := typechecker_extract_brand_from_suffix(target_struct, ctx);
+    return make_type_struct(target_struct, brand_name, ctx);
+}
+
+func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
 func get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
     unsafe {
         mut base := "";
