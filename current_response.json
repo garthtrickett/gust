@@ -1,9 +1,0 @@
-{
-  "summary": "fix: wrap empty expression initializer in std.Clone to satisfy escape analysis",
-  "files": [
-    {
-      "file_path": "compiler/codegen.gst",
-      "code_diff": "<<<<<<< SEARCH\n        if tag == 13 { // Empty\n            mut t_empty := ctx[ctx[expr_idx].Empty.target_type];\n            mut resolved_t := typechecker.env_resolve_type(env, t_empty, ctx);\n            return codegen_gen_type_aware_initializer(resolved_t, env, ctx);\n        }\n=======\n        if tag == 13 { // Empty\n            mut t_empty := ctx[ctx[expr_idx].Empty.target_type];\n            mut resolved_t := typechecker.env_resolve_type(env, t_empty, ctx);\n            return std.Clone(ctx, codegen_gen_type_aware_initializer(resolved_t, env, ctx));\n        }\n>>>>>>> REPLACE"
-    }
-  ]
-}
