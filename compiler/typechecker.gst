@@ -1019,7 +1019,7 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
 
             // Log prefix database registration (Step 3)
             if std.str_eq(prefix, "") == 0 {
-                mut log_reg := std.Concat("Prefix registered in type checker: ", prefix);
+                mut log_reg := std.Concat("👁️ Prefix registered in type checker: ", prefix);
                 os.LogStr(log_reg);
             }
         }
@@ -4166,7 +4166,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 // Log prefix database registration (Step 3)
                 if std.str_eq(prefix, "") == 0 {
-                    mut log_reg := std.Concat("Prefix registered in type checker (VarDecl): ", prefix);
+                    mut log_reg := std.Concat("👁️ Prefix registered in type checker (VarDecl): ", prefix);
                     os.LogStr(log_reg);
                 }
             }
@@ -4800,7 +4800,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 // Log prefix database registration (Step 3)
                 if std.str_eq(prefix, "") == 0 {
-                    mut log_reg := std.Concat("Prefix registered in type checker (Guard): ", prefix);
+                    mut log_reg := std.Concat("👁️ Prefix registered in type checker (Guard): ", prefix);
                     os.LogStr(log_reg);
                 }
             }

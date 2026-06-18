@@ -881,7 +881,7 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
         }
         
         if std.str_eq(prefix, "") == 0 {
-            mut log_pfx := std.Concat("Prefix match check for: ", prefix);
+            mut log_pfx := std.Concat("👁️ Prefix match check for: ", prefix);
             if found_idx != 0 - 1 {
                 log_pfx = std.Concat(log_pfx, " -> MATCH FOUND");
             } else {
