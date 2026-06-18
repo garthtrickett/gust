@@ -711,6 +711,13 @@ func main() {
     ctx[t_pool_ptr.RawPointer.inner] = t_pool_test;
     os.LogInt(codegen.codegen_is_pool_type(t_pool_ptr, &env, ctx)); // Expected: 1
 
+    // Sub-Step 1.2 Verification: Test codegen_is_hashmap_type with RawPointer (tag 9)
+    mut t_map_ptr: ast.Type[ctx];
+    t_map_ptr.tag = 9; // RawPointer
+    t_map_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_map_ptr.RawPointer.inner] = t_map_str_test;
+    os.LogInt(codegen.codegen_is_hashmap_type(t_map_ptr, &env, ctx)); // Expected: 1
+
     mut t_map_str_test: ast.Type[ctx];
     t_map_str_test.tag = 8; // Struct
     t_map_str_test.Struct.struct_name = "std_HashMap_str_int_ctx";
