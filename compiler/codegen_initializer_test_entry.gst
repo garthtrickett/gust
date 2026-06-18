@@ -959,4 +959,27 @@ func main() {
                                   //         int x = 42;
                                   //     }
     }
+
+    // Test Step 2.1: While Statement (Tag 6) statement transpilation
+    mut l_while_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_while_test, "while x < 10 { x = x + 1; }");
+    mut p_while_test: parser.Parser[ctx];
+    parser.init_parser(&p_while_test, &l_while_test, ctx);
+    mut prog_while_test := parser.parse_program(&p_while_test, ctx);
+    unsafe {
+        mut while_test_statements_vec := &ctx[prog_while_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut while_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[while_stmt_idx] = (*while_test_statements_vec)[0];
+
+        mut t_int: ast.Type[ctx];
+        t_int.tag = 0; // Int
+        
+        env.variable_types.Insert("x", t_int);
+
+        mut while_c := codegen.codegen_generate_statement(while_stmt_idx, &env, ctx);
+        os.LogStr(while_c); // Expected:
+                            //     while ((x < 10)) {
+                            //         x = (x + 1);
+                            //     }
+    }
 }

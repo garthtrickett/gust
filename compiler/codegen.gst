@@ -2843,6 +2843,15 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 res = std.Concat(res, "    }\n");
                 return std.Clone(ctx, res);
             }
+            if tag == 6 { // While
+                mut cond_str := codegen_generate_expression(ctx[stmt_idx].While.condition, env, ctx);
+                mut body_str := codegen_generate_block_statement(ctx[stmt_idx].While.body, env, ctx);
+                mut res := std.Concat("    while (", cond_str);
+                res = std.Concat(res, ") {\n");
+                res = std.Concat(res, body_str);
+                res = std.Concat(res, "    }\n");
+                return std.Clone(ctx, res);
+            }
         }
         return "";
     }
