@@ -4408,7 +4408,10 @@ Struct("os_Dir_ctx", Some("ctx"))
 🔍 env_resolve_type: returning ctx[res_idx]
 🔍 env_resolve_type: returning ctx[res_idx]
 CastResult_MyNode_ctx successfully synthesized!
-RawPointer(Struct("MyNode_ctx", Some("ctx")))"#
+RawPointer(Struct("MyNode_ctx", Some("ctx")))
+📥 env_resolve_type Struct: name=Node, brand=None
+🔍 env_resolve_type: returning ctx[res_idx]
+Struct("Node", None)"#
     );
 }
 
