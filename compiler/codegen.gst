@@ -1655,7 +1655,6 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         res = std.Concat(res, v_str);
                         return std.Clone(ctx, res);
                     }
-                    if std.str_eq(right_name, "Get") { 
                     if (std.str_eq(right_name, "Get")) { 
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Get FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
@@ -1722,7 +1721,6 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
 
 
-                    if std.str_eq(right_name, "Keys") {
                     if (std.str_eq(right_name, "Keys")) {
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
