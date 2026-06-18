@@ -240,4 +240,9 @@ func main() {
     ctx[expr_str_esc_idx].String.val = "\"";
     mut res_str_esc := codegen.codegen_generate_expression(expr_str_esc_idx, &env, ctx);
     os.LogStr(res_str_esc); // Expected: ((Slice_unsigned_char){ (unsigned char*)"\"", 1 })
+
+    // Sub-Step 2.1 Verification: Test codegen_get_c_type_name_by_struct_name
+    os.LogStr(codegen.codegen_get_c_type_name_by_struct_name("str", ctx)); // Expected: Slice_unsigned_char
+    os.LogStr(codegen.codegen_get_c_type_name_by_struct_name("bool", ctx)); // Expected: unsigned char
+    os.LogStr(codegen.codegen_get_c_type_name_by_struct_name("MyNode", ctx)); // Expected: MyNode
 }

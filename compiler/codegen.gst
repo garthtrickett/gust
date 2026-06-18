@@ -2490,10 +2490,11 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 if std.str_eq(struct_name, "") {
                     struct_name = "SessionNode";
                 }
+                mut c_size_type_name := codegen_get_c_type_name_by_struct_name(struct_name, ctx);
 
                 mut res := std.Concat("os_ArenaAlloc(", arena_expr);
                 res = std.Concat(res, ", sizeof(");
-                res = std.Concat(res, struct_name);
+                res = std.Concat(res, c_size_type_name);
                 res = std.Concat(res, "))");
                 return std.Clone(ctx, res);
             }
