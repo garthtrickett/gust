@@ -3672,6 +3672,83 @@ fn test_e2e_canonicalized_namespacing_compilation() {
 }
 
 #[test]
+fn test_e2e_c_std_clone_str() {
+    let mut c_program = String::new();
+    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    c_program.push_str("typedef struct Slice_unsigned_char Slice_unsigned_char;\n");
+    c_program.push_str("struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
+    c_program.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
+    c_program.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
+    c_program.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
+
+    c_program.push_str(r#"
+        int main() {
+            os_Arena arena = os_Arena_New();
+
+            char* temp_src = "Hello, deep-cloned scratchpad memory!";
+            int len = strlen(temp_src);
+            char* scratch_ptr = (char*)os_ScratchAlloc(len + 1);
+            strcpy(scratch_ptr, temp_src);
+
+            Slice_unsigned_char src_view = { (unsigned char*)scratch_ptr, len };
+
+            Slice_unsigned_char cloned_view = std_Clone_str(&arena, src_view);
+
+            os_ScratchReset();
+
+            assert(cloned_view.len == len);
+            assert(cloned_view.data != NULL);
+            assert(cloned_view.data != src_view.data);
+            assert(memcmp(cloned_view.data, temp_src, len) == 0);
+
+            printf("GUST_CLONE_OK\n");
+            os_Arena_Free(&arena);
+            return 0;
+        }
+    "#);
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!("gust_std_clone_str_{:?}_{}_{}.c", thread_id, process_id, count);
+    let bin_filename = format!("gust_std_clone_str_{:?}_{}_{}.bin", thread_id, process_id, count);
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = Command::new(&bin_path).output().expect("Execution failed");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert_eq!(stdout_str.trim(), "GUST_CLONE_OK");
+}
+
+#[test]
 fn test_self_hosted_parser_ast_dump() {
     gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();

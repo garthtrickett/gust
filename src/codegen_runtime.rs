@@ -1727,4 +1727,14 @@ static inline void std_Channel_Recv_impl(int chan_idx, void* out_ptr) {
 
     pthread_mutex_unlock(&chan->mutex);
 }
+
+static inline Slice_unsigned_char std_Clone_str(os_Arena* arena, Slice_unsigned_char s) {
+    if (s.data == NULL || s.len <= 0) {
+        return (Slice_unsigned_char){ NULL, 0 };
+    }
+    int offset = os_ArenaAlloc(arena, s.len);
+    unsigned char* dest = (unsigned char*)((char*)arena->BaseAddress + offset);
+    memcpy(dest, s.data, s.len);
+    return (Slice_unsigned_char){ dest, s.len };
+}
 "#;
