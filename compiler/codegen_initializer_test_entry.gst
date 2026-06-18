@@ -281,6 +281,50 @@ func main() {
         env.current_params.Clear();
         mut out_clone_val := codegen.codegen_generate_expression(expr_clone, &env, ctx);
         os.LogStr(out_clone_val);
+
+        // Direct test for Branded Collection Initializer std.VectorNew (Step 1)
+        mut l_vecnew: lexer.Lexer[ctx];
+        lexer.init_lexer(&l_vecnew, "std.VectorNew(ctx)");
+        mut p_vecnew: parser.Parser[ctx];
+        parser.init_parser(&p_vecnew, &l_vecnew, ctx);
+        mut expr_vecnew := parser.parse_expression(&p_vecnew, 1, ctx);
+
+        // Setup current_alloc_struct to simulate type-aware instantiation
+        env.current_alloc_struct = "std_Vector_int_ctx";
+
+        // Case A: ctx is in current_params (parameter) -> .arena = ctx
+        env.current_params.Clear();
+        env.current_params.Push("ctx");
+        mut out_vecnew_param := codegen.codegen_generate_expression(expr_vecnew, &env, ctx);
+        os.LogStr(out_vecnew_param);
+
+        // Case B: ctx is NOT in current_params (local value) -> .arena = &ctx
+        env.current_params.Clear();
+        mut out_vecnew_val := codegen.codegen_generate_expression(expr_vecnew, &env, ctx);
+        os.LogStr(out_vecnew_val);
+        env.current_alloc_struct = "";
+
+        // Direct test for Branded Collection Initializer std.HashMapNew (Step 1)
+        mut l_mapnew: lexer.Lexer[ctx];
+        lexer.init_lexer(&l_mapnew, "std.HashMapNew(ctx)");
+        mut p_mapnew: parser.Parser[ctx];
+        parser.init_parser(&p_mapnew, &l_mapnew, ctx);
+        mut expr_mapnew := parser.parse_expression(&p_mapnew, 1, ctx);
+
+        // Setup current_alloc_struct to simulate type-aware instantiation
+        env.current_alloc_struct = "std_HashMap_int_int_ctx";
+
+        // Case A: ctx is in current_params (parameter) -> .arena = ctx
+        env.current_params.Clear();
+        env.current_params.Push("ctx");
+        mut out_mapnew_param := codegen.codegen_generate_expression(expr_mapnew, &env, ctx);
+        os.LogStr(out_mapnew_param);
+
+        // Case B: ctx is NOT in current_params (local value) -> .arena = &ctx
+        env.current_params.Clear();
+        mut out_mapnew_val := codegen.codegen_generate_expression(expr_mapnew, &env, ctx);
+        os.LogStr(out_mapnew_val);
+        env.current_alloc_struct = "";
     }
 
     // 1. Test primitive types
