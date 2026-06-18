@@ -17,6 +17,286 @@ func init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx], ctx:
     }
 }
 
+func codegen_ends_with(s: str, suffix: str) int {
+    mut len_s := len(s);
+    mut len_suffix := len(suffix);
+    if len_s < len_suffix {
+        return 0;
+    }
+    mut sliced := std.str_slice(s, len_s - len_suffix, len_s);
+    if std.str_eq(sliced, suffix) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func codegen_rfind_char(s: str, ch: int, end_idx: int) int {
+    mut j := end_idx - 1;
+    while j >= 0 {
+        if std.str_byte_at(s, j) == ch {
+            return j;
+        }
+        j = j - 1;
+    }
+    return 0 - 1;
+}
+
+func codegen_strip_brand_prefix(brand: str, ctx: &Arena) str {
+    mut last_double_underscore := 0 - 1;
+    mut i := 0;
+    while i < len(brand) - 1 {
+        mut b1 := std.str_byte_at(brand, i);
+        mut b2 := std.str_byte_at(brand, i + 1);
+        if b1 == 95 && b2 == 95 {
+            last_double_underscore = i;
+        }
+        i = i + 1;
+    }
+    if last_double_underscore == 0 - 1 {
+        return std.Clone(ctx, brand);
+    }
+    return std.Clone(ctx, std.str_slice(brand, last_double_underscore + 2, len(brand)));
+}
+
+func codegen_erase_struct_name(name: str, brand: Index[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        mut erased := std.Clone(ctx, name);
+        mut suffix := "";
+        
+        mut pos := codegen_rfind_char(erased, 95, len(erased));
+        if pos != 0 - 1 {
+            mut last_part := std.str_slice(erased, pos + 1, len(erased));
+            mut has_upper := 0;
+            if len(last_part) > 0 {
+                mut first_b := std.str_byte_at(last_part, 0);
+                if first_b >= 65 && first_b <= 90 {
+                    has_upper = 1;
+                }
+            }
+            if has_upper == 1 && std.str_eq(last_part, "Any") == 0 {
+                suffix = std.str_slice(erased, pos, len(erased));
+                erased = std.str_slice(erased, 0, pos);
+            }
+        }
+
+        if brand != empty[Index[str, ctx]] {
+            mut brand_str_ptr := &ctx[brand] as *str;
+            mut b := *brand_str_ptr;
+            mut clean_b := codegen_strip_brand_prefix(b, ctx);
+            mut stripped_brand := 0;
+
+            mut ns_suffix := std.Concat("___", clean_b);
+            if std.str_find(erased, ns_suffix) == len(erased) - len(ns_suffix) {
+                mut pos_val := len(erased) - len(ns_suffix);
+                mut start_pos := codegen_rfind_char(erased, 95, pos_val);
+                if start_pos != 0 - 1 {
+                    mut check_double := 1;
+                    if start_pos >= 1 {
+                        mut b1 := std.str_byte_at(erased, start_pos - 1);
+                        mut b2 := std.str_byte_at(erased, start_pos);
+                        if b1 == 95 && b2 == 95 {
+                            check_double = 0;
+                        }
+                    }
+                    if check_double == 1 {
+                        erased = std.str_slice(erased, 0, start_pos);
+                        stripped_brand = 1;
+                    }
+                }
+            }
+
+            if stripped_brand == 0 {
+                mut direct_suffix := std.Concat("_", b);
+                if codegen_ends_with(erased, direct_suffix) == 1 {
+                    erased = std.str_slice(erased, 0, len(erased) - len(direct_suffix));
+                } else {
+                    mut clean_suffix := std.Concat("_", clean_b);
+                    if codegen_ends_with(erased, clean_suffix) == 1 {
+                        erased = std.str_slice(erased, 0, len(erased) - len(clean_suffix));
+                    }
+                }
+            }
+        }
+
+        mut brand_bases: std.Vector[str, ctx] := std.VectorNew(ctx);
+        brand_bases.Push("connCtx");
+        brand_bases.Push("arena");
+        brand_bases.Push("ctx");
+        brand_bases.Push("Any");
+        brand_bases.Push("a");
+
+        mut changed := 1;
+        while changed == 1 {
+            changed = 0;
+            mut b_idx := 0;
+            while b_idx < len(brand_bases) {
+                mut base := brand_bases[b_idx];
+                mut ns_suffix := std.Concat("__", base);
+                mut handled := 0;
+                if codegen_ends_with(erased, ns_suffix) == 1 {
+                    mut pos_val := len(erased) - len(ns_suffix);
+                    mut start_pos := codegen_rfind_char(erased, 95, pos_val);
+                    if start_pos != 0 - 1 {
+                        mut check_double := 1;
+                        if start_pos >= 1 {
+                            mut b1 := std.str_byte_at(erased, start_pos - 1);
+                            mut b2 := std.str_byte_at(erased, start_pos);
+                            if b1 == 95 && b2 == 95 {
+                                check_double = 0;
+                            }
+                        }
+                        if check_double == 1 {
+                            erased = std.str_slice(erased, 0, start_pos);
+                            changed = 1;
+                            handled = 1;
+                        }
+                    }
+                }
+
+                if handled == 0 {
+                    mut ns_mid := std.Concat("__", base);
+                    ns_mid = std.Concat(ns_mid, "_");
+                    mut mid_pos := std.str_find(erased, ns_mid);
+                    if mid_pos != 0 - 1 {
+                        mut start_pos := codegen_rfind_char(erased, 95, mid_pos);
+                        if start_pos != 0 - 1 {
+                            mut check_double := 1;
+                            if start_pos >= 1 {
+                                mut b1 := std.str_byte_at(erased, start_pos - 1);
+                                mut b2 := std.str_byte_at(erased, start_pos);
+                                if b1 == 95 && b2 == 95 {
+                                    check_double = 0;
+                                }
+                            }
+                            if check_double == 1 {
+                                mut left := std.str_slice(erased, 0, start_pos);
+                                mut right := std.str_slice(erased, mid_pos + len(ns_mid) - 1, len(erased));
+                                erased = std.Concat(left, right);
+                                changed = 1;
+                                handled = 1;
+                            }
+                        }
+                    }
+                }
+
+                if handled == 0 {
+                    mut flat_suffix := std.Concat("_", base);
+                    if codegen_ends_with(erased, flat_suffix) == 1 {
+                        erased = std.str_slice(erased, 0, len(erased) - len(flat_suffix));
+                        changed = 1;
+                        handled = 1;
+                    }
+                }
+
+                if handled == 0 {
+                    mut flat_mid := std.Concat("_", base);
+                    flat_mid = std.Concat(flat_mid, "_");
+                    mut pos2 := std.str_find(erased, flat_mid);
+                    if pos2 != 0 - 1 {
+                        mut left := std.str_slice(erased, 0, pos2);
+                        mut right := std.str_slice(erased, pos2 + len(flat_mid) - 1, len(erased));
+                        erased = std.Concat(left, right);
+                        changed = 1;
+                        handled = 1;
+                    }
+                }
+
+                if handled == 1 {
+                    b_idx = len(brand_bases);
+                } else {
+                    b_idx = b_idx + 1;
+                }
+            } 
+        }
+
+        mut res := std.Concat(erased, suffix);
+        return std.Clone(ctx, res);
+    }
+}
+
+func codegen_is_brand_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 8 {
+            mut name := t.Struct.struct_name;
+            mut is_brand_name := 0;
+            if std.str_eq(name, "ctx") == 1 { is_brand_name = 1; }
+            if std.str_eq(name, "connCtx") == 1 { is_brand_name = 1; }
+            if std.str_eq(name, "arena") == 1 { is_brand_name = 1; }
+            if std.str_eq(name, "a") == 1 { is_brand_name = 1; }
+            if std.str_eq(name, "Any") == 1 { is_brand_name = 1; }
+            if codegen_ends_with(name, "_ctx") == 1 { is_brand_name = 1; }
+            if codegen_ends_with(name, "_connCtx") == 1 { is_brand_name = 1; }
+            if codegen_ends_with(name, "_arena") == 1 { is_brand_name = 1; }
+            if codegen_ends_with(name, "_a") == 1 { is_brand_name = 1; }
+            if codegen_ends_with(name, "_Any") == 1 { is_brand_name = 1; }
+
+            if is_brand_name == 1 {
+                mut lookup := (*env).struct_registry.Get(name);
+                if lookup.Ok == 0 {
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+func codegen_erase_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        mut erased_t := t;
+        if t.tag == 8 {
+            mut name := t.Struct.struct_name;
+            mut brand := t.Struct.brand;
+            mut erased_name := codegen_erase_struct_name(name, brand, env, ctx);
+            erased_t.Struct.struct_name = erased_name;
+            erased_t.Struct.brand = empty[Index[str, ctx]];
+            return erased_t;
+        }
+        if t.tag == 7 {
+            mut name := t.Index.struct_name;
+            mut brand := t.Index.brand;
+            mut erased_name := codegen_erase_struct_name(name, brand, env, ctx);
+            erased_t.Index.struct_name = erased_name;
+            erased_t.Index.brand = empty[Index[str, ctx]];
+            return erased_t;
+        }
+        if t.tag == 9 {
+            mut inner := ctx[t.RawPointer.inner];
+            mut erased_inner := codegen_erase_type(inner, env, ctx);
+            erased_t.RawPointer.inner = os.ArenaAlloc(ctx);
+            ctx[erased_t.RawPointer.inner] = erased_inner;
+            return erased_t;
+        }
+        if t.tag == 6 {
+            mut inner := ctx[t.Slice.inner];
+            mut erased_inner := codegen_erase_type(inner, env, ctx);
+            erased_t.Slice.inner = os.ArenaAlloc(ctx);
+            ctx[erased_t.Slice.inner] = erased_inner;
+            return erased_t;
+        }
+        if t.tag == 10 {
+            mut name := t.Generic.name;
+            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            mut erased_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+            
+            mut i := 0;
+            while i < len(*args_vec) {
+                mut arg := (*args_vec)[i];
+                if codegen_is_brand_type(arg, env, ctx) == 0 {
+                    mut erased_arg := codegen_erase_type(arg, env, ctx);
+                    erased_args.Push(erased_arg);
+                }
+                i = i + 1;
+            }
+            erased_t.Generic.args = os.ArenaAlloc(ctx);
+            mut dest_args := &ctx[erased_t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            *dest_args = erased_args;
+            return erased_t;
+        }
+        return t;
+    }
+}
+
 func codegen_is_arena_ptr(var_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut i := 0;

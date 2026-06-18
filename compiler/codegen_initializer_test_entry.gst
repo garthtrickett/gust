@@ -362,4 +362,31 @@ func main() {
     } else {
         os.LogStr("Topological Sort ADT FAIL: Missing structs");
     }
+
+    // Step 1: Verification Test for Brand Erasure Utilities
+    mut t_branded_vect: ast.Type[ctx];
+    t_branded_vect.tag = 8;
+    t_branded_vect.Struct.struct_name = "std_Vector_str_ctx";
+    mut brand_v_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
+    t_branded_vect.Struct.brand = brand_v_idx;
+    unsafe {
+        mut brand_ptr := &ctx[t_branded_vect.Struct.brand] as *str;
+        *brand_ptr = "ctx";
+    }
+
+    mut erased_vect := codegen.codegen_erase_type(t_branded_vect, &env, ctx);
+    os.LogStr(erased_vect.Struct.struct_name);
+
+    mut t_lookup: ast.Type[ctx];
+    t_lookup.tag = 8;
+    t_lookup.Struct.struct_name = "LookupResult_os_Dir_ctx";
+    mut brand_l_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
+    t_lookup.Struct.brand = brand_l_idx;
+    unsafe {
+        mut brand_ptr := &ctx[t_lookup.Struct.brand] as *str;
+        *brand_ptr = "ctx";
+    }
+
+    mut erased_lookup := codegen.codegen_erase_type(t_lookup, &env, ctx);
+    os.LogStr(erased_lookup.Struct.struct_name);
 }
