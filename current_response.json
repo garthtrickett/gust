@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve unchecked lookup result error in typechecker vardecl via guard",
+  "summary": "fix: assign lookup_type directly to val_type in typechecker vardecl",
   "files": [
     {
       "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n            } else {\n                scope_insert(scope, name, val_type, ctx);\n                (*env).variable_types.Insert(std.Clone(ctx, name), val_type);\n                val_type = (*env).variable_types.Get(name).Val;\n            }\n=======\n            } else {\n                scope_insert(scope, name, val_type, ctx);\n                (*env).variable_types.Insert(std.Clone(ctx, name), val_type);\n                guard lookup_type := (*env).variable_types.Get(name) else {\n                    return res;\n                }\n                val_type = lookup_type.Val;\n            }\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n                guard lookup_type := (*env).variable_types.Get(name) else {\n                    return res;\n                }\n                val_type = lookup_type.Val;\n            }\n=======\n                guard lookup_type := (*env).variable_types.Get(name) else {\n                    return res;\n                }\n                val_type = lookup_type;\n            }\n>>>>>>> REPLACE"
     }
   ]
 }

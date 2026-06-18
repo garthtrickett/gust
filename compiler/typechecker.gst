@@ -3941,7 +3941,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 guard lookup_type := (*env).variable_types.Get(name) else {
                     return res;
                 }
-                val_type = lookup_type.Val;
+                val_type = lookup_type;
             }
 
             if val_type.tag == 8 { // Struct
