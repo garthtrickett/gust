@@ -9,6 +9,25 @@ type Codegen[ctx] struct {
     current_params: std.Vector[str, ctx]
 }
 
+func codegen_get_c_type_name_by_struct_name(name: str, ctx: &Arena) str {
+    if std.str_eq(name, "str") == 1 {
+        return "Slice_unsigned_char";
+    } else {
+        if std.str_eq(name, "int") == 1 {
+            return "int";
+        } else {
+            if std.str_eq(name, "byte") == 1 || std.str_eq(name, "bool") == 1 {
+                return "unsigned char";
+            } else {
+                if std.str_eq(name, "Arena") == 1 || std.str_eq(name, "os_Arena") == 1 || std.str_eq(name, "os.Arena") == 1 {
+                    return "os_Arena";
+                }
+            }
+        }
+    }
+    return std.Clone(ctx, name);
+}
+
 func codegen_escape_string(val: str, ctx: &Arena) str {
     mut res := "";
     mut i := 0;
