@@ -1372,7 +1372,7 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
         if enum_lookup.Ok {
             mut tmpl := enum_lookup.Val;
             mut num_args := len(ctx[tmpl.generics]);
-            mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx); 
+            mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
             mut i := 0;
             while i < num_args {
                 mut arg := parse_one_type_from_parts(env, parts, start_idx, ctx);
@@ -1382,7 +1382,8 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
             return make_type_generic(normalized_template_name, args, ctx);
         }
 
-        return make_type_struct(part, "", ctx);
+        mut brand_name := typechecker_extract_brand_from_suffix(part, ctx);
+        return make_type_struct(part, brand_name, ctx);
     }
 }
 

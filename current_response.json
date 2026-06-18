@@ -1,9 +1,10 @@
 {
-  "summary": "fix: remove non-existent resolved_names map access in typechecker",
+  "summary": "fix: preserve value-brand parameters during namespaced suffix type resolution in both compilers",
   "files": [
     {
       "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n            mut sig_lookup := (*env).function_registry.Get(resolved_func);\n            if sig_lookup.Ok {\n                mut sig := sig_lookup.Val;\n                (*env).resolved_names.Insert(function, std.Clone(ctx, resolved_func));\n\n                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];\n=======\n            mut sig_lookup := (*env).function_registry.Get(resolved_func);\n            if sig_lookup.Ok {\n                mut sig := sig_lookup.Val;\n\n                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n        if enum_lookup.Ok {\n            mut tmpl := enum_lookup.Val;\n            mut num_args := len(ctx[tmpl.generics]);\n            mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);\n            mut i := 0;\n            while i < num_args {\n                mut arg := parse_one_type_from_parts(env, parts, start_idx, ctx);\n                args.Push(arg);\n                i = i + 1;\n            }\n            return make_type_generic(normalized_template_name, args, ctx);\n        }\n\n        return make_type_struct(part, \"\", ctx);\n    }\n}\n=======\n        if enum_lookup.Ok {\n            mut tmpl := enum_lookup.Val;\n            mut num_args := len(ctx[tmpl.generics]);\n            mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);\n            mut i := 0;\n            while i < num_args {\n                mut arg := parse_one_type_from_parts(env, parts, start_idx, ctx);\n                args.Push(arg);\n                i = i + 1;\n            }\n            return make_type_generic(normalized_template_name, args, ctx);\n        }\n\n        mut brand_name := typechecker_extract_brand_from_suffix(part, ctx);\n        return make_type_struct(part, brand_name, ctx);\n    }\n}\n>>>>>>> REPLACE"
     }
+    
   ]
 }
