@@ -302,11 +302,13 @@ func codegen_get_erased_struct_name(name: str, env: &typechecker.TypeEnvironment
     unsafe {
         mut lookup := (*env).struct_registry.Get(name);
         if lookup.Ok {
-            return codegen_erase_struct_name(name, lookup.Val.brand, env, ctx);
+            mut b := lookup.Val.brand;
+            return std.Clone(ctx, codegen_erase_struct_name(name, b, env, ctx));
         }
-        return codegen_erase_struct_name(name, empty[Index[str, ctx]], env, ctx);
+        return std.Clone(ctx, codegen_erase_struct_name(name, empty[Index[str, ctx]], env, ctx));
     }
 }
+
 
 func codegen_is_arena_ptr(var_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
@@ -2598,14 +2600,37 @@ typedef void Any;
         // 2. Generate forward declarations for all structs
         c_code = std.Concat(c_code, "// Forward Declarations\n");
         mut struct_keys := codegen_get_topologically_sorted_structs(env, ctx);
+        
+        mut erased_struct_keys: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mut seen_structs: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+        mut erased_to_original: std.HashMap[str, str, ctx] := std.HashMapNew(ctx); 
+        
+        mut i_erase := 0;
+        while i_erase < len(struct_keys) {
+            mut key := struct_keys[i_erase];
+            mut erased_name := codegen_get_erased_struct_name(key, env, ctx);
+            if seen_structs.Get(erased_name).Ok == 0 {
+                erased_struct_keys.Push(erased_name);
+                seen_structs.Insert(std.Clone(ctx, erased_name), 1);
+                erased_to_original.Insert(std.Clone(ctx, erased_name), std.Clone(ctx, key));
+            }
+            i_erase = i_erase + 1;
+        }
+
         mut i_fwd := 0;
-        while i_fwd < len(struct_keys) {
-            mut key := struct_keys[i_fwd];
-            mut fwd := std.Concat("typedef struct ", key);
-            fwd = std.Concat(fwd, " ");
-            fwd = std.Concat(fwd, key);
-            fwd = std.Concat(fwd, ";\n");
-            c_code = std.Concat(c_code, fwd);
+        while i_fwd < len(erased_struct_keys) {
+            mut key := erased_struct_keys[i_fwd];
+            if std.str_eq(key, "std_Vector_str") == 0 &&
+               std.str_eq(key, "os_Dir") == 0 &&
+               std.str_eq(key, "os_DirEntry") == 0 &&
+               std.str_eq(key, "LookupResult_os_Dir") == 0 &&
+               std.str_eq(key, "LookupResult_os_DirEntry") == 0 {
+                mut fwd := std.Concat("typedef struct ", key);
+                fwd = std.Concat(fwd, " ");
+                fwd = std.Concat(fwd, key);
+                fwd = std.Concat(fwd, ";\n");
+                c_code = std.Concat(c_code, fwd);
+            }
             i_fwd = i_fwd + 1;
         }
         c_code = std.Concat(c_code, "\n");
@@ -2632,8 +2657,9 @@ typedef void Any;
         // 3. Structures Declarations
         c_code = std.Concat(c_code, "// Structures\n");
         mut i := 0;
-        while i < len(struct_keys) {
-            mut key := struct_keys[i];
+        while i < len(erased_struct_keys) {
+            mut key := erased_struct_keys[i];
+            mut orig_key := erased_to_original.Get(key).Val;
             
             mut is_template_instance := 0;
             if std.str_find(key, "_") != 0 - 1 {
@@ -2642,10 +2668,10 @@ typedef void Any;
             if is_template_instance == 1 {
                 codegen_log_trace("👁️", std.Format("codegen_generate: transpiling custom standard template instance %s", key), ctx);
             } else {
-                codegen_log_trace("👁️", std.Format("codegen_generate: transpiling structure layout for %s", key), ctx);
+                codegen_log_trace("👁️", std.Format("codegen_generate: transpiling structure layout for %s", key), ctx); 
             }
 
-            mut layout_lookup := (*env).struct_registry.Get(key);
+            mut layout_lookup := (*env).struct_registry.Get(orig_key);
             if layout_lookup.Ok {
                 mut layout := layout_lookup.Val;
                 mut struct_decl := std.Concat("typedef struct ", key);
@@ -2660,7 +2686,7 @@ typedef void Any;
                 while j < len(f_keys) {
                     mut f_key := f_keys[j];
                     mut f_lookup := layout.fields.Get(f_key);
-                    if f_lookup.Ok {
+                    if f_lookup.Ok { 
                         mut f_c_type := codegen_get_c_type(f_lookup.Val, env, ctx);
                         mut f_line := std.Concat("    ", f_c_type);
                         f_line = std.Concat(f_line, " ");
