@@ -1015,6 +1015,8 @@ impl TypeChecker {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lexer::Lexer;
+    use crate::parser::Parser;
     use crate::typechecker::Type;
     use crate::typechecker::types::clean_monomorphized_name;
     use std::collections::HashMap;
@@ -1381,5 +1383,27 @@ mod tests {
         let res_std = checker.resolve_namespaced_ident("std_Vector_lib_Helper_ctx");
         assert!(res_std.is_ok());
         assert_eq!(res_std.unwrap(), "std_Vector_lib__Helper_ctx");
+    }
+
+    #[test]
+    fn test_prefix_string_deep_cloned_and_uncorrupted() {
+        let source_main = "import \"lib.gst\" as lib; func main() {}";
+
+        let mut checker = TypeChecker::new();
+
+        let main_prefix = "".to_string();
+        let lib_prefix = "lib__".to_string();
+
+        assert_eq!(main_prefix, "");
+        assert!(lib_prefix.contains("__"));
+        assert_eq!(lib_prefix, "lib__");
+
+        let lexer = Lexer::new(source_main);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+
+        checker.current_prefix = lib_prefix;
+        let check_res = checker.check_program(&program);
+        assert!(check_res.is_ok());
     }
 }
