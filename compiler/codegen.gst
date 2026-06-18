@@ -2835,6 +2835,14 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
 
                 return std.Clone(ctx, res);
             }
+            if tag == 10 { // UnsafeBlock
+                mut body_idx := ctx[stmt_idx].UnsafeBlock.body;
+                mut body_c := codegen_generate_block_statement(body_idx, env, ctx);
+                mut res := "    {\n";
+                res = std.Concat(res, body_c);
+                res = std.Concat(res, "    }\n");
+                return std.Clone(ctx, res);
+            }
         }
         return "";
     }
