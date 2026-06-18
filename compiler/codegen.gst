@@ -2889,6 +2889,9 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     return std.Clone(ctx, res);
                 }
             }
+            if tag == 11 { // Defer
+                return "";
+            }
         }
         return "";
     }

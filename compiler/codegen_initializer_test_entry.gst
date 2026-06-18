@@ -1072,4 +1072,19 @@ func main() {
                             //         cleanup_first();
                             //     }
     }
+
+    // Test Step 3.2: Defer Statement (Tag 11) individual statement transpilation (Safe fallback)
+    mut l_defer_single: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_defer_single, "defer cleanup_first();");
+    mut p_defer_single: parser.Parser[ctx];
+    parser.init_parser(&p_defer_single, &l_defer_single, ctx);
+    mut prog_defer_single := parser.parse_program(&p_defer_single, ctx);
+    unsafe {
+        mut defer_single_vec := &ctx[prog_defer_single.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut defer_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[defer_stmt_idx] = (*defer_single_vec)[0];
+
+        mut defer_single_c := codegen.codegen_generate_statement(defer_stmt_idx, &env, ctx);
+        os.LogStr(defer_single_c); // Expected: ""
+    }
 }
