@@ -231,7 +231,6 @@ func main() {
     // Test Step 1 & 2: Guard Statement Typechecking & Wrapper Validation
     
     // Scenario A: Guard statement with integer RHS (should report TypeMismatch error)
-// Scenario A: Guard statement with integer RHS (should report TypeMismatch error)
     mut l_guard_tc_test: lexer.Lexer[ctx];
     lexer.init_lexer(&l_guard_tc_test, "guard mut x := 42 else { return; }");
     mut p_guard_tc_test: parser.Parser[ctx];
@@ -337,97 +336,6 @@ func main() {
             os.LogStr("Scenario B check: Err");
         }
     }
-
-    // Scenario C: Guard statement with non-diverging else block (should report TypeMismatch error)
-    mut l_guard_tc_test3: lexer.Lexer[ctx];
-    lexer.init_lexer(&l_guard_tc_test3, "guard mut x := res_val else { mut y := 10; }");
-    mut p_guard_tc_test3: parser.Parser[ctx];
-    parser.init_parser(&p_guard_tc_test3, &l_guard_tc_test3, ctx);
-    mut prog_guard_tc_test3 := parser.parse_program(&p_guard_tc_test3, ctx);
-    unsafe {
-        mut statements_vec := &ctx[prog_guard_tc_test3.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[guard_stmt_idx] = (*statements_vec)[0];
-
-        mut env_tc_test := typechecker.env_new(ctx);
-        mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
-
-        // Register custom fallible wrapper
-        mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
-        mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
-        fields.Insert("Ok", t_int);
-        
-        mut t_payload: ast.Type[ctx]; t_payload.tag = 8; // Struct
-        t_payload.Struct.struct_name = "os_Dir_ctx";
-        t_payload.Struct.brand = empty[Index[str, ctx]];
-        fields.Insert("Val", t_payload);
-
-        mut layout: typechecker.StructLayout[ctx];
-        layout.brand = empty[Index[str, ctx]];
-        layout.fields = fields;
-        typechecker.env_register_struct(&env_tc_test, "LookupResult_os_Dir_ctx", layout, ctx);
-
-        // Register variable res_val of type LookupResult_os_Dir_ctx
-        mut t_wrapper: ast.Type[ctx];
-        t_wrapper.tag = 8; // Struct
-        t_wrapper.Struct.struct_name = "LookupResult_os_Dir_ctx";
-        t_wrapper.Struct.brand = empty[Index[str, ctx]];
-        env_tc_test.variable_types.Insert("res_val", t_wrapper);
-        typechecker.scope_insert(scope_tc_test, "res_val", t_wrapper, ctx);
-
-        mut result := typechecker.check_statement(guard_stmt_idx, &env_tc_test, scope_tc_test, ctx);
-        os.LogInt(len(env_tc_test.errors)); // Expected: 1 (Since else block doesn't diverge)
-        if len(env_tc_test.errors) > 0 {
-            os.LogStr(env_tc_test.errors[0].message); // Expected message containing diverge
-        }
-    }
-
-    // Scenario D: Guard statement with diverging else block containing os.Exit (should succeed)
-    mut l_guard_tc_test4: lexer.Lexer[ctx];
-    lexer.init_lexer(&l_guard_tc_test4, "guard mut x := res_val else { os.Exit(1); }");
-    mut p_guard_tc_test4: parser.Parser[ctx];
-    parser.init_parser(&p_guard_tc_test4, &l_guard_tc_test4, ctx);
-    mut prog_guard_tc_test4 := parser.parse_program(&p_guard_tc_test4, ctx);
-    unsafe {
-        mut statements_vec := &ctx[prog_guard_tc_test4.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[guard_stmt_idx] = (*statements_vec)[0];
-
-        mut env_tc_test := typechecker.env_new(ctx); 
-        mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
-
-        // Register custom fallible wrapper
-        mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
-        mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
-        fields.Insert("Ok", t_int);
-        
-        mut t_payload: ast.Type[ctx]; t_payload.tag = 8; // Struct
-        t_payload.Struct.struct_name = "os_Dir_ctx";
-        t_payload.Struct.brand = empty[Index[str, ctx]];
-        fields.Insert("Val", t_payload);
-
-        mut layout: typechecker.StructLayout[ctx];
-        layout.brand = empty[Index[str, ctx]];
-        layout.fields = fields;
-        typechecker.env_register_struct(&env_tc_test, "LookupResult_os_Dir_ctx", layout, ctx);
-
-        // Register variable res_val of type LookupResult_os_Dir_ctx
-        mut t_wrapper: ast.Type[ctx];
-        t_wrapper.tag = 8; // Struct
-        t_wrapper.Struct.struct_name = "LookupResult_os_Dir_ctx";
-        t_wrapper.Struct.brand = empty[Index[str, ctx]];
-        env_tc_test.variable_types.Insert("res_val", t_wrapper);
-        typechecker.scope_insert(scope_tc_test, "res_val", t_wrapper, ctx);
-
-        mut result := typechecker.check_statement(guard_stmt_idx, &env_tc_test, scope_tc_test, ctx);
-        if result.tag == 0 { // Ok
-            os.LogStr("Scenario D check: Ok");
-            os.LogInt(len(env_tc_test.errors)); // Expected: 0
-        } else {
-            os.LogStr("Scenario D check: Err");
-        }
-    }
-}
 
     // Scenario C: Guard statement with non-diverging else block (should report TypeMismatch error)
     mut l_guard_tc_test3: lexer.Lexer[ctx];

@@ -3938,58 +3938,49 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             } else {
                 scope_insert(scope, name, val_type, ctx);
                 (*env).variable_types.Insert(std.Clone(ctx, name), val_type);
+                val_type = (*env).variable_types.Get(name).Val;
             }
 
-         scope_insert(scope, name, resolved_explicit, ctx);
-                    (*env).variable_types.Insert(std.Clone(ctx, name), resolved_explicit);
-                    val_type = resolved_explicit;
-                } else {
-                    scope_insert(scope, name, val_type, ctx);
-                    (*env).variable_types.Insert(std.Clone(ctx, name), val_type);
+            if val_type.tag == 8 { // Struct
+                mut assign_struct_name := val_type.Struct.struct_name;
+                if len(assign_struct_name) >= 7 && std.str_eq(std.str_slice(assign_struct_name, 0, 7), "os_Dir_") {
+                    (*env).open_directories.Insert(std.Clone(ctx, name), 1);
                 }
+            }
 
-                if val_type.tag == 8 { // Struct
-                    mut decl_struct_name := val_type.Struct.struct_name;
-                    if len(decl_struct_name) >= 7 && std.str_eq(std.str_slice(decl_struct_name, 0, 7), "os_Dir_") {
-                        (*env).open_directories.Insert(std.Clone(ctx, name), 1);
-                    }
+            if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
+                mut local_vars := (*env).current_function_local_vars;
+                set_add(local_vars, name, ctx);
+            }
+
+            mut prefix := (*env).current_prefix;
+            mut found_idx := 0 - 1;
+            mut i := 0;
+            while i < len((*env).resolved_types_nested) {
+                mut entry := (*env).resolved_types_nested[i];
+                if std.str_eq(entry.prefix, prefix) {
+                    found_idx = i;
+                    i = len((*env).resolved_types_nested);
                 }
+                i = i + 1;
+            }
 
-                if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
-                                mut local_vars := (*env).current_function_local_vars;
-                                set_add(local_vars, name, ctx);
-                            }
+            if found_idx == 0 - 1 {
+                mut new_entry: PrefixMapEntry[ctx];
+                new_entry.prefix = std.Clone(ctx, prefix);
+                new_entry.types = std.VectorNew(ctx);
+                (*env).resolved_types_nested.Push(new_entry);
+                found_idx = len((*env).resolved_types_nested) - 1;
+            }
 
-                            mut prefix := (*env).current_prefix;
-                            mut found_idx := 0 - 1;
-                            mut i := 0;
-                            while i < len((*env).resolved_types_nested) {
-                                mut entry := (*env).resolved_types_nested[i];
-                                if std.str_eq(entry.prefix, prefix) {
-                                    found_idx = i;
-                                    i = len((*env).resolved_types_nested);
-                                }
-                                i = i + 1;
-                            }
+            mut entry_ref := &(*env).resolved_types_nested[found_idx];
+            mut type_entry: ResolvedTypeEntry[ctx];
+            type_entry.start_offset = stmt.VarDecl.span.start.offset;
+            type_entry.end_offset = stmt.VarDecl.span.end.offset;
+            type_entry.val_type = val_type;
+            (*entry_ref).types.Push(type_entry);
 
-                            if found_idx == 0 - 1 {
-                                mut new_entry: PrefixMapEntry[ctx];
-                                new_entry.prefix = std.Clone(ctx, prefix);
-                                new_entry.types = std.VectorNew(ctx);
-                                (*env).resolved_types_nested.Push(new_entry);
-                                found_idx = len((*env).resolved_types_nested) - 1;
-                            }
-
-                            mut entry_ref := &(*env).resolved_types_nested[found_idx];
-                            mut type_entry: ResolvedTypeEntry[ctx];
-                            type_entry.start_offset = stmt.VarDecl.span.start.offset;
-                            type_entry.end_offset = stmt.VarDecl.span.end.offset;
-                            type_entry.val_type = val_type;
-                            (*entry_ref).types.Push(type_entry);
-
-                 return res;
-
-            
+            return res;
         }
 
         if stmt.tag == 5 { // Assignment
@@ -4426,6 +4417,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut expr_origins := get_expression_origins(expr_idx, env, ctx);
 
                 if set_contains(expr_origins, "scratch", ctx) == 1 {
+                    // Safe Scratchpad-allocated view check (Step 3 verification)
                     mut msg := "Semantic Error: Escape analysis violation. Returning scratchpad-allocated view of type ";
                     msg = std.Concat(msg, ast.serialize_type(actual_return, ctx));
                     report_error(2, msg, get_expression_span(expr_idx, ctx), env, ctx);
@@ -4447,7 +4439,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                 report_error(2, msg, get_expression_span(expr_idx, ctx), env, ctx);
                             }
                             m = m + 1;
-                        } 
+                        }
                     }
                 }
 
@@ -4482,112 +4474,82 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         }
 
         if stmt.tag == 13 { // Expression
-                mut expr_idx := stmt.Expression.expr;
-                check_expression(expr_idx, env, scope, ctx);
-
-                return res;
-            }
-
-            if stmt.tag == 9 { // Guard
-                mut name := stmt.Guard.name;
-                mut is_mut := stmt.Guard.is_mut;
-                mut value := stmt.Guard.value;
-                mut else_body := stmt.Guard.else_body;
-                mut span := stmt.Guard.span;
-
-                mut val_type := check_expression(value, env, scope, ctx);
-                mut resolved_val_type := env_resolve_type(env, val_type, ctx);
-
-                mut payload_type: ast.Type[ctx];
-                payload_type.tag = 3; // Void
-
-                mut is_ok := 0;
-                if resolved_val_type.tag == 8 { // Struct
-                    mut struct_name := resolved_val_type.Struct.struct_name;
-                    mut lookup_layout := (*env).struct_registry.Get(struct_name);
-                    if lookup_layout.Ok { 
-                        mut layout := lookup_layout.Val;
-                        mut ok_field_lookup := layout.fields.Get("Ok");
-                        mut val_field_lookup := layout.fields.Get("Val");
-                        if ok_field_lookup.Ok && val_field_lookup.Ok {
-                            mut ok_type := ok_field_lookup.Val;
-                            if ok_type.tag == 0 || ok_type.tag == 2 { // Int or Bool
-                                payload_type = val_field_lookup.Val;
-                                is_ok = 1;
-                            }
-                        }
-                    }
-                }
-
-                if is_ok == 0 {
-                    mut msg := "Semantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got ";
-                    msg = std.Concat(msg, ast.serialize_type(resolved_val_type, ctx));
-                    report_error(2, msg, span, env, ctx);
-                }
-
-                // Step 3: Implement Isolated Else-Block Checking and Divergence Enforcement
-                mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
-                mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
-                mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
-
-                mut child_scope := scope_new(scope, ctx);
-                
-                mut else_block := ctx[else_body];
-                mut else_statements := &ctx[else_block.statements] as *std.Vector[ast.Statement[ctx], ctx];
-                mut i := 0;
-                while i < len(*else_statements) { 
-                    mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = (*else_statements)[i];
-                    check_statement(s_idx, env, child_scope, ctx);
-                    i = i + 1;
-                }
-
-                mut diverges := is_diverging_block(else_body, env, ctx);
-                if diverges == 0 {
-                    mut msg := "Semantic Error: Guard 'else' block must diverge (i.e. end with a return statement or an exit call)";
-                    report_error(2, msg, ctx[else_body].span, env, ctx);
-                }
-
-                (*env).variable_origins = parent_origins;
-                (*env).moved_vars = parent_moved;
-                (*env).open_directories = parent_open_dirs;
-
-                return res;
-            }
-                // Step 3: Implement Isolated Else-Block Checking and Divergence Enforcement
-                mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
-                mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
-                mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
-
-                mut child_scope := scope_new(scope, ctx);
-                
-                mut else_block := ctx[else_body];
-                mut else_statements := &ctx[else_block.statements] as *std.Vector[ast.Statement[ctx], ctx];
-                mut i := 0;
-                while i < len(*else_statements) { 
-                    mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = (*else_statements)[i];
-                    check_statement(s_idx, env, child_scope, ctx);
-                    i = i + 1;
-                }
-
-                mut diverges := is_diverging_block(else_body, env, ctx);
-                if diverges == 0 {
-                    mut msg := "Semantic Error: Guard 'else' block must diverge (i.e. end with a return statement or an exit call)";
-                    report_error(2, msg, ctx[else_body].span, env, ctx);
-                }
-
-                (*env).variable_origins = parent_origins;
-                (*env).moved_vars = parent_moved;
-                (*env).open_directories = parent_open_dirs;
-
-                return res;
-            }
+            mut expr_idx := stmt.Expression.expr;
+            check_expression(expr_idx, env, scope, ctx);
 
             return res;
         }
-    }
 
+        if stmt.tag == 9 { // Guard
+            mut name := stmt.Guard.name;
+            mut is_mut := stmt.Guard.is_mut;
+            mut value := stmt.Guard.value;
+            mut else_body := stmt.Guard.else_body;
+            mut span := stmt.Guard.span;
+
+            mut val_type := check_expression(value, env, scope, ctx);
+            mut resolved_val_type := env_resolve_type(env, val_type, ctx);
+
+            mut payload_type: ast.Type[ctx];
+            payload_type.tag = 3; // Void
+
+            mut is_ok := 0;
+            if resolved_val_type.tag == 8 { // Struct
+                mut struct_name := resolved_val_type.Struct.struct_name;
+                mut lookup_layout := (*env).struct_registry.Get(struct_name);
+                if lookup_layout.Ok { 
+                    mut layout := lookup_layout.Val;
+                    mut ok_field_lookup := layout.fields.Get("Ok");
+                    mut val_field_lookup := layout.fields.Get("Val");
+                    if ok_field_lookup.Ok && val_field_lookup.Ok {
+                        mut ok_type := ok_field_lookup.Val;
+                        if ok_type.tag == 0 || ok_type.tag == 2 { // Int or Bool
+                            payload_type = val_field_lookup.Val;
+                            is_ok = 1;
+                        }
+                    }
+                }
+            }
+
+            if is_ok == 0 {
+                mut msg := "Semantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got ";
+                msg = std.Concat(msg, ast.serialize_type(resolved_val_type, ctx));
+                report_error(2, msg, span, env, ctx);
+            }
+
+            // Step 3: Implement Isolated Else-Block Checking and Divergence Enforcement
+            mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
+            mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
+            mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
+
+            mut child_scope := scope_new(scope, ctx);
+            
+            mut else_block := ctx[else_body];
+            mut else_statements := &ctx[else_block.statements] as *std.Vector[ast.Statement[ctx], ctx];
+            mut i := 0;
+            while i < len(*else_statements) { 
+                mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[s_idx] = (*else_statements)[i];
+                check_statement(s_idx, env, child_scope, ctx);
+                i = i + 1;
+            }
+
+            mut diverges := is_diverging_block(else_body, env, ctx);
+            if diverges == 0 {
+                mut msg := "Semantic Error: Guard 'else' block must diverge (i.e. end with a return statement or an exit call)";
+                report_error(2, msg, ctx[else_body].span, env, ctx);
+            }
+
+            (*env).variable_origins = parent_origins;
+            (*env).moved_vars = parent_moved;
+            (*env).open_directories = parent_open_dirs;
+
+            return res;
+        }
+
+        return res;
+    }
+}
 
 func typechecker_str_compare(s1: str, s2: str) int {
     mut len1 := len(s1);
