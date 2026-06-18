@@ -399,7 +399,8 @@ impl TypeChecker {
                                         || self.enum_templates.contains_key(&first_part);
                                 if is_generic_template {
                                     let reconstructed = format!("{}_{}", first_part, second_part);
-                                    args.push(Type::Struct(reconstructed, None));
+                                    let brand = extract_brand_from_suffix(&reconstructed);
+                                    args.push(Type::Struct(reconstructed, brand));
                                 } else {
                                     if first_part == "int" {
                                         args.push(Type::Int);
@@ -410,7 +411,8 @@ impl TypeChecker {
                                     } else if first_part == "str" {
                                         args.push(Type::Str);
                                     } else {
-                                        args.push(Type::Struct(first_part, None));
+                                        let brand = extract_brand_from_suffix(&first_part);
+                                        args.push(Type::Struct(first_part, brand));
                                     }
                                 }
                                 if second_part == "int" {
@@ -422,7 +424,8 @@ impl TypeChecker {
                                 } else if second_part == "str" {
                                     args.push(Type::Str);
                                 } else {
-                                    args.push(Type::Struct(second_part, None));
+                                    let brand = extract_brand_from_suffix(&second_part);
+                                    args.push(Type::Struct(second_part, brand));
                                 }
                             } else if parts.len() > num_generics {
                                 let num_to_join = parts.len() - num_generics + 1;
@@ -437,9 +440,11 @@ impl TypeChecker {
                                     let brand_part = parts[num_to_join].replace("@", "__");
                                     let reconstructed =
                                         format!("{}_{}", joined_first_arg, brand_part);
-                                    args.push(Type::Struct(reconstructed, None));
+                                    let brand = extract_brand_from_suffix(&reconstructed);
+                                    args.push(Type::Struct(reconstructed, brand));
                                 } else {
-                                    args.push(Type::Struct(joined_first_arg, None));
+                                    let brand = extract_brand_from_suffix(&joined_first_arg);
+                                    args.push(Type::Struct(joined_first_arg, brand));
                                 }
 
                                 for part in &parts[num_to_join..] {
@@ -453,7 +458,8 @@ impl TypeChecker {
                                     } else if clean_part == "str" {
                                         args.push(Type::Str);
                                     } else {
-                                        args.push(Type::Struct(clean_part, None));
+                                        let brand = extract_brand_from_suffix(&clean_part);
+                                        args.push(Type::Struct(clean_part, brand));
                                     }
                                 }
                             } else {
@@ -468,11 +474,11 @@ impl TypeChecker {
                                     } else if clean_part == "str" {
                                         args.push(Type::Str);
                                     } else {
-                                        args.push(Type::Struct(clean_part, None));
+                                        let brand = extract_brand_from_suffix(&clean_part);
+                                        args.push(Type::Struct(clean_part, brand));
                                     }
                                 }
                             }
-
                             match self.monomorphize(&template, &args) {
                                 Ok(monomorphized_type) => {
                                     return Ok(monomorphized_type);
@@ -780,7 +786,8 @@ impl TypeChecker {
                 if let Some(b) = brand {
                     let clean_b = strip_brand_prefix(b);
                     let suffix = format!("_{}", clean_b);
-                    if name.ends_with(&suffix) {
+                    let ns_suffix = format!("__{}", clean_b);
+                    if name.ends_with(&suffix) || name.ends_with(&ns_suffix) || name == &clean_b {
                         name.clone()
                     } else {
                         format!("{}_{}", name, clean_b)
@@ -793,7 +800,8 @@ impl TypeChecker {
                 if let Some(b) = brand {
                     let clean_b = strip_brand_prefix(b);
                     let suffix = format!("_{}", clean_b);
-                    if name.ends_with(&suffix) {
+                    let ns_suffix = format!("__{}", clean_b);
+                    if name.ends_with(&suffix) || name.ends_with(&ns_suffix) || name == &clean_b {
                         format!("Index_{}", name)
                     } else {
                         format!("Index_{}_{}", name, clean_b)
