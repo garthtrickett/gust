@@ -558,4 +558,102 @@ func main() {
 
     os.LogInt(codegen.codegen_is_hashmap_type(t_map_int_test, &env, ctx)); // Expected: 1
     os.LogInt(codegen.codegen_hashmap_is_str_key(t_map_int_test, &env, ctx)); // Expected: 0
+
+    // Step 4: Verification Test for Step 2 Slice, Str, and RawPointer IndexAccess Branches
+    mut e_slice_access: ast.Expression[ctx];
+    e_slice_access.tag = 8; // IndexAccess
+    e_slice_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
+    e_slice_access.IndexAccess.index = os.ArenaAlloc(ctx);
+    
+    // Set allocator as identifier "my_slice"
+    ctx[e_slice_access.IndexAccess.allocator].tag = 0; // Identifier
+    ctx[e_slice_access.IndexAccess.allocator].Identifier.name = "my_slice";
+    ctx[e_slice_test.IndexAccess.allocator].Identifier.span.start.offset = 100;
+    ctx[e_slice_access.IndexAccess.allocator].Identifier.span.end.offset = 108;
+
+    // Set index as integer 2
+    ctx[e_slice_access.IndexAccess.index].tag = 1; // Integer
+    ctx[e_slice_access.IndexAccess.index].Integer.val = 2;
+    ctx[e_slice_access.IndexAccess.index].Integer.span.start.offset = 109;
+    ctx[e_slice_access.IndexAccess.index].Integer.span.end.offset = 110;
+
+    e_slice_access.IndexAccess.span.start.offset = 100;
+    e_slice_access.IndexAccess.span.end.offset = 111;
+
+    // Setup types in env
+    mut t_slice: ast.Type[ctx];
+    t_slice.tag = 6; // Slice
+    t_slice.Slice.inner = os.ArenaAlloc(ctx);
+    ctx[t_slice.Slice.inner].tag = 0; // Int
+
+    mut t_int_test: ast.Type[ctx];
+    t_int_test.tag = 0; // Int
+
+    mut entry_slice: typechecker.ResolvedTypeEntry[ctx];
+    entry_slice.start_offset = 100;
+    entry_slice.end_offset = 108;
+    entry_slice.val_type = t_slice;
+
+    mut entry_idx: typechecker.ResolvedTypeEntry[ctx];
+    entry_idx.start_offset = 109;
+    entry_idx.end_offset = 110;
+    entry_idx.val_type = t_int_test;
+
+    mut pfx_entry2: typechecker.PrefixMapEntry[ctx];
+    pfx_entry2.prefix = "";
+    pfx_entry2.types = std.VectorNew(ctx);
+    pfx_entry2.types.Push(entry_slice);
+    pfx_entry2.types.Push(entry_idx);
+    env.resolved_types_nested.Push(pfx_entry2);
+
+    mut expr_slice_access_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx[expr_slice_access_idx] = e_slice_access;
+    mut slice_gen_str := codegen.codegen_generate_expression(expr_slice_access_idx, &env, ctx);
+    os.LogStr(slice_gen_str); // Expected: (*({ if (2 < 0 || 2 >= my_slice.len) { printf("Slice bounds check failed at line %d\n", __LINE__); exit(1); } &(my_slice.data[2]); }))
+
+    // Test RawPointer index access
+    mut e_ptr_access: ast.Expression[ctx];
+    e_ptr_access.tag = 8; // IndexAccess
+    e_ptr_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
+    e_ptr_access.IndexAccess.index = os.ArenaAlloc(ctx);
+
+    ctx[e_ptr_access.IndexAccess.allocator].tag = 0; // Identifier
+    ctx[e_ptr_access.IndexAccess.allocator].Identifier.name = "my_ptr";
+    ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.start.offset = 200;
+    ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.end.offset = 206;
+
+    ctx[e_ptr_access.IndexAccess.index].tag = 1; // Integer
+    ctx[e_ptr_access.IndexAccess.index].Integer.val = 3;
+    ctx[e_ptr_access.IndexAccess.index].Integer.span.start.offset = 207;
+    ctx[e_ptr_access.IndexAccess.index].Integer.span.end.offset = 208;
+
+    e_ptr_access.IndexAccess.span.start.offset = 200;
+    e_ptr_access.IndexAccess.span.end.offset = 209;
+
+    mut t_ptr_test: ast.Type[ctx];
+    t_ptr_test.tag = 9; // RawPointer
+    t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+
+    mut entry_ptr: typechecker.ResolvedTypeEntry[ctx];
+    entry_ptr.start_offset = 200;
+    entry_ptr.end_offset = 206;
+    entry_ptr.val_type = t_ptr_test;
+
+    mut entry_idx2: typechecker.ResolvedTypeEntry[ctx];
+    entry_idx2.start_offset = 207;
+    entry_idx2.end_offset = 208;
+    entry_idx2.val_type = t_int_test;
+
+    mut pfx_entry3: typechecker.PrefixMapEntry[ctx];
+    pfx_entry3.prefix = "";
+    pfx_entry3.types = std.VectorNew(ctx);
+    pfx_entry3.types.Push(entry_ptr);
+    pfx_entry3.types.Push(entry_idx2);
+    env.resolved_types_nested.Push(pfx_entry3);
+
+    mut expr_ptr_access_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx[expr_ptr_access_idx] = e_ptr_access;
+    mut ptr_gen_str := codegen.codegen_generate_expression(expr_ptr_access_idx, &env, ctx);
+    os.LogStr(ptr_gen_str); // Expected: (my_ptr[3])
 }

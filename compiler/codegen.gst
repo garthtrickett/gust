@@ -1259,7 +1259,29 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 res = std.Concat(res, arrow_or_dot);
                 res = std.Concat(res, "BaseAddress + ");
                 res = std.Concat(res, index_str);
-                res = std.Concat(res, ")))");
+                res = std.Concat(res, "")))");
+                return std.Clone(ctx, res);
+            }
+
+            if codegen_is_slice_type(alloc_t) == 1 {
+                mut res := std.Concat("(*({ if (", index_str);
+                res = std.Concat(res, " < 0 || ");
+                res = std.Concat(res, index_str);
+                res = std.Concat(res, " >= ");
+                res = std.Concat(res, alloc_str);
+                res = std.Concat(res, ".len) { printf(\"Slice bounds check failed at line %d\\n\", __LINE__); exit(1); } &(");
+                res = std.Concat(res, alloc_str);
+                res = std.Concat(res, ".data[");
+                res = std.Concat(res, index_str);
+                res = std.Concat(res, "]); }))");
+                return std.Clone(ctx, res);
+            }
+
+            if codegen_is_ptr_type(alloc_t, env, ctx) == 1 {
+                mut res := std.Concat("(", alloc_str);
+                res = std.Concat(res, "[");
+                res = std.Concat(res, index_str);
+                res = std.Concat(res, "])");
                 return std.Clone(ctx, res);
             }
 
