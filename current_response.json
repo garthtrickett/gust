@@ -1,9 +1,0 @@
-{
-  "summary": "fix(codegen): define missing layout variable in structures transpilation",
-  "files": [
-    {
-      "file_path": "compiler/codegen.gst",
-      "code_diff": "<<<<<<< SEARCH\n                mut layout_lookup := (*env).struct_registry.Get(orig_key);\n                if layout_lookup.Ok {\n                    mut struct_decl := std.Concat(\"typedef struct \", key);\n                    struct_decl = std.Concat(struct_decl, \" \");\n                    struct_decl = std.Concat(struct_decl, key);\n                    struct_decl = std.Concat(struct_decl, \";\\nstruct \");\n                    struct_decl = std.Concat(struct_decl, key);\n                    struct_decl = std.Concat(struct_decl, \" {\\n\");\n                    \n                    mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);\n=======\n                mut layout_lookup := (*env).struct_registry.Get(orig_key);\n                if layout_lookup.Ok {\n                    mut layout := layout_lookup.Val;\n                    mut struct_decl := std.Concat(\"typedef struct \", key);\n                    struct_decl = std.Concat(struct_decl, \" \");\n                    struct_decl = std.Concat(struct_decl, key);\n                    struct_decl = std.Concat(struct_decl, \";\\nstruct \");\n                    struct_decl = std.Concat(struct_decl, key);\n                    struct_decl = std.Concat(struct_decl, \" {\\n\");\n                    \n                    mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);\n>>>>>>> REPLACE"
-    }
-  ]
-}
