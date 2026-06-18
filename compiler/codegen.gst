@@ -1441,7 +1441,12 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
         }
         if tag == 11 { // Selector
             mut left_str := codegen_generate_expression(ctx[expr_idx].Selector.left, env, ctx);
-            mut res := std.Concat(left_str, ".");
+            mut left_t := codegen_get_expression_type(ctx[expr_idx].Selector.left, env, ctx);
+            mut arrow_or_dot := ".";
+            if left_t.tag == 9 { // RawPointer
+                arrow_or_dot = "->";
+            }
+            mut res := std.Concat(left_str, arrow_or_dot);
             res = std.Concat(res, ctx[expr_idx].Selector.right);
             return std.Clone(ctx, res);
         }

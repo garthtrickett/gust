@@ -5231,7 +5231,7 @@ fn test_self_hosted_typechecker_templates() {
     assert!(filtered_stdout.contains("Pointer inner: lib_module__MyStruct"));
     assert!(filtered_stdout.contains("Slice inner: lib_module__MyStruct"));
     assert!(filtered_stdout.contains("std_Vector"));
-    assert!(filtered_stdout.contains("std_Vector_lib_module__ctx_MyNode"));
+    assert!(filtered_stdout.contains("std_Vector_lib_module__MyStruct_ctx"));
     assert!(filtered_stdout.contains("MyNode"));
     assert!(filtered_stdout.contains("lib"));
     assert!(filtered_stdout.contains("lib_module__MyNode"));

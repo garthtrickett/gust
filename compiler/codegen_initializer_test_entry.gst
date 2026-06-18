@@ -788,6 +788,22 @@ func main() {
     mut evaluated_sel_t := typechecker.check_expression(expr_sel_test, &env_sel_test, scope_sel_test, ctx);
     os.LogStr(ast.serialize_type(evaluated_sel_t, ctx)); // Expected: Bool
 
+    // Variable node of type MyNode
+    typechecker.scope_insert(scope_sel_test, "node", t_node_struct_test, ctx);
+    mut l_sel_val: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_sel_val, "node.val");
+    mut p_sel_val: parser.Parser[ctx];
+    parser.init_parser(&p_sel_val, &l_sel_val, ctx);
+    mut expr_sel_val := parser.parse_expression(&p_sel_val, 1, ctx);
+    mut evaluated_sel_val := typechecker.check_expression(expr_sel_val, &env_sel_test, scope_sel_test, ctx);
+
+    // Generate C code for both (Step 2 Verification)
+    mut c_sel_test := codegen.codegen_generate_expression(expr_sel_test, &env_sel_test, ctx);
+    os.LogStr(c_sel_test); // Expected: p_node->val
+    
+    mut c_sel_val := codegen.codegen_generate_expression(expr_sel_val, &env_sel_test, ctx);
+    os.LogStr(c_sel_val); // Expected: node.val
+
     // Step 4: Verification Test for Step 2 Slice, Str, and RawPointer IndexAccess Branches
     mut e_slice_access: ast.Expression[ctx];
     e_slice_access.tag = 8; // IndexAccess
