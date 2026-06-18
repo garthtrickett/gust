@@ -319,6 +319,104 @@ func main() {
     t_gena_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
     ctx[t_gena_ptr.RawPointer.inner] = t_gena_direct;
 
-    os.LogInt(codegen.codegen_is_generational_arena_type(t_gena_direct, &env, ctx)); // Expected: 1
+ os.LogInt(codegen.codegen_is_generational_arena_type(t_gena_direct, &env, ctx)); // Expected: 1
     os.LogInt(codegen.codegen_is_generational_arena_type(t_gena_ptr, &env, ctx)); // Expected: 1
+
+    // Step 2: Verification Test for std.Pool and std.Rc FFI Overrides
+    mut l_pool_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_pool_test, "my_pool.Alloc(item)");
+    mut p_pool_test: parser.Parser[ctx];
+    parser.init_parser(&p_pool_test, &l_pool_test, ctx);
+    mut expr_pool_test := parser.parse_expression(&p_pool_test, 1, ctx);
+    unsafe {
+        mut t_pool: ast.Type[ctx];
+        t_pool.tag = 8; // Struct
+        t_pool.Struct.struct_name = "std_Pool_int_ctx";
+        t_pool.Struct.brand = empty[Index[str, ctx]];
+
+        mut t_int: ast.Type[ctx];
+        t_int.tag = 0; // Int
+
+        // Setup resolved type mapping for my_pool
+        mut left_expr := ctx[expr_pool_test].Call.function; // selector
+        mut left_left_expr := ctx[left_expr].Selector.left; // my_pool
+        mut left_left_span := parser.get_expression_span(left_left_expr, ctx);
+
+        mut entry_p: typechecker.ResolvedTypeEntry[ctx];
+        entry_p.start_offset = left_left_span.start.offset;
+        entry_p.end_offset = left_left_span.end.offset;
+        entry_p.val_type = t_pool;
+
+        // Setup resolved type mapping for argument 'item'
+        mut args_vec := &ctx[ctx[expr_pool_test].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[arg0_idx] = (*args_vec)[0];
+        mut arg0_span := parser.get_expression_span(arg0_idx, ctx);
+
+        mut entry_i: typechecker.ResolvedTypeEntry[ctx];
+        entry_i.start_offset = arg0_span.start.offset;
+        entry_i.end_offset = arg0_span.end.offset;
+        entry_i.val_type = t_int;
+
+        mut found_idx := 0 - 1;
+        mut p_idx := 0;
+        while p_idx < len(env.resolved_types_nested) {
+            if std.str_eq(env.resolved_types_nested[p_idx].prefix, "") {
+                found_idx = p_idx;
+            }
+            p_idx = p_idx + 1;
+        }
+        if found_idx != 0 - 1 {
+            mut entry_ref := &env.resolved_types_nested[found_idx];
+            (*entry_ref).types.Push(entry_p);
+            (*entry_ref).types.Push(entry_i);
+        }
+
+        mut output_c := codegen.codegen_generate_expression(expr_pool_test, &env, ctx);
+        os.LogStr(output_c); // Expected: std_PoolAlloc(&my_pool, item)
+    }
+
+    mut l_rc_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_rc_test, "rc_ptr.Get()");
+    mut p_rc_test: parser.Parser[ctx];
+    parser.init_parser(&p_rc_test, &l_rc_test, ctx);
+    mut expr_rc_test := parser.parse_expression(&p_rc_test, 1, ctx);
+    unsafe {
+        mut t_rc_inner: ast.Type[ctx];
+        t_rc_inner.tag = 8; // Struct
+        t_rc_inner.Struct.struct_name = "std_Rc_int_ctx";
+        t_rc_inner.Struct.brand = empty[Index[str, ctx]];
+
+        mut t_rc_ptr: ast.Type[ctx];
+        t_rc_ptr.tag = 9; // RawPointer
+        t_rc_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_rc_ptr.RawPointer.inner] = t_rc_inner;
+
+        // Setup resolved type mapping for rc_ptr
+        mut left_expr := ctx[expr_rc_test].Call.function; // selector
+        mut left_left_expr := ctx[left_expr].Selector.left; // rc_ptr
+        mut left_left_span := parser.get_expression_span(left_left_expr, ctx);
+
+        mut entry_rc: typechecker.ResolvedTypeEntry[ctx];
+        entry_rc.start_offset = left_left_span.start.offset;
+        entry_rc.end_offset = left_left_span.end.offset;
+        entry_rc.val_type = t_rc_ptr;
+
+        mut found_idx := 0 - 1;
+        mut p_idx := 0;
+        while p_idx < len(env.resolved_types_nested) {
+            if std.str_eq(env.resolved_types_nested[p_idx].prefix, "") {
+                found_idx = p_idx;
+            }
+            p_idx = p_idx + 1;
+        }
+        if found_idx != 0 - 1 {
+            mut entry_ref := &env.resolved_types_nested[found_idx];
+            (*entry_ref).types.Push(entry_rc);
+        }
+
+        mut output_c := codegen.codegen_generate_expression(expr_rc_test, &env, ctx);
+        os.LogStr(output_c); // Expected: std_RcGet(rc_ptr)
+    }
 }
+

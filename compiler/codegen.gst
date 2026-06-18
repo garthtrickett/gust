@@ -1947,6 +1947,80 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         return std.Clone(ctx, res);
                     }
                 }
+
+                if is_graph == 1 {
+                    mut left_str := codegen_generate_expression(left_expr_idx, env, ctx);
+                    mut ref_prefix := "&";
+                    if is_ptr == 1 {
+                        ref_prefix = "";
+                    }
+                    if std.str_eq(right_name, "AddNode") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Graph AddNode FFI override for %s", left_str), ctx);
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                        mut res := std.Concat("std_GraphAddNode(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, arg_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "AddEdge") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Graph AddEdge FFI override for %s", left_str), ctx);
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut arg0_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                        mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg1_idx] = (*args_vec)[1];
+                        mut arg1_str := codegen_generate_expression(arg1_idx, env, ctx);
+                        
+                        mut res := std.Concat("std_GraphAddEdge(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, arg0_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, arg1_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "GetNode") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Graph GetNode FFI override for %s", left_str), ctx);
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                        mut res := std.Concat("std_GraphGetNode(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, arg_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                }
+
+                if is_gen_arena == 1 {
+                    mut left_str := codegen_generate_expression(left_expr_idx, env, ctx);
+                    mut ref_prefix := "&";
+                    if is_ptr == 1 {
+                        ref_prefix = "";
+                    }
+                    if std.str_eq(right_name, "Step") || std.str_eq(right_name, "step") || std.str_eq(right_name, "Swap") || std.str_eq(right_name, "swap") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling GenerationalArena Step FFI override for %s", left_str), ctx);
+                        mut t_name := "Node";
+                        mut res := std.Concat("std_GenerationalArena_Step_", t_name);
+                        res = std.Concat(res, "(");
+                        res = std.Concat(res, ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                }
             }
 
             mut func_str := codegen_generate_expression(ctx[expr_idx].Call.function, env, ctx);
