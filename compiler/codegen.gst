@@ -970,11 +970,11 @@ func codegen_gen_type_aware_initializer(t: ast.Type[ctx], env: &typechecker.Type
             return "NULL";
         }
         if erased_t.tag == 8 { // Struct
-            return codegen_gen_struct_initializer(erased_t.Struct.struct_name, env, ctx);
+            return std.Clone(ctx, codegen_gen_struct_initializer(erased_t.Struct.struct_name, env, ctx));
         }
         if erased_t.tag == 10 { // Generic
             mut concrete_name := codegen_get_monomorphized_name(erased_t.Generic.name, erased_t.Generic.args, env, ctx);
-            return codegen_gen_struct_initializer(concrete_name, env, ctx);
+            return std.Clone(ctx, codegen_gen_struct_initializer(concrete_name, env, ctx));
         }
     }
     return "0";
