@@ -2289,7 +2289,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
         if tag == 13 { // Empty
             mut t_empty := ctx[ctx[expr_idx].Empty.target_type];
             mut resolved_t := typechecker.env_resolve_type(env, t_empty, ctx);
-            return codegen_gen_type_aware_initializer(resolved_t, env, ctx);
+            return std.Clone(ctx, codegen_gen_type_aware_initializer(resolved_t, env, ctx));
         }
     }
     return "0";
