@@ -164,16 +164,82 @@ func codegen_is_hashmap_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment
         if curr.tag == 8 { // Struct
             mut name := curr.Struct.struct_name;
             mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
-            if std.str_find(erased_name, "HashMap_") == 0 {
-                return 1;
-            }
-            if std.str_find(erased_name, "std_HashMap_") == 0 {
+            if std.str_find(erased_name, "HashMap_") == 0 || std.str_find(erased_name, "std_HashMap_") == 0 { 
                 return 1;
             }
         }
         if curr.tag == 10 { // Generic
             mut name := curr.Generic.name;
-            if std.str_eq(name, "HashMap") == 1 || std.str_eq(name, "std.HashMap") == 1 || std.str_eq(name, "std_HashMap") == 1 {
+            if std.str_eq(name, "HashMap") == 1 || std.str_eq(name, "std.HashMap") == 1 || std.str_eq(name, "std_HashMap") == 1 { 
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func codegen_is_rc_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut curr := t;
+        while curr.tag == 9 { // RawPointer
+            curr = ctx[curr.RawPointer.inner];
+        }
+        if curr.tag == 8 { // Struct
+            mut name := curr.Struct.struct_name;
+            mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
+            if std.str_find(erased_name, "Rc_") == 0 || std.str_find(erased_name, "std_Rc_") == 0 { 
+                return 1;
+            }
+        }
+        if curr.tag == 10 { // Generic
+            mut name := curr.Generic.name;
+            if std.str_eq(name, "Rc") == 1 || std.str_eq(name, "std.Rc") == 1 || std.str_eq(name, "std_Rc") == 1 { 
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func codegen_is_graph_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut curr := t;
+        while curr.tag == 9 { // RawPointer
+            curr = ctx[curr.RawPointer.inner];
+        }
+        if curr.tag == 8 { // Struct
+            mut name := curr.Struct.struct_name;
+            mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
+            if std.str_find(erased_name, "Graph_") == 0 || std.str_find(erased_name, "std_Graph_") == 0 { 
+                return 1;
+            }
+        }
+        if curr.tag == 10 { // Generic
+            mut name := curr.Generic.name;
+            if std.str_eq(name, "Graph") == 1 || std.str_eq(name, "std.Graph") == 1 || std.str_eq(name, "std_Graph") == 1 { 
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func codegen_is_generational_arena_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut curr := t;
+        while curr.tag == 9 { // RawPointer
+            curr = ctx[curr.RawPointer.inner];
+        }
+        if curr.tag == 8 { // Struct
+            mut name := curr.Struct.struct_name;
+            mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
+            if std.str_find(erased_name, "GenerationalArena_") == 0 || std.str_find(erased_name, "std_GenerationalArena_") == 0 { 
+                return 1;
+            }
+        }
+        if curr.tag == 10 { // Generic
+            mut name := curr.Generic.name;
+            if std.str_eq(name, "GenerationalArena") == 1 || std.str_eq(name, "std.GenerationalArena") == 1 || std.str_eq(name, "std_GenerationalArena") == 1 { 
                 return 1;
             }
         }
@@ -1485,6 +1551,10 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut is_channel := 0;
                 mut is_vec := 0;
                 mut is_map := 0;
+                mut is_pool := 0;
+                mut is_rc := 0;
+                mut is_graph := 0;
+                mut is_gen_arena := 0;
                 mut s_name := "";
                 if left_type.tag == 8 { // Struct
                     s_name = left_type.Struct.struct_name;
@@ -1500,6 +1570,18 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                     if std.str_find(clean, "HashMap_") == 0 || std.str_find(clean, "std_HashMap_") == 0 { 
                         is_map = 1;
+                    }
+                    if std.str_find(clean, "Pool_") == 0 || std.str_find(clean, "std_Pool_") == 0 { 
+                        is_pool = 1;
+                    }
+                    if std.str_find(clean, "Rc_") == 0 || std.str_find(clean, "std_Rc_") == 0 { 
+                        is_rc = 1;
+                    }
+                    if std.str_find(clean, "Graph_") == 0 || std.str_find(clean, "std_Graph_") == 0 { 
+                        is_graph = 1;
+                    }
+                    if std.str_find(clean, "GenerationalArena_") == 0 || std.str_find(clean, "std_GenerationalArena_") == 0 { 
+                        is_gen_arena = 1;
                     }
                 }
 
