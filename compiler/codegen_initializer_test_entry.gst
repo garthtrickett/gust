@@ -914,4 +914,49 @@ func main() {
     ctx[expr_map_access_idx] = e_map_access;
     mut map_gen_str := codegen.codegen_generate_expression(expr_map_access_idx, &env, ctx);
     os.LogStr(map_gen_str); // Expected: (*os_HashMapRef(&my_map, my_key, 1))
+
+    // Test Step 1.3: UnsafeBlock (Tag 10) statement transpilation
+    mut l_unsafe_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_unsafe_test, "unsafe { mut x := 42; }");
+    mut p_unsafe_test: parser.Parser[ctx];
+    parser.init_parser(&p_unsafe_test, &l_unsafe_test, ctx);
+    mut prog_unsafe_test := parser.parse_program(&p_unsafe_test, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog_unsafe_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut unsafe_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[unsafe_stmt_idx] = (*statements_vec)[0];
+
+        // Register the variable 'x' as type Int (0) to allow type resolution inside codegen
+        mut body_idx := ctx[unsafe_stmt_idx].UnsafeBlock.body;
+        mut body_statements := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut var_decl := (*body_statements)[0];
+        mut var_decl_span := var_decl.VarDecl.span;
+
+        mut t_int: ast.Type[ctx];
+        t_int.tag = 0; // Int
+
+        mut entry: typechecker.ResolvedTypeEntry[ctx];
+        entry.start_offset = var_decl_span.start.offset;
+        entry.end_offset = var_decl_span.end.offset;
+        entry.val_type = t_int;
+
+        mut found_idx := 0 - 1;
+        mut p_idx := 0;
+        while p_idx < len(env.resolved_types_nested) {
+            if std.str_eq(env.resolved_types_nested[p_idx].prefix, "") {
+                found_idx = p_idx;
+            }
+            p_idx = p_idx + 1;
+        }
+        if found_idx != 0 - 1 {
+            mut entry_ref := &env.resolved_types_nested[found_idx];
+            (*entry_ref).types.Push(entry);
+        }
+
+        mut unsafe_c := codegen.codegen_generate_statement(unsafe_stmt_idx, &env, ctx);
+        os.LogStr(unsafe_c); // Expected: 
+                             //     {
+                             //         int x = 42;
+                             //     }
+    }
 }
