@@ -416,4 +416,51 @@ func main() {
     
     mut c_type_str := codegen.codegen_get_c_type(t_gen_vector, &env, ctx);
     os.LogStr(c_type_str);
+
+    // Step 3: Verification Test for Struct Deduplication
+    // Register MyNode_ctx1 and MyNode_ctx2
+    mut env_dup := typechecker.env_new(ctx);
+    
+    mut layout1: typechecker.StructLayout[ctx];
+    mut brand1: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+    unsafe {
+        mut b_ptr := &ctx[brand1] as *str;
+        *b_ptr = "ctx1";
+    }
+    layout1.brand = brand1;
+    layout1.fields = std.HashMapNew(ctx);
+    mut t_int_dup: ast.Type[ctx]; t_int_dup.tag = 0; // Int
+    layout1.fields.Insert("val", t_int_dup);
+    typechecker.env_register_struct(&env_dup, "MyNode_ctx1", layout1, ctx);
+
+    mut layout2: typechecker.StructLayout[ctx];
+    mut brand2: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+    unsafe {
+        mut b_ptr := &ctx[brand2] as *str;
+        *b_ptr = "ctx2";
+    }
+    layout2.brand = brand2;
+    layout2.fields = std.HashMapNew(ctx);
+    layout2.fields.Insert("val", t_int_dup);
+    typechecker.env_register_struct(&env_dup, "MyNode_ctx2", layout2, ctx);
+
+    // Generate full C output
+    mut empty_prog_vec: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);
+    mut empty_prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
+    mut generated_c := codegen.codegen_generate(empty_prog_vec, empty_prefixes, &env_dup, ctx);
+
+    // Assert that "struct MyNode {" is defined exactly once
+    mut search_str := "struct MyNode {";
+    mut first_idx := std.str_find(generated_c, search_str);
+    if first_idx != 0 - 1 {
+        mut remaining := std.str_slice(generated_c, first_idx + len(search_str), len(generated_c));
+        mut second_idx := std.str_find(remaining, search_str);
+        if second_idx == 0 - 1 {
+            os.LogStr("Struct MyNode correctly defined exactly once!");
+        } else {
+            os.LogStr("ERROR: Struct MyNode defined more than once!");
+        }
+    } else {
+        os.LogStr("ERROR: Struct MyNode not defined at all!");
+    }
 }
