@@ -191,6 +191,24 @@ func main() {
         if codegen.codegen_is_arena_ptr("ctx", &env, ctx) == 1 {
             os.LogStr("is_arena_ptr direct fallback OK: parameter ctx is not value");
         }
+
+        // Direct test for general call argument generation (Step 1)
+        mut l_general_call: lexer.Lexer[ctx];
+        lexer.init_lexer(&l_general_call, "my_user_func(ctx)");
+        mut p_general_call: parser.Parser[ctx];
+        parser.init_parser(&p_general_call, &l_general_call, ctx);
+        mut expr_general_call := parser.parse_expression(&p_general_call, 1, ctx);
+        
+        // Case A: ctx is in current_params (function parameter) -> should generate my_user_func(ctx)
+        env.current_params.Clear();
+        env.current_params.Push("ctx");
+        mut out_general_param := codegen.codegen_generate_expression(expr_general_call, &env, ctx);
+        os.LogStr(out_general_param);
+        
+        // Case B: ctx is NOT in current_params (local value) -> should generate my_user_func(&ctx)
+        env.current_params.Clear();
+        mut out_general_val := codegen.codegen_generate_expression(expr_general_call, &env, ctx);
+        os.LogStr(out_general_val);
     }
 
     // 1. Test primitive types
