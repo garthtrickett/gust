@@ -269,4 +269,56 @@ func main() {
     mut erased_res := codegen.codegen_erase_struct_name("std_HashMap_str_int_typechecker__ctx", test_brand, &env, ctx);
     os.LogStr(erased_res); // Expected: std_HashMap_str_int
 
+    // Step 1: Verification Test for codegen_is_pool_type, codegen_is_rc_type, codegen_is_graph_type
+    mut t_pool_direct: ast.Type[ctx];
+    t_pool_direct.tag = 8; // Struct
+    t_pool_direct.Struct.struct_name = "std_Pool_int_ctx";
+    t_pool_direct.Struct.brand = empty[Index[str, ctx]];
+
+    mut t_pool_ptr: ast.Type[ctx];
+    t_pool_ptr.tag = 9; // RawPointer
+    t_pool_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_pool_ptr.RawPointer.inner] = t_pool_direct;
+
+    os.LogInt(codegen.codegen_is_pool_type(t_pool_direct, &env, ctx)); // Expected: 1
+    os.LogInt(codegen.codegen_is_pool_type(t_pool_ptr, &env, ctx)); // Expected: 1
+
+    mut t_rc_direct: ast.Type[ctx];
+    t_rc_direct.tag = 8; // Struct
+    t_rc_direct.Struct.struct_name = "std_Rc_int_ctx";
+    t_rc_direct.Struct.brand = empty[Index[str, ctx]];
+
+    mut t_rc_ptr: ast.Type[ctx];
+    t_rc_ptr.tag = 9; // RawPointer
+    t_rc_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_rc_ptr.RawPointer.inner] = t_rc_direct;
+
+    os.LogInt(codegen.codegen_is_rc_type(t_rc_direct, &env, ctx)); // Expected: 1
+    os.LogInt(codegen.codegen_is_rc_type(t_rc_ptr, &env, ctx)); // Expected: 1
+
+    mut t_graph_direct: ast.Type[ctx];
+    t_graph_direct.tag = 8; // Struct
+    t_graph_direct.Struct.struct_name = "std_Graph_int_ctx";
+    t_graph_direct.Struct.brand = empty[Index[str, ctx]];
+
+    mut t_graph_ptr: ast.Type[ctx];
+    t_graph_ptr.tag = 9; // RawPointer
+    t_graph_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_graph_ptr.RawPointer.inner] = t_graph_direct;
+
+    os.LogInt(codegen.codegen_is_graph_type(t_graph_direct, &env, ctx)); // Expected: 1
+    os.LogInt(codegen.codegen_is_graph_type(t_graph_ptr, &env, ctx)); // Expected: 1
+
+    mut t_gena_direct: ast.Type[ctx];
+    t_gena_direct.tag = 8; // Struct
+    t_gena_direct.Struct.struct_name = "std_GenerationalArena_int_ctx";
+    t_gena_direct.Struct.brand = empty[Index[str, ctx]];
+
+    mut t_gena_ptr: ast.Type[ctx];
+    t_gena_ptr.tag = 9; // RawPointer
+    t_gena_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_gena_ptr.RawPointer.inner] = t_gena_direct;
+
+    os.LogInt(codegen.codegen_is_generational_arena_type(t_gena_direct, &env, ctx)); // Expected: 1
+    os.LogInt(codegen.codegen_is_generational_arena_type(t_gena_ptr, &env, ctx)); // Expected: 1
 }

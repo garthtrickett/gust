@@ -1882,6 +1882,71 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         return std.Clone(ctx, res);
                     }
                 }
+
+                if is_pool == 1 {
+                    mut left_str := codegen_generate_expression(left_expr_idx, env, ctx);
+                    mut ref_prefix := "&";
+                    if is_ptr == 1 {
+                        ref_prefix = "";
+                    }
+                    if std.str_eq(right_name, "Alloc") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Pool Alloc FFI override for %s", left_str), ctx);
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                        mut res := std.Concat("std_PoolAlloc(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, arg_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Free") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Pool Free FFI override for %s", left_str), ctx);
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
+                        
+                        mut res := std.Concat("std_PoolFree(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, arg_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                }
+
+                if is_rc == 1 {
+                    mut left_str := codegen_generate_expression(left_expr_idx, env, ctx);
+                    mut ref_prefix := "&";
+                    if is_ptr == 1 {
+                        ref_prefix = "";
+                    }
+                    if std.str_eq(right_name, "Clone") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Rc Clone FFI override for %s", left_str), ctx);
+                        mut res := std.Concat("std_RcClone(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Release") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Rc Release FFI override for %s", left_str), ctx);
+                        mut res := std.Concat("std_RcRelease(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                    if std.str_eq(right_name, "Get") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Rc Get FFI override for %s", left_str), ctx);
+                        mut res := std.Concat("std_RcGet(", ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                }
             }
 
             mut func_str := codegen_generate_expression(ctx[expr_idx].Call.function, env, ctx);
