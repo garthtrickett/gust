@@ -1656,6 +1656,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         return std.Clone(ctx, res);
                     }
                     if std.str_eq(right_name, "Get") { 
+                    if (std.str_eq(right_name, "Get")) { 
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Get FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
@@ -1670,7 +1671,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                                 mut val_type := val_type_lookup.Val;
                                 if val_type.tag == 9 { // RawPointer
                                     mut val_elem_type := ctx[val_type.RawPointer.inner];
-                                    val_type_ident = codegen_get_c_type_ident(val_elem_type, env, ctx);
+                                    mut erased_val_elem_type := codegen_erase_type(val_elem_type, env, ctx);
+                                    val_type_ident = typechecker.get_type_ident(erased_val_elem_type, ctx);
                                 } 
                             }
                         }
@@ -1721,6 +1723,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
 
                     if std.str_eq(right_name, "Keys") {
+                    if (std.str_eq(right_name, "Keys")) {
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx[arg0_idx] = (*args_vec)[0];
@@ -1728,7 +1731,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
                         mut expr_type := codegen_get_expression_type(expr_idx, env, ctx);
                         mut vec_type_str := "";
-                        if expr_type.tag == 3 { // Void - fallback
+                        if (expr_type.tag == 3) { // Void - fallback
                             mut key_type_ident := "int";
                             if lookup_struct.Ok {
                                 mut layout := lookup_struct.Val;
@@ -1737,7 +1740,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                                     mut keys_type := keys_type_lookup.Val;
                                     if keys_type.tag == 9 { // RawPointer
                                         mut key_elem_type := ctx[keys_type.RawPointer.inner];
-                                        key_type_ident = codegen_get_c_type_ident(key_elem_type, env, ctx);
+                                        mut erased_key_elem_type := codegen_erase_type(key_elem_type, env, ctx);
+                                        key_type_ident = typechecker.get_type_ident(erased_key_elem_type, ctx);
                                     }
                                 }
                             }
