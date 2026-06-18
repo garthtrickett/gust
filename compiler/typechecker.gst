@@ -867,6 +867,22 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             mut func_name := expression_to_string(expr.Call.function, ctx);
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
 
+            if std.str_eq(resolved_func, "len") {
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec) != 1 {
+                    mut msg := "Semantic Error: len expects exactly 1 argument";
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                } else {
+                    mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[arg0_idx] = (*args_vec)[0];
+                    check_expression(arg0_idx, env, scope, ctx);
+                }
+                mut t_int: ast.Type[ctx];
+                t_int.tag = 0; // Int
+                return t_int;
+            }
+
+            if std.str_eq(resolved_func, "os_ArenaAlloc") || std.str_eq(resolved_func, "os_ArenaAlloc") {
             if std.str_eq(resolved_func, "os_ArenaAlloc") || std.str_eq(resolved_func, "os.ArenaAlloc") {
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 if len(*args_vec) != 1 {

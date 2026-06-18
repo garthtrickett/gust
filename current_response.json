@@ -1,0 +1,9 @@
+{
+  "summary": "fix: implement typechecking for len builtin in self-hosted typechecker",
+  "files": [
+    {
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\n            mut func_name := expression_to_string(expr.Call.function, ctx);\n            mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);\n\n            if std.str_eq(resolved_func, \"os_ArenaAlloc\") || std.str_eq(resolved_func, \"os_ArenaAlloc\") {\n=======\n            mut func_name := expression_to_string(expr.Call.function, ctx);\n            mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);\n\n            if std.str_eq(resolved_func, \"len\") {\n                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];\n                if len(*args_vec) != 1 {\n                    mut msg := \"Semantic Error: len expects exactly 1 argument\";\n                    report_error(2, msg, expr.Call.span, env, ctx);\n                } else {\n                    mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);\n                    ctx[arg0_idx] = (*args_vec)[0];\n                    check_expression(arg0_idx, env, scope, ctx);\n                }\n                mut t_int: ast.Type[ctx];\n                t_int.tag = 0; // Int\n                return t_int;\n            }\n\n            if std.str_eq(resolved_func, \"os_ArenaAlloc\") || std.str_eq(resolved_func, \"os_ArenaAlloc\") {\n>>>>>>> REPLACE"
+    }
+  ]
+}
