@@ -1,9 +1,0 @@
-{
-  "summary": "fix: wrap struct and generic initializers in std.Clone to satisfy escape analysis",
-  "files": [
-    {
-      "file_path": "compiler/codegen.gst",
-      "code_diff": "<<<<<<< SEARCH\n        if erased_t.tag == 8 { // Struct\n            return codegen_gen_struct_initializer(erased_t.Struct.struct_name, env, ctx);\n        }\n        if erased_t.tag == 10 { // Generic\n            mut concrete_name := codegen_get_monomorphized_name(erased_t.Generic.name, erased_t.Generic.args, env, ctx);\n            return codegen_gen_struct_initializer(concrete_name, env, ctx);\n        }\n=======\n        if erased_t.tag == 8 { // Struct\n            return std.Clone(ctx, codegen_gen_struct_initializer(erased_t.Struct.struct_name, env, ctx));\n        }\n        if erased_t.tag == 10 { // Generic\n            mut concrete_name := codegen_get_monomorphized_name(erased_t.Generic.name, erased_t.Generic.args, env, ctx);\n            return std.Clone(ctx, codegen_gen_struct_initializer(concrete_name, env, ctx));\n        }\n>>>>>>> REPLACE"
-    }
-  ]
-}
