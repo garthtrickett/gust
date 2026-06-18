@@ -1,9 +1,0 @@
-{
-  "summary": "fix: include FIBER_RUNTIME and assert.h in e2e std_Clone_str test",
-  "files": [
-    {
-      "file_path": "tests/e2e_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n#[test]\nfn test_e2e_c_std_clone_str() {\n    let mut c_program = String::new();\n    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);\n    c_program.push_str(\"typedef struct Slice_unsigned_char Slice_unsigned_char;\\n\");\n    c_program.push_str(\"struct Slice_unsigned_char {\\n    unsigned char* data;\\n    int len;\\n};\\n\\n\");\n    c_program.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);\n    c_program.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);\n    c_program.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);\n=======\n#[test]\nfn test_e2e_c_std_clone_str() {\n    let mut c_program = String::new();\n    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);\n    c_program.push_str(\"#include <assert.h>\\n\");\n    c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);\n    c_program.push_str(\"typedef struct Slice_unsigned_char Slice_unsigned_char;\\n\");\n    c_program.push_str(\"struct Slice_unsigned_char {\\n    unsigned char* data;\\n    int len;\\n};\\n\\n\");\n    c_program.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);\n    c_program.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);\n    c_program.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);\n>>>>>>> REPLACE"
-    }
-  ]
-}
