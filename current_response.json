@@ -1,9 +1,0 @@
-{
-  "summary": "fix: resolve UseOfMovedVariable error in self-hosted typechecker",
-  "files": [
-    {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n            if val_type.tag == 8 { // Struct\n                mut assign_struct_name := val_type.Struct.struct_name;\n                if len(assign_struct_name) >= 7 && std.str_eq(std.str_slice(assign_struct_name, 0, 7), \"os_Dir_\") { \n                    (*env).open_directories.Insert(std.Clone(ctx, name), 1);\n                }\n            } \n=======\n            if val_type.tag == 8 { // Struct\n                mut decl_struct_name := val_type.Struct.struct_name;\n                if len(decl_struct_name) >= 7 && std.str_eq(std.str_slice(decl_struct_name, 0, 7), \"os_Dir_\") { \n                    (*env).open_directories.Insert(std.Clone(ctx, name), 1);\n                }\n            } \n>>>>>>> REPLACE"
-    }
-  ]
-}
