@@ -1,0 +1,10 @@
+{
+  "summary": "feat: secure prefix strings at creation in driver and add verification test in tests/compile_tests.rs",
+  "files": [
+    {
+      "file_path": "compiler/test_runner_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n        mut stem := typechecker.typechecker_get_file_stem(path, ctx);\n        mut is_entry := std.str_eq(path, file_path);\n        mut prefix := \"\";\n        if is_entry == 0 {\n            // Secure prefix string view in long-lived Arena to prevent scratchpad corruption (Step 3)\n            prefix = std.Clone(ctx, std.Concat(stem, \"__\"));\n        }\n        module_prefixes.Push(prefix);\n=======\n        mut stem := typechecker.typechecker_get_file_stem(path, ctx);\n        mut is_entry := std.str_eq(path, file_path);\n        mut prefix := \"\";\n        if is_entry == 0 {\n            // Secure prefix string view in long-lived Arena to prevent scratchpad corruption (Step 3)\n            // The prefix string must be anchored in the long-lived Arena (ctx) to prevent transient\n            // scratchpad corruption before it is assigned to env.current_prefix.\n            prefix = std.Clone(ctx, std.Concat(stem, \"__\"));\n        }\n        module_prefixes.Push(prefix);\n>>>>>>> REPLACE"
+    }
+    
+  ]
+}

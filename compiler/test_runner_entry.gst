@@ -78,6 +78,8 @@ func main() {
         mut prefix := "";
         if is_entry == 0 {
             // Secure prefix string view in long-lived Arena to prevent scratchpad corruption (Step 3)
+            // The prefix string must be anchored in the long-lived Arena (ctx) to prevent transient
+            // scratchpad corruption before it is assigned to env.current_prefix.
             prefix = std.Clone(ctx, std.Concat(stem, "__"));
         }
         module_prefixes.Push(prefix);
