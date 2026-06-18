@@ -209,6 +209,78 @@ func main() {
         env.current_params.Clear();
         mut out_general_val := codegen.codegen_generate_expression(expr_general_call, &env, ctx);
         os.LogStr(out_general_val);
+
+        // Direct test for FFI Override os.ReadFile (Step 2)
+        mut l_readfile: lexer.Lexer[ctx];
+        lexer.init_lexer(&l_readfile, "os.ReadFile(ctx, \"path.txt\")");
+        mut p_readfile: parser.Parser[ctx];
+        parser.init_parser(&p_readfile, &l_readfile, ctx);
+        mut expr_readfile := parser.parse_expression(&p_readfile, 1, ctx);
+
+        // Case A: ctx is in current_params (parameter) -> should generate os_ReadFile(ctx, "path.txt")
+        env.current_params.Clear();
+        env.current_params.Push("ctx");
+        mut out_readfile_param := codegen.codegen_generate_expression(expr_readfile, &env, ctx);
+        os.LogStr(out_readfile_param);
+
+        // Case B: ctx is NOT in current_params (local value) -> should generate os_ReadFile(&ctx, "path.txt")
+        env.current_params.Clear();
+        mut out_readfile_val := codegen.codegen_generate_expression(expr_readfile, &env, ctx);
+        os.LogStr(out_readfile_val);
+
+        // Direct test for FFI Override std.Clone (Step 2)
+        mut l_clone: lexer.Lexer[ctx];
+        lexer.init_lexer(&l_clone, "std.Clone(ctx, node)");
+        mut p_clone: parser.Parser[ctx];
+        parser.init_parser(&p_clone, &l_clone, ctx);
+        mut expr_clone := parser.parse_expression(&p_clone, 1, ctx);
+
+        // Pre-register 'node' of type Index[SessionNode, current_ctx] so Clone finds its brand
+        mut t_node_idx: ast.Type[ctx];
+        t_node_idx.tag = 7; // Index
+        t_node_idx.Index.struct_name = "SessionNode";
+        t_node_idx.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+        unsafe {
+            mut brand_ptr := &ctx[t_node_idx.Index.brand] as *str;
+            *brand_ptr = "current_ctx";
+        }
+        // Insert into resolved types for the expression 'node'
+        mut node_expr_idx := ctx[expr_clone].Call.arguments; // Vector[Expression]
+        unsafe {
+            mut args_vec := &ctx[node_expr_idx] as *std.Vector[ast.Expression[ctx], ctx];
+            mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[arg1_idx] = (*args_vec)[1];
+            mut span1 := parser.get_expression_span(arg1_idx, ctx);
+            
+            mut entry_node: typechecker.ResolvedTypeEntry[ctx];
+            entry_node.start_offset = span1.start.offset;
+            entry_node.end_offset = span1.end.offset;
+            entry_node.val_type = t_node_idx;
+
+            mut found_idx := 0 - 1;
+            mut p_idx := 0;
+            while p_idx < len(env.resolved_types_nested) {
+                if std.str_eq(env.resolved_types_nested[p_idx].prefix, "") {
+                    found_idx = p_idx;
+                }
+                p_idx = p_idx + 1;
+            }
+            if found_idx != 0 - 1 {
+                mut entry_ref := &env.resolved_types_nested[found_idx];
+                (*entry_ref).types.Push(entry_node);
+            }
+        }
+
+        // Case A: ctx is in current_params (parameter) -> should generate os_ArenaAlloc(ctx, sizeof(SessionNode))
+        env.current_params.Clear();
+        env.current_params.Push("ctx");
+        mut out_clone_param := codegen.codegen_generate_expression(expr_clone, &env, ctx);
+        os.LogStr(out_clone_param);
+
+        // Case B: ctx is NOT in current_params (local value) -> should generate os_ArenaAlloc(&ctx, sizeof(SessionNode))
+        env.current_params.Clear();
+        mut out_clone_val := codegen.codegen_generate_expression(expr_clone, &env, ctx);
+        os.LogStr(out_clone_val);
     }
 
     // 1. Test primitive types
