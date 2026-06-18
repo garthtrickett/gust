@@ -3957,13 +3957,27 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
         mut log_msg := std.Format('types_match: expected=%s, actual=%s', t_expected, t_actual);
         typechecker_log_trace('⚖', log_msg, ctx);
 
-        if expected.tag != actual.tag {
-            // Handle Int/Byte match
-            if (expected.tag == 0 && actual.tag == 1) || (expected.tag == 1 && actual.tag == 0) {
-                return 1;
+         if expected.tag != actual.tag {
+                // Handle RawPointer(Arena) vs Arena match
+                if expected.tag == 9 && actual.tag == 4 {
+                    mut inner := ctx[expected.RawPointer.inner];
+                    if inner.tag == 4 {
+                        return 1;
+                    }
+                }
+                if expected.tag == 4 && actual.tag == 9 {
+                    mut inner := ctx[actual.RawPointer.inner];
+                    if inner.tag == 4 {
+                        return 1;
+                    }
+                }
+                // Handle Int/Byte match
+                if (expected.tag == 0 && actual.tag == 1) || (expected.tag == 1 && actual.tag == 0) {
+                    return 1;
+                }
+                return 0;
             }
-            return 0;
-        }
+        
         if expected.tag == 0 || expected.tag == 1 || expected.tag == 2 || expected.tag == 3 || expected.tag == 4 || expected.tag == 5 {
             return 1;
         }
