@@ -2861,6 +2861,15 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     res = std.Concat(res, cons_str);
                     res = std.Concat(res, "    }\n");
                     return std.Clone(ctx, res);
+                } else {
+                    mut alt_str := codegen_generate_block_statement(ctx[stmt_idx].If.alternative, env, ctx);
+                    mut res := std.Concat("    if (", cond_str);
+                    res = std.Concat(res, ") {\n");
+                    res = std.Concat(res, cons_str);
+                    res = std.Concat(res, "    } else {\n");
+                    res = std.Concat(res, alt_str);
+                    res = std.Concat(res, "    }\n");
+                    return std.Clone(ctx, res);
                 }
             }
         }

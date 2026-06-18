@@ -1009,4 +1009,31 @@ func main() {
                          //         val = 1;
                          //     }
     }
+
+    // Test Step 2.3: If-Else Statement (Tag 7) statement transpilation
+    mut l_ifelse_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_ifelse_test, "if x == 1 { y = 10; } else { y = 20; }");
+    mut p_ifelse_test: parser.Parser[ctx];
+    parser.init_parser(&p_ifelse_test, &l_ifelse_test, ctx);
+    mut prog_ifelse_test := parser.parse_program(&p_ifelse_test, ctx);
+    unsafe {
+        mut ifelse_test_statements_vec := &ctx[prog_while_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut while_test_statements_vec := &ctx[prog_while_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut while_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[while_stmt_idx] = (*while_test_statements_vec)[0];
+
+        mut t_int: ast.Type[ctx];
+        t_int.tag = 0; // Int
+
+        env.variable_types.Insert("x", t_int);
+        env.variable_types.Insert("y", t_int);
+
+        mut ifelse_c := codegen.codegen_generate_statement(while_stmt_idx, &env, ctx);
+        os.LogStr(ifelse_c); // Expected:
+                             //     if ((x == 1)) {
+                             //         y = 10;
+                             //     } else {
+                             //         y = 20;
+                             //     }
+    }
 }
