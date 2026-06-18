@@ -4340,7 +4340,7 @@ fn test_e2e_self_hosted_origins() {
         .join("\n");
     assert_eq!(
         filtered_stdout.trim(),
-        "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch\nexpr3 correctly flagged origin_x invalidation\nexpr4 correctly flagged ctx_brand invalidation\nexpr5 correctly flagged var_c move\ntypechecker_extract_ok_checked_variables correctly extracted result\ntypechecker_extract_ok_checked_variables correctly ignored OR operator"
+        "set1 has origin_a\nset1 missing origin_c\nset1 now has origin_c\nset1 now has origin_d\nexpr1 correctly resolved to my_root\nexpr2 correctly identified scratch\nexpr3 correctly flagged origin_x invalidation\nexpr4 correctly flagged ctx_brand invalidation\nexpr5 correctly flagged var_c move\ntypechecker_extract_ok_checked_variables correctly extracted result\ntypechecker_extract_ok_checked_variables correctly ignored OR operator\n📥 check_statement: start for stmt tag 9\n🔍 env_resolve_type: returning ctx[res_idx]\n❌ TypeError at line 1:1: Semantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got Int\n✅ check_statement: successfully verified stmt tag 9\n1\nSemantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got Int\n📥 check_statement: start for stmt tag 9\n🔍 env_resolve_type: returning ctx[res_idx]\n✅ check_statement: successfully verified stmt tag 9\nScenario B check: Ok\n0"
     );
 }
 

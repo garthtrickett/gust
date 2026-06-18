@@ -289,7 +289,7 @@ func main() {
     mut prog_guard_tc_test2 := parser.parse_program(&p_guard_tc_test2, ctx);
     unsafe {
         mut statements_vec := &ctx[prog_guard_tc_test2.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut guard_stmt_idx := os.ArenaAlloc(ctx);
+        mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
         ctx[guard_stmt_idx] = (*statements_vec)[0];
 
         mut env_tc_test := typechecker.env_new(ctx);
