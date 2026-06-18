@@ -699,24 +699,24 @@ func main() {
     mut vec_gen_str := codegen.codegen_generate_expression(expr_vec_access_idx, &env, ctx);
     os.LogStr(vec_gen_str); // Expected: (*({ if (4 < 0 || 4 >= my_vec.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(my_slice.data[2]); }))
 
-    // Test RawPointer index access
-    mut e_ptr_access: ast.Expression[ctx];
-    e_ptr_access.tag = 8; // IndexAccess
-    e_ptr_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
-    e_ptr_access.IndexAccess.index = os.ArenaAlloc(ctx);
+    // Test HashMap index access
+    mut e_map_access: ast.Expression[ctx];
+    e_map_access.tag = 8; // IndexAccess
+    e_map_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
+    e_map_access.IndexAccess.index = os.ArenaAlloc(ctx);
 
-    ctx[e_ptr_access.IndexAccess.allocator].tag = 0; // Identifier
-    ctx[e_ptr_access.IndexAccess.allocator].Identifier.name = "my_map";
-    ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.start.offset = 400;
-    ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.end.offset = 406;
+    ctx[e_map_access.IndexAccess.allocator].tag = 0; // Identifier
+    ctx[e_map_access.IndexAccess.allocator].Identifier.name = "my_map";
+    ctx[e_map_access.IndexAccess.allocator].Identifier.span.start.offset = 400;
+    ctx[e_map_access.IndexAccess.allocator].Identifier.span.end.offset = 406;
 
-    ctx[e_ptr_access.IndexAccess.index].tag = 0; // Identifier
-    ctx[e_ptr_access.IndexAccess.index].Identifier.name = "my_key";
-    ctx[e_ptr_access.IndexAccess.index].Identifier.span.start.offset = 407;
-    ctx[e_ptr_access.IndexAccess.index].Identifier.span.end.offset = 413;
+    ctx[e_map_access.IndexAccess.index].tag = 0; // Identifier
+    ctx[e_map_access.IndexAccess.index].Identifier.name = "my_key";
+    ctx[e_map_access.IndexAccess.index].Identifier.span.start.offset = 407;
+    ctx[e_map_access.IndexAccess.index].Identifier.span.end.offset = 413;
 
-    e_ptr_access.IndexAccess.span.start.offset = 400;
-    e_ptr_access.IndexAccess.span.end.offset = 414;
+    e_map_access.IndexAccess.span.start.offset = 400;
+    e_map_access.IndexAccess.span.end.offset = 414;
 
     mut t_map: ast.Type[ctx];
     t_map.tag = 8; // Struct
