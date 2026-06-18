@@ -325,6 +325,24 @@ func main() {
         mut out_mapnew_val := codegen.codegen_generate_expression(expr_mapnew, &env, ctx);
         os.LogStr(out_mapnew_val);
         env.current_alloc_struct = "";
+
+        // Direct test for FFI Block Helper os.Args (Step 2)
+        mut l_args: lexer.Lexer[ctx];
+        lexer.init_lexer(&l_args, "os.Args(ctx)");
+        mut p_args: parser.Parser[ctx];
+        parser.init_parser(&p_args, &l_args, ctx);
+        mut expr_args := parser.parse_expression(&p_args, 1, ctx);
+
+        // Case A: ctx is in current_params (parameter) -> os_Arena* _ctx = ctx
+        env.current_params.Clear();
+        env.current_params.Push("ctx");
+        mut out_args_param := codegen.codegen_generate_expression(expr_args, &env, ctx);
+        os.LogStr(out_args_param);
+
+        // Case B: ctx is NOT in current_params (local value) -> os_Arena* _ctx = &ctx
+        env.current_params.Clear();
+        mut out_args_val := codegen.codegen_generate_expression(expr_args, &env, ctx);
+        os.LogStr(out_args_val);
     }
 
     // 1. Test primitive types
