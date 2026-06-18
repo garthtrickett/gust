@@ -419,19 +419,21 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             if alloc_t.tag == 6 { // Slice
                 return ctx[alloc_t.Slice.inner];
             }
+            if alloc_t.tag == 5 { // Str
+                return make_type_byte();
+            }
             if alloc_t.tag == 8 { // Struct
                 mut s_name := alloc_t.Struct.struct_name;
                 mut lookup := (*env).struct_registry.Get(s_name);
                 if lookup.Ok {
-                    mut layout := lookup.Val;
-                    mut data_lookup := layout.fields.Get("data");
+                    mut data_lookup := lookup.Val.fields.Get("data");
                     if data_lookup.Ok {
                         mut data_type := data_lookup.Val;
                         if data_type.tag == 9 { // RawPointer
                             return ctx[data_type.RawPointer.inner];
                         }
                     }
-                    mut val_lookup := layout.fields.Get("values");
+                    mut val_lookup := lookup.Val.fields.Get("values");
                     if val_lookup.Ok {
                         mut val_type := val_lookup.Val;
                         if val_type.tag == 9 { // RawPointer
@@ -442,9 +444,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
             if alloc_t.tag == 9 { // RawPointer
                 mut inner := ctx[alloc_t.RawPointer.inner];
-                if inner.tag != 4 { // NOT Arena
-                    return env_resolve_type(env, inner, ctx);
-                } 
+                return env_resolve_type(env, inner, ctx);
             }
             mut t: ast.Type[ctx];
             t.tag = 0; // Int

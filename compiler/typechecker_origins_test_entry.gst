@@ -515,4 +515,20 @@ func main() {
 
     mut evaluated_step1_t := typechecker.check_expression(expr_step1, &env_step1_test, scope_step1_test, ctx);
     os.LogStr(ast.serialize_type(evaluated_step1_t, ctx)); // Expected: Struct("MyNode", Some("ctx_var"))
+
+    // Step 2 Verification: Test IndexAccess on Str (returns Byte)
+    mut env_step2_test := typechecker.env_new(ctx);
+    mut scope_step2_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+    mut t_str := typechecker.make_type_str();
+    typechecker.scope_insert(scope_step2_test, "my_str_var", t_str, ctx);
+
+    mut l_step2: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_step2, "my_str_var[0]");
+    mut p_step2: parser.Parser[ctx];
+    parser.init_parser(&p_step2, &l_step2, ctx);
+    mut expr_step2 := parser.parse_expression(&p_step2, 1, ctx);
+
+    mut evaluated_step2_t := typechecker.check_expression(expr_step2, &env_step2_test, scope_step2_test, ctx);
+    os.LogStr(ast.serialize_type(evaluated_step2_t, ctx)); // Expected: Byte
 }

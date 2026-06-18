@@ -4411,7 +4411,9 @@ CastResult_MyNode_ctx successfully synthesized!
 RawPointer(Struct("MyNode_ctx", Some("ctx")))
 📥 env_resolve_type Struct: name=Node, brand=None
 🔍 env_resolve_type: returning ctx[res_idx]
-Struct("Node", None)"#
+Struct("Node", None)
+Struct("MyNode", Some("ctx_var"))
+Byte"#
     );
 }
 
