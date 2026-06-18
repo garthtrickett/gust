@@ -439,7 +439,23 @@ func main() {
         if val_t_lookup.Ok {
             os.LogStr(ast.serialize_type(val_t_lookup.Val, ctx));
         }
-    } else {
+    } else { 
         os.LogStr("LookupResult_os_Dir_ctx synthesis failed!");
+    }
+
+    // Test Step 3: Dynamic CastResult_ Synthesis (Step 3 Fix)
+    mut env_step3 := typechecker.env_new(ctx);
+    mut t_step3 := typechecker.make_type_struct("CastResult_MyNode_ctx", "", ctx);
+    mut resolved_step3 := typechecker.env_resolve_type(&env_step3, t_step3, ctx);
+    
+    mut layout_lookup_step3 := env_step3.struct_registry.Get("CastResult_MyNode_ctx");
+    if layout_lookup_step3.Ok {
+        os.LogStr("CastResult_MyNode_ctx successfully synthesized!");
+        mut val_t_lookup := layout_lookup_step3.Val.fields.Get("Val");
+        if val_t_lookup.Ok {
+            os.LogStr(ast.serialize_type(val_t_lookup.Val, ctx));
+        }
+    } else { 
+        os.LogStr("CastResult_MyNode_ctx synthesis failed!");
     }
 }

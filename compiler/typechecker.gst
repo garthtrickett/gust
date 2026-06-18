@@ -2751,7 +2751,7 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                 mut d_idx := std.str_find(namespaced_name, "__");
                 if d_idx != 0 - 1 {
                     mut after_pfx := std.str_slice(namespaced_name, d_idx + 2, len(namespaced_name));
-                    if typechecker_starts_with(after_pfx, "LookupResult_") == 1 {
+                    if typechecker_starts_with(after_pfx, "LookupResult_") == 1 || typechecker_starts_with(after_pfx, "CastResult_") == 1 { 
                         clean_name = after_pfx;
                     }
                 }
@@ -2762,6 +2762,33 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                         mut target_struct := std.str_slice(clean_name, 13, len(clean_name));
                         mut v_type := typechecker_parse_type_from_string(target_struct, ctx);
                         mut resolved_v_type := env_resolve_type(env, v_type, ctx);
+                        
+                        mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+                        mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
+                        fields.Insert("Ok", t_int);
+                        fields.Insert("Val", resolved_v_type);
+                        
+                        mut layout: StructLayout[ctx];
+                        layout.brand = empty[Index[str, ctx]];
+                        layout.fields = fields;
+                        
+                        env_register_struct(env, namespaced_name, layout, ctx);
+                        exists = 1;
+                    } else if typechecker_starts_with(clean_name, "CastResult_") == 1 {
+                        mut target_struct := std.str_slice(clean_name, 11, len(clean_name));
+                        mut v_type := typechecker_parse_type_from_string(target_struct, ctx);
+                        
+                        mut is_primitive := 0;
+                        if std.str_eq(target_struct, "int") || std.str_eq(target_struct, "byte") || std.str_eq(target_struct, "bool") || std.str_eq(target_struct, "str") {
+                            is_primitive = 1;
+                        }
+                        
+                        mut final_v_type := v_type;
+                        if is_primitive == 0 {
+                            final_v_type = make_type_pointer(v_type, ctx);
+                        }
+                        
+                        mut resolved_v_type := env_resolve_type(env, final_v_type, ctx);
                         
                         mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
                         mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
