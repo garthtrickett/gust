@@ -882,7 +882,6 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 return t_int;
             }
 
-            if std.str_eq(resolved_func, "os_ArenaAlloc") || std.str_eq(resolved_func, "os_ArenaAlloc") {
             if std.str_eq(resolved_func, "os_ArenaAlloc") || std.str_eq(resolved_func, "os.ArenaAlloc") {
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 if len(*args_vec) != 1 {
