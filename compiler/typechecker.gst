@@ -4501,15 +4501,29 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         }
 
         if stmt.tag == 13 { // Expression
-            mut expr_idx := stmt.Expression.expr;
-            check_expression(expr_idx, env, scope, ctx);
+                mut expr_idx := stmt.Expression.expr;
+                check_expression(expr_idx, env, scope, ctx);
+
+                return res;
+            }
+
+            if stmt.tag == 9 { // Guard
+                mut name := stmt.Guard.name;
+                mut is_mut := stmt.Guard.is_mut;
+                mut value := stmt.Guard.value;
+                mut else_body := stmt.Guard.else_body;
+                mut span := stmt.Guard.span;
+
+                mut val_type := check_expression(value, env, scope, ctx);
+                mut resolved_val_type := env_resolve_type(env, val_type, ctx);
+
+                return res;
+            }
 
             return res;
         }
-
-        return res;
     }
-}
+
 
 func typechecker_str_compare(s1: str, s2: str) int {
     mut len1 := len(s1);
