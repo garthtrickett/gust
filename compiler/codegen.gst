@@ -2530,13 +2530,30 @@ func codegen_generate_block_statement(block_idx: Index[ast.BlockStatement[ctx], 
         }
         mut body_statements := &ctx[ctx[block_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
         mut res := "";
+        mut defer_stack: std.Vector[str, ctx] := std.VectorNew(ctx);
         mut j := 0;
         while j < len(*body_statements) {
             mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx[child_stmt_idx] = (*body_statements)[j];
-            mut child_c := codegen_generate_statement(child_stmt_idx, env, ctx);
-            res = std.Concat(res, child_c);
+            
+            mut stmt_tag := ctx[child_stmt_idx].tag;
+            if stmt_tag == 11 { // Defer
+                mut defer_expr_idx := ctx[child_stmt_idx].Defer.expr;
+                mut expr_str := codegen_generate_expression(defer_expr_idx, env, ctx);
+                mut formatted := std.Concat("    ", expr_str);
+                formatted = std.Concat(formatted, ";\n");
+                defer_stack.Push(std.Clone(ctx, formatted));
+            } else {
+                mut child_c := codegen_generate_statement(child_stmt_idx, env, ctx);
+                res = std.Concat(res, child_c);
+            }
             j = j + 1;
+        }
+        mut k := len(defer_stack) - 1;
+        while k >= 0 {
+            mut defer_str := defer_stack[k];
+            res = std.Concat(res, defer_str);
+            k = k - 1;
         }
         return std.Clone(ctx, res);
     }

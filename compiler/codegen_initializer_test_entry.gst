@@ -1016,11 +1016,10 @@ func main() {
     mut p_ifelse_test: parser.Parser[ctx];
     parser.init_parser(&p_ifelse_test, &l_ifelse_test, ctx);
     mut prog_ifelse_test := parser.parse_program(&p_ifelse_test, ctx);
-    unsafe {
-        mut ifelse_test_statements_vec := &ctx[prog_while_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut while_test_statements_vec := &ctx[prog_while_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut while_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[while_stmt_idx] = (*while_test_statements_vec)[0];
+    unsafe { 
+        mut ifelse_test_statements_vec := &ctx[prog_ifelse_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut ifelse_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[ifelse_stmt_idx] = (*ifelse_test_statements_vec)[0];
 
         mut t_int: ast.Type[ctx];
         t_int.tag = 0; // Int
@@ -1028,12 +1027,49 @@ func main() {
         env.variable_types.Insert("x", t_int);
         env.variable_types.Insert("y", t_int);
 
-        mut ifelse_c := codegen.codegen_generate_statement(while_stmt_idx, &env, ctx);
+        mut ifelse_c := codegen.codegen_generate_statement(ifelse_stmt_idx, &env, ctx);
         os.LogStr(ifelse_c); // Expected:
                              //     if ((x == 1)) {
                              //         y = 10;
                              //     } else {
                              //         y = 20;
                              //     }
+    }
+
+    // Test Step 3.1: Defer Statement (Tag 11) LIFO Block-level statement transpilation
+    mut l_defer_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_defer_test, "while 1 {\n    defer cleanup_first();\n    mut x := 1;\n    defer cleanup_second();\n}");
+    mut p_defer_test: parser.Parser[ctx];
+    parser.init_parser(&p_defer_test, &l_defer_test, ctx);
+    mut prog_defer_test := parser.parse_program(&p_defer_test, ctx);
+    unsafe {
+        mut defer_test_statements_vec := &ctx[prog_defer_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut while_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[while_stmt_idx] = (*defer_test_statements_vec)[0];
+
+        mut t_int: ast.Type[ctx];
+        t_int.tag = 0; // Int
+        env.variable_types.Insert("x", t_int);
+
+        // Register the dummy function signatures
+        mut sig_cleanup_first: typechecker.FunctionSignature[ctx];
+        sig_cleanup_first.param_names = std.VectorNew(ctx);
+        sig_cleanup_first.params = std.VectorNew(ctx);
+        sig_cleanup_first.return_type.tag = 3; // Void
+        env.function_registry.Insert("cleanup_first", sig_cleanup_first);
+
+        mut sig_cleanup_second: typechecker.FunctionSignature[ctx];
+        sig_cleanup_second.param_names = std.VectorNew(ctx); 
+        sig_cleanup_second.params = std.VectorNew(ctx);
+        sig_cleanup_second.return_type.tag = 3; // Void
+        env.function_registry.Insert("cleanup_second", sig_cleanup_second);
+
+        mut defer_c := codegen.codegen_generate_statement(while_stmt_idx, &env, ctx);
+        os.LogStr(defer_c); // Expected:
+                            //     while (1) {
+                            //         int x = 1;
+                            //         cleanup_second();
+                            //         cleanup_first();
+                            //     }
     }
 }
