@@ -1117,10 +1117,10 @@ func main() {
         t_status.Struct.struct_name = "Status";
         t_status.Struct.brand = empty[Index[str, ctx]];
 
-        mut entry_status: typechecker.ResolvedTypeEntry[ctx];
-        entry_status.start_offset = expr_span.start.offset;
-        entry_status.end_offset = expr_span.end.offset;
-        entry_status.val_type = t_status;
+        mut match_entry_status: typechecker.ResolvedTypeEntry[ctx];
+        match_entry_status.start_offset = expr_span.start.offset;
+        match_entry_status.end_offset = expr_span.end.offset;
+        match_entry_status.val_type = t_status;
 
         mut found_nested_idx := 0 - 1;
         mut idx_nested := 0;
@@ -1130,14 +1130,14 @@ func main() {
             }
             idx_nested = idx_nested + 1;
         }
-        if found_nested_idx != 0 - 1 {
-            mut entry_ref := &env.resolved_types_nested[found_nested_idx];
-            (*entry_ref).types.Push(entry_status);
+        if found_nested_idx != 0 - 1 { 
+            mut match_entry_ref := &env.resolved_types_nested[found_nested_idx];
+            (*match_entry_ref).types.Push(match_entry_status);
         } else {
             mut pfx_entry: typechecker.PrefixMapEntry[ctx];
             pfx_entry.prefix = "";
             pfx_entry.types = std.VectorNew(ctx);
-            pfx_entry.types.Push(entry_status);
+            pfx_entry.types.Push(match_entry_status);
             env.resolved_types_nested.Push(pfx_entry);
         }
 
