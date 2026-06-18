@@ -4550,6 +4550,69 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).moved_vars = parent_moved;
             (*env).open_directories = parent_open_dirs;
 
+            scope_insert(scope, std.Clone(ctx, name), payload_type, ctx);
+            (*env).variable_types.Insert(std.Clone(ctx, name), payload_type);
+
+            if payload_type.tag == 8 { // Struct
+                mut guard_struct_name := payload_type.Struct.struct_name;
+                if len(guard_struct_name) >= 7 && std.str_eq(std.str_slice(guard_struct_name, 0, 7), "os_Dir_") { 
+                    (*env).open_directories.Insert(std.Clone(ctx, name), 1);
+                }
+            }
+
+            mut is_cast_res := 0;
+            if resolved_val_type.tag == 8 { // Struct
+                mut struct_name := resolved_val_type.Struct.struct_name;
+                if len(struct_name) >= 11 && std.str_eq(std.str_slice(struct_name, 0, 11), "CastResult_") {
+                    is_cast_res = 1;
+                }
+            }
+
+            mut is_view := env_type_is_ephemeral_view(payload_type, ctx);
+            mut origs := set_init(ctx);
+            if is_view == 1 || is_cast_res == 1 {
+                mut temp_origs := get_expression_origins(value, env, ctx);
+                origs = typechecker_clone_origin_set(temp_origs, ctx);
+            }
+            if ctx[origs].map.len == 0 {
+                set_add(origs, std.Clone(ctx, name), ctx);
+            }
+            (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
+
+            (*env).moved_vars.Remove(name);
+
+            if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] { 
+                mut local_vars := (*env).current_function_local_vars;
+                set_add(local_vars, std.Clone(ctx, name), ctx);
+            }
+
+            mut prefix := (*env).current_prefix;
+            mut found_idx := 0 - 1;
+            mut i_res := 0;
+            while i_res < len((*env).resolved_types_nested) {
+                mut entry := (*env).resolved_types_nested[i_res];
+                if std.str_eq(entry.prefix, prefix) {
+                    found_idx = i_res;
+                    i_res = len((*env).resolved_types_nested);
+                }
+                i_res = i_res + 1;
+            }
+
+            if found_idx == 0 - 1 {
+                mut new_entry: PrefixMapEntry[ctx];
+                new_entry.prefix = std.Clone(ctx, prefix);
+                new_entry.types = std.VectorNew(ctx);
+                (*env).resolved_types_nested.Push(new_entry);
+                found_idx = len((*env).resolved_types_nested) - 1;
+            }
+
+            mut entry_ref := &(*env).resolved_types_nested[found_idx];
+            mut type_entry: ResolvedTypeEntry[ctx];
+            type_entry.start_offset = span.start.offset;
+            type_entry.end_offset = span.end.offset;
+            type_entry.val_type = payload_type;
+            (*entry_ref).types.Push(type_entry);
+
             return res;
         }
 
