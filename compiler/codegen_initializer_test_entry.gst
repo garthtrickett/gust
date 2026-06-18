@@ -567,8 +567,7 @@ func main() {
     
     // Set allocator as identifier "my_slice"
     ctx[e_slice_access.IndexAccess.allocator].tag = 0; // Identifier
-    ctx[e_slice_access.IndexAccess.allocator].Identifier.name = "my_slice";
-    ctx[e_slice_test.IndexAccess.allocator].Identifier.span.start.offset = 100;
+    ctx[e_slice_access.IndexAccess.allocator].Identifier.span.start.offset = 100;
     ctx[e_slice_access.IndexAccess.allocator].Identifier.span.end.offset = 108;
 
     // Set index as integer 2
