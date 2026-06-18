@@ -982,4 +982,31 @@ func main() {
                             //         x = (x + 1);
                             //     }
     }
+
+    // Test Step 2.2: If Statement (Tag 7) statement transpilation (Consequence block only)
+    mut l_if_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_if_test, "if active { val = 1; }");
+    mut p_if_test: parser.Parser[ctx];
+    parser.init_parser(&p_if_test, &l_if_test, ctx);
+    mut prog_if_test := parser.parse_program(&p_if_test, ctx);
+    unsafe {
+        mut if_test_statements_vec := &ctx[prog_if_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut if_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[if_stmt_idx] = (*if_test_statements_vec)[0];
+
+        mut t_bool: ast.Type[ctx];
+        t_bool.tag = 2; // Bool
+
+        mut t_int: ast.Type[ctx];
+        t_int.tag = 0; // Int
+
+        env.variable_types.Insert("active", t_bool);
+        env.variable_types.Insert("val", t_int);
+
+        mut if_c := codegen.codegen_generate_statement(if_stmt_idx, &env, ctx);
+        os.LogStr(if_c); // Expected:
+                         //     if (active) {
+                         //         val = 1;
+                         //     }
+    }
 }

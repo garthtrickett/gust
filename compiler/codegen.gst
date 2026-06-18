@@ -2852,6 +2852,17 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 res = std.Concat(res, "    }\n");
                 return std.Clone(ctx, res);
             }
+            if tag == 7 { // If
+                mut cond_str := codegen_generate_expression(ctx[stmt_idx].If.condition, env, ctx);
+                mut cons_str := codegen_generate_block_statement(ctx[stmt_idx].If.consequence, env, ctx);
+                if ctx[stmt_idx].If.alternative == empty[Index[ast.BlockStatement[ctx], ctx]] {
+                    mut res := std.Concat("    if (", cond_str);
+                    res = std.Concat(res, ") {\n");
+                    res = std.Concat(res, cons_str);
+                    res = std.Concat(res, "    }\n");
+                    return std.Clone(ctx, res);
+                }
+            }
         }
         return "";
     }
