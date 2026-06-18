@@ -261,7 +261,7 @@ func main() {
     env.current_alloc_struct = "";
 
     // Sub-Step 3.1 Verification: Test codegen_erase_struct_name with namespaced brands
-    mut test_brand: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+    mut test_brand: Index[str, ctx] := os.ArenaAlloc(ctx);
     unsafe {
         mut brand_ptr := &ctx[test_brand] as *str;
         *brand_ptr = "typechecker__ctx";
