@@ -2284,6 +2284,13 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     res = std.Concat(res, " + _src_idx); _dest_idx; })");
                     return std.Clone(ctx, res);
                 } else {
+                    if src_type.tag == 5 { // Str
+                        mut res := std.Concat("std_Clone_str(", dest_arena_expr);
+                        res = std.Concat(res, ", ");
+                        res = std.Concat(res, src_arg_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
                     return std.Clone(ctx, src_arg_str);
                 }
             }

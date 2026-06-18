@@ -2171,14 +2171,14 @@ impl Codegen {
                         {
                             src_is_ptr = true;
                         }
-                        let src_base = if src_is_ptr {
+                        let src_base = if src_is_ptr { 
                             format!("{}->BaseAddress", src_brand)
                         } else {
                             format!("{}.BaseAddress", src_brand)
                         };
 
                         return format!(
-                            "({{ int _src_idx = {}; int _dest_idx = os_ArenaAlloc({}, sizeof({})); *(struct {}*)((char*){} + _dest_idx) = *(struct {}*)((char*){} + _src_idx); _dest_idx; }})",
+                            "({{ int _src_idx = {}; int _dest_idx = os_ArenaAlloc({}, sizeof({})); *(struct {}*)((char*){} + _dest_idx) = *(struct {}*)((char*){} + _src_idx); _dest_idx; })",
                             src_arg_str,
                             dest_arena_expr,
                             struct_name,
@@ -2188,6 +2188,9 @@ impl Codegen {
                             src_base
                         );
                     } else {
+                        if let Some(Type::Str) = self.get_expr_type(&arguments[1]) {
+                            return format!("std_Clone_str({}, {})", dest_arena_expr, src_arg_str);
+                        }
                         return src_arg_str;
                     }
                 }

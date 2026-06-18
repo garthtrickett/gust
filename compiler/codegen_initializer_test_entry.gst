@@ -282,6 +282,54 @@ func main() {
         mut out_clone_val := codegen.codegen_generate_expression(expr_clone, &env, ctx);
         os.LogStr(out_clone_val);
 
+        // Direct test for FFI Override std.Clone with Str argument (Step 2 Str deep-cloning)
+        mut l_clone_str: lexer.Lexer[ctx];
+        lexer.init_lexer(&l_clone_str, "std.Clone(ctx, my_str_val)");
+        mut p_clone_str: parser.Parser[ctx];
+        parser.init_parser(&p_clone_str, &l_clone_str, ctx);
+        mut expr_clone_str := parser.parse_expression(&p_clone_str, 1, ctx);
+
+        // Pre-register 'my_str_val' of type Str (5) so Clone is treated as Str deep clone
+        mut t_str_var: ast.Type[ctx];
+        t_str_var.tag = 5; // Str
+        
+        mut span_str_var: token.Span;
+        unsafe {
+            mut args_vec := &ctx[ctx[expr_clone_str].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+            mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[arg1_idx] = (*args_vec)[1];
+            span_str_var = parser.get_expression_span(arg1_idx, ctx);
+            
+            mut entry_str: typechecker.ResolvedTypeEntry[ctx];
+            entry_str.start_offset = span_str_var.start.offset;
+            entry_str.end_offset = span_str_var.end.offset;
+            entry_str.val_type = t_str_var;
+
+            mut found_idx := 0 - 1;
+            mut p_idx := 0;
+            while p_idx < len(env.resolved_types_nested) {
+                if std.str_eq(env.resolved_types_nested[p_idx].prefix, "") {
+                    found_idx = p_idx;
+                }
+                p_idx = p_idx + 1;
+            }
+            if found_idx != 0 - 1 {
+                mut entry_ref := &env.resolved_types_nested[found_idx];
+                (*entry_ref).types.Push(entry_str);
+            }
+        }
+
+        // Case A: ctx is in current_params (parameter) -> should generate std_Clone_str(ctx, my_str_val)
+        env.current_params.Clear();
+        env.current_params.Push("ctx");
+        mut out_clone_str_param := codegen.codegen_generate_expression(expr_clone_str, &env, ctx);
+        os.LogStr(out_clone_str_param);
+
+        // Case B: ctx is NOT in current_params (local value) -> should generate std_Clone_str(&ctx, my_str_val)
+        env.current_params.Clear();
+        mut out_clone_str_val := codegen.codegen_generate_expression(expr_clone_str, &env, ctx);
+        os.LogStr(out_clone_str_val);
+
         // Direct test for Branded Collection Initializer std.VectorNew (Step 1)
         mut l_vecnew: lexer.Lexer[ctx];
         lexer.init_lexer(&l_vecnew, "std.VectorNew(ctx)");
