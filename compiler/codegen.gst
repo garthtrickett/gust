@@ -943,36 +943,37 @@ func codegen_gen_is_valid_helper(struct_name: str, layout: typechecker.StructLay
 
 func codegen_gen_type_aware_initializer(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
-        if t.tag == 0 || t.tag == 1 || t.tag == 2 { // Int, Byte, Bool
+        mut erased_t := codegen_erase_type(t, env, ctx);
+        if erased_t.tag == 0 || erased_t.tag == 1 || erased_t.tag == 2 { // Int, Byte, Bool
             return "0";
         }
-        if t.tag == 3 { // Void
+        if erased_t.tag == 3 { // Void
             return "";
         }
-        if t.tag == 4 { // Arena
+        if erased_t.tag == 4 { // Arena
             return "((os_Arena){0})";
         }
-        if t.tag == 5 { // Str
+        if erased_t.tag == 5 { // Str
             return "((Slice_unsigned_char){ NULL, 0 })";
         }
-        if t.tag == 6 { // Slice
-            mut inner_type := ctx[t.Slice.inner];
+        if erased_t.tag == 6 { // Slice
+            mut inner_type := ctx[erased_t.Slice.inner];
             mut inner_ident := codegen_get_c_type_ident(inner_type, env, ctx);
             mut res := std.Concat("((Slice_", inner_ident);
             res = std.Concat(res, "){ NULL, 0 })");
             return std.Clone(ctx, res);
         }
-        if t.tag == 7 { // Index
+        if erased_t.tag == 7 { // Index
             return "0xFFFFFFFF";
         }
-        if t.tag == 9 { // RawPointer
+        if erased_t.tag == 9 { // RawPointer
             return "NULL";
         }
-        if t.tag == 8 { // Struct
-            return codegen_gen_struct_initializer(t.Struct.struct_name, env, ctx);
+        if erased_t.tag == 8 { // Struct
+            return codegen_gen_struct_initializer(erased_t.Struct.struct_name, env, ctx);
         }
-        if t.tag == 10 { // Generic
-            mut concrete_name := codegen_get_monomorphized_name(t.Generic.name, t.Generic.args, env, ctx);
+        if erased_t.tag == 10 { // Generic
+            mut concrete_name := codegen_get_monomorphized_name(erased_t.Generic.name, erased_t.Generic.args, env, ctx);
             return codegen_gen_struct_initializer(concrete_name, env, ctx);
         }
     }

@@ -465,4 +465,24 @@ func main() {
     } else {
         os.LogStr("ERROR: Struct MyNode not defined at all!");
     }
+
+    // Step 1: Verification Test for codegen_gen_type_aware_initializer Erasure
+    mut t_branded_prog: ast.Type[ctx];
+    t_branded_prog.tag = 8;
+    t_branded_prog.Struct.struct_name = "ast__Program_ctx";
+    mut brand_prog_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
+    t_branded_prog.Struct.brand = brand_prog_idx;
+    unsafe { 
+        mut brand_ptr := &ctx[t_branded_prog.Struct.brand] as *str;
+        *brand_ptr = "ctx";
+    }
+
+    // Register ast__Program in the struct registry of env
+    mut program_layout: typechecker.StructLayout[ctx];
+    program_layout.brand = empty[Index[str, ctx]];
+    program_layout.fields = std.HashMapNew(ctx);
+    typechecker.env_register_struct(&env, "ast__Program", program_layout, ctx);
+
+    mut init_str := codegen.codegen_gen_type_aware_initializer(t_branded_prog, &env, ctx);
+    os.LogStr(init_str);
 }
