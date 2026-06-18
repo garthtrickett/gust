@@ -985,7 +985,6 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             mut sig_lookup := (*env).function_registry.Get(resolved_func);
             if sig_lookup.Ok {
                 mut sig := sig_lookup.Val;
-                (*env).resolved_names.Insert(function, std.Clone(ctx, resolved_func));
 
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut evaluated_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
