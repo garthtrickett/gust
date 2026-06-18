@@ -627,6 +627,9 @@ func codegen_is_arena_val(var_name: str, env: &typechecker.TypeEnvironment[ctx],
             }
             i = i + 1;
         }
+        if std.str_eq(var_name, "ctx") == 1 || std.str_eq(var_name, "arena") == 1 || std.str_eq(var_name, "connCtx") == 1 || std.str_eq(var_name, "a") == 1 {
+            return 1;
+        }
         mut lookup := (*env).variable_types.Get(var_name);
         if lookup.Ok {
             mut t := lookup.Val;

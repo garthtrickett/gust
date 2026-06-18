@@ -167,6 +167,18 @@ func main() {
         
         mut output_c_val := codegen.codegen_generate_expression(expr_alloc_test, &env, ctx);
         os.LogStr(output_c_val); // Expected: os_ArenaAlloc(&ctx, sizeof(SessionNode))
+
+        // Direct test for codegen_is_arena_val fallback behavior (Step 1)
+        env.current_params.Clear();
+        env.variable_types.Remove("ctx"); // Simulate empty/clashing symbol table
+        if codegen.codegen_is_arena_val("ctx", &env, ctx) == 1 {
+            os.LogStr("is_arena_val direct fallback OK: local ctx is value");
+        }
+        
+        env.current_params.Push("ctx");
+        if codegen.codegen_is_arena_val("ctx", &env, ctx) == 0 {
+            os.LogStr("is_arena_val direct fallback OK: parameter ctx is not value");
+        }
     }
 
     // 1. Test primitive types
