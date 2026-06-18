@@ -899,7 +899,7 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     // Successful lookup trace (Step 3)
                     if std.str_eq(prefix, "") == 0 {
                         mut type_str := ast.serialize_type(t_entry.val_type, ctx);
-                        mut log_success := std.Concat("Type Resolved for ", prefix);
+                        mut log_success := std.Concat("👁️ Type Resolved for ", prefix);
                         log_success = std.Concat(log_success, ": ");
                         log_success = std.Concat(log_success, type_str);
                         os.LogStr(log_success);
