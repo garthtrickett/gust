@@ -77,6 +77,7 @@ func main() {
         mut is_entry := std.str_eq(path, file_path);
         mut prefix := "";
         if is_entry == 0 {
+            // Secure prefix string view in long-lived Arena to prevent scratchpad corruption (Step 3)
             prefix = std.Clone(ctx, std.Concat(stem, "__"));
         }
         module_prefixes.Push(prefix);

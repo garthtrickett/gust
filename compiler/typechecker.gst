@@ -1011,6 +1011,7 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
 
         if found_idx == 0 - 1 {
             mut new_entry: PrefixMapEntry[ctx];
+            // Secure prefix string view in long-lived Arena to prevent scratchpad corruption (Step 3)
             new_entry.prefix = std.Clone(ctx, prefix);
             new_entry.types = std.VectorNew(ctx);
             (*env).resolved_types_nested.Push(new_entry);
@@ -4151,6 +4152,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             if found_idx == 0 - 1 {
                 mut new_entry: PrefixMapEntry[ctx];
+                // Secure prefix string view in long-lived Arena to prevent scratchpad corruption (Step 3)
                 new_entry.prefix = std.Clone(ctx, prefix);
                 new_entry.types = std.VectorNew(ctx);
                 (*env).resolved_types_nested.Push(new_entry);
@@ -4778,6 +4780,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             if found_idx == 0 - 1 {
                 mut new_entry: PrefixMapEntry[ctx];
+                // Secure prefix string view in long-lived Arena to prevent scratchpad corruption (Step 3)
                 new_entry.prefix = std.Clone(ctx, prefix);
                 new_entry.types = std.VectorNew(ctx);
                 (*env).resolved_types_nested.Push(new_entry);
