@@ -272,8 +272,8 @@ func codegen_erase_struct_name(name: str, brand: Index[str, ctx], env: &typechec
             mut clean_b := codegen_strip_brand_prefix(b, ctx);
             mut stripped_brand := 0;
 
-            mut ns_suffix := std.Concat("___", clean_b);
-            if std.str_find(erased, ns_suffix) == len(erased) - len(ns_suffix) {
+            mut ns_suffix := std.Concat("__", clean_b);
+            if codegen_ends_with(erased, ns_suffix) == 1 {
                 mut pos_val := len(erased) - len(ns_suffix);
                 mut start_pos := codegen_rfind_char(erased, 95, pos_val);
                 if start_pos != 0 - 1 {
