@@ -179,6 +179,18 @@ func main() {
         if codegen.codegen_is_arena_val("ctx", &env, ctx) == 0 {
             os.LogStr("is_arena_val direct fallback OK: parameter ctx is not value");
         }
+
+        // Direct test for codegen_is_arena_ptr fallback behavior (Step 2)
+        env.current_params.Clear();
+        env.variable_types.Remove("ctx"); // Simulate empty/clashing symbol table
+        if codegen.codegen_is_arena_ptr("ctx", &env, ctx) == 0 {
+            os.LogStr("is_arena_ptr direct fallback OK: local ctx is not ptr");
+        }
+        
+        env.current_params.Push("ctx");
+        if codegen.codegen_is_arena_ptr("ctx", &env, ctx) == 1 {
+            os.LogStr("is_arena_ptr direct fallback OK: parameter ctx is not value");
+        }
     }
 
     // 1. Test primitive types
