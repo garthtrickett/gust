@@ -4384,7 +4384,31 @@ Semantic Error: Guard 'else' block must diverge (i.e. end with a return statemen
 ✅ check_statement: successfully verified stmt tag 13
 ✅ check_statement: successfully verified stmt tag 9
 Scenario D check: Ok
-0"#
+0
+📥 env_resolve_type Struct: name=LookupResult_os_Dir_ctx, brand=None
+📥 env_resolve_type Struct: name=os_Dir_ctx, brand=ctx
+⚙ monomorphize_impl field: handle - start
+🔍 env_resolve_type: returning ctx[res_idx]
+🔍 env_resolve_type: returning ctx[res_idx]
+🔍 env_resolve_type: returning ctx[res_idx]
+🔍 env_resolve_type: returning ctx[res_idx]
+🔍 env_resolve_type: returning ctx[res_idx]
+⚙ monomorphize_impl field: handle - end
+🔍 env_resolve_type: returning ctx[res_idx]
+LookupResult_os_Dir_ctx successfully synthesized!
+Struct("os_Dir_ctx", Some("ctx"))
+📥 env_resolve_type Struct: name=CastResult_MyNode_ctx, brand=None
+📥 env_resolve_type Struct: name=MyNode_ctx, brand=ctx
+🔍 env_resolve_type: before struct_templates.Get
+🔍 env_resolve_type: after struct_templates.Get
+🔍 env_resolve_type: before enum_templates.Get
+🔍 env_resolve_type: after enum_templates.Get
+🔍 env_resolve_type: determined has_template
+🔍 env_resolve_type: returning ctx[res_idx]
+🔍 env_resolve_type: returning ctx[res_idx]
+🔍 env_resolve_type: returning ctx[res_idx]
+CastResult_MyNode_ctx successfully synthesized!
+RawPointer(Struct("MyNode_ctx", Some("ctx")))"#
     );
 }
 

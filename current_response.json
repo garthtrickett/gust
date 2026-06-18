@@ -1,9 +1,0 @@
-{
-  "summary": "fix: resolve selector target type and harmonize HashMap.Get layout synthesis",
-  "files": [
-    {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n        if expr.tag == 11 { // Selector\n            mut left_t := check_expression(expr.Selector.left, env, scope, ctx);\n            mut left_str := expression_to_string(expr.Selector.left, ctx);\n            if left_t.tag == 8 { // Struct\n                mut struct_name := left_t.Struct.struct_name;\n=======\n        if expr.tag == 11 { // Selector\n            mut left_t := check_expression(expr.Selector.left, env, scope, ctx);\n            left_t = env_resolve_type(env, left_t, ctx);\n            mut left_str := expression_to_string(expr.Selector.left, ctx);\n            if left_t.tag == 8 { // Struct\n                mut struct_name := left_t.Struct.struct_name;\n>>>>>>> REPLACE"
-    }
-  ]
-}
