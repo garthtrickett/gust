@@ -223,11 +223,10 @@ impl TypeChecker {
     fn extract_ok_checked_variable(expr: &Expression) -> HashSet<String> {
         let mut results = HashSet::new();
         match expr {
-            Expression::Selector { left, right, .. } => {
-                if right == "Ok" {
+            Expression::Selector { left, right, .. }
+                if right == "Ok" => {
                     results.insert(expression_to_string(left));
                 }
-            }
             Expression::Binary {
                 op, left, right, ..
             } => {
