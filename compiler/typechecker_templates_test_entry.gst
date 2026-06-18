@@ -233,4 +233,11 @@ func main() {
     mut test_raw := "Hello \"World\" \\ !";
     mut test_escaped := codegen.codegen_escape_string(test_raw, ctx);
     os.LogStr(test_escaped); // Expected: Hello \"World\" \\ !
+
+    // Step 2 Verification: Test String expression escaping
+    mut expr_str_esc_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx[expr_str_esc_idx].tag = 2; // String
+    ctx[expr_str_esc_idx].String.val = "\"";
+    mut res_str_esc := codegen.codegen_generate_expression(expr_str_esc_idx, &env, ctx);
+    os.LogStr(res_str_esc); // Expected: ((Slice_unsigned_char){ (unsigned char*)"\"", 1 })
 }

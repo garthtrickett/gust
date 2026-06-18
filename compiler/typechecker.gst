@@ -366,36 +366,58 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         if expr.tag == 8 { // IndexAccess
             mut alloc_t := check_expression(expr.IndexAccess.allocator, env, scope, ctx);
             mut idx_t := check_expression(expr.IndexAccess.index, env, scope, ctx);
+
+            mut is_arena := 0;
+            if alloc_t.tag == 4 { // Arena
+                is_arena = 1;
+            } else {
+                if alloc_t.tag == 9 { // RawPointer
+                    mut inner := ctx[alloc_t.RawPointer.inner];
+                    if inner.tag == 4 { // Arena
+                        is_arena = 1;
+                    }
+                }
+            }
+
+            if is_arena == 1 {
+                mut target_struct := "SessionNode";
+                mut brand_idx := empty[Index[str, ctx]];
+                if idx_t.tag == 7 { // Index
+                    if std.str_eq(idx_t.Index.struct_name, "Any") == 0 {
+                        target_struct = idx_t.Index.struct_name;
+                    }
+                    brand_idx = idx_t.Index.brand;
+                }
+
+                if std.str_eq(target_struct, "int") == 1 {
+                    mut t: ast.Type[ctx]; t.tag = 0; // Int
+                    return t;
+                } else {
+                    if std.str_eq(target_struct, "byte") == 1 {
+                        mut t: ast.Type[ctx]; t.tag = 1; // Byte
+                        return t;
+                    } else {
+                        if std.str_eq(target_struct, "bool") == 1 {
+                            mut t: ast.Type[ctx]; t.tag = 2; // Bool
+                            return t;
+                        } else {
+                            if std.str_eq(target_struct, "str") == 1 {
+                                mut t: ast.Type[ctx]; t.tag = 5; // Str
+                                return t;
+                            } else {
+                                mut t: ast.Type[ctx];
+                                t.tag = 8; // Struct
+                                t.Struct.struct_name = std.Clone(ctx, target_struct);
+                                t.Struct.brand = brand_idx;
+                                return t;
+                            }
+                        }
+                    }
+                }
+            }
+
             if alloc_t.tag == 6 { // Slice
                 return ctx[alloc_t.Slice.inner];
-            }
-            if idx_t.tag == 7 { // Index
-                mut name := idx_t.Index.struct_name;
-                if std.str_eq(name, "int") {
-                    mut t: ast.Type[ctx];
-                    t.tag = 0; // Int
-                    return t;
-                }
-                if std.str_eq(name, "byte") {
-                    mut t: ast.Type[ctx];
-                    t.tag = 1; // Byte
-                    return t;
-                }
-                if std.str_eq(name, "bool") {
-                    mut t: ast.Type[ctx];
-                    t.tag = 2; // Bool
-                    return t;
-                }
-                if std.str_eq(name, "str") {
-                    mut t: ast.Type[ctx];
-                    t.tag = 5; // Str
-                    return t;
-                }
-                mut t: ast.Type[ctx];
-                t.tag = 8; // Struct
-                t.Struct.struct_name = std.Clone(ctx, name);
-                t.Struct.brand = idx_t.Index.brand;
-                return t;
             }
             if alloc_t.tag == 8 { // Struct
                 mut s_name := alloc_t.Struct.struct_name;

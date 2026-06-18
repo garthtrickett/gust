@@ -486,4 +486,33 @@ func main() {
     // Check expression
     mut evaluated_ptr_t := typechecker.check_expression(expr_ptr_test, &env_ptr_test, scope_ptr_test, ctx);
     os.LogStr(ast.serialize_type(evaluated_ptr_t, ctx)); // Expected: Struct("Node", None)
+
+    // Step 1 Verification: Test IndexAccess on RawPointer(Arena)
+    mut env_step1_test := typechecker.env_new(ctx);
+    mut scope_step1_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+    // Register a custom struct MyNode
+    mut my_node_layout: typechecker.StructLayout[ctx];
+    my_node_layout.brand = empty[Index[str, ctx]];
+    my_node_layout.fields = std.HashMapNew(ctx);
+    typechecker.env_register_struct(&env_step1_test, "MyNode", my_node_layout, ctx);
+
+    // Create ctx_var of type RawPointer(Arena)
+    mut t_arena := typechecker.make_type_arena();
+    mut t_arena_ptr := typechecker.make_type_pointer(t_arena, ctx);
+    typechecker.scope_insert(scope_step1_test, "ctx_var", t_arena_ptr, ctx);
+
+    // Create index variable of type Index[MyNode, ctx_var]
+    mut t_index_var := typechecker.make_type_index("MyNode", "ctx_var", ctx);
+    typechecker.scope_insert(scope_step1_test, "idx_var", t_index_var, ctx);
+
+    // Parse and check "ctx_var[idx_var]"
+    mut l_step1: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_step1, "ctx_var[idx_var]");
+    mut p_step1: parser.Parser[ctx];
+    parser.init_parser(&p_step1, &l_step1, ctx);
+    mut expr_step1 := parser.parse_expression(&p_step1, 1, ctx);
+
+    mut evaluated_step1_t := typechecker.check_expression(expr_step1, &env_step1_test, scope_step1_test, ctx);
+    os.LogStr(ast.serialize_type(evaluated_step1_t, ctx)); // Expected: Struct("MyNode", Some("ctx_var"))
 }
