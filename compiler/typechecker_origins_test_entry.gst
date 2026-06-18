@@ -449,7 +449,7 @@ func main() {
     mut resolved_step3 := typechecker.env_resolve_type(&env_step3, t_step3, ctx);
     
     mut layout_lookup_step3 := env_step3.struct_registry.Get("CastResult_MyNode_ctx");
-    if layout_lookup_step3.Ok {
+    if layout_lookup_step3.Ok { 
         os.LogStr("CastResult_MyNode_ctx successfully synthesized!");
         mut val_t_lookup := layout_lookup_step3.Val.fields.Get("Val");
         if val_t_lookup.Ok {
@@ -458,4 +458,32 @@ func main() {
     } else { 
         os.LogStr("CastResult_MyNode_ctx synthesis failed!");
     }
+
+    // Step 1: Raw Pointer Indexing Verification Test
+    mut env_ptr_test := typechecker.env_new(ctx);
+    mut scope_ptr_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+    // Register a custom struct Node
+    mut node_layout: typechecker.StructLayout[ctx];
+    node_layout.brand = empty[Index[str, ctx]];
+    node_layout.fields = std.HashMapNew(ctx);
+    typechecker.env_register_struct(&env_ptr_test, "Node", node_layout, ctx);
+
+    // Create a pointer to Node
+    mut t_node_struct := typechecker.make_type_struct("Node", "", ctx);
+    mut t_node_ptr := typechecker.make_type_pointer(t_node_struct, ctx);
+
+    // Insert pointer variable 'p_node' into scope
+    typechecker.scope_insert(scope_ptr_test, "p_node", t_node_ptr, ctx);
+
+    // Parse index access 'p_node[0]'
+    mut l_ptr_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_ptr_test, "p_node[0]");
+    mut p_ptr_test: parser.Parser[ctx];
+    parser.init_parser(&p_ptr_test, &l_ptr_test, ctx);
+    mut expr_ptr_test := parser.parse_expression(&p_ptr_test, 1, ctx);
+
+    // Check expression
+    mut evaluated_ptr_t := typechecker.check_expression(expr_ptr_test, &env_ptr_test, scope_ptr_test, ctx);
+    os.LogStr(ast.serialize_type(evaluated_ptr_t, ctx)); // Expected: Struct("Node", None)
 }
