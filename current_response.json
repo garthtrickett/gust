@@ -1,9 +1,0 @@
-{
-  "summary": "fix: initialize current_function_local_vars using set_init to prevent ASan segfault",
-  "files": [
-    {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n            mut inout_params_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);\n            mut dest_ptr := &ctx[inout_params_idx] as *std.Vector[str, ctx];\n            *dest_ptr = inout_params;\n            (*env).current_function_inout_params = inout_params_idx;\n            (*env).current_function_local_vars = os.ArenaAlloc(ctx) as Index[OriginSet[ctx], ctx];\n=======\n            mut inout_params_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);\n            mut dest_ptr := &ctx[inout_params_idx] as *std.Vector[str, ctx];\n            *dest_ptr = inout_params;\n            (*env).current_function_inout_params = inout_params_idx;\n            (*env).current_function_local_vars = set_init(ctx);\n>>>>>>> REPLACE"
-    }
-  ]
-}
