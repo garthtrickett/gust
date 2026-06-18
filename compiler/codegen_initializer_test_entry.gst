@@ -916,47 +916,47 @@ func main() {
     os.LogStr(map_gen_str); // Expected: (*os_HashMapRef(&my_map, my_key, 1))
 
     // Test Step 1.3: UnsafeBlock (Tag 10) statement transpilation
-    mut l_unsafe_test: lexer.Lexer[ctx];
-    lexer.init_lexer(&l_unsafe_test, "unsafe { mut x := 42; }");
-    mut p_unsafe_test: parser.Parser[ctx];
-    parser.init_parser(&p_unsafe_test, &l_unsafe_test, ctx);
-    mut prog_unsafe_test := parser.parse_program(&p_unsafe_test, ctx);
+    mut l_step1_3_test: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_step1_3_test, "unsafe { mut x := 42; }");
+    mut p_step1_3_test: parser.Parser[ctx];
+    parser.init_parser(&p_step1_3_test, &l_step1_3_test, ctx);
+    mut prog_step1_3_test := parser.parse_program(&p_step1_3_test, ctx);
     unsafe {
-        mut statements_vec := &ctx[prog_unsafe_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut unsafe_test_statements_vec := &ctx[prog_step1_3_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
         mut unsafe_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[unsafe_stmt_idx] = (*statements_vec)[0];
+        ctx[unsafe_stmt_idx] = (*unsafe_test_statements_vec)[0];
 
         // Register the variable 'x' as type Int (0) to allow type resolution inside codegen
-        mut body_idx := ctx[unsafe_stmt_idx].UnsafeBlock.body;
-        mut body_statements := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut var_decl := (*body_statements)[0];
-        mut var_decl_span := var_decl.VarDecl.span;
+        mut unsafe_test_body_idx := ctx[unsafe_stmt_idx].UnsafeBlock.body;
+        mut unsafe_test_body_statements := &ctx[ctx[unsafe_test_body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut unsafe_test_var_decl := (*unsafe_test_body_statements)[0];
+        mut unsafe_test_var_decl_span := unsafe_test_var_decl.VarDecl.span;
 
-        mut t_int: ast.Type[ctx];
-        t_int.tag = 0; // Int
+        mut unsafe_test_t_int: ast.Type[ctx];
+        unsafe_test_t_int.tag = 0; // Int
 
-        mut entry: typechecker.ResolvedTypeEntry[ctx];
-        entry.start_offset = var_decl_span.start.offset;
-        entry.end_offset = var_decl_span.end.offset;
-        entry.val_type = t_int;
+        mut unsafe_test_entry: typechecker.ResolvedTypeEntry[ctx];
+        unsafe_test_entry.start_offset = unsafe_test_var_decl_span.start.offset;
+        unsafe_test_entry.end_offset = unsafe_test_var_decl_span.end.offset;
+        unsafe_test_entry.val_type = unsafe_test_t_int;
 
-        mut found_idx := 0 - 1;
-        mut p_idx := 0;
-        while p_idx < len(env.resolved_types_nested) {
-            if std.str_eq(env.resolved_types_nested[p_idx].prefix, "") {
-                found_idx = p_idx;
+        mut unsafe_test_found_idx := 0 - 1;
+        mut unsafe_test_p_idx := 0;
+        while unsafe_test_p_idx < len(env.resolved_types_nested) {
+            if std.str_eq(env.resolved_types_nested[unsafe_test_p_idx].prefix, "") {
+                unsafe_test_found_idx = unsafe_test_p_idx;
             }
-            p_idx = p_idx + 1;
+            unsafe_test_p_idx = unsafe_test_p_idx + 1;
         }
-        if found_idx != 0 - 1 {
-            mut entry_ref := &env.resolved_types_nested[found_idx];
-            (*entry_ref).types.Push(entry);
+        if unsafe_test_found_idx != 0 - 1 {
+            mut unsafe_test_entry_ref := &env.resolved_types_nested[unsafe_test_found_idx];
+            (*unsafe_test_entry_ref).types.Push(unsafe_test_entry);
         }
 
-        mut unsafe_c := codegen.codegen_generate_statement(unsafe_stmt_idx, &env, ctx);
-        os.LogStr(unsafe_c); // Expected: 
-                             //     {
-                             //         int x = 42;
-                             //     }
+        mut unsafe_test_c := codegen.codegen_generate_statement(unsafe_stmt_idx, &env, ctx);
+        os.LogStr(unsafe_test_c); // Expected: 
+                                  //     {
+                                  //         int x = 42;
+                                  //     }
     }
 }
