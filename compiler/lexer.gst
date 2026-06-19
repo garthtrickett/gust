@@ -149,7 +149,7 @@ func read_string(l: *Lexer[ctx]) str {
         mut header_ptr := (header_alloc + 0) as *StringHeader;
         (*header_ptr).data = buf + 0;
         (*header_ptr).len = write_idx;
-        return *(header_ptr as *str);
+        return *((header_ptr as *str) + 0);
     }
 }
 
