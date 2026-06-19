@@ -5239,25 +5239,56 @@ fn test_self_hosted_compiler_full_bootstrap() {
             );
 
             let c_output_v4_raw =
-                String::from_utf8(run_gust_v3.stdout).expect("Invalid UTF-8 from gust_v3 compilation");
-            let c_output_v4 = filter_output_c_code(&c_output_v4_raw);
+                        String::from_utf8(run_gust_v3.stdout).expect("Invalid UTF-8 from gust_v3 compilation");
+                    let c_output_v4 = filter_output_c_code(&c_output_v4_raw);
 
-            // 4. Assert that c_output_v3 and c_output_v4 are 100% byte-for-byte identical (Fixed-Point Convergence!)
-            assert_eq!(
-                c_output_v3.trim(),
-                c_output_v4.trim(),
-                "Fixed-point bootstrap failed! gust_v3.c and gust_v4.c are not identical."
-            );
+                    let mut full_c_output_v4 = String::new();
+                    full_c_output_v4.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
 
-            // Preserved for root folder debugging
-            // let _ = std::fs::remove_file(&gust_v2_c_path);
-            // let _ = std::fs::remove_file(&gust_v2_bin_path);
-            // let _ = std::fs::remove_file(&gust_v3_c_path);
-            // let _ = std::fs::remove_file(&gust_v3_bin_path);
-        })
-        .unwrap()
-        .join()
-        .unwrap();
+                    // Forward declare Slice structures so COLLECTIONS_RUNTIME can utilize them
+                    full_c_output_v4.push_str("typedef struct Slice_unsigned_char Slice_unsigned_char;\n");
+                    full_c_output_v4
+                        .push_str("struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
+                    full_c_output_v4.push_str("typedef struct Slice_int Slice_int;\n");
+                    full_c_output_v4
+                        .push_str("struct Slice_int {\n    int* data;\n    int len;\n};\n\n");
+
+                    full_c_output_v4.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+                    full_c_output_v4.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
+                    full_c_output_v4.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
+                    full_c_output_v4.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
+                    full_c_output_v4.push_str(gust_lexer::codegen_runtime::MOCK_PAYLOAD_RUNTIME);
+                    full_c_output_v4.push_str(gust_lexer::codegen_runtime::FILE_IO_RUNTIME);
+                    full_c_output_v4.push_str(&c_output_v4);
+
+                    let gust_v4_c_path = std::path::PathBuf::from("gust_v4.c");
+                    std::fs::write(&gust_v4_c_path, &full_c_output_v4).expect("Failed to write gust_v4 C file");
+
+                    // 4. Assert that c_output_v3 and c_output_v4 are 100% byte-for-byte identical (Fixed-Point Convergence!)
+                    assert_eq!(
+                        c_output_v3.trim(),
+                        c_output_v4.trim(),
+                        "Fixed-point bootstrap failed! gust_v3.c and gust_v4.c are not identical."
+                    );
+
+                    // Preserved for root folder debugging
+                    // let _ = std::fs::remove_file(&gust_v2_c_path);
+                    // let _ = std::fs::remove_file(&gust_v2_bin_path);
+                    // let _ = std::fs::remove_file(&gust_v3_c_path);
+                    // let _ = std::fs::remove_file(&gust_v3_bin_path);
+                })
+                .unwrap()
+                .join()
+                .map_err(|e| {
+                    if let Some(s) = e.downcast_ref::<&str>() {
+                        panic!("Thread panicked: {}", s);
+                    } else if let Some(s) = e.downcast_ref::<String>() {
+                        panic!("Thread panicked: {}", s);
+                    } else {
+                        panic!("Thread panicked with an unknown error type");
+                    }
+                })
+                .unwrap();
 }
 
 #[test]
