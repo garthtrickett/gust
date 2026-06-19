@@ -129,10 +129,44 @@ func main() {
         os.Exit(1);
     }
 
- // Reset current_prefix to entry module for main call matching
-        env.current_prefix = "";
+    // Print full Type Environment dump for bootstrapping diagnostics
+    os.LogStr("=== BOOTSTRAP TYPE DUMP ===");
+    mut serialized := typechecker.typechecker_serialize_type_environment(&env, ctx);
+    os.LogStr(serialized);
+    os.LogStr("===========================");
 
-        // 7. Generate Code
+    // Print all nested resolved types
+    os.LogStr("=== BOOTSTRAP RESOLVED TYPES ===");
+    mut r_idx := 0;
+    while r_idx < len(env.resolved_types_nested) {
+        mut entry := env.resolved_types_nested[r_idx];
+        mut log_pfx := std.Concat("Prefix: ", entry.prefix);
+        os.LogStr(log_pfx);
+        
+        mut t_idx := 0;
+        while t_idx < len(entry.types) {
+            mut t_entry := entry.types[t_idx];
+            mut start_str := std.FormatInt(t_entry.start_offset);
+            mut end_str := std.FormatInt(t_entry.end_offset);
+            mut type_str := ast.serialize_type(t_entry.val_type, ctx);
+            
+            mut log_line := std.Concat("  Span ", start_str);
+            log_line = std.Concat(log_line, "..");
+            log_line = std.Concat(log_line, end_str);
+            log_line = std.Concat(log_line, " -> ");
+            log_line = std.Concat(log_line, type_str);
+            os.LogStr(log_line);
+            
+            t_idx = t_idx + 1;
+        }
+        r_idx = r_idx + 1;
+    }
+    os.LogStr("=================================");
+
+    // Reset current_prefix to entry module for main call matching
+    env.current_prefix = "";
+
+    // 7. Generate Code
         mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);
         os.LogStr(c_code);
 }
