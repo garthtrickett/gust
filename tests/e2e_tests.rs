@@ -3931,504 +3931,535 @@ fn test_self_hosted_parser_ast_dump() {
 
 #[test]
 fn test_e2e_self_hosted_types() {
-    gust_lexer::init_logging();
-    let resolver = gust_lexer::resolver::ModuleResolver::new();
-    let fs_impl = gust_lexer::resolver::RealFileSystem;
-    let entry_path = std::path::Path::new("compiler/typechecker_types_test_entry.gst");
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
+            let entry_path = std::path::Path::new("compiler/typechecker_types_test_entry.gst");
 
-    let res = resolver.resolve(&entry_path, &fs_impl);
-    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+            let res = resolver.resolve(&entry_path, &fs_impl);
+            assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
 
-    let (order, mut modules) = res.unwrap();
-    let mut checker = TypeChecker::new();
-    for path in &order {
-        if let Some(module) = modules.get(path) {
-            let stem = path.file_stem().unwrap().to_str().unwrap();
-            let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry {
-                "".to_string()
-            } else {
-                format!("{}__", stem)
-            };
-            let check_res = checker.check_module(&module.program, &prefix);
-            assert!(
-                check_res.is_ok(),
-                "Typechecking failed on {:?}: {:?}",
-                path,
-                check_res.err()
+            let (order, mut modules) = res.unwrap();
+            let mut checker = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    let check_res = checker.check_module(&module.program, &prefix);
+                    assert!(
+                        check_res.is_ok(),
+                        "Typechecking failed on {:?}: {:?}",
+                        path,
+                        check_res.err()
+                    );
+                }
+            }
+
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
+                }
+            }
+
+            let codegen = Codegen::new(
+                checker.variable_types,
+                checker.struct_registry,
+                checker.function_registry,
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
             );
-        }
-    }
+            let c_output = codegen.generate(&modules_for_codegen);
 
-    let mut modules_for_codegen = Vec::new();
-    for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            modules_for_codegen.push((path.clone(), module.program.clone()));
-        }
-    }
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
+            let c_filename = format!("gust_e2e_types_{:?}_{}.c", thread_id, process_id);
+            let bin_filename = format!("gust_e2e_types_{:?}_{}.bin", thread_id, process_id);
 
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let c_output = codegen.generate(&modules_for_codegen);
+            let c_path = temp_dir.join(&c_filename);
+            let bin_path = temp_dir.join(&bin_filename);
 
-    let temp_dir = std::env::temp_dir();
-    let thread_id = std::thread::current().id();
-    let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_types_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_e2e_types_{:?}_{}.bin", thread_id, process_id);
+            std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let c_path = temp_dir.join(&c_filename);
-    let bin_path = temp_dir.join(&bin_filename);
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&bin_path)
+                .output()
+                .expect("GCC command failed");
 
-    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+            assert!(
+                compile_output.status.success(),
+                "Compilation failed: {}",
+                String::from_utf8_lossy(&compile_output.stderr)
+            );
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
+            let run_output = std::process::Command::new(&bin_path)
+                .output()
+                .expect("Execution failed");
 
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+            let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
-    let run_output = std::process::Command::new(&bin_path)
-        .output()
-        .expect("Execution failed");
+            let _ = std::fs::remove_file(&c_path);
+            let _ = std::fs::remove_file(&bin_path);
 
-    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
-
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
-
-    // Assert that the output contains the dispatch and verification traces in sequence, and the error trace!
-    assert!(stdout_str.contains("📥 check_statement: start for stmt tag 3")); // FuncDecl
-    assert!(stdout_str.contains("✅ check_statement: successfully verified stmt tag 3"));
-    assert!(stdout_str.contains("❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str") || stdout_str.contains("❌ TypeError at line 1:"));
-    assert!(stdout_str.contains("Cycle Detection OK: Loop1 directly by-value rejected"));
-    assert!(stdout_str.contains("Cycle Detection OK: Pointer-indirected Loop2 accepted"));
+            // Assert that the output contains the dispatch and verification traces in sequence, and the error trace!
+            assert!(stdout_str.contains("📥 check_statement: start for stmt tag 3")); // FuncDecl
+            assert!(stdout_str.contains("✅ check_statement: successfully verified stmt tag 3"));
+            assert!(stdout_str.contains("❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str") || stdout_str.contains("❌ TypeError at line 1:"));
+            assert!(stdout_str.contains("Cycle Detection OK: Loop1 directly by-value rejected"));
+            assert!(stdout_str.contains("Cycle Detection OK: Pointer-indirected Loop2 accepted"));
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
 fn test_e2e_self_hosted_typechecker_tracing() {
-    gust_lexer::init_logging();
-    let resolver = gust_lexer::resolver::ModuleResolver::new();
-    let fs_impl = gust_lexer::resolver::RealFileSystem;
-    let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
+            let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
 
-    let res = resolver.resolve(&entry_path, &fs_impl);
-    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+            let res = resolver.resolve(&entry_path, &fs_impl);
+            assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
 
-    let (order, mut modules) = res.unwrap();
-    let mut checker = TypeChecker::new();
-    for path in &order {
-        if let Some(module) = modules.get(path) {
-            let stem = path.file_stem().unwrap().to_str().unwrap();
-            let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry {
-                "".to_string()
-            } else {
-                format!("{}__", stem)
-            };
-            let check_res = checker.check_module(&module.program, &prefix);
-            assert!(
-                check_res.is_ok(),
-                "Typechecking failed on {:?}: {:?}",
-                path,
-                check_res.err()
+            let (order, mut modules) = res.unwrap();
+            let mut checker = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    let check_res = checker.check_module(&module.program, &prefix);
+                    assert!(
+                        check_res.is_ok(),
+                        "Typechecking failed on {:?}: {:?}",
+                        path,
+                        check_res.err()
+                    );
+                }
+            }
+
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
+                }
+            }
+
+            let codegen = Codegen::new(
+                checker.variable_types,
+                checker.struct_registry,
+                checker.function_registry,
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
             );
-        }
-    }
+            let c_output = codegen.generate(&modules_for_codegen);
 
-    let mut modules_for_codegen = Vec::new();
-    for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            modules_for_codegen.push((path.clone(), module.program.clone()));
-        }
-    }
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
+            let c_filename = format!("gust_e2e_tracing_{:?}_{}.c", thread_id, process_id);
+            let bin_filename = format!("gust_e2e_tracing_{:?}_{}.bin", thread_id, process_id);
 
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let c_output = codegen.generate(&modules_for_codegen);
+            let c_path = temp_dir.join(&c_filename);
+            let bin_path = temp_dir.join(&bin_filename);
 
-    let temp_dir = std::env::temp_dir();
-    let thread_id = std::thread::current().id();
-    let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_tracing_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_e2e_tracing_{:?}_{}.bin", thread_id, process_id);
+            std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let c_path = temp_dir.join(&c_filename);
-    let bin_path = temp_dir.join(&bin_filename);
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&bin_path)
+                .output()
+                .expect("GCC command failed");
 
-    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+            assert!(
+                compile_output.status.success(),
+                "Compilation failed: {}",
+                String::from_utf8_lossy(&compile_output.stderr)
+            );
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
+            let run_output = std::process::Command::new(&bin_path)
+                .arg("compiler/test_scratch_storage_violation.gst")
+                .output()
+                .expect("Execution failed");
 
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+            let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
-    let run_output = std::process::Command::new(&bin_path)
-        .arg("compiler/test_scratch_storage_violation.gst")
-        .output()
-        .expect("Execution failed");
+            let _ = std::fs::remove_file(&c_path);
+            let _ = std::fs::remove_file(&bin_path);
 
-    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
-
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
-
-    // Assert the presence of all expected structured tracing emojis with expected payloads!
-    assert!(
-        stdout_str.contains("🗄 scope_new: spawned root scope") || stdout_str.contains("scope_new")
-    );
-    assert!(
-        stdout_str
-            .contains("🗄 env_register_function: registered function 'main' with 0 parameters")
-            || stdout_str.contains("env_register_function")
-    );
-    assert!(
-        stdout_str.contains("📥 check_statement: start for stmt tag 3")
-            || stdout_str.contains("check_statement")
-    ); // FunctionDecl main
-    assert!(stdout_str.contains("📥 check_statement: start for stmt tag 4")); // VarDecl ctx
-    assert!(stdout_str.contains("✅ check_statement: successfully verified stmt tag 4"));
-    assert!(
-        stdout_str.contains(
-            "🗄 scope_insert: bound variable 'n' to type Struct(\"BrandedNode\", Some(\"ctx\"))"
-        ) || stdout_str.contains("BrandedNode")
-    );
-    assert!(stdout_str.contains("❌ TypeError at line 10:14: Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct Struct(\"BrandedNode\", Some(\"ctx\"))") || stdout_str.contains("❌"));
+            // Assert the presence of all expected structured tracing emojis with expected payloads!
+            assert!(
+                stdout_str.contains("🗄 scope_new: spawned root scope") || stdout_str.contains("scope_new")
+            );
+            assert!(
+                stdout_str
+                    .contains("🗄 env_register_function: registered function 'main' with 0 parameters")
+                    || stdout_str.contains("env_register_function")
+            );
+            assert!(
+                stdout_str.contains("📥 check_statement: start for stmt tag 3")
+                    || stdout_str.contains("check_statement")
+            ); // FunctionDecl main
+            assert!(stdout_str.contains("📥 check_statement: start for stmt tag 4")); // VarDecl ctx
+            assert!(stdout_str.contains("✅ check_statement: successfully verified stmt tag 4"));
+            assert!(
+                stdout_str.contains(
+                    "🗄 scope_insert: bound variable 'n' to type Struct(\"BrandedNode\", Some(\"ctx\"))"
+                ) || stdout_str.contains("BrandedNode")
+            );
+            assert!(stdout_str.contains("❌ TypeError at line 10:14: Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct Struct(\"BrandedNode\", Some(\"ctx\"))") || stdout_str.contains("❌"));
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
 fn test_e2e_self_hosted_scope_resolution() {
-    gust_lexer::init_logging();
-    let resolver = gust_lexer::resolver::ModuleResolver::new();
-    let fs_impl = gust_lexer::resolver::RealFileSystem;
-    let entry_path = std::path::Path::new("compiler/typechecker_scope_test_entry.gst");
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
+            let entry_path = std::path::Path::new("compiler/typechecker_scope_test_entry.gst");
 
-    let res = resolver.resolve(&entry_path, &fs_impl);
-    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+            let res = resolver.resolve(&entry_path, &fs_impl);
+            assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
 
-    let (order, mut modules) = res.unwrap();
-    let mut checker = TypeChecker::new();
-    for path in &order {
-        if let Some(module) = modules.get(path) {
-            let stem = path.file_stem().unwrap().to_str().unwrap();
-            let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry {
-                "".to_string()
-            } else {
-                format!("{}__", stem)
-            };
-            let check_res = checker.check_module(&module.program, &prefix);
-            assert!(
-                check_res.is_ok(),
-                "Typechecking failed on {:?}: {:?}",
-                path,
-                check_res.err()
+            let (order, mut modules) = res.unwrap();
+            let mut checker = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    let check_res = checker.check_module(&module.program, &prefix);
+                    assert!(
+                        check_res.is_ok(),
+                        "Typechecking failed on {:?}: {:?}",
+                        path,
+                        check_res.err()
+                    );
+                }
+            }
+
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
+                }
+            }
+
+            let codegen = Codegen::new(
+                checker.variable_types,
+                checker.struct_registry,
+                checker.function_registry,
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
             );
-        }
-    }
+            let c_output = codegen.generate(&modules_for_codegen);
 
-    let mut modules_for_codegen = Vec::new();
-    for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            modules_for_codegen.push((path.clone(), module.program.clone()));
-        }
-    }
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
+            let c_filename = format!("gust_e2e_scope_{:?}_{}.c", thread_id, process_id);
+            let bin_filename = format!("gust_e2e_scope_{:?}_{}.bin", thread_id, process_id);
 
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let c_output = codegen.generate(&modules_for_codegen);
+            let c_path = temp_dir.join(&c_filename);
+            let bin_path = temp_dir.join(&bin_filename);
 
-    let temp_dir = std::env::temp_dir();
-    let thread_id = std::thread::current().id();
-    let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_scope_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_e2e_scope_{:?}_{}.bin", thread_id, process_id);
+            std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let c_path = temp_dir.join(&c_filename);
-    let bin_path = temp_dir.join(&bin_filename);
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&bin_path)
+                .output()
+                .expect("GCC command failed");
 
-    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+            assert!(
+                compile_output.status.success(),
+                "Compilation failed: {}",
+                String::from_utf8_lossy(&compile_output.stderr)
+            );
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
+            let run_output = std::process::Command::new(&bin_path)
+                .output()
+                .expect("Execution failed");
 
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+            let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
-    let run_output = std::process::Command::new(&bin_path)
-        .output()
-        .expect("Execution failed");
+            let _ = std::fs::remove_file(&c_path);
+            let _ = std::fs::remove_file(&bin_path);
 
-    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
-
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
-
-    let expected = vec![
-        "🗄️ scope_new: spawned root scope",
-        "🗄️ scope_insert: bound variable 'x' to type Int",
-        "🗄️ scope_new: spawned child scope under parent",
-        "🗄️ scope_insert: bound variable 'y' to type Bool",
-        "🗄️ scope_insert: bound variable 'x' to type Byte",
-        "0",
-        "3",
-        "1",
-        "2",
-    ]
-    .join("\n");
-    assert_eq!(stdout_str.trim(), expected.trim());
+            let expected = vec![
+                "🗄️ scope_new: spawned root scope",
+                "🗄️ scope_insert: bound variable 'x' to type Int",
+                "🗄️ scope_new: spawned child scope under parent",
+                "🗄️ scope_insert: bound variable 'y' to type Bool",
+                "🗄️ scope_insert: bound variable 'x' to type Byte",
+                "0",
+                "3",
+                "1",
+                "2",
+            ]
+            .join("\n");
+            assert_eq!(stdout_str.trim(), expected.trim());
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
 fn test_e2e_self_hosted_registries() {
-    gust_lexer::init_logging();
-    let resolver = gust_lexer::resolver::ModuleResolver::new();
-    let fs_impl = gust_lexer::resolver::RealFileSystem;
-    let entry_path = std::path::Path::new("compiler/typechecker_registry_test_entry.gst");
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
+            let entry_path = std::path::Path::new("compiler/typechecker_registry_test_entry.gst");
 
-    let res = resolver.resolve(&entry_path, &fs_impl);
-    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+            let res = resolver.resolve(&entry_path, &fs_impl);
+            assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
 
-    let (order, mut modules) = res.unwrap();
-    let mut checker = TypeChecker::new();
-    for path in &order {
-        if let Some(module) = modules.get(path) {
-            let stem = path.file_stem().unwrap().to_str().unwrap();
-            let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry {
-                "".to_string()
-            } else {
-                format!("{}__", stem)
-            };
-            let check_res = checker.check_module(&module.program, &prefix);
-            assert!(
-                check_res.is_ok(),
-                "Typechecking failed on {:?}: {:?}",
-                path,
-                check_res.err()
+            let (order, mut modules) = res.unwrap();
+            let mut checker = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    let check_res = checker.check_module(&module.program, &prefix);
+                    assert!(
+                        check_res.is_ok(),
+                        "Typechecking failed on {:?}: {:?}",
+                        path,
+                        check_res.err()
+                    );
+                }
+            }
+
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
+                }
+            }
+
+            let codegen = Codegen::new(
+                checker.variable_types,
+                checker.struct_registry,
+                checker.function_registry,
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
             );
-        }
-    }
+            let c_output = codegen.generate(&modules_for_codegen);
 
-    let mut modules_for_codegen = Vec::new();
-    for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            modules_for_codegen.push((path.clone(), module.program.clone()));
-        }
-    }
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
+            let c_filename = format!("gust_e2e_registry_{:?}_{}.c", thread_id, process_id);
+            let bin_filename = format!("gust_e2e_registry_{:?}_{}.bin", thread_id, process_id);
 
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let c_output = codegen.generate(&modules_for_codegen);
+            let c_path = temp_dir.join(&c_filename);
+            let bin_path = temp_dir.join(&bin_filename);
 
-    let temp_dir = std::env::temp_dir();
-    let thread_id = std::thread::current().id();
-    let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_registry_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_e2e_registry_{:?}_{}.bin", thread_id, process_id);
+            std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let c_path = temp_dir.join(&c_filename);
-    let bin_path = temp_dir.join(&bin_filename);
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&bin_path)
+                .output()
+                .expect("GCC command failed");
 
-    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+            assert!(
+                compile_output.status.success(),
+                "Compilation failed: {}",
+                String::from_utf8_lossy(&compile_output.stderr)
+            );
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
+            let run_output = std::process::Command::new(&bin_path)
+                .output()
+                .expect("Execution failed");
 
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+            let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
-    let run_output = std::process::Command::new(&bin_path)
-        .output()
-        .expect("Execution failed");
+            let _ = std::fs::remove_file(&c_path);
+            let _ = std::fs::remove_file(&bin_path);
 
-    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
-
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
-
-    let filtered_stdout: String = stdout_str
-        .lines()
-        .filter(|line| {
-            !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️")
+            let filtered_stdout: String = stdout_str
+                .lines()
+                .filter(|line| {
+                    !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️")
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            assert_eq!(
+                filtered_stdout.trim(),
+                "lib__Helper\nlib__add\nmain__local_var\nint\nLookupResult_lib__Helper\nstd_Vector_lib__Helper_ctx"
+            );
         })
-        .collect::<Vec<_>>()
-        .join("\n");
-    assert_eq!(
-        filtered_stdout.trim(),
-        "lib__Helper\nlib__add\nmain__local_var\nint\nLookupResult_lib__Helper\nstd_Vector_lib__Helper_ctx"
-    );
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
 fn test_e2e_self_hosted_origins() {
-    gust_lexer::init_logging();
-    let resolver = gust_lexer::resolver::ModuleResolver::new();
-    let fs_impl = gust_lexer::resolver::RealFileSystem;
-    let entry_path = std::path::Path::new("compiler/typechecker_origins_test_entry.gst");
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
+            let entry_path = std::path::Path::new("compiler/typechecker_origins_test_entry.gst");
 
-    let res = resolver.resolve(&entry_path, &fs_impl);
-    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+            let res = resolver.resolve(&entry_path, &fs_impl);
+            assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
 
-    let (order, mut modules) = res.unwrap();
-    let mut checker = TypeChecker::new();
-    for path in &order {
-        if let Some(module) = modules.get(path) {
-            let stem = path.file_stem().unwrap().to_str().unwrap();
-            let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry {
-                "".to_string()
-            } else {
-                format!("{}__", stem)
-            };
-            let check_res = checker.check_module(&module.program, &prefix);
-            assert!(
-                check_res.is_ok(),
-                "Typechecking failed on {:?}: {:?}",
-                path,
-                check_res.err()
+            let (order, mut modules) = res.unwrap();
+            let mut checker = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    let check_res = checker.check_module(&module.program, &prefix);
+                    assert!(
+                        check_res.is_ok(),
+                        "Typechecking failed on {:?}: {:?}",
+                        path,
+                        check_res.err()
+                    );
+                }
+            }
+
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
+                }
+            }
+
+            let codegen = Codegen::new(
+                checker.variable_types,
+                checker.struct_registry,
+                checker.function_registry,
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
             );
-        }
-    }
+            let c_output = codegen.generate(&modules_for_codegen);
 
-    let mut modules_for_codegen = Vec::new();
-    for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            modules_for_codegen.push((path.clone(), module.program.clone()));
-        }
-    }
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
+            let c_filename = format!("gust_e2e_origins_{:?}_{}.c", thread_id, process_id);
+            let bin_filename = format!("gust_e2e_origins_{:?}_{}.bin", thread_id, process_id);
 
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let c_output = codegen.generate(&modules_for_codegen);
+            let c_path = temp_dir.join(&c_filename);
+            let bin_path = temp_dir.join(&bin_filename);
 
-    let temp_dir = std::env::temp_dir();
-    let thread_id = std::thread::current().id();
-    let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_origins_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_e2e_origins_{:?}_{}.bin", thread_id, process_id);
+            std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let c_path = temp_dir.join(&c_filename);
-    let bin_path = temp_dir.join(&bin_filename);
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&bin_path)
+                .output()
+                .expect("GCC command failed");
 
-    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+            assert!(
+                compile_output.status.success(),
+                "Compilation failed: {}",
+                String::from_utf8_lossy(&compile_output.stderr)
+            );
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
+            let run_output = std::process::Command::new(&bin_path)
+                .output()
+                .expect("Execution failed");
 
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+            let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
-    let run_output = std::process::Command::new(&bin_path)
-        .output()
-        .expect("Execution failed");
+            let _ = std::fs::remove_file(&c_path);
+            let _ = std::fs::remove_file(&bin_path);
 
-    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
-
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
-
-    let filtered_stdout: String = stdout_str
-        .lines()
-        .filter(|line| {
-            !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️")
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
-    assert_eq!(
-        filtered_stdout.trim(),
-        r#"set1 has origin_a
+            let filtered_stdout: String = stdout_str
+                .lines()
+                .filter(|line| {
+                    !line.starts_with("🗄️") && !line.starts_with("🔄") && !line.starts_with("👁️")
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            assert_eq!(
+                filtered_stdout.trim(),
+                r#"set1 has origin_a
 set1 missing origin_c
 set1 now has origin_c
 set1 now has origin_d
@@ -4505,7 +4536,11 @@ RawPointer(Struct("MyNode_ctx", Some("ctx")))
 Struct("Node", None)
 Struct("MyNode", Some("ctx_var"))
 Byte"#
-    );
+            );
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
@@ -4525,125 +4560,132 @@ fn test_e2e_fallible_guard_bootstrap() {
 
 #[test]
 fn test_self_hosted_typechecker_violations() {
-    gust_lexer::init_logging();
-    let resolver = gust_lexer::resolver::ModuleResolver::new();
-    let fs_impl = gust_lexer::resolver::RealFileSystem;
-    let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
+            let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
 
-    let res = resolver.resolve(&entry_path, &fs_impl);
-    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+            let res = resolver.resolve(&entry_path, &fs_impl);
+            assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
 
-    let (order, mut modules) = res.unwrap();
+            let (order, mut modules) = res.unwrap();
 
-    let mut checker = TypeChecker::new();
-    for path in &order {
-        if let Some(module) = modules.get(path) {
-            let stem = path.file_stem().unwrap().to_str().unwrap();
-            let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry {
-                "".to_string()
-            } else {
-                format!("{}__", stem)
-            };
-            let check_res = checker.check_module(&module.program, &prefix);
-            assert!(
-                check_res.is_ok(),
-                "Typechecking failed on {:?}: {:?}",
-                path,
-                check_res.err()
+            let mut checker = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    let check_res = checker.check_module(&module.program, &prefix);
+                    assert!(
+                        check_res.is_ok(),
+                        "Typechecking failed on {:?}: {:?}",
+                        path,
+                        check_res.err()
+                    );
+                }
+            }
+
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
+                }
+            }
+
+            let codegen = Codegen::new(
+                checker.variable_types,
+                checker.struct_registry,
+                checker.function_registry,
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
             );
-        }
-    }
+            let c_output = codegen.generate(&modules_for_codegen);
 
-    let mut modules_for_codegen = Vec::new();
-    for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            modules_for_codegen.push((path.clone(), module.program.clone()));
-        }
-    }
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
+            let c_filename = format!("gust_self_hosted_driver_{:?}_{}.c", thread_id, process_id);
+            let bin_filename = format!("gust_self_hosted_driver_{:?}_{}.bin", thread_id, process_id);
 
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let c_output = codegen.generate(&modules_for_codegen);
+            let c_path = temp_dir.join(&c_filename);
+            let bin_path = temp_dir.join(&bin_filename);
 
-    let temp_dir = std::env::temp_dir();
-    let thread_id = std::thread::current().id();
-    let process_id = std::process::id();
-    let c_filename = format!("gust_self_hosted_driver_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_self_hosted_driver_{:?}_{}.bin", thread_id, process_id);
+            std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let c_path = temp_dir.join(&c_filename);
-    let bin_path = temp_dir.join(&bin_filename);
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&bin_path)
+                .output()
+                .expect("GCC command failed");
 
-    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+            assert!(
+                compile_output.status.success(),
+                "Compilation failed: {}",
+                String::from_utf8_lossy(&compile_output.stderr)
+            );
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
+            // Violation 1: test_escape_return_violation.gst
+            let run1 = std::process::Command::new(&bin_path)
+                .arg("compiler/test_escape_return_violation.gst")
+                .output()
+                .expect("Execution failed");
+            let out1 = String::from_utf8(run1.stdout).expect("Invalid UTF-8");
+            let err1 = String::from_utf8(run1.stderr).expect("Invalid UTF-8");
+            println!("RUN1 STATUS: {:?}", run1.status);
+            println!("RUN1 STDOUT:\n{}", out1);
+            println!("RUN1 STDERR:\n{}", err1);
+            assert!(!run1.status.success());
+            assert!(out1.contains("Returning ephemeral view of type Str whose origin traces back to local stack variable 'local'"));
 
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+            // Violation 2: test_scratch_storage_violation.gst
+            let run2 = std::process::Command::new(&bin_path)
+                .arg("compiler/test_scratch_storage_violation.gst")
+                .output()
+                .expect("Execution failed");
+            let out2 = String::from_utf8(run2.stdout).expect("Invalid UTF-8");
+            let err2 = String::from_utf8(run2.stderr).expect("Invalid UTF-8");
+            println!("RUN2 STATUS: {:?}", run2.status);
+            println!("RUN2 STDOUT:\n{}", out2);
+            println!("RUN2 STDERR:\n{}", err2);
+            assert!(!run2.status.success());
+            assert!(out2.contains("Cannot assign scratchpad-allocated view to field of branded struct"));
+            assert!(out2.contains("BrandedNode"));
 
-    // Violation 1: test_escape_return_violation.gst
-    let run1 = std::process::Command::new(&bin_path)
-        .arg("compiler/test_escape_return_violation.gst")
-        .output()
-        .expect("Execution failed");
-    let out1 = String::from_utf8(run1.stdout).expect("Invalid UTF-8");
-    let err1 = String::from_utf8(run1.stderr).expect("Invalid UTF-8");
-    println!("RUN1 STATUS: {:?}", run1.status);
-    println!("RUN1 STDOUT:\n{}", out1);
-    println!("RUN1 STDERR:\n{}", err1);
-    assert!(!run1.status.success());
-    assert!(out1.contains("Returning ephemeral view of type Str whose origin traces back to local stack variable 'local'"));
+            // Violation 3: test_directory_leak_violation.gst
+            let run3 = std::process::Command::new(&bin_path)
+                .arg("compiler/test_directory_leak_violation.gst")
+                .output()
+                .expect("Execution failed");
+            let out3 = String::from_utf8(run3.stdout).expect("Invalid UTF-8");
+            let err3 = String::from_utf8(run3.stderr).expect("Invalid UTF-8");
+            println!("RUN3 STATUS: {:?}", run3.status);
+            println!("RUN3 STDOUT:\n{}", out3);
+            println!("RUN3 STDERR:\n{}", err3);
+            assert!(!run3.status.success());
+            assert!(out3.contains("Directory resource variable 'd' must be cleanly closed with os.CloseDir before leaving local scope"));
 
-    // Violation 2: test_scratch_storage_violation.gst
-    let run2 = std::process::Command::new(&bin_path)
-        .arg("compiler/test_scratch_storage_violation.gst")
-        .output()
-        .expect("Execution failed");
-    let out2 = String::from_utf8(run2.stdout).expect("Invalid UTF-8");
-    let err2 = String::from_utf8(run2.stderr).expect("Invalid UTF-8");
-    println!("RUN2 STATUS: {:?}", run2.status);
-    println!("RUN2 STDOUT:\n{}", out2);
-    println!("RUN2 STDERR:\n{}", err2);
-    assert!(!run2.status.success());
-    assert!(out2.contains("Cannot assign scratchpad-allocated view to field of branded struct"));
-    assert!(out2.contains("BrandedNode"));
-
-    // Violation 3: test_directory_leak_violation.gst
-    let run3 = std::process::Command::new(&bin_path)
-        .arg("compiler/test_directory_leak_violation.gst")
-        .output()
-        .expect("Execution failed");
-    let out3 = String::from_utf8(run3.stdout).expect("Invalid UTF-8");
-    let err3 = String::from_utf8(run3.stderr).expect("Invalid UTF-8");
-    println!("RUN3 STATUS: {:?}", run3.status);
-    println!("RUN3 STDOUT:\n{}", out3);
-    println!("RUN3 STDERR:\n{}", err3);
-    assert!(!run3.status.success());
-    assert!(out3.contains("Directory resource variable 'd' must be cleanly closed with os.CloseDir before leaving local scope"));
-
-    // Clean up temporary files
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
+            // Clean up temporary files
+            let _ = std::fs::remove_file(&c_path);
+            let _ = std::fs::remove_file(&bin_path);
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
@@ -5219,125 +5261,129 @@ fn test_self_hosted_compiler_full_bootstrap() {
 
 #[test]
 fn test_self_hosted_typechecker_templates() {
-    gust_lexer::init_logging();
-    let resolver = gust_lexer::resolver::ModuleResolver::new();
-    let fs_impl = gust_lexer::resolver::RealFileSystem;
-    let entry_path = std::path::Path::new("compiler/typechecker_templates_test_entry.gst");
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
+            let entry_path = std::path::Path::new("compiler/typechecker_templates_test_entry.gst");
 
-    let res = resolver.resolve(&entry_path, &fs_impl);
-    assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
+            let res = resolver.resolve(&entry_path, &fs_impl);
+            assert!(res.is_ok(), "Module resolution failed: {:?}", res.err());
 
-    let (order, mut modules) = res.unwrap();
-    let mut checker = TypeChecker::new();
-    for path in &order {
-        if let Some(module) = modules.get(path) {
-            let stem = path.file_stem().unwrap().to_str().unwrap();
-            let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry {
-                "".to_string()
-            } else {
-                format!("{}__", stem)
-            };
-            let check_res = checker.check_module(&module.program, &prefix);
-            assert!(
-                check_res.is_ok(),
-                "Typechecking failed on {:?}: {:?}",
-                path,
-                check_res.err()
+            let (order, mut modules) = res.unwrap();
+            let mut checker = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    let check_res = checker.check_module(&module.program, &prefix);
+                    assert!(
+                        check_res.is_ok(),
+                        "Typechecking failed on {:?}: {:?}",
+                        path,
+                        check_res.err()
+                    );
+                }
+            }
+
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
+                }
+            }
+
+            let codegen = Codegen::new(
+                checker.variable_types,
+                checker.struct_registry,
+                checker.function_registry,
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
             );
-        }
-    }
+            let c_output = codegen.generate(&modules_for_codegen);
 
-    let mut modules_for_codegen = Vec::new();
-    for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            modules_for_codegen.push((path.clone(), module.program.clone()));
-        }
-    }
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
+            let c_filename = format!("gust_e2e_templates_{:?}_{}.c", thread_id, process_id);
+            let bin_filename = format!("gust_e2e_templates_{:?}_{}.bin", thread_id, process_id);
 
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let c_output = codegen.generate(&modules_for_codegen);
+            let c_path = temp_dir.join(&c_filename);
+            let bin_path = temp_dir.join(&bin_filename);
 
-    let temp_dir = std::env::temp_dir();
-    let thread_id = std::thread::current().id();
-    let process_id = std::process::id();
-    let c_filename = format!("gust_e2e_templates_{:?}_{}.c", thread_id, process_id);
-    let bin_filename = format!("gust_e2e_templates_{:?}_{}.bin", thread_id, process_id);
+            std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let c_path = temp_dir.join(&c_filename);
-    let bin_path = temp_dir.join(&bin_filename);
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&bin_path)
+                .output()
+                .expect("GCC command failed");
 
-    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+            assert!(
+                compile_output.status.success(),
+                "Compilation failed: {}",
+                String::from_utf8_lossy(&compile_output.stderr)
+            );
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
+            let run_output = std::process::Command::new(&bin_path)
+                .output()
+                .expect("Execution failed");
 
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+            let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
-    let run_output = std::process::Command::new(&bin_path)
-        .output()
-        .expect("Execution failed");
+            let _ = std::fs::remove_file(&c_path);
+            let _ = std::fs::remove_file(&bin_path);
 
-    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
+            let filtered_stdout: String = stdout_str
+                .lines()
+                .filter(|line| {
+                    !line.starts_with("🗄")
+                        && !line.starts_with("🔄")
+                        && !line.starts_with("👁")
+                        && !line.starts_with("⚖")
+                        && !line.starts_with("📥")
+                        && !line.starts_with("✅")
+                        && !line.starts_with("⚙")
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
 
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
-
-    let filtered_stdout: String = stdout_str
-        .lines()
-        .filter(|line| {
-            !line.starts_with("🗄")
-                && !line.starts_with("🔄")
-                && !line.starts_with("👁")
-                && !line.starts_with("⚖")
-                && !line.starts_with("📥")
-                && !line.starts_with("✅")
-                && !line.starts_with("⚙")
+            assert!(filtered_stdout.contains("Vector template found"));
+            assert!(filtered_stdout.contains("std_HashMap template found"));
+            assert!(filtered_stdout.contains("Custom registered as template"));
+            assert!(filtered_stdout.contains("Custom absent from concrete registry"));
+            assert!(filtered_stdout.contains("substitute_generics Int ok"));
+            assert!(filtered_stdout.contains("lib_module__MyStruct"));
+            assert!(filtered_stdout.contains("Pointer inner: lib_module__MyStruct"));
+            assert!(filtered_stdout.contains("Slice inner: lib_module__MyStruct"));
+            assert!(filtered_stdout.contains("std_Vector"));
+            assert!(filtered_stdout.contains("std_Vector_lib_module__MyStruct_ctx"));
+            assert!(filtered_stdout.contains("MyNode"));
+            assert!(filtered_stdout.contains("lib"));
+            assert!(filtered_stdout.contains("lib_module__MyNode"));
+            assert!(filtered_stdout.contains("std_Vector_lib_MyNode"));
+            assert!(filtered_stdout.contains("std_Vector_MyNode"));
+            assert!(filtered_stdout.contains("Index(\"SessionNode\", Some(\"my_brand\"))"));
+            assert!(filtered_stdout.contains("std_GraphNode_int_ctx successfully registered!"));
+            assert!(filtered_stdout.contains("std_HashMap_str_int"));
         })
-        .collect::<Vec<_>>()
-        .join(
-            "
-",
-        );
-
-    assert!(filtered_stdout.contains("Vector template found"));
-    assert!(filtered_stdout.contains("std_HashMap template found"));
-    assert!(filtered_stdout.contains("Custom registered as template"));
-    assert!(filtered_stdout.contains("Custom absent from concrete registry"));
-    assert!(filtered_stdout.contains("substitute_generics Int ok"));
-    assert!(filtered_stdout.contains("lib_module__MyStruct"));
-    assert!(filtered_stdout.contains("Pointer inner: lib_module__MyStruct"));
-    assert!(filtered_stdout.contains("Slice inner: lib_module__MyStruct"));
-    assert!(filtered_stdout.contains("std_Vector"));
-    assert!(filtered_stdout.contains("std_Vector_lib_module__MyStruct_ctx"));
-    assert!(filtered_stdout.contains("MyNode"));
-    assert!(filtered_stdout.contains("lib"));
-    assert!(filtered_stdout.contains("lib_module__MyNode"));
-    assert!(filtered_stdout.contains("std_Vector_lib_MyNode"));
-    assert!(filtered_stdout.contains("std_Vector_MyNode"));
-    assert!(filtered_stdout.contains("Index(\"SessionNode\", Some(\"my_brand\"))"));
-    assert!(filtered_stdout.contains("std_GraphNode_int_ctx successfully registered!"));
-    assert!(filtered_stdout.contains("std_HashMap_str_int"));
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
@@ -5566,279 +5612,286 @@ fn test_namespaced_template_cross_module_matching() {
 
 #[test]
 fn test_self_hosted_type_dump_consistency() {
-    gust_lexer::init_logging();
-    let resolver = gust_lexer::resolver::ModuleResolver::new();
-    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
 
-    let entry_path = std::path::Path::new("compiler/type_dump_entry.gst");
-    let target_path = std::path::Path::new("compiler/type_diff_target.gst");
+            let entry_path = std::path::Path::new("compiler/type_dump_entry.gst");
+            let target_path = std::path::Path::new("compiler/type_diff_target.gst");
 
-    std::fs::create_dir_all("compiler").unwrap();
+            std::fs::create_dir_all("compiler").unwrap();
 
-    // 1. Write the target test program
-    let target_source = r#"
-        type Inner struct {
-            val: int
-        }
-        type Outer struct {
-            inner: Inner
-        }
-        type Option[T, ctx] enum {
-            Some { val: T },
-            None
-        }
-        func main() {
-            mut ctx := os.Arena.New();
-            defer ctx.Free();
-
-            mut x: int := 42;
-            mut o: Outer;
-            o.inner.val = x;
-
-            mut vec: std.Vector[Outer, ctx] := std.VectorNew(ctx);
-            vec.Push(o);
-
-            mut opt: Option[int, ctx];
-            opt.tag = 0;
-            opt.Some.val = 100;
-        }
-    "#;
-    std::fs::write(&target_path, target_source).unwrap();
-
-    // 2. Write the self-hosted type dumper driver
-    let entry_source = r#"
-        import "token.gst" as token;
-        import "lexer.gst" as lexer;
-        import "parser.gst" as parser;
-        import "ast.gst" as ast;
-        import "errors.gst" as errors;
-        import "typechecker.gst" as typechecker;
-
-        func main() {
-            mut ctx := os.Arena.New();
-            defer ctx.Free();
-            os.SetThreadScratch(ctx);
-
-            mut args := os.Args(ctx);
-            if len(args) < 2 {
-                os.LogStr("Usage: type_dump <file>");
-                os.Exit(1);
-            }
-            mut file_path := args[1];
-            mut source := os.ReadFile(ctx, file_path);
-            if len(source) == 0 {
-                os.LogStr("Error: empty file or failed to read");
-                os.Exit(1);
-            }
-
-            mut l: lexer.Lexer[ctx];
-            lexer.init_lexer(&l, source);
-
-            mut p: parser.Parser[ctx];
-            parser.init_parser(&p, &l, ctx);
-
-            mut prog := parser.parse_program(&p, ctx);
-            if len(p.errors) > 0 {
-                os.LogStr("ParserError");
-                os.Exit(1);
-            }
-
-            mut env := typechecker.env_new(ctx);
-            mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
-
-            unsafe {
-                mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
-
-                mut i := 0;
-                while i < len(*statements_vec) {
-                    typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
-                    i = i + 1;
+            // 1. Write the target test program
+            let target_source = r#"
+                type Inner struct {
+                    val: int
                 }
+                type Outer struct {
+                    inner: Inner
+                }
+                type Option[T, ctx] enum {
+                    Some { val: T },
+                    None
+                }
+                func main() {
+                    mut ctx := os.Arena.New();
+                    defer ctx.Free();
 
-                mut j := 0;
-                while j < len(*statements_vec) {
-                    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[stmt_idx] = (*statements_vec)[j];
-                    typechecker.check_statement(stmt_idx, &env, scope, ctx);
-                    j = j + 1;
+                    mut x: int := 42;
+                    mut o: Outer;
+                    o.inner.val = x;
+
+                    mut vec: std.Vector[Outer, ctx] := std.VectorNew(ctx);
+                    vec.Push(o);
+
+                    mut opt: Option[int, ctx];
+                    opt.tag = 0;
+                    opt.Some.val = 100;
+                }
+            "#;
+            std::fs::write(&target_path, target_source).unwrap();
+
+            // 2. Write the self-hosted type dumper driver
+            let entry_source = r#"
+                import "token.gst" as token;
+                import "lexer.gst" as lexer;
+                import "parser.gst" as parser;
+                import "ast.gst" as ast;
+                import "errors.gst" as errors;
+                import "typechecker.gst" as typechecker;
+
+                func main() {
+                    mut ctx := os.Arena.New();
+                    defer ctx.Free();
+                    os.SetThreadScratch(ctx);
+
+                    mut args := os.Args(ctx);
+                    if len(args) < 2 {
+                        os.LogStr("Usage: type_dump <file>");
+                        os.Exit(1);
+                    }
+                    mut file_path := args[1];
+                    mut source := os.ReadFile(ctx, file_path);
+                    if len(source) == 0 {
+                        os.LogStr("Error: empty file or failed to read");
+                        os.Exit(1);
+                    }
+
+                    mut l: lexer.Lexer[ctx];
+                    lexer.init_lexer(&l, source);
+
+                    mut p: parser.Parser[ctx];
+                    parser.init_parser(&p, &l, ctx);
+
+                    mut prog := parser.parse_program(&p, ctx);
+                    if len(p.errors) > 0 {
+                        os.LogStr("ParserError");
+                        os.Exit(1);
+                    }
+
+                    mut env := typechecker.env_new(ctx);
+                    mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+                    unsafe {
+                        mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+
+                        mut i := 0;
+                        while i < len(*statements_vec) {
+                            typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+                            i = i + 1;
+                        }
+
+                        mut j := 0;
+                        while j < len(*statements_vec) {
+                            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[stmt_idx] = (*statements_vec)[j];
+                            typechecker.check_statement(stmt_idx, &env, scope, ctx);
+                            j = j + 1;
+                        }
+                    }
+
+                    if len(env.errors) > 0 {
+                        mut k := 0;
+                        while k < len(env.errors) {
+                            os.LogStr(env.errors[k].message);
+                            k = k + 1;
+                        }
+                        os.Exit(1);
+                    }
+
+                    mut serialized := typechecker.typechecker_serialize_type_environment(&env, ctx);
+                    os.LogStr(serialized);
+                }
+            "#;
+            std::fs::write(&entry_path, entry_source).unwrap();
+
+            // 3. Resolve and compile the self-hosted type dumper
+            let res = resolver
+                .resolve(&entry_path, &fs_impl)
+                .expect("Failed to resolve entry");
+
+            let (order, mut modules) = res;
+
+            let mut checker = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    checker
+                        .check_module(&module.program, &prefix)
+                        .expect("Typecheck failed");
                 }
             }
 
-            if len(env.errors) > 0 {
-                mut k := 0;
-                while k < len(env.errors) {
-                    os.LogStr(env.errors[k].message);
-                    k = k + 1;
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
                 }
-                os.Exit(1);
             }
 
-            mut serialized := typechecker.typechecker_serialize_type_environment(&env, ctx);
-            os.LogStr(serialized);
-        }
-    "#;
-    std::fs::write(&entry_path, entry_source).unwrap();
+            let codegen = Codegen::new(
+                checker.variable_types,
+                checker.struct_registry,
+                checker.function_registry,
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
+            );
+            let c_output = codegen.generate(&modules_for_codegen);
 
-    // 3. Resolve and compile the self-hosted type dumper
-    let res = resolver
-        .resolve(&entry_path, &fs_impl)
-        .expect("Failed to resolve entry");
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
 
-    let (order, mut modules) = res;
+            let c_filename = format!(
+                "gust_type_dump_consistency_{:?}_{}.c",
+                thread_id, process_id
+            );
+            let bin_filename = format!(
+                "gust_type_dump_consistency_{:?}_{}.bin",
+                thread_id, process_id
+            );
 
-    let mut checker = TypeChecker::new();
-    for path in &order {
-        if let Some(module) = modules.get(path) {
-            let stem = path.file_stem().unwrap().to_str().unwrap();
-            let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry {
-                "".to_string()
-            } else {
-                format!("{}__", stem)
-            };
-            checker
-                .check_module(&module.program, &prefix)
-                .expect("Typecheck failed");
-        }
-    }
+            let c_path = temp_dir.join(&c_filename);
+            let bin_path = temp_dir.join(&bin_filename);
 
-    let mut modules_for_codegen = Vec::new();
-    for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            modules_for_codegen.push((path.clone(), module.program.clone()));
-        }
-    }
+            std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let c_output = codegen.generate(&modules_for_codegen);
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&bin_path)
+                .output()
+                .expect("GCC compile command failed");
 
-    let temp_dir = std::env::temp_dir();
-    let thread_id = std::thread::current().id();
-    let process_id = std::process::id();
+            if !compile_output.status.success() {
+                println!("--- GCC Compilation Failed ---");
+                println!(
+                    "STDOUT:\n{}",
+                    String::from_utf8_lossy(&compile_output.stdout)
+                );
+                println!(
+                    "STDERR:\n{}",
+                    String::from_utf8_lossy(&compile_output.stderr)
+                );
+            }
+            assert!(
+                compile_output.status.success(),
+                "C compilation of self-hosted type dumper failed"
+            );
 
-    let c_filename = format!(
-        "gust_type_dump_consistency_{:?}_{}.c",
-        thread_id, process_id
-    );
-    let bin_filename = format!(
-        "gust_type_dump_consistency_{:?}_{}.bin",
-        thread_id, process_id
-    );
+            // 4. Capture bootstrapped Type serialization
+            let run_output = std::process::Command::new(&bin_path)
+                .arg(&target_path)
+                .output()
+                .expect("Failed to execute bootstrapped Type dumper");
 
-    let c_path = temp_dir.join(&c_filename);
-    let bin_path = temp_dir.join(&bin_filename);
+            assert!(
+                run_output.status.success(),
+                "Bootstrapped binary failed!\nSTDOUT:\n{}\nSTDERR:\n{}",
+                String::from_utf8_lossy(&run_output.stdout),
+                String::from_utf8_lossy(&run_output.stderr)
+            );
+            let bootstrapped_stdout = String::from_utf8(run_output.stdout).expect("Invalid UTF-8 output");
 
-    std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+            // 5. Verify internal consistency of the self-hosted type dump
+            // Checking section headers
+            assert!(
+                bootstrapped_stdout.contains("Variables:"),
+                "Missing Variables section"
+            );
+            assert!(
+                bootstrapped_stdout.contains("Structures:"),
+                "Missing Structures section"
+            );
+            assert!(
+                bootstrapped_stdout.contains("Enums:"),
+                "Missing Enums section"
+            );
+            assert!(
+                bootstrapped_stdout.contains("Functions:"),
+                "Missing Functions section"
+            );
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC compile command failed");
+            // Checking key variable declarations
+            assert!(
+                bootstrapped_stdout.contains("x : Int"),
+                "Missing variable x check"
+            );
+            assert!(
+                bootstrapped_stdout.contains("o : Struct(\"Outer\", None)"),
+                "Missing variable o check"
+            );
+            assert!(
+                bootstrapped_stdout.contains("ctx : Arena"),
+                "Missing variable ctx check"
+            );
 
-    if !compile_output.status.success() {
-        println!("--- GCC Compilation Failed ---");
-        println!(
-            "STDOUT:\n{}",
-            String::from_utf8_lossy(&compile_output.stdout)
-        );
-        println!(
-            "STDERR:\n{}",
-            String::from_utf8_lossy(&compile_output.stderr)
-        );
-    }
-    assert!(
-        compile_output.status.success(),
-        "C compilation of self-hosted type dumper failed"
-    );
+            // Checking structures and layouts
+            assert!(
+                bootstrapped_stdout.contains("Inner:"),
+                "Missing Inner struct check"
+            );
+            assert!(
+                bootstrapped_stdout.contains("val : Int"),
+                "Missing val : Int field check"
+            );
+            assert!(
+                bootstrapped_stdout.contains("Outer:"),
+                "Missing Outer struct check"
+            );
+            assert!(
+                bootstrapped_stdout.contains("inner : Struct(\"Inner\", None)"),
+                "Missing inner : Inner field check"
+            );
 
-    // 4. Capture bootstrapped Type serialization
-    let run_output = std::process::Command::new(&bin_path)
-        .arg(&target_path)
-        .output()
-        .expect("Failed to execute bootstrapped Type dumper");
+            // Checking functions
+            assert!(
+                bootstrapped_stdout.contains("main() -> Void"),
+                "Missing main function check"
+            );
 
-    assert!(
-        run_output.status.success(),
-        "Bootstrapped binary failed!\nSTDOUT:\n{}\nSTDERR:\n{}",
-        String::from_utf8_lossy(&run_output.stdout),
-        String::from_utf8_lossy(&run_output.stderr)
-    );
-    let bootstrapped_stdout = String::from_utf8(run_output.stdout).expect("Invalid UTF-8 output");
-
-    // 5. Verify internal consistency of the self-hosted type dump
-    // Checking section headers
-    assert!(
-        bootstrapped_stdout.contains("Variables:"),
-        "Missing Variables section"
-    );
-    assert!(
-        bootstrapped_stdout.contains("Structures:"),
-        "Missing Structures section"
-    );
-    assert!(
-        bootstrapped_stdout.contains("Enums:"),
-        "Missing Enums section"
-    );
-    assert!(
-        bootstrapped_stdout.contains("Functions:"),
-        "Missing Functions section"
-    );
-
-    // Checking key variable declarations
-    assert!(
-        bootstrapped_stdout.contains("x : Int"),
-        "Missing variable x check"
-    );
-    assert!(
-        bootstrapped_stdout.contains("o : Struct(\"Outer\", None)"),
-        "Missing variable o check"
-    );
-    assert!(
-        bootstrapped_stdout.contains("ctx : Arena"),
-        "Missing variable ctx check"
-    );
-
-    // Checking structures and layouts
-    assert!(
-        bootstrapped_stdout.contains("Inner:"),
-        "Missing Inner struct check"
-    );
-    assert!(
-        bootstrapped_stdout.contains("val : Int"),
-        "Missing val : Int field check"
-    );
-    assert!(
-        bootstrapped_stdout.contains("Outer:"),
-        "Missing Outer struct check"
-    );
-    assert!(
-        bootstrapped_stdout.contains("inner : Struct(\"Inner\", None)"),
-        "Missing inner : Inner field check"
-    );
-
-    // Checking functions
-    assert!(
-        bootstrapped_stdout.contains("main() -> Void"),
-        "Missing main function check"
-    );
-
-    // Clean up temporary files
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
-    let _ = std::fs::remove_file(entry_path);
-    let _ = std::fs::remove_file(target_path);
+            // Clean up temporary files
+            let _ = std::fs::remove_file(&c_path);
+            let _ = std::fs::remove_file(&bin_path);
+            let _ = std::fs::remove_file(entry_path);
+            let _ = std::fs::remove_file(target_path);
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
