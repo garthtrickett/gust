@@ -391,6 +391,57 @@ func main() {
         env.current_params.Clear();
         mut out_args_val := codegen.codegen_generate_expression(expr_args, &env, ctx);
         os.LogStr(out_args_val);
+
+        // Test Step 4: Cast-Aware Allocation Size Propagation (Step 4 Fix)
+        mut l_cast_alloc_test: lexer.Lexer[ctx];
+        lexer.init_lexer(&l_cast_alloc_test, "os.ArenaAlloc(ctx) as Index[ListNode, ctx]");
+        mut p_cast_alloc_test: parser.Parser[ctx];
+        parser.init_parser(&p_cast_alloc_test, &l_cast_alloc_test, ctx);
+        mut expr_cast_alloc_test := parser.parse_expression(&p_cast_alloc_test, 1, ctx);
+        
+        // Register ListNode in struct registry
+        mut listnode_layout: typechecker.StructLayout[ctx];
+        listnode_layout.brand = empty[Index[str, ctx]];
+        listnode_layout.fields = std.HashMapNew(ctx);
+        typechecker.env_register_struct(&env, "ListNode", listnode_layout, ctx);
+        
+        // Setup resolved types to simulate proper compilation type mapping
+        mut t_listnode_idx: ast.Type[ctx];
+        t_listnode_idx.tag = 7; // Index
+        t_listnode_idx.Index.struct_name = "ListNode_ctx";
+        t_listnode_idx.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+        unsafe {
+            mut brand_ptr := &ctx[t_listnode_idx.Index.brand] as *str;
+            *brand_ptr = "ctx";
+        }
+        
+        mut cast_alloc_span := parser.get_expression_span(expr_cast_alloc_test, ctx);
+        mut entry_cast_alloc: typechecker.ResolvedTypeEntry[ctx];
+        entry_cast_alloc.start_offset = cast_alloc_span.start.offset;
+        entry_cast_alloc.end_offset = cast_alloc_span.end.offset;
+        entry_cast_alloc.val_type = t_listnode_idx;
+        
+        mut found_nested_idx := 0 - 1;
+        mut idx_nested := 0;
+        while idx_nested < len(env.resolved_types_nested) {
+            if std.str_eq(env.resolved_types_nested[idx_nested].prefix, "") == 1 {
+                found_nested_idx = idx_nested;
+            }
+            idx_nested = idx_nested + 1;
+        }
+        if found_nested_idx != 0 - 1 {
+            mut entry_ref := &env.resolved_types_nested[found_nested_idx];
+            (*entry_ref).types.Push(entry_cast_alloc);
+        } else {
+            mut pfx_entry: typechecker.PrefixMapEntry[ctx];
+            pfx_entry.prefix = "";
+            pfx_entry.types = std.VectorNew(ctx);
+            pfx_entry.types.Push(entry_cast_alloc);
+            env.resolved_types_nested.Push(pfx_entry);
+        }
+        
+        mut out_cast_alloc_c := codegen.codegen_generate_expression(expr_cast_alloc_test, &env, ctx);
+        os.LogStr(out_cast_alloc_c); // Expected: ((int)os_ArenaAlloc(&ctx, sizeof(ListNode)))
     }
 
     // 1. Test primitive types

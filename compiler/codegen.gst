@@ -1538,7 +1538,41 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             return std.Clone(ctx, res);
         }
         if tag == 9 { // AsCast
-            mut left_str := codegen_generate_expression(ctx[expr_idx].AsCast.left, env, ctx);
+            mut left_idx := ctx[expr_idx].AsCast.left;
+            mut left_expr := ctx[left_idx];
+            mut old_alloc_struct := "";
+            mut has_alloc_override := 0;
+
+            if left_expr.tag == 12 { // Call
+                mut func_str := get_call_func_name(left_expr.Call.function, ctx);
+                mut resolved_func := typechecker.env_resolve_namespaced_ident(env, func_str, ctx);
+                if std.str_eq(resolved_func, "os_ArenaAlloc") == 1 || std.str_eq(resolved_func, "os.ArenaAlloc") == 1 ||
+                   std.str_eq(resolved_func, "os_ScratchAlloc") == 1 || std.str_eq(resolved_func, "os.ScratchAlloc") == 1 {
+                    mut target_type_idx := ctx[expr_idx].AsCast.target_type;
+                    mut target_type := ctx[target_type_idx];
+                    mut resolved_target_type := typechecker.env_resolve_type(env, target_type, ctx);
+                    mut erased_target_type := codegen_erase_type(resolved_target_type, env, ctx);
+
+                    mut struct_name := "";
+                    if erased_target_type.tag == 8 { // Struct
+                        struct_name = erased_target_type.Struct.struct_name;
+                    } else {
+                        if erased_target_type.tag == 7 { // Index
+                            struct_name = erased_target_type.Index.struct_name;
+                        }
+                    }
+                    old_alloc_struct = (*env).current_alloc_struct;
+                    (*env).current_alloc_struct = struct_name;
+                    has_alloc_override = 1;
+                }
+            }
+
+            mut left_str := codegen_generate_expression(left_idx, env, ctx);
+
+            if has_alloc_override == 1 {
+                (*env).current_alloc_struct = old_alloc_struct;
+            }
+
             mut target_str := codegen_get_c_type(ctx[ctx[expr_idx].AsCast.target_type], env, ctx);
             mut res := std.Concat("((", target_str);
             res = std.Concat(res, ")");
