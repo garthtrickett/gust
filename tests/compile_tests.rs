@@ -8166,7 +8166,9 @@ fn test_cast_aware_allocation_size_propagation() {
             defer ctx.Free();
             
             // unassigned or complex-assigned AsCast
-            std.Clone(ctx, os.ArenaAlloc(ctx) as Index[ListNode, ctx]);
+            unsafe {
+                std.Clone(ctx, os.ArenaAlloc(ctx) as Index[ListNode, ctx]);
+            }
         }
     ";
     let lexer = Lexer::new(source);
