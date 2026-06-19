@@ -1,9 +1,0 @@
-{
-  "summary": "fix: wrap index cast inside unsafe block in test_cast_aware_allocation_size_propagation",
-  "files": [
-    {
-      "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n#[test]\nfn test_cast_aware_allocation_size_propagation() {\n    let source = \"\n        type ListNode[ctx] struct {\n            val: int,\n            next: Index[ListNode, ctx]\n        }\n        func main() {\n            mut ctx := os.Arena.New();\n            defer ctx.Free();\n            \n            // unassigned or complex-assigned AsCast\n            std.Clone(ctx, os.ArenaAlloc(ctx) as Index[ListNode, ctx]);\n        }\n    \";\n    let lexer = Lexer::new(source);\n=======\n#[test]\nfn test_cast_aware_allocation_size_propagation() {\n    let source = \"\n        type ListNode[ctx] struct {\n            val: int,\n            next: Index[ListNode, ctx]\n        }\n        func main() {\n            mut ctx := os.Arena.New();\n            defer ctx.Free();\n            \n            // unassigned or complex-assigned AsCast\n            unsafe {\n                std.Clone(ctx, os.ArenaAlloc(ctx) as Index[ListNode, ctx]);\n            }\n        }\n    \";\n    let lexer = Lexer::new(source);\n>>>>>>> REPLACE"
-    }
-  ]
-}
