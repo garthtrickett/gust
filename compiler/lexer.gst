@@ -100,25 +100,50 @@ func read_string(l: *Lexer[ctx]) str {
             delimiter = 34; // Fallback to '"'
         }
         
-        mut start_pos := (*l).position + 1;
+        mut len_input := len((*l).input);
+        mut max_size := len_input - (*l).position;
+        mut buf := os.ScratchAlloc(max_size);
+        mut dest := buf as *byte;
+        mut write_idx := 0;
+        
         mut loop := 1;
         while loop == 1 {
             read_char(l);
             if (*l).ch == 92 { // '\' = 92
-                read_char(l); // skip the escaped character
+                read_char(l); // look at the escaped character
+                if (*l).ch == 110 { // 'n' = 110
+                    *(dest + write_idx) = 10; // newline
+                } else {
+                    if (*l).ch == 116 { // 't' = 116
+                        *(dest + write_idx) = 9; // tab
+                    } else {
+                        if (*l).ch == 114 { // 'r' = 114
+                            *(dest + write_idx) = 13; // carriage return
+                        } else {
+                            *(dest + write_idx) = (*l).ch;
+                        }
+                    }
+                }
+                write_idx = write_idx + 1;
             } else {
                 if (*l).ch == delimiter {
                     loop = 0;
                 } else {
                     if (*l).ch == 0 { // EOF
                         loop = 0;
+                    } else {
+                        *(dest + write_idx) = (*l).ch;
+                        write_idx = write_idx + 1;
                     }
                 }
             }
         }
-        mut out := std.str_slice((*l).input, start_pos, (*l).position);
         read_char(l); // consume closing delimiter
-        return out;
+        
+        mut res: str;
+        res.data = buf;
+        res.len = write_idx;
+        return res;
     }
 }
 
