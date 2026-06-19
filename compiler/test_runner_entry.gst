@@ -123,7 +123,7 @@ func main() {
     if len(env.errors) > 0 {
         mut k := 0;
         while k < len(env.errors) {
-            os.LogStr(env.errors[k].message);
+            os.LogStr(env.errors[k].message); // Should be this but this errors
             k = k + 1;
         }
         os.Exit(1);
