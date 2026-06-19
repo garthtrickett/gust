@@ -2151,7 +2151,7 @@ impl Codegen {
                     let s1_expr = self.gen_expression(&arguments[0]);
                     let s2_expr = self.gen_expression(&arguments[1]);
                     return format!(
-                        "(({{ Slice_unsigned_char _s1 = {}; Slice_unsigned_char _s2 = {}; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){{ (unsigned char*)_buf, _s1.len + _s2.len }}); }}))",
+                        "(({{ Slice_unsigned_char _s1 = {}; Slice_unsigned_char _s2 = {}; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){{ (unsigned char*)_buf, _s1.len + _s2.len }}); }}))",
                         s1_expr, s2_expr
                     );
                 }

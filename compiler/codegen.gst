@@ -2363,18 +2363,18 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             if std.str_eq(func_str, "std.Concat") || std.str_eq(func_str, "std_Concat") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.Concat FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os_ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
                 mut s1_expr := codegen_generate_expression(arg0_idx, env, ctx);
                 
-                mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                mut arg1_idx: Index[ast.Expression[ctx], ctx] := os_ArenaAlloc(ctx);
                 ctx[arg1_idx] = (*args_vec)[1];
                 mut s2_expr := codegen_generate_expression(arg1_idx, env, ctx);
                 
                 mut res := std.Concat("(({ Slice_unsigned_char _s1 = ", s1_expr);
                 res = std.Concat(res, "; Slice_unsigned_char _s2 = ");
                 res = std.Concat(res, s2_expr);
-                res = std.Concat(res, "; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }))");
+                res = std.Concat(res, "; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }))");
                 return std.Clone(ctx, res);
             }
 
