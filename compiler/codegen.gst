@@ -1547,6 +1547,10 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     left_type = ctx[left_type.RawPointer.inner];
                     is_ptr = 1;
                 } 
+                mut is_arena := 0;
+                if left_type.tag == 4 { // Arena
+                    is_arena = 1;
+                }
                 mut is_mutex := 0;
                 mut is_channel := 0;
                 mut is_vec := 0;
@@ -2016,6 +2020,21 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         mut res := std.Concat("std_GenerationalArena_Step_", t_name);
                         res = std.Concat(res, "(");
                         res = std.Concat(res, ref_prefix);
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, ")");
+                        return std.Clone(ctx, res);
+                    }
+                }
+
+                if is_arena == 1 {
+                    mut left_str := codegen_generate_expression(left_expr_idx, env, ctx);
+                    mut ref_prefix := "&";
+                    if is_ptr == 1 {
+                        ref_prefix = "";
+                    }
+                    if std.str_eq(right_name, "Free") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Arena Free FFI override for %s", left_str), ctx);
+                        mut res := std.Concat("os_Arena_Free(", ref_prefix);
                         res = std.Concat(res, left_str);
                         res = std.Concat(res, ")");
                         return std.Clone(ctx, res);

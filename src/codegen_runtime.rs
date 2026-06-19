@@ -665,8 +665,9 @@ void os_LogStr(Slice_unsigned_char s) {
 }
 
 int std_str_eq(Slice_unsigned_char s1, Slice_unsigned_char s2) {
-    if (s1.len != s2.len) return 0;
-    return memcmp(s1.data, s2.data, s1.len) == 0;
+ if (s1.len != s2.len) return 0;
+ if (s1.len == 0) return 1;
+ return memcmp(s1.data, s2.data, s1.len) == 0;
 }
 
 Slice_unsigned_char std_str_slice(Slice_unsigned_char s, int start, int end) {

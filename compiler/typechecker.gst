@@ -2913,15 +2913,19 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
         return name;
     }
 
+    
+
     // 3. Primitives & already namespaced types
-    if std.str_eq(name, "len") || std.str_eq(name, "int") || std.str_eq(name, "byte") || std.str_eq(name, "bool") ||
-       std.str_eq(name, "str") || std.str_eq(name, "Arena") || std.str_eq(name, "void") ||
-       std.str_eq(name, "Any") || std.str_eq(name, "SessionNode") || std.str_eq(name, "APIRequest") ||
-       std.str_eq(name, "Vector_Any") || std.str_eq(name, "HashMap_Any") ||
-       std.str_eq(name, "Pool_Any") || std.str_eq(name, "Mutex_Any") || std.str_eq(name, "Channel_Any") ||
-       std.str_eq(name, "ThreadLocalContext_Any") {
-        return name;
-    }
+            if std.str_eq(name, "len") || std.str_eq(name, "int") || std.str_eq(name, "byte") || std.str_eq(name, "bool") ||
+               std.str_eq(name, "str") || std.str_eq(name, "Arena") || std.str_eq(name, "void") ||
+               std.str_eq(name, "Any") || std.str_eq(name, "SessionNode") || std.str_eq(name, "APIRequest") ||
+               std.str_eq(name, "Vector_Any") || std.str_eq(name, "HashMap_Any") ||
+               std.str_eq(name, "Pool_Any") || std.str_eq(name, "Mutex_Any") || std.str_eq(name, "Channel_Any") ||
+               std.str_eq(name, "ThreadLocalContext_Any") ||
+               std.str_eq(name, "ctx") || std.str_eq(name, "connCtx") ||
+               std.str_eq(name, "arena") || std.str_eq(name, "a") {
+                return name;
+            }
 
     if std.str_find(name, "__") != 0 - 1 || 
        (len(name) >= 4 && std.str_eq(std.str_slice(name, 0, 4), "std_")) ||
