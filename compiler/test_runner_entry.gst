@@ -146,6 +146,7 @@ func main() {
 
     // Print all nested resolved types
     os.LogStr("👁️ === BOOTSTRAP RESOLVED TYPES ===");
+    mut entry_source_code := os.ReadFile(ctx, file_path);
     mut r_idx := 0;
     while r_idx < len(env.resolved_types_nested) {
         mut entry := env.resolved_types_nested[r_idx];
@@ -159,12 +160,27 @@ func main() {
             mut end_str := std.FormatInt(t_entry.end_offset);
             mut type_str := ast.serialize_type(t_entry.val_type, ctx);
             
+            mut expr_text := "";
+            if std.str_eq(entry.prefix, "") == 1 {
+                if t_entry.start_offset >= 0 && t_entry.end_offset <= len(entry_source_code) && t_entry.start_offset < t_entry.end_offset {
+                    expr_text = std.str_slice(entry_source_code, t_entry.start_offset, t_entry.end_offset);
+                }
+            }
+
             mut log_line := std.Concat("👁️   Span ", start_str);
             log_line = std.Concat(log_line, "..");
             log_line = std.Concat(log_line, end_str);
-            log_line = std.Concat(log_line, " -> ");
+            log_line = std.Concat(log_line, " ('");
+            log_line = std.Concat(log_line, expr_text);
+            log_line = std.Concat(log_line, "') -> ");
             log_line = std.Concat(log_line, type_str);
             os.LogStr(log_line);
+            
+            if std.str_find(expr_text, "env.errors") != 0 - 1 {
+                mut log_match := std.Concat("🎯 MATCH env.errors: '", expr_text);
+                log_match = std.Concat(log_match, "'");
+                os.LogStr(log_match);
+            }
             
             t_idx = t_idx + 1;
         }
