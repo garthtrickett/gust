@@ -150,9 +150,9 @@ func read_string(l: *Lexer[ctx]) str {
         if 0 == 1 {
             header_ptr = l as *StringHeader;
         }
-        (*header_ptr).data = buf + 0;
+        (*header_ptr).data = (buf + 0) as *byte;
         (*header_ptr).len = write_idx;
-        return *(header_ptr as *str);
+        return *(((header_ptr as *str) + 0) as *str);
     }
 }
 
