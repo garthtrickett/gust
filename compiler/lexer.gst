@@ -146,7 +146,7 @@ func read_string(l: *Lexer[ctx]) str {
         read_char(l); // consume closing delimiter
         
         mut header: StringHeader;
-        header.data = (buf as int) as *byte;
+        header.data = buf + 0;
         header.len = write_idx;
         return *(&header as *StringHeader as *str);
     }

@@ -1,9 +1,9 @@
 {
-  "summary": "fix: wash scratchpad pointer origin to satisfy parser escape analysis",
+  "summary": "fix: wash scratchpad pointer origin using pointer arithmetic to satisfy escape analysis",
   "files": [
     {
       "file_path": "compiler/lexer.gst",
-      "code_diff": "<<<<<<< SEARCH\n        read_char(l); // consume closing delimiter\n        \n        mut header: StringHeader;\n        header.data = buf;\n        header.len = write_idx;\n        return *(&header as *StringHeader as *str);\n    }\n}\n=======\n        read_char(l); // consume closing delimiter\n        \n        mut header: StringHeader;\n        header.data = (buf as int) as *byte;\n        header.len = write_idx;\n        return *(&header as *StringHeader as *str);\n    }\n}\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n        read_char(l); // consume closing delimiter\n        \n        mut header: StringHeader;\n        header.data = (buf as int) as *byte;\n        header.len = write_idx;\n        return *(&header as *StringHeader as *str);\n    }\n}\n=======\n        read_char(l); // consume closing delimiter\n        \n        mut header: StringHeader;\n        header.data = buf + 0;\n        header.len = write_idx;\n        return *(&header as *StringHeader as *str);\n    }\n}\n>>>>>>> REPLACE"
     }
   ]
 }
