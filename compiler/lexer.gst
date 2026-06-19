@@ -1,5 +1,10 @@
 import "token.gst" as token;
 
+type StringHeader struct {
+    data: *byte,
+    len: int
+}
+
 type Lexer[ctx] struct {
     input: str,
     position: int,
@@ -140,10 +145,10 @@ func read_string(l: *Lexer[ctx]) str {
         }
         read_char(l); // consume closing delimiter
         
-        mut res: str;
-        res.data = buf;
-        res.len = write_idx;
-        return res;
+        mut header: StringHeader;
+        header.data = buf;
+        header.len = write_idx;
+        return *(&header as *StringHeader as *str);
     }
 }
 
