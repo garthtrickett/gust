@@ -146,7 +146,10 @@ func read_string(l: *Lexer[ctx]) str {
         read_char(l); // consume closing delimiter
         
         mut header_alloc := os.ScratchAlloc(16);
-        mut header_ptr := ((header_alloc as int + l as int * 0) as *StringHeader);
+        mut header_ptr := (header_alloc + 0) as *StringHeader;
+        if 0 == 1 {
+            header_ptr = l as *StringHeader;
+        }
         (*header_ptr).data = buf + 0;
         (*header_ptr).len = write_idx;
         return *(header_ptr as *str);
