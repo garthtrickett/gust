@@ -421,23 +421,23 @@ func main() {
         entry_cast_alloc.end_offset = cast_alloc_span.end.offset;
         entry_cast_alloc.val_type = t_listnode_idx;
         
-        mut found_nested_idx := 0 - 1;
-        mut idx_nested := 0;
-        while idx_nested < len(env.resolved_types_nested) {
-            if std.str_eq(env.resolved_types_nested[idx_nested].prefix, "") == 1 {
-                found_nested_idx = idx_nested;
+        mut found_cast_idx := 0 - 1;
+        mut idx_cast := 0;
+        while idx_cast < len(env.resolved_types_nested) {
+            if std.str_eq(env.resolved_types_nested[idx_cast].prefix, "") == 1 {
+                found_cast_idx = idx_cast;
             }
-            idx_nested = idx_nested + 1;
+            idx_cast = idx_cast + 1;
         }
-        if found_nested_idx != 0 - 1 {
-            mut entry_ref := &env.resolved_types_nested[found_nested_idx];
-            (*entry_ref).types.Push(entry_cast_alloc);
+        if found_cast_idx != 0 - 1 {
+            mut entry_ref_cast := &env.resolved_types_nested[found_cast_idx];
+            (*entry_ref_cast).types.Push(entry_cast_alloc);
         } else {
-            mut pfx_entry: typechecker.PrefixMapEntry[ctx];
-            pfx_entry.prefix = "";
-            pfx_entry.types = std.VectorNew(ctx);
-            pfx_entry.types.Push(entry_cast_alloc);
-            env.resolved_types_nested.Push(pfx_entry);
+            mut pfx_entry_cast: typechecker.PrefixMapEntry[ctx];
+            pfx_entry_cast.prefix = "";
+            pfx_entry_cast.types = std.VectorNew(ctx);
+            pfx_entry_cast.types.Push(entry_cast_alloc);
+            env.resolved_types_nested.Push(pfx_entry_cast);
         }
         
         mut out_cast_alloc_c := codegen.codegen_generate_expression(expr_cast_alloc_test, &env, ctx);

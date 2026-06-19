@@ -1544,7 +1544,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut has_alloc_override := 0;
 
             if left_expr.tag == 12 { // Call
-                mut func_str := get_call_func_name(left_expr.Call.function, ctx);
+                mut func_str := typechecker.get_call_func_name(left_expr.Call.function, ctx);
                 mut resolved_func := typechecker.env_resolve_namespaced_ident(env, func_str, ctx);
                 if std.str_eq(resolved_func, "os_ArenaAlloc") == 1 || std.str_eq(resolved_func, "os.ArenaAlloc") == 1 ||
                    std.str_eq(resolved_func, "os_ScratchAlloc") == 1 || std.str_eq(resolved_func, "os.ScratchAlloc") == 1 {
