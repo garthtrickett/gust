@@ -2832,7 +2832,9 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
         if len(name) >= len(prefix) {
             if std.str_eq(std.str_slice(name, 0, len(prefix)), prefix) {
                 mut suffix := std.str_slice(name, len(prefix), len(name));
-                if std.str_find(suffix, "__") == 0 - 1 {
+                if std.str_find(suffix, "__") != 0 - 1 {
+                    return std.Clone(ctx, name);
+                }
                     unsafe {
                         mut parts := std.str_split(suffix, "_", ctx);
                         mut resolved_parts: std.Vector[str, ctx] := std.VectorNew(ctx);
@@ -2892,7 +2894,6 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
                         }
                         return std.Clone(ctx, res);
                     }
-                }
             }
         }
         p = p + 1;
