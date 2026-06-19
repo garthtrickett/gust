@@ -3,6 +3,13 @@
 /temp_gust_e2e_dir/
 /test_e2e_file_io_evaluation_output.txt
 
+# Build files
+/gust_v2.c
+/gust_v2_bin
+/type_dump_failed.c
+/gust_v3.c
+/gust_v3_bin
+
 # Transpiled C files
 /gust_output.c
 /gust_unsafe.c

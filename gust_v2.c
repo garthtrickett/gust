@@ -610,167 +610,167 @@ void os_ScratchReset() {
 // ====================================================
 // FORWARD DECLARATIONS
 // ====================================================
-typedef struct errors__CompilerError errors__CompilerError;
-typedef struct typechecker__StructLayout typechecker__StructLayout;
-typedef struct ast__Type_Int ast__Type_Int;
-typedef struct ast__Expression_Bool ast__Expression_Bool;
-typedef struct std_Vector_ast__FieldDef std_Vector_ast__FieldDef;
-typedef struct token__TokenType_Slash token__TokenType_Slash;
-typedef struct token__TokenType_Empty token__TokenType_Empty;
-typedef struct ast__Type_Str ast__Type_Str;
-typedef struct errors__Result_ast__Type_Ok errors__Result_ast__Type_Ok;
-typedef struct LookupResult_std_Vector_str LookupResult_std_Vector_str;
-typedef struct token__TokenType_Lt token__TokenType_Lt;
-typedef struct std_HashMap_str_typechecker__FunctionSignature std_HashMap_str_typechecker__FunctionSignature;
-typedef struct token__TokenType_If token__TokenType_If;
-typedef struct token__TokenType_Return token__TokenType_Return;
-typedef struct ast__Expression_Binary ast__Expression_Binary;
-typedef struct ast__Expression_Take ast__Expression_Take;
-typedef struct token__Span token__Span;
-typedef struct token__TokenType_Func token__TokenType_Func;
-typedef struct token__TokenType_Import token__TokenType_Import;
-typedef struct std_HashMap_str_Index_typechecker__OriginSet std_HashMap_str_Index_typechecker__OriginSet;
-typedef struct std_GraphNode_str std_GraphNode_str;
-typedef struct errors__ErrorKind_ParserError errors__ErrorKind_ParserError;
-typedef struct token__TokenType_RParen token__TokenType_RParen;
-typedef struct token__TokenType_Plus token__TokenType_Plus;
-typedef struct ast__Type_RawPointer ast__Type_RawPointer;
-typedef struct ast__Type_Struct ast__Type_Struct;
-typedef struct ast__Expression_Dereference ast__Expression_Dereference;
-typedef struct ast__Expression_Empty ast__Expression_Empty;
-typedef struct token__TokenType_Ident token__TokenType_Ident;
-typedef struct std_Pool_std_GraphNode_str std_Pool_std_GraphNode_str;
-typedef struct LookupResult_typechecker__EnumTemplate LookupResult_typechecker__EnumTemplate;
-typedef struct errors__ErrorKind_LexerError errors__ErrorKind_LexerError;
-typedef struct token__TokenType_Assign token__TokenType_Assign;
-typedef struct ast__Expression_Move ast__Expression_Move;
-typedef struct std_HashMap_str_typechecker__StructLayout std_HashMap_str_typechecker__StructLayout;
-typedef struct ast__Type_Bool ast__Type_Bool;
-typedef struct token__TokenType_Gt token__TokenType_Gt;
-typedef struct typechecker__PrefixMapEntry typechecker__PrefixMapEntry;
-typedef struct ast__Expression_Integer ast__Expression_Integer;
-typedef struct token__TokenType_LParen token__TokenType_LParen;
-typedef struct token__TokenType_Colon token__TokenType_Colon;
-typedef struct token__TokenType_Illegal token__TokenType_Illegal;
-typedef struct std_HashMap_str_str std_HashMap_str_str;
-typedef struct typechecker__OriginSet typechecker__OriginSet;
-typedef struct token__TokenType_Defer token__TokenType_Defer;
-typedef struct token__TokenType_RBrace token__TokenType_RBrace;
-typedef struct token__TokenType_Enum token__TokenType_Enum;
-typedef struct lexer__Lexer lexer__Lexer;
-typedef struct token__TokenType_Eof token__TokenType_Eof;
-typedef struct std_Vector_int std_Vector_int;
-typedef struct token__TokenType_Match token__TokenType_Match;
-typedef struct std_Vector_ast__Program std_Vector_ast__Program;
-typedef struct ast__BlockStatement ast__BlockStatement;
-typedef struct SessionNode SessionNode;
-typedef struct ast__Expression_AddressOf ast__Expression_AddressOf;
-typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
-typedef struct std_Graph_str std_Graph_str;
-typedef struct token__TokenType_Dot token__TokenType_Dot;
-typedef struct ast__Statement_Defer ast__Statement_Defer;
-typedef struct LookupResult_typechecker__FunctionSignature LookupResult_typechecker__FunctionSignature;
-typedef struct LookupResult_ast__Type LookupResult_ast__Type;
-typedef struct token__TokenType_Comma token__TokenType_Comma;
-typedef struct parser__Parser parser__Parser;
-typedef struct std_Vector_typechecker__ResolvedTypeEntry std_Vector_typechecker__ResolvedTypeEntry;
-typedef struct token__TokenType_As token__TokenType_As;
-typedef struct token__TokenType_Mut token__TokenType_Mut;
-typedef struct typechecker__ResolvedTypeEntry typechecker__ResolvedTypeEntry;
-typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
-typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
-typedef struct typechecker__StructTemplate typechecker__StructTemplate;
-typedef struct token__TokenType_LBracket token__TokenType_LBracket;
-typedef struct ast__Expression_Identifier ast__Expression_Identifier;
-typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
-typedef struct ast__VariantDef ast__VariantDef;
-typedef struct ast__Type_Arena ast__Type_Arena;
-typedef struct ast__Type_Index ast__Type_Index;
-typedef struct std_Vector_errors__CompilerError std_Vector_errors__CompilerError;
-typedef struct errors__ErrorKind_CodegenError errors__ErrorKind_CodegenError;
+typedef struct ast__Type_Void ast__Type_Void;
 typedef struct errors__ErrorKind_TypeError errors__ErrorKind_TypeError;
+typedef struct token__TokenType_Colon token__TokenType_Colon;
+typedef struct std_HashMap_str_std_Vector_str std_HashMap_str_std_Vector_str;
+typedef struct token__TokenType_Dot token__TokenType_Dot;
 typedef struct ast__Program ast__Program;
-typedef struct ast__Expression_Selector ast__Expression_Selector;
-typedef struct std_HashMap_str_ast__Type std_HashMap_str_ast__Type;
-typedef struct token__TokenType_String token__TokenType_String;
-typedef struct ast__Statement_While ast__Statement_While;
-typedef struct ast__Type_Byte ast__Type_Byte;
-typedef struct LookupResult_str LookupResult_str;
-typedef struct token__TokenType_False token__TokenType_False;
-typedef struct LookupResult_Index_typechecker__OriginSet LookupResult_Index_typechecker__OriginSet;
-typedef struct errors__Result_int errors__Result_int;
-typedef struct ast__Statement_Return ast__Statement_Return;
-typedef struct token__TokenType_True token__TokenType_True;
-typedef struct token__TokenType_Eq token__TokenType_Eq;
-typedef struct std_Vector_token__Token std_Vector_token__Token;
+typedef struct ast__Statement_Guard ast__Statement_Guard;
+typedef struct std_HashMap_str_Index_typechecker__OriginSet std_HashMap_str_Index_typechecker__OriginSet;
+typedef struct LookupResult_typechecker__FunctionSignature LookupResult_typechecker__FunctionSignature;
 typedef struct ast__Statement_Assignment ast__Statement_Assignment;
+typedef struct token__TokenType_Guard token__TokenType_Guard;
+typedef struct LookupResult_typechecker__StructLayout LookupResult_typechecker__StructLayout;
+typedef struct std_GraphNode_str std_GraphNode_str;
+typedef struct APIRequest APIRequest;
+typedef struct ast__Expression_Move ast__Expression_Move;
+typedef struct token__TokenType_If token__TokenType_If;
+typedef struct ast__Type_Arena ast__Type_Arena;
+typedef struct token__TokenType_Mut token__TokenType_Mut;
+typedef struct typechecker__StructLayout typechecker__StructLayout;
 typedef struct token__TokenType_Unsafe token__TokenType_Unsafe;
 typedef struct token__Token token__Token;
-typedef struct std_Vector_ast__Type std_Vector_ast__Type;
-typedef struct ast__Statement_Import ast__Statement_Import;
-typedef struct std_Vector_typechecker__PrefixMapEntry std_Vector_typechecker__PrefixMapEntry;
-typedef struct ast__FieldDef ast__FieldDef;
+typedef struct ast__Expression_Dereference ast__Expression_Dereference;
 typedef struct token__TokenType_Struct token__TokenType_Struct;
-typedef struct ast__Statement_Match ast__Statement_Match;
-typedef struct ast__Statement_Expression ast__Statement_Expression;
-typedef struct errors__Result_int_Err errors__Result_int_Err;
-typedef struct typechecker__EnumTemplate typechecker__EnumTemplate;
-typedef struct token__TokenType_Bool token__TokenType_Bool;
-typedef struct token__TokenType token__TokenType;
-typedef struct typechecker__FunctionSignature typechecker__FunctionSignature;
-typedef struct token__TokenType_Type token__TokenType_Type;
-typedef struct std_Vector_ast__Expression std_Vector_ast__Expression;
-typedef struct token__TokenType_FatArrow token__TokenType_FatArrow;
-typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
-typedef struct ast__Expression ast__Expression;
-typedef struct ast__Parameter ast__Parameter;
-typedef struct codegen__Codegen codegen__Codegen;
-typedef struct token__TokenType_Guard token__TokenType_Guard;
-typedef struct token__TokenType_NotEq token__TokenType_NotEq;
-typedef struct LookupResult_typechecker__StructLayout LookupResult_typechecker__StructLayout;
-typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
-typedef struct errors__Result_ast__Type_Err errors__Result_ast__Type_Err;
-typedef struct std_Vector_ast__Statement std_Vector_ast__Statement;
-typedef struct ast__Type ast__Type;
-typedef struct token__TokenType_Int token__TokenType_Int;
-typedef struct errors__ErrorKind errors__ErrorKind;
-typedef struct std_HashMap_str_int std_HashMap_str_int;
-typedef struct token__TokenType_Semicolon token__TokenType_Semicolon;
+typedef struct ast__BlockStatement ast__BlockStatement;
+typedef struct std_HashMap_str_str std_HashMap_str_str;
+typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
 typedef struct ast__Expression_String ast__Expression_String;
-typedef struct token__TokenType_Move token__TokenType_Move;
-typedef struct ast__Statement_Guard ast__Statement_Guard;
-typedef struct ast__Expression_AsCast ast__Expression_AsCast;
-typedef struct ast__Type_Slice ast__Type_Slice;
-typedef struct ast__Statement ast__Statement;
-typedef struct token__TokenType_Take token__TokenType_Take;
-typedef struct token__TokenType_Ampersand token__TokenType_Ampersand;
-typedef struct LookupResult_int LookupResult_int;
-typedef struct ast__Statement_If ast__Statement_If;
-typedef struct token__TokenType_EqEq token__TokenType_EqEq;
-typedef struct std_HashMap_str_typechecker__StructTemplate std_HashMap_str_typechecker__StructTemplate;
-typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
-typedef struct token__TokenType_Minus token__TokenType_Minus;
-typedef struct std_HashMap_str_std_Vector_str std_HashMap_str_std_Vector_str;
-typedef struct std_Vector_ast__MatchCase std_Vector_ast__MatchCase;
-typedef struct parser__ParseResult parser__ParseResult;
-typedef struct typechecker__Scope typechecker__Scope;
-typedef struct token__TokenType_While token__TokenType_While;
+typedef struct token__TokenType_Import token__TokenType_Import;
+typedef struct token__TokenType_As token__TokenType_As;
+typedef struct std_Vector_typechecker__ResolvedTypeEntry std_Vector_typechecker__ResolvedTypeEntry;
+typedef struct typechecker__PrefixMapEntry typechecker__PrefixMapEntry;
+typedef struct std_Pool_std_GraphNode_str std_Pool_std_GraphNode_str;
 typedef struct typechecker__TypeEnvironment typechecker__TypeEnvironment;
-typedef struct errors__Result_int_Ok errors__Result_int_Ok;
-typedef struct token__Position token__Position;
-typedef struct token__TokenType_RBracket token__TokenType_RBracket;
-typedef struct errors__Result_ast__Type errors__Result_ast__Type;
-typedef struct ast__Type_Void ast__Type_Void;
-typedef struct ast__Expression_Call ast__Expression_Call;
-typedef struct token__TokenType_Asterisk token__TokenType_Asterisk;
-typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
-typedef struct token__TokenType_LBrace token__TokenType_LBrace;
-typedef struct token__TokenType_Else token__TokenType_Else;
-typedef struct ast__MatchCase ast__MatchCase;
-typedef struct LookupResult_typechecker__StructTemplate LookupResult_typechecker__StructTemplate;
-typedef struct ast__Type_Generic ast__Type_Generic;
-typedef struct APIRequest APIRequest;
+typedef struct ast__Statement_Import ast__Statement_Import;
+typedef struct LookupResult_ast__Type LookupResult_ast__Type;
+typedef struct errors__Result_int_Err errors__Result_int_Err;
+typedef struct ast__Type_Struct ast__Type_Struct;
+typedef struct ast__Statement ast__Statement;
+typedef struct lexer__Lexer lexer__Lexer;
+typedef struct token__TokenType_FatArrow token__TokenType_FatArrow;
+typedef struct std_Vector_ast__FieldDef std_Vector_ast__FieldDef;
+typedef struct std_HashMap_str_typechecker__FunctionSignature std_HashMap_str_typechecker__FunctionSignature;
+typedef struct ast__Statement_While ast__Statement_While;
+typedef struct ast__Expression_Empty ast__Expression_Empty;
 typedef struct std_HashMap_str_typechecker__EnumTemplate std_HashMap_str_typechecker__EnumTemplate;
+typedef struct ast__Type_Int ast__Type_Int;
+typedef struct errors__Result_ast__Type_Err errors__Result_ast__Type_Err;
+typedef struct std_Vector_ast__Program std_Vector_ast__Program;
+typedef struct token__TokenType_Take token__TokenType_Take;
+typedef struct token__TokenType_Eq token__TokenType_Eq;
+typedef struct ast__Type_Str ast__Type_Str;
+typedef struct token__TokenType_Plus token__TokenType_Plus;
+typedef struct token__TokenType_EqEq token__TokenType_EqEq;
+typedef struct token__TokenType_Enum token__TokenType_Enum;
+typedef struct std_Vector_int std_Vector_int;
+typedef struct token__TokenType_Lt token__TokenType_Lt;
+typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
+typedef struct ast__Expression_Identifier ast__Expression_Identifier;
+typedef struct typechecker__FunctionSignature typechecker__FunctionSignature;
+typedef struct token__TokenType_LBrace token__TokenType_LBrace;
+typedef struct ast__VariantDef ast__VariantDef;
+typedef struct ast__Expression_Call ast__Expression_Call;
+typedef struct ast__FieldDef ast__FieldDef;
+typedef struct token__TokenType_String token__TokenType_String;
+typedef struct token__TokenType_Comma token__TokenType_Comma;
+typedef struct std_Graph_str std_Graph_str;
+typedef struct token__TokenType_RBrace token__TokenType_RBrace;
+typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
+typedef struct ast__Expression_AddressOf ast__Expression_AddressOf;
+typedef struct LookupResult_Index_typechecker__OriginSet LookupResult_Index_typechecker__OriginSet;
+typedef struct token__TokenType_Else token__TokenType_Else;
+typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
+typedef struct parser__Parser parser__Parser;
+typedef struct ast__Expression_Selector ast__Expression_Selector;
+typedef struct ast__Statement_Defer ast__Statement_Defer;
+typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
+typedef struct ast__Expression_Binary ast__Expression_Binary;
+typedef struct ast__Parameter ast__Parameter;
+typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
+typedef struct token__TokenType_Bool token__TokenType_Bool;
+typedef struct ast__Type ast__Type;
+typedef struct token__TokenType_Ampersand token__TokenType_Ampersand;
+typedef struct ast__Type_Byte ast__Type_Byte;
+typedef struct ast__Statement_Expression ast__Statement_Expression;
+typedef struct std_Vector_ast__MatchCase std_Vector_ast__MatchCase;
+typedef struct token__TokenType_Func token__TokenType_Func;
+typedef struct token__TokenType_Match token__TokenType_Match;
+typedef struct token__Span token__Span;
+typedef struct token__TokenType_Defer token__TokenType_Defer;
+typedef struct std_HashMap_str_ast__Type std_HashMap_str_ast__Type;
+typedef struct codegen__Codegen codegen__Codegen;
+typedef struct LookupResult_int LookupResult_int;
+typedef struct token__TokenType_Return token__TokenType_Return;
+typedef struct token__TokenType_NotEq token__TokenType_NotEq;
+typedef struct std_Vector_ast__Expression std_Vector_ast__Expression;
+typedef struct token__TokenType_False token__TokenType_False;
+typedef struct token__TokenType_LBracket token__TokenType_LBracket;
+typedef struct typechecker__Scope typechecker__Scope;
+typedef struct std_Vector_ast__Statement std_Vector_ast__Statement;
+typedef struct token__TokenType_Asterisk token__TokenType_Asterisk;
+typedef struct ast__Type_Slice ast__Type_Slice;
+typedef struct token__TokenType_LParen token__TokenType_LParen;
+typedef struct errors__ErrorKind_LexerError errors__ErrorKind_LexerError;
+typedef struct typechecker__ResolvedTypeEntry typechecker__ResolvedTypeEntry;
+typedef struct token__TokenType_Semicolon token__TokenType_Semicolon;
+typedef struct SessionNode SessionNode;
+typedef struct errors__ErrorKind errors__ErrorKind;
+typedef struct ast__Expression_Take ast__Expression_Take;
+typedef struct token__TokenType_Slash token__TokenType_Slash;
+typedef struct errors__Result_ast__Type_Ok errors__Result_ast__Type_Ok;
+typedef struct token__TokenType_Move token__TokenType_Move;
+typedef struct errors__Result_int errors__Result_int;
+typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
+typedef struct ast__Type_Bool ast__Type_Bool;
+typedef struct token__TokenType_Empty token__TokenType_Empty;
+typedef struct ast__Expression ast__Expression;
+typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
+typedef struct token__TokenType_Ident token__TokenType_Ident;
+typedef struct LookupResult_str LookupResult_str;
+typedef struct std_Vector_token__Token std_Vector_token__Token;
+typedef struct ast__MatchCase ast__MatchCase;
+typedef struct errors__CompilerError errors__CompilerError;
+typedef struct typechecker__StructTemplate typechecker__StructTemplate;
+typedef struct token__TokenType_RParen token__TokenType_RParen;
+typedef struct ast__Statement_Return ast__Statement_Return;
+typedef struct token__TokenType_Eof token__TokenType_Eof;
+typedef struct errors__ErrorKind_CodegenError errors__ErrorKind_CodegenError;
+typedef struct ast__Expression_Bool ast__Expression_Bool;
+typedef struct token__TokenType_Assign token__TokenType_Assign;
+typedef struct ast__Statement_Match ast__Statement_Match;
+typedef struct token__TokenType_True token__TokenType_True;
+typedef struct token__TokenType_Illegal token__TokenType_Illegal;
+typedef struct token__Position token__Position;
+typedef struct parser__ParseResult parser__ParseResult;
+typedef struct LookupResult_typechecker__EnumTemplate LookupResult_typechecker__EnumTemplate;
+typedef struct token__TokenType token__TokenType;
+typedef struct typechecker__EnumTemplate typechecker__EnumTemplate;
+typedef struct std_HashMap_str_typechecker__StructLayout std_HashMap_str_typechecker__StructLayout;
+typedef struct std_Vector_ast__Type std_Vector_ast__Type;
+typedef struct errors__ErrorKind_ParserError errors__ErrorKind_ParserError;
+typedef struct LookupResult_std_Vector_str LookupResult_std_Vector_str;
+typedef struct ast__Type_RawPointer ast__Type_RawPointer;
+typedef struct token__TokenType_While token__TokenType_While;
+typedef struct std_HashMap_str_typechecker__StructTemplate std_HashMap_str_typechecker__StructTemplate;
+typedef struct LookupResult_typechecker__StructTemplate LookupResult_typechecker__StructTemplate;
+typedef struct token__TokenType_RBracket token__TokenType_RBracket;
+typedef struct std_Vector_errors__CompilerError std_Vector_errors__CompilerError;
+typedef struct errors__Result_ast__Type errors__Result_ast__Type;
+typedef struct ast__Type_Index ast__Type_Index;
+typedef struct std_HashMap_str_int std_HashMap_str_int;
+typedef struct token__TokenType_Type token__TokenType_Type;
+typedef struct typechecker__OriginSet typechecker__OriginSet;
+typedef struct ast__Expression_AsCast ast__Expression_AsCast;
+typedef struct token__TokenType_Int token__TokenType_Int;
+typedef struct token__TokenType_Minus token__TokenType_Minus;
+typedef struct errors__Result_int_Ok errors__Result_int_Ok;
+typedef struct ast__Statement_If ast__Statement_If;
+typedef struct std_Vector_typechecker__PrefixMapEntry std_Vector_typechecker__PrefixMapEntry;
+typedef struct token__TokenType_Gt token__TokenType_Gt;
+typedef struct ast__Type_Generic ast__Type_Generic;
+typedef struct ast__Expression_Integer ast__Expression_Integer;
 
 // ====================================================
 // DYNAMICALLY GENERATED SLICE STRUCTURE FORWARD DECLARATIONS
@@ -1907,238 +1907,238 @@ Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char fi
 // ====================================================
 // FUNCTION FORWARD DECLARATIONS
 // ====================================================
-Slice_unsigned_char codegen__codegen_find_original_struct_name(Slice_unsigned_char erased_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int typechecker__set_contains(int set, Slice_unsigned_char element, os_Arena* ctx);
-Slice_unsigned_char typechecker__env_resolve_namespaced_ident(typechecker__TypeEnvironment* env, Slice_unsigned_char name, os_Arena* ctx);
-int parser__parse_defer_statement(parser__Parser* p, os_Arena* ctx);
-token__Position lexer__current_position(lexer__Lexer* l);
-void* lexer__current_position_pthread_wrapper(void* arg);
-Slice_unsigned_char codegen__codegen_get_erased_struct_name(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
-void lexer__init_lexer(lexer__Lexer* l, Slice_unsigned_char input);
-int parser__is_at_end(parser__Parser* p);
-void* parser__is_at_end_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int indent, os_Arena* ctx);
-int parser__parse_expression(parser__Parser* p, int precedence, os_Arena* ctx);
-LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
-int typechecker__scope_new(int parent, os_Arena* ctx);
-int typechecker__typechecker_ends_with(Slice_unsigned_char s, Slice_unsigned_char suffix);
-ast__Type typechecker__typechecker_substitute_field_brand(ast__Type t, int struct_brand, Slice_unsigned_char parent_path, typechecker__StructLayout layout, os_Arena* ctx);
-std_Vector_str codegen__codegen_get_topologically_sorted_structs(typechecker__TypeEnvironment* env, os_Arena* ctx);
-std_Vector_str resolver__discover_source_files(Slice_unsigned_char dir_path, os_Arena* ctx);
-Slice_unsigned_char resolver__get_dirname(Slice_unsigned_char path, os_Arena* ctx);
-Slice_unsigned_char typechecker__get_type_brand(ast__Type t, os_Arena* ctx);
-ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
-int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
-os_Arena os_Arena_New(void);
-Slice_unsigned_char typechecker__typechecker_clean_monomorphized_name(Slice_unsigned_char name, os_Arena* ctx);
-void os_SetThreadScratch(os_Arena* arg0);
-void* os_SetThreadScratch_pthread_wrapper(void* arg);
-Slice_unsigned_char codegen__codegen_get_c_type_ident(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_serialize_structures(typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
-void* std_Format_pthread_wrapper(void* arg);
-int typechecker__typechecker_str_compare(Slice_unsigned_char s1, Slice_unsigned_char s2);
-Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_char sep, os_Arena* ctx);
-unsigned char lexer__is_letter(unsigned char b);
-void* lexer__is_letter_pthread_wrapper(void* arg);
-void typechecker__typechecker_sort_vector_str(std_Vector_str* vec, os_Arena* ctx);
-std_Vector_str resolver__resolve_topological_sort(Slice_unsigned_char entry_path, std_Graph_str* graph, std_HashMap_str_int* path_to_node, os_Arena* ctx);
-token__TokenType lexer__lookup_ident(Slice_unsigned_char literal);
-void* lexer__lookup_ident_pthread_wrapper(void* arg);
-Slice_unsigned_char codegen__codegen_gen_struct_initializer(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void parser__error_at_current(parser__Parser* p, Slice_unsigned_char message);
-parser__ParseResult parser__expect_peek(parser__Parser* p, int tag, os_Arena* ctx);
-void typechecker__typechecker_extract_ok_checked_variables(int expr_idx, std_HashMap_str_int* checked_map, os_Arena* ctx);
-int lexer__Lexer_Any_IsValid(lexer__Lexer* req);
-void* lexer__Lexer_Any_IsValid_pthread_wrapper(void* arg);
-int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
-unsigned char lexer__is_digit(unsigned char b);
-void* lexer__is_digit_pthread_wrapper(void* arg);
-int codegen__codegen_is_brand_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void lexer__read_char(lexer__Lexer* l);
-void* lexer__read_char_pthread_wrapper(void* arg);
-Slice_unsigned_char codegen__codegen_generate_expression(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void typechecker__scope_insert(int scope, Slice_unsigned_char name, ast__Type t, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, std_Vector_str prefixes, typechecker__TypeEnvironment* env, os_Arena* ctx);
-ast__Type typechecker__make_type_struct(Slice_unsigned_char name, Slice_unsigned_char brand_name, os_Arena* ctx);
-int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
-std_HashMap_str_Index_typechecker__OriginSet typechecker__typechecker_clone_origins(std_HashMap_str_Index_typechecker__OriginSet src, os_Arena* ctx);
-ast__Type typechecker__make_type_bool(void);
-Slice_unsigned_char codegen__codegen_gen_is_valid_helper(Slice_unsigned_char struct_name, typechecker__StructLayout layout, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int codegen__codegen_has_boolean_fields(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Arena* ctx);
-token__Span parser__get_expression_span(int expr, os_Arena* ctx);
-int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
-ast__Type typechecker__parse_one_type_from_parts(typechecker__TypeEnvironment* env, std_Vector_str parts, int* start_idx, os_Arena* ctx);
-int os_Dir_ctx_IsValid(os_Dir* req);
-void* os_Dir_ctx_IsValid_pthread_wrapper(void* arg);
-int parser__parse_type_signature(parser__Parser* p, os_Arena* ctx);
-ast__Type typechecker__make_type_generic(Slice_unsigned_char name, std_Vector_ast__Type args, os_Arena* ctx);
-void typechecker__env_register_function(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__FunctionSignature sig, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_get_c_type_name_by_struct_name(Slice_unsigned_char name, os_Arena* ctx);
-int codegen__codegen_is_vector_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void os_SetThreadScratch(os_Arena* arg0);
-void* os_SetThreadScratch_pthread_wrapper(void* arg);
-Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
-void lexer__next_token(lexer__Lexer* l, token__Token* tok);
-std_Vector_ast__Type typechecker__parse_types_from_suffix(typechecker__TypeEnvironment* env, Slice_unsigned_char suffix, os_Arena* ctx);
-ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx);
-int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx);
-void codegen__init_codegen(codegen__Codegen* c, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void os_CloseDir(os_Dir arg0);
-void* os_CloseDir_pthread_wrapper(void* arg);
-ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, ast__Type t, std_HashMap_str_ast__Type map, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx);
-Slice_unsigned_char typechecker__get_root_variable(int expr_idx, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_serialize_enums(typechecker__TypeEnvironment* env, os_Arena* ctx);
-token__Span typechecker__get_expression_span(int expr_idx, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_serialize_variables(typechecker__TypeEnvironment* env, os_Arena* ctx);
-int LookupResult_os_Dir_ctx_IsValid(LookupResult_os_Dir* req);
-void* LookupResult_os_Dir_ctx_IsValid_pthread_wrapper(void* arg);
-int typechecker__typechecker_starts_with(Slice_unsigned_char s, Slice_unsigned_char prefix);
-ast__Type typechecker__scope_lookup(int scope, Slice_unsigned_char name, os_Arena* ctx);
-ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx);
-int typechecker__typechecker_rfind_char(Slice_unsigned_char s, int ch, int end_idx);
-void codegen__codegen_log_trace(Slice_unsigned_char emoji, Slice_unsigned_char message, os_Arena* ctx);
-Slice_unsigned_char typechecker__expression_to_string(int expr_idx, os_Arena* ctx);
-void parser__init_parser(parser__Parser* p, lexer__Lexer* l, os_Arena* ctx);
-int typechecker__is_pointer_write(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
-Slice_unsigned_char lexer__read_string(lexer__Lexer* l);
-void* lexer__read_string_pthread_wrapper(void* arg);
-int codegen__codegen_is_arena_val(Slice_unsigned_char var_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void typechecker__set_union(int dest, int src, os_Arena* ctx);
-int codegen__codegen_is_rc_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int codegen__codegen_topological_visit(Slice_unsigned_char name, std_HashMap_str_int* visited, std_HashMap_str_int* temp_visited, std_Vector_str* ordered, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void typechecker__set_add(int set, Slice_unsigned_char element, os_Arena* ctx);
-void resolver__dfs(int node_idx, std_Graph_str* graph, std_HashMap_str_int* visiting, std_HashMap_str_int* visited, std_Vector_str* order, os_Arena* ctx);
-void resolver__resolve_imports_recursive(Slice_unsigned_char entry_path, std_Graph_str* graph, std_HashMap_str_int* path_to_node, os_Arena* ctx);
-unsigned char lexer__peek_char(lexer__Lexer* l);
-void* lexer__peek_char_pthread_wrapper(void* arg);
-int codegen__codegen_is_ptr_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx);
-int codegen__codegen_hashmap_is_str_key(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void typechecker__register_fn(typechecker__TypeEnvironment* env, Slice_unsigned_char name, std_Vector_ast__Type params, ast__Type ret_t, os_Arena* ctx);
-void codegen__codegen_get_by_value_dependencies_recursive(ast__Type t, std_HashMap_str_int* deps, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
-void* lexer__Lexer_ctx_IsValid_pthread_wrapper(void* arg);
-Slice_unsigned_char typechecker__typechecker_extract_brand_from_suffix(Slice_unsigned_char suffix, os_Arena* ctx);
-Slice_unsigned_char typechecker__get_call_func_name(int func_expr_idx, os_Arena* ctx);
-ast__Type typechecker__typechecker_get_template_elem_type(Slice_unsigned_char struct_name, Slice_unsigned_char field_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int codegen__codegen_is_slice_type(ast__Type t);
-void* codegen__codegen_is_slice_type_pthread_wrapper(void* arg);
-errors__Result_ast__Type typechecker__monomorphize(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx);
-int parser__Parser_ctx_IsValid(parser__Parser* req);
-void* parser__Parser_ctx_IsValid_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_variant_def(ast__VariantDef v, int indent, os_Arena* ctx);
-int parser__peek_token_precedence(parser__Parser* p);
-void* parser__peek_token_precedence_pthread_wrapper(void* arg);
-Slice_unsigned_char typechecker__typechecker_serialize_type_environment(typechecker__TypeEnvironment* env, os_Arena* ctx);
-int codegen__codegen_is_pool_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void typechecker__typechecker_log_trace(Slice_unsigned_char emoji, Slice_unsigned_char message, os_Arena* ctx);
-void typechecker__env_register_std_templates(typechecker__TypeEnvironment* env, os_Arena* ctx);
-void std_Yield(void);
-std_Vector_str typechecker__typechecker_get_sorted_keys_func(std_HashMap_str_typechecker__FunctionSignature* map, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_strip_brand_prefix(Slice_unsigned_char brand, os_Arena* ctx);
-Slice_unsigned_char typechecker__get_type_ident(ast__Type t, os_Arena* ctx);
-std_Vector_str typechecker__typechecker_get_sorted_keys_layout(std_HashMap_str_typechecker__StructLayout* map, os_Arena* ctx);
-token__Span parser__merge_spans(token__Span start, token__Span end);
-ast__Type typechecker__make_type_pointer(ast__Type inner, os_Arena* ctx);
-int typechecker__env_type_is_ephemeral_view(ast__Type t, os_Arena* ctx);
-int parser__cur_token_precedence(parser__Parser* p);
-void* parser__cur_token_precedence_pthread_wrapper(void* arg);
-ast__Type typechecker__make_type_int(void);
-int codegen__codegen_ends_with(Slice_unsigned_char s, Slice_unsigned_char suffix);
-int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx);
-std_Vector_str typechecker__typechecker_get_sorted_keys_enum(std_HashMap_str_std_Vector_str* map, os_Arena* ctx);
-ast__Type typechecker__make_type_arena(void);
-void lexer__skip_whitespace(lexer__Lexer* l);
-void* lexer__skip_whitespace_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os_Arena* ctx);
-void typechecker__report_error(int kind_tag, Slice_unsigned_char message, token__Span span, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
-void* std_Format_pthread_wrapper(void* arg);
-ast__FieldDef typechecker__make_field(Slice_unsigned_char name, ast__Type t, os_Arena* ctx);
-unsigned char parser__peek_token_is(parser__Parser* p, int tag);
-void typechecker__env_register_std_functions(typechecker__TypeEnvironment* env, os_Arena* ctx);
-ast__Type typechecker__make_type_index(Slice_unsigned_char struct_name, Slice_unsigned_char brand_name, os_Arena* ctx);
-LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
-int codegen__codegen_rfind_char(Slice_unsigned_char s, int ch, int end_idx);
-std_HashMap_str_int typechecker__typechecker_clone_int_map(std_HashMap_str_int src, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_generate_block_statement(int block_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int indent, os_Arena* ctx);
-os_Arena os_Arena_New(void);
-errors__Result_int typechecker__check_statement(int stmt_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
-int parser__parse_unsafe_block(parser__Parser* p, os_Arena* ctx);
-typechecker__TypeEnvironment typechecker__env_new(os_Arena* ctx);
-void* typechecker__env_new_pthread_wrapper(void* arg);
-int codegen__codegen_is_arena_ptr(Slice_unsigned_char var_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void os_CloseDir(os_Dir arg0);
-void* os_CloseDir_pthread_wrapper(void* arg);
-int codegen__codegen_is_hashmap_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
-void parser__synchronize(parser__Parser* p);
-void* parser__synchronize_pthread_wrapper(void* arg);
-ast__Type codegen__codegen_erase_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-std_Vector_str resolver__scan_imports(Slice_unsigned_char source, os_Arena* ctx);
-ast__Type typechecker__check_expression(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
-Slice_unsigned_char lexer__read_number(lexer__Lexer* l);
-void* lexer__read_number_pthread_wrapper(void* arg);
-int codegen__codegen_is_graph_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-ast__Type typechecker__make_type_byte(void);
-Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int indent, os_Arena* ctx);
-int parser__parse_function_decl(parser__Parser* p, os_Arena* ctx);
-void typechecker__env_register_std_structs(typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_generate_statement(int stmt_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char typechecker__strip_brand_prefix(Slice_unsigned_char brand, os_Arena* ctx);
-ast__Type typechecker__typechecker_parse_type_from_string(Slice_unsigned_char target_struct, os_Arena* ctx);
-unsigned char parser__cur_token_is(parser__Parser* p, int tag);
-std_Vector_str typechecker__typechecker_get_sorted_keys_type(std_HashMap_str_ast__Type* map, os_Arena* ctx);
-int codegen__codegen_has_boolean_fields_recursive(ast__Type t, typechecker__TypeEnvironment* env, std_HashMap_str_int* visited, os_Arena* ctx);
-int parser__parse_statement(parser__Parser* p, os_Arena* ctx);
-ast__Type codegen__codegen_get_expression_type(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
-int typechecker__get_expression_origins(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int typechecker__is_diverging_block(int block_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_serialize_functions(typechecker__TypeEnvironment* env, os_Arena* ctx);
 int codegen__codegen_should_skip_fwd_decl(Slice_unsigned_char name);
 void* codegen__codegen_should_skip_fwd_decl_pthread_wrapper(void* arg);
-int typechecker__typechecker_clone_origin_set(int src, os_Arena* ctx);
+Slice_unsigned_char typechecker__strip_brand_prefix(Slice_unsigned_char brand, os_Arena* ctx);
+void typechecker__env_register_function(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__FunctionSignature sig, os_Arena* ctx);
+Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_serialize_type_environment(typechecker__TypeEnvironment* env, os_Arena* ctx);
 int typechecker__is_diverging_statement(int stmt_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void parser__next_token(parser__Parser* p);
-void* parser__next_token_pthread_wrapper(void* arg);
+std_Vector_str typechecker__typechecker_get_sorted_keys_func(std_HashMap_str_typechecker__FunctionSignature* map, os_Arena* ctx);
+int codegen__codegen_is_ptr_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+ast__Type typechecker__make_type_int(void);
+void typechecker__set_union(int dest, int src, os_Arena* ctx);
+int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
+int codegen__codegen_rfind_char(Slice_unsigned_char s, int ch, int end_idx);
+Slice_unsigned_char codegen__codegen_generate_statement(int stmt_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_clean_monomorphized_name(Slice_unsigned_char name, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena* ctx);
+int typechecker__typechecker_starts_with(Slice_unsigned_char s, Slice_unsigned_char prefix);
+LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
+int codegen__codegen_is_vector_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_char sep, os_Arena* ctx);
+void typechecker__report_error(int kind_tag, Slice_unsigned_char message, token__Span span, typechecker__TypeEnvironment* env, os_Arena* ctx);
+std_Vector_str typechecker__typechecker_get_sorted_keys_type(std_HashMap_str_ast__Type* map, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_gen_type_aware_initializer(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_strip_brand_prefix(Slice_unsigned_char brand, os_Arena* ctx);
+int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
+int parser__parse_unsafe_block(parser__Parser* p, os_Arena* ctx);
+LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
+int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
+void codegen__init_codegen(codegen__Codegen* c, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx);
+ast__Type codegen__codegen_get_expression_type(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, ast__Type t, std_HashMap_str_ast__Type map, os_Arena* ctx);
+ast__Type typechecker__make_type_arena(void);
+Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int indent, os_Arena* ctx);
+int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
+void os_SetThreadScratch(os_Arena* arg0);
+void* os_SetThreadScratch_pthread_wrapper(void* arg);
+token__Position lexer__current_position(lexer__Lexer* l);
+void* lexer__current_position_pthread_wrapper(void* arg);
+int codegen__codegen_is_brand_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void resolver__dfs(int node_idx, std_Graph_str* graph, std_HashMap_str_int* visiting, std_HashMap_str_int* visited, std_Vector_str* order, os_Arena* ctx);
+int parser__is_at_end(parser__Parser* p);
+void* parser__is_at_end_pthread_wrapper(void* arg);
+void resolver__resolve_imports_recursive(Slice_unsigned_char entry_path, std_Graph_str* graph, std_HashMap_str_int* path_to_node, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_generate_expression(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char resolver__get_dirname(Slice_unsigned_char path, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_gen_struct_initializer(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+token__Span codegen__codegen_get_expression_span(int expr_idx, os_Arena* ctx);
+int parser__Parser_ctx_IsValid(parser__Parser* req);
+void* parser__Parser_ctx_IsValid_pthread_wrapper(void* arg);
+Slice_unsigned_char lexer__read_number(lexer__Lexer* l);
+void* lexer__read_number_pthread_wrapper(void* arg);
+Slice_unsigned_char typechecker__typechecker_serialize_enums(typechecker__TypeEnvironment* env, os_Arena* ctx);
+void typechecker__typechecker_sort_vector_str(std_Vector_str* vec, os_Arena* ctx);
+os_Arena os_Arena_New(void);
+int typechecker__scope_contains(int scope, Slice_unsigned_char name, os_Arena* ctx);
+int codegen__codegen_has_boolean_fields(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+ast__Type typechecker__typechecker_get_template_elem_type(Slice_unsigned_char struct_name, Slice_unsigned_char field_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_serialize_structures(typechecker__TypeEnvironment* env, os_Arena* ctx);
+int LookupResult_os_Dir_ctx_IsValid(LookupResult_os_Dir* req);
+void* LookupResult_os_Dir_ctx_IsValid_pthread_wrapper(void* arg);
+ast__Type typechecker__typechecker_parse_type_from_string(Slice_unsigned_char target_struct, os_Arena* ctx);
+void lexer__next_token(lexer__Lexer* l, token__Token* tok);
+ast__Type typechecker__make_type_bool(void);
+ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx);
+int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
+void* lexer__Lexer_ctx_IsValid_pthread_wrapper(void* arg);
+void os_CloseDir(os_Dir arg0);
+void* os_CloseDir_pthread_wrapper(void* arg);
+Slice_unsigned_char codegen__codegen_get_erased_struct_name(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
 void std_Yield(void);
-Slice_unsigned_char codegen__codegen_erase_struct_name(Slice_unsigned_char name, int brand, typechecker__TypeEnvironment* env, os_Arena* ctx);
+std_Vector_str typechecker__typechecker_get_sorted_keys_enum(std_HashMap_str_std_Vector_str* map, os_Arena* ctx);
+std_Vector_str codegen__codegen_get_topologically_sorted_structs(typechecker__TypeEnvironment* env, os_Arena* ctx);
+int parser__parse_statement(parser__Parser* p, os_Arena* ctx);
+token__Span parser__merge_spans(token__Span start, token__Span end);
+int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
+ast__Type typechecker__parse_one_type_from_parts(typechecker__TypeEnvironment* env, std_Vector_str parts, int* start_idx, os_Arena* ctx);
+unsigned char lexer__peek_char(lexer__Lexer* l);
+void* lexer__peek_char_pthread_wrapper(void* arg);
+ast__Type typechecker__check_expression(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+int parser__parse_function_decl(parser__Parser* p, os_Arena* ctx);
+ast__Type typechecker__scope_lookup(int scope, Slice_unsigned_char name, os_Arena* ctx);
+errors__Result_int typechecker__check_statement(int stmt_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+void parser__error_at_current(parser__Parser* p, Slice_unsigned_char message);
+Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, std_Vector_str prefixes, typechecker__TypeEnvironment* env, os_Arena* ctx);
+std_Vector_str typechecker__typechecker_get_sorted_keys_layout(std_HashMap_str_typechecker__StructLayout* map, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_variant_def(ast__VariantDef v, int indent, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_gen_is_valid_helper(Slice_unsigned_char struct_name, typechecker__StructLayout layout, typechecker__TypeEnvironment* env, os_Arena* ctx);
+ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+Slice_unsigned_char lexer__read_string(lexer__Lexer* l);
+void* lexer__read_string_pthread_wrapper(void* arg);
+Slice_unsigned_char codegen__codegen_generate_block_statement(int block_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_gen_function_fwd_decl(Slice_unsigned_char name, typechecker__FunctionSignature sig, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_serialize_variables(typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
+void typechecker__env_register_std_structs(typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
+void* std_Format_pthread_wrapper(void* arg);
+os_Arena os_Arena_New(void);
 Slice_unsigned_char lexer__read_identifier(lexer__Lexer* l);
 void* lexer__read_identifier_pthread_wrapper(void* arg);
-LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
+ast__Type typechecker__typechecker_substitute_field_brand(ast__Type t, int struct_brand, Slice_unsigned_char parent_path, typechecker__StructLayout layout, os_Arena* ctx);
+std_HashMap_str_int typechecker__typechecker_clone_int_map(std_HashMap_str_int src, os_Arena* ctx);
+typechecker__TypeEnvironment typechecker__env_new(os_Arena* ctx);
+void* typechecker__env_new_pthread_wrapper(void* arg);
+void parser__init_parser(parser__Parser* p, lexer__Lexer* l, os_Arena* ctx);
+void lexer__init_lexer(lexer__Lexer* l, Slice_unsigned_char input);
+errors__Result_ast__Type typechecker__monomorphize(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx);
+ast__Type typechecker__make_type_byte(void);
+std_HashMap_str_Index_typechecker__OriginSet typechecker__typechecker_clone_origins(std_HashMap_str_Index_typechecker__OriginSet src, os_Arena* ctx);
+ast__Type typechecker__make_type_str(void);
+ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx);
+ast__Type typechecker__typechecker_substitute_brand(ast__Type t, int new_brand, os_Arena* ctx);
+void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, ast__Statement stmt, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_erase_struct_name(Slice_unsigned_char name, int brand, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int indent, os_Arena* ctx);
+int codegen__codegen_hashmap_is_str_key(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_get_c_type_ident(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int lexer__Lexer_Any_IsValid(lexer__Lexer* req);
+void* lexer__Lexer_Any_IsValid_pthread_wrapper(void* arg);
+Slice_unsigned_char codegen__codegen_get_c_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void typechecker__env_register_std_templates(typechecker__TypeEnvironment* env, os_Arena* ctx);
+void typechecker__typechecker_extract_ok_checked_variables(int expr_idx, std_HashMap_str_int* checked_map, os_Arena* ctx);
+Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
+int typechecker__typechecker_rfind_char(Slice_unsigned_char s, int ch, int end_idx);
+int typechecker__types_match(ast__Type expected, ast__Type actual, os_Arena* ctx);
+os_Arena os_Arena_New(void);
+int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
+void lexer__read_char(lexer__Lexer* l);
+void* lexer__read_char_pthread_wrapper(void* arg);
+unsigned char lexer__is_letter(unsigned char b);
+void* lexer__is_letter_pthread_wrapper(void* arg);
+token__Span parser__get_expression_span(int expr, os_Arena* ctx);
+void typechecker__env_register_struct(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__StructLayout layout, os_Arena* ctx);
+int codegen__codegen_is_arena_val(Slice_unsigned_char var_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int indent, os_Arena* ctx);
+token__TokenType lexer__lookup_ident(Slice_unsigned_char literal);
+void* lexer__lookup_ident_pthread_wrapper(void* arg);
+int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx);
+int codegen__codegen_is_slice_type(ast__Type t);
+void* codegen__codegen_is_slice_type_pthread_wrapper(void* arg);
+void typechecker__typechecker_log_trace(Slice_unsigned_char emoji, Slice_unsigned_char message, os_Arena* ctx);
 int typechecker__set_init(os_Arena* ctx);
 void* typechecker__set_init_pthread_wrapper(void* arg);
-void typechecker__env_register_struct(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__StructLayout layout, os_Arena* ctx);
-int typechecker__scope_contains(int scope, Slice_unsigned_char name, os_Arena* ctx);
-ast__Type typechecker__typechecker_substitute_brand(ast__Type t, int new_brand, os_Arena* ctx);
-Slice_unsigned_char typechecker__get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_get_file_stem(Slice_unsigned_char path, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_serialize_functions(typechecker__TypeEnvironment* env, os_Arena* ctx);
-int typechecker__types_match(ast__Type expected, ast__Type actual, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_gen_type_aware_initializer(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_get_c_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_strip_module_prefix(Slice_unsigned_char name, os_Arena* ctx);
-LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
-ast__Type typechecker__make_type_str(void);
-Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_gen_function_fwd_decl(Slice_unsigned_char name, typechecker__FunctionSignature sig, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void typechecker__register_fn(typechecker__TypeEnvironment* env, Slice_unsigned_char name, std_Vector_ast__Type params, ast__Type ret_t, os_Arena* ctx);
 int codegen__codegen_is_generational_arena_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
-errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx);
-void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, ast__Statement stmt, os_Arena* ctx);
-os_Arena os_Arena_New(void);
-Slice_unsigned_char codegen__codegen_escape_string(Slice_unsigned_char val, os_Arena* ctx);
+void parser__synchronize(parser__Parser* p);
+void* parser__synchronize_pthread_wrapper(void* arg);
+Slice_unsigned_char typechecker__get_call_func_name(int func_expr_idx, os_Arena* ctx);
+int typechecker__is_diverging_block(int block_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os_Arena* ctx);
+parser__ParseResult parser__expect_peek(parser__Parser* p, int tag, os_Arena* ctx);
+Slice_unsigned_char typechecker__get_root_variable(int expr_idx, os_Arena* ctx);
+int codegen__codegen_topological_visit(Slice_unsigned_char name, std_HashMap_str_int* visited, std_HashMap_str_int* temp_visited, std_Vector_str* ordered, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_get_file_stem(Slice_unsigned_char path, os_Arena* ctx);
+ast__Type typechecker__make_type_pointer(ast__Type inner, os_Arena* ctx);
+int codegen__codegen_has_boolean_fields_recursive(ast__Type t, typechecker__TypeEnvironment* env, std_HashMap_str_int* visited, os_Arena* ctx);
+LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
+void os_CloseDir(os_Dir arg0);
+void* os_CloseDir_pthread_wrapper(void* arg);
+int codegen__codegen_is_graph_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+ast__Type codegen__codegen_erase_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+token__Span typechecker__get_expression_span(int expr_idx, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Arena* ctx);
 std_Vector_str typechecker__typechecker_get_sorted_keys_int(std_HashMap_str_int* map, os_Arena* ctx);
-token__Span codegen__codegen_get_expression_span(int expr_idx, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena* ctx);
+void lexer__skip_whitespace(lexer__Lexer* l);
+void* lexer__skip_whitespace_pthread_wrapper(void* arg);
+Slice_unsigned_char typechecker__typechecker_strip_module_prefix(Slice_unsigned_char name, os_Arena* ctx);
+int typechecker__set_contains(int set, Slice_unsigned_char element, os_Arena* ctx);
+Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
+void* std_Format_pthread_wrapper(void* arg);
+Slice_unsigned_char typechecker__get_type_ident(ast__Type t, os_Arena* ctx);
+std_Vector_ast__Type typechecker__parse_types_from_suffix(typechecker__TypeEnvironment* env, Slice_unsigned_char suffix, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_extract_brand_from_suffix(Slice_unsigned_char suffix, os_Arena* ctx);
+int typechecker__is_pointer_write(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+void typechecker__env_register_std_functions(typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena* ctx);
+Slice_unsigned_char typechecker__env_resolve_namespaced_ident(typechecker__TypeEnvironment* env, Slice_unsigned_char name, os_Arena* ctx);
+std_Vector_str resolver__discover_source_files(Slice_unsigned_char dir_path, os_Arena* ctx);
+void codegen__codegen_get_by_value_dependencies_recursive(ast__Type t, std_HashMap_str_int* deps, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__get_type_brand(ast__Type t, os_Arena* ctx);
+errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx);
+void typechecker__scope_insert(int scope, Slice_unsigned_char name, ast__Type t, os_Arena* ctx);
+std_Vector_str resolver__scan_imports(Slice_unsigned_char source, os_Arena* ctx);
+int typechecker__typechecker_str_compare(Slice_unsigned_char s1, Slice_unsigned_char s2);
+int parser__parse_type_signature(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_get_c_type_name_by_struct_name(Slice_unsigned_char name, os_Arena* ctx);
+int typechecker__typechecker_ends_with(Slice_unsigned_char s, Slice_unsigned_char suffix);
+std_Vector_str resolver__resolve_topological_sort(Slice_unsigned_char entry_path, std_Graph_str* graph, std_HashMap_str_int* path_to_node, os_Arena* ctx);
+Slice_unsigned_char typechecker__expression_to_string(int expr_idx, os_Arena* ctx);
+int codegen__codegen_is_hashmap_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
+unsigned char parser__peek_token_is(parser__Parser* p, int tag);
+unsigned char lexer__is_digit(unsigned char b);
+void* lexer__is_digit_pthread_wrapper(void* arg);
+LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
+Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx);
+void os_SetThreadScratch(os_Arena* arg0);
+void* os_SetThreadScratch_pthread_wrapper(void* arg);
+ast__Type typechecker__make_type_index(Slice_unsigned_char struct_name, Slice_unsigned_char brand_name, os_Arena* ctx);
+int typechecker__env_type_is_ephemeral_view(ast__Type t, os_Arena* ctx);
+int parser__parse_defer_statement(parser__Parser* p, os_Arena* ctx);
+int codegen__codegen_ends_with(Slice_unsigned_char s, Slice_unsigned_char suffix);
+unsigned char parser__cur_token_is(parser__Parser* p, int tag);
+int parser__peek_token_precedence(parser__Parser* p);
+void* parser__peek_token_precedence_pthread_wrapper(void* arg);
+void typechecker__set_add(int set, Slice_unsigned_char element, os_Arena* ctx);
+int parser__cur_token_precedence(parser__Parser* p);
+void* parser__cur_token_precedence_pthread_wrapper(void* arg);
+ast__FieldDef typechecker__make_field(Slice_unsigned_char name, ast__Type t, os_Arena* ctx);
+void codegen__codegen_log_trace(Slice_unsigned_char emoji, Slice_unsigned_char message, os_Arena* ctx);
+int codegen__codegen_is_pool_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void std_Yield(void);
+Slice_unsigned_char codegen__codegen_find_original_struct_name(Slice_unsigned_char erased_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int typechecker__get_expression_origins(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int typechecker__scope_new(int parent, os_Arena* ctx);
+int os_Dir_ctx_IsValid(os_Dir* req);
+void* os_Dir_ctx_IsValid_pthread_wrapper(void* arg);
+Slice_unsigned_char codegen__codegen_escape_string(Slice_unsigned_char val, os_Arena* ctx);
+errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+int codegen__codegen_is_arena_ptr(Slice_unsigned_char var_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void parser__next_token(parser__Parser* p);
+void* parser__next_token_pthread_wrapper(void* arg);
+int parser__parse_expression(parser__Parser* p, int precedence, os_Arena* ctx);
+ast__Type typechecker__make_type_struct(Slice_unsigned_char name, Slice_unsigned_char brand_name, os_Arena* ctx);
+int typechecker__typechecker_clone_origin_set(int src, os_Arena* ctx);
+int codegen__codegen_is_rc_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+ast__Type typechecker__make_type_generic(Slice_unsigned_char name, std_Vector_ast__Type args, os_Arena* ctx);
+int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx);
 
 // ====================================================
 // DYNAMICALLY TRANSPILED USER STRUCTS
@@ -8469,270 +8469,296 @@ int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx) {
 #line 1537 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
 #line 1538 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 13)) {
+    if (parser__cur_token_is(p, 35)) {
 #line 1539 "/home/garth/files/code/gust/compiler/parser.gst"
-    alternative = parser__parse_block_statement(p, ctx);
+    int if_stmt = parser__parse_if_statement(p, ctx);
 #line 1540 "/home/garth/files/code/gust/compiler/parser.gst"
+    token__Span if_span = (*(( ast__Statement*)((char*)ctx->BaseAddress + if_stmt))).If.span;
+#line 1541 "/home/garth/files/code/gust/compiler/parser.gst"
+    std_Vector_ast__Statement alt_statements = (struct std_Vector_ast__Statement){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 1542 "/home/garth/files/code/gust/compiler/parser.gst"
+    os_VectorPush(&alt_statements, (*(( ast__Statement*)((char*)ctx->BaseAddress + if_stmt))));
+#line 1543 "/home/garth/files/code/gust/compiler/parser.gst"
+    int alt_idx = os_ArenaAlloc(ctx, sizeof(ast__BlockStatement));
+#line 1544 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + alt_idx))).span = if_span;
+#line 1545 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + alt_idx))).statements = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Statement));
+#line 1546 "/home/garth/files/code/gust/compiler/parser.gst"
+    std_Vector_ast__Statement* dest_stmts = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + alt_idx))).statements)))));
+#line 1547 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(dest_stmts)) = alt_statements;
+#line 1548 "/home/garth/files/code/gust/compiler/parser.gst"
+    alternative = alt_idx;
+#line 1549 "/home/garth/files/code/gust/compiler/parser.gst"
+    end_span = if_span;
+    } else {
+#line 1551 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 13)) {
+#line 1552 "/home/garth/files/code/gust/compiler/parser.gst"
+    alternative = parser__parse_block_statement(p, ctx);
+#line 1553 "/home/garth/files/code/gust/compiler/parser.gst"
     end_span = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + alternative))).span;
     }
     }
     }
-#line 1545 "/home/garth/files/code/gust/compiler/parser.gst"
+    }
+#line 1559 "/home/garth/files/code/gust/compiler/parser.gst"
     int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-#line 1546 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1560 "/home/garth/files/code/gust/compiler/parser.gst"
     {
-#line 1547 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1561 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 7;
-#line 1548 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1562 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.condition = condition;
-#line 1549 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1563 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.consequence = consequence;
-#line 1550 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1564 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.alternative = alternative;
-#line 1551 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1565 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).If.span = parser__merge_spans(start_span, (*(p)).cur_token.span);
     }
-#line 1553 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1567 "/home/garth/files/code/gust/compiler/parser.gst"
     return stmt_idx;
 }
 
-#line 1556 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1570 "/home/garth/files/code/gust/compiler/parser.gst"
 int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx) {
-#line 1557 "/home/garth/files/code/gust/compiler/parser.gst"
-    token__Span start_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
-#line 1558 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1559 "/home/garth/files/code/gust/compiler/parser.gst"
-    start_span = (*(p)).cur_token.span;
-#line 1560 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-    }
-#line 1563 "/home/garth/files/code/gust/compiler/parser.gst"
-    int is_mut = 0;
-#line 1564 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1565 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 29)) {
-#line 1566 "/home/garth/files/code/gust/compiler/parser.gst"
-    is_mut = 1;
-#line 1567 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-    }
-    }
 #line 1571 "/home/garth/files/code/gust/compiler/parser.gst"
+    token__Span start_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
+#line 1572 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1573 "/home/garth/files/code/gust/compiler/parser.gst"
+    start_span = (*(p)).cur_token.span;
+#line 1574 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+    }
+#line 1577 "/home/garth/files/code/gust/compiler/parser.gst"
+    int is_mut = 0;
+#line 1578 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1579 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 29)) {
+#line 1580 "/home/garth/files/code/gust/compiler/parser.gst"
+    is_mut = 1;
+#line 1581 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+    }
+    }
+#line 1585 "/home/garth/files/code/gust/compiler/parser.gst"
     if (parser__cur_token_is(p, 2)) {
     } else {
-#line 1573 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1587 "/home/garth/files/code/gust/compiler/parser.gst"
     return 0xFFFFFFFF;
-    }
-#line 1576 "/home/garth/files/code/gust/compiler/parser.gst"
-    Slice_unsigned_char name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 1577 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1578 "/home/garth/files/code/gust/compiler/parser.gst"
-    name = std_Clone_str(&(*(ctx)), (*(p)).cur_token.literal);
-#line 1579 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-    }
-#line 1582 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1583 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 5)) {
-#line 1584 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-    } else {
-#line 1586 "/home/garth/files/code/gust/compiler/parser.gst"
-    return 0xFFFFFFFF;
-    }
     }
 #line 1590 "/home/garth/files/code/gust/compiler/parser.gst"
-    int value = parser__parse_expression(p, 1, ctx);
-#line 1592 "/home/garth/files/code/gust/compiler/parser.gst"
+    Slice_unsigned_char name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 1591 "/home/garth/files/code/gust/compiler/parser.gst"
     {
+#line 1592 "/home/garth/files/code/gust/compiler/parser.gst"
+    name = std_Clone_str(&(*(ctx)), (*(p)).cur_token.literal);
 #line 1593 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 36)) {
-#line 1594 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+    }
+#line 1596 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1597 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 5)) {
+#line 1598 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     } else {
-#line 1596 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1600 "/home/garth/files/code/gust/compiler/parser.gst"
     return 0xFFFFFFFF;
     }
     }
-#line 1600 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 13) == 0) {
-#line 1601 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1602 "/home/garth/files/code/gust/compiler/parser.gst"
-    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
-#line 1603 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.kind.tag = 1;
 #line 1604 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected '{' after else", 23 });
-#line 1605 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.span = (*(p)).cur_token.span;
+    int value = parser__parse_expression(p, 1, ctx);
 #line 1606 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1607 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 36)) {
+#line 1608 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+    } else {
+#line 1610 "/home/garth/files/code/gust/compiler/parser.gst"
+    return 0xFFFFFFFF;
+    }
+    }
+#line 1614 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 13) == 0) {
+#line 1615 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1616 "/home/garth/files/code/gust/compiler/parser.gst"
+    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+#line 1617 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.kind.tag = 1;
+#line 1618 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected '{' after else", 23 });
+#line 1619 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.span = (*(p)).cur_token.span;
+#line 1620 "/home/garth/files/code/gust/compiler/parser.gst"
     os_VectorPush(&(*(p)).errors, err);
     }
-#line 1608 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1622 "/home/garth/files/code/gust/compiler/parser.gst"
     return 0xFFFFFFFF;
     }
-#line 1611 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1625 "/home/garth/files/code/gust/compiler/parser.gst"
     int else_body = parser__parse_block_statement(p, ctx);
-#line 1613 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1627 "/home/garth/files/code/gust/compiler/parser.gst"
     int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-#line 1614 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1628 "/home/garth/files/code/gust/compiler/parser.gst"
     {
-#line 1615 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1629 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 9;
-#line 1616 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1630 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.name = name;
-#line 1617 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1631 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.is_mut = is_mut;
-#line 1618 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1632 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.value = value;
-#line 1619 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1633 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.else_body = else_body;
-#line 1620 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1634 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Guard.span = parser__merge_spans(start_span, (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + else_body))).span);
     }
-#line 1622 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1636 "/home/garth/files/code/gust/compiler/parser.gst"
     return stmt_idx;
 }
 
-#line 1625 "/home/garth/files/code/gust/compiler/parser.gst"
-ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx) {
-#line 1626 "/home/garth/files/code/gust/compiler/parser.gst"
-    ast__Program prog = ((ast__Program){ .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }), .statements = 0xFFFFFFFF });
-#line 1627 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1628 "/home/garth/files/code/gust/compiler/parser.gst"
-    std_Vector_ast__Statement statements_vec = (struct std_Vector_ast__Statement){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 1629 "/home/garth/files/code/gust/compiler/parser.gst"
-    std_Vector_ast__Statement* dest_ptr = &(statements_vec);
-#line 1631 "/home/garth/files/code/gust/compiler/parser.gst"
-    token__Span start_span = (*(p)).cur_token.span;
-#line 1633 "/home/garth/files/code/gust/compiler/parser.gst"
-    while ((*(p)).cur_token.token_type.tag != 0) {
-#line 1634 "/home/garth/files/code/gust/compiler/parser.gst"
-    int before_errors = (*(p)).errors.len;
-#line 1635 "/home/garth/files/code/gust/compiler/parser.gst"
-    int stmt = parser__parse_statement(p, ctx);
-#line 1636 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (stmt != 0xFFFFFFFF) {
-#line 1637 "/home/garth/files/code/gust/compiler/parser.gst"
-    os_VectorPush(&(*(dest_ptr)), (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt))));
-#line 1638 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 10)) {
 #line 1639 "/home/garth/files/code/gust/compiler/parser.gst"
+ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx) {
+#line 1640 "/home/garth/files/code/gust/compiler/parser.gst"
+    ast__Program prog = ((ast__Program){ .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }), .statements = 0xFFFFFFFF });
+#line 1641 "/home/garth/files/code/gust/compiler/parser.gst"
+    {
+#line 1642 "/home/garth/files/code/gust/compiler/parser.gst"
+    std_Vector_ast__Statement statements_vec = (struct std_Vector_ast__Statement){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 1643 "/home/garth/files/code/gust/compiler/parser.gst"
+    std_Vector_ast__Statement* dest_ptr = &(statements_vec);
+#line 1645 "/home/garth/files/code/gust/compiler/parser.gst"
+    token__Span start_span = (*(p)).cur_token.span;
+#line 1647 "/home/garth/files/code/gust/compiler/parser.gst"
+    while ((*(p)).cur_token.token_type.tag != 0) {
+#line 1648 "/home/garth/files/code/gust/compiler/parser.gst"
+    int before_errors = (*(p)).errors.len;
+#line 1649 "/home/garth/files/code/gust/compiler/parser.gst"
+    int stmt = parser__parse_statement(p, ctx);
+#line 1650 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (stmt != 0xFFFFFFFF) {
+#line 1651 "/home/garth/files/code/gust/compiler/parser.gst"
+    os_VectorPush(&(*(dest_ptr)), (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt))));
+#line 1652 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 10)) {
+#line 1653 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
     } else {
-#line 1642 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1656 "/home/garth/files/code/gust/compiler/parser.gst"
     if ((*(p)).errors.len == before_errors) {
-#line 1643 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1657 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: unexpected token or malformed statement", 53 }));
     }
-#line 1645 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1659 "/home/garth/files/code/gust/compiler/parser.gst"
     int before_sync = (*(p)).cur_token.token_type.tag;
-#line 1646 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1660 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__synchronize(p);
-#line 1647 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1661 "/home/garth/files/code/gust/compiler/parser.gst"
     if ((*(p)).cur_token.token_type.tag == before_sync) {
-#line 1648 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1662 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
     }
     }
-#line 1653 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1667 "/home/garth/files/code/gust/compiler/parser.gst"
     prog.statements = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Statement));
-#line 1654 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1668 "/home/garth/files/code/gust/compiler/parser.gst"
     std_Vector_ast__Statement* dest_arena_ptr = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + prog.statements)))));
-#line 1655 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1669 "/home/garth/files/code/gust/compiler/parser.gst"
     (*(dest_arena_ptr)) = statements_vec;
-#line 1657 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1671 "/home/garth/files/code/gust/compiler/parser.gst"
     prog.span = parser__merge_spans(start_span, (*(p)).cur_token.span);
     }
-#line 1659 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1673 "/home/garth/files/code/gust/compiler/parser.gst"
     return prog;
 }
 
-#line 1662 "/home/garth/files/code/gust/compiler/parser.gst"
-int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx) {
-#line 1663 "/home/garth/files/code/gust/compiler/parser.gst"
-    {
-#line 1664 "/home/garth/files/code/gust/compiler/parser.gst"
-    token__Span start_span = (*(p)).cur_token.span;
-#line 1665 "/home/garth/files/code/gust/compiler/parser.gst"
-    if ((*(p)).has_non_import_statement == 1) {
-#line 1666 "/home/garth/files/code/gust/compiler/parser.gst"
-    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
-#line 1667 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.kind.tag = 1;
-#line 1668 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.message = ((Slice_unsigned_char){ (unsigned char*)"Imports must be at the beginning of the program", 47 });
-#line 1669 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.span = (*(p)).cur_token.span;
-#line 1670 "/home/garth/files/code/gust/compiler/parser.gst"
-    os_VectorPush(&(*(p)).errors, err);
-    }
-#line 1673 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-#line 1675 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 4) == 0) {
 #line 1676 "/home/garth/files/code/gust/compiler/parser.gst"
-    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx) {
 #line 1677 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.kind.tag = 1;
+    {
 #line 1678 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected string literal specifying the import path", 50 });
+    token__Span start_span = (*(p)).cur_token.span;
 #line 1679 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.span = (*(p)).cur_token.span;
+    if ((*(p)).has_non_import_statement == 1) {
 #line 1680 "/home/garth/files/code/gust/compiler/parser.gst"
-    os_VectorPush(&(*(p)).errors, err);
-#line 1681 "/home/garth/files/code/gust/compiler/parser.gst"
-    return 0xFFFFFFFF;
-    }
-#line 1684 "/home/garth/files/code/gust/compiler/parser.gst"
-    Slice_unsigned_char path = std_Clone_str(&(*(ctx)), (*(p)).cur_token.literal);
-#line 1685 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-#line 1687 "/home/garth/files/code/gust/compiler/parser.gst"
-    Slice_unsigned_char alias = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 1688 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 37)) {
-#line 1689 "/home/garth/files/code/gust/compiler/parser.gst"
-    parser__next_token(p);
-#line 1690 "/home/garth/files/code/gust/compiler/parser.gst"
-    if (parser__cur_token_is(p, 2) == 0) {
-#line 1691 "/home/garth/files/code/gust/compiler/parser.gst"
     errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
-#line 1692 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1681 "/home/garth/files/code/gust/compiler/parser.gst"
     err.kind.tag = 1;
-#line 1693 "/home/garth/files/code/gust/compiler/parser.gst"
-    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected identifier alias after 'as'", 36 });
-#line 1694 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1682 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.message = ((Slice_unsigned_char){ (unsigned char*)"Imports must be at the beginning of the program", 47 });
+#line 1683 "/home/garth/files/code/gust/compiler/parser.gst"
     err.span = (*(p)).cur_token.span;
-#line 1695 "/home/garth/files/code/gust/compiler/parser.gst"
+#line 1684 "/home/garth/files/code/gust/compiler/parser.gst"
     os_VectorPush(&(*(p)).errors, err);
-#line 1696 "/home/garth/files/code/gust/compiler/parser.gst"
+    }
+#line 1687 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+#line 1689 "/home/garth/files/code/gust/compiler/parser.gst"
+    if (parser__cur_token_is(p, 4) == 0) {
+#line 1690 "/home/garth/files/code/gust/compiler/parser.gst"
+    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+#line 1691 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.kind.tag = 1;
+#line 1692 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected string literal specifying the import path", 50 });
+#line 1693 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.span = (*(p)).cur_token.span;
+#line 1694 "/home/garth/files/code/gust/compiler/parser.gst"
+    os_VectorPush(&(*(p)).errors, err);
+#line 1695 "/home/garth/files/code/gust/compiler/parser.gst"
     return 0xFFFFFFFF;
     }
 #line 1698 "/home/garth/files/code/gust/compiler/parser.gst"
-    alias = std_Clone_str(&(*(ctx)), (*(p)).cur_token.literal);
+    Slice_unsigned_char path = std_Clone_str(&(*(ctx)), (*(p)).cur_token.literal);
 #line 1699 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
-    }
+#line 1701 "/home/garth/files/code/gust/compiler/parser.gst"
+    Slice_unsigned_char alias = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
 #line 1702 "/home/garth/files/code/gust/compiler/parser.gst"
-    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+    if (parser__cur_token_is(p, 37)) {
 #line 1703 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 0;
+    parser__next_token(p);
 #line 1704 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Import.path = path;
+    if (parser__cur_token_is(p, 2) == 0) {
 #line 1705 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Import.alias = alias;
+    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
 #line 1706 "/home/garth/files/code/gust/compiler/parser.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Import.span = parser__merge_spans(start_span, (*(p)).cur_token.span);
+    err.kind.tag = 1;
 #line 1707 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.message = ((Slice_unsigned_char){ (unsigned char*)"Expected identifier alias after 'as'", 36 });
+#line 1708 "/home/garth/files/code/gust/compiler/parser.gst"
+    err.span = (*(p)).cur_token.span;
+#line 1709 "/home/garth/files/code/gust/compiler/parser.gst"
+    os_VectorPush(&(*(p)).errors, err);
+#line 1710 "/home/garth/files/code/gust/compiler/parser.gst"
+    return 0xFFFFFFFF;
+    }
+#line 1712 "/home/garth/files/code/gust/compiler/parser.gst"
+    alias = std_Clone_str(&(*(ctx)), (*(p)).cur_token.literal);
+#line 1713 "/home/garth/files/code/gust/compiler/parser.gst"
+    parser__next_token(p);
+    }
+#line 1716 "/home/garth/files/code/gust/compiler/parser.gst"
+    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+#line 1717 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).tag = 0;
+#line 1718 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Import.path = path;
+#line 1719 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Import.alias = alias;
+#line 1720 "/home/garth/files/code/gust/compiler/parser.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))).Import.span = parser__merge_spans(start_span, (*(p)).cur_token.span);
+#line 1721 "/home/garth/files/code/gust/compiler/parser.gst"
     return stmt_idx;
     }
 }
