@@ -4435,7 +4435,6 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         }
 
         if stmt.tag == 5 { // Assignment
-        if tag == 5 { // Assignment
             mut left_idx := stmt.Assignment.left;
             mut val_idx := stmt.Assignment.value;
 

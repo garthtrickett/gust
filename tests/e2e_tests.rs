@@ -4024,6 +4024,7 @@ fn test_e2e_self_hosted_types() {
             assert!(stdout_str.contains("❌ TypeError at line 1:29: Semantic Error: Explicit Type Annotation Mismatch. Declared Int but got value Str") || stdout_str.contains("❌ TypeError at line 1:"));
             assert!(stdout_str.contains("Cycle Detection OK: Loop1 directly by-value rejected"));
             assert!(stdout_str.contains("Cycle Detection OK: Pointer-indirected Loop2 accepted"));
+            assert!(stdout_str.contains("LHS resolved_types type is Int ok!"));
         })
         .unwrap()
         .join()
