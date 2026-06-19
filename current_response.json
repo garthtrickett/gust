@@ -1,9 +1,0 @@
-{
-  "summary": "fix: align lexer pointer arithmetic with self-hosted compiler type casting",
-  "files": [
-    {
-      "file_path": "compiler/lexer.gst",
-      "code_diff": "<<<<<<< SEARCH\n        read_char(l); // consume closing delimiter\n        \n        mut header_alloc := os.ScratchAlloc(16);\n        mut header_ptr := (header_alloc + 0) as *StringHeader;\n        if 0 == 1 {\n            header_ptr = l as *StringHeader;\n        }\n        (*header_ptr).data = buf + 0;\n        (*header_ptr).len = write_idx;\n        return *(header_ptr as *str);\n    }\n}\n=======\n        read_char(l); // consume closing delimiter\n        \n        mut header_alloc := os.ScratchAlloc(16);\n        mut header_ptr := (header_alloc + 0) as *StringHeader;\n        if 0 == 1 {\n            header_ptr = l as *StringHeader;\n        }\n        (*header_ptr).data = (buf + 0) as *byte;\n        (*header_ptr).len = write_idx;\n        return *(((header_ptr as *str) + 0) as *str);\n    }\n}\n>>>>>>> REPLACE"
-    }
-  ]
-}
