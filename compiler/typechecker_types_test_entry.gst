@@ -73,7 +73,7 @@ func main() {
 
     // 3. Parse and typecheck a small mock program with variable declarations and an enum
     mut l3: lexer.Lexer[ctx];
-    lexer.init_lexer(&l3, "type Status enum { Active, Inactive } func main() { mut x: int := 10; }");
+    lexer.init_lexer(&l3, "type Status enum { Active, Inactive } func main() { mut x: int := 10; x = 20; }");
 
     mut p3: parser.Parser[ctx];
     parser.init_parser(&p3, &l3, ctx);
@@ -190,6 +190,56 @@ func main() {
             }
         } else {
             os.LogStr("resolved_types lookup failed!");
+        }
+    }
+
+    // Verify that the assignment LHS is registered in resolved_types (Step 2 Fix)
+    unsafe { 
+        mut statements_vec := &ctx[prog3.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut main_decl := (*statements_vec)[1];
+        mut body_idx := main_decl.FunctionDecl.body;
+        mut body_stmts := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut assign_stmt := (*body_stmts)[1];
+        
+        mut left_expr := assign_stmt.Assignment.left;
+        mut span := parser.get_expression_span(left_expr, ctx);
+        
+        mut found_idx := 0 - 1;
+        mut i := 0;
+        while i < len(env.resolved_types_nested) {
+            mut entry := env.resolved_types_nested[i];
+            if std.str_eq(entry.prefix, "") {
+                found_idx = i;
+                i = len(env.resolved_types_nested);
+            }
+            i = i + 1;
+        }
+        
+        mut lookup_resolved_ok := 0;
+        mut lookup_resolved_val: ast.Type[ctx];
+        if found_idx != 0 - 1 {
+            mut entry_ref := &env.resolved_types_nested[found_idx];
+            mut j := 0;
+            while j < len((*entry_ref).types) { 
+                mut t_entry := (*entry_ref).types[j];
+                if t_entry.start_offset == span.start.offset && t_entry.end_offset == span.end.offset {
+                    lookup_resolved_val = t_entry.val_type;
+                    lookup_resolved_ok = 1;
+                    j = len((*entry_ref).types);
+                }
+                j = j + 1;
+            }
+        }
+        
+        if lookup_resolved_ok == 1 {
+            os.LogStr("LHS resolved_types lookup ok!");
+            if typechecker.types_match(typechecker.make_type_int(), lookup_resolved_val, ctx) == 1 {
+                os.LogStr("LHS resolved_types type is Int ok!");
+            } else {
+                os.LogStr("LHS resolved_types type mismatch!");
+            }
+        } else {
+            os.LogStr("LHS resolved_types lookup failed!");
         }
     }
 

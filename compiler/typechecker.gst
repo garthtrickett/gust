@@ -4435,28 +4435,19 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         }
 
         if stmt.tag == 5 { // Assignment
+        if tag == 5 { // Assignment
             mut left_idx := stmt.Assignment.left;
             mut val_idx := stmt.Assignment.value;
 
-            mut left_type: ast.Type[ctx];
-            left_type.tag = 3; // Void
-
+            mut left_type := check_expression(left_idx, env, scope, ctx);
             mut left := ctx[left_idx];
-            if left.tag == 0 { // Identifier
-                mut name := left.Identifier.name;
-                mut resolved_name := name;
-                mut is_local := scope_contains(scope, name, ctx);
-                if is_local == 0 {
-                    resolved_name = env_resolve_namespaced_ident(env, name, ctx);
-                }
-                left_type = scope_lookup(scope, resolved_name, ctx);
-                if left_type.tag == 3 {
-                    mut msg := std.Concat("Semantic Error: Undefined variable '", name);
+            if left_type.tag == 3 {
+                mut msg := "Semantic Error: Undefined variable or invalid assignment LHS";
+                if left.tag == 0 {
+                    msg = std.Concat("Semantic Error: Undefined variable '", left.Identifier.name);
                     msg = std.Concat(msg, "' in assignment LHS");
-                    report_error(2, msg, left.Identifier.span, env, ctx);
                 }
-            } else {
-                left_type = check_expression(left_idx, env, scope, ctx);
+                report_error(2, msg, get_expression_span(left_idx, ctx), env, ctx);
             }
 
             mut val_type := check_expression(val_idx, env, scope, ctx);
