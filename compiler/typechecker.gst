@@ -1658,29 +1658,34 @@ func get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
         } else if t.tag == 6 { // Slice
             mut inner_t := ctx[t.Slice.inner];
             base = std.Concat("Slice_", get_type_ident(inner_t, ctx));
-        } else if t.tag == 7 { // Index
-                base = std.Concat("Index_", t.Index.struct_name);
-                if t.Index.brand != empty[Index[str, ctx]] {
-                    mut brand_str_ptr := &ctx[t.Index.brand] as *str;
-                    mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
-                    mut suffix := std.Concat("_", clean_b);
-                    mut ns_suffix := std.Concat("__", clean_b);
-                    if typechecker_ends_with(t.Index.struct_name, suffix) == 0 && typechecker_ends_with(t.Index.struct_name, ns_suffix) == 0 && std.str_eq(t.Index.struct_name, clean_b) == 0 {
-                        base = std.Concat(base, suffix);
-                    }
+
+         } else if t.tag == 7 { // Index
+            base = std.Concat("Index_", t.Index.struct_name);
+            if t.Index.brand != empty[Index[str, ctx]] {
+                mut brand_str_ptr := &ctx[t.Index.brand] as *str;
+                mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
+                mut suffix := std.Concat("_", clean_b);
+                mut ns_suffix := std.Concat("__", clean_b);
+                if typechecker_ends_with(t.Index.struct_name, suffix) == 0 && typechecker_ends_with(t.Index.struct_name, ns_suffix) == 0 && std.str_eq(t.Index.struct_name, clean_b) == 0 {
+                    base = std.Concat(base, suffix);
                 }
-            } else if t.tag == 8 { // Struct
-                base = t.Struct.struct_name;
-                if t.Struct.brand != empty[Index[str, ctx]] {
-                    mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
-                    mut clean_b := strip_brand_prefix(*brand_str_ptr, ctx);
-                    mut suffix := std.Concat("_", clean_b);
-                    mut ns_suffix := std.Concat("__", clean_b);
-                    if typechecker_ends_with(base, suffix) == 0 && typechecker_ends_with(base, ns_suffix) == 0 && std.str_eq(base, clean_b) == 0 {
-                        base = std.Concat(base, suffix);
+            }
+        } else if t.tag == 8 { // Struct
+            base = t.Struct.struct_name;
+            if t.Struct.brand != empty[Index[str, ctx]] {
+                mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
+                mut brand_name := *brand_str_ptr;
+                mut clean_b := strip_brand_prefix(brand_name, ctx);
+                mut suffix := std.Concat("_", clean_b);
+                mut ns_suffix := std.Concat("__", clean_b);
+                if typechecker_ends_with(base, suffix) == 0 && typechecker_ends_with(base, ns_suffix) == 0 && std.str_eq(base, clean_b) == 0 {
+                    base = std.Concat(base, suffix);
                 }
             }
         } else if t.tag == 9 { // RawPointer
+            
+
+        
             mut inner_t := ctx[t.RawPointer.inner];
             base = std.Concat(get_type_ident(inner_t, ctx), "_ptr");
         } else if t.tag == 10 { // Generic

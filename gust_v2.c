@@ -610,167 +610,167 @@ void os_ScratchReset() {
 // ====================================================
 // FORWARD DECLARATIONS
 // ====================================================
-typedef struct ast__Type_Void ast__Type_Void;
-typedef struct errors__ErrorKind_TypeError errors__ErrorKind_TypeError;
-typedef struct token__TokenType_Colon token__TokenType_Colon;
-typedef struct std_HashMap_str_std_Vector_str std_HashMap_str_std_Vector_str;
-typedef struct token__TokenType_Dot token__TokenType_Dot;
-typedef struct ast__Program ast__Program;
-typedef struct ast__Statement_Guard ast__Statement_Guard;
-typedef struct std_HashMap_str_Index_typechecker__OriginSet std_HashMap_str_Index_typechecker__OriginSet;
-typedef struct LookupResult_typechecker__FunctionSignature LookupResult_typechecker__FunctionSignature;
-typedef struct ast__Statement_Assignment ast__Statement_Assignment;
-typedef struct token__TokenType_Guard token__TokenType_Guard;
-typedef struct LookupResult_typechecker__StructLayout LookupResult_typechecker__StructLayout;
-typedef struct std_GraphNode_str std_GraphNode_str;
-typedef struct APIRequest APIRequest;
-typedef struct ast__Expression_Move ast__Expression_Move;
-typedef struct token__TokenType_If token__TokenType_If;
-typedef struct ast__Type_Arena ast__Type_Arena;
-typedef struct token__TokenType_Mut token__TokenType_Mut;
 typedef struct typechecker__StructLayout typechecker__StructLayout;
-typedef struct token__TokenType_Unsafe token__TokenType_Unsafe;
-typedef struct token__Token token__Token;
-typedef struct ast__Expression_Dereference ast__Expression_Dereference;
-typedef struct token__TokenType_Struct token__TokenType_Struct;
-typedef struct ast__BlockStatement ast__BlockStatement;
-typedef struct std_HashMap_str_str std_HashMap_str_str;
-typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
-typedef struct ast__Expression_String ast__Expression_String;
-typedef struct token__TokenType_Import token__TokenType_Import;
-typedef struct token__TokenType_As token__TokenType_As;
-typedef struct std_Vector_typechecker__ResolvedTypeEntry std_Vector_typechecker__ResolvedTypeEntry;
-typedef struct typechecker__PrefixMapEntry typechecker__PrefixMapEntry;
-typedef struct std_Pool_std_GraphNode_str std_Pool_std_GraphNode_str;
-typedef struct typechecker__TypeEnvironment typechecker__TypeEnvironment;
-typedef struct ast__Statement_Import ast__Statement_Import;
-typedef struct LookupResult_ast__Type LookupResult_ast__Type;
-typedef struct errors__Result_int_Err errors__Result_int_Err;
-typedef struct ast__Type_Struct ast__Type_Struct;
-typedef struct ast__Statement ast__Statement;
-typedef struct lexer__Lexer lexer__Lexer;
-typedef struct token__TokenType_FatArrow token__TokenType_FatArrow;
-typedef struct std_Vector_ast__FieldDef std_Vector_ast__FieldDef;
-typedef struct std_HashMap_str_typechecker__FunctionSignature std_HashMap_str_typechecker__FunctionSignature;
-typedef struct ast__Statement_While ast__Statement_While;
-typedef struct ast__Expression_Empty ast__Expression_Empty;
-typedef struct std_HashMap_str_typechecker__EnumTemplate std_HashMap_str_typechecker__EnumTemplate;
-typedef struct ast__Type_Int ast__Type_Int;
-typedef struct errors__Result_ast__Type_Err errors__Result_ast__Type_Err;
-typedef struct std_Vector_ast__Program std_Vector_ast__Program;
+typedef struct token__TokenType_Comma token__TokenType_Comma;
+typedef struct std_HashMap_str_std_Vector_str std_HashMap_str_std_Vector_str;
 typedef struct token__TokenType_Take token__TokenType_Take;
-typedef struct token__TokenType_Eq token__TokenType_Eq;
 typedef struct ast__Type_Str ast__Type_Str;
-typedef struct token__TokenType_Plus token__TokenType_Plus;
+typedef struct token__TokenType_Func token__TokenType_Func;
+typedef struct token__TokenType_Ident token__TokenType_Ident;
+typedef struct token__TokenType_FatArrow token__TokenType_FatArrow;
+typedef struct token__TokenType_Semicolon token__TokenType_Semicolon;
+typedef struct typechecker__StructTemplate typechecker__StructTemplate;
+typedef struct ast__Expression_String ast__Expression_String;
+typedef struct parser__ParseResult parser__ParseResult;
+typedef struct token__TokenType_Eof token__TokenType_Eof;
+typedef struct errors__Result_ast__Type_Err errors__Result_ast__Type_Err;
+typedef struct std_Vector_ast__FieldDef std_Vector_ast__FieldDef;
+typedef struct std_Vector_ast__MatchCase std_Vector_ast__MatchCase;
+typedef struct ast__Statement_If ast__Statement_If;
+typedef struct LookupResult_typechecker__FunctionSignature LookupResult_typechecker__FunctionSignature;
+typedef struct token__TokenType_String token__TokenType_String;
+typedef struct ast__Statement_Defer ast__Statement_Defer;
+typedef struct token__TokenType token__TokenType;
+typedef struct std_Vector_ast__Program std_Vector_ast__Program;
+typedef struct token__TokenType_Int token__TokenType_Int;
+typedef struct token__TokenType_Struct token__TokenType_Struct;
+typedef struct typechecker__OriginSet typechecker__OriginSet;
+typedef struct token__TokenType_Slash token__TokenType_Slash;
+typedef struct token__TokenType_Defer token__TokenType_Defer;
+typedef struct errors__Result_ast__Type_Ok errors__Result_ast__Type_Ok;
+typedef struct LookupResult_str LookupResult_str;
+typedef struct token__TokenType_Colon token__TokenType_Colon;
+typedef struct token__TokenType_Return token__TokenType_Return;
+typedef struct ast__Parameter ast__Parameter;
+typedef struct ast__Type_Int ast__Type_Int;
+typedef struct LookupResult_Index_typechecker__OriginSet LookupResult_Index_typechecker__OriginSet;
+typedef struct token__TokenType_RParen token__TokenType_RParen;
+typedef struct token__TokenType_As token__TokenType_As;
 typedef struct token__TokenType_EqEq token__TokenType_EqEq;
 typedef struct token__TokenType_Enum token__TokenType_Enum;
-typedef struct std_Vector_int std_Vector_int;
-typedef struct token__TokenType_Lt token__TokenType_Lt;
-typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
-typedef struct ast__Expression_Identifier ast__Expression_Identifier;
-typedef struct typechecker__FunctionSignature typechecker__FunctionSignature;
-typedef struct token__TokenType_LBrace token__TokenType_LBrace;
-typedef struct ast__VariantDef ast__VariantDef;
-typedef struct ast__Expression_Call ast__Expression_Call;
-typedef struct ast__FieldDef ast__FieldDef;
-typedef struct token__TokenType_String token__TokenType_String;
-typedef struct token__TokenType_Comma token__TokenType_Comma;
-typedef struct std_Graph_str std_Graph_str;
-typedef struct token__TokenType_RBrace token__TokenType_RBrace;
-typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
-typedef struct ast__Expression_AddressOf ast__Expression_AddressOf;
-typedef struct LookupResult_Index_typechecker__OriginSet LookupResult_Index_typechecker__OriginSet;
-typedef struct token__TokenType_Else token__TokenType_Else;
-typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
-typedef struct parser__Parser parser__Parser;
-typedef struct ast__Expression_Selector ast__Expression_Selector;
-typedef struct ast__Statement_Defer ast__Statement_Defer;
-typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
-typedef struct ast__Expression_Binary ast__Expression_Binary;
-typedef struct ast__Parameter ast__Parameter;
-typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
-typedef struct token__TokenType_Bool token__TokenType_Bool;
-typedef struct ast__Type ast__Type;
-typedef struct token__TokenType_Ampersand token__TokenType_Ampersand;
+typedef struct errors__Result_int_Ok errors__Result_int_Ok;
+typedef struct std_Vector_token__Token std_Vector_token__Token;
+typedef struct typechecker__PrefixMapEntry typechecker__PrefixMapEntry;
+typedef struct std_GraphNode_str std_GraphNode_str;
+typedef struct std_Vector_ast__Type std_Vector_ast__Type;
 typedef struct ast__Type_Byte ast__Type_Byte;
-typedef struct ast__Statement_Expression ast__Statement_Expression;
-typedef struct std_Vector_ast__MatchCase std_Vector_ast__MatchCase;
-typedef struct token__TokenType_Func token__TokenType_Func;
-typedef struct token__TokenType_Match token__TokenType_Match;
-typedef struct token__Span token__Span;
-typedef struct token__TokenType_Defer token__TokenType_Defer;
-typedef struct std_HashMap_str_ast__Type std_HashMap_str_ast__Type;
-typedef struct codegen__Codegen codegen__Codegen;
-typedef struct LookupResult_int LookupResult_int;
-typedef struct token__TokenType_Return token__TokenType_Return;
-typedef struct token__TokenType_NotEq token__TokenType_NotEq;
-typedef struct std_Vector_ast__Expression std_Vector_ast__Expression;
-typedef struct token__TokenType_False token__TokenType_False;
+typedef struct ast__Expression_Binary ast__Expression_Binary;
 typedef struct token__TokenType_LBracket token__TokenType_LBracket;
-typedef struct typechecker__Scope typechecker__Scope;
+typedef struct ast__Type_Bool ast__Type_Bool;
+typedef struct parser__Parser parser__Parser;
+typedef struct token__TokenType_Mut token__TokenType_Mut;
+typedef struct SessionNode SessionNode;
+typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
+typedef struct APIRequest APIRequest;
+typedef struct token__TokenType_False token__TokenType_False;
+typedef struct token__TokenType_NotEq token__TokenType_NotEq;
+typedef struct ast__Statement_While ast__Statement_While;
+typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
+typedef struct std_HashMap_str_str std_HashMap_str_str;
+typedef struct std_Vector_typechecker__ResolvedTypeEntry std_Vector_typechecker__ResolvedTypeEntry;
+typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
+typedef struct LookupResult_typechecker__EnumTemplate LookupResult_typechecker__EnumTemplate;
+typedef struct ast__Type_RawPointer ast__Type_RawPointer;
+typedef struct token__TokenType_Guard token__TokenType_Guard;
+typedef struct ast__Expression_AddressOf ast__Expression_AddressOf;
+typedef struct ast__Expression_Move ast__Expression_Move;
+typedef struct token__TokenType_LParen token__TokenType_LParen;
+typedef struct errors__ErrorKind_CodegenError errors__ErrorKind_CodegenError;
+typedef struct ast__Program ast__Program;
+typedef struct token__TokenType_Type token__TokenType_Type;
+typedef struct errors__CompilerError errors__CompilerError;
+typedef struct ast__Type ast__Type;
+typedef struct ast__Expression_Integer ast__Expression_Integer;
+typedef struct ast__Expression_Take ast__Expression_Take;
+typedef struct token__Position token__Position;
+typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
+typedef struct token__TokenType_Illegal token__TokenType_Illegal;
+typedef struct token__TokenType_Import token__TokenType_Import;
+typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
+typedef struct ast__BlockStatement ast__BlockStatement;
+typedef struct typechecker__TypeEnvironment typechecker__TypeEnvironment;
+typedef struct std_Graph_str std_Graph_str;
+typedef struct token__TokenType_Empty token__TokenType_Empty;
+typedef struct ast__Expression_Empty ast__Expression_Empty;
+typedef struct errors__Result_ast__Type errors__Result_ast__Type;
+typedef struct ast__Type_Arena ast__Type_Arena;
+typedef struct typechecker__FunctionSignature typechecker__FunctionSignature;
+typedef struct std_Vector_ast__Expression std_Vector_ast__Expression;
+typedef struct ast__MatchCase ast__MatchCase;
+typedef struct std_HashMap_str_typechecker__EnumTemplate std_HashMap_str_typechecker__EnumTemplate;
+typedef struct ast__Expression_Selector ast__Expression_Selector;
+typedef struct token__Span token__Span;
 typedef struct std_Vector_ast__Statement std_Vector_ast__Statement;
 typedef struct token__TokenType_Asterisk token__TokenType_Asterisk;
-typedef struct ast__Type_Slice ast__Type_Slice;
-typedef struct token__TokenType_LParen token__TokenType_LParen;
-typedef struct errors__ErrorKind_LexerError errors__ErrorKind_LexerError;
-typedef struct typechecker__ResolvedTypeEntry typechecker__ResolvedTypeEntry;
-typedef struct token__TokenType_Semicolon token__TokenType_Semicolon;
-typedef struct SessionNode SessionNode;
-typedef struct errors__ErrorKind errors__ErrorKind;
-typedef struct ast__Expression_Take ast__Expression_Take;
-typedef struct token__TokenType_Slash token__TokenType_Slash;
-typedef struct errors__Result_ast__Type_Ok errors__Result_ast__Type_Ok;
-typedef struct token__TokenType_Move token__TokenType_Move;
-typedef struct errors__Result_int errors__Result_int;
-typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
-typedef struct ast__Type_Bool ast__Type_Bool;
-typedef struct token__TokenType_Empty token__TokenType_Empty;
-typedef struct ast__Expression ast__Expression;
-typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
-typedef struct token__TokenType_Ident token__TokenType_Ident;
-typedef struct LookupResult_str LookupResult_str;
-typedef struct std_Vector_token__Token std_Vector_token__Token;
-typedef struct ast__MatchCase ast__MatchCase;
-typedef struct errors__CompilerError errors__CompilerError;
-typedef struct typechecker__StructTemplate typechecker__StructTemplate;
-typedef struct token__TokenType_RParen token__TokenType_RParen;
-typedef struct ast__Statement_Return ast__Statement_Return;
-typedef struct token__TokenType_Eof token__TokenType_Eof;
-typedef struct errors__ErrorKind_CodegenError errors__ErrorKind_CodegenError;
-typedef struct ast__Expression_Bool ast__Expression_Bool;
+typedef struct token__TokenType_Dot token__TokenType_Dot;
 typedef struct token__TokenType_Assign token__TokenType_Assign;
-typedef struct ast__Statement_Match ast__Statement_Match;
-typedef struct token__TokenType_True token__TokenType_True;
-typedef struct token__TokenType_Illegal token__TokenType_Illegal;
-typedef struct token__Position token__Position;
-typedef struct parser__ParseResult parser__ParseResult;
-typedef struct LookupResult_typechecker__EnumTemplate LookupResult_typechecker__EnumTemplate;
-typedef struct token__TokenType token__TokenType;
+typedef struct token__TokenType_Unsafe token__TokenType_Unsafe;
+typedef struct LookupResult_int LookupResult_int;
 typedef struct typechecker__EnumTemplate typechecker__EnumTemplate;
-typedef struct std_HashMap_str_typechecker__StructLayout std_HashMap_str_typechecker__StructLayout;
-typedef struct std_Vector_ast__Type std_Vector_ast__Type;
-typedef struct errors__ErrorKind_ParserError errors__ErrorKind_ParserError;
-typedef struct LookupResult_std_Vector_str LookupResult_std_Vector_str;
-typedef struct ast__Type_RawPointer ast__Type_RawPointer;
-typedef struct token__TokenType_While token__TokenType_While;
-typedef struct std_HashMap_str_typechecker__StructTemplate std_HashMap_str_typechecker__StructTemplate;
-typedef struct LookupResult_typechecker__StructTemplate LookupResult_typechecker__StructTemplate;
-typedef struct token__TokenType_RBracket token__TokenType_RBracket;
-typedef struct std_Vector_errors__CompilerError std_Vector_errors__CompilerError;
-typedef struct errors__Result_ast__Type errors__Result_ast__Type;
-typedef struct ast__Type_Index ast__Type_Index;
-typedef struct std_HashMap_str_int std_HashMap_str_int;
-typedef struct token__TokenType_Type token__TokenType_Type;
-typedef struct typechecker__OriginSet typechecker__OriginSet;
-typedef struct ast__Expression_AsCast ast__Expression_AsCast;
-typedef struct token__TokenType_Int token__TokenType_Int;
+typedef struct errors__Result_int errors__Result_int;
+typedef struct ast__Type_Void ast__Type_Void;
+typedef struct ast__Expression_Call ast__Expression_Call;
+typedef struct ast__VariantDef ast__VariantDef;
+typedef struct token__TokenType_Eq token__TokenType_Eq;
+typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
+typedef struct std_HashMap_str_ast__Type std_HashMap_str_ast__Type;
+typedef struct token__TokenType_Ampersand token__TokenType_Ampersand;
+typedef struct typechecker__Scope typechecker__Scope;
 typedef struct token__TokenType_Minus token__TokenType_Minus;
-typedef struct errors__Result_int_Ok errors__Result_int_Ok;
-typedef struct ast__Statement_If ast__Statement_If;
+typedef struct lexer__Lexer lexer__Lexer;
+typedef struct ast__FieldDef ast__FieldDef;
+typedef struct std_Vector_errors__CompilerError std_Vector_errors__CompilerError;
+typedef struct ast__Expression_AsCast ast__Expression_AsCast;
+typedef struct ast__Type_Index ast__Type_Index;
 typedef struct std_Vector_typechecker__PrefixMapEntry std_Vector_typechecker__PrefixMapEntry;
-typedef struct token__TokenType_Gt token__TokenType_Gt;
+typedef struct token__TokenType_True token__TokenType_True;
+typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
+typedef struct ast__Expression_Bool ast__Expression_Bool;
+typedef struct token__TokenType_Else token__TokenType_Else;
+typedef struct errors__Result_int_Err errors__Result_int_Err;
+typedef struct ast__Expression_Identifier ast__Expression_Identifier;
+typedef struct std_Vector_int std_Vector_int;
 typedef struct ast__Type_Generic ast__Type_Generic;
-typedef struct ast__Expression_Integer ast__Expression_Integer;
+typedef struct token__TokenType_While token__TokenType_While;
+typedef struct LookupResult_typechecker__StructLayout LookupResult_typechecker__StructLayout;
+typedef struct token__TokenType_Plus token__TokenType_Plus;
+typedef struct codegen__Codegen codegen__Codegen;
+typedef struct token__TokenType_LBrace token__TokenType_LBrace;
+typedef struct ast__Type_Struct ast__Type_Struct;
+typedef struct ast__Statement_Assignment ast__Statement_Assignment;
+typedef struct token__TokenType_Match token__TokenType_Match;
+typedef struct std_HashMap_str_typechecker__StructTemplate std_HashMap_str_typechecker__StructTemplate;
+typedef struct std_HashMap_str_typechecker__StructLayout std_HashMap_str_typechecker__StructLayout;
+typedef struct ast__Statement_Expression ast__Statement_Expression;
+typedef struct std_HashMap_str_int std_HashMap_str_int;
+typedef struct ast__Expression ast__Expression;
+typedef struct ast__Statement_Import ast__Statement_Import;
+typedef struct std_HashMap_str_typechecker__FunctionSignature std_HashMap_str_typechecker__FunctionSignature;
+typedef struct errors__ErrorKind_LexerError errors__ErrorKind_LexerError;
+typedef struct std_HashMap_str_Index_typechecker__OriginSet std_HashMap_str_Index_typechecker__OriginSet;
+typedef struct ast__Type_Slice ast__Type_Slice;
+typedef struct ast__Statement_Match ast__Statement_Match;
+typedef struct token__TokenType_If token__TokenType_If;
+typedef struct errors__ErrorKind_TypeError errors__ErrorKind_TypeError;
+typedef struct token__TokenType_RBrace token__TokenType_RBrace;
+typedef struct errors__ErrorKind errors__ErrorKind;
+typedef struct token__TokenType_Bool token__TokenType_Bool;
+typedef struct LookupResult_std_Vector_str LookupResult_std_Vector_str;
+typedef struct LookupResult_ast__Type LookupResult_ast__Type;
+typedef struct LookupResult_typechecker__StructTemplate LookupResult_typechecker__StructTemplate;
+typedef struct ast__Statement_Guard ast__Statement_Guard;
+typedef struct token__Token token__Token;
+typedef struct std_Pool_std_GraphNode_str std_Pool_std_GraphNode_str;
+typedef struct token__TokenType_Gt token__TokenType_Gt;
+typedef struct typechecker__ResolvedTypeEntry typechecker__ResolvedTypeEntry;
+typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
+typedef struct errors__ErrorKind_ParserError errors__ErrorKind_ParserError;
+typedef struct token__TokenType_Move token__TokenType_Move;
+typedef struct ast__Statement ast__Statement;
+typedef struct ast__Expression_Dereference ast__Expression_Dereference;
+typedef struct ast__Statement_Return ast__Statement_Return;
+typedef struct token__TokenType_Lt token__TokenType_Lt;
+typedef struct token__TokenType_RBracket token__TokenType_RBracket;
 
 // ====================================================
 // DYNAMICALLY GENERATED SLICE STRUCTURE FORWARD DECLARATIONS
@@ -1907,238 +1907,238 @@ Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char fi
 // ====================================================
 // FUNCTION FORWARD DECLARATIONS
 // ====================================================
-Slice_unsigned_char typechecker__typechecker_serialize_functions(typechecker__TypeEnvironment* env, os_Arena* ctx);
-int codegen__codegen_should_skip_fwd_decl(Slice_unsigned_char name);
-void* codegen__codegen_should_skip_fwd_decl_pthread_wrapper(void* arg);
-Slice_unsigned_char typechecker__strip_brand_prefix(Slice_unsigned_char brand, os_Arena* ctx);
-void typechecker__env_register_function(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__FunctionSignature sig, os_Arena* ctx);
-Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_serialize_type_environment(typechecker__TypeEnvironment* env, os_Arena* ctx);
-int typechecker__is_diverging_statement(int stmt_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-std_Vector_str typechecker__typechecker_get_sorted_keys_func(std_HashMap_str_typechecker__FunctionSignature* map, os_Arena* ctx);
-int codegen__codegen_is_ptr_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-ast__Type typechecker__make_type_int(void);
-void typechecker__set_union(int dest, int src, os_Arena* ctx);
-int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
-int codegen__codegen_rfind_char(Slice_unsigned_char s, int ch, int end_idx);
-Slice_unsigned_char codegen__codegen_generate_statement(int stmt_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_clean_monomorphized_name(Slice_unsigned_char name, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena* ctx);
-int typechecker__typechecker_starts_with(Slice_unsigned_char s, Slice_unsigned_char prefix);
-LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
-int codegen__codegen_is_vector_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_char sep, os_Arena* ctx);
-void typechecker__report_error(int kind_tag, Slice_unsigned_char message, token__Span span, typechecker__TypeEnvironment* env, os_Arena* ctx);
-std_Vector_str typechecker__typechecker_get_sorted_keys_type(std_HashMap_str_ast__Type* map, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_gen_type_aware_initializer(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_strip_brand_prefix(Slice_unsigned_char brand, os_Arena* ctx);
-int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
-int parser__parse_unsafe_block(parser__Parser* p, os_Arena* ctx);
-LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
-int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
-void codegen__init_codegen(codegen__Codegen* c, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx);
-ast__Type codegen__codegen_get_expression_type(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, ast__Type t, std_HashMap_str_ast__Type map, os_Arena* ctx);
-ast__Type typechecker__make_type_arena(void);
-Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int indent, os_Arena* ctx);
-int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
-void os_SetThreadScratch(os_Arena* arg0);
-void* os_SetThreadScratch_pthread_wrapper(void* arg);
-token__Position lexer__current_position(lexer__Lexer* l);
-void* lexer__current_position_pthread_wrapper(void* arg);
-int codegen__codegen_is_brand_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void resolver__dfs(int node_idx, std_Graph_str* graph, std_HashMap_str_int* visiting, std_HashMap_str_int* visited, std_Vector_str* order, os_Arena* ctx);
-int parser__is_at_end(parser__Parser* p);
-void* parser__is_at_end_pthread_wrapper(void* arg);
-void resolver__resolve_imports_recursive(Slice_unsigned_char entry_path, std_Graph_str* graph, std_HashMap_str_int* path_to_node, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_generate_expression(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char resolver__get_dirname(Slice_unsigned_char path, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_gen_struct_initializer(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-token__Span codegen__codegen_get_expression_span(int expr_idx, os_Arena* ctx);
-int parser__Parser_ctx_IsValid(parser__Parser* req);
-void* parser__Parser_ctx_IsValid_pthread_wrapper(void* arg);
-Slice_unsigned_char lexer__read_number(lexer__Lexer* l);
-void* lexer__read_number_pthread_wrapper(void* arg);
-Slice_unsigned_char typechecker__typechecker_serialize_enums(typechecker__TypeEnvironment* env, os_Arena* ctx);
-void typechecker__typechecker_sort_vector_str(std_Vector_str* vec, os_Arena* ctx);
-os_Arena os_Arena_New(void);
-int typechecker__scope_contains(int scope, Slice_unsigned_char name, os_Arena* ctx);
-int codegen__codegen_has_boolean_fields(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-ast__Type typechecker__typechecker_get_template_elem_type(Slice_unsigned_char struct_name, Slice_unsigned_char field_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_serialize_structures(typechecker__TypeEnvironment* env, os_Arena* ctx);
-int LookupResult_os_Dir_ctx_IsValid(LookupResult_os_Dir* req);
-void* LookupResult_os_Dir_ctx_IsValid_pthread_wrapper(void* arg);
-ast__Type typechecker__typechecker_parse_type_from_string(Slice_unsigned_char target_struct, os_Arena* ctx);
-void lexer__next_token(lexer__Lexer* l, token__Token* tok);
-ast__Type typechecker__make_type_bool(void);
-ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx);
-int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
-void* lexer__Lexer_ctx_IsValid_pthread_wrapper(void* arg);
-void os_CloseDir(os_Dir arg0);
-void* os_CloseDir_pthread_wrapper(void* arg);
-Slice_unsigned_char codegen__codegen_get_erased_struct_name(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void std_Yield(void);
-std_Vector_str typechecker__typechecker_get_sorted_keys_enum(std_HashMap_str_std_Vector_str* map, os_Arena* ctx);
-std_Vector_str codegen__codegen_get_topologically_sorted_structs(typechecker__TypeEnvironment* env, os_Arena* ctx);
-int parser__parse_statement(parser__Parser* p, os_Arena* ctx);
-token__Span parser__merge_spans(token__Span start, token__Span end);
-int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
-ast__Type typechecker__parse_one_type_from_parts(typechecker__TypeEnvironment* env, std_Vector_str parts, int* start_idx, os_Arena* ctx);
-unsigned char lexer__peek_char(lexer__Lexer* l);
-void* lexer__peek_char_pthread_wrapper(void* arg);
-ast__Type typechecker__check_expression(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
-int parser__parse_function_decl(parser__Parser* p, os_Arena* ctx);
-ast__Type typechecker__scope_lookup(int scope, Slice_unsigned_char name, os_Arena* ctx);
-errors__Result_int typechecker__check_statement(int stmt_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
-void parser__error_at_current(parser__Parser* p, Slice_unsigned_char message);
-Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, std_Vector_str prefixes, typechecker__TypeEnvironment* env, os_Arena* ctx);
-std_Vector_str typechecker__typechecker_get_sorted_keys_layout(std_HashMap_str_typechecker__StructLayout* map, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_variant_def(ast__VariantDef v, int indent, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_gen_is_valid_helper(Slice_unsigned_char struct_name, typechecker__StructLayout layout, typechecker__TypeEnvironment* env, os_Arena* ctx);
-ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
-Slice_unsigned_char lexer__read_string(lexer__Lexer* l);
-void* lexer__read_string_pthread_wrapper(void* arg);
-Slice_unsigned_char codegen__codegen_generate_block_statement(int block_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_gen_function_fwd_decl(Slice_unsigned_char name, typechecker__FunctionSignature sig, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_serialize_variables(typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char typechecker__get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
-void typechecker__env_register_std_structs(typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
 void* std_Format_pthread_wrapper(void* arg);
+Slice_unsigned_char codegen__codegen_gen_type_aware_initializer(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, ast__Statement stmt, os_Arena* ctx);
+int typechecker__typechecker_ends_with(Slice_unsigned_char s, Slice_unsigned_char suffix);
+int codegen__codegen_is_slice_type(ast__Type t);
+void* codegen__codegen_is_slice_type_pthread_wrapper(void* arg);
+void std_Yield(void);
+int typechecker__is_pointer_write(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+token__Span parser__merge_spans(token__Span start, token__Span end);
+int typechecker__typechecker_str_compare(Slice_unsigned_char s1, Slice_unsigned_char s2);
+void typechecker__env_register_std_templates(typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
+void* std_Format_pthread_wrapper(void* arg);
+Slice_unsigned_char lexer__read_string(lexer__Lexer* l);
+void* lexer__read_string_pthread_wrapper(void* arg);
+token__TokenType lexer__lookup_ident(Slice_unsigned_char literal);
+void* lexer__lookup_ident_pthread_wrapper(void* arg);
+int codegen__codegen_should_skip_fwd_decl(Slice_unsigned_char name);
+void* codegen__codegen_should_skip_fwd_decl_pthread_wrapper(void* arg);
+void typechecker__typechecker_log_trace(Slice_unsigned_char emoji, Slice_unsigned_char message, os_Arena* ctx);
+void typechecker__typechecker_sort_vector_str(std_Vector_str* vec, os_Arena* ctx);
+ast__Type codegen__codegen_erase_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int indent, os_Arena* ctx);
+os_Arena os_Arena_New(void);
+int parser__parse_unsafe_block(parser__Parser* p, os_Arena* ctx);
+int os_Dir_ctx_IsValid(os_Dir* req);
+void* os_Dir_ctx_IsValid_pthread_wrapper(void* arg);
+void os_SetThreadScratch(os_Arena* arg0);
+void* os_SetThreadScratch_pthread_wrapper(void* arg);
+void typechecker__env_register_struct(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__StructLayout layout, os_Arena* ctx);
+errors__Result_int typechecker__check_statement(int stmt_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+void resolver__dfs(int node_idx, std_Graph_str* graph, std_HashMap_str_int* visiting, std_HashMap_str_int* visited, std_Vector_str* order, os_Arena* ctx);
+ast__Type typechecker__make_type_str(void);
+ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx);
+std_HashMap_str_Index_typechecker__OriginSet typechecker__typechecker_clone_origins(std_HashMap_str_Index_typechecker__OriginSet src, os_Arena* ctx);
+int typechecker__set_contains(int set, Slice_unsigned_char element, os_Arena* ctx);
+int codegen__codegen_rfind_char(Slice_unsigned_char s, int ch, int end_idx);
+int typechecker__scope_new(int parent, os_Arena* ctx);
+errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
 os_Arena os_Arena_New(void);
 Slice_unsigned_char lexer__read_identifier(lexer__Lexer* l);
 void* lexer__read_identifier_pthread_wrapper(void* arg);
-ast__Type typechecker__typechecker_substitute_field_brand(ast__Type t, int struct_brand, Slice_unsigned_char parent_path, typechecker__StructLayout layout, os_Arena* ctx);
-std_HashMap_str_int typechecker__typechecker_clone_int_map(std_HashMap_str_int src, os_Arena* ctx);
+void typechecker__env_register_std_functions(typechecker__TypeEnvironment* env, os_Arena* ctx);
+token__Span parser__get_expression_span(int expr, os_Arena* ctx);
+int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
+void* lexer__Lexer_ctx_IsValid_pthread_wrapper(void* arg);
+ast__Type typechecker__typechecker_get_template_elem_type(Slice_unsigned_char struct_name, Slice_unsigned_char field_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int typechecker__typechecker_clone_origin_set(int src, os_Arena* ctx);
+int codegen__codegen_has_boolean_fields_recursive(ast__Type t, typechecker__TypeEnvironment* env, std_HashMap_str_int* visited, os_Arena* ctx);
+ast__Type typechecker__make_type_arena(void);
 typechecker__TypeEnvironment typechecker__env_new(os_Arena* ctx);
 void* typechecker__env_new_pthread_wrapper(void* arg);
-void parser__init_parser(parser__Parser* p, lexer__Lexer* l, os_Arena* ctx);
-void lexer__init_lexer(lexer__Lexer* l, Slice_unsigned_char input);
-errors__Result_ast__Type typechecker__monomorphize(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx);
-ast__Type typechecker__make_type_byte(void);
-std_HashMap_str_Index_typechecker__OriginSet typechecker__typechecker_clone_origins(std_HashMap_str_Index_typechecker__OriginSet src, os_Arena* ctx);
-ast__Type typechecker__make_type_str(void);
-ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx);
-ast__Type typechecker__typechecker_substitute_brand(ast__Type t, int new_brand, os_Arena* ctx);
-void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, ast__Statement stmt, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_erase_struct_name(Slice_unsigned_char name, int brand, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int indent, os_Arena* ctx);
-int codegen__codegen_hashmap_is_str_key(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_get_c_type_ident(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int lexer__Lexer_Any_IsValid(lexer__Lexer* req);
-void* lexer__Lexer_Any_IsValid_pthread_wrapper(void* arg);
-Slice_unsigned_char codegen__codegen_get_c_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void typechecker__env_register_std_templates(typechecker__TypeEnvironment* env, os_Arena* ctx);
-void typechecker__typechecker_extract_ok_checked_variables(int expr_idx, std_HashMap_str_int* checked_map, os_Arena* ctx);
-Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
-int typechecker__typechecker_rfind_char(Slice_unsigned_char s, int ch, int end_idx);
-int typechecker__types_match(ast__Type expected, ast__Type actual, os_Arena* ctx);
-os_Arena os_Arena_New(void);
-int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
-void lexer__read_char(lexer__Lexer* l);
-void* lexer__read_char_pthread_wrapper(void* arg);
-unsigned char lexer__is_letter(unsigned char b);
-void* lexer__is_letter_pthread_wrapper(void* arg);
-token__Span parser__get_expression_span(int expr, os_Arena* ctx);
-void typechecker__env_register_struct(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__StructLayout layout, os_Arena* ctx);
-int codegen__codegen_is_arena_val(Slice_unsigned_char var_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int indent, os_Arena* ctx);
-token__TokenType lexer__lookup_ident(Slice_unsigned_char literal);
-void* lexer__lookup_ident_pthread_wrapper(void* arg);
-int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx);
-int codegen__codegen_is_slice_type(ast__Type t);
-void* codegen__codegen_is_slice_type_pthread_wrapper(void* arg);
-void typechecker__typechecker_log_trace(Slice_unsigned_char emoji, Slice_unsigned_char message, os_Arena* ctx);
-int typechecker__set_init(os_Arena* ctx);
-void* typechecker__set_init_pthread_wrapper(void* arg);
-void typechecker__register_fn(typechecker__TypeEnvironment* env, Slice_unsigned_char name, std_Vector_ast__Type params, ast__Type ret_t, os_Arena* ctx);
-int codegen__codegen_is_generational_arena_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void parser__synchronize(parser__Parser* p);
-void* parser__synchronize_pthread_wrapper(void* arg);
-Slice_unsigned_char typechecker__get_call_func_name(int func_expr_idx, os_Arena* ctx);
-int typechecker__is_diverging_block(int block_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os_Arena* ctx);
-parser__ParseResult parser__expect_peek(parser__Parser* p, int tag, os_Arena* ctx);
-Slice_unsigned_char typechecker__get_root_variable(int expr_idx, os_Arena* ctx);
-int codegen__codegen_topological_visit(Slice_unsigned_char name, std_HashMap_str_int* visited, std_HashMap_str_int* temp_visited, std_Vector_str* ordered, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_get_file_stem(Slice_unsigned_char path, os_Arena* ctx);
-ast__Type typechecker__make_type_pointer(ast__Type inner, os_Arena* ctx);
-int codegen__codegen_has_boolean_fields_recursive(ast__Type t, typechecker__TypeEnvironment* env, std_HashMap_str_int* visited, os_Arena* ctx);
-LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
-void os_CloseDir(os_Dir arg0);
-void* os_CloseDir_pthread_wrapper(void* arg);
-int codegen__codegen_is_graph_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-ast__Type codegen__codegen_erase_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-token__Span typechecker__get_expression_span(int expr_idx, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Arena* ctx);
-std_Vector_str typechecker__typechecker_get_sorted_keys_int(std_HashMap_str_int* map, os_Arena* ctx);
-void lexer__skip_whitespace(lexer__Lexer* l);
-void* lexer__skip_whitespace_pthread_wrapper(void* arg);
-Slice_unsigned_char typechecker__typechecker_strip_module_prefix(Slice_unsigned_char name, os_Arena* ctx);
-int typechecker__set_contains(int set, Slice_unsigned_char element, os_Arena* ctx);
-Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
-void* std_Format_pthread_wrapper(void* arg);
-Slice_unsigned_char typechecker__get_type_ident(ast__Type t, os_Arena* ctx);
-std_Vector_ast__Type typechecker__parse_types_from_suffix(typechecker__TypeEnvironment* env, Slice_unsigned_char suffix, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx);
-Slice_unsigned_char typechecker__typechecker_extract_brand_from_suffix(Slice_unsigned_char suffix, os_Arena* ctx);
-int typechecker__is_pointer_write(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
-void typechecker__env_register_std_functions(typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena* ctx);
-Slice_unsigned_char typechecker__env_resolve_namespaced_ident(typechecker__TypeEnvironment* env, Slice_unsigned_char name, os_Arena* ctx);
-std_Vector_str resolver__discover_source_files(Slice_unsigned_char dir_path, os_Arena* ctx);
-void codegen__codegen_get_by_value_dependencies_recursive(ast__Type t, std_HashMap_str_int* deps, typechecker__TypeEnvironment* env, os_Arena* ctx);
-Slice_unsigned_char typechecker__get_type_brand(ast__Type t, os_Arena* ctx);
-errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx);
-void typechecker__scope_insert(int scope, Slice_unsigned_char name, ast__Type t, os_Arena* ctx);
-std_Vector_str resolver__scan_imports(Slice_unsigned_char source, os_Arena* ctx);
-int typechecker__typechecker_str_compare(Slice_unsigned_char s1, Slice_unsigned_char s2);
-int parser__parse_type_signature(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char codegen__codegen_get_c_type_name_by_struct_name(Slice_unsigned_char name, os_Arena* ctx);
-int typechecker__typechecker_ends_with(Slice_unsigned_char s, Slice_unsigned_char suffix);
-std_Vector_str resolver__resolve_topological_sort(Slice_unsigned_char entry_path, std_Graph_str* graph, std_HashMap_str_int* path_to_node, os_Arena* ctx);
-Slice_unsigned_char typechecker__expression_to_string(int expr_idx, os_Arena* ctx);
-int codegen__codegen_is_hashmap_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
-unsigned char parser__peek_token_is(parser__Parser* p, int tag);
-unsigned char lexer__is_digit(unsigned char b);
-void* lexer__is_digit_pthread_wrapper(void* arg);
-LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
-Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx);
-void os_SetThreadScratch(os_Arena* arg0);
-void* os_SetThreadScratch_pthread_wrapper(void* arg);
-ast__Type typechecker__make_type_index(Slice_unsigned_char struct_name, Slice_unsigned_char brand_name, os_Arena* ctx);
-int typechecker__env_type_is_ephemeral_view(ast__Type t, os_Arena* ctx);
-int parser__parse_defer_statement(parser__Parser* p, os_Arena* ctx);
-int codegen__codegen_ends_with(Slice_unsigned_char s, Slice_unsigned_char suffix);
-unsigned char parser__cur_token_is(parser__Parser* p, int tag);
-int parser__peek_token_precedence(parser__Parser* p);
-void* parser__peek_token_precedence_pthread_wrapper(void* arg);
-void typechecker__set_add(int set, Slice_unsigned_char element, os_Arena* ctx);
-int parser__cur_token_precedence(parser__Parser* p);
-void* parser__cur_token_precedence_pthread_wrapper(void* arg);
-ast__FieldDef typechecker__make_field(Slice_unsigned_char name, ast__Type t, os_Arena* ctx);
-void codegen__codegen_log_trace(Slice_unsigned_char emoji, Slice_unsigned_char message, os_Arena* ctx);
-int codegen__codegen_is_pool_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
-void std_Yield(void);
-Slice_unsigned_char codegen__codegen_find_original_struct_name(Slice_unsigned_char erased_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int typechecker__get_expression_origins(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
-int typechecker__scope_new(int parent, os_Arena* ctx);
-int os_Dir_ctx_IsValid(os_Dir* req);
-void* os_Dir_ctx_IsValid_pthread_wrapper(void* arg);
-Slice_unsigned_char codegen__codegen_escape_string(Slice_unsigned_char val, os_Arena* ctx);
-errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
-int codegen__codegen_is_arena_ptr(Slice_unsigned_char var_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
 void parser__next_token(parser__Parser* p);
 void* parser__next_token_pthread_wrapper(void* arg);
-int parser__parse_expression(parser__Parser* p, int precedence, os_Arena* ctx);
-ast__Type typechecker__make_type_struct(Slice_unsigned_char name, Slice_unsigned_char brand_name, os_Arena* ctx);
-int typechecker__typechecker_clone_origin_set(int src, os_Arena* ctx);
-int codegen__codegen_is_rc_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+std_Vector_str codegen__codegen_get_topologically_sorted_structs(typechecker__TypeEnvironment* env, os_Arena* ctx);
+void lexer__next_token(lexer__Lexer* l, token__Token* tok);
+void codegen__codegen_log_trace(Slice_unsigned_char emoji, Slice_unsigned_char message, os_Arena* ctx);
+parser__ParseResult parser__expect_peek(parser__Parser* p, int tag, os_Arena* ctx);
+int parser__Parser_ctx_IsValid(parser__Parser* req);
+void* parser__Parser_ctx_IsValid_pthread_wrapper(void* arg);
+int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_get_c_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_gen_function_fwd_decl(Slice_unsigned_char name, typechecker__FunctionSignature sig, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int typechecker__set_init(os_Arena* ctx);
+void* typechecker__set_init_pthread_wrapper(void* arg);
+Slice_unsigned_char codegen__codegen_get_c_type_ident(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+token__Span codegen__codegen_get_expression_span(int expr_idx, os_Arena* ctx);
+int parser__peek_token_precedence(parser__Parser* p);
+void* parser__peek_token_precedence_pthread_wrapper(void* arg);
+Slice_unsigned_char typechecker__typechecker_strip_module_prefix(Slice_unsigned_char name, os_Arena* ctx);
+int codegen__codegen_is_arena_val(Slice_unsigned_char var_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void typechecker__typechecker_extract_ok_checked_variables(int expr_idx, std_HashMap_str_int* checked_map, os_Arena* ctx);
+ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx);
 ast__Type typechecker__make_type_generic(Slice_unsigned_char name, std_Vector_ast__Type args, os_Arena* ctx);
+int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char typechecker__expression_to_string(int expr_idx, os_Arena* ctx);
+ast__Type typechecker__parse_one_type_from_parts(typechecker__TypeEnvironment* env, std_Vector_str parts, int* start_idx, os_Arena* ctx);
+int typechecker__get_expression_origins(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_strip_brand_prefix(Slice_unsigned_char brand, os_Arena* ctx);
+std_Vector_str typechecker__typechecker_get_sorted_keys_layout(std_HashMap_str_typechecker__StructLayout* map, os_Arena* ctx);
+int codegen__codegen_ends_with(Slice_unsigned_char s, Slice_unsigned_char suffix);
+void typechecker__register_fn(typechecker__TypeEnvironment* env, Slice_unsigned_char name, std_Vector_ast__Type params, ast__Type ret_t, os_Arena* ctx);
+void parser__init_parser(parser__Parser* p, lexer__Lexer* l, os_Arena* ctx);
+void typechecker__env_register_function(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__FunctionSignature sig, os_Arena* ctx);
+token__Span typechecker__get_expression_span(int expr_idx, os_Arena* ctx);
+Slice_unsigned_char lexer__read_number(lexer__Lexer* l);
+void* lexer__read_number_pthread_wrapper(void* arg);
+Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int indent, os_Arena* ctx);
+Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx);
+int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
+unsigned char parser__cur_token_is(parser__Parser* p, int tag);
+std_Vector_str resolver__scan_imports(Slice_unsigned_char source, os_Arena* ctx);
+LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
+Slice_unsigned_char codegen__codegen_get_erased_struct_name(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_clean_monomorphized_name(Slice_unsigned_char name, os_Arena* ctx);
+errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_generate_expression(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena* ctx);
+os_Arena os_Arena_New(void);
+int codegen__codegen_topological_visit(Slice_unsigned_char name, std_HashMap_str_int* visited, std_HashMap_str_int* temp_visited, std_Vector_str* ordered, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_serialize_type_environment(typechecker__TypeEnvironment* env, os_Arena* ctx);
+void os_SetThreadScratch(os_Arena* arg0);
+void* os_SetThreadScratch_pthread_wrapper(void* arg);
+Slice_unsigned_char codegen__codegen_gen_is_valid_helper(Slice_unsigned_char struct_name, typechecker__StructLayout layout, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int parser__parse_statement(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char typechecker__get_type_brand(ast__Type t, os_Arena* ctx);
+void typechecker__set_union(int dest, int src, os_Arena* ctx);
+std_Vector_str resolver__discover_source_files(Slice_unsigned_char dir_path, os_Arena* ctx);
+std_Vector_str typechecker__typechecker_get_sorted_keys_type(std_HashMap_str_ast__Type* map, os_Arena* ctx);
+ast__Type typechecker__make_type_index(Slice_unsigned_char struct_name, Slice_unsigned_char brand_name, os_Arena* ctx);
+std_Vector_str typechecker__typechecker_get_sorted_keys_func(std_HashMap_str_typechecker__FunctionSignature* map, os_Arena* ctx);
+void resolver__resolve_imports_recursive(Slice_unsigned_char entry_path, std_Graph_str* graph, std_HashMap_str_int* path_to_node, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_erase_struct_name(Slice_unsigned_char name, int brand, typechecker__TypeEnvironment* env, os_Arena* ctx);
+token__Position lexer__current_position(lexer__Lexer* l);
+void* lexer__current_position_pthread_wrapper(void* arg);
+Slice_unsigned_char typechecker__typechecker_get_file_stem(Slice_unsigned_char path, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Arena* ctx);
+int codegen__codegen_hashmap_is_str_key(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
+void os_CloseDir(os_Dir arg0);
+void* os_CloseDir_pthread_wrapper(void* arg);
+void lexer__init_lexer(lexer__Lexer* l, Slice_unsigned_char input);
+int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
+int parser__cur_token_precedence(parser__Parser* p);
+void* parser__cur_token_precedence_pthread_wrapper(void* arg);
+int codegen__codegen_is_hashmap_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void typechecker__report_error(int kind_tag, Slice_unsigned_char message, token__Span span, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_generate_statement(int stmt_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__strip_brand_prefix(Slice_unsigned_char brand, os_Arena* ctx);
+void typechecker__env_register_std_structs(typechecker__TypeEnvironment* env, os_Arena* ctx);
+ast__Type typechecker__check_expression(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, ast__Type t, std_HashMap_str_ast__Type map, os_Arena* ctx);
+int typechecker__is_diverging_block(int block_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+void lexer__read_char(lexer__Lexer* l);
+void* lexer__read_char_pthread_wrapper(void* arg);
+Slice_unsigned_char typechecker__typechecker_extract_brand_from_suffix(Slice_unsigned_char suffix, os_Arena* ctx);
+int typechecker__typechecker_starts_with(Slice_unsigned_char s, Slice_unsigned_char prefix);
+int codegen__codegen_has_boolean_fields(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int codegen__codegen_is_brand_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+std_HashMap_str_int typechecker__typechecker_clone_int_map(std_HashMap_str_int src, os_Arena* ctx);
+unsigned char lexer__is_letter(unsigned char b);
+void* lexer__is_letter_pthread_wrapper(void* arg);
 int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx);
+ast__Type typechecker__make_type_struct(Slice_unsigned_char name, Slice_unsigned_char brand_name, os_Arena* ctx);
+int codegen__codegen_is_ptr_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os_Arena* ctx);
+void typechecker__set_add(int set, Slice_unsigned_char element, os_Arena* ctx);
+int codegen__codegen_is_graph_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int parser__is_at_end(parser__Parser* p);
+void* parser__is_at_end_pthread_wrapper(void* arg);
+int typechecker__env_type_is_ephemeral_view(ast__Type t, os_Arena* ctx);
+ast__FieldDef typechecker__make_field(Slice_unsigned_char name, ast__Type t, os_Arena* ctx);
+int LookupResult_os_Dir_ctx_IsValid(LookupResult_os_Dir* req);
+void* LookupResult_os_Dir_ctx_IsValid_pthread_wrapper(void* arg);
+int typechecker__types_match(ast__Type expected, ast__Type actual, os_Arena* ctx);
+std_Vector_str typechecker__typechecker_get_sorted_keys_int(std_HashMap_str_int* map, os_Arena* ctx);
+void codegen__init_codegen(codegen__Codegen* c, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__get_call_func_name(int func_expr_idx, os_Arena* ctx);
+void std_Yield(void);
+Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int indent, os_Arena* ctx);
+std_Vector_str resolver__resolve_topological_sort(Slice_unsigned_char entry_path, std_Graph_str* graph, std_HashMap_str_int* path_to_node, os_Arena* ctx);
+int typechecker__scope_contains(int scope, Slice_unsigned_char name, os_Arena* ctx);
+ast__Type typechecker__scope_lookup(int scope, Slice_unsigned_char name, os_Arena* ctx);
+ast__Type typechecker__typechecker_substitute_field_brand(ast__Type t, int struct_brand, Slice_unsigned_char parent_path, typechecker__StructLayout layout, os_Arena* ctx);
+int typechecker__is_diverging_statement(int stmt_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+unsigned char parser__peek_token_is(parser__Parser* p, int tag);
+void os_CloseDir(os_Dir arg0);
+void* os_CloseDir_pthread_wrapper(void* arg);
+int codegen__codegen_is_vector_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int codegen__codegen_is_generational_arena_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void parser__error_at_current(parser__Parser* p, Slice_unsigned_char message);
+int parser__parse_function_decl(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_gen_struct_initializer(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_get_c_type_name_by_struct_name(Slice_unsigned_char name, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_variant_def(ast__VariantDef v, int indent, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_serialize_enums(typechecker__TypeEnvironment* env, os_Arena* ctx);
+int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
+int codegen__codegen_is_pool_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void parser__synchronize(parser__Parser* p);
+void* parser__synchronize_pthread_wrapper(void* arg);
+Slice_unsigned_char typechecker__get_type_ident(ast__Type t, os_Arena* ctx);
+int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx);
+int parser__parse_type_signature(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int typechecker__typechecker_rfind_char(Slice_unsigned_char s, int ch, int end_idx);
+int parser__parse_expression(parser__Parser* p, int precedence, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx);
+int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
+ast__Type typechecker__typechecker_parse_type_from_string(Slice_unsigned_char target_struct, os_Arena* ctx);
+Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, std_Vector_str prefixes, typechecker__TypeEnvironment* env, os_Arena* ctx);
+unsigned char lexer__peek_char(lexer__Lexer* l);
+void* lexer__peek_char_pthread_wrapper(void* arg);
+unsigned char lexer__is_digit(unsigned char b);
+void* lexer__is_digit_pthread_wrapper(void* arg);
+errors__Result_ast__Type typechecker__monomorphize(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx);
+ast__Type typechecker__make_type_int(void);
+Slice_unsigned_char typechecker__typechecker_serialize_functions(typechecker__TypeEnvironment* env, os_Arena* ctx);
+int lexer__Lexer_Any_IsValid(lexer__Lexer* req);
+void* lexer__Lexer_Any_IsValid_pthread_wrapper(void* arg);
+Slice_unsigned_char resolver__get_dirname(Slice_unsigned_char path, os_Arena* ctx);
+Slice_unsigned_char typechecker__get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_serialize_variables(typechecker__TypeEnvironment* env, os_Arena* ctx);
+int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
+Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_char sep, os_Arena* ctx);
+void codegen__codegen_get_by_value_dependencies_recursive(ast__Type t, std_HashMap_str_int* deps, typechecker__TypeEnvironment* env, os_Arena* ctx);
+ast__Type typechecker__make_type_bool(void);
+int codegen__codegen_is_arena_ptr(Slice_unsigned_char var_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+void typechecker__scope_insert(int scope, Slice_unsigned_char name, ast__Type t, os_Arena* ctx);
+std_Vector_str typechecker__typechecker_get_sorted_keys_enum(std_HashMap_str_std_Vector_str* map, os_Arena* ctx);
+ast__Type typechecker__typechecker_substitute_brand(ast__Type t, int new_brand, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_find_original_struct_name(Slice_unsigned_char erased_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__get_root_variable(int expr_idx, os_Arena* ctx);
+std_Vector_ast__Type typechecker__parse_types_from_suffix(typechecker__TypeEnvironment* env, Slice_unsigned_char suffix, os_Arena* ctx);
+int parser__parse_defer_statement(parser__Parser* p, os_Arena* ctx);
+int codegen__codegen_is_rc_type(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
+ast__Type typechecker__make_type_byte(void);
+ast__Type typechecker__make_type_pointer(ast__Type inner, os_Arena* ctx);
+LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
+Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena* ctx);
+void lexer__skip_whitespace(lexer__Lexer* l);
+void* lexer__skip_whitespace_pthread_wrapper(void* arg);
+Slice_unsigned_char typechecker__typechecker_serialize_structures(typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__env_resolve_namespaced_ident(typechecker__TypeEnvironment* env, Slice_unsigned_char name, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_escape_string(Slice_unsigned_char val, os_Arena* ctx);
+ast__Type codegen__codegen_get_expression_type(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_generate_block_statement(int block_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
+LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
+LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
 
 // ====================================================
 // DYNAMICALLY TRANSPILED USER STRUCTS
@@ -4151,20 +4151,20 @@ struct CastResult_typechecker__TypeEnvironment {
 // ====================================================
 // INVARIANT VALIDATION HELPER FORWARD DECLARATIONS
 // ====================================================
-int lexer__Lexer_IsValid(lexer__Lexer* req);
 int parser__Parser_IsValid(parser__Parser* req);
+int lexer__Lexer_IsValid(lexer__Lexer* req);
 
 // ====================================================
 // INVARIANT VALIDATION HELPERS
 // ====================================================
-int lexer__Lexer_IsValid(lexer__Lexer* req) {
+int parser__Parser_IsValid(parser__Parser* req) {
     if (req == NULL) return 0;
-    if (req->ch != 0x00 && req->ch != 0x01) return 0;
     return 1;
 }
 
-int parser__Parser_IsValid(parser__Parser* req) {
+int lexer__Lexer_IsValid(lexer__Lexer* req) {
     if (req == NULL) return 0;
+    if (req->ch != 0x00 && req->ch != 0x01) return 0;
     return 1;
 }
 
@@ -11577,61 +11577,63 @@ Slice_unsigned_char typechecker__get_type_ident(ast__Type t, os_Arena* ctx) {
 #line 1660 "/home/garth/files/code/gust/compiler/typechecker.gst"
     base = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Slice_", 6 }); Slice_unsigned_char _s2 = typechecker__get_type_ident(inner_t, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
-#line 1661 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 7) {
 #line 1662 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    base = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Index_", 6 }); Slice_unsigned_char _s2 = t.Index.struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (t.tag == 7) {
 #line 1663 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Index.brand != 0xFFFFFFFF) {
+    base = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Index_", 6 }); Slice_unsigned_char _s2 = t.Index.struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 1664 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
+    if (t.Index.brand != 0xFFFFFFFF) {
 #line 1665 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char clean_b = typechecker__strip_brand_prefix((*(brand_str_ptr)), ctx);
+    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
 #line 1666 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = clean_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1667 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char ns_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"__", 2 }); Slice_unsigned_char _s2 = clean_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1668 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__typechecker_ends_with(t.Index.struct_name, suffix) == 0 && typechecker__typechecker_ends_with(t.Index.struct_name, ns_suffix) == 0 && std_str_eq(t.Index.struct_name, clean_b) == 0) {
-#line 1669 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    base = (({ Slice_unsigned_char _s1 = base; Slice_unsigned_char _s2 = suffix; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-    }
-    }
-    } else {
-#line 1672 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 8) {
-#line 1673 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    base = t.Struct.struct_name;
-#line 1674 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Struct.brand != 0xFFFFFFFF) {
-#line 1675 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
-#line 1676 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char clean_b = typechecker__strip_brand_prefix((*(brand_str_ptr)), ctx);
-#line 1677 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1667 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = clean_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1678 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1668 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char ns_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"__", 2 }); Slice_unsigned_char _s2 = clean_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1679 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__typechecker_ends_with(base, suffix) == 0 && typechecker__typechecker_ends_with(base, ns_suffix) == 0 && std_str_eq(base, clean_b) == 0) {
-#line 1680 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1669 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__typechecker_ends_with(t.Index.struct_name, suffix) == 0 && typechecker__typechecker_ends_with(t.Index.struct_name, ns_suffix) == 0 && std_str_eq(t.Index.struct_name, clean_b) == 0) {
+#line 1670 "/home/garth/files/code/gust/compiler/typechecker.gst"
     base = (({ Slice_unsigned_char _s1 = base; Slice_unsigned_char _s2 = suffix; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
     }
     } else {
-#line 1683 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 9) {
-#line 1684 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type inner_t = (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner)));
+#line 1673 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.tag == 8) {
+#line 1674 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    base = t.Struct.struct_name;
+#line 1675 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.Struct.brand != 0xFFFFFFFF) {
+#line 1676 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
+#line 1677 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char brand_name = (*(brand_str_ptr));
+#line 1678 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char clean_b = typechecker__strip_brand_prefix(brand_name, ctx);
+#line 1679 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = clean_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 1680 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char ns_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"__", 2 }); Slice_unsigned_char _s2 = clean_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 1681 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__typechecker_ends_with(base, suffix) == 0 && typechecker__typechecker_ends_with(base, ns_suffix) == 0 && std_str_eq(base, clean_b) == 0) {
+#line 1682 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    base = (({ Slice_unsigned_char _s1 = base; Slice_unsigned_char _s2 = suffix; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
+    }
+    } else {
 #line 1685 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.tag == 9) {
+#line 1689 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type inner_t = (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner)));
+#line 1690 "/home/garth/files/code/gust/compiler/typechecker.gst"
     base = (({ Slice_unsigned_char _s1 = typechecker__get_type_ident(inner_t, ctx); Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_ptr", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
-#line 1686 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1691 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (t.tag == 10) {
-#line 1687 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1692 "/home/garth/files/code/gust/compiler/typechecker.gst"
     base = typechecker__get_monomorphized_name(t.Generic.name, t.Generic.args, ctx);
     } else {
-#line 1689 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1694 "/home/garth/files/code/gust/compiler/typechecker.gst"
     base = ((Slice_unsigned_char){ (unsigned char*)"unknown", 7 });
     }
     }
@@ -11644,97 +11646,97 @@ Slice_unsigned_char typechecker__get_type_ident(ast__Type t, os_Arena* ctx) {
     }
     }
     }
-#line 1692 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char out = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 1693 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 1694 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < base.len) {
-#line 1695 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    unsigned char b = std_str_byte_at(base, i);
-#line 1696 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b == 46) {
 #line 1697 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char out = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 1698 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 1699 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < base.len) {
+#line 1700 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    unsigned char b = std_str_byte_at(base, i);
+#line 1701 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (b == 46) {
+#line 1702 "/home/garth/files/code/gust/compiler/typechecker.gst"
     out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
-#line 1699 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1704 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char char_slice = std_str_slice(base, i, i + 1);
-#line 1700 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1705 "/home/garth/files/code/gust/compiler/typechecker.gst"
     out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = char_slice; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 1702 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1707 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 1704 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1709 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, out);
     }
 }
 
-#line 1708 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx) {
-#line 1709 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 1710 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type* args_vec = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + args_idx)))));
-#line 1711 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char arg_names = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 1712 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
 #line 1713 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(args_vec)).len) {
+Slice_unsigned_char typechecker__get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx) {
 #line 1714 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (i > 0) {
+    {
 #line 1715 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Type* args_vec = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + args_idx)))));
+#line 1716 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char arg_names = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 1717 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 1718 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(args_vec)).len) {
+#line 1719 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (i > 0) {
+#line 1720 "/home/garth/files/code/gust/compiler/typechecker.gst"
     arg_names = (({ Slice_unsigned_char _s1 = arg_names; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 1717 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1722 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char arg_name = typechecker__get_type_ident((*({ if (i < 0 || i >= (*(args_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(args_vec)).data[i]); })), ctx);
-#line 1718 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1723 "/home/garth/files/code/gust/compiler/typechecker.gst"
     arg_names = (({ Slice_unsigned_char _s1 = arg_names; Slice_unsigned_char _s2 = arg_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1719 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1724 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 1721 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name = (({ Slice_unsigned_char _s1 = template_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1722 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    name = (({ Slice_unsigned_char _s1 = name; Slice_unsigned_char _s2 = arg_names; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1724 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char out = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 1725 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
 #line 1726 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < name.len) {
+    Slice_unsigned_char name = (({ Slice_unsigned_char _s1 = template_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 1727 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    unsigned char b = std_str_byte_at(name, j);
-#line 1728 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b == 46) {
+    name = (({ Slice_unsigned_char _s1 = name; Slice_unsigned_char _s2 = arg_names; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 1729 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char out = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 1730 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = 0;
+#line 1731 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < name.len) {
+#line 1732 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    unsigned char b = std_str_byte_at(name, j);
+#line 1733 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (b == 46) {
+#line 1734 "/home/garth/files/code/gust/compiler/typechecker.gst"
     out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
-#line 1731 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1736 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char char_slice = std_str_slice(name, j, j + 1);
-#line 1732 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1737 "/home/garth/files/code/gust/compiler/typechecker.gst"
     out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = char_slice; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 1734 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1739 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
-#line 1736 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1741 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, out);
     }
 }
 
-#line 1740 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1745 "/home/garth/files/code/gust/compiler/typechecker.gst"
 ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, ast__Type t, std_HashMap_str_ast__Type map, os_Arena* ctx) {
-#line 1741 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 1742 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type res_type = ((ast__Type){ .tag = 0 });
-#line 1743 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 8) {
-#line 1744 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name = t.Struct.struct_name;
 #line 1746 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    {
+#line 1747 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type res_type = ((ast__Type){ .tag = 0 });
+#line 1748 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.tag == 8) {
+#line 1749 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char name = t.Struct.struct_name;
+#line 1751 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str map_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < (map.capacity); _i++) {
@@ -11744,9 +11746,9 @@ ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, as
         }
         _v;
     }));
-#line 1747 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1752 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char joined_keys = ast__ast_join_strings(map_keys, ((Slice_unsigned_char){ (unsigned char*)", ", 2 }), ctx);
-#line 1748 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1753 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char log_msg = (({
         Slice_unsigned_char _arg1 = name;
         Slice_unsigned_char _arg2 = joined_keys;
@@ -11755,19 +11757,19 @@ ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, as
         int _len = snprintf(_buf, _alloc_size, "substitute_generics Struct: name=%.*s, map_keys=[%.*s]", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 1749 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"👁", 4 }), log_msg, ctx);
-#line 1751 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, name, 1); } res; });
-#line 1752 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
-#line 1753 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_type = lookup.Val;
 #line 1754 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char before_str = name;
-#line 1755 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char after_str = ast__serialize_type(res_type, ctx);
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"👁", 4 }), log_msg, ctx);
 #line 1756 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_ast__Type lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, name, 1); } res; });
+#line 1757 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (lookup.Ok) {
+#line 1758 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_type = lookup.Val;
+#line 1759 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char before_str = name;
+#line 1760 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char after_str = ast__serialize_type(res_type, ctx);
+#line 1761 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char subst_msg = (({
         Slice_unsigned_char _arg1 = before_str;
         Slice_unsigned_char _arg2 = after_str;
@@ -11776,102 +11778,102 @@ ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, as
         int _len = snprintf(_buf, _alloc_size, "substitute_generics: replaced placeholder '%.*s' with %.*s", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 1757 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1762 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"👁️", 7 }), subst_msg, ctx);
     } else {
-#line 1759 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str parts = std_str_split(name, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }), ctx);
-#line 1760 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int changed = 0;
-#line 1761 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 1762 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < parts.len) {
-#line 1763 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char part = (*({ if (i < 0 || i >= parts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(parts.data[i]); }));
 #line 1764 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type part_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, part, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, part, 1); } res; });
+    std_Vector_str parts = std_str_split(name, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }), ctx);
 #line 1765 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (part_lookup.Ok) {
+    int changed = 0;
 #line 1766 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*({ if (i < 0 || i >= parts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(parts.data[i]); })) = typechecker__get_type_ident(part_lookup.Val, ctx);
+    int i = 0;
 #line 1767 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < parts.len) {
+#line 1768 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char part = (*({ if (i < 0 || i >= parts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(parts.data[i]); }));
+#line 1769 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_ast__Type part_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, part, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, part, 1); } res; });
+#line 1770 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (part_lookup.Ok) {
+#line 1771 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*({ if (i < 0 || i >= parts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(parts.data[i]); })) = typechecker__get_type_ident(part_lookup.Val, ctx);
+#line 1772 "/home/garth/files/code/gust/compiler/typechecker.gst"
     changed = 1;
     }
-#line 1769 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1774 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 1771 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1776 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char new_name = name;
-#line 1772 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1777 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (changed == 1) {
-#line 1773 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1778 "/home/garth/files/code/gust/compiler/typechecker.gst"
     new_name = ast__ast_join_strings(parts, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }), ctx);
     }
-#line 1776 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1781 "/home/garth/files/code/gust/compiler/typechecker.gst"
     LookupResult_ast__Type final_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, new_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, new_name, 1); } res; });
-#line 1777 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1782 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (final_lookup.Ok) {
-#line 1778 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1783 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type = final_lookup.Val;
     } else {
-#line 1780 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int new_brand = t.Struct.brand;
-#line 1781 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Struct.brand != 0xFFFFFFFF) {
-#line 1782 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
-#line 1783 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type brand_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, typechecker__strip_brand_prefix((*(brand_str_ptr)), ctx), 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, typechecker__strip_brand_prefix((*(brand_str_ptr)), ctx), 1); } res; });
-#line 1784 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (brand_lookup.Ok) {
 #line 1785 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type b_type = brand_lookup.Val;
+    int new_brand = t.Struct.brand;
 #line 1786 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b_type.tag == 8) {
+    if (t.Struct.brand != 0xFFFFFFFF) {
 #line 1787 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    new_brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
+    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
 #line 1788 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + new_brand)))));
+    LookupResult_ast__Type brand_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, typechecker__strip_brand_prefix((*(brand_str_ptr)), ctx), 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, typechecker__strip_brand_prefix((*(brand_str_ptr)), ctx), 1); } res; });
 #line 1789 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (brand_lookup.Ok) {
+#line 1790 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type b_type = brand_lookup.Val;
+#line 1791 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (b_type.tag == 8) {
+#line 1792 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    new_brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
+#line 1793 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + new_brand)))));
+#line 1794 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(ptr)) = std_Clone_str(ctx, b_type.Struct.struct_name);
     }
     }
     }
-#line 1793 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1798 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type.tag = 8;
-#line 1794 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1799 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type.Struct.struct_name = std_Clone_str(ctx, new_name);
-#line 1795 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1800 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type.Struct.brand = new_brand;
     }
     }
     } else {
-#line 1798 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 7) {
-#line 1799 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name = t.Index.struct_name;
-#line 1800 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, name, 1); } res; });
-#line 1801 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char new_struct = name;
-#line 1802 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
 #line 1803 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type b_type = lookup.Val;
+    if (t.tag == 7) {
 #line 1804 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b_type.tag == 8) {
+    Slice_unsigned_char name = t.Index.struct_name;
 #line 1805 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_ast__Type lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, name, 1); } res; });
+#line 1806 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char new_struct = name;
+#line 1807 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (lookup.Ok) {
+#line 1808 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type b_type = lookup.Val;
+#line 1809 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (b_type.tag == 8) {
+#line 1810 "/home/garth/files/code/gust/compiler/typechecker.gst"
     new_struct = b_type.Struct.struct_name;
     } else {
-#line 1807 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1812 "/home/garth/files/code/gust/compiler/typechecker.gst"
     new_struct = typechecker__get_type_ident(b_type, ctx);
     }
-#line 1809 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1814 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char before_str = name;
-#line 1810 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1815 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char after_str = ast__serialize_type(b_type, ctx);
-#line 1811 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1816 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char subst_msg = (({
         Slice_unsigned_char _arg1 = before_str;
         Slice_unsigned_char _arg2 = after_str;
@@ -11880,211 +11882,211 @@ ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, as
         int _len = snprintf(_buf, _alloc_size, "substitute_generics: replaced placeholder '%.*s' with %.*s", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 1812 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1817 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"👁️", 7 }), subst_msg, ctx);
     } else {
-#line 1814 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str parts = std_str_split(name, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }), ctx);
-#line 1815 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int changed = 0;
-#line 1816 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 1817 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < parts.len) {
-#line 1818 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char part = (*({ if (i < 0 || i >= parts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(parts.data[i]); }));
 #line 1819 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type part_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, part, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, part, 1); } res; });
+    std_Vector_str parts = std_str_split(name, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }), ctx);
 #line 1820 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (part_lookup.Ok) {
+    int changed = 0;
 #line 1821 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*({ if (i < 0 || i >= parts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(parts.data[i]); })) = typechecker__get_type_ident(part_lookup.Val, ctx);
+    int i = 0;
 #line 1822 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < parts.len) {
+#line 1823 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char part = (*({ if (i < 0 || i >= parts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(parts.data[i]); }));
+#line 1824 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_ast__Type part_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, part, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, part, 1); } res; });
+#line 1825 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (part_lookup.Ok) {
+#line 1826 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*({ if (i < 0 || i >= parts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(parts.data[i]); })) = typechecker__get_type_ident(part_lookup.Val, ctx);
+#line 1827 "/home/garth/files/code/gust/compiler/typechecker.gst"
     changed = 1;
     }
-#line 1824 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1829 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 1826 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1831 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (changed == 1) {
-#line 1827 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1832 "/home/garth/files/code/gust/compiler/typechecker.gst"
     new_struct = ast__ast_join_strings(parts, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }), ctx);
     }
     }
-#line 1831 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type final_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, new_struct, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, new_struct, 1); } res; });
-#line 1832 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char final_struct = new_struct;
-#line 1833 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (final_lookup.Ok) {
-#line 1834 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type b_type = final_lookup.Val;
-#line 1835 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b_type.tag == 8) {
 #line 1836 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_ast__Type final_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, new_struct, 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, new_struct, 1); } res; });
+#line 1837 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char final_struct = new_struct;
+#line 1838 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (final_lookup.Ok) {
+#line 1839 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type b_type = final_lookup.Val;
+#line 1840 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (b_type.tag == 8) {
+#line 1841 "/home/garth/files/code/gust/compiler/typechecker.gst"
     final_struct = b_type.Struct.struct_name;
     }
     }
-#line 1840 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int new_brand = t.Index.brand;
-#line 1841 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Index.brand != 0xFFFFFFFF) {
-#line 1842 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: before reading brand", 47 }), ctx);
-#line 1843 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
-#line 1844 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char brand_name = (*(brand_str_ptr));
 #line 1845 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: before brand map lookup", 50 }), ctx);
+    int new_brand = t.Index.brand;
 #line 1846 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type brand_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, typechecker__strip_brand_prefix(brand_name, ctx), 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, typechecker__strip_brand_prefix(brand_name, ctx), 1); } res; });
+    if (t.Index.brand != 0xFFFFFFFF) {
 #line 1847 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: after brand map lookup", 49 }), ctx);
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: before reading brand", 47 }), ctx);
 #line 1848 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (brand_lookup.Ok) {
+    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
 #line 1849 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type b_type = brand_lookup.Val;
+    Slice_unsigned_char brand_name = (*(brand_str_ptr));
 #line 1850 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b_type.tag == 8) {
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: before brand map lookup", 50 }), ctx);
 #line 1851 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: before ArenaAlloc for new_brand", 58 }), ctx);
+    LookupResult_ast__Type brand_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&map, typechecker__strip_brand_prefix(brand_name, ctx), 1); if (res.Ok) { res.Val = *os_HashMapRef(&map, typechecker__strip_brand_prefix(brand_name, ctx), 1); } res; });
 #line 1852 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    new_brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: after brand map lookup", 49 }), ctx);
 #line 1853 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: after ArenaAlloc for new_brand", 57 }), ctx);
+    if (brand_lookup.Ok) {
 #line 1854 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + new_brand)))));
+    ast__Type b_type = brand_lookup.Val;
 #line 1855 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(ptr)) = std_Clone_str(ctx, b_type.Struct.struct_name);
+    if (b_type.tag == 8) {
 #line 1856 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: before ArenaAlloc for new_brand", 58 }), ctx);
+#line 1857 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    new_brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
+#line 1858 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: after ArenaAlloc for new_brand", 57 }), ctx);
+#line 1859 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + new_brand)))));
+#line 1860 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(ptr)) = std_Clone_str(ctx, b_type.Struct.struct_name);
+#line 1861 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: successfully cloned new_brand", 56 }), ctx);
     }
     }
     }
-#line 1861 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1866 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type.tag = 7;
-#line 1862 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1867 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type.Index.struct_name = std_Clone_str(ctx, final_struct);
-#line 1863 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1868 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type.Index.brand = new_brand;
     } else {
-#line 1864 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1869 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (t.tag == 9) {
-#line 1865 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner)));
-#line 1867 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
-#line 1868 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 1870 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type sub_inner = typechecker__substitute_generics(env, inner, map, ctx);
+    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner)));
 #line 1872 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
+#line 1873 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 1875 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type sub_inner = typechecker__substitute_generics(env, inner, map, ctx);
+#line 1877 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(env)).active_monomorphizations = temp_active;
-#line 1874 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1879 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type = typechecker__make_type_pointer(sub_inner, ctx);
     } else {
-#line 1875 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1880 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (t.tag == 6) {
-#line 1876 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner)));
-#line 1878 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
-#line 1879 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 1881 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type sub_inner = typechecker__substitute_generics(env, inner, map, ctx);
+    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner)));
 #line 1883 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).active_monomorphizations = temp_active;
-#line 1885 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type s = ((ast__Type){ .tag = 0 });
+    std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
+#line 1884 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 1886 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    s.tag = 6;
-#line 1887 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    s.Slice.inner = os_ArenaAlloc(ctx, sizeof(ast__Type));
+    ast__Type sub_inner = typechecker__substitute_generics(env, inner, map, ctx);
 #line 1888 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).active_monomorphizations = temp_active;
+#line 1890 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type s = ((ast__Type){ .tag = 0 });
+#line 1891 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    s.tag = 6;
+#line 1892 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    s.Slice.inner = os_ArenaAlloc(ctx, sizeof(ast__Type));
+#line 1893 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(( ast__Type*)((char*)ctx->BaseAddress + s.Slice.inner))) = sub_inner;
-#line 1889 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1894 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type = s;
     } else {
-#line 1890 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 10) {
-#line 1891 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type* args_vec = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + t.Generic.args)))));
-#line 1892 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type sub_args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 1893 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 1894 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(args_vec)).len) {
 #line 1895 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type arg = (*({ if (i < 0 || i >= (*(args_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(args_vec)).data[i]); }));
+    if (t.tag == 10) {
 #line 1896 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&sub_args, typechecker__substitute_generics(env, arg, map, ctx));
+    std_Vector_ast__Type* args_vec = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + t.Generic.args)))));
 #line 1897 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Type sub_args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 1898 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 1899 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(args_vec)).len) {
+#line 1900 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type arg = (*({ if (i < 0 || i >= (*(args_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(args_vec)).data[i]); }));
+#line 1901 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&sub_args, typechecker__substitute_generics(env, arg, map, ctx));
+#line 1902 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 1899 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1904 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type = typechecker__make_type_generic(t.Generic.name, sub_args, ctx);
     } else {
-#line 1901 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1906 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_type = t;
     }
     }
     }
     }
     }
-#line 1904 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1909 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type resolved_namespaced = typechecker__env_resolve_type(env, res_type, ctx);
-#line 1905 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1910 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return resolved_namespaced;
     }
 }
 
-#line 1909 "/home/garth/files/code/gust/compiler/typechecker.gst"
-errors__Result_ast__Type typechecker__monomorphize(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx) {
-#line 1910 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 1911 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char old_prefix = (*(env)).current_prefix;
-#line 1912 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_str old_imports = (*(env)).imports;
 #line 1914 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char template_prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+errors__Result_ast__Type typechecker__monomorphize(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx) {
 #line 1915 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int pos = std_str_find(template_name, ((Slice_unsigned_char){ (unsigned char*)"__", 2 }));
+    {
 #line 1916 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (pos != 0 - 1) {
+    Slice_unsigned_char old_prefix = (*(env)).current_prefix;
 #line 1917 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_str old_imports = (*(env)).imports;
+#line 1919 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char template_prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 1920 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int pos = std_str_find(template_name, ((Slice_unsigned_char){ (unsigned char*)"__", 2 }));
+#line 1921 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (pos != 0 - 1) {
+#line 1922 "/home/garth/files/code/gust/compiler/typechecker.gst"
     template_prefix = std_str_slice(template_name, 0, pos + 2);
     }
-#line 1920 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1925 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(template_prefix, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0) {
-#line 1921 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1926 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(env)).current_prefix = std_Clone_str(ctx, template_prefix);
     }
-#line 1924 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    errors__Result_ast__Type res = typechecker__monomorphize_impl(env, template_name, args, ctx);
-#line 1926 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).current_prefix = old_prefix;
-#line 1927 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).imports = old_imports;
 #line 1929 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    errors__Result_ast__Type res = typechecker__monomorphize_impl(env, template_name, args, ctx);
+#line 1931 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).current_prefix = old_prefix;
+#line 1932 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).imports = old_imports;
+#line 1934 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
 }
 
-#line 1933 "/home/garth/files/code/gust/compiler/typechecker.gst"
-errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx) {
-#line 1934 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 1935 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int args_idx_start = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Type));
-#line 1936 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + args_idx_start))) = args;
-#line 1937 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char start_args_name = typechecker__get_monomorphized_name(template_name, args_idx_start, ctx);
 #line 1938 "/home/garth/files/code/gust/compiler/typechecker.gst"
+errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx) {
+#line 1939 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    {
+#line 1940 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int args_idx_start = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Type));
+#line 1941 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + args_idx_start))) = args;
+#line 1942 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char start_args_name = typechecker__get_monomorphized_name(template_name, args_idx_start, ctx);
+#line 1943 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char start_msg = (({
         Slice_unsigned_char _arg1 = start_args_name;
         int _alloc_size = 31 + _arg1.len + 1;
@@ -12092,231 +12094,231 @@ errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnviron
         int _len = snprintf(_buf, _alloc_size, "monomorphize_impl: start for %.*s", _arg1.len, (char*)_arg1.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 1939 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔄", 4 }), start_msg, ctx);
-#line 1941 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    errors__Result_ast__Type res = ((errors__Result_ast__Type){ .tag = 0 });
-#line 1942 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.tag = 0;
 #line 1944 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int start_err_len = (*(env)).errors.len;
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔄", 4 }), start_msg, ctx);
 #line 1946 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_int lookup_active = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&(*(env)).active_monomorphizations, template_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).active_monomorphizations, template_name, 1); } res; });
+    errors__Result_ast__Type res = ((errors__Result_ast__Type){ .tag = 0 });
 #line 1947 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup_active.Ok) {
-#line 1948 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
+    res.tag = 0;
 #line 1949 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
-#line 1950 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Recursive monomorphization cycle detected: ", 59 }); Slice_unsigned_char _s2 = template_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int start_err_len = (*(env)).errors.len;
 #line 1951 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, msg);
+    LookupResult_int lookup_active = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&(*(env)).active_monomorphizations, template_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).active_monomorphizations, template_name, 1); } res; });
 #line 1952 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.tag = 1;
+    if (lookup_active.Ok) {
 #line 1953 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Err.error = err;
-#line 1954 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res;
-    }
-#line 1956 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).active_monomorphizations, std_Clone_str(ctx, template_name), 1) = 1;
-#line 1959 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_typechecker__EnumTemplate enum_lookup = ({ LookupResult_typechecker__EnumTemplate res = {0}; res.Ok = os_HashMapContains(&(*(env)).enum_templates, template_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).enum_templates, template_name, 1); } res; });
-#line 1960 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (enum_lookup.Ok) {
-#line 1961 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__EnumTemplate template = enum_lookup.Val;
-#line 1962 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str* generics_vec = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + template.generics)))));
-#line 1963 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(generics_vec)).len != args.len) {
-#line 1964 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
-#line 1965 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1954 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
-#line 1966 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Template '", 26 }); Slice_unsigned_char _s2 = template_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1967 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' expects ", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1968 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = (({ int _val = (*(generics_vec)).len; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1969 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" generic arguments but got ", 27 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1970 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = (({ int _val = args.len; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 1971 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1955 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Recursive monomorphization cycle detected: ", 59 }); Slice_unsigned_char _s2 = template_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 1956 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, msg);
-#line 1972 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1957 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res.tag = 1;
-#line 1973 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1958 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res.Err.error = err;
-#line 1974 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
-#line 1975 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1959 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
+#line 1961 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).active_monomorphizations, std_Clone_str(ctx, template_name), 1) = 1;
+#line 1964 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_typechecker__EnumTemplate enum_lookup = ({ LookupResult_typechecker__EnumTemplate res = {0}; res.Ok = os_HashMapContains(&(*(env)).enum_templates, template_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).enum_templates, template_name, 1); } res; });
+#line 1965 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (enum_lookup.Ok) {
+#line 1966 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__EnumTemplate template = enum_lookup.Val;
+#line 1967 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_str* generics_vec = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + template.generics)))));
+#line 1968 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(generics_vec)).len != args.len) {
+#line 1969 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
+#line 1970 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
+#line 1971 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Template '", 26 }); Slice_unsigned_char _s2 = template_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 1972 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' expects ", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 1973 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = (({ int _val = (*(generics_vec)).len; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 1974 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" generic arguments but got ", 27 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 1975 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = (({ int _val = args.len; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 1976 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, msg);
+#line 1977 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.tag = 1;
 #line 1978 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_ast__Type substitution_map = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    res.Err.error = err;
 #line 1979 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
 #line 1980 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return res;
+    }
+#line 1983 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_ast__Type substitution_map = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 1984 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 1985 "/home/garth/files/code/gust/compiler/typechecker.gst"
     while (i < (*(generics_vec)).len) {
-#line 1981 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1986 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&substitution_map, std_Clone_str(ctx, (*({ if (i < 0 || i >= (*(generics_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(generics_vec)).data[i]); }))), 1) = (*({ if (i < 0 || i >= args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(args.data[i]); }));
-#line 1982 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 1987 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 1985 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int args_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Type));
-#line 1986 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + args_idx))) = args;
-#line 1987 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char concrete_name = typechecker__get_monomorphized_name(template_name, args_idx, ctx);
-#line 1989 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int brand = 0xFFFFFFFF;
 #line 1990 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
+    int args_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Type));
 #line 1991 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < (*(generics_vec)).len) {
+    (*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + args_idx))) = args;
 #line 1992 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char g_name = (*({ if (j < 0 || j >= (*(generics_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(generics_vec)).data[j]); }));
-#line 1993 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"arena", 5 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"a", 1 }))) {
+    Slice_unsigned_char concrete_name = typechecker__get_monomorphized_name(template_name, args_idx, ctx);
 #line 1994 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type arg = (*({ if (j < 0 || j >= args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(args.data[j]); }));
+    int brand = 0xFFFFFFFF;
 #line 1995 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (arg.tag == 8) {
+    int j = 0;
 #line 1996 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
+    while (j < (*(generics_vec)).len) {
 #line 1997 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + brand)))));
+    Slice_unsigned_char g_name = (*({ if (j < 0 || j >= (*(generics_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(generics_vec)).data[j]); }));
 #line 1998 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"arena", 5 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"a", 1 }))) {
+#line 1999 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type arg = (*({ if (j < 0 || j >= args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(args.data[j]); }));
+#line 2000 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (arg.tag == 8) {
+#line 2001 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
+#line 2002 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + brand)))));
+#line 2003 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(ptr)) = std_Clone_str(ctx, arg.Struct.struct_name);
     }
     }
-#line 2001 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2006 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
-#line 2004 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_typechecker__StructLayout existing = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, concrete_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, concrete_name, 1); } res; });
-#line 2005 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (existing.Ok == 0) {
-#line 2006 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout placeholder = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
-#line 2007 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    placeholder.brand = brand;
-#line 2008 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    placeholder.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2009 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_registry, std_Clone_str(ctx, concrete_name), 1) = placeholder;
+    LookupResult_typechecker__StructLayout existing = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, concrete_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, concrete_name, 1); } res; });
+#line 2010 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (existing.Ok == 0) {
 #line 2011 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_ast__Type enum_fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    typechecker__StructLayout placeholder = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
 #line 2012 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_int = ((ast__Type){ .tag = 0 });
+    placeholder.brand = brand;
 #line 2013 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_int.tag = 0;
+    placeholder.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2014 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&enum_fields, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"tag", 3 })), 1) = t_int;
+    *os_HashMapRef(&(*(env)).struct_registry, std_Clone_str(ctx, concrete_name), 1) = placeholder;
 #line 2016 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__VariantDef* variants_vec = ((std_Vector_ast__VariantDef*)&((*(( std_Vector_ast__VariantDef*)((char*)ctx->BaseAddress + template.variants)))));
+    std_HashMap_str_ast__Type enum_fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2017 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str concrete_variants = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    ast__Type t_int = ((ast__Type){ .tag = 0 });
 #line 2018 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int v_idx = 0;
+    t_int.tag = 0;
 #line 2019 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (v_idx < (*(variants_vec)).len) {
-#line 2020 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__VariantDef variant = (*({ if (v_idx < 0 || v_idx >= (*(variants_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(variants_vec)).data[v_idx]); }));
+    *os_HashMapRef(&enum_fields, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"tag", 3 })), 1) = t_int;
 #line 2021 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&concrete_variants, std_Clone_str(ctx, variant.name));
+    std_Vector_ast__VariantDef* variants_vec = ((std_Vector_ast__VariantDef*)&((*(( std_Vector_ast__VariantDef*)((char*)ctx->BaseAddress + template.variants)))));
 #line 2022 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char concrete_variant_struct_name = (({ Slice_unsigned_char _s1 = concrete_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    std_Vector_str concrete_variants = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2023 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    concrete_variant_struct_name = (({ Slice_unsigned_char _s1 = concrete_variant_struct_name; Slice_unsigned_char _s2 = variant.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int v_idx = 0;
+#line 2024 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (v_idx < (*(variants_vec)).len) {
 #line 2025 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_ast__Type variant_fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    ast__VariantDef variant = (*({ if (v_idx < 0 || v_idx >= (*(variants_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(variants_vec)).data[v_idx]); }));
 #line 2026 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef* vfields_vec = ((std_Vector_ast__FieldDef*)&((*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + variant.fields)))));
+    os_VectorPush(&concrete_variants, std_Clone_str(ctx, variant.name));
 #line 2027 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int f_idx = 0;
+    Slice_unsigned_char concrete_variant_struct_name = (({ Slice_unsigned_char _s1 = concrete_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 2028 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (f_idx < (*(vfields_vec)).len) {
-#line 2029 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__FieldDef field = (*({ if (f_idx < 0 || f_idx >= (*(vfields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vfields_vec)).data[f_idx]); }));
+    concrete_variant_struct_name = (({ Slice_unsigned_char _s1 = concrete_variant_struct_name; Slice_unsigned_char _s2 = variant.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 2030 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type substituted_type = typechecker__substitute_generics(env, field.field_type, substitution_map, ctx);
+    std_HashMap_str_ast__Type variant_fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2031 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type resolved_field_type = typechecker__env_resolve_type(env, substituted_type, ctx);
+    std_Vector_ast__FieldDef* vfields_vec = ((std_Vector_ast__FieldDef*)&((*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + variant.fields)))));
+#line 2032 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int f_idx = 0;
 #line 2033 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (resolved_field_type.tag == 8) {
+    while (f_idx < (*(vfields_vec)).len) {
 #line 2034 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_typechecker__StructLayout sub_layout_lookup = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, resolved_field_type.Struct.struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, resolved_field_type.Struct.struct_name, 1); } res; });
+    ast__FieldDef field = (*({ if (f_idx < 0 || f_idx >= (*(vfields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vfields_vec)).data[f_idx]); }));
 #line 2035 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (sub_layout_lookup.Ok) {
+    ast__Type substituted_type = typechecker__substitute_generics(env, field.field_type, substitution_map, ctx);
 #line 2036 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (sub_layout_lookup.Val.fields.len > 2) {
+    ast__Type resolved_field_type = typechecker__env_resolve_type(env, substituted_type, ctx);
 #line 2038 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&sub_layout_lookup.Val.fields, ((Slice_unsigned_char){ (unsigned char*)"tag", 3 }), 1); if (res.Ok) { res.Val = *os_HashMapRef(&sub_layout_lookup.Val.fields, ((Slice_unsigned_char){ (unsigned char*)"tag", 3 }), 1); } res; }).Ok == 0) {
+    if (resolved_field_type.tag == 8) {
 #line 2039 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
+    LookupResult_typechecker__StructLayout sub_layout_lookup = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, resolved_field_type.Struct.struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, resolved_field_type.Struct.struct_name, 1); } res; });
 #line 2040 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
+    if (sub_layout_lookup.Ok) {
 #line 2041 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Variant '", 25 }); Slice_unsigned_char _s2 = variant.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 2042 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' contains a large enum variant payload struct '", 48 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (sub_layout_lookup.Val.fields.len > 2) {
 #line 2043 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = resolved_field_type.Struct.struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&sub_layout_lookup.Val.fields, ((Slice_unsigned_char){ (unsigned char*)"tag", 3 }), 1); if (res.Ok) { res.Val = *os_HashMapRef(&sub_layout_lookup.Val.fields, ((Slice_unsigned_char){ (unsigned char*)"tag", 3 }), 1); } res; }).Ok == 0) {
 #line 2044 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' (3 fields). Use Index, or pointer indirection to avoid memory bloat.", 70 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
 #line 2045 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, msg);
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
 #line 2046 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.tag = 1;
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Variant '", 25 }); Slice_unsigned_char _s2 = variant.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 2047 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Err.error = err;
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' contains a large enum variant payload struct '", 48 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 2048 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = resolved_field_type.Struct.struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 2049 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' (3 fields). Use Index, or pointer indirection to avoid memory bloat.", 70 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 2050 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, msg);
+#line 2051 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.tag = 1;
+#line 2052 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.Err.error = err;
+#line 2053 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
+#line 2054 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
     }
     }
     }
-#line 2055 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2060 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&variant_fields, std_Clone_str(ctx, field.name), 1) = resolved_field_type;
-#line 2056 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2061 "/home/garth/files/code/gust/compiler/typechecker.gst"
     f_idx = f_idx + 1;
     }
-#line 2059 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout variant_layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
-#line 2060 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    variant_layout.brand = brand;
-#line 2061 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    variant_layout.fields = variant_fields;
-#line 2062 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_registry, std_Clone_str(ctx, concrete_variant_struct_name), 1) = variant_layout;
 #line 2064 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_variant = ((ast__Type){ .tag = 0 });
+    typechecker__StructLayout variant_layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
 #line 2065 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_variant.tag = 8;
+    variant_layout.brand = brand;
 #line 2066 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_variant.Struct.struct_name = std_Clone_str(ctx, concrete_variant_struct_name);
+    variant_layout.fields = variant_fields;
 #line 2067 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_variant.Struct.brand = brand;
-#line 2068 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&enum_fields, std_Clone_str(ctx, variant.name), 1) = t_variant;
+    *os_HashMapRef(&(*(env)).struct_registry, std_Clone_str(ctx, concrete_variant_struct_name), 1) = variant_layout;
+#line 2069 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type t_variant = ((ast__Type){ .tag = 0 });
 #line 2070 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    t_variant.tag = 8;
+#line 2071 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    t_variant.Struct.struct_name = std_Clone_str(ctx, concrete_variant_struct_name);
+#line 2072 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    t_variant.Struct.brand = brand;
+#line 2073 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&enum_fields, std_Clone_str(ctx, variant.name), 1) = t_variant;
+#line 2075 "/home/garth/files/code/gust/compiler/typechecker.gst"
     v_idx = v_idx + 1;
     }
-#line 2073 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2078 "/home/garth/files/code/gust/compiler/typechecker.gst"
     placeholder.fields = enum_fields;
-#line 2074 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2079 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).struct_registry, std_Clone_str(ctx, concrete_name), 1) = placeholder;
-#line 2075 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2080 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).enum_registry, std_Clone_str(ctx, concrete_name), 1) = concrete_variants;
-#line 2077 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2082 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char success_msg = (({
         Slice_unsigned_char _arg1 = concrete_name;
         int _alloc_size = 54 + _arg1.len + 1;
@@ -12324,133 +12326,133 @@ errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnviron
         int _len = snprintf(_buf, _alloc_size, "monomorphize_impl: successfully instantiated enum '%.*s'", _arg1.len, (char*)_arg1.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 2078 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2083 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔄", 4 }), success_msg, ctx);
     }
-#line 2081 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Ok.val.tag = 8;
-#line 2082 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Ok.val.Struct.struct_name = std_Clone_str(ctx, concrete_name);
-#line 2083 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Ok.val.Struct.brand = brand;
-#line 2084 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
 #line 2086 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(env)).errors.len > start_err_len) {
+    res.Ok.val.tag = 8;
 #line 2087 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.tag = 1;
+    res.Ok.val.Struct.struct_name = std_Clone_str(ctx, concrete_name);
 #line 2088 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int err_idx = (*(env)).errors.len - 1;
+    res.Ok.val.Struct.brand = brand;
 #line 2089 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int err_idx_arena = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
-#line 2090 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err_idx_arena))) = (*({ if (err_idx < 0 || err_idx >= (*(env)).errors.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).errors.data[err_idx]); }));
+    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
 #line 2091 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(env)).errors.len > start_err_len) {
+#line 2092 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.tag = 1;
+#line 2093 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int err_idx = (*(env)).errors.len - 1;
+#line 2094 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int err_idx_arena = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
+#line 2095 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err_idx_arena))) = (*({ if (err_idx < 0 || err_idx >= (*(env)).errors.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).errors.data[err_idx]); }));
+#line 2096 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res.Err.error = err_idx_arena;
     }
-#line 2093 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res;
-    }
-#line 2097 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_typechecker__StructTemplate struct_lookup = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_templates, template_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_templates, template_name, 1); } res; });
 #line 2098 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (struct_lookup.Ok) {
-#line 2099 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate template = struct_lookup.Val;
-#line 2100 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str* generics_vec = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + template.generics)))));
-#line 2101 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(generics_vec)).len != args.len) {
-#line 2102 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
-#line 2103 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
-#line 2104 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Template '", 26 }); Slice_unsigned_char _s2 = template_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 2105 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' expects ", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 2106 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = (({ int _val = (*(generics_vec)).len; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 2107 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" generic arguments but got ", 27 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 2108 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = (({ int _val = args.len; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 2109 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, msg);
-#line 2110 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.tag = 1;
-#line 2111 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Err.error = err;
-#line 2112 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
-#line 2113 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
+#line 2102 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_typechecker__StructTemplate struct_lookup = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_templates, template_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_templates, template_name, 1); } res; });
+#line 2103 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (struct_lookup.Ok) {
+#line 2104 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__StructTemplate template = struct_lookup.Val;
+#line 2105 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_str* generics_vec = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + template.generics)))));
+#line 2106 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(generics_vec)).len != args.len) {
+#line 2107 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
+#line 2108 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
+#line 2109 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Template '", 26 }); Slice_unsigned_char _s2 = template_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 2110 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' expects ", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 2111 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = (({ int _val = (*(generics_vec)).len; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 2112 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" generic arguments but got ", 27 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 2113 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = (({ int _val = args.len; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 2114 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, msg);
+#line 2115 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.tag = 1;
 #line 2116 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_ast__Type substitution_map = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    res.Err.error = err;
 #line 2117 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
 #line 2118 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return res;
+    }
+#line 2121 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_ast__Type substitution_map = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2122 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 2123 "/home/garth/files/code/gust/compiler/typechecker.gst"
     while (i < (*(generics_vec)).len) {
-#line 2119 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2124 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&substitution_map, std_Clone_str(ctx, (*({ if (i < 0 || i >= (*(generics_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(generics_vec)).data[i]); }))), 1) = (*({ if (i < 0 || i >= args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(args.data[i]); }));
-#line 2120 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2125 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 2123 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int args_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Type));
-#line 2124 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + args_idx))) = args;
-#line 2125 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char concrete_name = typechecker__get_monomorphized_name(template_name, args_idx, ctx);
-#line 2127 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int brand = 0xFFFFFFFF;
 #line 2128 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
+    int args_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Type));
 #line 2129 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < (*(generics_vec)).len) {
+    (*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + args_idx))) = args;
 #line 2130 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char g_name = (*({ if (j < 0 || j >= (*(generics_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(generics_vec)).data[j]); }));
-#line 2131 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"arena", 5 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"a", 1 }))) {
+    Slice_unsigned_char concrete_name = typechecker__get_monomorphized_name(template_name, args_idx, ctx);
 #line 2132 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type arg = (*({ if (j < 0 || j >= args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(args.data[j]); }));
+    int brand = 0xFFFFFFFF;
 #line 2133 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (arg.tag == 8) {
+    int j = 0;
 #line 2134 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
+    while (j < (*(generics_vec)).len) {
 #line 2135 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + brand)))));
+    Slice_unsigned_char g_name = (*({ if (j < 0 || j >= (*(generics_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(generics_vec)).data[j]); }));
 #line 2136 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"arena", 5 })) || std_str_eq(g_name, ((Slice_unsigned_char){ (unsigned char*)"a", 1 }))) {
+#line 2137 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type arg = (*({ if (j < 0 || j >= args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(args.data[j]); }));
+#line 2138 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (arg.tag == 8) {
+#line 2139 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
+#line 2140 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + brand)))));
+#line 2141 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(ptr)) = std_Clone_str(ctx, arg.Struct.struct_name);
     }
     }
-#line 2139 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2144 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
-#line 2142 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_typechecker__StructLayout existing = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, concrete_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, concrete_name, 1); } res; });
-#line 2143 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (existing.Ok == 0) {
-#line 2144 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout placeholder = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
-#line 2145 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    placeholder.brand = brand;
-#line 2146 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    placeholder.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2147 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_registry, std_Clone_str(ctx, concrete_name), 1) = placeholder;
+    LookupResult_typechecker__StructLayout existing = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, concrete_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, concrete_name, 1); } res; });
+#line 2148 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (existing.Ok == 0) {
 #line 2149 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_ast__Type concrete_fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    typechecker__StructLayout placeholder = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
 #line 2150 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef* fields_vec = ((std_Vector_ast__FieldDef*)&((*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + template.fields)))));
+    placeholder.brand = brand;
 #line 2151 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int f_idx = 0;
+    placeholder.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2152 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (f_idx < (*(fields_vec)).len) {
-#line 2153 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__FieldDef field = (*({ if (f_idx < 0 || f_idx >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[f_idx]); }));
+    *os_HashMapRef(&(*(env)).struct_registry, std_Clone_str(ctx, concrete_name), 1) = placeholder;
+#line 2154 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_ast__Type concrete_fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2155 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__FieldDef* fields_vec = ((std_Vector_ast__FieldDef*)&((*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + template.fields)))));
+#line 2156 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int f_idx = 0;
+#line 2157 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (f_idx < (*(fields_vec)).len) {
+#line 2158 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__FieldDef field = (*({ if (f_idx < 0 || f_idx >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[f_idx]); }));
+#line 2160 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char log_start = (({
         Slice_unsigned_char _arg1 = field.name;
         int _alloc_size = 35 + _arg1.len + 1;
@@ -12458,15 +12460,15 @@ errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnviron
         int _len = snprintf(_buf, _alloc_size, "monomorphize_impl field: %.*s - start", _arg1.len, (char*)_arg1.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 2156 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2161 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"⚙", 3 }), log_start, ctx);
-#line 2158 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2163 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type substituted_type = typechecker__substitute_generics(env, field.field_type, substitution_map, ctx);
-#line 2159 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2164 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type resolved_field_type = typechecker__env_resolve_type(env, substituted_type, ctx);
-#line 2160 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2165 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&concrete_fields, std_Clone_str(ctx, field.name), 1) = resolved_field_type;
-#line 2162 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2167 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char log_end = (({
         Slice_unsigned_char _arg1 = field.name;
         int _alloc_size = 33 + _arg1.len + 1;
@@ -12474,16 +12476,16 @@ errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnviron
         int _len = snprintf(_buf, _alloc_size, "monomorphize_impl field: %.*s - end", _arg1.len, (char*)_arg1.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 2163 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2168 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"⚙", 3 }), log_end, ctx);
-#line 2165 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2170 "/home/garth/files/code/gust/compiler/typechecker.gst"
     f_idx = f_idx + 1;
     }
-#line 2168 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2173 "/home/garth/files/code/gust/compiler/typechecker.gst"
     placeholder.fields = concrete_fields;
-#line 2169 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2174 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).struct_registry, std_Clone_str(ctx, concrete_name), 1) = placeholder;
-#line 2171 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2176 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char success_msg = (({
         Slice_unsigned_char _arg1 = concrete_name;
         int _alloc_size = 56 + _arg1.len + 1;
@@ -12491,972 +12493,972 @@ errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnviron
         int _len = snprintf(_buf, _alloc_size, "monomorphize_impl: successfully instantiated struct '%.*s'", _arg1.len, (char*)_arg1.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 2172 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔄", 4 }), success_msg, ctx);
-#line 2175 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (brand == 0xFFFFFFFF) {
-#line 2176 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int f = 0;
 #line 2177 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (f < (*(fields_vec)).len) {
-#line 2178 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__FieldDef field = (*({ if (f < 0 || f >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[f]); }));
-#line 2179 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&concrete_fields, field.name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&concrete_fields, field.name, 1); } res; });
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔄", 4 }), success_msg, ctx);
 #line 2180 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
+    if (brand == 0xFFFFFFFF) {
 #line 2181 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type field_type = lookup.Val;
+    int f = 0;
 #line 2182 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__env_type_is_ephemeral_view(field_type, ctx) == 1) {
+    while (f < (*(fields_vec)).len) {
 #line 2183 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
+    ast__FieldDef field = (*({ if (f < 0 || f >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[f]); }));
 #line 2184 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
+    LookupResult_ast__Type lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&concrete_fields, field.name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&concrete_fields, field.name, 1); } res; });
 #line 2185 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Unbranded monomorphized struct '", 48 }); Slice_unsigned_char _s2 = concrete_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (lookup.Ok) {
 #line 2186 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' cannot contain ephemeral slice or view field '", 48 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    ast__Type field_type = lookup.Val;
 #line 2187 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = field.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (typechecker__env_type_is_ephemeral_view(field_type, ctx) == 1) {
 #line 2188 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"'", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
 #line 2189 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, msg);
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
 #line 2190 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.tag = 1;
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Unbranded monomorphized struct '", 48 }); Slice_unsigned_char _s2 = concrete_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 2191 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Err.error = err;
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' cannot contain ephemeral slice or view field '", 48 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 2192 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = field.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 2193 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"'", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 2194 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, msg);
+#line 2195 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.tag = 1;
+#line 2196 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.Err.error = err;
+#line 2197 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
+#line 2198 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
     }
-#line 2196 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2201 "/home/garth/files/code/gust/compiler/typechecker.gst"
     f = f + 1;
     }
     }
     }
-#line 2201 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Ok.val.tag = 8;
-#line 2202 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Ok.val.Struct.struct_name = std_Clone_str(ctx, concrete_name);
-#line 2203 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Ok.val.Struct.brand = brand;
-#line 2204 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
 #line 2206 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(env)).errors.len > start_err_len) {
+    res.Ok.val.tag = 8;
 #line 2207 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.tag = 1;
+    res.Ok.val.Struct.struct_name = std_Clone_str(ctx, concrete_name);
 #line 2208 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int err_idx = (*(env)).errors.len - 1;
+    res.Ok.val.Struct.brand = brand;
 #line 2209 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int err_idx_arena = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
-#line 2210 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err_idx_arena))) = (*({ if (err_idx < 0 || err_idx >= (*(env)).errors.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).errors.data[err_idx]); }));
+    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
 #line 2211 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(env)).errors.len > start_err_len) {
+#line 2212 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.tag = 1;
+#line 2213 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int err_idx = (*(env)).errors.len - 1;
+#line 2214 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int err_idx_arena = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
+#line 2215 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err_idx_arena))) = (*({ if (err_idx < 0 || err_idx >= (*(env)).errors.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).errors.data[err_idx]); }));
+#line 2216 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res.Err.error = err_idx_arena;
     }
-#line 2213 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2218 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-#line 2216 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
-#line 2217 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
-#line 2218 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Generic template not found: ", 44 }); Slice_unsigned_char _s2 = template_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
-#line 2219 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.tag = 1;
-#line 2220 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Err.error = err;
 #line 2221 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
+    int err = os_ArenaAlloc(ctx, sizeof(errors__CompilerError));
 #line 2222 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).kind.tag = 2;
+#line 2223 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( errors__CompilerError*)((char*)ctx->BaseAddress + err))).message = std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Generic template not found: ", 44 }); Slice_unsigned_char _s2 = template_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
+#line 2224 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.tag = 1;
+#line 2225 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.Err.error = err;
+#line 2226 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_HashMapRemove(&(*(env)).active_monomorphizations, template_name, 1);
+#line 2227 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
 }
 
-#line 2226 "/home/garth/files/code/gust/compiler/typechecker.gst"
-void typechecker__env_register_std_templates(typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 2227 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 2228 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_int = typechecker__make_type_int();
-#line 2229 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_byte = typechecker__make_type_byte();
-#line 2230 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_bool = typechecker__make_type_bool();
 #line 2231 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_arena = typechecker__make_type_arena();
+void typechecker__env_register_std_templates(typechecker__TypeEnvironment* env, os_Arena* ctx) {
 #line 2232 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_str = typechecker__make_type_str();
+    {
 #line 2233 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_arena_ptr = typechecker__make_type_pointer(t_arena, ctx);
+    ast__Type t_int = typechecker__make_type_int();
+#line 2234 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type t_byte = typechecker__make_type_byte();
+#line 2235 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type t_bool = typechecker__make_type_bool();
 #line 2236 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str vec_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    ast__Type t_arena = typechecker__make_type_arena();
 #line 2237 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&vec_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
+    ast__Type t_str = typechecker__make_type_str();
 #line 2238 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&vec_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2240 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef vec_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    ast__Type t_arena_ptr = typechecker__make_type_pointer(t_arena, ctx);
 #line 2241 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&vec_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"data", 4 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
+    std_Vector_str vec_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2242 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&vec_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"len", 3 }), t_int, ctx));
+    os_VectorPush(&vec_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
 #line 2243 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&vec_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"capacity", 8 }), t_int, ctx));
-#line 2244 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&vec_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"arena", 5 }), t_arena_ptr, ctx));
+    os_VectorPush(&vec_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
+#line 2245 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__FieldDef vec_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2246 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int vec_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    os_VectorPush(&vec_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"data", 4 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
 #line 2247 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int vec_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    os_VectorPush(&vec_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"len", 3 }), t_int, ctx));
 #line 2248 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + vec_gen_idx))) = vec_gen;
+    os_VectorPush(&vec_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"capacity", 8 }), t_int, ctx));
 #line 2249 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + vec_fields_idx))) = vec_fields;
+    os_VectorPush(&vec_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"arena", 5 }), t_arena_ptr, ctx));
 #line 2251 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate vec_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int vec_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2252 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    vec_tmpl.generics = vec_gen_idx;
+    int vec_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2253 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    vec_tmpl.fields = vec_fields_idx;
-#line 2255 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Vector", 10 })), 1) = vec_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + vec_gen_idx))) = vec_gen;
+#line 2254 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + vec_fields_idx))) = vec_fields;
 #line 2256 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 })), 1) = vec_tmpl;
+    typechecker__StructTemplate vec_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2257 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Vector", 6 })), 1) = vec_tmpl;
+    vec_tmpl.generics = vec_gen_idx;
+#line 2258 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    vec_tmpl.fields = vec_fields_idx;
 #line 2260 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str map_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Vector", 10 })), 1) = vec_tmpl;
 #line 2261 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&map_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"K", 1 })));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 })), 1) = vec_tmpl;
 #line 2262 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&map_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"V", 1 })));
-#line 2263 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&map_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Vector", 6 })), 1) = vec_tmpl;
 #line 2265 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef map_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_Vector_str map_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2266 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"keys", 4 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"K", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
+    os_VectorPush(&map_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"K", 1 })));
 #line 2267 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"values", 6 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"V", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
+    os_VectorPush(&map_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"V", 1 })));
 #line 2268 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"occupied", 8 }), typechecker__make_type_pointer(t_int, ctx), ctx));
-#line 2269 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"len", 3 }), t_int, ctx));
+    os_VectorPush(&map_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2270 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"capacity", 8 }), t_int, ctx));
+    std_Vector_ast__FieldDef map_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2271 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"arena", 5 }), t_arena_ptr, ctx));
+    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"keys", 4 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"K", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
+#line 2272 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"values", 6 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"V", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
 #line 2273 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int map_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"occupied", 8 }), typechecker__make_type_pointer(t_int, ctx), ctx));
 #line 2274 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int map_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"len", 3 }), t_int, ctx));
 #line 2275 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + map_gen_idx))) = map_gen;
+    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"capacity", 8 }), t_int, ctx));
 #line 2276 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + map_fields_idx))) = map_fields;
+    os_VectorPush(&map_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"arena", 5 }), t_arena_ptr, ctx));
 #line 2278 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate map_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int map_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2279 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    map_tmpl.generics = map_gen_idx;
+    int map_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2280 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    map_tmpl.fields = map_fields_idx;
-#line 2282 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_HashMap", 11 })), 1) = map_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + map_gen_idx))) = map_gen;
+#line 2281 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + map_fields_idx))) = map_fields;
 #line 2283 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.HashMap", 11 })), 1) = map_tmpl;
+    typechecker__StructTemplate map_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2284 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"HashMap", 7 })), 1) = map_tmpl;
+    map_tmpl.generics = map_gen_idx;
+#line 2285 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    map_tmpl.fields = map_fields_idx;
 #line 2287 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str pool_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_HashMap", 11 })), 1) = map_tmpl;
 #line 2288 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.HashMap", 11 })), 1) = map_tmpl;
 #line 2289 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2291 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef pool_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"HashMap", 7 })), 1) = map_tmpl;
 #line 2292 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"data", 4 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
+    std_Vector_str pool_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2293 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"occupied", 8 }), typechecker__make_type_pointer(t_int, ctx), ctx));
+    os_VectorPush(&pool_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
 #line 2294 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"free_list", 9 }), typechecker__make_type_pointer(t_int, ctx), ctx));
-#line 2295 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"len", 3 }), t_int, ctx));
+    os_VectorPush(&pool_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2296 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"capacity", 8 }), t_int, ctx));
+    std_Vector_ast__FieldDef pool_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2297 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"free_len", 8 }), t_int, ctx));
+    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"data", 4 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
 #line 2298 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"arena", 5 }), t_arena_ptr, ctx));
+    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"occupied", 8 }), typechecker__make_type_pointer(t_int, ctx), ctx));
+#line 2299 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"free_list", 9 }), typechecker__make_type_pointer(t_int, ctx), ctx));
 #line 2300 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int pool_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"len", 3 }), t_int, ctx));
 #line 2301 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int pool_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"capacity", 8 }), t_int, ctx));
 #line 2302 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + pool_gen_idx))) = pool_gen;
+    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"free_len", 8 }), t_int, ctx));
 #line 2303 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + pool_fields_idx))) = pool_fields;
+    os_VectorPush(&pool_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"arena", 5 }), t_arena_ptr, ctx));
 #line 2305 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate pool_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int pool_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2306 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    pool_tmpl.generics = pool_gen_idx;
+    int pool_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2307 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    pool_tmpl.fields = pool_fields_idx;
-#line 2309 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Pool", 8 })), 1) = pool_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + pool_gen_idx))) = pool_gen;
+#line 2308 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + pool_fields_idx))) = pool_fields;
 #line 2310 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Pool", 8 })), 1) = pool_tmpl;
+    typechecker__StructTemplate pool_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2311 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Pool", 4 })), 1) = pool_tmpl;
+    pool_tmpl.generics = pool_gen_idx;
+#line 2312 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    pool_tmpl.fields = pool_fields_idx;
 #line 2314 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str rcnode_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Pool", 8 })), 1) = pool_tmpl;
 #line 2315 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&rcnode_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
-#line 2317 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef rcnode_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2318 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&rcnode_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"value", 5 }), typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Pool", 8 })), 1) = pool_tmpl;
+#line 2316 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Pool", 4 })), 1) = pool_tmpl;
 #line 2319 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&rcnode_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"ref_count", 9 }), t_int, ctx));
-#line 2321 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int rcnode_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    std_Vector_str rcnode_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2320 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&rcnode_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
 #line 2322 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int rcnode_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    std_Vector_ast__FieldDef rcnode_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2323 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + rcnode_gen_idx))) = rcnode_gen;
+    os_VectorPush(&rcnode_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"value", 5 }), typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx));
 #line 2324 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + rcnode_fields_idx))) = rcnode_fields;
+    os_VectorPush(&rcnode_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"ref_count", 9 }), t_int, ctx));
 #line 2326 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate rcnode_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int rcnode_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2327 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    rcnode_tmpl.generics = rcnode_gen_idx;
+    int rcnode_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2328 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    rcnode_tmpl.fields = rcnode_fields_idx;
-#line 2330 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_RcNode", 10 })), 1) = rcnode_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + rcnode_gen_idx))) = rcnode_gen;
+#line 2329 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + rcnode_fields_idx))) = rcnode_fields;
 #line 2331 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.RcNode", 10 })), 1) = rcnode_tmpl;
+    typechecker__StructTemplate rcnode_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2332 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"RcNode", 6 })), 1) = rcnode_tmpl;
+    rcnode_tmpl.generics = rcnode_gen_idx;
+#line 2333 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    rcnode_tmpl.fields = rcnode_fields_idx;
 #line 2335 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str rc_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_RcNode", 10 })), 1) = rcnode_tmpl;
 #line 2336 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&rc_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.RcNode", 10 })), 1) = rcnode_tmpl;
 #line 2337 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&rc_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2339 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef rc_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"RcNode", 6 })), 1) = rcnode_tmpl;
 #line 2340 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&rc_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"node_index", 10 }), typechecker__make_type_index(((Slice_unsigned_char){ (unsigned char*)"std_RcNode_T", 12 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx));
+    std_Vector_str rc_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2341 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&rc_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
 #line 2342 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type pool_args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2343 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_args, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_RcNode_T", 12 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
+    os_VectorPush(&rc_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2344 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_args, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
+    std_Vector_ast__FieldDef rc_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2345 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&rc_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"pool", 4 }), typechecker__make_type_pointer(typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Pool", 8 }), pool_args, ctx), ctx), ctx));
+    os_VectorPush(&rc_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"node_index", 10 }), typechecker__make_type_index(((Slice_unsigned_char){ (unsigned char*)"std_RcNode_T", 12 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx));
 #line 2347 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int rc_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    std_Vector_ast__Type pool_args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2348 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int rc_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    os_VectorPush(&pool_args, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_RcNode_T", 12 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
 #line 2349 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + rc_gen_idx))) = rc_gen;
+    os_VectorPush(&pool_args, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
 #line 2350 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + rc_fields_idx))) = rc_fields;
+    os_VectorPush(&rc_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"pool", 4 }), typechecker__make_type_pointer(typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Pool", 8 }), pool_args, ctx), ctx), ctx));
 #line 2352 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate rc_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int rc_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2353 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    rc_tmpl.generics = rc_gen_idx;
+    int rc_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2354 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    rc_tmpl.fields = rc_fields_idx;
-#line 2356 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Rc", 6 })), 1) = rc_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + rc_gen_idx))) = rc_gen;
+#line 2355 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + rc_fields_idx))) = rc_fields;
 #line 2357 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Rc", 6 })), 1) = rc_tmpl;
+    typechecker__StructTemplate rc_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2358 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Rc", 2 })), 1) = rc_tmpl;
+    rc_tmpl.generics = rc_gen_idx;
+#line 2359 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    rc_tmpl.fields = rc_fields_idx;
 #line 2361 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str gnode_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Rc", 6 })), 1) = rc_tmpl;
 #line 2362 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&gnode_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Rc", 6 })), 1) = rc_tmpl;
 #line 2363 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&gnode_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2365 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef gnode_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Rc", 2 })), 1) = rc_tmpl;
 #line 2366 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&gnode_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"value", 5 }), typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx));
+    std_Vector_str gnode_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2367 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&gnode_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
 #line 2368 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type vec_args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2369 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&vec_args, t_int);
+    os_VectorPush(&gnode_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2370 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&vec_args, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
+    std_Vector_ast__FieldDef gnode_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2371 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&gnode_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"edges", 5 }), typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 }), vec_args, ctx), ctx));
+    os_VectorPush(&gnode_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"value", 5 }), typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx));
 #line 2373 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int gnode_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    std_Vector_ast__Type vec_args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2374 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int gnode_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    os_VectorPush(&vec_args, t_int);
 #line 2375 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + gnode_gen_idx))) = gnode_gen;
+    os_VectorPush(&vec_args, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
 #line 2376 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + gnode_fields_idx))) = gnode_fields;
+    os_VectorPush(&gnode_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"edges", 5 }), typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 }), vec_args, ctx), ctx));
 #line 2378 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate gnode_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int gnode_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2379 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    gnode_tmpl.generics = gnode_gen_idx;
+    int gnode_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2380 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    gnode_tmpl.fields = gnode_fields_idx;
-#line 2382 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_GraphNode", 13 })), 1) = gnode_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + gnode_gen_idx))) = gnode_gen;
+#line 2381 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + gnode_fields_idx))) = gnode_fields;
 #line 2383 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.GraphNode", 13 })), 1) = gnode_tmpl;
+    typechecker__StructTemplate gnode_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2384 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"GraphNode", 9 })), 1) = gnode_tmpl;
+    gnode_tmpl.generics = gnode_gen_idx;
+#line 2385 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    gnode_tmpl.fields = gnode_fields_idx;
 #line 2387 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str graph_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_GraphNode", 13 })), 1) = gnode_tmpl;
 #line 2388 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&graph_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.GraphNode", 13 })), 1) = gnode_tmpl;
 #line 2389 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&graph_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2391 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef graph_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"GraphNode", 9 })), 1) = gnode_tmpl;
+#line 2392 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_str graph_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2393 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type pool_args_g = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    os_VectorPush(&graph_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
 #line 2394 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_args_g, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_GraphNode_T_ctx", 19 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
-#line 2395 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&pool_args_g, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
+    os_VectorPush(&graph_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2396 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&graph_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"nodes", 5 }), typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Pool", 8 }), pool_args_g, ctx), ctx));
+    std_Vector_ast__FieldDef graph_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2398 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int graph_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    std_Vector_ast__Type pool_args_g = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2399 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int graph_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    os_VectorPush(&pool_args_g, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_GraphNode_T_ctx", 19 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
 #line 2400 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + graph_gen_idx))) = graph_gen;
+    os_VectorPush(&pool_args_g, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
 #line 2401 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + graph_fields_idx))) = graph_fields;
+    os_VectorPush(&graph_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"nodes", 5 }), typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Pool", 8 }), pool_args_g, ctx), ctx));
 #line 2403 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate graph_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int graph_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2404 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    graph_tmpl.generics = graph_gen_idx;
+    int graph_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2405 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    graph_tmpl.fields = graph_fields_idx;
-#line 2407 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Graph", 9 })), 1) = graph_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + graph_gen_idx))) = graph_gen;
+#line 2406 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + graph_fields_idx))) = graph_fields;
 #line 2408 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Graph", 9 })), 1) = graph_tmpl;
+    typechecker__StructTemplate graph_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2409 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Graph", 5 })), 1) = graph_tmpl;
+    graph_tmpl.generics = graph_gen_idx;
+#line 2410 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    graph_tmpl.fields = graph_fields_idx;
 #line 2412 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str mutex_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Graph", 9 })), 1) = graph_tmpl;
 #line 2413 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&mutex_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Graph", 9 })), 1) = graph_tmpl;
 #line 2414 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&mutex_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2416 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef mutex_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Graph", 5 })), 1) = graph_tmpl;
 #line 2417 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&mutex_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"value", 5 }), typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx));
+    std_Vector_str mutex_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2418 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&mutex_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"lock_state", 10 }), t_int, ctx));
-#line 2420 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int mutex_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    os_VectorPush(&mutex_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
+#line 2419 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&mutex_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2421 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int mutex_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    std_Vector_ast__FieldDef mutex_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2422 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + mutex_gen_idx))) = mutex_gen;
+    os_VectorPush(&mutex_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"value", 5 }), typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx));
 #line 2423 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + mutex_fields_idx))) = mutex_fields;
+    os_VectorPush(&mutex_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"lock_state", 10 }), t_int, ctx));
 #line 2425 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate mutex_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int mutex_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2426 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    mutex_tmpl.generics = mutex_gen_idx;
+    int mutex_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2427 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    mutex_tmpl.fields = mutex_fields_idx;
-#line 2429 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Mutex", 9 })), 1) = mutex_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + mutex_gen_idx))) = mutex_gen;
+#line 2428 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + mutex_fields_idx))) = mutex_fields;
 #line 2430 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Mutex", 9 })), 1) = mutex_tmpl;
+    typechecker__StructTemplate mutex_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2431 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Mutex", 5 })), 1) = mutex_tmpl;
+    mutex_tmpl.generics = mutex_gen_idx;
+#line 2432 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    mutex_tmpl.fields = mutex_fields_idx;
 #line 2434 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str chan_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Mutex", 9 })), 1) = mutex_tmpl;
 #line 2435 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&chan_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Mutex", 9 })), 1) = mutex_tmpl;
 #line 2436 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&chan_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2438 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef chan_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Mutex", 5 })), 1) = mutex_tmpl;
 #line 2439 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&chan_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"capacity", 8 }), t_int, ctx));
+    std_Vector_str chan_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2440 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&chan_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"len", 3 }), t_int, ctx));
+    os_VectorPush(&chan_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
 #line 2441 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&chan_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"_phantom", 8 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
+    os_VectorPush(&chan_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2443 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int chan_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    std_Vector_ast__FieldDef chan_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2444 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int chan_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    os_VectorPush(&chan_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"capacity", 8 }), t_int, ctx));
 #line 2445 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + chan_gen_idx))) = chan_gen;
+    os_VectorPush(&chan_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"len", 3 }), t_int, ctx));
 #line 2446 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + chan_fields_idx))) = chan_fields;
+    os_VectorPush(&chan_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"_phantom", 8 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
 #line 2448 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate chan_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int chan_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2449 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    chan_tmpl.generics = chan_gen_idx;
+    int chan_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2450 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    chan_tmpl.fields = chan_fields_idx;
-#line 2452 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Channel", 11 })), 1) = chan_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + chan_gen_idx))) = chan_gen;
+#line 2451 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + chan_fields_idx))) = chan_fields;
 #line 2453 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Channel", 11 })), 1) = chan_tmpl;
+    typechecker__StructTemplate chan_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2454 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Channel", 7 })), 1) = chan_tmpl;
+    chan_tmpl.generics = chan_gen_idx;
+#line 2455 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    chan_tmpl.fields = chan_fields_idx;
 #line 2457 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str gena_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Channel", 11 })), 1) = chan_tmpl;
 #line 2458 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&gena_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.Channel", 11 })), 1) = chan_tmpl;
 #line 2459 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&gena_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2461 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef gena_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Channel", 7 })), 1) = chan_tmpl;
 #line 2462 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&gena_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"current_ctx", 11 }), t_arena, ctx));
+    std_Vector_str gena_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2463 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&gena_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"next_ctx", 8 }), t_arena, ctx));
+    os_VectorPush(&gena_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"T", 1 })));
 #line 2464 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&gena_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"survivor", 8 }), typechecker__make_type_index(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"current_ctx", 11 }), ctx), ctx));
+    os_VectorPush(&gena_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2466 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int gena_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    std_Vector_ast__FieldDef gena_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2467 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int gena_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    os_VectorPush(&gena_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"current_ctx", 11 }), t_arena, ctx));
 #line 2468 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + gena_gen_idx))) = gena_gen;
+    os_VectorPush(&gena_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"next_ctx", 8 }), t_arena, ctx));
 #line 2469 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + gena_fields_idx))) = gena_fields;
+    os_VectorPush(&gena_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"survivor", 8 }), typechecker__make_type_index(((Slice_unsigned_char){ (unsigned char*)"T", 1 }), ((Slice_unsigned_char){ (unsigned char*)"current_ctx", 11 }), ctx), ctx));
 #line 2471 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate gena_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int gena_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2472 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    gena_tmpl.generics = gena_gen_idx;
+    int gena_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2473 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    gena_tmpl.fields = gena_fields_idx;
-#line 2475 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_GenerationalArena", 21 })), 1) = gena_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + gena_gen_idx))) = gena_gen;
+#line 2474 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + gena_fields_idx))) = gena_fields;
 #line 2476 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.GenerationalArena", 21 })), 1) = gena_tmpl;
+    typechecker__StructTemplate gena_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2477 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"GenerationalArena", 17 })), 1) = gena_tmpl;
+    gena_tmpl.generics = gena_gen_idx;
+#line 2478 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    gena_tmpl.fields = gena_fields_idx;
 #line 2480 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str dir_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_GenerationalArena", 21 })), 1) = gena_tmpl;
 #line 2481 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&dir_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2483 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef dir_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2484 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&dir_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"handle", 6 }), typechecker__make_type_pointer(t_byte, ctx), ctx));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.GenerationalArena", 21 })), 1) = gena_tmpl;
+#line 2482 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"GenerationalArena", 17 })), 1) = gena_tmpl;
+#line 2485 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_str dir_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2486 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int dir_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
-#line 2487 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int dir_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    os_VectorPush(&dir_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2488 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + dir_gen_idx))) = dir_gen;
+    std_Vector_ast__FieldDef dir_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2489 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + dir_fields_idx))) = dir_fields;
+    os_VectorPush(&dir_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"handle", 6 }), typechecker__make_type_pointer(t_byte, ctx), ctx));
 #line 2491 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate dir_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int dir_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2492 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    dir_tmpl.generics = dir_gen_idx;
+    int dir_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2493 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    dir_tmpl.fields = dir_fields_idx;
-#line 2495 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os_Dir", 6 })), 1) = dir_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + dir_gen_idx))) = dir_gen;
+#line 2494 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + dir_fields_idx))) = dir_fields;
 #line 2496 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os.Dir", 6 })), 1) = dir_tmpl;
-#line 2499 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str dire_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    typechecker__StructTemplate dir_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+#line 2497 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    dir_tmpl.generics = dir_gen_idx;
+#line 2498 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    dir_tmpl.fields = dir_fields_idx;
 #line 2500 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&dire_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2502 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef dire_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2503 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&dire_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"name", 4 }), t_str, ctx));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os_Dir", 6 })), 1) = dir_tmpl;
+#line 2501 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os.Dir", 6 })), 1) = dir_tmpl;
 #line 2504 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&dire_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"is_dir", 6 }), t_int, ctx));
-#line 2506 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int dire_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    std_Vector_str dire_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2505 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&dire_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2507 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int dire_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    std_Vector_ast__FieldDef dire_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2508 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + dire_gen_idx))) = dire_gen;
+    os_VectorPush(&dire_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"name", 4 }), t_str, ctx));
 #line 2509 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + dire_fields_idx))) = dire_fields;
+    os_VectorPush(&dire_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"is_dir", 6 }), t_int, ctx));
 #line 2511 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate dire_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int dire_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2512 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    dire_tmpl.generics = dire_gen_idx;
+    int dire_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2513 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    dire_tmpl.fields = dire_fields_idx;
-#line 2515 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 })), 1) = dire_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + dire_gen_idx))) = dire_gen;
+#line 2514 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + dire_fields_idx))) = dire_fields;
 #line 2516 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os.DirEntry", 11 })), 1) = dire_tmpl;
-#line 2519 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str tlc_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    typechecker__StructTemplate dire_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+#line 2517 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    dire_tmpl.generics = dire_gen_idx;
+#line 2518 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    dire_tmpl.fields = dire_fields_idx;
 #line 2520 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&tlc_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
-#line 2522 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef tlc_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2523 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&tlc_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"arena", 5 }), typechecker__make_type_pointer(t_arena, ctx), ctx));
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 })), 1) = dire_tmpl;
+#line 2521 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os.DirEntry", 11 })), 1) = dire_tmpl;
 #line 2524 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&tlc_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"_phantom", 8 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
-#line 2526 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int tlc_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    std_Vector_str tlc_gen = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2525 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&tlc_gen, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
 #line 2527 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int tlc_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
+    std_Vector_ast__FieldDef tlc_fields = (struct std_Vector_ast__FieldDef){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2528 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_str*)((char*)ctx->BaseAddress + tlc_gen_idx))) = tlc_gen;
+    os_VectorPush(&tlc_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"arena", 5 }), typechecker__make_type_pointer(t_arena, ctx), ctx));
 #line 2529 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + tlc_fields_idx))) = tlc_fields;
+    os_VectorPush(&tlc_fields, typechecker__make_field(((Slice_unsigned_char){ (unsigned char*)"_phantom", 8 }), typechecker__make_type_pointer(typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx), ctx), ctx));
 #line 2531 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate tlc_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+    int tlc_gen_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
 #line 2532 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    tlc_tmpl.generics = tlc_gen_idx;
+    int tlc_fields_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__FieldDef));
 #line 2533 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    tlc_tmpl.fields = tlc_fields_idx;
-#line 2535 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_ThreadLocalContext", 22 })), 1) = tlc_tmpl;
+    (*(( std_Vector_str*)((char*)ctx->BaseAddress + tlc_gen_idx))) = tlc_gen;
+#line 2534 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + tlc_fields_idx))) = tlc_fields;
 #line 2536 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.ThreadLocalContext", 22 })), 1) = tlc_tmpl;
+    typechecker__StructTemplate tlc_tmpl = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
 #line 2537 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    tlc_tmpl.generics = tlc_gen_idx;
+#line 2538 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    tlc_tmpl.fields = tlc_fields_idx;
+#line 2540 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_ThreadLocalContext", 22 })), 1) = tlc_tmpl;
+#line 2541 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std.ThreadLocalContext", 22 })), 1) = tlc_tmpl;
+#line 2542 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ThreadLocalContext", 18 })), 1) = tlc_tmpl;
     }
 }
 
-#line 2542 "/home/garth/files/code/gust/compiler/typechecker.gst"
-void typechecker__env_register_std_structs(typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 2543 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 2544 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_int = typechecker__make_type_int();
 #line 2547 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout api_layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
+void typechecker__env_register_std_structs(typechecker__TypeEnvironment* env, os_Arena* ctx) {
 #line 2548 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    api_layout.brand = 0xFFFFFFFF;
+    {
 #line 2549 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    api_layout.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2550 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&api_layout.fields, ((Slice_unsigned_char){ (unsigned char*)"UserID", 6 }), 1) = t_int;
-#line 2551 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&api_layout.fields, ((Slice_unsigned_char){ (unsigned char*)"SessionID", 9 }), 1) = t_int;
+    ast__Type t_int = typechecker__make_type_int();
 #line 2552 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&api_layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Active", 6 }), 1) = t_int;
+    typechecker__StructLayout api_layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
 #line 2553 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__env_register_struct(env, ((Slice_unsigned_char){ (unsigned char*)"APIRequest", 10 }), api_layout, ctx);
+    api_layout.brand = 0xFFFFFFFF;
+#line 2554 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    api_layout.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2555 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&api_layout.fields, ((Slice_unsigned_char){ (unsigned char*)"UserID", 6 }), 1) = t_int;
 #line 2556 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout session_layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
+    *os_HashMapRef(&api_layout.fields, ((Slice_unsigned_char){ (unsigned char*)"SessionID", 9 }), 1) = t_int;
 #line 2557 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int brand_idx = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
+    *os_HashMapRef(&api_layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Active", 6 }), 1) = t_int;
 #line 2558 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* brand_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + brand_idx)))));
-#line 2559 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(brand_ptr)) = ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 });
-#line 2560 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    session_layout.brand = brand_idx;
+    typechecker__env_register_struct(env, ((Slice_unsigned_char){ (unsigned char*)"APIRequest", 10 }), api_layout, ctx);
 #line 2561 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    session_layout.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    typechecker__StructLayout session_layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
 #line 2562 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&session_layout.fields, ((Slice_unsigned_char){ (unsigned char*)"SessionID", 9 }), 1) = t_int;
+    int brand_idx = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
 #line 2563 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&session_layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Next", 4 }), 1) = typechecker__make_type_index(((Slice_unsigned_char){ (unsigned char*)"SessionNode", 11 }), ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 }), ctx);
+    Slice_unsigned_char* brand_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + brand_idx)))));
 #line 2564 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(brand_ptr)) = ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 });
+#line 2565 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    session_layout.brand = brand_idx;
+#line 2566 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    session_layout.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2567 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&session_layout.fields, ((Slice_unsigned_char){ (unsigned char*)"SessionID", 9 }), 1) = t_int;
+#line 2568 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&session_layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Next", 4 }), 1) = typechecker__make_type_index(((Slice_unsigned_char){ (unsigned char*)"SessionNode", 11 }), ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 }), ctx);
+#line 2569 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__env_register_struct(env, ((Slice_unsigned_char){ (unsigned char*)"SessionNode", 11 }), session_layout, ctx);
     }
 }
 
-#line 2568 "/home/garth/files/code/gust/compiler/typechecker.gst"
-void typechecker__register_fn(typechecker__TypeEnvironment* env, Slice_unsigned_char name, std_Vector_ast__Type params, ast__Type ret_t, os_Arena* ctx) {
-#line 2569 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 2570 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
-#line 2571 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    sig.params = params;
-#line 2572 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    sig.return_type = ret_t;
 #line 2573 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    sig.return_origins = typechecker__set_init(ctx);
+void typechecker__register_fn(typechecker__TypeEnvironment* env, Slice_unsigned_char name, std_Vector_ast__Type params, ast__Type ret_t, os_Arena* ctx) {
+#line 2574 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    {
 #line 2575 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str param_names = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
 #line 2576 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    sig.params = params;
 #line 2577 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < params.len) {
+    sig.return_type = ret_t;
 #line 2578 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    sig.return_origins = typechecker__set_init(ctx);
+#line 2580 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_str param_names = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2581 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 2582 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < params.len) {
+#line 2583 "/home/garth/files/code/gust/compiler/typechecker.gst"
     os_VectorPush(&param_names, (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"arg", 3 }); Slice_unsigned_char _s2 = (({ int _val = i; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
-#line 2579 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2584 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 2581 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2586 "/home/garth/files/code/gust/compiler/typechecker.gst"
     sig.param_names = param_names;
-#line 2583 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2588 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__env_register_function(env, name, sig, ctx);
     }
 }
 
-#line 2587 "/home/garth/files/code/gust/compiler/typechecker.gst"
-void typechecker__env_register_std_functions(typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 2588 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 2589 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_int = typechecker__make_type_int();
-#line 2590 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_byte = typechecker__make_type_byte();
-#line 2591 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_bool = typechecker__make_type_bool();
 #line 2592 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_arena = typechecker__make_type_arena();
+void typechecker__env_register_std_functions(typechecker__TypeEnvironment* env, os_Arena* ctx) {
 #line 2593 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_str = typechecker__make_type_str();
+    {
 #line 2594 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_void = ((ast__Type){ .tag = 0 });
-#line 2594 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_void.tag = 3;
+    ast__Type t_int = typechecker__make_type_int();
 #line 2595 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_arena_ptr = typechecker__make_type_pointer(t_arena, ctx);
+    ast__Type t_byte = typechecker__make_type_byte();
 #line 2596 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_any_idx = typechecker__make_type_index(((Slice_unsigned_char){ (unsigned char*)"Any", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx);
+    ast__Type t_bool = typechecker__make_type_bool();
+#line 2597 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type t_arena = typechecker__make_type_arena();
+#line 2598 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type t_str = typechecker__make_type_str();
+#line 2599 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type t_void = ((ast__Type){ .tag = 0 });
+#line 2599 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    t_void.tag = 3;
 #line 2600 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_void = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    ast__Type t_arena_ptr = typechecker__make_type_pointer(t_arena, ctx);
 #line 2601 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_int = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2602 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_int, t_int);
-#line 2603 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_str = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2604 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str, t_str);
+    ast__Type t_any_idx = typechecker__make_type_index(((Slice_unsigned_char){ (unsigned char*)"Any", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx);
 #line 2605 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_byte = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_Vector_ast__Type p_void = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2606 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_byte, t_byte);
+    std_Vector_ast__Type p_int = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2607 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&p_int, t_int);
 #line 2608 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_arena_ptr = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_Vector_ast__Type p_str = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2609 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_arena_ptr, t_arena_ptr);
+    os_VectorPush(&p_str, t_str);
+#line 2610 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Type p_byte = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2611 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_arena_ptr_arena_ptr = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2612 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_arena_ptr_arena_ptr, t_arena_ptr);
+    os_VectorPush(&p_byte, t_byte);
 #line 2613 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_arena_ptr_arena_ptr, t_arena_ptr);
-#line 2615 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_arena_ptr_str = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_Vector_ast__Type p_arena_ptr = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2614 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&p_arena_ptr, t_arena_ptr);
 #line 2616 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_arena_ptr_str, t_arena_ptr);
+    std_Vector_ast__Type p_arena_ptr_arena_ptr = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2617 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_arena_ptr_str, t_str);
-#line 2619 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_str_str = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    os_VectorPush(&p_arena_ptr_arena_ptr, t_arena_ptr);
+#line 2618 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&p_arena_ptr_arena_ptr, t_arena_ptr);
 #line 2620 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str_str, t_str);
+    std_Vector_ast__Type p_arena_ptr_str = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2621 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str_str, t_str);
-#line 2623 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_str_int = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    os_VectorPush(&p_arena_ptr_str, t_arena_ptr);
+#line 2622 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&p_arena_ptr_str, t_str);
 #line 2624 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str_int, t_str);
+    std_Vector_ast__Type p_str_str = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2625 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str_int, t_int);
-#line 2627 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_str_int_int = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    os_VectorPush(&p_str_str, t_str);
+#line 2626 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&p_str_str, t_str);
 #line 2628 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str_int_int, t_str);
+    std_Vector_ast__Type p_str_int = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2629 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str_int_int, t_int);
+    os_VectorPush(&p_str_int, t_str);
 #line 2630 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str_int_int, t_int);
+    os_VectorPush(&p_str_int, t_int);
 #line 2632 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_str_str_arena_ptr = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_Vector_ast__Type p_str_int_int = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2633 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str_str_arena_ptr, t_str);
+    os_VectorPush(&p_str_int_int, t_str);
 #line 2634 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str_str_arena_ptr, t_str);
+    os_VectorPush(&p_str_int_int, t_int);
 #line 2635 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_str_str_arena_ptr, t_arena_ptr);
+    os_VectorPush(&p_str_int_int, t_int);
 #line 2637 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_dir = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_Vector_ast__Type p_str_str_arena_ptr = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2638 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_dir, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"os_Dir_ctx", 10 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx));
+    os_VectorPush(&p_str_str_arena_ptr, t_str);
+#line 2639 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&p_str_str_arena_ptr, t_str);
 #line 2640 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_arena_ptr_dir = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2641 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_arena_ptr_dir, t_arena_ptr);
+    os_VectorPush(&p_str_str_arena_ptr, t_arena_ptr);
 #line 2642 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_arena_ptr_dir, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"os_Dir_ctx", 10 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx));
-#line 2644 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type p_arena_ptr_any = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_Vector_ast__Type p_dir = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2643 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&p_dir, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"os_Dir_ctx", 10 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx));
 #line 2645 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_arena_ptr_any, t_arena_ptr);
+    std_Vector_ast__Type p_arena_ptr_dir = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2646 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&p_arena_ptr_any, t_any_idx);
+    os_VectorPush(&p_arena_ptr_dir, t_arena_ptr);
+#line 2647 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&p_arena_ptr_dir, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"os_Dir_ctx", 10 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx));
 #line 2649 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type vec_args_str = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_Vector_ast__Type p_arena_ptr_any = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2650 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&vec_args_str, t_str);
+    os_VectorPush(&p_arena_ptr_any, t_arena_ptr);
 #line 2651 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&vec_args_str, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
+    os_VectorPush(&p_arena_ptr_any, t_any_idx);
+#line 2654 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Type vec_args_str = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2655 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.ScratchReset", 15 }), p_void, t_void, ctx);
+    os_VectorPush(&vec_args_str, t_str);
 #line 2656 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ScratchReset", 15 }), p_void, t_void, ctx);
-#line 2657 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.Yield", 9 }), p_void, t_void, ctx);
-#line 2658 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_Yield", 9 }), p_void, t_void, ctx);
+    os_VectorPush(&vec_args_str, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
+#line 2660 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.ScratchReset", 15 }), p_void, t_void, ctx);
 #line 2661 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__FunctionSignature sig_arena_new = ((typechecker__FunctionSignature){ .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ScratchReset", 15 }), p_void, t_void, ctx);
 #line 2662 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str arena_new_names = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.Yield", 9 }), p_void, t_void, ctx);
 #line 2663 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type arena_new_params = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2664 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    sig_arena_new.param_names = arena_new_names;
-#line 2665 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    sig_arena_new.params = arena_new_params;
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_Yield", 9 }), p_void, t_void, ctx);
 #line 2666 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    sig_arena_new.return_type = t_arena;
+    typechecker__FunctionSignature sig_arena_new = ((typechecker__FunctionSignature){ .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
 #line 2667 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    sig_arena_new.return_origins = typechecker__set_init(ctx);
+    std_Vector_str arena_new_names = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2668 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__env_register_function(env, ((Slice_unsigned_char){ (unsigned char*)"os_Arena_New", 12 }), sig_arena_new, ctx);
+    std_Vector_ast__Type arena_new_params = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2669 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__env_register_function(env, ((Slice_unsigned_char){ (unsigned char*)"os.Arena.New", 12 }), sig_arena_new, ctx);
+    sig_arena_new.param_names = arena_new_names;
 #line 2670 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__env_register_function(env, ((Slice_unsigned_char){ (unsigned char*)"os_Arena.New", 12 }), sig_arena_new, ctx);
+    sig_arena_new.params = arena_new_params;
+#line 2671 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    sig_arena_new.return_type = t_arena;
 #line 2672 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.GetThreadScratch", 19 }), p_void, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_ThreadLocalContext_Any", 26 }), ((Slice_unsigned_char){ (unsigned char*)"Any", 3 }), ctx), ctx);
+    sig_arena_new.return_origins = typechecker__set_init(ctx);
 #line 2673 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_GetThreadScratch", 19 }), p_void, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_ThreadLocalContext_Any", 26 }), ((Slice_unsigned_char){ (unsigned char*)"Any", 3 }), ctx), ctx);
+    typechecker__env_register_function(env, ((Slice_unsigned_char){ (unsigned char*)"os_Arena_New", 12 }), sig_arena_new, ctx);
+#line 2674 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__env_register_function(env, ((Slice_unsigned_char){ (unsigned char*)"os.Arena.New", 12 }), sig_arena_new, ctx);
 #line 2675 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.Args", 7 }), p_arena_ptr, typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 }), vec_args_str, ctx), ctx);
-#line 2676 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_Args", 7 }), p_arena_ptr, typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 }), vec_args_str, ctx), ctx);
+    typechecker__env_register_function(env, ((Slice_unsigned_char){ (unsigned char*)"os_Arena.New", 12 }), sig_arena_new, ctx);
 #line 2677 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.ArenaValidate", 16 }), p_arena_ptr, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.GetThreadScratch", 19 }), p_void, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_ThreadLocalContext_Any", 26 }), ((Slice_unsigned_char){ (unsigned char*)"Any", 3 }), ctx), ctx);
 #line 2678 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ArenaValidate", 16 }), p_arena_ptr, t_void, ctx);
-#line 2679 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.SetThreadScratch", 19 }), p_arena_ptr, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_GetThreadScratch", 19 }), p_void, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_ThreadLocalContext_Any", 26 }), ((Slice_unsigned_char){ (unsigned char*)"Any", 3 }), ctx), ctx);
 #line 2680 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_SetThreadScratch", 19 }), p_arena_ptr, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.Args", 7 }), p_arena_ptr, typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 }), vec_args_str, ctx), ctx);
+#line 2681 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_Args", 7 }), p_arena_ptr, typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 }), vec_args_str, ctx), ctx);
 #line 2682 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.VectorNew", 12 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Vector_Any", 14 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.ArenaValidate", 16 }), p_arena_ptr, t_void, ctx);
 #line 2683 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_VectorNew", 12 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Vector_Any", 14 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ArenaValidate", 16 }), p_arena_ptr, t_void, ctx);
 #line 2684 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.VectorNew", 13 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Vector_Any", 14 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.SetThreadScratch", 19 }), p_arena_ptr, t_void, ctx);
 #line 2685 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_VectorNew", 13 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Vector_Any", 14 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_SetThreadScratch", 19 }), p_arena_ptr, t_void, ctx);
 #line 2687 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.HashMapNew", 13 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_HashMap_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.VectorNew", 12 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Vector_Any", 14 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2688 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_HashMapNew", 13 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_HashMap_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_VectorNew", 12 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Vector_Any", 14 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2689 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.HashMapNew", 14 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_HashMap_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.VectorNew", 13 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Vector_Any", 14 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2690 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_HashMapNew", 14 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_HashMap_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_VectorNew", 13 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Vector_Any", 14 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2692 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.PoolNew", 10 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Pool_Any", 12 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.HashMapNew", 13 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_HashMap_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2693 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_PoolNew", 10 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Pool_Any", 12 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_HashMapNew", 13 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_HashMap_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2694 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.PoolNew", 11 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Pool_Any", 12 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.HashMapNew", 14 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_HashMap_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2695 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_PoolNew", 11 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Pool_Any", 12 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_HashMapNew", 14 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_HashMap_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2697 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.MutexNew", 12 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Mutex_Any", 13 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.PoolNew", 10 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Pool_Any", 12 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2698 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_MutexNew", 12 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Mutex_Any", 13 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_PoolNew", 10 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Pool_Any", 12 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2699 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.ChannelNew", 14 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Channel_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.PoolNew", 11 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Pool_Any", 12 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2700 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_ChannelNew", 14 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Channel_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_PoolNew", 11 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Pool_Any", 12 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2702 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.Exit", 7 }), p_int, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.MutexNew", 12 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Mutex_Any", 13 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2703 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_Exit", 7 }), p_int, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_MutexNew", 12 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Mutex_Any", 13 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2704 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.LogInt", 9 }), p_int, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.ChannelNew", 14 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Channel_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2705 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_LogInt", 9 }), p_int, t_void, ctx);
-#line 2706 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.LogStr", 9 }), p_str, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_ChannelNew", 14 }), p_arena_ptr, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"std_Channel_Any", 15 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2707 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_LogStr", 9 }), p_str, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.Exit", 7 }), p_int, t_void, ctx);
 #line 2708 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.ScratchAlloc", 15 }), p_int, typechecker__make_type_pointer(t_byte, ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_Exit", 7 }), p_int, t_void, ctx);
 #line 2709 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ScratchAlloc", 15 }), p_int, typechecker__make_type_pointer(t_byte, ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.LogInt", 9 }), p_int, t_void, ctx);
 #line 2710 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.FormatInt", 13 }), p_int, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_LogInt", 9 }), p_int, t_void, ctx);
 #line 2711 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_FormatInt", 13 }), p_int, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.LogStr", 9 }), p_str, t_void, ctx);
+#line 2712 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_LogStr", 9 }), p_str, t_void, ctx);
 #line 2713 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.Format", 10 }), p_str, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.ScratchAlloc", 15 }), p_int, typechecker__make_type_pointer(t_byte, ctx), ctx);
 #line 2714 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_Format", 10 }), p_str, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ScratchAlloc", 15 }), p_int, typechecker__make_type_pointer(t_byte, ctx), ctx);
 #line 2715 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.parse_int", 13 }), p_str, t_int, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.FormatInt", 13 }), p_int, t_str, ctx);
 #line 2716 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_parse_int", 13 }), p_str, t_int, ctx);
-#line 2717 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_trim", 12 }), p_str, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_FormatInt", 13 }), p_int, t_str, ctx);
 #line 2718 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_trim", 12 }), p_str, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.Format", 10 }), p_str, t_str, ctx);
+#line 2719 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_Format", 10 }), p_str, t_str, ctx);
 #line 2720 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.is_alpha", 12 }), p_byte, t_bool, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.parse_int", 13 }), p_str, t_int, ctx);
 #line 2721 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_is_alpha", 12 }), p_byte, t_bool, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_parse_int", 13 }), p_str, t_int, ctx);
 #line 2722 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.is_digit", 12 }), p_byte, t_bool, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_trim", 12 }), p_str, t_str, ctx);
 #line 2723 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_is_digit", 12 }), p_byte, t_bool, ctx);
-#line 2724 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.is_whitespace", 17 }), p_byte, t_bool, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_trim", 12 }), p_str, t_str, ctx);
 #line 2725 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_is_whitespace", 17 }), p_byte, t_bool, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.is_alpha", 12 }), p_byte, t_bool, ctx);
+#line 2726 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_is_alpha", 12 }), p_byte, t_bool, ctx);
 #line 2727 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.GenerationalSwap", 20 }), p_arena_ptr_arena_ptr, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.is_digit", 12 }), p_byte, t_bool, ctx);
 #line 2728 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_GenerationalSwap", 20 }), p_arena_ptr_arena_ptr, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_is_digit", 12 }), p_byte, t_bool, ctx);
+#line 2729 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.is_whitespace", 17 }), p_byte, t_bool, ctx);
 #line 2730 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.OpenDir", 10 }), p_arena_ptr_str, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir_ctx", 23 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
-#line 2731 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_OpenDir", 10 }), p_arena_ptr_str, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir_ctx", 23 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_is_whitespace", 17 }), p_byte, t_bool, ctx);
 #line 2732 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.ReadFile", 11 }), p_arena_ptr_str, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.GenerationalSwap", 20 }), p_arena_ptr_arena_ptr, t_void, ctx);
 #line 2733 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ReadFile", 11 }), p_arena_ptr_str, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_GenerationalSwap", 20 }), p_arena_ptr_arena_ptr, t_void, ctx);
 #line 2735 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.Concat", 10 }), p_str_str, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.OpenDir", 10 }), p_arena_ptr_str, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir_ctx", 23 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2736 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_Concat", 10 }), p_str_str, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_OpenDir", 10 }), p_arena_ptr_str, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir_ctx", 23 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
 #line 2737 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_eq", 10 }), p_str_str, t_int, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.ReadFile", 11 }), p_arena_ptr_str, t_str, ctx);
 #line 2738 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_eq", 10 }), p_str_str, t_int, ctx);
-#line 2739 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_find", 12 }), p_str_str, t_int, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ReadFile", 11 }), p_arena_ptr_str, t_str, ctx);
 #line 2740 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_find", 12 }), p_str_str, t_int, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.Concat", 10 }), p_str_str, t_str, ctx);
 #line 2741 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.WriteFile", 12 }), p_str_str, t_int, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_Concat", 10 }), p_str_str, t_str, ctx);
 #line 2742 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_WriteFile", 12 }), p_str_str, t_int, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_eq", 10 }), p_str_str, t_int, ctx);
+#line 2743 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_eq", 10 }), p_str_str, t_int, ctx);
 #line 2744 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_byte_at", 15 }), p_str_int, t_byte, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_find", 12 }), p_str_str, t_int, ctx);
 #line 2745 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_byte_at", 15 }), p_str_int, t_byte, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_find", 12 }), p_str_str, t_int, ctx);
+#line 2746 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.WriteFile", 12 }), p_str_str, t_int, ctx);
 #line 2747 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_slice", 13 }), p_str_int_int, t_str, ctx);
-#line 2748 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_slice", 13 }), p_str_int_int, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_WriteFile", 12 }), p_str_str, t_int, ctx);
+#line 2749 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_byte_at", 15 }), p_str_int, t_byte, ctx);
 #line 2750 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.path_join", 12 }), p_str_str_arena_ptr, t_str, ctx);
-#line 2751 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_path_join", 12 }), p_str_str_arena_ptr, t_str, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_byte_at", 15 }), p_str_int, t_byte, ctx);
 #line 2752 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_split", 13 }), p_str_str_arena_ptr, typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 }), vec_args_str, ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_slice", 13 }), p_str_int_int, t_str, ctx);
 #line 2753 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_split", 13 }), p_str_str_arena_ptr, typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 }), vec_args_str, ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_slice", 13 }), p_str_int_int, t_str, ctx);
 #line 2755 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.CloseDir", 11 }), p_dir, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.path_join", 12 }), p_str_str_arena_ptr, t_str, ctx);
 #line 2756 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_CloseDir", 11 }), p_dir, t_void, ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_path_join", 12 }), p_str_str_arena_ptr, t_str, ctx);
+#line 2757 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.str_split", 13 }), p_str_str_arena_ptr, typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 }), vec_args_str, ctx), ctx);
 #line 2758 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.ReadDir", 10 }), p_arena_ptr_dir, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry_ctx", 28 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
-#line 2759 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ReadDir", 10 }), p_arena_ptr_dir, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry_ctx", 28 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_str_split", 13 }), p_str_str_arena_ptr, typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"std.Vector", 10 }), vec_args_str, ctx), ctx);
+#line 2760 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.CloseDir", 11 }), p_dir, t_void, ctx);
 #line 2761 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_CloseDir", 11 }), p_dir, t_void, ctx);
+#line 2763 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os.ReadDir", 10 }), p_arena_ptr_dir, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry_ctx", 28 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+#line 2764 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ReadDir", 10 }), p_arena_ptr_dir, typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry_ctx", 28 }), ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }), ctx), ctx);
+#line 2766 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.Clone", 9 }), p_arena_ptr_any, t_any_idx, ctx);
-#line 2762 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2767 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_Clone", 9 }), p_arena_ptr_any, t_any_idx, ctx);
     }
 }
 
-#line 2766 "/home/garth/files/code/gust/compiler/typechecker.gst"
-typechecker__TypeEnvironment typechecker__env_new(os_Arena* ctx) {
-#line 2767 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int env_idx = os_ArenaAlloc(ctx, sizeof(typechecker__TypeEnvironment));
-#line 2768 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 2769 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).struct_registry = (struct std_HashMap_str_typechecker__StructLayout){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2770 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).struct_templates = (struct std_HashMap_str_typechecker__StructTemplate){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2771 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).enum_templates = (struct std_HashMap_str_typechecker__EnumTemplate){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+typechecker__TypeEnvironment typechecker__env_new(os_Arena* ctx) {
 #line 2772 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).function_registry = (struct std_HashMap_str_typechecker__FunctionSignature){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    int env_idx = os_ArenaAlloc(ctx, sizeof(typechecker__TypeEnvironment));
 #line 2773 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).variable_types = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    {
 #line 2774 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).resolved_types_nested = (struct std_Vector_typechecker__PrefixMapEntry){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).struct_registry = (struct std_HashMap_str_typechecker__StructLayout){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2775 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).enum_registry = (struct std_HashMap_str_std_Vector_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).struct_templates = (struct std_HashMap_str_typechecker__StructTemplate){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2776 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).enum_templates = (struct std_HashMap_str_typechecker__EnumTemplate){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2777 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).imports = (struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).function_registry = (struct std_HashMap_str_typechecker__FunctionSignature){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2778 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).imports, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std", 3 })), 1) = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_", 4 }));
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).variable_types = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2779 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).imports, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os", 2 })), 1) = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os_", 3 }));
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).resolved_types_nested = (struct std_Vector_typechecker__PrefixMapEntry){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2780 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).variable_origins = (struct std_HashMap_str_Index_typechecker__OriginSet){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).enum_registry = (struct std_HashMap_str_std_Vector_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2781 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).moved_vars = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
 #line 2782 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).open_directories = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).imports = (struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2783 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).errors = (struct std_Vector_errors__CompilerError){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    *os_HashMapRef(&(*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).imports, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std", 3 })), 1) = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_", 4 }));
 #line 2784 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).expected_return_type = 0xFFFFFFFF;
+    *os_HashMapRef(&(*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).imports, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os", 2 })), 1) = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os_", 3 }));
 #line 2785 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_function_return_origins = 0xFFFFFFFF;
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).variable_origins = (struct std_HashMap_str_Index_typechecker__OriginSet){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2786 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_function_inout_params = 0xFFFFFFFF;
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).moved_vars = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2787 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_function_local_vars = 0xFFFFFFFF;
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).open_directories = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2788 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).checked_results = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).errors = (struct std_Vector_errors__CompilerError){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2789 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).in_unsafe_block = 0;
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).expected_return_type = 0xFFFFFFFF;
 #line 2790 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_function_return_origins = 0xFFFFFFFF;
 #line 2791 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_alloc_struct = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_function_inout_params = 0xFFFFFFFF;
 #line 2792 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_params = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_function_local_vars = 0xFFFFFFFF;
+#line 2793 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).checked_results = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2794 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__env_register_std_templates(((typechecker__TypeEnvironment*)&((*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))))), ctx);
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).in_unsafe_block = 0;
 #line 2795 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__env_register_std_structs(((typechecker__TypeEnvironment*)&((*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))))), ctx);
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2796 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_alloc_struct = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 2797 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))).current_params = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 2799 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__env_register_std_templates(((typechecker__TypeEnvironment*)&((*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))))), ctx);
+#line 2800 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__env_register_std_structs(((typechecker__TypeEnvironment*)&((*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))))), ctx);
+#line 2801 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__env_register_std_functions(((typechecker__TypeEnvironment*)&((*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx))))), ctx);
-#line 2798 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2803 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return (*(( typechecker__TypeEnvironment*)((char*)ctx->BaseAddress + env_idx)));
     }
 }
@@ -13466,295 +13468,295 @@ void* typechecker__env_new_pthread_wrapper(void* arg) {
     return NULL;
 }
 
-#line 2804 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__env_resolve_namespaced_ident(typechecker__TypeEnvironment* env, Slice_unsigned_char name, os_Arena* ctx) {
-#line 2806 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (name.len >= 13 && std_str_eq(std_str_slice(name, 0, 13), ((Slice_unsigned_char){ (unsigned char*)"LookupResult_", 13 }))) {
-#line 2807 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char suffix = std_str_slice(name, 13, name.len);
-#line 2808 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char resolved = typechecker__env_resolve_namespaced_ident(env, suffix, ctx);
 #line 2809 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"LookupResult_", 13 }); Slice_unsigned_char _s2 = resolved; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
-    }
+Slice_unsigned_char typechecker__env_resolve_namespaced_ident(typechecker__TypeEnvironment* env, Slice_unsigned_char name, os_Arena* ctx) {
 #line 2811 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (name.len >= 11 && std_str_eq(std_str_slice(name, 0, 11), ((Slice_unsigned_char){ (unsigned char*)"CastResult_", 11 }))) {
+    if (name.len >= 13 && std_str_eq(std_str_slice(name, 0, 13), ((Slice_unsigned_char){ (unsigned char*)"LookupResult_", 13 }))) {
 #line 2812 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char suffix = std_str_slice(name, 11, name.len);
+    Slice_unsigned_char suffix = std_str_slice(name, 13, name.len);
 #line 2813 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char resolved = typechecker__env_resolve_namespaced_ident(env, suffix, ctx);
 #line 2814 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"LookupResult_", 13 }); Slice_unsigned_char _s2 = resolved; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
+    }
+#line 2816 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (name.len >= 11 && std_str_eq(std_str_slice(name, 0, 11), ((Slice_unsigned_char){ (unsigned char*)"CastResult_", 11 }))) {
+#line 2817 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char suffix = std_str_slice(name, 11, name.len);
+#line 2818 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char resolved = typechecker__env_resolve_namespaced_ident(env, suffix, ctx);
+#line 2819 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"CastResult_", 11 }); Slice_unsigned_char _s2 = resolved; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     }
-#line 2818 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str prefixes = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2819 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Vector_", 11 }));
-#line 2820 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_HashMap_", 12 }));
-#line 2821 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Pool_", 9 }));
-#line 2822 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_RcNode_", 11 }));
 #line 2823 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Rc_", 7 }));
+    std_Vector_str prefixes = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2824 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_GraphNode_", 14 }));
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Vector_", 11 }));
 #line 2825 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Graph_", 10 }));
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_HashMap_", 12 }));
 #line 2826 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_", 10 }));
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Pool_", 9 }));
 #line 2827 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Channel_", 12 }));
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_RcNode_", 11 }));
 #line 2828 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_GenerationalArena_", 22 }));
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Rc_", 7 }));
 #line 2829 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_ThreadLocalContext_", 23 }));
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_GraphNode_", 14 }));
 #line 2830 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"os_Dir_", 7 }));
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Graph_", 10 }));
 #line 2831 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry_", 12 }));
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_", 10 }));
+#line 2832 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_Channel_", 12 }));
 #line 2833 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int p = 0;
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_GenerationalArena_", 22 }));
 #line 2834 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (p < prefixes.len) {
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"std_ThreadLocalContext_", 23 }));
 #line 2835 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char prefix = (*({ if (p < 0 || p >= prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(prefixes.data[p]); }));
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"os_Dir_", 7 }));
 #line 2836 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (name.len >= prefix.len) {
-#line 2837 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(std_str_slice(name, 0, prefix.len), prefix)) {
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry_", 12 }));
 #line 2838 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char suffix = std_str_slice(name, prefix.len, name.len);
+    int p = 0;
 #line 2839 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_find(suffix, ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) != 0 - 1) {
+    while (p < prefixes.len) {
 #line 2840 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char prefix = (*({ if (p < 0 || p >= prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(prefixes.data[p]); }));
+#line 2841 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (name.len >= prefix.len) {
+#line 2842 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(std_str_slice(name, 0, prefix.len), prefix)) {
+#line 2843 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char suffix = std_str_slice(name, prefix.len, name.len);
+#line 2844 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_find(suffix, ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) != 0 - 1) {
+#line 2845 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, name);
     }
-#line 2842 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 2843 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str parts = std_str_split(suffix, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }), ctx);
-#line 2844 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str resolved_parts = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 2845 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char active_prefix = (*(env)).current_prefix;
 #line 2847 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    {
 #line 2848 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < parts.len) {
+    std_Vector_str parts = std_str_split(suffix, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }), ctx);
 #line 2849 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char part = (*({ if (i < 0 || i >= parts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(parts.data[i]); }));
+    std_Vector_str resolved_parts = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 2850 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_str lookup = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(*(env)).imports, part, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).imports, part, 1); } res; });
-#line 2851 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
+    Slice_unsigned_char active_prefix = (*(env)).current_prefix;
 #line 2852 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 2853 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < parts.len) {
+#line 2854 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char part = (*({ if (i < 0 || i >= parts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(parts.data[i]); }));
+#line 2855 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_str lookup = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(*(env)).imports, part, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).imports, part, 1); } res; });
+#line 2856 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (lookup.Ok) {
+#line 2857 "/home/garth/files/code/gust/compiler/typechecker.gst"
     active_prefix = lookup.Val;
     } else {
-#line 2854 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2859 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char temp_resolved = part;
-#line 2855 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2860 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int is_primitive = 0;
-#line 2856 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2861 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"len", 3 }))) {
-#line 2856 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2861 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2857 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2862 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"int", 3 }))) {
-#line 2857 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2862 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2858 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2863 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"byte", 4 }))) {
-#line 2858 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2863 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2859 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2864 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"bool", 4 }))) {
-#line 2859 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2864 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2860 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2865 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"str", 3 }))) {
-#line 2860 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2865 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2861 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2866 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"Arena", 5 }))) {
-#line 2861 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2866 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2862 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2867 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"os_Arena", 8 }))) {
-#line 2862 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2867 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2863 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2868 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"os.Arena", 8 }))) {
-#line 2863 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2868 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2864 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2869 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"void", 4 }))) {
-#line 2864 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2869 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2865 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2870 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 }))) {
-#line 2865 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2870 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2866 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2871 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"SessionNode", 11 }))) {
-#line 2866 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2871 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2867 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2872 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"APIRequest", 10 }))) {
-#line 2867 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2872 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2868 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2873 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"Vector_Any", 10 }))) {
-#line 2868 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2873 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2869 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2874 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"HashMap_Any", 11 }))) {
-#line 2869 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2874 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2870 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2875 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"Pool_Any", 8 }))) {
-#line 2870 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2875 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2871 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2876 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"Mutex_Any", 9 }))) {
-#line 2871 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2876 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2872 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2877 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"Channel_Any", 11 }))) {
-#line 2872 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2877 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2873 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2878 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"ThreadLocalContext_Any", 22 }))) {
-#line 2873 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2878 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
-#line 2874 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2879 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"std_ThreadLocalContext_Any", 26 }))) {
-#line 2874 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    is_primitive = 1;
-    }
-#line 2875 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }))) {
-#line 2875 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    is_primitive = 1;
-    }
-#line 2876 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 }))) {
-#line 2876 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    is_primitive = 1;
-    }
-#line 2877 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"arena", 5 }))) {
-#line 2877 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    is_primitive = 1;
-    }
-#line 2878 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"a", 1 }))) {
-#line 2878 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2879 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_primitive = 1;
     }
 #line 2880 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (is_primitive == 0) {
+    if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }))) {
+#line 2880 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    is_primitive = 1;
+    }
 #line 2881 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    temp_resolved = (({ Slice_unsigned_char _s1 = active_prefix; Slice_unsigned_char _s2 = part; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 }))) {
+#line 2881 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    is_primitive = 1;
+    }
+#line 2882 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"arena", 5 }))) {
+#line 2882 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    is_primitive = 1;
     }
 #line 2883 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(part, ((Slice_unsigned_char){ (unsigned char*)"a", 1 }))) {
+#line 2883 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    is_primitive = 1;
+    }
+#line 2885 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (is_primitive == 0) {
+#line 2886 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    temp_resolved = (({ Slice_unsigned_char _s1 = active_prefix; Slice_unsigned_char _s2 = part; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
+#line 2888 "/home/garth/files/code/gust/compiler/typechecker.gst"
     os_VectorPush(&resolved_parts, temp_resolved);
-#line 2884 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2889 "/home/garth/files/code/gust/compiler/typechecker.gst"
     active_prefix = (*(env)).current_prefix;
     }
-#line 2886 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2891 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 2889 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char joined = ast__ast_join_strings(resolved_parts, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }), ctx);
-#line 2890 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = joined; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 2892 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int triple_idx = std_str_find(res, ((Slice_unsigned_char){ (unsigned char*)"___", 3 }));
-#line 2893 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (triple_idx != 0 - 1) {
 #line 2894 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char left = std_str_slice(res, 0, triple_idx);
+    Slice_unsigned_char joined = ast__ast_join_strings(resolved_parts, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }), ctx);
 #line 2895 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char right = std_str_slice(res, triple_idx + 1, res.len);
-#line 2896 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res = (({ Slice_unsigned_char _s1 = left; Slice_unsigned_char _s2 = right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = joined; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 2897 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int triple_idx = std_str_find(res, ((Slice_unsigned_char){ (unsigned char*)"___", 3 }));
+#line 2898 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (triple_idx != 0 - 1) {
+#line 2899 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char left = std_str_slice(res, 0, triple_idx);
+#line 2900 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char right = std_str_slice(res, triple_idx + 1, res.len);
+#line 2901 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res = (({ Slice_unsigned_char _s1 = left; Slice_unsigned_char _s2 = right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 2902 "/home/garth/files/code/gust/compiler/typechecker.gst"
     triple_idx = std_str_find(res, ((Slice_unsigned_char){ (unsigned char*)"___", 3 }));
     }
-#line 2899 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2904 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, res);
     }
     }
     }
-#line 2903 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2908 "/home/garth/files/code/gust/compiler/typechecker.gst"
     p = p + 1;
     }
-#line 2907 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int dot_idx = std_str_find(name, ((Slice_unsigned_char){ (unsigned char*)".", 1 }));
-#line 2908 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (dot_idx != 0 - 1) {
-#line 2909 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char alias = std_str_slice(name, 0, dot_idx);
-#line 2910 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char rest = std_str_slice(name, dot_idx + 1, name.len);
-#line 2911 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
 #line 2912 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_str lookup = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(*(env)).imports, alias, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).imports, alias, 1); } res; });
+    int dot_idx = std_str_find(name, ((Slice_unsigned_char){ (unsigned char*)".", 1 }));
 #line 2913 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
+    if (dot_idx != 0 - 1) {
 #line 2914 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char alias = std_str_slice(name, 0, dot_idx);
+#line 2915 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char rest = std_str_slice(name, dot_idx + 1, name.len);
+#line 2916 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    {
+#line 2917 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_str lookup = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(*(env)).imports, alias, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).imports, alias, 1); } res; });
+#line 2918 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (lookup.Ok) {
+#line 2919 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = lookup.Val; Slice_unsigned_char _s2 = rest; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     }
     }
-#line 2917 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2922 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return name;
     }
-#line 2923 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2928 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"len", 3 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"int", 3 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"byte", 4 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"bool", 4 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"str", 3 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"Arena", 5 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"void", 4 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"SessionNode", 11 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"APIRequest", 10 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"Vector_Any", 10 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"HashMap_Any", 11 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"Pool_Any", 8 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"Mutex_Any", 9 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"Channel_Any", 11 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"ThreadLocalContext_Any", 22 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"arena", 5 })) || std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"a", 1 }))) {
-#line 2931 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2936 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return name;
     }
-#line 2934 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2939 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_find(name, ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) != 0 - 1 || name.len >= 4 && std_str_eq(std_str_slice(name, 0, 4), ((Slice_unsigned_char){ (unsigned char*)"std_", 4 })) || name.len >= 3 && std_str_eq(std_str_slice(name, 0, 3), ((Slice_unsigned_char){ (unsigned char*)"os_", 3 }))) {
-#line 2937 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2942 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return name;
     }
-#line 2941 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2946 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 2942 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2947 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = (*(env)).current_prefix; Slice_unsigned_char _s2 = name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     }
 }
 
-#line 2946 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2951 "/home/garth/files/code/gust/compiler/typechecker.gst"
 void typechecker__env_register_struct(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__StructLayout layout, os_Arena* ctx) {
-#line 2947 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2952 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 2948 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2953 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).struct_registry, std_Clone_str(ctx, name), 1) = layout;
     }
-#line 2950 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2955 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char msg = (({
         Slice_unsigned_char _arg1 = name;
         __typeof__(layout.fields.len) _arg2 = layout.fields.len;
@@ -13763,18 +13765,18 @@ void typechecker__env_register_struct(typechecker__TypeEnvironment* env, Slice_u
         int _len = snprintf(_buf, _alloc_size, "env_register_struct: registered struct '%.*s' with %d fields", _arg1.len, (char*)_arg1.data, _arg2);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 2951 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2956 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🗄️", 7 }), msg, ctx);
 }
 
-#line 2954 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2959 "/home/garth/files/code/gust/compiler/typechecker.gst"
 void typechecker__env_register_function(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__FunctionSignature sig, os_Arena* ctx) {
-#line 2955 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2960 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 2956 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2961 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).function_registry, std_Clone_str(ctx, name), 1) = sig;
     }
-#line 2958 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2963 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char msg = (({
         Slice_unsigned_char _arg1 = name;
         __typeof__(sig.params.len) _arg2 = sig.params.len;
@@ -13783,110 +13785,110 @@ void typechecker__env_register_function(typechecker__TypeEnvironment* env, Slice
         int _len = snprintf(_buf, _alloc_size, "env_register_function: registered function '%.*s' with %d parameters", _arg1.len, (char*)_arg1.data, _arg2);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 2959 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 2964 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🗄️", 7 }), msg, ctx);
 }
 
-#line 2962 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__typechecker_get_file_stem(Slice_unsigned_char path, os_Arena* ctx) {
-#line 2963 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int last_slash = 0 - 1;
-#line 2964 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int dot_idx = 0 - 1;
-#line 2965 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 2966 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < path.len) {
 #line 2967 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    unsigned char b = std_str_byte_at(path, i);
+Slice_unsigned_char typechecker__typechecker_get_file_stem(Slice_unsigned_char path, os_Arena* ctx) {
 #line 2968 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b == 47) {
+    int last_slash = 0 - 1;
 #line 2969 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    last_slash = i;
-    }
+    int dot_idx = 0 - 1;
+#line 2970 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
 #line 2971 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b == 92) {
+    while (i < path.len) {
 #line 2972 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    unsigned char b = std_str_byte_at(path, i);
+#line 2973 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (b == 47) {
+#line 2974 "/home/garth/files/code/gust/compiler/typechecker.gst"
     last_slash = i;
     }
-#line 2974 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b == 46) {
-#line 2975 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    dot_idx = i;
-    }
+#line 2976 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (b == 92) {
 #line 2977 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    i = i + 1;
+    last_slash = i;
     }
 #line 2979 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int start = last_slash + 1;
+    if (b == 46) {
 #line 2980 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int end = path.len;
-#line 2981 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (dot_idx > start) {
+    dot_idx = i;
+    }
 #line 2982 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    end = dot_idx;
+    i = i + 1;
     }
 #line 2984 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int start = last_slash + 1;
+#line 2985 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int end = path.len;
+#line 2986 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (dot_idx > start) {
+#line 2987 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    end = dot_idx;
+    }
+#line 2989 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, std_str_slice(path, start, end));
 }
 
-#line 2987 "/home/garth/files/code/gust/compiler/typechecker.gst"
-ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx) {
-#line 2988 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int res_idx = os_ArenaAlloc(ctx, sizeof(ast__Type));
-#line 2989 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 2990 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Type*)((char*)ctx->BaseAddress + res_idx))) = t;
-#line 2991 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 7) {
 #line 2992 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Type*)((char*)ctx->BaseAddress + res_idx))).Index.struct_name = typechecker__env_resolve_namespaced_ident(env, t.Index.struct_name, ctx);
+ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx) {
+#line 2993 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int res_idx = os_ArenaAlloc(ctx, sizeof(ast__Type));
 #line 2994 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char brand_name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    {
 #line 2995 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Index.brand != 0xFFFFFFFF) {
+    (*(( ast__Type*)((char*)ctx->BaseAddress + res_idx))) = t;
 #line 2996 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type Index: before reading brand", 44 }), ctx);
+    if (t.tag == 7) {
 #line 2997 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
-#line 2998 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    brand_name = (*(brand_str_ptr));
+    (*(( ast__Type*)((char*)ctx->BaseAddress + res_idx))).Index.struct_name = typechecker__env_resolve_namespaced_ident(env, t.Index.struct_name, ctx);
 #line 2999 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char brand_name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 3000 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.Index.brand != 0xFFFFFFFF) {
+#line 3001 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type Index: before reading brand", 44 }), ctx);
+#line 3002 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
+#line 3003 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    brand_name = (*(brand_str_ptr));
+#line 3004 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type Index: successfully read brand", 47 }), ctx);
     }
-#line 3001 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type temp_struct = typechecker__make_type_struct(t.Index.struct_name, brand_name, ctx);
-#line 3003 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
-#line 3004 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3006 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type resolved_inner = typechecker__env_resolve_type(env, temp_struct, ctx);
+    ast__Type temp_struct = typechecker__make_type_struct(t.Index.struct_name, brand_name, ctx);
 #line 3008 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).active_monomorphizations = temp_active;
-#line 3010 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (resolved_inner.tag == 8) {
+    std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
+#line 3009 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3011 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type resolved_inner = typechecker__env_resolve_type(env, temp_struct, ctx);
+#line 3013 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).active_monomorphizations = temp_active;
+#line 3015 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (resolved_inner.tag == 8) {
+#line 3016 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(( ast__Type*)((char*)ctx->BaseAddress + res_idx))).Index.struct_name = std_Clone_str(ctx, resolved_inner.Struct.struct_name);
     }
     } else {
-#line 3014 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 8) {
-#line 3015 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, t.Struct.struct_name, ctx);
-#line 3016 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Type*)((char*)ctx->BaseAddress + res_idx))).Struct.struct_name = namespaced_name;
-#line 3018 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char brand_name = ((Slice_unsigned_char){ (unsigned char*)"None", 4 });
 #line 3019 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Struct.brand != 0xFFFFFFFF) {
+    if (t.tag == 8) {
 #line 3020 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
+    Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, t.Struct.struct_name, ctx);
 #line 3021 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Type*)((char*)ctx->BaseAddress + res_idx))).Struct.struct_name = namespaced_name;
+#line 3023 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char brand_name = ((Slice_unsigned_char){ (unsigned char*)"None", 4 });
+#line 3024 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.Struct.brand != 0xFFFFFFFF) {
+#line 3025 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
+#line 3026 "/home/garth/files/code/gust/compiler/typechecker.gst"
     brand_name = (*(brand_str_ptr));
     }
-#line 3023 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3028 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char log_msg = (({
         Slice_unsigned_char _arg1 = namespaced_name;
         Slice_unsigned_char _arg2 = brand_name;
@@ -13895,103 +13897,103 @@ ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__
         int _len = snprintf(_buf, _alloc_size, "env_resolve_type Struct: name=%.*s, brand=%.*s", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 3024 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"📥", 4 }), log_msg, ctx);
-#line 3026 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char clean_name = namespaced_name;
-#line 3027 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int d_idx = std_str_find(namespaced_name, ((Slice_unsigned_char){ (unsigned char*)"__", 2 }));
-#line 3028 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (d_idx != 0 - 1) {
 #line 3029 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char after_pfx = std_str_slice(namespaced_name, d_idx + 2, namespaced_name.len);
-#line 3030 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__typechecker_starts_with(after_pfx, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_", 13 })) == 1 || typechecker__typechecker_starts_with(after_pfx, ((Slice_unsigned_char){ (unsigned char*)"CastResult_", 11 })) == 1) {
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"📥", 4 }), log_msg, ctx);
 #line 3031 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char clean_name = namespaced_name;
+#line 3032 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int d_idx = std_str_find(namespaced_name, ((Slice_unsigned_char){ (unsigned char*)"__", 2 }));
+#line 3033 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (d_idx != 0 - 1) {
+#line 3034 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char after_pfx = std_str_slice(namespaced_name, d_idx + 2, namespaced_name.len);
+#line 3035 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__typechecker_starts_with(after_pfx, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_", 13 })) == 1 || typechecker__typechecker_starts_with(after_pfx, ((Slice_unsigned_char){ (unsigned char*)"CastResult_", 11 })) == 1) {
+#line 3036 "/home/garth/files/code/gust/compiler/typechecker.gst"
     clean_name = after_pfx;
     }
     }
-#line 3035 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int exists = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, namespaced_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, namespaced_name, 1); } res; }).Ok;
-#line 3036 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (exists == 0) {
-#line 3037 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__typechecker_starts_with(clean_name, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_", 13 })) == 1) {
-#line 3038 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char target_struct = std_str_slice(clean_name, 13, clean_name.len);
-#line 3039 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type v_type = typechecker__typechecker_parse_type_from_string(target_struct, ctx);
 #line 3040 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type resolved_v_type = typechecker__env_resolve_type(env, v_type, ctx);
+    int exists = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, namespaced_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, namespaced_name, 1); } res; }).Ok;
+#line 3041 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (exists == 0) {
 #line 3042 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_ast__Type fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    if (typechecker__typechecker_starts_with(clean_name, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_", 13 })) == 1) {
 #line 3043 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_int = ((ast__Type){ .tag = 0 });
-#line 3043 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_int.tag = 0;
+    Slice_unsigned_char target_struct = std_str_slice(clean_name, 13, clean_name.len);
 #line 3044 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&fields, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }), 1) = t_int;
+    ast__Type v_type = typechecker__typechecker_parse_type_from_string(target_struct, ctx);
 #line 3045 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&fields, ((Slice_unsigned_char){ (unsigned char*)"Val", 3 }), 1) = resolved_v_type;
+    ast__Type resolved_v_type = typechecker__env_resolve_type(env, v_type, ctx);
 #line 3047 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
+    std_HashMap_str_ast__Type fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3048 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    layout.brand = 0xFFFFFFFF;
+    ast__Type t_int = ((ast__Type){ .tag = 0 });
+#line 3048 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    t_int.tag = 0;
 #line 3049 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    layout.fields = fields;
-#line 3051 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__env_register_struct(env, namespaced_name, layout, ctx);
+    *os_HashMapRef(&fields, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }), 1) = t_int;
+#line 3050 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&fields, ((Slice_unsigned_char){ (unsigned char*)"Val", 3 }), 1) = resolved_v_type;
 #line 3052 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__StructLayout layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
+#line 3053 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    layout.brand = 0xFFFFFFFF;
+#line 3054 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    layout.fields = fields;
+#line 3056 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__env_register_struct(env, namespaced_name, layout, ctx);
+#line 3057 "/home/garth/files/code/gust/compiler/typechecker.gst"
     exists = 1;
     } else {
-#line 3054 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3059 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (typechecker__typechecker_starts_with(clean_name, ((Slice_unsigned_char){ (unsigned char*)"CastResult_", 11 })) == 1) {
-#line 3055 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3060 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char target_struct = std_str_slice(clean_name, 11, clean_name.len);
-#line 3056 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3061 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type v_type = typechecker__typechecker_parse_type_from_string(target_struct, ctx);
-#line 3057 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3062 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (v_type.tag == 8) {
-#line 3058 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3063 "/home/garth/files/code/gust/compiler/typechecker.gst"
     v_type = typechecker__make_type_pointer(v_type, ctx);
     }
-#line 3060 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type resolved_v_type = typechecker__env_resolve_type(env, v_type, ctx);
-#line 3062 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_ast__Type fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 3063 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_int = ((ast__Type){ .tag = 0 });
-#line 3063 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_int.tag = 0;
-#line 3064 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&fields, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }), 1) = t_int;
 #line 3065 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&fields, ((Slice_unsigned_char){ (unsigned char*)"Val", 3 }), 1) = resolved_v_type;
+    ast__Type resolved_v_type = typechecker__env_resolve_type(env, v_type, ctx);
 #line 3067 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
+    std_HashMap_str_ast__Type fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3068 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    layout.brand = 0xFFFFFFFF;
+    ast__Type t_int = ((ast__Type){ .tag = 0 });
+#line 3068 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    t_int.tag = 0;
 #line 3069 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    layout.fields = fields;
-#line 3071 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__env_register_struct(env, namespaced_name, layout, ctx);
+    *os_HashMapRef(&fields, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }), 1) = t_int;
+#line 3070 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&fields, ((Slice_unsigned_char){ (unsigned char*)"Val", 3 }), 1) = resolved_v_type;
 #line 3072 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__StructLayout layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
+#line 3073 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    layout.brand = 0xFFFFFFFF;
+#line 3074 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    layout.fields = fields;
+#line 3076 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__env_register_struct(env, namespaced_name, layout, ctx);
+#line 3077 "/home/garth/files/code/gust/compiler/typechecker.gst"
     exists = 1;
     }
     }
     }
-#line 3077 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3082 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (exists == 0) {
-#line 3078 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3083 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char clean_namespaced_name = namespaced_name;
-#line 3079 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3084 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int d_idx = std_str_find(clean_namespaced_name, ((Slice_unsigned_char){ (unsigned char*)"__", 2 }));
-#line 3080 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3085 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (d_idx != 0 - 1) {
-#line 3081 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3086 "/home/garth/files/code/gust/compiler/typechecker.gst"
     clean_namespaced_name = std_str_slice(clean_namespaced_name, d_idx + 2, clean_namespaced_name.len);
     }
-#line 3084 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3089 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str s_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(env)).struct_templates.capacity); _i++) {
@@ -14001,64 +14003,64 @@ ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__
         }
         _v;
     }));
-#line 3085 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int matched = 0;
-#line 3086 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type matched_val = ((ast__Type){ .tag = 0 });
-#line 3088 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int k_idx = 0;
-#line 3089 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (k_idx < s_keys.len && matched == 0) {
 #line 3090 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char tmpl_name = (*({ if (k_idx < 0 || k_idx >= s_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(s_keys.data[k_idx]); }));
+    int matched = 0;
 #line 3091 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 3092 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
+    ast__Type matched_val = ((ast__Type){ .tag = 0 });
 #line 3093 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < tmpl_name.len) {
+    int k_idx = 0;
 #line 3094 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    unsigned char b = std_str_byte_at(tmpl_name, j);
+    while (k_idx < s_keys.len && matched == 0) {
 #line 3095 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b == 46) {
+    Slice_unsigned_char tmpl_name = (*({ if (k_idx < 0 || k_idx >= s_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(s_keys.data[k_idx]); }));
 #line 3096 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 3097 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = 0;
+#line 3098 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < tmpl_name.len) {
+#line 3099 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    unsigned char b = std_str_byte_at(tmpl_name, j);
+#line 3100 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (b == 46) {
+#line 3101 "/home/garth/files/code/gust/compiler/typechecker.gst"
     prefix = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
-#line 3098 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3103 "/home/garth/files/code/gust/compiler/typechecker.gst"
     prefix = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = std_str_slice(tmpl_name, j, j + 1); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 3100 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3105 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
-#line 3102 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    prefix = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3104 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (clean_namespaced_name.len >= prefix.len) {
-#line 3105 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char pfx_part = std_str_slice(clean_namespaced_name, 0, prefix.len);
-#line 3106 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(pfx_part, prefix)) {
 #line 3107 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char suffix = std_str_slice(clean_namespaced_name, prefix.len, clean_namespaced_name.len);
-#line 3108 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type parsed_args = typechecker__parse_types_from_suffix(env, suffix, ctx);
+    prefix = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 3109 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    errors__Result_ast__Type mono_res = typechecker__monomorphize(env, tmpl_name, parsed_args, ctx);
+    if (clean_namespaced_name.len >= prefix.len) {
 #line 3110 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (mono_res.tag == 0) {
+    Slice_unsigned_char pfx_part = std_str_slice(clean_namespaced_name, 0, prefix.len);
 #line 3111 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    matched_val = mono_res.Ok.val;
+    if (std_str_eq(pfx_part, prefix)) {
 #line 3112 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char suffix = std_str_slice(clean_namespaced_name, prefix.len, clean_namespaced_name.len);
+#line 3113 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Type parsed_args = typechecker__parse_types_from_suffix(env, suffix, ctx);
+#line 3114 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    errors__Result_ast__Type mono_res = typechecker__monomorphize(env, tmpl_name, parsed_args, ctx);
+#line 3115 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (mono_res.tag == 0) {
+#line 3116 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    matched_val = mono_res.Ok.val;
+#line 3117 "/home/garth/files/code/gust/compiler/typechecker.gst"
     matched = 1;
     }
     }
     }
-#line 3116 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3121 "/home/garth/files/code/gust/compiler/typechecker.gst"
     k_idx = k_idx + 1;
     }
-#line 3119 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3124 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (matched == 0) {
-#line 3120 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3125 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str e_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(env)).enum_templates.capacity); _i++) {
@@ -14068,151 +14070,151 @@ ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__
         }
         _v;
     }));
-#line 3121 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int ek_idx = 0;
-#line 3122 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (ek_idx < e_keys.len && matched == 0) {
-#line 3123 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char tmpl_name = (*({ if (ek_idx < 0 || ek_idx >= e_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(e_keys.data[ek_idx]); }));
-#line 3124 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 3125 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
 #line 3126 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < tmpl_name.len) {
+    int ek_idx = 0;
 #line 3127 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    unsigned char b = std_str_byte_at(tmpl_name, j);
+    while (ek_idx < e_keys.len && matched == 0) {
 #line 3128 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b == 46) {
+    Slice_unsigned_char tmpl_name = (*({ if (ek_idx < 0 || ek_idx >= e_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(e_keys.data[ek_idx]); }));
 #line 3129 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 3130 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = 0;
+#line 3131 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < tmpl_name.len) {
+#line 3132 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    unsigned char b = std_str_byte_at(tmpl_name, j);
+#line 3133 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (b == 46) {
+#line 3134 "/home/garth/files/code/gust/compiler/typechecker.gst"
     prefix = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
-#line 3131 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3136 "/home/garth/files/code/gust/compiler/typechecker.gst"
     prefix = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = std_str_slice(tmpl_name, j, j + 1); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 3133 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3138 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
-#line 3135 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    prefix = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3137 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (clean_namespaced_name.len >= prefix.len) {
-#line 3138 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(std_str_slice(clean_namespaced_name, 0, prefix.len), prefix)) {
-#line 3139 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char suffix = std_str_slice(clean_namespaced_name, prefix.len, clean_namespaced_name.len);
 #line 3140 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type parsed_args = typechecker__parse_types_from_suffix(env, suffix, ctx);
-#line 3141 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    errors__Result_ast__Type mono_res = typechecker__monomorphize(env, tmpl_name, parsed_args, ctx);
+    prefix = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 3142 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (mono_res.tag == 0) {
+    if (clean_namespaced_name.len >= prefix.len) {
 #line 3143 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    matched_val = mono_res.Ok.val;
+    if (std_str_eq(std_str_slice(clean_namespaced_name, 0, prefix.len), prefix)) {
 #line 3144 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char suffix = std_str_slice(clean_namespaced_name, prefix.len, clean_namespaced_name.len);
+#line 3145 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Type parsed_args = typechecker__parse_types_from_suffix(env, suffix, ctx);
+#line 3146 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    errors__Result_ast__Type mono_res = typechecker__monomorphize(env, tmpl_name, parsed_args, ctx);
+#line 3147 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (mono_res.tag == 0) {
+#line 3148 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    matched_val = mono_res.Ok.val;
+#line 3149 "/home/garth/files/code/gust/compiler/typechecker.gst"
     matched = 1;
     }
     }
     }
-#line 3148 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3153 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ek_idx = ek_idx + 1;
     }
     }
-#line 3152 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3157 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (matched == 1) {
-#line 3153 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3158 "/home/garth/files/code/gust/compiler/typechecker.gst"
     matched_val.Struct.brand = t.Struct.brand;
-#line 3154 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3159 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return matched_val;
     }
     }
-#line 3158 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Struct.brand != 0xFFFFFFFF) {
-#line 3159 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int has_template = 0;
-#line 3161 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: before struct_templates.Get", 45 }), ctx);
-#line 3162 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int is_struct_tmpl = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_templates, namespaced_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_templates, namespaced_name, 1); } res; }).Ok;
 #line 3163 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: after struct_templates.Get", 44 }), ctx);
-#line 3165 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (is_struct_tmpl == 1) {
+    if (t.Struct.brand != 0xFFFFFFFF) {
+#line 3164 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int has_template = 0;
 #line 3166 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: before struct_templates.Get", 45 }), ctx);
+#line 3167 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int is_struct_tmpl = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_templates, namespaced_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_templates, namespaced_name, 1); } res; }).Ok;
+#line 3168 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: after struct_templates.Get", 44 }), ctx);
+#line 3170 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (is_struct_tmpl == 1) {
+#line 3171 "/home/garth/files/code/gust/compiler/typechecker.gst"
     has_template = 1;
     } else {
-#line 3168 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3173 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: before enum_templates.Get", 43 }), ctx);
-#line 3169 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3174 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int is_enum_tmpl = ({ LookupResult_typechecker__EnumTemplate res = {0}; res.Ok = os_HashMapContains(&(*(env)).enum_templates, namespaced_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).enum_templates, namespaced_name, 1); } res; }).Ok;
-#line 3170 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3175 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: after enum_templates.Get", 42 }), ctx);
-#line 3171 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3176 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (is_enum_tmpl == 1) {
-#line 3172 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3177 "/home/garth/files/code/gust/compiler/typechecker.gst"
     has_template = 1;
     }
     }
-#line 3176 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: determined has_template", 41 }), ctx);
-#line 3177 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (has_template == 1) {
-#line 3178 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 3179 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&args, typechecker__make_type_struct(brand_name, ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
 #line 3181 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    errors__Result_ast__Type mono_res = typechecker__monomorphize(env, namespaced_name, args, ctx);
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: determined has_template", 41 }), ctx);
 #line 3182 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (mono_res.tag == 0) {
+    if (has_template == 1) {
 #line 3183 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: monomorphize returned Ok", 42 }), ctx);
+    std_Vector_ast__Type args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3184 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&args, typechecker__make_type_struct(brand_name, ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
+#line 3186 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    errors__Result_ast__Type mono_res = typechecker__monomorphize(env, namespaced_name, args, ctx);
+#line 3187 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (mono_res.tag == 0) {
+#line 3188 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: monomorphize returned Ok", 42 }), ctx);
+#line 3189 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return mono_res.Ok.val;
     } else {
-#line 3186 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3191 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: monomorphize returned Err", 43 }), ctx);
-#line 3187 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3192 "/home/garth/files/code/gust/compiler/typechecker.gst"
     os_VectorPush(&(*(env)).errors, (*(( errors__CompilerError*)((char*)ctx->BaseAddress + mono_res.Err.error))));
     }
     }
     }
     } else {
-#line 3192 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3197 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (t.tag == 9) {
-#line 3193 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int inner_idx = os_ArenaAlloc(ctx, sizeof(ast__Type));
-#line 3195 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
-#line 3196 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3198 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Type*)((char*)ctx->BaseAddress + inner_idx))) = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner))), ctx);
+    int inner_idx = os_ArenaAlloc(ctx, sizeof(ast__Type));
 #line 3200 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
+#line 3201 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 3203 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Type*)((char*)ctx->BaseAddress + inner_idx))) = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner))), ctx);
+#line 3205 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(env)).active_monomorphizations = temp_active;
-#line 3202 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3207 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(( ast__Type*)((char*)ctx->BaseAddress + res_idx))).RawPointer.inner = inner_idx;
     } else {
-#line 3204 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3209 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (t.tag == 6) {
-#line 3205 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int inner_idx = os_ArenaAlloc(ctx, sizeof(ast__Type));
-#line 3207 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
-#line 3208 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3210 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Type*)((char*)ctx->BaseAddress + inner_idx))) = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner))), ctx);
+    int inner_idx = os_ArenaAlloc(ctx, sizeof(ast__Type));
 #line 3212 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
+#line 3213 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).active_monomorphizations = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 3215 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Type*)((char*)ctx->BaseAddress + inner_idx))) = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner))), ctx);
+#line 3217 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(env)).active_monomorphizations = temp_active;
-#line 3214 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3219 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(( ast__Type*)((char*)ctx->BaseAddress + res_idx))).Slice.inner = inner_idx;
     } else {
-#line 3216 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3221 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (t.tag == 10) {
-#line 3217 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3222 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char name = typechecker__env_resolve_namespaced_ident(env, t.Generic.name, ctx);
-#line 3219 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3224 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char log_msg = (({
         Slice_unsigned_char _arg1 = name;
         int _alloc_size = 33 + _arg1.len + 1;
@@ -14220,37 +14222,37 @@ ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__
         int _len = snprintf(_buf, _alloc_size, "env_resolve_type Generic: name=%.*s", _arg1.len, (char*)_arg1.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 3220 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"📥", 4 }), log_msg, ctx);
-#line 3222 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type* args_vec = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + t.Generic.args)))));
-#line 3223 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type new_args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 3224 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
 #line 3225 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(args_vec)).len) {
-#line 3226 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type arg = (*({ if (i < 0 || i >= (*(args_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(args_vec)).data[i]); }));
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"📥", 4 }), log_msg, ctx);
 #line 3227 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&new_args, typechecker__env_resolve_type(env, arg, ctx));
+    std_Vector_ast__Type* args_vec = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + t.Generic.args)))));
 #line 3228 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Type new_args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 3229 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 3230 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(args_vec)).len) {
+#line 3231 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type arg = (*({ if (i < 0 || i >= (*(args_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(args_vec)).data[i]); }));
+#line 3232 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&new_args, typechecker__env_resolve_type(env, arg, ctx));
+#line 3233 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 3231 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3236 "/home/garth/files/code/gust/compiler/typechecker.gst"
     errors__Result_ast__Type mono_res = typechecker__monomorphize(env, name, new_args, ctx);
-#line 3232 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3237 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (mono_res.tag == 0) {
-#line 3233 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3238 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return mono_res.Ok.val;
     } else {
-#line 3235 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3240 "/home/garth/files/code/gust/compiler/typechecker.gst"
     os_VectorPush(&(*(env)).errors, (*(( errors__CompilerError*)((char*)ctx->BaseAddress + mono_res.Err.error))));
-#line 3236 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3241 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type dummy = ((ast__Type){ .tag = 0 });
-#line 3237 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3242 "/home/garth/files/code/gust/compiler/typechecker.gst"
     dummy.tag = 3;
-#line 3238 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3243 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return dummy;
     }
     }
@@ -14258,42 +14260,42 @@ ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__
     }
     }
     }
-#line 3245 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3250 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: returning ctx[res_idx]", 40 }), ctx);
-#line 3246 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3251 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return (*(( ast__Type*)((char*)ctx->BaseAddress + res_idx)));
     }
 }
 
-#line 3250 "/home/garth/files/code/gust/compiler/typechecker.gst"
-void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, ast__Statement stmt, os_Arena* ctx) {
-#line 3251 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 0) {
-#line 3252 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char path = stmt.Import.path;
-#line 3253 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char alias = stmt.Import.alias;
-#line 3254 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char stem = typechecker__typechecker_get_file_stem(path, ctx);
 #line 3255 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char prefix = (({ Slice_unsigned_char _s1 = stem; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"__", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, ast__Statement stmt, os_Arena* ctx) {
 #line 3256 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char alias_name = alias;
+    if (stmt.tag == 0) {
 #line 3257 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(alias_name, ((Slice_unsigned_char){ (unsigned char*)"", 0 }))) {
+    Slice_unsigned_char path = stmt.Import.path;
 #line 3258 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char alias = stmt.Import.alias;
+#line 3259 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char stem = typechecker__typechecker_get_file_stem(path, ctx);
+#line 3260 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char prefix = (({ Slice_unsigned_char _s1 = stem; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"__", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 3261 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char alias_name = alias;
+#line 3262 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(alias_name, ((Slice_unsigned_char){ (unsigned char*)"", 0 }))) {
+#line 3263 "/home/garth/files/code/gust/compiler/typechecker.gst"
     alias_name = stem;
     }
-#line 3260 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3265 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char cur_prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 3261 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3266 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 3262 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3267 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).imports, std_Clone_str(ctx, alias_name), 1) = std_Clone_str(ctx, prefix);
-#line 3263 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3268 "/home/garth/files/code/gust/compiler/typechecker.gst"
     cur_prefix = (*(env)).current_prefix;
     }
-#line 3265 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3270 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char msg = (({
         Slice_unsigned_char _arg1 = alias_name;
         Slice_unsigned_char _arg2 = prefix;
@@ -14303,225 +14305,225 @@ void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, 
         int _len = snprintf(_buf, _alloc_size, "Import pre-register: alias_name='%.*s', prefix='%.*s', current_prefix='%.*s'", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data, _arg3.len, (char*)_arg3.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 3266 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3271 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🗄️", 7 }), msg, ctx);
     }
-#line 3268 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 1) {
-#line 3269 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name = stmt.StructDecl.name;
-#line 3270 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, name, ctx);
-#line 3272 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int is_generic = 0;
 #line 3273 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
+    if (stmt.tag == 1) {
 #line 3274 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.StructDecl.generics != 0xFFFFFFFF) {
+    Slice_unsigned_char name = stmt.StructDecl.name;
 #line 3275 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str* generics_vec = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + stmt.StructDecl.generics)))));
-#line 3276 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(generics_vec)).len > 0) {
+    Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, name, ctx);
 #line 3277 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int is_generic = 0;
+#line 3278 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    {
+#line 3279 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (stmt.StructDecl.generics != 0xFFFFFFFF) {
+#line 3280 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_str* generics_vec = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + stmt.StructDecl.generics)))));
+#line 3281 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(generics_vec)).len > 0) {
+#line 3282 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_generic = 1;
     }
     }
     }
-#line 3282 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (is_generic == 1) {
-#line 3283 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 3284 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructTemplate template = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
-#line 3285 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    template.generics = stmt.StructDecl.generics;
-#line 3286 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    template.fields = stmt.StructDecl.fields;
 #line 3287 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (is_generic == 1) {
+#line 3288 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    {
+#line 3289 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__StructTemplate template = ((typechecker__StructTemplate){ .fields = 0xFFFFFFFF, .generics = 0xFFFFFFFF });
+#line 3290 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    template.generics = stmt.StructDecl.generics;
+#line 3291 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    template.fields = stmt.StructDecl.fields;
+#line 3292 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).struct_templates, std_Clone_str(ctx, namespaced_name), 1) = template;
     }
     } else {
-#line 3290 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
-#line 3291 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    layout.brand = 0xFFFFFFFF;
-#line 3292 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    layout.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 3294 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
 #line 3295 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef* fields_vec = ((std_Vector_ast__FieldDef*)&((*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + stmt.StructDecl.fields)))));
+    typechecker__StructLayout layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
 #line 3296 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    layout.brand = 0xFFFFFFFF;
 #line 3297 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(fields_vec)).len) {
-#line 3298 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__FieldDef f = (*({ if (i < 0 || i >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[i]); }));
+    layout.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3299 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type resolved_t = typechecker__env_resolve_type(env, f.field_type, ctx);
+    {
 #line 3300 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&layout.fields, std_Clone_str(ctx, f.name), 1) = resolved_t;
+    std_Vector_ast__FieldDef* fields_vec = ((std_Vector_ast__FieldDef*)&((*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + stmt.StructDecl.fields)))));
 #line 3301 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 3302 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(fields_vec)).len) {
+#line 3303 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__FieldDef f = (*({ if (i < 0 || i >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[i]); }));
+#line 3304 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type resolved_t = typechecker__env_resolve_type(env, f.field_type, ctx);
+#line 3305 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&layout.fields, std_Clone_str(ctx, f.name), 1) = resolved_t;
+#line 3306 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
     }
-#line 3304 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3309 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__env_register_struct(env, namespaced_name, layout, ctx);
     }
     }
-#line 3307 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 2) {
-#line 3308 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name = stmt.EnumDecl.name;
-#line 3309 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, name, ctx);
-#line 3311 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int is_generic = 0;
 #line 3312 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
+    if (stmt.tag == 2) {
 #line 3313 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.EnumDecl.generics != 0xFFFFFFFF) {
+    Slice_unsigned_char name = stmt.EnumDecl.name;
 #line 3314 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str* generics_vec = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + stmt.EnumDecl.generics)))));
-#line 3315 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(generics_vec)).len > 0) {
+    Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, name, ctx);
 #line 3316 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int is_generic = 0;
+#line 3317 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    {
+#line 3318 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (stmt.EnumDecl.generics != 0xFFFFFFFF) {
+#line 3319 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_str* generics_vec = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + stmt.EnumDecl.generics)))));
+#line 3320 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(generics_vec)).len > 0) {
+#line 3321 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_generic = 1;
     }
     }
     }
-#line 3321 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (is_generic == 1) {
-#line 3322 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 3323 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__EnumTemplate template = ((typechecker__EnumTemplate){ .generics = 0xFFFFFFFF, .variants = 0xFFFFFFFF });
-#line 3324 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    template.generics = stmt.EnumDecl.generics;
-#line 3325 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    template.variants = stmt.EnumDecl.variants;
 #line 3326 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (is_generic == 1) {
+#line 3327 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    {
+#line 3328 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__EnumTemplate template = ((typechecker__EnumTemplate){ .generics = 0xFFFFFFFF, .variants = 0xFFFFFFFF });
+#line 3329 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    template.generics = stmt.EnumDecl.generics;
+#line 3330 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    template.variants = stmt.EnumDecl.variants;
+#line 3331 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).enum_templates, std_Clone_str(ctx, namespaced_name), 1) = template;
     }
     } else {
-#line 3329 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout enum_layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
-#line 3330 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    enum_layout.brand = 0xFFFFFFFF;
-#line 3331 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    enum_layout.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 3333 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_int = ((ast__Type){ .tag = 0 });
 #line 3334 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_int.tag = 0;
+    typechecker__StructLayout enum_layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
 #line 3335 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&enum_layout.fields, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"tag", 3 })), 1) = t_int;
-#line 3337 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str variants_list = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    enum_layout.brand = 0xFFFFFFFF;
+#line 3336 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    enum_layout.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3338 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
+    ast__Type t_int = ((ast__Type){ .tag = 0 });
 #line 3339 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__VariantDef* variants_vec = ((std_Vector_ast__VariantDef*)&((*(( std_Vector_ast__VariantDef*)((char*)ctx->BaseAddress + stmt.EnumDecl.variants)))));
+    t_int.tag = 0;
 #line 3340 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 3341 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(variants_vec)).len) {
+    *os_HashMapRef(&enum_layout.fields, std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"tag", 3 })), 1) = t_int;
 #line 3342 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__VariantDef v = (*({ if (i < 0 || i >= (*(variants_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(variants_vec)).data[i]); }));
+    std_Vector_str variants_list = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3343 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&variants_list, std_Clone_str(ctx, v.name));
+    {
 #line 3344 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char variant_struct_name = (({ Slice_unsigned_char _s1 = namespaced_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    std_Vector_ast__VariantDef* variants_vec = ((std_Vector_ast__VariantDef*)&((*(( std_Vector_ast__VariantDef*)((char*)ctx->BaseAddress + stmt.EnumDecl.variants)))));
 #line 3345 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    variant_struct_name = (({ Slice_unsigned_char _s1 = variant_struct_name; Slice_unsigned_char _s2 = v.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int i = 0;
+#line 3346 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(variants_vec)).len) {
 #line 3347 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout variant_layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
+    ast__VariantDef v = (*({ if (i < 0 || i >= (*(variants_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(variants_vec)).data[i]); }));
 #line 3348 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    variant_layout.brand = 0xFFFFFFFF;
+    os_VectorPush(&variants_list, std_Clone_str(ctx, v.name));
 #line 3349 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    variant_layout.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 3351 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__FieldDef* fields_vec = ((std_Vector_ast__FieldDef*)&((*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + v.fields)))));
+    Slice_unsigned_char variant_struct_name = (({ Slice_unsigned_char _s1 = namespaced_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 3350 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    variant_struct_name = (({ Slice_unsigned_char _s1 = variant_struct_name; Slice_unsigned_char _s2 = v.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 3352 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
+    typechecker__StructLayout variant_layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
 #line 3353 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < (*(fields_vec)).len) {
+    variant_layout.brand = 0xFFFFFFFF;
 #line 3354 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__FieldDef f = (*({ if (j < 0 || j >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[j]); }));
-#line 3355 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type resolved_t = typechecker__env_resolve_type(env, f.field_type, ctx);
+    variant_layout.fields = (struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3356 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&variant_layout.fields, std_Clone_str(ctx, f.name), 1) = resolved_t;
+    std_Vector_ast__FieldDef* fields_vec = ((std_Vector_ast__FieldDef*)&((*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + v.fields)))));
 #line 3357 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = 0;
+#line 3358 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < (*(fields_vec)).len) {
+#line 3359 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__FieldDef f = (*({ if (j < 0 || j >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[j]); }));
+#line 3360 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type resolved_t = typechecker__env_resolve_type(env, f.field_type, ctx);
+#line 3361 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&variant_layout.fields, std_Clone_str(ctx, f.name), 1) = resolved_t;
+#line 3362 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
-#line 3360 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__env_register_struct(env, variant_struct_name, variant_layout, ctx);
-#line 3362 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type t_variant = ((ast__Type){ .tag = 0 });
-#line 3363 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_variant.tag = 8;
-#line 3364 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_variant.Struct.struct_name = std_Clone_str(ctx, variant_struct_name);
 #line 3365 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    t_variant.Struct.brand = 0xFFFFFFFF;
+    typechecker__env_register_struct(env, variant_struct_name, variant_layout, ctx);
 #line 3367 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&enum_layout.fields, std_Clone_str(ctx, v.name), 1) = t_variant;
+    ast__Type t_variant = ((ast__Type){ .tag = 0 });
 #line 3368 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    t_variant.tag = 8;
+#line 3369 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    t_variant.Struct.struct_name = std_Clone_str(ctx, variant_struct_name);
+#line 3370 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    t_variant.Struct.brand = 0xFFFFFFFF;
+#line 3372 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&enum_layout.fields, std_Clone_str(ctx, v.name), 1) = t_variant;
+#line 3373 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
     }
-#line 3372 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3377 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__env_register_struct(env, namespaced_name, enum_layout, ctx);
-#line 3373 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3378 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 3374 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3379 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).enum_registry, std_Clone_str(ctx, namespaced_name), 1) = variants_list;
     }
     }
     }
-#line 3378 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 3) {
-#line 3379 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name = stmt.FunctionDecl.name;
-#line 3380 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, name, ctx);
-#line 3382 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
 #line 3383 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    sig.param_names = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    if (stmt.tag == 3) {
 #line 3384 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    sig.params = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 3386 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
+    Slice_unsigned_char name = stmt.FunctionDecl.name;
+#line 3385 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, name, ctx);
 #line 3387 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Parameter* params_vec = ((std_Vector_ast__Parameter*)&((*(( std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + stmt.FunctionDecl.params)))));
+    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
 #line 3388 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    sig.param_names = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3389 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(params_vec)).len) {
-#line 3390 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Parameter p = (*({ if (i < 0 || i >= (*(params_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(params_vec)).data[i]); }));
+    sig.params = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 3391 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&sig.param_names, std_Clone_str(ctx, p.name));
+    {
 #line 3392 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&sig.params, typechecker__env_resolve_type(env, p.param_type, ctx));
+    std_Vector_ast__Parameter* params_vec = ((std_Vector_ast__Parameter*)&((*(( std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + stmt.FunctionDecl.params)))));
 #line 3393 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 3394 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(params_vec)).len) {
+#line 3395 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Parameter p = (*({ if (i < 0 || i >= (*(params_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(params_vec)).data[i]); }));
+#line 3396 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&sig.param_names, std_Clone_str(ctx, p.name));
+#line 3397 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&sig.params, typechecker__env_resolve_type(env, p.param_type, ctx));
+#line 3398 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 3395 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3400 "/home/garth/files/code/gust/compiler/typechecker.gst"
     sig.return_type = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + stmt.FunctionDecl.return_type))), ctx);
-#line 3396 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3401 "/home/garth/files/code/gust/compiler/typechecker.gst"
     sig.return_origins = typechecker__set_init(ctx);
     }
-#line 3399 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3404 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__env_register_function(env, namespaced_name, sig, ctx);
     }
 }
 
-#line 3403 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3408 "/home/garth/files/code/gust/compiler/typechecker.gst"
 void typechecker__report_error(int kind_tag, Slice_unsigned_char message, token__Span span, typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 3404 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3409 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char err_msg = (({
         __typeof__(span.start.line) _arg1 = span.start.line;
         __typeof__(span.start.column) _arg2 = span.start.column;
@@ -14531,26 +14533,26 @@ void typechecker__report_error(int kind_tag, Slice_unsigned_char message, token_
         int _len = snprintf(_buf, _alloc_size, "TypeError at line %d:%d: %.*s", _arg1, _arg2, _arg3.len, (char*)_arg3.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 3405 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"❌", 3 }), err_msg, ctx);
-#line 3407 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 3408 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
-#line 3409 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    err.kind.tag = kind_tag;
 #line 3410 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    err.message = std_Clone_str(ctx, message);
-#line 3411 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    err.span = span;
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"❌", 3 }), err_msg, ctx);
 #line 3412 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    {
+#line 3413 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    errors__CompilerError err = ((errors__CompilerError){ .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+#line 3414 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    err.kind.tag = kind_tag;
+#line 3415 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    err.message = std_Clone_str(ctx, message);
+#line 3416 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    err.span = span;
+#line 3417 "/home/garth/files/code/gust/compiler/typechecker.gst"
     os_VectorPush(&(*(env)).errors, err);
     }
 }
 
-#line 3416 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3421 "/home/garth/files/code/gust/compiler/typechecker.gst"
 void typechecker__typechecker_log_trace(Slice_unsigned_char emoji, Slice_unsigned_char message, os_Arena* ctx) {
-#line 3417 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3422 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char formatted = (({
         Slice_unsigned_char _arg1 = emoji;
         Slice_unsigned_char _arg2 = message;
@@ -14559,514 +14561,514 @@ void typechecker__typechecker_log_trace(Slice_unsigned_char emoji, Slice_unsigne
         int _len = snprintf(_buf, _alloc_size, "%.*s %.*s", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 3418 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3423 "/home/garth/files/code/gust/compiler/typechecker.gst"
     os_LogStr(formatted);
 }
 
-#line 3421 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3426 "/home/garth/files/code/gust/compiler/typechecker.gst"
 token__Span typechecker__get_expression_span(int expr_idx, os_Arena* ctx) {
-#line 3422 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3427 "/home/garth/files/code/gust/compiler/typechecker.gst"
     token__Span s = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
-#line 3423 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3428 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 3424 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3429 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (expr_idx == 0xFFFFFFFF) {
-#line 3425 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3430 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return s;
     }
-#line 3427 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3432 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Expression expr = (*(( ast__Expression*)((char*)ctx->BaseAddress + expr_idx)));
-#line 3428 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3433 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int tag = expr.tag;
-#line 3429 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3434 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 0) {
-#line 3429 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3434 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.Identifier.span;
     }
-#line 3430 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3435 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 1) {
-#line 3430 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3435 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.Integer.span;
     }
-#line 3431 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3436 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 2) {
-#line 3431 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3436 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.String.span;
     }
-#line 3432 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3437 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 3) {
-#line 3432 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3437 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.Bool.span;
     }
-#line 3433 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3438 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 4) {
-#line 3433 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3438 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.Move.span;
     }
-#line 3434 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3439 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 5) {
-#line 3434 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3439 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.Take.span;
     }
-#line 3435 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3440 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 6) {
-#line 3435 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3440 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.AddressOf.span;
     }
-#line 3436 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3441 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 7) {
-#line 3436 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3441 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.Dereference.span;
     }
-#line 3437 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3442 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 8) {
-#line 3437 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3442 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.IndexAccess.span;
     }
-#line 3438 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3443 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 9) {
-#line 3438 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3443 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.AsCast.span;
     }
-#line 3439 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3444 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 10) {
-#line 3439 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3444 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.Binary.span;
     }
-#line 3440 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3445 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 11) {
-#line 3440 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3445 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.Selector.span;
     }
-#line 3441 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3446 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 12) {
-#line 3441 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3446 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.Call.span;
     }
-#line 3442 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3447 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (tag == 13) {
-#line 3442 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3447 "/home/garth/files/code/gust/compiler/typechecker.gst"
     s = expr.Empty.span;
     }
     }
-#line 3444 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3449 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return s;
 }
 
-#line 3447 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3452 "/home/garth/files/code/gust/compiler/typechecker.gst"
 Slice_unsigned_char typechecker__get_root_variable(int expr_idx, os_Arena* ctx) {
-#line 3448 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3453 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 3449 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3454 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (expr_idx == 0xFFFFFFFF) {
-#line 3450 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3455 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
-#line 3452 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3457 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Expression* expr_ptr = ((ast__Expression*)&((*(( ast__Expression*)((char*)ctx->BaseAddress + expr_idx)))));
-#line 3453 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3458 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 0) {
-#line 3454 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3459 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return (*(expr_ptr)).Identifier.name;
     }
-#line 3456 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3461 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 4) {
-#line 3457 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3462 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__get_root_variable((*(expr_ptr)).Move.expr, ctx);
     }
-#line 3459 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3464 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 5) {
-#line 3460 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3465 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__get_root_variable((*(expr_ptr)).Take.expr, ctx);
     }
-#line 3462 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3467 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 6) {
-#line 3463 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3468 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__get_root_variable((*(expr_ptr)).AddressOf.expr, ctx);
     }
-#line 3465 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3470 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 7) {
-#line 3466 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3471 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__get_root_variable((*(expr_ptr)).Dereference.expr, ctx);
     }
-#line 3468 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3473 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 8) {
-#line 3469 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3474 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__get_root_variable((*(expr_ptr)).IndexAccess.allocator, ctx);
     }
-#line 3471 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3476 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 9) {
-#line 3472 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3477 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__get_root_variable((*(expr_ptr)).AsCast.left, ctx);
     }
-#line 3474 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3479 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 11) {
-#line 3475 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3480 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__get_root_variable((*(expr_ptr)).Selector.left, ctx);
     }
-#line 3477 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3482 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
 }
 
-#line 3481 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3486 "/home/garth/files/code/gust/compiler/typechecker.gst"
 int typechecker__is_pointer_write(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx) {
-#line 3482 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3487 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 3483 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3488 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (expr_idx == 0xFFFFFFFF) {
-#line 3484 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3489 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
-#line 3486 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Expression expr = (*(( ast__Expression*)((char*)ctx->BaseAddress + expr_idx)));
-#line 3487 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expr.tag == 7) {
-#line 3488 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return 1;
-    }
-#line 3490 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expr.tag == 8) {
 #line 3491 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Expression expr = (*(( ast__Expression*)((char*)ctx->BaseAddress + expr_idx)));
+#line 3492 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (expr.tag == 7) {
+#line 3493 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
-#line 3493 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expr.tag == 11) {
-#line 3494 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type left_t = typechecker__check_expression(expr.Selector.left, env, scope, ctx);
 #line 3495 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (left_t.tag == 9) {
+    if (expr.tag == 8) {
 #line 3496 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
 #line 3498 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return typechecker__is_pointer_write(expr.Selector.left, env, scope, ctx);
-    }
+    if (expr.tag == 11) {
+#line 3499 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type left_t = typechecker__check_expression(expr.Selector.left, env, scope, ctx);
 #line 3500 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expr.tag == 9) {
+    if (left_t.tag == 9) {
 #line 3501 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return typechecker__is_pointer_write(expr.AsCast.left, env, scope, ctx);
+    return 1;
     }
 #line 3503 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return typechecker__is_pointer_write(expr.Selector.left, env, scope, ctx);
+    }
+#line 3505 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (expr.tag == 9) {
+#line 3506 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return typechecker__is_pointer_write(expr.AsCast.left, env, scope, ctx);
+    }
+#line 3508 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (expr.tag == 4) {
-#line 3504 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3509 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__is_pointer_write(expr.Move.expr, env, scope, ctx);
     }
-#line 3506 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3511 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (expr.tag == 5) {
-#line 3507 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3512 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__is_pointer_write(expr.Take.expr, env, scope, ctx);
     }
-#line 3509 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3514 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
 }
 
-#line 3513 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3518 "/home/garth/files/code/gust/compiler/typechecker.gst"
 Slice_unsigned_char typechecker__get_call_func_name(int func_expr_idx, os_Arena* ctx) {
-#line 3514 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3519 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 3515 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3520 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (func_expr_idx == 0xFFFFFFFF) {
-#line 3516 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3521 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
-#line 3518 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3523 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Expression* expr_ptr = ((ast__Expression*)&((*(( ast__Expression*)((char*)ctx->BaseAddress + func_expr_idx)))));
-#line 3519 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3524 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 0) {
-#line 3520 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3525 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return (*(expr_ptr)).Identifier.name;
     }
-#line 3522 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(expr_ptr)).tag == 11) {
-#line 3523 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int left_expr_idx = (*(expr_ptr)).Selector.left;
-#line 3524 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (left_expr_idx != 0xFFFFFFFF) {
-#line 3525 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Expression* left_ptr = ((ast__Expression*)&((*(( ast__Expression*)((char*)ctx->BaseAddress + left_expr_idx)))));
-#line 3526 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(left_ptr)).tag == 0) {
 #line 3527 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(expr_ptr)).tag == 11) {
+#line 3528 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int left_expr_idx = (*(expr_ptr)).Selector.left;
+#line 3529 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (left_expr_idx != 0xFFFFFFFF) {
+#line 3530 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Expression* left_ptr = ((ast__Expression*)&((*(( ast__Expression*)((char*)ctx->BaseAddress + left_expr_idx)))));
+#line 3531 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(left_ptr)).tag == 0) {
+#line 3532 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = (({ Slice_unsigned_char _s1 = (*(left_ptr)).Identifier.name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)".", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })); Slice_unsigned_char _s2 = (*(expr_ptr)).Selector.right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     }
     }
     }
-#line 3531 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3536 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
 }
 
-#line 3535 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3540 "/home/garth/files/code/gust/compiler/typechecker.gst"
 int typechecker__is_diverging_statement(int stmt_idx, typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 3536 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3541 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 3537 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3542 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (stmt_idx == 0xFFFFFFFF) {
-#line 3538 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3543 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
-#line 3540 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Statement stmt = (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx)));
-#line 3541 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 12) {
-#line 3542 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return 1;
-    }
-#line 3544 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 13) {
 #line 3545 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int expr_idx = stmt.Expression.expr;
+    ast__Statement stmt = (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx)));
 #line 3546 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expr_idx != 0xFFFFFFFF) {
+    if (stmt.tag == 12) {
 #line 3547 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Expression expr = (*(( ast__Expression*)((char*)ctx->BaseAddress + expr_idx)));
-#line 3548 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expr.tag == 12) {
+    return 1;
+    }
 #line 3549 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char func_name = typechecker__get_call_func_name(expr.Call.function, ctx);
+    if (stmt.tag == 13) {
 #line 3550 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char resolved_func = typechecker__env_resolve_namespaced_ident(env, func_name, ctx);
+    int expr_idx = stmt.Expression.expr;
 #line 3551 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(resolved_func, ((Slice_unsigned_char){ (unsigned char*)"os_Exit", 7 })) || std_str_eq(resolved_func, ((Slice_unsigned_char){ (unsigned char*)"os.Exit", 7 }))) {
+    if (expr_idx != 0xFFFFFFFF) {
 #line 3552 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Expression expr = (*(( ast__Expression*)((char*)ctx->BaseAddress + expr_idx)));
+#line 3553 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (expr.tag == 12) {
+#line 3554 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char func_name = typechecker__get_call_func_name(expr.Call.function, ctx);
+#line 3555 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char resolved_func = typechecker__env_resolve_namespaced_ident(env, func_name, ctx);
+#line 3556 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(resolved_func, ((Slice_unsigned_char){ (unsigned char*)"os_Exit", 7 })) || std_str_eq(resolved_func, ((Slice_unsigned_char){ (unsigned char*)"os.Exit", 7 }))) {
+#line 3557 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
     }
     }
     }
-#line 3557 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3562 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (stmt.tag == 10) {
-#line 3558 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3563 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__is_diverging_block(stmt.UnsafeBlock.body, env, ctx);
     }
-#line 3560 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3565 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (stmt.tag == 7) {
-#line 3561 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3566 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int cons_div = typechecker__is_diverging_block(stmt.If.consequence, env, ctx);
-#line 3562 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3567 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int alt_div = 0;
-#line 3563 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3568 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (stmt.If.alternative != 0xFFFFFFFF) {
-#line 3564 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3569 "/home/garth/files/code/gust/compiler/typechecker.gst"
     alt_div = typechecker__is_diverging_block(stmt.If.alternative, env, ctx);
     }
-#line 3566 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3571 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (cons_div == 1 && alt_div == 1) {
-#line 3567 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3572 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
     }
-#line 3570 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3575 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
 }
 
-#line 3574 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3579 "/home/garth/files/code/gust/compiler/typechecker.gst"
 int typechecker__is_diverging_block(int block_idx, typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 3575 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3580 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 3576 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3581 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (block_idx == 0xFFFFFFFF) {
-#line 3577 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3582 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
-#line 3579 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__BlockStatement block = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx)));
-#line 3580 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + block.statements)))));
-#line 3581 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 3582 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(statements_vec)).len) {
-#line 3583 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
 #line 3584 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))) = (*({ if (i < 0 || i >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[i]); }));
+    ast__BlockStatement block = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + block_idx)));
 #line 3585 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__is_diverging_statement(stmt_idx, env, ctx) == 1) {
+    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + block.statements)))));
 #line 3586 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 3587 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(statements_vec)).len) {
+#line 3588 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+#line 3589 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))) = (*({ if (i < 0 || i >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[i]); }));
+#line 3590 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__is_diverging_statement(stmt_idx, env, ctx) == 1) {
+#line 3591 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
-#line 3588 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3593 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 3590 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3595 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
 }
 
-#line 3594 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3599 "/home/garth/files/code/gust/compiler/typechecker.gst"
 Slice_unsigned_char typechecker__expression_to_string(int expr_idx, os_Arena* ctx) {
-#line 3595 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3600 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 3596 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3601 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (expr_idx == 0xFFFFFFFF) {
-#line 3597 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3602 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
-#line 3599 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3604 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Expression* expr_ptr = ((ast__Expression*)&((*(( ast__Expression*)((char*)ctx->BaseAddress + expr_idx)))));
-#line 3600 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3605 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 0) {
-#line 3601 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3606 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return (*(expr_ptr)).Identifier.name;
     }
-#line 3603 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3608 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 4) {
-#line 3604 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3609 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__expression_to_string((*(expr_ptr)).Move.expr, ctx);
     }
-#line 3606 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3611 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 5) {
-#line 3607 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3612 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__expression_to_string((*(expr_ptr)).Take.expr, ctx);
     }
-#line 3609 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3614 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 6) {
-#line 3610 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3615 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char inner_str = typechecker__expression_to_string((*(expr_ptr)).AddressOf.expr, ctx);
-#line 3611 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3616 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"&", 1 }); Slice_unsigned_char _s2 = inner_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     }
-#line 3613 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3618 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 7) {
-#line 3614 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3619 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char inner_str = typechecker__expression_to_string((*(expr_ptr)).Dereference.expr, ctx);
-#line 3615 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3620 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"*", 1 }); Slice_unsigned_char _s2 = inner_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     }
-#line 3617 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3622 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 8) {
-#line 3618 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3623 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char alloc_str = typechecker__expression_to_string((*(expr_ptr)).IndexAccess.allocator, ctx);
-#line 3619 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3624 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char idx_str = typechecker__expression_to_string((*(expr_ptr)).IndexAccess.index, ctx);
-#line 3620 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3625 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = (({ Slice_unsigned_char _s1 = (({ Slice_unsigned_char _s1 = alloc_str; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"[", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })); Slice_unsigned_char _s2 = idx_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })); Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"]", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     }
-#line 3622 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3627 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 9) {
-#line 3623 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3628 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__expression_to_string((*(expr_ptr)).AsCast.left, ctx);
     }
-#line 3625 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3630 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 11) {
-#line 3626 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3631 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char left_str = typechecker__expression_to_string((*(expr_ptr)).Selector.left, ctx);
-#line 3627 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3632 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = (({ Slice_unsigned_char _s1 = left_str; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)".", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })); Slice_unsigned_char _s2 = (*(expr_ptr)).Selector.right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     }
-#line 3629 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(expr_ptr)).tag == 12) {
-#line 3630 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char func_str = typechecker__expression_to_string((*(expr_ptr)).Call.function, ctx);
-#line 3631 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Expression* args_vec = ((std_Vector_ast__Expression*)&((*(( std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (*(expr_ptr)).Call.arguments)))));
-#line 3632 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char args_str = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
-#line 3633 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
 #line 3634 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(args_vec)).len) {
+    if ((*(expr_ptr)).tag == 12) {
 #line 3635 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (i > 0) {
+    Slice_unsigned_char func_str = typechecker__expression_to_string((*(expr_ptr)).Call.function, ctx);
 #line 3636 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Expression* args_vec = ((std_Vector_ast__Expression*)&((*(( std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (*(expr_ptr)).Call.arguments)))));
+#line 3637 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char args_str = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 3638 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 3639 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(args_vec)).len) {
+#line 3640 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (i > 0) {
+#line 3641 "/home/garth/files/code/gust/compiler/typechecker.gst"
     args_str = (({ Slice_unsigned_char _s1 = args_str; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 3638 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3643 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int arg_idx = os_ArenaAlloc(ctx, sizeof(ast__Expression));
-#line 3639 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3644 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(( ast__Expression*)((char*)ctx->BaseAddress + arg_idx))) = (*({ if (i < 0 || i >= (*(args_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(args_vec)).data[i]); }));
-#line 3640 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3645 "/home/garth/files/code/gust/compiler/typechecker.gst"
     args_str = (({ Slice_unsigned_char _s1 = args_str; Slice_unsigned_char _s2 = typechecker__expression_to_string(arg_idx, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3641 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3646 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 3643 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3648 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = func_str; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"(", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3644 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3649 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = args_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3645 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3650 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3646 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3651 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, res);
     }
-#line 3648 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3653 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
 }
 
-#line 3652 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3657 "/home/garth/files/code/gust/compiler/typechecker.gst"
 void typechecker__typechecker_extract_ok_checked_variables(int expr_idx, std_HashMap_str_int* checked_map, os_Arena* ctx) {
-#line 3653 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3658 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 3654 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3659 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (expr_idx == 0xFFFFFFFF) {
-#line 3655 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3660 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return;
     }
-#line 3657 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3662 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Expression* expr_ptr = ((ast__Expression*)&((*(( ast__Expression*)((char*)ctx->BaseAddress + expr_idx)))));
-#line 3658 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3663 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 11) {
-#line 3659 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3664 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq((*(expr_ptr)).Selector.right, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }))) {
-#line 3660 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3665 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char var_name = typechecker__expression_to_string((*(expr_ptr)).Selector.left, ctx);
-#line 3661 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3666 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(checked_map)), std_Clone_str(ctx, var_name), 1) = 1;
     }
     }
-#line 3664 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3669 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(expr_ptr)).tag == 10) {
-#line 3665 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3670 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq((*(expr_ptr)).Binary.op, ((Slice_unsigned_char){ (unsigned char*)"&&", 2 }))) {
-#line 3666 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3671 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_extract_ok_checked_variables((*(expr_ptr)).Binary.left, checked_map, ctx);
-#line 3667 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3672 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_extract_ok_checked_variables((*(expr_ptr)).Binary.right, checked_map, ctx);
     } else {
-#line 3669 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq((*(expr_ptr)).Binary.op, ((Slice_unsigned_char){ (unsigned char*)"==", 2 }))) {
-#line 3671 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int left_idx = (*(expr_ptr)).Binary.left;
-#line 3672 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int right_idx = (*(expr_ptr)).Binary.right;
-#line 3673 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (left_idx != 0xFFFFFFFF && right_idx != 0xFFFFFFFF) {
 #line 3674 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Expression* left_ptr = ((ast__Expression*)&((*(( ast__Expression*)((char*)ctx->BaseAddress + left_idx)))));
-#line 3675 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Expression* right_ptr = ((ast__Expression*)&((*(( ast__Expression*)((char*)ctx->BaseAddress + right_idx)))));
+    if (std_str_eq((*(expr_ptr)).Binary.op, ((Slice_unsigned_char){ (unsigned char*)"==", 2 }))) {
 #line 3676 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(left_ptr)).tag == 11) {
+    int left_idx = (*(expr_ptr)).Binary.left;
 #line 3677 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq((*(left_ptr)).Selector.right, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }))) {
+    int right_idx = (*(expr_ptr)).Binary.right;
 #line 3678 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(right_ptr)).tag == 1) {
+    if (left_idx != 0xFFFFFFFF && right_idx != 0xFFFFFFFF) {
 #line 3679 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(right_ptr)).Integer.val == 1) {
+    ast__Expression* left_ptr = ((ast__Expression*)&((*(( ast__Expression*)((char*)ctx->BaseAddress + left_idx)))));
 #line 3680 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char var_name = typechecker__expression_to_string((*(left_ptr)).Selector.left, ctx);
+    ast__Expression* right_ptr = ((ast__Expression*)&((*(( ast__Expression*)((char*)ctx->BaseAddress + right_idx)))));
 #line 3681 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(left_ptr)).tag == 11) {
+#line 3682 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq((*(left_ptr)).Selector.right, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }))) {
+#line 3683 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(right_ptr)).tag == 1) {
+#line 3684 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(right_ptr)).Integer.val == 1) {
+#line 3685 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char var_name = typechecker__expression_to_string((*(left_ptr)).Selector.left, ctx);
+#line 3686 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(checked_map)), std_Clone_str(ctx, var_name), 1) = 1;
     }
     }
     }
     }
-#line 3686 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(right_ptr)).tag == 11) {
-#line 3687 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq((*(right_ptr)).Selector.right, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }))) {
-#line 3688 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(left_ptr)).tag == 1) {
-#line 3689 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(left_ptr)).Integer.val == 1) {
-#line 3690 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char var_name = typechecker__expression_to_string((*(right_ptr)).Selector.left, ctx);
 #line 3691 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(right_ptr)).tag == 11) {
+#line 3692 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq((*(right_ptr)).Selector.right, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }))) {
+#line 3693 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(left_ptr)).tag == 1) {
+#line 3694 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(left_ptr)).Integer.val == 1) {
+#line 3695 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char var_name = typechecker__expression_to_string((*(right_ptr)).Selector.left, ctx);
+#line 3696 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(checked_map)), std_Clone_str(ctx, var_name), 1) = 1;
     }
     }
@@ -15079,537 +15081,537 @@ void typechecker__typechecker_extract_ok_checked_variables(int expr_idx, std_Has
     }
 }
 
-#line 3703 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__get_type_brand(ast__Type t, os_Arena* ctx) {
-#line 3704 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 3705 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 7) {
-#line 3706 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Index.brand != 0xFFFFFFFF) {
-#line 3707 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
 #line 3708 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return (*(brand_str_ptr));
-    }
-    }
+Slice_unsigned_char typechecker__get_type_brand(ast__Type t, os_Arena* ctx) {
+#line 3709 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    {
+#line 3710 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.tag == 7) {
 #line 3711 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 8) {
+    if (t.Index.brand != 0xFFFFFFFF) {
 #line 3712 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Struct.brand != 0xFFFFFFFF) {
+    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
 #line 3713 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
-#line 3714 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return (*(brand_str_ptr));
     }
     }
+#line 3716 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.tag == 8) {
 #line 3717 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 9) {
+    if (t.Struct.brand != 0xFFFFFFFF) {
 #line 3718 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
+#line 3719 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return (*(brand_str_ptr));
+    }
+    }
+#line 3722 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.tag == 9) {
+#line 3723 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__get_type_brand((*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner))), ctx);
     }
-#line 3720 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3725 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (t.tag == 6) {
-#line 3721 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3726 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__get_type_brand((*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner))), ctx);
     }
-#line 3723 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3728 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
 }
 
-#line 3727 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__typechecker_strip_module_prefix(Slice_unsigned_char name, os_Arena* ctx) {
-#line 3728 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char clean = name;
-#line 3729 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int d_idx = std_str_find(clean, ((Slice_unsigned_char){ (unsigned char*)"__", 2 }));
-#line 3730 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (d_idx != 0 - 1) {
-#line 3731 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int s_idx = std_str_find(clean, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }));
 #line 3732 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (s_idx == d_idx) {
+Slice_unsigned_char typechecker__typechecker_strip_module_prefix(Slice_unsigned_char name, os_Arena* ctx) {
 #line 3733 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char clean = name;
+#line 3734 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int d_idx = std_str_find(clean, ((Slice_unsigned_char){ (unsigned char*)"__", 2 }));
+#line 3735 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (d_idx != 0 - 1) {
+#line 3736 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int s_idx = std_str_find(clean, ((Slice_unsigned_char){ (unsigned char*)"_", 1 }));
+#line 3737 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (s_idx == d_idx) {
+#line 3738 "/home/garth/files/code/gust/compiler/typechecker.gst"
     clean = std_str_slice(clean, d_idx + 2, clean.len);
     }
     }
-#line 3737 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str prefixes = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 3738 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"ast_", 4 }));
-#line 3739 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"lexer_", 6 }));
-#line 3740 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"parser_", 7 }));
-#line 3741 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"errors_", 7 }));
 #line 3742 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"token_", 6 }));
+    std_Vector_str prefixes = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 3743 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"ast_", 4 }));
 #line 3744 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"lexer_", 6 }));
 #line 3745 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < prefixes.len) {
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"parser_", 7 }));
 #line 3746 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char prefix = (*({ if (i < 0 || i >= prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(prefixes.data[i]); }));
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"errors_", 7 }));
 #line 3747 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int pos = std_str_find(clean, prefix);
-#line 3748 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (pos != 0 - 1) {
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"token_", 6 }));
 #line 3749 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char left = std_str_slice(clean, 0, pos);
+    int i = 0;
 #line 3750 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char right = std_str_slice(clean, pos + prefix.len, clean.len);
+    while (i < prefixes.len) {
 #line 3751 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    clean = (({ Slice_unsigned_char _s1 = left; Slice_unsigned_char _s2 = right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char prefix = (*({ if (i < 0 || i >= prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(prefixes.data[i]); }));
 #line 3752 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int pos = std_str_find(clean, prefix);
+#line 3753 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (pos != 0 - 1) {
+#line 3754 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char left = std_str_slice(clean, 0, pos);
+#line 3755 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char right = std_str_slice(clean, pos + prefix.len, clean.len);
+#line 3756 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    clean = (({ Slice_unsigned_char _s1 = left; Slice_unsigned_char _s2 = right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 3757 "/home/garth/files/code/gust/compiler/typechecker.gst"
     pos = std_str_find(clean, prefix);
     }
-#line 3754 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3759 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 3756 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3761 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, clean);
 }
 
-#line 3759 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3764 "/home/garth/files/code/gust/compiler/typechecker.gst"
 int typechecker__typechecker_rfind_char(Slice_unsigned_char s, int ch, int end_idx) {
-#line 3760 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3765 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int j = end_idx - 1;
-#line 3761 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3766 "/home/garth/files/code/gust/compiler/typechecker.gst"
     while (j >= 0) {
-#line 3762 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3767 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_byte_at(s, j) == ch) {
-#line 3763 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3768 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return j;
     }
-#line 3765 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3770 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j - 1;
     }
-#line 3767 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3772 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0 - 1;
 }
 
-#line 3770 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__typechecker_clean_monomorphized_name(Slice_unsigned_char name, os_Arena* ctx) {
-#line 3771 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char erased = name;
-#line 3772 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int changed = 1;
-#line 3773 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (changed == 1) {
-#line 3774 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    changed = 0;
 #line 3775 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str brand_bases = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+Slice_unsigned_char typechecker__typechecker_clean_monomorphized_name(Slice_unsigned_char name, os_Arena* ctx) {
 #line 3776 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&brand_bases, ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 }));
+    Slice_unsigned_char erased = name;
 #line 3777 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&brand_bases, ((Slice_unsigned_char){ (unsigned char*)"arena", 5 }));
+    int changed = 1;
 #line 3778 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&brand_bases, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }));
+    while (changed == 1) {
 #line 3779 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&brand_bases, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 }));
+    changed = 0;
 #line 3780 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&brand_bases, ((Slice_unsigned_char){ (unsigned char*)"a", 1 }));
+    std_Vector_str brand_bases = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 3781 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&brand_bases, ((Slice_unsigned_char){ (unsigned char*)"connCtx", 7 }));
 #line 3782 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    os_VectorPush(&brand_bases, ((Slice_unsigned_char){ (unsigned char*)"arena", 5 }));
 #line 3783 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < brand_bases.len) {
+    os_VectorPush(&brand_bases, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 }));
 #line 3784 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char base = (*({ if (i < 0 || i >= brand_bases.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(brand_bases.data[i]); }));
+    os_VectorPush(&brand_bases, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 }));
 #line 3785 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char ns_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"__", 2 }); Slice_unsigned_char _s2 = base; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3786 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char ns_mid = (({ Slice_unsigned_char _s1 = ns_suffix; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    os_VectorPush(&brand_bases, ((Slice_unsigned_char){ (unsigned char*)"a", 1 }));
 #line 3787 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char flat_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = base; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int i = 0;
 #line 3788 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char flat_mid = (({ Slice_unsigned_char _s1 = flat_suffix; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    while (i < brand_bases.len) {
+#line 3789 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char base = (*({ if (i < 0 || i >= brand_bases.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(brand_bases.data[i]); }));
 #line 3790 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__typechecker_ends_with(erased, ns_suffix) == 1) {
+    Slice_unsigned_char ns_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"__", 2 }); Slice_unsigned_char _s2 = base; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 3791 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int pos = erased.len - ns_suffix.len;
+    Slice_unsigned_char ns_mid = (({ Slice_unsigned_char _s1 = ns_suffix; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 3792 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int start_pos = typechecker__typechecker_rfind_char(erased, 95, pos);
+    Slice_unsigned_char flat_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = base; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 3793 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (start_pos != 0 - 1) {
-#line 3794 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__typechecker_ends_with(std_str_slice(erased, 0, pos), ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) == 0) {
+    Slice_unsigned_char flat_mid = (({ Slice_unsigned_char _s1 = flat_suffix; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 3795 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    erased = std_str_slice(erased, 0, start_pos);
+    if (typechecker__typechecker_ends_with(erased, ns_suffix) == 1) {
 #line 3796 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    changed = 1;
+    int pos = erased.len - ns_suffix.len;
 #line 3797 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    i = brand_bases.len;
-    }
-    }
-    } else {
-#line 3801 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int pos = std_str_find(erased, ns_mid);
-#line 3802 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (pos != 0 - 1) {
-#line 3803 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int start_pos = typechecker__typechecker_rfind_char(erased, 95, pos);
-#line 3804 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3798 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (start_pos != 0 - 1) {
-#line 3805 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3799 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (typechecker__typechecker_ends_with(std_str_slice(erased, 0, pos), ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) == 0) {
-#line 3806 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char left = std_str_slice(erased, 0, start_pos);
-#line 3807 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char right = std_str_slice(erased, pos + ns_mid.len - 1, erased.len);
-#line 3808 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    erased = (({ Slice_unsigned_char _s1 = left; Slice_unsigned_char _s2 = right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3809 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3800 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    erased = std_str_slice(erased, 0, start_pos);
+#line 3801 "/home/garth/files/code/gust/compiler/typechecker.gst"
     changed = 1;
-#line 3810 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3802 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = brand_bases.len;
     }
     }
     } else {
+#line 3806 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int pos = std_str_find(erased, ns_mid);
+#line 3807 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (pos != 0 - 1) {
+#line 3808 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int start_pos = typechecker__typechecker_rfind_char(erased, 95, pos);
+#line 3809 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (start_pos != 0 - 1) {
+#line 3810 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__typechecker_ends_with(std_str_slice(erased, 0, pos), ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) == 0) {
+#line 3811 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char left = std_str_slice(erased, 0, start_pos);
+#line 3812 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char right = std_str_slice(erased, pos + ns_mid.len - 1, erased.len);
 #line 3813 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__typechecker_ends_with(erased, flat_suffix) == 1) {
+    erased = (({ Slice_unsigned_char _s1 = left; Slice_unsigned_char _s2 = right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 3814 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    erased = std_str_slice(erased, 0, erased.len - flat_suffix.len);
-#line 3815 "/home/garth/files/code/gust/compiler/typechecker.gst"
     changed = 1;
-#line 3816 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3815 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = brand_bases.len;
+    }
+    }
     } else {
 #line 3818 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int pos2 = std_str_find(erased, flat_mid);
+    if (typechecker__typechecker_ends_with(erased, flat_suffix) == 1) {
 #line 3819 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (pos2 != 0 - 1) {
+    erased = std_str_slice(erased, 0, erased.len - flat_suffix.len);
 #line 3820 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char left = std_str_slice(erased, 0, pos2);
-#line 3821 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char right = std_str_slice(erased, pos2 + flat_mid.len - 1, erased.len);
-#line 3822 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    erased = (({ Slice_unsigned_char _s1 = left; Slice_unsigned_char _s2 = right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3823 "/home/garth/files/code/gust/compiler/typechecker.gst"
     changed = 1;
+#line 3821 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    i = brand_bases.len;
+    } else {
+#line 3823 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int pos2 = std_str_find(erased, flat_mid);
 #line 3824 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (pos2 != 0 - 1) {
+#line 3825 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char left = std_str_slice(erased, 0, pos2);
+#line 3826 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char right = std_str_slice(erased, pos2 + flat_mid.len - 1, erased.len);
+#line 3827 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    erased = (({ Slice_unsigned_char _s1 = left; Slice_unsigned_char _s2 = right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 3828 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    changed = 1;
+#line 3829 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = brand_bases.len;
     }
     }
     }
     }
-#line 3828 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3833 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
     }
-#line 3831 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3836 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, erased);
 }
 
-#line 3834 "/home/garth/files/code/gust/compiler/typechecker.gst"
-ast__Type typechecker__typechecker_substitute_brand(ast__Type t, int new_brand, os_Arena* ctx) {
-#line 3835 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 3836 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 7) {
-#line 3837 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char struct_name = t.Index.struct_name;
-#line 3838 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Index.brand != 0xFFFFFFFF && new_brand != 0xFFFFFFFF) {
 #line 3839 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* old_b_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
+ast__Type typechecker__typechecker_substitute_brand(ast__Type t, int new_brand, os_Arena* ctx) {
 #line 3840 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char old_b = (*(old_b_ptr));
+    {
 #line 3841 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* new_b_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + new_brand)))));
+    if (t.tag == 7) {
 #line 3842 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char new_b = (*(new_b_ptr));
+    Slice_unsigned_char struct_name = t.Index.struct_name;
+#line 3843 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.Index.brand != 0xFFFFFFFF && new_brand != 0xFFFFFFFF) {
 #line 3844 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char old_b_clean = typechecker__strip_brand_prefix(old_b, ctx);
+    Slice_unsigned_char* old_b_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
 #line 3845 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char new_b_clean = typechecker__strip_brand_prefix(new_b, ctx);
-#line 3847 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = old_b_clean; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3848 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char new_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = new_b_clean; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3850 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__typechecker_ends_with(struct_name, suffix) == 1) {
-#line 3851 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char stripped = std_str_slice(struct_name, 0, struct_name.len - suffix.len);
-#line 3852 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    struct_name = (({ Slice_unsigned_char _s1 = stripped; Slice_unsigned_char _s2 = new_suffix; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-    } else {
-#line 3854 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char suffix_full = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = old_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3855 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char new_suffix_full = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = new_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3856 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__typechecker_ends_with(struct_name, suffix_full) == 1) {
-#line 3857 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char stripped = std_str_slice(struct_name, 0, struct_name.len - suffix_full.len);
-#line 3858 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    struct_name = (({ Slice_unsigned_char _s1 = stripped; Slice_unsigned_char _s2 = new_suffix_full; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-    }
-    }
-    }
-#line 3862 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type res_t = ((ast__Type){ .tag = 0 });
-#line 3863 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.tag = 7;
-#line 3864 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Index.struct_name = std_Clone_str(ctx, struct_name);
-#line 3865 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Index.brand = new_brand;
-#line 3866 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res_t;
-    }
-#line 3868 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 8) {
-#line 3869 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char struct_name = t.Struct.struct_name;
-#line 3870 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Struct.brand != 0xFFFFFFFF && new_brand != 0xFFFFFFFF) {
-#line 3871 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* old_b_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
-#line 3872 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char old_b = (*(old_b_ptr));
-#line 3873 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3846 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char* new_b_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + new_brand)))));
-#line 3874 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3847 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char new_b = (*(new_b_ptr));
-#line 3876 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3849 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char old_b_clean = typechecker__strip_brand_prefix(old_b, ctx);
-#line 3877 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3850 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char new_b_clean = typechecker__strip_brand_prefix(new_b, ctx);
-#line 3879 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3852 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = old_b_clean; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3880 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3853 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char new_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = new_b_clean; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3882 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3855 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (typechecker__typechecker_ends_with(struct_name, suffix) == 1) {
-#line 3883 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3856 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char stripped = std_str_slice(struct_name, 0, struct_name.len - suffix.len);
-#line 3884 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3857 "/home/garth/files/code/gust/compiler/typechecker.gst"
     struct_name = (({ Slice_unsigned_char _s1 = stripped; Slice_unsigned_char _s2 = new_suffix; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
-#line 3886 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3859 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char suffix_full = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = old_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3887 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3860 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char new_suffix_full = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = new_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3888 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3861 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (typechecker__typechecker_ends_with(struct_name, suffix_full) == 1) {
-#line 3889 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3862 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char stripped = std_str_slice(struct_name, 0, struct_name.len - suffix_full.len);
-#line 3890 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3863 "/home/garth/files/code/gust/compiler/typechecker.gst"
     struct_name = (({ Slice_unsigned_char _s1 = stripped; Slice_unsigned_char _s2 = new_suffix_full; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
     }
     }
+#line 3867 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type res_t = ((ast__Type){ .tag = 0 });
+#line 3868 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.tag = 7;
+#line 3869 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.Index.struct_name = std_Clone_str(ctx, struct_name);
+#line 3870 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.Index.brand = new_brand;
+#line 3871 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return res_t;
+    }
+#line 3873 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.tag == 8) {
+#line 3874 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char struct_name = t.Struct.struct_name;
+#line 3875 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.Struct.brand != 0xFFFFFFFF && new_brand != 0xFFFFFFFF) {
+#line 3876 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* old_b_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
+#line 3877 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char old_b = (*(old_b_ptr));
+#line 3878 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* new_b_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + new_brand)))));
+#line 3879 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char new_b = (*(new_b_ptr));
+#line 3881 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char old_b_clean = typechecker__strip_brand_prefix(old_b, ctx);
+#line 3882 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char new_b_clean = typechecker__strip_brand_prefix(new_b, ctx);
+#line 3884 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = old_b_clean; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 3885 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char new_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = new_b_clean; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 3887 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__typechecker_ends_with(struct_name, suffix) == 1) {
+#line 3888 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char stripped = std_str_slice(struct_name, 0, struct_name.len - suffix.len);
+#line 3889 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    struct_name = (({ Slice_unsigned_char _s1 = stripped; Slice_unsigned_char _s2 = new_suffix; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    } else {
+#line 3891 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char suffix_full = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = old_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 3892 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char new_suffix_full = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = new_b; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 3893 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__typechecker_ends_with(struct_name, suffix_full) == 1) {
 #line 3894 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type res_t = ((ast__Type){ .tag = 0 });
+    Slice_unsigned_char stripped = std_str_slice(struct_name, 0, struct_name.len - suffix_full.len);
 #line 3895 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.tag = 8;
-#line 3896 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Struct.struct_name = std_Clone_str(ctx, struct_name);
-#line 3897 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Struct.brand = new_brand;
-#line 3898 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res_t;
+    struct_name = (({ Slice_unsigned_char _s1 = stripped; Slice_unsigned_char _s2 = new_suffix_full; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
+    }
+    }
+#line 3899 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type res_t = ((ast__Type){ .tag = 0 });
 #line 3900 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 9) {
+    res_t.tag = 8;
 #line 3901 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner)));
+    res_t.Struct.struct_name = std_Clone_str(ctx, struct_name);
 #line 3902 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type sub_inner = typechecker__typechecker_substitute_brand(inner, new_brand, ctx);
+    res_t.Struct.brand = new_brand;
 #line 3903 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type res_t = ((ast__Type){ .tag = 0 });
-#line 3904 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.tag = 9;
+    return res_t;
+    }
 #line 3905 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.RawPointer.inner = os_ArenaAlloc(ctx, sizeof(ast__Type));
+    if (t.tag == 9) {
 #line 3906 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Type*)((char*)ctx->BaseAddress + res_t.RawPointer.inner))) = sub_inner;
+    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner)));
 #line 3907 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res_t;
-    }
-#line 3909 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 6) {
-#line 3910 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner)));
-#line 3911 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type sub_inner = typechecker__typechecker_substitute_brand(inner, new_brand, ctx);
-#line 3912 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3908 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type res_t = ((ast__Type){ .tag = 0 });
-#line 3913 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.tag = 6;
-#line 3914 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Slice.inner = os_ArenaAlloc(ctx, sizeof(ast__Type));
-#line 3915 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Type*)((char*)ctx->BaseAddress + res_t.Slice.inner))) = sub_inner;
-#line 3916 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3909 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.tag = 9;
+#line 3910 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.RawPointer.inner = os_ArenaAlloc(ctx, sizeof(ast__Type));
+#line 3911 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Type*)((char*)ctx->BaseAddress + res_t.RawPointer.inner))) = sub_inner;
+#line 3912 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res_t;
     }
+#line 3914 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.tag == 6) {
+#line 3915 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner)));
+#line 3916 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type sub_inner = typechecker__typechecker_substitute_brand(inner, new_brand, ctx);
+#line 3917 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type res_t = ((ast__Type){ .tag = 0 });
 #line 3918 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 10) {
+    res_t.tag = 6;
 #line 3919 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type* args_vec = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + t.Generic.args)))));
+    res_t.Slice.inner = os_ArenaAlloc(ctx, sizeof(ast__Type));
 #line 3920 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type new_args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    (*(( ast__Type*)((char*)ctx->BaseAddress + res_t.Slice.inner))) = sub_inner;
 #line 3921 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 3922 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(args_vec)).len) {
+    return res_t;
+    }
 #line 3923 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&new_args, typechecker__typechecker_substitute_brand((*({ if (i < 0 || i >= (*(args_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(args_vec)).data[i]); })), new_brand, ctx));
+    if (t.tag == 10) {
 #line 3924 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Type* args_vec = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + t.Generic.args)))));
+#line 3925 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Type new_args = (struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 3926 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 3927 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(args_vec)).len) {
+#line 3928 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&new_args, typechecker__typechecker_substitute_brand((*({ if (i < 0 || i >= (*(args_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(args_vec)).data[i]); })), new_brand, ctx));
+#line 3929 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 3926 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3931 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__make_type_generic(t.Generic.name, new_args, ctx);
     }
-#line 3928 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3933 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return t;
     }
 }
 
-#line 3932 "/home/garth/files/code/gust/compiler/typechecker.gst"
-ast__Type typechecker__typechecker_substitute_field_brand(ast__Type t, int struct_brand, Slice_unsigned_char parent_path, typechecker__StructLayout layout, os_Arena* ctx) {
-#line 3933 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 3934 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 7) {
-#line 3935 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Index.brand != 0xFFFFFFFF) {
-#line 3936 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* original_brand_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
 #line 3937 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char original_brand = (*(original_brand_ptr));
+ast__Type typechecker__typechecker_substitute_field_brand(ast__Type t, int struct_brand, Slice_unsigned_char parent_path, typechecker__StructLayout layout, os_Arena* ctx) {
 #line 3938 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&layout.fields, original_brand, 1); if (res.Ok) { res.Val = *os_HashMapRef(&layout.fields, original_brand, 1); } res; }).Ok == 1) {
+    {
 #line 3939 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = parent_path; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)".", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (t.tag == 7) {
 #line 3940 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = original_brand; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (t.Index.brand != 0xFFFFFFFF) {
+#line 3941 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* original_brand_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
 #line 3942 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int new_brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
-#line 3943 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + new_brand)))));
-#line 3944 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(ptr)) = std_Clone_str(ctx, res);
-#line 3946 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type res_t = ((ast__Type){ .tag = 0 });
-#line 3947 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.tag = 7;
-#line 3948 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Index.struct_name = std_Clone_str(ctx, t.Index.struct_name);
-#line 3949 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Index.brand = new_brand;
-#line 3950 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res_t;
-    } else {
-#line 3952 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type res_t = ((ast__Type){ .tag = 0 });
-#line 3953 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.tag = 7;
-#line 3954 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Index.struct_name = std_Clone_str(ctx, t.Index.struct_name);
-#line 3955 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Index.brand = struct_brand;
-#line 3956 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res_t;
-    }
-    }
-    }
-#line 3960 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 8) {
-#line 3961 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.Struct.brand != 0xFFFFFFFF) {
-#line 3962 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* original_brand_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
-#line 3963 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char original_brand = (*(original_brand_ptr));
-#line 3964 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3943 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&layout.fields, original_brand, 1); if (res.Ok) { res.Val = *os_HashMapRef(&layout.fields, original_brand, 1); } res; }).Ok == 1) {
-#line 3965 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3944 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = parent_path; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)".", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3966 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3945 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = original_brand; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 3968 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3947 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int new_brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
-#line 3969 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3948 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + new_brand)))));
-#line 3970 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3949 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(ptr)) = std_Clone_str(ctx, res);
-#line 3972 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3951 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type res_t = ((ast__Type){ .tag = 0 });
-#line 3973 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.tag = 8;
-#line 3974 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Struct.struct_name = std_Clone_str(ctx, t.Struct.struct_name);
-#line 3975 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Struct.brand = new_brand;
-#line 3976 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3952 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.tag = 7;
+#line 3953 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.Index.struct_name = std_Clone_str(ctx, t.Index.struct_name);
+#line 3954 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.Index.brand = new_brand;
+#line 3955 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res_t;
     } else {
+#line 3957 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type res_t = ((ast__Type){ .tag = 0 });
+#line 3958 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.tag = 7;
+#line 3959 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.Index.struct_name = std_Clone_str(ctx, t.Index.struct_name);
+#line 3960 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.Index.brand = struct_brand;
+#line 3961 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return res_t;
+    }
+    }
+    }
+#line 3965 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.tag == 8) {
+#line 3966 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.Struct.brand != 0xFFFFFFFF) {
+#line 3967 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* original_brand_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
+#line 3968 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char original_brand = (*(original_brand_ptr));
+#line 3969 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&layout.fields, original_brand, 1); if (res.Ok) { res.Val = *os_HashMapRef(&layout.fields, original_brand, 1); } res; }).Ok == 1) {
+#line 3970 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = parent_path; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)".", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 3971 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = original_brand; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 3973 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int new_brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
+#line 3974 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + new_brand)))));
+#line 3975 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(ptr)) = std_Clone_str(ctx, res);
+#line 3977 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type res_t = ((ast__Type){ .tag = 0 });
 #line 3978 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type res_t = ((ast__Type){ .tag = 0 });
-#line 3979 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_t.tag = 8;
-#line 3980 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3979 "/home/garth/files/code/gust/compiler/typechecker.gst"
     res_t.Struct.struct_name = std_Clone_str(ctx, t.Struct.struct_name);
+#line 3980 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.Struct.brand = new_brand;
 #line 3981 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Struct.brand = struct_brand;
-#line 3982 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res_t;
-    }
-    }
-    }
+    } else {
+#line 3983 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type res_t = ((ast__Type){ .tag = 0 });
+#line 3984 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.tag = 8;
+#line 3985 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.Struct.struct_name = std_Clone_str(ctx, t.Struct.struct_name);
 #line 3986 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 9) {
+    res_t.Struct.brand = struct_brand;
 #line 3987 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner)));
-#line 3988 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type sub_inner = typechecker__typechecker_substitute_field_brand(inner, struct_brand, parent_path, layout, ctx);
-#line 3989 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type res_t = ((ast__Type){ .tag = 0 });
-#line 3990 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.tag = 9;
+    return res_t;
+    }
+    }
+    }
 #line 3991 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.RawPointer.inner = os_ArenaAlloc(ctx, sizeof(ast__Type));
+    if (t.tag == 9) {
 #line 3992 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Type*)((char*)ctx->BaseAddress + res_t.RawPointer.inner))) = sub_inner;
+    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner)));
 #line 3993 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res_t;
-    }
-#line 3995 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (t.tag == 6) {
-#line 3996 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner)));
-#line 3997 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type sub_inner = typechecker__typechecker_substitute_field_brand(inner, struct_brand, parent_path, layout, ctx);
-#line 3998 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3994 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type res_t = ((ast__Type){ .tag = 0 });
-#line 3999 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.tag = 6;
-#line 4000 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res_t.Slice.inner = os_ArenaAlloc(ctx, sizeof(ast__Type));
-#line 4001 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Type*)((char*)ctx->BaseAddress + res_t.Slice.inner))) = sub_inner;
-#line 4002 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 3995 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.tag = 9;
+#line 3996 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.RawPointer.inner = os_ArenaAlloc(ctx, sizeof(ast__Type));
+#line 3997 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Type*)((char*)ctx->BaseAddress + res_t.RawPointer.inner))) = sub_inner;
+#line 3998 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res_t;
     }
+#line 4000 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (t.tag == 6) {
+#line 4001 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner)));
+#line 4002 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type sub_inner = typechecker__typechecker_substitute_field_brand(inner, struct_brand, parent_path, layout, ctx);
+#line 4003 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type res_t = ((ast__Type){ .tag = 0 });
 #line 4004 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.tag = 6;
+#line 4005 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res_t.Slice.inner = os_ArenaAlloc(ctx, sizeof(ast__Type));
+#line 4006 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Type*)((char*)ctx->BaseAddress + res_t.Slice.inner))) = sub_inner;
+#line 4007 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return res_t;
+    }
+#line 4009 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__typechecker_substitute_brand(t, struct_brand, ctx);
     }
 }
 
-#line 4008 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4013 "/home/garth/files/code/gust/compiler/typechecker.gst"
 int typechecker__types_match(ast__Type expected, ast__Type actual, os_Arena* ctx) {
-#line 4009 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4014 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 4010 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4015 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char t_expected = ast__serialize_type(expected, ctx);
-#line 4011 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4016 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char t_actual = ast__serialize_type(actual, ctx);
-#line 4012 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4017 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char log_msg = (({
         Slice_unsigned_char _arg1 = t_expected;
         Slice_unsigned_char _arg2 = t_actual;
@@ -15618,253 +15620,253 @@ int typechecker__types_match(ast__Type expected, ast__Type actual, os_Arena* ctx
         int _len = snprintf(_buf, _alloc_size, "types_match: expected=%.*s, actual=%.*s", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 4013 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"⚖", 3 }), log_msg, ctx);
-#line 4015 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expected.tag != actual.tag) {
-#line 4017 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expected.tag == 9 && actual.tag == 4) {
 #line 4018 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + expected.RawPointer.inner)));
-#line 4019 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (inner.tag == 4) {
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"⚖", 3 }), log_msg, ctx);
 #line 4020 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return 1;
-    }
-    }
+    if (expected.tag != actual.tag) {
+#line 4022 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (expected.tag == 9 && actual.tag == 4) {
 #line 4023 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expected.tag == 4 && actual.tag == 9) {
+    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + expected.RawPointer.inner)));
 #line 4024 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + actual.RawPointer.inner)));
-#line 4025 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (inner.tag == 4) {
-#line 4026 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4025 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
     }
+#line 4028 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (expected.tag == 4 && actual.tag == 9) {
+#line 4029 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type inner = (*(( ast__Type*)((char*)ctx->BaseAddress + actual.RawPointer.inner)));
 #line 4030 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expected.tag == 0 && actual.tag == 1 || expected.tag == 1 && actual.tag == 0) {
+    if (inner.tag == 4) {
 #line 4031 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
-#line 4033 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return 0;
     }
+#line 4035 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (expected.tag == 0 && actual.tag == 1 || expected.tag == 1 && actual.tag == 0) {
 #line 4036 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expected.tag == 0 || expected.tag == 1 || expected.tag == 2 || expected.tag == 3 || expected.tag == 4 || expected.tag == 5) {
-#line 4037 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
-#line 4039 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4038 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return 0;
+    }
+#line 4041 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (expected.tag == 0 || expected.tag == 1 || expected.tag == 2 || expected.tag == 3 || expected.tag == 4 || expected.tag == 5) {
+#line 4042 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return 1;
+    }
+#line 4044 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (expected.tag == 6) {
-#line 4040 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4045 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__types_match((*(( ast__Type*)((char*)ctx->BaseAddress + expected.Slice.inner))), (*(( ast__Type*)((char*)ctx->BaseAddress + actual.Slice.inner))), ctx);
     }
-#line 4042 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4047 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (expected.tag == 9) {
-#line 4043 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4048 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return typechecker__types_match((*(( ast__Type*)((char*)ctx->BaseAddress + expected.RawPointer.inner))), (*(( ast__Type*)((char*)ctx->BaseAddress + actual.RawPointer.inner))), ctx);
     }
-#line 4046 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expected.tag == 7) {
-#line 4047 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name1 = expected.Index.struct_name;
-#line 4048 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name2 = actual.Index.struct_name;
-#line 4049 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    name1 = typechecker__typechecker_strip_module_prefix(name1, ctx);
-#line 4050 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    name2 = typechecker__typechecker_strip_module_prefix(name2, ctx);
 #line 4051 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    name1 = typechecker__typechecker_clean_monomorphized_name(name1, ctx);
+    if (expected.tag == 7) {
 #line 4052 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    name2 = typechecker__typechecker_clean_monomorphized_name(name2, ctx);
+    Slice_unsigned_char name1 = expected.Index.struct_name;
 #line 4053 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(name1, name2) || std_str_eq(name1, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 })) || std_str_eq(name2, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 }))) {
+    Slice_unsigned_char name2 = actual.Index.struct_name;
 #line 4054 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    name1 = typechecker__typechecker_strip_module_prefix(name1, ctx);
+#line 4055 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    name2 = typechecker__typechecker_strip_module_prefix(name2, ctx);
+#line 4056 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    name1 = typechecker__typechecker_clean_monomorphized_name(name1, ctx);
+#line 4057 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    name2 = typechecker__typechecker_clean_monomorphized_name(name2, ctx);
+#line 4058 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(name1, name2) || std_str_eq(name1, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 })) || std_str_eq(name2, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 }))) {
+#line 4059 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
-#line 4056 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4061 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
-#line 4059 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4064 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (expected.tag == 8) {
-#line 4060 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4065 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char name1 = expected.Struct.struct_name;
-#line 4061 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4066 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char name2 = actual.Struct.struct_name;
-#line 4062 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4067 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(name1, name2) || std_str_eq(name1, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 })) || std_str_eq(name2, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 }))) {
-#line 4063 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4068 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
-#line 4066 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4071 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (name1.len >= 4) {
-#line 4067 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4072 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(std_str_slice(name1, 0, 4), ((Slice_unsigned_char){ (unsigned char*)"std_", 4 }))) {
-#line 4068 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4073 "/home/garth/files/code/gust/compiler/typechecker.gst"
     name1 = std_str_slice(name1, 4, name1.len);
     }
     }
-#line 4071 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4076 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (name2.len >= 4) {
-#line 4072 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4077 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(std_str_slice(name2, 0, 4), ((Slice_unsigned_char){ (unsigned char*)"std_", 4 }))) {
-#line 4073 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4078 "/home/garth/files/code/gust/compiler/typechecker.gst"
     name2 = std_str_slice(name2, 4, name2.len);
     }
     }
-#line 4077 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4082 "/home/garth/files/code/gust/compiler/typechecker.gst"
     name1 = typechecker__typechecker_strip_module_prefix(name1, ctx);
-#line 4078 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    name2 = typechecker__typechecker_strip_module_prefix(name2, ctx);
-#line 4080 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    name1 = typechecker__typechecker_clean_monomorphized_name(name1, ctx);
-#line 4081 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    name2 = typechecker__typechecker_clean_monomorphized_name(name2, ctx);
 #line 4083 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    name2 = typechecker__typechecker_strip_module_prefix(name2, ctx);
+#line 4085 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    name1 = typechecker__typechecker_clean_monomorphized_name(name1, ctx);
+#line 4086 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    name2 = typechecker__typechecker_clean_monomorphized_name(name2, ctx);
+#line 4088 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(name1, name2)) {
-#line 4084 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return 1;
-    }
-#line 4087 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str prefixes = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 4089 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Vector_", 7 }));
-#line 4090 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"HashMap_", 8 }));
-#line 4091 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Pool_", 5 }));
-#line 4092 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Rc_", 3 }));
-#line 4093 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Graph_", 6 }));
-#line 4094 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Mutex_", 6 }));
-#line 4095 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Channel_", 8 }));
-#line 4096 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"GenerationalArena_", 18 }));
-#line 4097 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"os_Dir_", 7 }));
-#line 4098 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry_", 12 }));
-#line 4100 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int p = 0;
-#line 4101 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (p < prefixes.len) {
-#line 4102 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char prefix = (*({ if (p < 0 || p >= prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(prefixes.data[p]); }));
-#line 4103 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char base_name = std_str_slice(prefix, 0, prefix.len - 1);
-#line 4105 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int is_prefix1 = 0;
-#line 4106 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (name1.len >= prefix.len) {
-#line 4107 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(std_str_slice(name1, 0, prefix.len), prefix)) {
-#line 4108 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    is_prefix1 = 1;
-    }
-    }
-#line 4111 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(name1, base_name)) {
-#line 4112 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    is_prefix1 = 1;
-    }
-#line 4115 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int is_prefix2 = 0;
-#line 4116 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (name2.len >= prefix.len) {
-#line 4117 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(std_str_slice(name2, 0, prefix.len), prefix)) {
-#line 4118 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    is_prefix2 = 1;
-    }
-    }
-#line 4121 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(name2, base_name)) {
-#line 4122 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    is_prefix2 = 1;
-    }
-#line 4125 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (is_prefix1 == 1 && is_prefix2 == 1) {
-#line 4126 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char brand1 = typechecker__get_type_brand(expected, ctx);
-#line 4127 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char brand2 = typechecker__get_type_brand(actual, ctx);
-#line 4128 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char clean_b1 = typechecker__strip_brand_prefix(brand1, ctx);
-#line 4129 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char clean_b2 = typechecker__strip_brand_prefix(brand2, ctx);
-#line 4130 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(clean_b1, clean_b2) || std_str_eq(clean_b1, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 })) || std_str_eq(clean_b2, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 })) || std_str_eq(clean_b1, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) || std_str_eq(clean_b2, ((Slice_unsigned_char){ (unsigned char*)"", 0 }))) {
-#line 4131 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
+#line 4092 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_str prefixes = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 4094 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Vector_", 7 }));
+#line 4095 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"HashMap_", 8 }));
+#line 4096 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Pool_", 5 }));
+#line 4097 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Rc_", 3 }));
+#line 4098 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Graph_", 6 }));
+#line 4099 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Mutex_", 6 }));
+#line 4100 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"Channel_", 8 }));
+#line 4101 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"GenerationalArena_", 18 }));
+#line 4102 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"os_Dir_", 7 }));
+#line 4103 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&prefixes, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry_", 12 }));
+#line 4105 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int p = 0;
+#line 4106 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (p < prefixes.len) {
+#line 4107 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char prefix = (*({ if (p < 0 || p >= prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(prefixes.data[p]); }));
+#line 4108 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char base_name = std_str_slice(prefix, 0, prefix.len - 1);
+#line 4110 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int is_prefix1 = 0;
+#line 4111 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (name1.len >= prefix.len) {
+#line 4112 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(std_str_slice(name1, 0, prefix.len), prefix)) {
+#line 4113 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    is_prefix1 = 1;
     }
+    }
+#line 4116 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(name1, base_name)) {
+#line 4117 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    is_prefix1 = 1;
+    }
+#line 4120 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int is_prefix2 = 0;
+#line 4121 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (name2.len >= prefix.len) {
+#line 4122 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(std_str_slice(name2, 0, prefix.len), prefix)) {
+#line 4123 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    is_prefix2 = 1;
+    }
+    }
+#line 4126 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(name2, base_name)) {
+#line 4127 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    is_prefix2 = 1;
+    }
+#line 4130 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (is_prefix1 == 1 && is_prefix2 == 1) {
+#line 4131 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char brand1 = typechecker__get_type_brand(expected, ctx);
+#line 4132 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char brand2 = typechecker__get_type_brand(actual, ctx);
+#line 4133 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char clean_b1 = typechecker__strip_brand_prefix(brand1, ctx);
 #line 4134 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    p = p + 1;
-    }
+    Slice_unsigned_char clean_b2 = typechecker__strip_brand_prefix(brand2, ctx);
+#line 4135 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(clean_b1, clean_b2) || std_str_eq(clean_b1, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 })) || std_str_eq(clean_b2, ((Slice_unsigned_char){ (unsigned char*)"Any", 3 })) || std_str_eq(clean_b1, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) || std_str_eq(clean_b2, ((Slice_unsigned_char){ (unsigned char*)"", 0 }))) {
 #line 4136 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return 0;
+    return 1;
+    }
     }
 #line 4139 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expected.tag == 10) {
-#line 4140 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(expected.Generic.name, actual.Generic.name) == 0) {
+    p = p + 1;
+    }
 #line 4141 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
-#line 4143 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type* e_args = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + expected.Generic.args)))));
 #line 4144 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Type* a_args = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + actual.Generic.args)))));
+    if (expected.tag == 10) {
 #line 4145 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(e_args)).len != (*(a_args)).len) {
+    if (std_str_eq(expected.Generic.name, actual.Generic.name) == 0) {
 #line 4146 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
 #line 4148 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int idx = 0;
+    std_Vector_ast__Type* e_args = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + expected.Generic.args)))));
 #line 4149 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (idx < (*(e_args)).len) {
+    std_Vector_ast__Type* a_args = ((std_Vector_ast__Type*)&((*(( std_Vector_ast__Type*)((char*)ctx->BaseAddress + actual.Generic.args)))));
 #line 4150 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__types_match((*({ if (idx < 0 || idx >= (*(e_args)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(e_args)).data[idx]); })), (*({ if (idx < 0 || idx >= (*(a_args)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(a_args)).data[idx]); })), ctx) == 0) {
+    if ((*(e_args)).len != (*(a_args)).len) {
 #line 4151 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
 #line 4153 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int idx = 0;
+#line 4154 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (idx < (*(e_args)).len) {
+#line 4155 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__types_match((*({ if (idx < 0 || idx >= (*(e_args)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(e_args)).data[idx]); })), (*({ if (idx < 0 || idx >= (*(a_args)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(a_args)).data[idx]); })), ctx) == 0) {
+#line 4156 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return 0;
+    }
+#line 4158 "/home/garth/files/code/gust/compiler/typechecker.gst"
     idx = idx + 1;
     }
-#line 4155 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4160 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
-#line 4157 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4162 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
     }
 }
 
-#line 4161 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4166 "/home/garth/files/code/gust/compiler/typechecker.gst"
 errors__Result_int typechecker__check_statement(int stmt_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx) {
-#line 4162 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 4163 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    errors__Result_int res = ((errors__Result_int){ .tag = 0 });
-#line 4164 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.tag = 0;
-#line 4165 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Ok.val = 0;
 #line 4167 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt_idx == 0xFFFFFFFF) {
+    {
 #line 4168 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    errors__Result_int res = ((errors__Result_int){ .tag = 0 });
+#line 4169 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.tag = 0;
+#line 4170 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.Ok.val = 0;
+#line 4172 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (stmt_idx == 0xFFFFFFFF) {
+#line 4173 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-#line 4171 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4176 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Statement stmt = (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx)));
-#line 4172 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4177 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int err_count = (*(env)).errors.len;
-#line 4173 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4178 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char start_msg = (({
         __typeof__(stmt.tag) _arg1 = stmt.tag;
         int _alloc_size = 38 + 20 + 1;
@@ -15872,13 +15874,13 @@ errors__Result_int typechecker__check_statement(int stmt_idx, typechecker__TypeE
         int _len = snprintf(_buf, _alloc_size, "check_statement: start for stmt tag %d", _arg1);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 4174 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"📥", 4 }), start_msg, ctx);
-#line 4176 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res = typechecker__check_statement_impl(stmt_idx, env, scope, ctx);
-#line 4178 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(env)).errors.len == err_count) {
 #line 4179 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"📥", 4 }), start_msg, ctx);
+#line 4181 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res = typechecker__check_statement_impl(stmt_idx, env, scope, ctx);
+#line 4183 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(env)).errors.len == err_count) {
+#line 4184 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char success_msg = (({
         __typeof__(stmt.tag) _arg1 = stmt.tag;
         int _alloc_size = 50 + 20 + 1;
@@ -15886,159 +15888,159 @@ errors__Result_int typechecker__check_statement(int stmt_idx, typechecker__TypeE
         int _len = snprintf(_buf, _alloc_size, "check_statement: successfully verified stmt tag %d", _arg1);
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     }));
-#line 4180 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4185 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"✅", 3 }), success_msg, ctx);
     }
-#line 4182 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4187 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
 }
 
-#line 4186 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4191 "/home/garth/files/code/gust/compiler/typechecker.gst"
 errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx) {
-#line 4187 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 4188 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    errors__Result_int res = ((errors__Result_int){ .tag = 0 });
-#line 4189 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.tag = 0;
-#line 4190 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    res.Ok.val = 0;
 #line 4192 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt_idx == 0xFFFFFFFF) {
+    {
 #line 4193 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res;
-    }
-#line 4196 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Statement stmt = (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx)));
+    errors__Result_int res = ((errors__Result_int){ .tag = 0 });
+#line 4194 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.tag = 0;
+#line 4195 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    res.Ok.val = 0;
+#line 4197 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (stmt_idx == 0xFFFFFFFF) {
 #line 4198 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 0 || stmt.tag == 1 || stmt.tag == 2) {
-#line 4199 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-#line 4202 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 3) {
+#line 4201 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Statement stmt = (*(( ast__Statement*)((char*)ctx->BaseAddress + stmt_idx)));
 #line 4203 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Parameter* params_vec = ((std_Vector_ast__Parameter*)&((*(( std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + stmt.FunctionDecl.params)))));
+    if (stmt.tag == 0 || stmt.tag == 1 || stmt.tag == 2) {
 #line 4204 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int return_type_idx = stmt.FunctionDecl.return_type;
-#line 4205 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int body_idx = stmt.FunctionDecl.body;
+    return res;
+    }
+#line 4207 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (stmt.tag == 3) {
 #line 4208 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int parent_moved = typechecker__typechecker_clone_int_map((*(env)).moved_vars, ctx);
+    std_Vector_ast__Parameter* params_vec = ((std_Vector_ast__Parameter*)&((*(( std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + stmt.FunctionDecl.params)))));
 #line 4209 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int parent_checked = typechecker__typechecker_clone_int_map((*(env)).checked_results, ctx);
+    int return_type_idx = stmt.FunctionDecl.return_type;
 #line 4210 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int parent_open_dirs = typechecker__typechecker_clone_int_map((*(env)).open_directories, ctx);
-#line 4211 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_Index_typechecker__OriginSet parent_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
+    int body_idx = stmt.FunctionDecl.body;
+#line 4213 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_int parent_moved = typechecker__typechecker_clone_int_map((*(env)).moved_vars, ctx);
 #line 4214 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).moved_vars = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_HashMap_str_int parent_checked = typechecker__typechecker_clone_int_map((*(env)).checked_results, ctx);
 #line 4215 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).checked_results = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_HashMap_str_int parent_open_dirs = typechecker__typechecker_clone_int_map((*(env)).open_directories, ctx);
 #line 4216 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).open_directories = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 4217 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).variable_origins = (struct std_HashMap_str_Index_typechecker__OriginSet){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_HashMap_str_Index_typechecker__OriginSet parent_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
 #line 4219 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int child_scope = typechecker__scope_new(scope, ctx);
+    (*(env)).moved_vars = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 4220 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).checked_results = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+#line 4221 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).open_directories = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 4222 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str inout_params = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 4223 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    (*(env)).variable_origins = (struct std_HashMap_str_Index_typechecker__OriginSet){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 4224 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(params_vec)).len) {
-#line 4225 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Parameter param = (*({ if (i < 0 || i >= (*(params_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(params_vec)).data[i]); }));
-#line 4226 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type resolved_param_type = typechecker__env_resolve_type(env, param.param_type, ctx);
+    int child_scope = typechecker__scope_new(scope, ctx);
+#line 4227 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_str inout_params = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 4228 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (resolved_param_type.tag == 9) {
+    int i = 0;
 #line 4229 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(params_vec)).len) {
+#line 4230 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Parameter param = (*({ if (i < 0 || i >= (*(params_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(params_vec)).data[i]); }));
+#line 4231 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type resolved_param_type = typechecker__env_resolve_type(env, param.param_type, ctx);
+#line 4233 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (resolved_param_type.tag == 9) {
+#line 4234 "/home/garth/files/code/gust/compiler/typechecker.gst"
     os_VectorPush(&inout_params, std_Clone_str(ctx, param.name));
     }
-#line 4232 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__scope_insert(child_scope, param.name, resolved_param_type, ctx);
-#line 4233 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).variable_types, std_Clone_str(ctx, param.name), 1) = resolved_param_type;
-#line 4235 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int param_origins = typechecker__set_init(ctx);
-#line 4236 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__set_add(param_origins, param.name, ctx);
 #line 4237 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__scope_insert(child_scope, param.name, resolved_param_type, ctx);
+#line 4238 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).variable_types, std_Clone_str(ctx, param.name), 1) = resolved_param_type;
+#line 4240 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int param_origins = typechecker__set_init(ctx);
+#line 4241 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__set_add(param_origins, param.name, ctx);
+#line 4242 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).variable_origins, std_Clone_str(ctx, param.name), 1) = param_origins;
-#line 4239 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4244 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 4243 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int old_expected = (*(env)).expected_return_type;
-#line 4244 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int old_return_origins = (*(env)).current_function_return_origins;
-#line 4245 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int old_inout_params = (*(env)).current_function_inout_params;
-#line 4246 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int old_local_vars = (*(env)).current_function_local_vars;
 #line 4248 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int resolved_ret_idx = os_ArenaAlloc(ctx, sizeof(ast__Type));
+    int old_expected = (*(env)).expected_return_type;
 #line 4249 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Type*)((char*)ctx->BaseAddress + resolved_ret_idx))) = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + return_type_idx))), ctx);
+    int old_return_origins = (*(env)).current_function_return_origins;
 #line 4250 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).expected_return_type = resolved_ret_idx;
+    int old_inout_params = (*(env)).current_function_inout_params;
 #line 4251 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).current_function_return_origins = typechecker__set_init(ctx);
+    int old_local_vars = (*(env)).current_function_local_vars;
 #line 4253 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int inout_params_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+    int resolved_ret_idx = os_ArenaAlloc(ctx, sizeof(ast__Type));
 #line 4254 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str* dest_ptr = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + inout_params_idx)))));
+    (*(( ast__Type*)((char*)ctx->BaseAddress + resolved_ret_idx))) = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + return_type_idx))), ctx);
 #line 4255 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(dest_ptr)) = inout_params;
+    (*(env)).expected_return_type = resolved_ret_idx;
 #line 4256 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).current_function_inout_params = inout_params_idx;
-#line 4257 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).current_function_local_vars = typechecker__set_init(ctx);
+    (*(env)).current_function_return_origins = typechecker__set_init(ctx);
+#line 4258 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int inout_params_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_str));
+#line 4259 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_str* dest_ptr = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + inout_params_idx)))));
 #line 4260 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (body_idx != 0xFFFFFFFF) {
+    (*(dest_ptr)) = inout_params;
 #line 4261 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__BlockStatement body = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + body_idx)));
+    (*(env)).current_function_inout_params = inout_params_idx;
 #line 4262 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
-#line 4263 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
-#line 4264 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < (*(statements_vec)).len) {
+    (*(env)).current_function_local_vars = typechecker__set_init(ctx);
 #line 4265 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+    if (body_idx != 0xFFFFFFFF) {
 #line 4266 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+    ast__BlockStatement body = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + body_idx)));
 #line 4267 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__check_statement(s_idx, env, child_scope, ctx);
+    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
 #line 4268 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = 0;
+#line 4269 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < (*(statements_vec)).len) {
+#line 4270 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+#line 4271 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+#line 4272 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__check_statement(s_idx, env, child_scope, ctx);
+#line 4273 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
     }
-#line 4273 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str* current_inouts = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + (*(env)).current_function_inout_params)))));
-#line 4274 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int k = 0;
-#line 4275 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (k < (*(current_inouts)).len) {
-#line 4276 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char inout_p = (*({ if (k < 0 || k >= (*(current_inouts)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(current_inouts)).data[k]); }));
-#line 4277 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&(*(env)).moved_vars, inout_p, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).moved_vars, inout_p, 1); } res; }).Ok) {
 #line 4278 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Inout reference parameter '", 43 }); Slice_unsigned_char _s2 = inout_p; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    std_Vector_str* current_inouts = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + (*(env)).current_function_inout_params)))));
 #line 4279 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' was moved but never re-initialized before function exit", 57 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int k = 0;
 #line 4280 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (k < (*(current_inouts)).len) {
+#line 4281 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char inout_p = (*({ if (k < 0 || k >= (*(current_inouts)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(current_inouts)).data[k]); }));
+#line 4282 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&(*(env)).moved_vars, inout_p, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).moved_vars, inout_p, 1); } res; }).Ok) {
+#line 4283 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Inout reference parameter '", 43 }); Slice_unsigned_char _s2 = inout_p; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4284 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' was moved but never re-initialized before function exit", 57 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4285 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, stmt.FunctionDecl.span, env, ctx);
     }
-#line 4282 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4287 "/home/garth/files/code/gust/compiler/typechecker.gst"
     k = k + 1;
     }
-#line 4286 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4291 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int local_vars = (*(env)).current_function_local_vars;
-#line 4287 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4292 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str local_var_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(( typechecker__OriginSet*)((char*)ctx->BaseAddress + local_vars))).map.capacity); _i++) {
@@ -16048,320 +16050,320 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
         }
         _v;
     }));
-#line 4288 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int m = 0;
-#line 4289 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (m < local_var_keys.len) {
-#line 4290 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char local_var = (*({ if (m < 0 || m >= local_var_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(local_var_keys.data[m]); }));
-#line 4291 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&(*(env)).open_directories, local_var, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).open_directories, local_var, 1); } res; }).Ok) {
-#line 4292 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Resource leak. Directory resource variable '", 60 }); Slice_unsigned_char _s2 = local_var; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 4293 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be cleanly closed with os.CloseDir before leaving local scope", 68 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int m = 0;
 #line 4294 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (m < local_var_keys.len) {
+#line 4295 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char local_var = (*({ if (m < 0 || m >= local_var_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(local_var_keys.data[m]); }));
+#line 4296 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&(*(env)).open_directories, local_var, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).open_directories, local_var, 1); } res; }).Ok) {
+#line 4297 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Resource leak. Directory resource variable '", 60 }); Slice_unsigned_char _s2 = local_var; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4298 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be cleanly closed with os.CloseDir before leaving local scope", 68 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4299 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, stmt.FunctionDecl.span, env, ctx);
     }
-#line 4296 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4301 "/home/garth/files/code/gust/compiler/typechecker.gst"
     m = m + 1;
     }
-#line 4300 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).moved_vars = parent_moved;
-#line 4301 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).checked_results = parent_checked;
-#line 4302 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).open_directories = parent_open_dirs;
-#line 4303 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).variable_origins = parent_origins;
-#line 4304 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).expected_return_type = old_expected;
 #line 4305 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).current_function_return_origins = old_return_origins;
+    (*(env)).moved_vars = parent_moved;
 #line 4306 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).current_function_inout_params = old_inout_params;
+    (*(env)).checked_results = parent_checked;
 #line 4307 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).current_function_local_vars = old_local_vars;
+    (*(env)).open_directories = parent_open_dirs;
+#line 4308 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).variable_origins = parent_origins;
 #line 4309 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).expected_return_type = old_expected;
+#line 4310 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).current_function_return_origins = old_return_origins;
+#line 4311 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).current_function_inout_params = old_inout_params;
+#line 4312 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).current_function_local_vars = old_local_vars;
+#line 4314 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-#line 4312 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 4) {
-#line 4313 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name = stmt.VarDecl.name;
-#line 4314 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int val_idx = stmt.VarDecl.value;
-#line 4315 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int var_type_idx = stmt.VarDecl.var_type;
 #line 4317 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type val_type = ((ast__Type){ .tag = 0 });
+    if (stmt.tag == 4) {
 #line 4318 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    val_type.tag = 3;
+    Slice_unsigned_char name = stmt.VarDecl.name;
+#line 4319 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int val_idx = stmt.VarDecl.value;
 #line 4320 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (val_idx != 0xFFFFFFFF) {
-#line 4321 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    val_type = typechecker__check_expression(val_idx, env, scope, ctx);
+    int var_type_idx = stmt.VarDecl.var_type;
 #line 4322 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    val_type = typechecker__env_resolve_type(env, val_type, ctx);
-#line 4324 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int origs = typechecker__set_init(ctx);
+    ast__Type val_type = ((ast__Type){ .tag = 0 });
+#line 4323 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    val_type.tag = 3;
 #line 4325 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int is_ephemeral = typechecker__env_type_is_ephemeral_view(val_type, ctx);
+    if (val_idx != 0xFFFFFFFF) {
 #line 4326 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (is_ephemeral == 1) {
+    val_type = typechecker__check_expression(val_idx, env, scope, ctx);
 #line 4327 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int temp_origs = typechecker__get_expression_origins(val_idx, env, ctx);
-#line 4328 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    origs = typechecker__typechecker_clone_origin_set(temp_origs, ctx);
+    val_type = typechecker__env_resolve_type(env, val_type, ctx);
 #line 4329 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(( typechecker__OriginSet*)((char*)ctx->BaseAddress + origs))).map.len == 0) {
-#line 4330 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__set_add(origs, std_Clone_str(ctx, name), ctx);
-    }
-    }
-#line 4333 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).variable_origins, std_Clone_str(ctx, name), 1) = origs;
-    } else {
-#line 4335 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (var_type_idx != 0xFFFFFFFF) {
-#line 4336 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int origs = typechecker__set_init(ctx);
-#line 4337 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type resolved = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + var_type_idx))), ctx);
-#line 4338 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    val_type = resolved;
-#line 4339 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__env_type_is_ephemeral_view(val_type, ctx) == 1) {
-#line 4340 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4330 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int is_ephemeral = typechecker__env_type_is_ephemeral_view(val_type, ctx);
+#line 4331 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (is_ephemeral == 1) {
+#line 4332 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int temp_origs = typechecker__get_expression_origins(val_idx, env, ctx);
+#line 4333 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    origs = typechecker__typechecker_clone_origin_set(temp_origs, ctx);
+#line 4334 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(( typechecker__OriginSet*)((char*)ctx->BaseAddress + origs))).map.len == 0) {
+#line 4335 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_add(origs, std_Clone_str(ctx, name), ctx);
     }
-#line 4342 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    }
+#line 4338 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).variable_origins, std_Clone_str(ctx, name), 1) = origs;
     } else {
+#line 4340 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (var_type_idx != 0xFFFFFFFF) {
+#line 4341 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int origs = typechecker__set_init(ctx);
+#line 4342 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type resolved = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + var_type_idx))), ctx);
+#line 4343 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    val_type = resolved;
 #line 4344 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Uninitialized variable '", 40 }); Slice_unsigned_char _s2 = name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (typechecker__env_type_is_ephemeral_view(val_type, ctx) == 1) {
 #line 4345 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__set_add(origs, std_Clone_str(ctx, name), ctx);
+    }
+#line 4347 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).variable_origins, std_Clone_str(ctx, name), 1) = origs;
+    } else {
+#line 4349 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Uninitialized variable '", 40 }); Slice_unsigned_char _s2 = name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4350 "/home/garth/files/code/gust/compiler/typechecker.gst"
     msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must have an explicit type annotation", 39 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 4346 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4351 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, stmt.VarDecl.span, env, ctx);
     }
     }
-#line 4350 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (var_type_idx != 0xFFFFFFFF) {
-#line 4351 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type resolved_explicit = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + var_type_idx))), ctx);
-#line 4353 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__types_match(resolved_explicit, val_type, ctx) == 0) {
-#line 4354 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Explicit Type Annotation Mismatch. Declared ", 60 });
 #line 4355 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(resolved_explicit, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (var_type_idx != 0xFFFFFFFF) {
 #line 4356 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" but got value ", 15 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 4357 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(val_type, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    ast__Type resolved_explicit = typechecker__env_resolve_type(env, (*(( ast__Type*)((char*)ctx->BaseAddress + var_type_idx))), ctx);
+#line 4358 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__types_match(resolved_explicit, val_type, ctx) == 0) {
 #line 4359 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    token__Span val_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
+    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Explicit Type Annotation Mismatch. Declared ", 60 });
 #line 4360 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (val_idx != 0xFFFFFFFF) {
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(resolved_explicit, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 4361 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" but got value ", 15 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4362 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(val_type, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4364 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    token__Span val_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
+#line 4365 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (val_idx != 0xFFFFFFFF) {
+#line 4366 "/home/garth/files/code/gust/compiler/typechecker.gst"
     val_span = typechecker__get_expression_span(val_idx, ctx);
     } else {
-#line 4363 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4368 "/home/garth/files/code/gust/compiler/typechecker.gst"
     val_span = stmt.VarDecl.span;
     }
-#line 4365 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4370 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, val_span, env, ctx);
     }
-#line 4368 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4373 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), resolved_explicit, ctx);
-#line 4369 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4374 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).variable_types, std_Clone_str(ctx, name), 1) = resolved_explicit;
-#line 4370 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type _guard_res_lookup_type_explicit_4370_17 = {0};
-    _guard_res_lookup_type_explicit_4370_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_types, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_types, name, 1); } res; });
-    if (!_guard_res_lookup_type_explicit_4370_17.Ok) {
-    #line 4371 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4375 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_ast__Type _guard_res_lookup_type_explicit_4375_17 = {0};
+    _guard_res_lookup_type_explicit_4375_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_types, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_types, name, 1); } res; });
+    if (!_guard_res_lookup_type_explicit_4375_17.Ok) {
+    #line 4376 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_4370_17.Val;
-#line 4373 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_4375_17.Val;
+#line 4378 "/home/garth/files/code/gust/compiler/typechecker.gst"
     val_type = lookup_type_explicit;
     } else {
-#line 4375 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4380 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), val_type, ctx);
-#line 4376 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4381 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).variable_types, std_Clone_str(ctx, name), 1) = val_type;
-#line 4377 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type _guard_res_lookup_type_4377_17 = {0};
-    _guard_res_lookup_type_4377_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_types, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_types, name, 1); } res; });
-    if (!_guard_res_lookup_type_4377_17.Ok) {
-    #line 4378 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4382 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_ast__Type _guard_res_lookup_type_4382_17 = {0};
+    _guard_res_lookup_type_4382_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_types, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_types, name, 1); } res; });
+    if (!_guard_res_lookup_type_4382_17.Ok) {
+    #line 4383 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-    ast__Type lookup_type = _guard_res_lookup_type_4377_17.Val;
-#line 4380 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type lookup_type = _guard_res_lookup_type_4382_17.Val;
+#line 4385 "/home/garth/files/code/gust/compiler/typechecker.gst"
     val_type = lookup_type;
     }
-#line 4383 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4388 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (val_type.tag == 8) {
-#line 4384 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4389 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char decl_struct_name = val_type.Struct.struct_name;
-#line 4385 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4390 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (decl_struct_name.len >= 7 && std_str_eq(std_str_slice(decl_struct_name, 0, 7), ((Slice_unsigned_char){ (unsigned char*)"os_Dir_", 7 }))) {
-#line 4386 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4391 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).open_directories, std_Clone_str(ctx, name), 1) = 1;
     }
     }
-#line 4390 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4395 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(env)).current_function_local_vars != 0xFFFFFFFF) {
-#line 4391 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4396 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int local_vars = (*(env)).current_function_local_vars;
-#line 4392 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4397 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_add(local_vars, std_Clone_str(ctx, name), ctx);
     }
-#line 4395 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char prefix = (*(env)).current_prefix;
-#line 4396 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int found_idx = 0 - 1;
-#line 4397 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 4398 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(env)).resolved_types_nested.len) {
-#line 4399 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__PrefixMapEntry entry = (*({ if (i < 0 || i >= (*(env)).resolved_types_nested.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).resolved_types_nested.data[i]); }));
 #line 4400 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(entry.prefix, prefix)) {
+    Slice_unsigned_char prefix = (*(env)).current_prefix;
 #line 4401 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    found_idx = i;
+    int found_idx = 0 - 1;
 #line 4402 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 4403 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(env)).resolved_types_nested.len) {
+#line 4404 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__PrefixMapEntry entry = (*({ if (i < 0 || i >= (*(env)).resolved_types_nested.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).resolved_types_nested.data[i]); }));
+#line 4405 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(entry.prefix, prefix)) {
+#line 4406 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    found_idx = i;
+#line 4407 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = (*(env)).resolved_types_nested.len;
     }
-#line 4404 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4409 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 4407 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (found_idx == 0 - 1) {
-#line 4408 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__PrefixMapEntry new_entry = ((typechecker__PrefixMapEntry){ .prefix = ((Slice_unsigned_char){ NULL, 0 }), .types = ((std_Vector_typechecker__ResolvedTypeEntry){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }) });
-#line 4410 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    new_entry.prefix = std_Clone_str(ctx, prefix);
-#line 4411 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    new_entry.types = (struct std_Vector_typechecker__ResolvedTypeEntry){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 4412 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&(*(env)).resolved_types_nested, new_entry);
+    if (found_idx == 0 - 1) {
 #line 4413 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    found_idx = (*(env)).resolved_types_nested.len - 1;
+    typechecker__PrefixMapEntry new_entry = ((typechecker__PrefixMapEntry){ .prefix = ((Slice_unsigned_char){ NULL, 0 }), .types = ((std_Vector_typechecker__ResolvedTypeEntry){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }) });
+#line 4415 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    new_entry.prefix = std_Clone_str(ctx, prefix);
 #line 4416 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(prefix, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0) {
+    new_entry.types = (struct std_Vector_typechecker__ResolvedTypeEntry){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 4417 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char log_reg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"👁️ Prefix registered in type checker (VarDecl): ", 53 }); Slice_unsigned_char _s2 = prefix; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    os_VectorPush(&(*(env)).resolved_types_nested, new_entry);
 #line 4418 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    found_idx = (*(env)).resolved_types_nested.len - 1;
+#line 4421 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(prefix, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0) {
+#line 4422 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char log_reg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"👁️ Prefix registered in type checker (VarDecl): ", 53 }); Slice_unsigned_char _s2 = prefix; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4423 "/home/garth/files/code/gust/compiler/typechecker.gst"
     os_LogStr(log_reg);
     }
     }
-#line 4422 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__PrefixMapEntry* entry_ref = &((*({ if (found_idx < 0 || found_idx >= (*(env)).resolved_types_nested.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).resolved_types_nested.data[found_idx]); })));
-#line 4423 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__ResolvedTypeEntry type_entry = ((typechecker__ResolvedTypeEntry){ .end_offset = 0, .start_offset = 0, .val_type = ((ast__Type){ .tag = 0 }) });
-#line 4424 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    type_entry.start_offset = stmt.VarDecl.span.start.offset;
-#line 4425 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    type_entry.end_offset = stmt.VarDecl.span.end.offset;
-#line 4426 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    type_entry.val_type = val_type;
 #line 4427 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&(*(entry_ref)).types, type_entry);
+    typechecker__PrefixMapEntry* entry_ref = &((*({ if (found_idx < 0 || found_idx >= (*(env)).resolved_types_nested.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).resolved_types_nested.data[found_idx]); })));
+#line 4428 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__ResolvedTypeEntry type_entry = ((typechecker__ResolvedTypeEntry){ .end_offset = 0, .start_offset = 0, .val_type = ((ast__Type){ .tag = 0 }) });
 #line 4429 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    type_entry.start_offset = stmt.VarDecl.span.start.offset;
+#line 4430 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    type_entry.end_offset = stmt.VarDecl.span.end.offset;
+#line 4431 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    type_entry.val_type = val_type;
+#line 4432 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&(*(entry_ref)).types, type_entry);
+#line 4434 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-#line 4432 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 5) {
-#line 4433 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int left_idx = stmt.Assignment.left;
-#line 4434 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int val_idx = stmt.Assignment.value;
-#line 4436 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type left_type = ((ast__Type){ .tag = 0 });
 #line 4437 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    left_type.tag = 3;
+    if (stmt.tag == 5) {
+#line 4438 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int left_idx = stmt.Assignment.left;
 #line 4439 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Expression left = (*(( ast__Expression*)((char*)ctx->BaseAddress + left_idx)));
-#line 4440 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (left.tag == 0) {
+    int val_idx = stmt.Assignment.value;
 #line 4441 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name = left.Identifier.name;
+    ast__Type left_type = ((ast__Type){ .tag = 0 });
 #line 4442 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char resolved_name = name;
-#line 4443 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int is_local = typechecker__scope_contains(scope, name, ctx);
+    left_type.tag = 3;
 #line 4444 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (is_local == 0) {
+    ast__Expression left = (*(( ast__Expression*)((char*)ctx->BaseAddress + left_idx)));
 #line 4445 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (left.tag == 0) {
+#line 4446 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char name = left.Identifier.name;
+#line 4447 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char resolved_name = name;
+#line 4448 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int is_local = typechecker__scope_contains(scope, name, ctx);
+#line 4449 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (is_local == 0) {
+#line 4450 "/home/garth/files/code/gust/compiler/typechecker.gst"
     resolved_name = typechecker__env_resolve_namespaced_ident(env, name, ctx);
     }
-#line 4447 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4452 "/home/garth/files/code/gust/compiler/typechecker.gst"
     left_type = typechecker__scope_lookup(scope, resolved_name, ctx);
-#line 4448 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4453 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (left_type.tag == 3) {
-#line 4449 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4454 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Undefined variable '", 36 }); Slice_unsigned_char _s2 = name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 4450 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4455 "/home/garth/files/code/gust/compiler/typechecker.gst"
     msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' in assignment LHS", 19 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 4451 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4456 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, left.Identifier.span, env, ctx);
     }
     } else {
-#line 4454 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4459 "/home/garth/files/code/gust/compiler/typechecker.gst"
     left_type = typechecker__check_expression(left_idx, env, scope, ctx);
     }
-#line 4457 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type val_type = typechecker__check_expression(val_idx, env, scope, ctx);
-#line 4458 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    val_type = typechecker__env_resolve_type(env, val_type, ctx);
-#line 4460 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__types_match(left_type, val_type, ctx) == 0) {
-#line 4461 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Mismatched types in assignment. Cannot assign ", 62 });
 #line 4462 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(val_type, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    ast__Type val_type = typechecker__check_expression(val_idx, env, scope, ctx);
 #line 4463 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" to ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 4464 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(left_type, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    val_type = typechecker__env_resolve_type(env, val_type, ctx);
 #line 4465 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__report_error(2, msg, typechecker__get_expression_span(val_idx, ctx), env, ctx);
-    }
+    if (typechecker__types_match(left_type, val_type, ctx) == 0) {
+#line 4466 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Mismatched types in assignment. Cannot assign ", 62 });
+#line 4467 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(val_type, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4468 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" to ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 4469 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (left.tag == 11) {
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(left_type, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 4470 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type parent_type = typechecker__check_expression(left.Selector.left, env, scope, ctx);
-#line 4471 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char parent_brand = typechecker__get_type_brand(parent_type, ctx);
-#line 4472 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(parent_brand, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0) {
-#line 4473 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int rhs_origins = typechecker__get_expression_origins(val_idx, env, ctx);
+    typechecker__report_error(2, msg, typechecker__get_expression_span(val_idx, ctx), env, ctx);
+    }
 #line 4474 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__set_contains(rhs_origins, ((Slice_unsigned_char){ (unsigned char*)"scratch", 7 }), ctx) == 1) {
+    if (left.tag == 11) {
 #line 4475 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct ", 83 });
+    ast__Type parent_type = typechecker__check_expression(left.Selector.left, env, scope, ctx);
 #line 4476 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(parent_type, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char parent_brand = typechecker__get_type_brand(parent_type, ctx);
 #line 4477 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(parent_brand, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0) {
+#line 4478 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int rhs_origins = typechecker__get_expression_origins(val_idx, env, ctx);
+#line 4479 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__set_contains(rhs_origins, ((Slice_unsigned_char){ (unsigned char*)"scratch", 7 }), ctx) == 1) {
+#line 4480 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct ", 83 });
+#line 4481 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(parent_type, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4482 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, typechecker__get_expression_span(val_idx, ctx), env, ctx);
     }
     }
     }
-#line 4482 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4487 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int is_ptr_write = typechecker__is_pointer_write(left_idx, env, scope, ctx);
-#line 4484 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4489 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (is_ptr_write == 0) {
-#line 4485 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4490 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char root_name = typechecker__get_root_variable(left_idx, ctx);
-#line 4486 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4491 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (std_str_eq(root_name, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0) {
-#line 4488 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4493 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str var_origins_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(env)).variable_origins.capacity); _i++) {
@@ -16371,211 +16373,211 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
         }
         _v;
     }));
-#line 4489 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int m = 0;
-#line 4490 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (m < var_origins_keys.len) {
-#line 4491 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char var_name = (*({ if (m < 0 || m >= var_origins_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(var_origins_keys.data[m]); }));
-#line 4492 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(var_name, root_name) == 0) {
-#line 4493 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_Index_typechecker__OriginSet lookup_origins = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_origins, var_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_origins, var_name, 1); } res; });
 #line 4494 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup_origins.Ok) {
+    int m = 0;
 #line 4495 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int origins = lookup_origins.Val;
+    while (m < var_origins_keys.len) {
 #line 4496 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__set_contains(origins, root_name, ctx) == 1) {
+    Slice_unsigned_char var_name = (*({ if (m < 0 || m >= var_origins_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(var_origins_keys.data[m]); }));
 #line 4497 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(var_name, root_name) == 0) {
+#line 4498 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_Index_typechecker__OriginSet lookup_origins = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_origins, var_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_origins, var_name, 1); } res; });
+#line 4499 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (lookup_origins.Ok) {
+#line 4500 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int origins = lookup_origins.Val;
+#line 4501 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__set_contains(origins, root_name, ctx) == 1) {
+#line 4502 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).moved_vars, std_Clone_str(ctx, var_name), 1) = 1;
     }
     }
     }
-#line 4501 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4506 "/home/garth/files/code/gust/compiler/typechecker.gst"
     m = m + 1;
     }
-#line 4505 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4510 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int origs = typechecker__set_init(ctx);
-#line 4506 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4511 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (typechecker__env_type_is_ephemeral_view(left_type, ctx) == 1) {
-#line 4507 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4512 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int temp_origs = typechecker__get_expression_origins(val_idx, env, ctx);
-#line 4508 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4513 "/home/garth/files/code/gust/compiler/typechecker.gst"
     origs = typechecker__typechecker_clone_origin_set(temp_origs, ctx);
     }
-#line 4510 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4515 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (left.tag == 0) {
-#line 4511 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4516 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(( typechecker__OriginSet*)((char*)ctx->BaseAddress + origs))).map.len == 0) {
-#line 4512 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4517 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_add(origs, root_name, ctx);
     }
-#line 4514 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4519 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).variable_origins, std_Clone_str(ctx, root_name), 1) = origs;
     } else {
-#line 4516 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(( typechecker__OriginSet*)((char*)ctx->BaseAddress + origs))).map.len > 0) {
-#line 4517 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_Index_typechecker__OriginSet existing_lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_origins, root_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_origins, root_name, 1); } res; });
-#line 4518 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (existing_lookup.Ok) {
-#line 4519 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int cloned_existing = typechecker__typechecker_clone_origin_set(existing_lookup.Val, ctx);
-#line 4520 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__set_union(cloned_existing, origs, ctx);
 #line 4521 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(( typechecker__OriginSet*)((char*)ctx->BaseAddress + origs))).map.len > 0) {
+#line 4522 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_Index_typechecker__OriginSet existing_lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_origins, root_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_origins, root_name, 1); } res; });
+#line 4523 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (existing_lookup.Ok) {
+#line 4524 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int cloned_existing = typechecker__typechecker_clone_origin_set(existing_lookup.Val, ctx);
+#line 4525 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__set_union(cloned_existing, origs, ctx);
+#line 4526 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).variable_origins, std_Clone_str(ctx, root_name), 1) = cloned_existing;
     } else {
-#line 4523 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4528 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).variable_origins, std_Clone_str(ctx, root_name), 1) = origs;
     }
     }
     }
-#line 4527 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_HashMapRemove(&(*(env)).moved_vars, root_name, 1);
-#line 4529 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (val_type.tag == 8) {
-#line 4530 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char assign_struct_name = val_type.Struct.struct_name;
-#line 4531 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (assign_struct_name.len >= 7 && std_str_eq(std_str_slice(assign_struct_name, 0, 7), ((Slice_unsigned_char){ (unsigned char*)"os_Dir_", 7 }))) {
 #line 4532 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_HashMapRemove(&(*(env)).moved_vars, root_name, 1);
+#line 4534 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (val_type.tag == 8) {
+#line 4535 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char assign_struct_name = val_type.Struct.struct_name;
+#line 4536 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (assign_struct_name.len >= 7 && std_str_eq(std_str_slice(assign_struct_name, 0, 7), ((Slice_unsigned_char){ (unsigned char*)"os_Dir_", 7 }))) {
+#line 4537 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).open_directories, std_Clone_str(ctx, root_name), 1) = 1;
     }
     }
     }
     }
-#line 4538 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res;
-    }
-#line 4541 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 6) {
-#line 4542 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int cond_idx = stmt.While.condition;
 #line 4543 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int body_idx = stmt.While.body;
-#line 4545 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type cond_type = typechecker__check_expression(cond_idx, env, scope, ctx);
-#line 4546 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (cond_type.tag != 0 && cond_type.tag != 2) {
-#line 4547 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Loop condition must evaluate to an Int or Bool (binary comparison or boolean)", 93 });
-#line 4548 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__report_error(2, msg, typechecker__get_expression_span(cond_idx, ctx), env, ctx);
-    }
-#line 4551 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int parent_moved = typechecker__typechecker_clone_int_map((*(env)).moved_vars, ctx);
-#line 4552 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_Index_typechecker__OriginSet parent_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
-#line 4554 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (body_idx != 0xFFFFFFFF) {
-#line 4555 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__BlockStatement body = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + body_idx)));
-#line 4556 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
-#line 4557 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
-#line 4558 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < (*(statements_vec)).len) {
-#line 4559 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-#line 4560 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
-#line 4561 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__check_statement(s_idx, env, scope, ctx);
-#line 4562 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    j = j + 1;
-    }
-    }
-#line 4566 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).moved_vars = parent_moved;
-#line 4567 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).variable_origins = parent_origins;
-#line 4569 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-#line 4572 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 7) {
-#line 4573 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int cond_idx = stmt.If.condition;
-#line 4574 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int cons_idx = stmt.If.consequence;
-#line 4575 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int alt_idx = stmt.If.alternative;
-#line 4577 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4546 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (stmt.tag == 6) {
+#line 4547 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int cond_idx = stmt.While.condition;
+#line 4548 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int body_idx = stmt.While.body;
+#line 4550 "/home/garth/files/code/gust/compiler/typechecker.gst"
     ast__Type cond_type = typechecker__check_expression(cond_idx, env, scope, ctx);
-#line 4578 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4551 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (cond_type.tag != 0 && cond_type.tag != 2) {
-#line 4579 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: If condition must evaluate to an Int or Bool (binary comparison or boolean)", 91 });
-#line 4580 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4552 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Loop condition must evaluate to an Int or Bool (binary comparison or boolean)", 93 });
+#line 4553 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, typechecker__get_expression_span(cond_idx, ctx), env, ctx);
     }
+#line 4556 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_int parent_moved = typechecker__typechecker_clone_int_map((*(env)).moved_vars, ctx);
+#line 4557 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_Index_typechecker__OriginSet parent_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
+#line 4559 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (body_idx != 0xFFFFFFFF) {
+#line 4560 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__BlockStatement body = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + body_idx)));
+#line 4561 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
+#line 4562 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = 0;
+#line 4563 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < (*(statements_vec)).len) {
+#line 4564 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+#line 4565 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+#line 4566 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__check_statement(s_idx, env, scope, ctx);
+#line 4567 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    j = j + 1;
+    }
+    }
+#line 4571 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).moved_vars = parent_moved;
+#line 4572 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).variable_origins = parent_origins;
+#line 4574 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return res;
+    }
+#line 4577 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (stmt.tag == 7) {
+#line 4578 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int cond_idx = stmt.If.condition;
+#line 4579 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int cons_idx = stmt.If.consequence;
+#line 4580 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int alt_idx = stmt.If.alternative;
+#line 4582 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type cond_type = typechecker__check_expression(cond_idx, env, scope, ctx);
 #line 4583 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_Index_typechecker__OriginSet pre_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
+    if (cond_type.tag != 0 && cond_type.tag != 2) {
 #line 4584 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int pre_moved = typechecker__typechecker_clone_int_map((*(env)).moved_vars, ctx);
+    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: If condition must evaluate to an Int or Bool (binary comparison or boolean)", 91 });
 #line 4585 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int pre_checked = typechecker__typechecker_clone_int_map((*(env)).checked_results, ctx);
-#line 4587 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_extract_ok_checked_variables(cond_idx, &((*(env)).checked_results), ctx);
+    typechecker__report_error(2, msg, typechecker__get_expression_span(cond_idx, ctx), env, ctx);
+    }
+#line 4588 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_Index_typechecker__OriginSet pre_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
+#line 4589 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_int pre_moved = typechecker__typechecker_clone_int_map((*(env)).moved_vars, ctx);
 #line 4590 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (cons_idx != 0xFFFFFFFF) {
-#line 4591 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__BlockStatement cons = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + cons_idx)));
+    std_HashMap_str_int pre_checked = typechecker__typechecker_clone_int_map((*(env)).checked_results, ctx);
 #line 4592 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + cons.statements)))));
-#line 4593 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
-#line 4594 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < (*(statements_vec)).len) {
+    typechecker__typechecker_extract_ok_checked_variables(cond_idx, &((*(env)).checked_results), ctx);
 #line 4595 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+    if (cons_idx != 0xFFFFFFFF) {
 #line 4596 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+    ast__BlockStatement cons = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + cons_idx)));
 #line 4597 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__check_statement(s_idx, env, scope, ctx);
+    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + cons.statements)))));
 #line 4598 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    j = j + 1;
-    }
-    }
-#line 4602 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_Index_typechecker__OriginSet consequence_origins = (*(env)).variable_origins;
-#line 4603 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int consequence_moved = (*(env)).moved_vars;
-#line 4605 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (alt_idx != 0xFFFFFFFF) {
-#line 4607 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).variable_origins = pre_origins;
-#line 4608 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).moved_vars = pre_moved;
-#line 4609 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).checked_results = pre_checked;
-#line 4611 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__BlockStatement alt = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + alt_idx)));
-#line 4612 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + alt.statements)))));
-#line 4613 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int j = 0;
-#line 4614 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4599 "/home/garth/files/code/gust/compiler/typechecker.gst"
     while (j < (*(statements_vec)).len) {
-#line 4615 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4600 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-#line 4616 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4601 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
-#line 4617 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4602 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__check_statement(s_idx, env, scope, ctx);
-#line 4618 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4603 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
+    }
+#line 4607 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_Index_typechecker__OriginSet consequence_origins = (*(env)).variable_origins;
+#line 4608 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_int consequence_moved = (*(env)).moved_vars;
+#line 4610 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (alt_idx != 0xFFFFFFFF) {
+#line 4612 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).variable_origins = pre_origins;
+#line 4613 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).moved_vars = pre_moved;
+#line 4614 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).checked_results = pre_checked;
+#line 4616 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__BlockStatement alt = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + alt_idx)));
+#line 4617 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + alt.statements)))));
+#line 4618 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = 0;
+#line 4619 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < (*(statements_vec)).len) {
+#line 4620 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
 #line 4621 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_Index_typechecker__OriginSet alternative_origins = (*(env)).variable_origins;
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
 #line 4622 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__check_statement(s_idx, env, scope, ctx);
+#line 4623 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    j = j + 1;
+    }
+#line 4626 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    std_HashMap_str_Index_typechecker__OriginSet alternative_origins = (*(env)).variable_origins;
+#line 4627 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_HashMap_str_int alternative_moved = (*(env)).moved_vars;
-#line 4625 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4630 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_HashMap_str_Index_typechecker__OriginSet merged_origins = pre_origins;
-#line 4628 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4633 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str conseq_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < (consequence_origins.capacity); _i++) {
@@ -16585,44 +16587,44 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
         }
         _v;
     }));
-#line 4629 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int m = 0;
-#line 4630 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (m < conseq_keys.len) {
-#line 4631 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char key = (*({ if (m < 0 || m >= conseq_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(conseq_keys.data[m]); }));
-#line 4632 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_Index_typechecker__OriginSet lookup_conseq = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&consequence_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&consequence_origins, key, 1); } res; });
-#line 4633 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup_conseq.Ok) {
 #line 4634 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int orig_conseq = lookup_conseq.Val;
+    int m = 0;
 #line 4635 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_Index_typechecker__OriginSet orig_alt_lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&alternative_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&alternative_origins, key, 1); } res; });
+    while (m < conseq_keys.len) {
+#line 4636 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char key = (*({ if (m < 0 || m >= conseq_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(conseq_keys.data[m]); }));
 #line 4637 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int union_set = typechecker__set_init(ctx);
+    LookupResult_Index_typechecker__OriginSet lookup_conseq = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&consequence_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&consequence_origins, key, 1); } res; });
 #line 4638 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__set_union(union_set, orig_conseq, ctx);
+    if (lookup_conseq.Ok) {
 #line 4639 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (orig_alt_lookup.Ok) {
+    int orig_conseq = lookup_conseq.Val;
 #line 4640 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_Index_typechecker__OriginSet orig_alt_lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&alternative_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&alternative_origins, key, 1); } res; });
+#line 4642 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int union_set = typechecker__set_init(ctx);
+#line 4643 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__set_union(union_set, orig_conseq, ctx);
+#line 4644 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (orig_alt_lookup.Ok) {
+#line 4645 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_union(union_set, orig_alt_lookup.Val, ctx);
     } else {
-#line 4642 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4647 "/home/garth/files/code/gust/compiler/typechecker.gst"
     LookupResult_Index_typechecker__OriginSet pre_lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&pre_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&pre_origins, key, 1); } res; });
-#line 4643 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4648 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (pre_lookup.Ok) {
-#line 4644 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4649 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_union(union_set, pre_lookup.Val, ctx);
     }
     }
-#line 4647 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4652 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&merged_origins, std_Clone_str(ctx, key), 1) = union_set;
     }
-#line 4649 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4654 "/home/garth/files/code/gust/compiler/typechecker.gst"
     m = m + 1;
     }
-#line 4653 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4658 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str alt_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < (alternative_origins.capacity); _i++) {
@@ -16632,41 +16634,41 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
         }
         _v;
     }));
-#line 4654 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int n = 0;
-#line 4655 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (n < alt_keys.len) {
-#line 4656 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char key = (*({ if (n < 0 || n >= alt_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(alt_keys.data[n]); }));
-#line 4657 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&consequence_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&consequence_origins, key, 1); } res; }).Ok == 0) {
-#line 4658 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_Index_typechecker__OriginSet lookup_alt = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&alternative_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&alternative_origins, key, 1); } res; });
 #line 4659 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup_alt.Ok) {
+    int n = 0;
 #line 4660 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int orig_alt = lookup_alt.Val;
+    while (n < alt_keys.len) {
 #line 4661 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int union_set = typechecker__set_init(ctx);
+    Slice_unsigned_char key = (*({ if (n < 0 || n >= alt_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(alt_keys.data[n]); }));
 #line 4662 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__set_union(union_set, orig_alt, ctx);
+    if (({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&consequence_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&consequence_origins, key, 1); } res; }).Ok == 0) {
 #line 4663 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_Index_typechecker__OriginSet pre_lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&pre_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&pre_origins, key, 1); } res; });
+    LookupResult_Index_typechecker__OriginSet lookup_alt = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&alternative_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&alternative_origins, key, 1); } res; });
 #line 4664 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (pre_lookup.Ok) {
+    if (lookup_alt.Ok) {
 #line 4665 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int orig_alt = lookup_alt.Val;
+#line 4666 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int union_set = typechecker__set_init(ctx);
+#line 4667 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__set_union(union_set, orig_alt, ctx);
+#line 4668 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_Index_typechecker__OriginSet pre_lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&pre_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&pre_origins, key, 1); } res; });
+#line 4669 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (pre_lookup.Ok) {
+#line 4670 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_union(union_set, pre_lookup.Val, ctx);
     }
-#line 4667 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4672 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&merged_origins, std_Clone_str(ctx, key), 1) = union_set;
     }
     }
-#line 4670 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4675 "/home/garth/files/code/gust/compiler/typechecker.gst"
     n = n + 1;
     }
-#line 4673 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4678 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_HashMap_str_int merged_moved = pre_moved;
-#line 4675 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4680 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str conseq_moved_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < (consequence_moved.capacity); _i++) {
@@ -16676,16 +16678,16 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
         }
         _v;
     }));
-#line 4676 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4681 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int p = 0;
-#line 4677 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4682 "/home/garth/files/code/gust/compiler/typechecker.gst"
     while (p < conseq_moved_keys.len) {
-#line 4678 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4683 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&merged_moved, std_Clone_str(ctx, (*({ if (p < 0 || p >= conseq_moved_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(conseq_moved_keys.data[p]); }))), 1) = 1;
-#line 4679 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4684 "/home/garth/files/code/gust/compiler/typechecker.gst"
     p = p + 1;
     }
-#line 4682 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4687 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str alt_moved_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < (alternative_moved.capacity); _i++) {
@@ -16695,23 +16697,23 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
         }
         _v;
     }));
-#line 4683 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4688 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int q = 0;
-#line 4684 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4689 "/home/garth/files/code/gust/compiler/typechecker.gst"
     while (q < alt_moved_keys.len) {
-#line 4685 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4690 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&merged_moved, std_Clone_str(ctx, (*({ if (q < 0 || q >= alt_moved_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(alt_moved_keys.data[q]); }))), 1) = 1;
-#line 4686 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4691 "/home/garth/files/code/gust/compiler/typechecker.gst"
     q = q + 1;
     }
-#line 4689 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4694 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(env)).variable_origins = merged_origins;
-#line 4690 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4695 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(env)).moved_vars = merged_moved;
     } else {
-#line 4693 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4698 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_HashMap_str_Index_typechecker__OriginSet merged_origins = pre_origins;
-#line 4694 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4699 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str conseq_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < (consequence_origins.capacity); _i++) {
@@ -16721,41 +16723,41 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
         }
         _v;
     }));
-#line 4695 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int m = 0;
-#line 4696 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (m < conseq_keys.len) {
-#line 4697 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char key = (*({ if (m < 0 || m >= conseq_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(conseq_keys.data[m]); }));
-#line 4698 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_Index_typechecker__OriginSet lookup_conseq = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&consequence_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&consequence_origins, key, 1); } res; });
-#line 4699 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup_conseq.Ok) {
 #line 4700 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int c_set = lookup_conseq.Val;
+    int m = 0;
 #line 4701 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_Index_typechecker__OriginSet pre_lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&pre_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&pre_origins, key, 1); } res; });
+    while (m < conseq_keys.len) {
 #line 4702 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (pre_lookup.Ok) {
+    Slice_unsigned_char key = (*({ if (m < 0 || m >= conseq_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(conseq_keys.data[m]); }));
 #line 4703 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int union_set = typechecker__set_init(ctx);
+    LookupResult_Index_typechecker__OriginSet lookup_conseq = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&consequence_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&consequence_origins, key, 1); } res; });
 #line 4704 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__set_union(union_set, pre_lookup.Val, ctx);
+    if (lookup_conseq.Ok) {
 #line 4705 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__set_union(union_set, c_set, ctx);
+    int c_set = lookup_conseq.Val;
 #line 4706 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_Index_typechecker__OriginSet pre_lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&pre_origins, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&pre_origins, key, 1); } res; });
+#line 4707 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (pre_lookup.Ok) {
+#line 4708 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int union_set = typechecker__set_init(ctx);
+#line 4709 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__set_union(union_set, pre_lookup.Val, ctx);
+#line 4710 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__set_union(union_set, c_set, ctx);
+#line 4711 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&merged_origins, std_Clone_str(ctx, key), 1) = union_set;
     } else {
-#line 4708 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4713 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&merged_origins, std_Clone_str(ctx, key), 1) = c_set;
     }
     }
-#line 4711 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4716 "/home/garth/files/code/gust/compiler/typechecker.gst"
     m = m + 1;
     }
-#line 4714 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4719 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_HashMap_str_int merged_moved = pre_moved;
-#line 4715 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4720 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str conseq_moved_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < (consequence_moved.capacity); _i++) {
@@ -16765,232 +16767,232 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
         }
         _v;
     }));
-#line 4716 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4721 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int p = 0;
-#line 4717 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4722 "/home/garth/files/code/gust/compiler/typechecker.gst"
     while (p < conseq_moved_keys.len) {
-#line 4718 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4723 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&merged_moved, std_Clone_str(ctx, (*({ if (p < 0 || p >= conseq_moved_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(conseq_moved_keys.data[p]); }))), 1) = 1;
-#line 4719 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4724 "/home/garth/files/code/gust/compiler/typechecker.gst"
     p = p + 1;
     }
-#line 4722 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4727 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(env)).variable_origins = merged_origins;
-#line 4723 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4728 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(env)).moved_vars = merged_moved;
     }
-#line 4727 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4732 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(env)).checked_results = pre_checked;
-#line 4729 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4734 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-#line 4732 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 8) {
-#line 4733 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int expr_idx = stmt.Match.expression;
-#line 4734 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__MatchCase* cases_vec = ((std_Vector_ast__MatchCase*)&((*(( std_Vector_ast__MatchCase*)((char*)ctx->BaseAddress + stmt.Match.cases)))));
-#line 4736 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type expr_type = typechecker__check_expression(expr_idx, env, scope, ctx);
 #line 4737 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expr_type.tag == 8) {
+    if (stmt.tag == 8) {
 #line 4738 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char enum_name = expr_type.Struct.struct_name;
+    int expr_idx = stmt.Match.expression;
 #line 4739 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int matched_variants = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
+    std_Vector_ast__MatchCase* cases_vec = ((std_Vector_ast__MatchCase*)&((*(( std_Vector_ast__MatchCase*)((char*)ctx->BaseAddress + stmt.Match.cases)))));
 #line 4741 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    ast__Type expr_type = typechecker__check_expression(expr_idx, env, scope, ctx);
 #line 4742 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(cases_vec)).len) {
+    if (expr_type.tag == 8) {
 #line 4743 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__MatchCase m_case = (*({ if (i < 0 || i >= (*(cases_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(cases_vec)).data[i]); }));
+    Slice_unsigned_char enum_name = expr_type.Struct.struct_name;
 #line 4744 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char variant_name = m_case.variant_name;
+    std_HashMap_str_int matched_variants = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 4746 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&matched_variants, std_Clone_str(ctx, variant_name), 1) = 1;
+    int i = 0;
+#line 4747 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(cases_vec)).len) {
+#line 4748 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__MatchCase m_case = (*({ if (i < 0 || i >= (*(cases_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(cases_vec)).data[i]); }));
 #line 4749 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int parent_scope = scope;
-#line 4750 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_Index_typechecker__OriginSet parent_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
-#line 4752 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int child_scope = typechecker__scope_new(scope, ctx);
+    Slice_unsigned_char variant_name = m_case.variant_name;
+#line 4751 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&matched_variants, std_Clone_str(ctx, variant_name), 1) = 1;
 #line 4754 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(( std_Vector_str*)((char*)ctx->BaseAddress + m_case.fields))).len > 0) {
+    int parent_scope = scope;
 #line 4755 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char variant_struct_name = (({ Slice_unsigned_char _s1 = (({ Slice_unsigned_char _s1 = enum_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })); Slice_unsigned_char _s2 = variant_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 4756 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_typechecker__StructLayout lookup_variant = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, variant_struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, variant_struct_name, 1); } res; });
+    std_HashMap_str_Index_typechecker__OriginSet parent_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
 #line 4757 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup_variant.Ok) {
-#line 4758 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str* fields_vec = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + m_case.fields)))));
+    int child_scope = typechecker__scope_new(scope, ctx);
 #line 4759 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int f = 0;
+    if ((*(( std_Vector_str*)((char*)ctx->BaseAddress + m_case.fields))).len > 0) {
 #line 4760 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (f < (*(fields_vec)).len) {
+    Slice_unsigned_char variant_struct_name = (({ Slice_unsigned_char _s1 = (({ Slice_unsigned_char _s1 = enum_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })); Slice_unsigned_char _s2 = variant_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 4761 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char field_name = (*({ if (f < 0 || f >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[f]); }));
+    LookupResult_typechecker__StructLayout lookup_variant = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, variant_struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, variant_struct_name, 1); } res; });
 #line 4762 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type field_type_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&lookup_variant.Val.fields, field_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&lookup_variant.Val.fields, field_name, 1); } res; });
+    if (lookup_variant.Ok) {
 #line 4763 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (field_type_lookup.Ok) {
+    std_Vector_str* fields_vec = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + m_case.fields)))));
 #line 4764 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__scope_insert(child_scope, field_name, field_type_lookup.Val, ctx);
+    int f = 0;
+#line 4765 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (f < (*(fields_vec)).len) {
+#line 4766 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char field_name = (*({ if (f < 0 || f >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[f]); }));
 #line 4767 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int parent_origins_set = typechecker__get_expression_origins(expr_idx, env, ctx);
+    LookupResult_ast__Type field_type_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&lookup_variant.Val.fields, field_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&lookup_variant.Val.fields, field_name, 1); } res; });
 #line 4768 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int final_origins = typechecker__set_init(ctx);
+    if (field_type_lookup.Ok) {
 #line 4769 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__scope_insert(child_scope, field_name, field_type_lookup.Val, ctx);
+#line 4772 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int parent_origins_set = typechecker__get_expression_origins(expr_idx, env, ctx);
+#line 4773 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int final_origins = typechecker__set_init(ctx);
+#line 4774 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (typechecker__env_type_is_ephemeral_view(field_type_lookup.Val, ctx) == 1) {
-#line 4770 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4775 "/home/garth/files/code/gust/compiler/typechecker.gst"
     final_origins = typechecker__typechecker_clone_origin_set(parent_origins_set, ctx);
     }
-#line 4772 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4777 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (typechecker__set_contains(final_origins, field_name, ctx) == 0 && (*(( typechecker__OriginSet*)((char*)ctx->BaseAddress + final_origins))).map.len == 0) {
-#line 4773 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4778 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_add(final_origins, field_name, ctx);
     }
-#line 4775 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4780 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).variable_origins, std_Clone_str(ctx, field_name), 1) = final_origins;
-#line 4777 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4782 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(env)).current_function_local_vars != 0xFFFFFFFF) {
-#line 4778 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4783 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int local_vars = (*(env)).current_function_local_vars;
-#line 4779 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4784 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_add(local_vars, field_name, ctx);
     }
     }
-#line 4782 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4787 "/home/garth/files/code/gust/compiler/typechecker.gst"
     f = f + 1;
     }
     }
     }
-#line 4787 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (m_case.body != 0xFFFFFFFF) {
-#line 4788 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__BlockStatement body = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + m_case.body)));
-#line 4789 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
-#line 4790 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
-#line 4791 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < (*(statements_vec)).len) {
 #line 4792 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+    if (m_case.body != 0xFFFFFFFF) {
 #line 4793 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+    ast__BlockStatement body = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + m_case.body)));
 #line 4794 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__check_statement(s_idx, env, child_scope, ctx);
+    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
 #line 4795 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = 0;
+#line 4796 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < (*(statements_vec)).len) {
+#line 4797 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+#line 4798 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+#line 4799 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__check_statement(s_idx, env, child_scope, ctx);
+#line 4800 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
     }
-#line 4800 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4805 "/home/garth/files/code/gust/compiler/typechecker.gst"
     (*(env)).variable_origins = parent_origins;
-#line 4802 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4807 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
     }
-#line 4806 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4811 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-#line 4809 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 10) {
-#line 4810 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int body_idx = stmt.UnsafeBlock.body;
-#line 4811 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int was_unsafe = (*(env)).in_unsafe_block;
-#line 4812 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).in_unsafe_block = 1;
 #line 4814 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (body_idx != 0xFFFFFFFF) {
+    if (stmt.tag == 10) {
 #line 4815 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__BlockStatement body = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + body_idx)));
+    int body_idx = stmt.UnsafeBlock.body;
 #line 4816 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
+    int was_unsafe = (*(env)).in_unsafe_block;
 #line 4817 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
-#line 4818 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < (*(statements_vec)).len) {
+    (*(env)).in_unsafe_block = 1;
 #line 4819 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+    if (body_idx != 0xFFFFFFFF) {
 #line 4820 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+    ast__BlockStatement body = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + body_idx)));
 #line 4821 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__check_statement(s_idx, env, scope, ctx);
+    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
 #line 4822 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = 0;
+#line 4823 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < (*(statements_vec)).len) {
+#line 4824 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+#line 4825 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+#line 4826 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__check_statement(s_idx, env, scope, ctx);
+#line 4827 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
     }
-#line 4826 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).in_unsafe_block = was_unsafe;
-#line 4828 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res;
-    }
 #line 4831 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 11) {
-#line 4832 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int expr_idx = stmt.Defer.expr;
+    (*(env)).in_unsafe_block = was_unsafe;
 #line 4833 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__check_expression(expr_idx, env, scope, ctx);
-#line 4835 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
+#line 4836 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (stmt.tag == 11) {
+#line 4837 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int expr_idx = stmt.Defer.expr;
 #line 4838 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 12) {
-#line 4839 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int expr_idx = stmt.Return.expr;
-#line 4842 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(env)).current_function_inout_params != 0xFFFFFFFF) {
+    typechecker__check_expression(expr_idx, env, scope, ctx);
+#line 4840 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return res;
+    }
 #line 4843 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str* inout_params = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + (*(env)).current_function_inout_params)))));
+    if (stmt.tag == 12) {
 #line 4844 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int k = 0;
-#line 4845 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (k < (*(inout_params)).len) {
-#line 4846 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char inout_p = (*({ if (k < 0 || k >= (*(inout_params)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(inout_params)).data[k]); }));
+    int expr_idx = stmt.Return.expr;
 #line 4847 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&(*(env)).moved_vars, inout_p, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).moved_vars, inout_p, 1); } res; }).Ok) {
+    if ((*(env)).current_function_inout_params != 0xFFFFFFFF) {
 #line 4848 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Inout reference parameter '", 43 }); Slice_unsigned_char _s2 = inout_p; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    std_Vector_str* inout_params = ((std_Vector_str*)&((*(( std_Vector_str*)((char*)ctx->BaseAddress + (*(env)).current_function_inout_params)))));
 #line 4849 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' was moved but never re-initialized before return", 50 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int k = 0;
 #line 4850 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (k < (*(inout_params)).len) {
+#line 4851 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char inout_p = (*({ if (k < 0 || k >= (*(inout_params)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(inout_params)).data[k]); }));
+#line 4852 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&(*(env)).moved_vars, inout_p, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).moved_vars, inout_p, 1); } res; }).Ok) {
+#line 4853 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Inout reference parameter '", 43 }); Slice_unsigned_char _s2 = inout_p; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4854 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' was moved but never re-initialized before return", 50 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4855 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, stmt.Return.span, env, ctx);
     }
-#line 4852 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4857 "/home/garth/files/code/gust/compiler/typechecker.gst"
     k = k + 1;
     }
     }
-#line 4856 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type actual_return = ((ast__Type){ .tag = 0 });
-#line 4857 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    actual_return.tag = 3;
-#line 4859 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expr_idx != 0xFFFFFFFF) {
-#line 4860 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    actual_return = typechecker__check_expression(expr_idx, env, scope, ctx);
 #line 4861 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    actual_return = typechecker__env_resolve_type(env, actual_return, ctx);
-#line 4863 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int expr_origins = typechecker__get_expression_origins(expr_idx, env, ctx);
+    ast__Type actual_return = ((ast__Type){ .tag = 0 });
+#line 4862 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    actual_return.tag = 3;
+#line 4864 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (expr_idx != 0xFFFFFFFF) {
 #line 4865 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__set_contains(expr_origins, ((Slice_unsigned_char){ (unsigned char*)"scratch", 7 }), ctx) == 1) {
-#line 4867 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Escape analysis violation. Returning scratchpad-allocated view of type ", 87 });
+    actual_return = typechecker__check_expression(expr_idx, env, scope, ctx);
+#line 4866 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    actual_return = typechecker__env_resolve_type(env, actual_return, ctx);
 #line 4868 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int expr_origins = typechecker__get_expression_origins(expr_idx, env, ctx);
+#line 4870 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__set_contains(expr_origins, ((Slice_unsigned_char){ (unsigned char*)"scratch", 7 }), ctx) == 1) {
+#line 4872 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Escape analysis violation. Returning scratchpad-allocated view of type ", 87 });
+#line 4873 "/home/garth/files/code/gust/compiler/typechecker.gst"
     msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(actual_return, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 4869 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4874 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, typechecker__get_expression_span(expr_idx, ctx), env, ctx);
     }
-#line 4872 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4877 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (typechecker__env_type_is_ephemeral_view(actual_return, ctx) == 1) {
-#line 4873 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4878 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(env)).current_function_local_vars != 0xFFFFFFFF) {
-#line 4874 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4879 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int local_vars = (*(env)).current_function_local_vars;
-#line 4875 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4880 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str local_keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(( typechecker__OriginSet*)((char*)ctx->BaseAddress + local_vars))).map.capacity); _i++) {
@@ -17000,391 +17002,391 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
         }
         _v;
     }));
-#line 4876 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int m = 0;
-#line 4877 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (m < local_keys.len) {
-#line 4878 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char origin = (*({ if (m < 0 || m >= local_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(local_keys.data[m]); }));
-#line 4879 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__set_contains(expr_origins, origin, ctx) == 1) {
-#line 4880 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Escape analysis violation. Returning ephemeral view of type ", 76 });
 #line 4881 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(actual_return, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int m = 0;
 #line 4882 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" whose origin traces back to local stack variable '", 51 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    while (m < local_keys.len) {
 #line 4883 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = origin; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char origin = (*({ if (m < 0 || m >= local_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(local_keys.data[m]); }));
 #line 4884 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"'", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (typechecker__set_contains(expr_origins, origin, ctx) == 1) {
 #line 4885 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Escape analysis violation. Returning ephemeral view of type ", 76 });
+#line 4886 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(actual_return, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4887 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" whose origin traces back to local stack variable '", 51 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4888 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = origin; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4889 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"'", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4890 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, typechecker__get_expression_span(expr_idx, ctx), env, ctx);
     }
-#line 4887 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4892 "/home/garth/files/code/gust/compiler/typechecker.gst"
     m = m + 1;
     }
     }
     }
-#line 4892 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4897 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(env)).current_function_return_origins != 0xFFFFFFFF) {
-#line 4893 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4898 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int return_origins = (*(env)).current_function_return_origins;
-#line 4894 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4899 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_union(return_origins, expr_origins, ctx);
     }
     }
-#line 4898 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(env)).expected_return_type != 0xFFFFFFFF) {
-#line 4899 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type expected_t = (*(( ast__Type*)((char*)ctx->BaseAddress + (*(env)).expected_return_type)));
-#line 4900 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (typechecker__types_match(expected_t, actual_return, ctx) == 0) {
-#line 4901 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Return type mismatch. Expected ", 47 });
-#line 4902 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(expected_t, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 4903 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" but got ", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if ((*(env)).expected_return_type != 0xFFFFFFFF) {
 #line 4904 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(actual_return, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    ast__Type expected_t = (*(( ast__Type*)((char*)ctx->BaseAddress + (*(env)).expected_return_type)));
+#line 4905 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (typechecker__types_match(expected_t, actual_return, ctx) == 0) {
 #line 4906 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    token__Span val_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
+    Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Return type mismatch. Expected ", 47 });
 #line 4907 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (expr_idx != 0xFFFFFFFF) {
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(expected_t, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 4908 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" but got ", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4909 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(actual_return, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 4911 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    token__Span val_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) });
+#line 4912 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (expr_idx != 0xFFFFFFFF) {
+#line 4913 "/home/garth/files/code/gust/compiler/typechecker.gst"
     val_span = typechecker__get_expression_span(expr_idx, ctx);
     } else {
-#line 4910 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4915 "/home/garth/files/code/gust/compiler/typechecker.gst"
     val_span = stmt.Return.span;
     }
-#line 4912 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4917 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, val_span, env, ctx);
     }
     } else {
-#line 4915 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4920 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Return statement used outside function body", 59 });
-#line 4916 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4921 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, stmt.Return.span, env, ctx);
     }
-#line 4919 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return res;
-    }
-#line 4922 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 13) {
-#line 4923 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int expr_idx = stmt.Expression.expr;
 #line 4924 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__check_expression(expr_idx, env, scope, ctx);
-#line 4926 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
+#line 4927 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (stmt.tag == 13) {
+#line 4928 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int expr_idx = stmt.Expression.expr;
 #line 4929 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (stmt.tag == 9) {
-#line 4930 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char name = stmt.Guard.name;
+    typechecker__check_expression(expr_idx, env, scope, ctx);
 #line 4931 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int is_mut = stmt.Guard.is_mut;
-#line 4932 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int value = stmt.Guard.value;
-#line 4933 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int else_body = stmt.Guard.else_body;
+    return res;
+    }
 #line 4934 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    token__Span span = stmt.Guard.span;
+    if (stmt.tag == 9) {
+#line 4935 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char name = stmt.Guard.name;
 #line 4936 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type val_type = typechecker__check_expression(value, env, scope, ctx);
+    int is_mut = stmt.Guard.is_mut;
 #line 4937 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type resolved_val_type = typechecker__env_resolve_type(env, val_type, ctx);
+    int value = stmt.Guard.value;
+#line 4938 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int else_body = stmt.Guard.else_body;
 #line 4939 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type payload_type = ((ast__Type){ .tag = 0 });
-#line 4940 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    payload_type.tag = 3;
+    token__Span span = stmt.Guard.span;
+#line 4941 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type val_type = typechecker__check_expression(value, env, scope, ctx);
 #line 4942 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int is_ok = 0;
-#line 4943 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (resolved_val_type.tag == 8) {
+    ast__Type resolved_val_type = typechecker__env_resolve_type(env, val_type, ctx);
 #line 4944 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char struct_name = resolved_val_type.Struct.struct_name;
+    ast__Type payload_type = ((ast__Type){ .tag = 0 });
 #line 4945 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_typechecker__StructLayout lookup_layout = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, struct_name, 1); } res; });
-#line 4946 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup_layout.Ok) {
+    payload_type.tag = 3;
 #line 4947 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout layout = lookup_layout.Val;
+    int is_ok = 0;
 #line 4948 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type ok_field_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }), 1); if (res.Ok) { res.Val = *os_HashMapRef(&layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }), 1); } res; });
+    if (resolved_val_type.tag == 8) {
 #line 4949 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type val_field_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Val", 3 }), 1); if (res.Ok) { res.Val = *os_HashMapRef(&layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Val", 3 }), 1); } res; });
+    Slice_unsigned_char struct_name = resolved_val_type.Struct.struct_name;
 #line 4950 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (ok_field_lookup.Ok && val_field_lookup.Ok) {
+    LookupResult_typechecker__StructLayout lookup_layout = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, struct_name, 1); } res; });
 #line 4951 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type ok_type = ok_field_lookup.Val;
+    if (lookup_layout.Ok) {
 #line 4952 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (ok_type.tag == 0 || ok_type.tag == 2) {
+    typechecker__StructLayout layout = lookup_layout.Val;
 #line 4953 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    payload_type = val_field_lookup.Val;
+    LookupResult_ast__Type ok_field_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }), 1); if (res.Ok) { res.Val = *os_HashMapRef(&layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }), 1); } res; });
 #line 4954 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_ast__Type val_field_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Val", 3 }), 1); if (res.Ok) { res.Val = *os_HashMapRef(&layout.fields, ((Slice_unsigned_char){ (unsigned char*)"Val", 3 }), 1); } res; });
+#line 4955 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (ok_field_lookup.Ok && val_field_lookup.Ok) {
+#line 4956 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type ok_type = ok_field_lookup.Val;
+#line 4957 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (ok_type.tag == 0 || ok_type.tag == 2) {
+#line 4958 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    payload_type = val_field_lookup.Val;
+#line 4959 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_ok = 1;
     }
     }
     }
     }
-#line 4960 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4965 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (is_ok == 0) {
-#line 4961 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4966 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got ", 97 });
-#line 4962 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4967 "/home/garth/files/code/gust/compiler/typechecker.gst"
     msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ast__serialize_type(resolved_val_type, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 4963 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4968 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, span, env, ctx);
     }
-#line 4967 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4972 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_HashMap_str_int parent_moved = typechecker__typechecker_clone_int_map((*(env)).moved_vars, ctx);
-#line 4968 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_int parent_open_dirs = typechecker__typechecker_clone_int_map((*(env)).open_directories, ctx);
-#line 4969 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_HashMap_str_Index_typechecker__OriginSet parent_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
-#line 4971 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int child_scope = typechecker__scope_new(scope, ctx);
 #line 4973 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__BlockStatement else_block = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + else_body)));
+    std_HashMap_str_int parent_open_dirs = typechecker__typechecker_clone_int_map((*(env)).open_directories, ctx);
 #line 4974 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_ast__Statement* else_statements = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + else_block.statements)))));
-#line 4975 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
+    std_HashMap_str_Index_typechecker__OriginSet parent_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
 #line 4976 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < (*(else_statements)).len) {
-#line 4977 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+    int child_scope = typechecker__scope_new(scope, ctx);
 #line 4978 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (i < 0 || i >= (*(else_statements)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(else_statements)).data[i]); }));
+    ast__BlockStatement else_block = (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + else_body)));
 #line 4979 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__check_statement(s_idx, env, child_scope, ctx);
+    std_Vector_ast__Statement* else_statements = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + else_block.statements)))));
 #line 4980 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 4981 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < (*(else_statements)).len) {
+#line 4982 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+#line 4983 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(( ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (i < 0 || i >= (*(else_statements)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(else_statements)).data[i]); }));
+#line 4984 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__check_statement(s_idx, env, child_scope, ctx);
+#line 4985 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 4983 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4988 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int diverges = typechecker__is_diverging_block(else_body, env, ctx);
-#line 4984 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4989 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (diverges == 0) {
-#line 4985 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4990 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Guard 'else' block must diverge (i.e. end with a return statement or an exit call)", 98 });
-#line 4986 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 4991 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__report_error(2, msg, (*(( ast__BlockStatement*)((char*)ctx->BaseAddress + else_body))).span, env, ctx);
     }
-#line 4989 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).variable_origins = parent_origins;
-#line 4990 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).moved_vars = parent_moved;
-#line 4991 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*(env)).open_directories = parent_open_dirs;
-#line 4993 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__scope_insert(scope, std_Clone_str(ctx, name), payload_type, ctx);
 #line 4994 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).variable_types, std_Clone_str(ctx, name), 1) = payload_type;
+    (*(env)).variable_origins = parent_origins;
+#line 4995 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*(env)).moved_vars = parent_moved;
 #line 4996 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (payload_type.tag == 8) {
-#line 4997 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char guard_struct_name = payload_type.Struct.struct_name;
+    (*(env)).open_directories = parent_open_dirs;
 #line 4998 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (guard_struct_name.len >= 7 && std_str_eq(std_str_slice(guard_struct_name, 0, 7), ((Slice_unsigned_char){ (unsigned char*)"os_Dir_", 7 }))) {
+    typechecker__scope_insert(scope, std_Clone_str(ctx, name), payload_type, ctx);
 #line 4999 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).variable_types, std_Clone_str(ctx, name), 1) = payload_type;
+#line 5001 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (payload_type.tag == 8) {
+#line 5002 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char guard_struct_name = payload_type.Struct.struct_name;
+#line 5003 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (guard_struct_name.len >= 7 && std_str_eq(std_str_slice(guard_struct_name, 0, 7), ((Slice_unsigned_char){ (unsigned char*)"os_Dir_", 7 }))) {
+#line 5004 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&(*(env)).open_directories, std_Clone_str(ctx, name), 1) = 1;
     }
     }
-#line 5003 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5008 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int is_cast_res = 0;
-#line 5004 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5009 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (resolved_val_type.tag == 8) {
-#line 5005 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5010 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char struct_name = resolved_val_type.Struct.struct_name;
-#line 5006 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5011 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (struct_name.len >= 11 && std_str_eq(std_str_slice(struct_name, 0, 11), ((Slice_unsigned_char){ (unsigned char*)"CastResult_", 11 }))) {
-#line 5007 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5012 "/home/garth/files/code/gust/compiler/typechecker.gst"
     is_cast_res = 1;
     }
     }
-#line 5011 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5016 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int is_view = typechecker__env_type_is_ephemeral_view(payload_type, ctx);
-#line 5012 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5017 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int origs = typechecker__set_init(ctx);
-#line 5013 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5018 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (is_view == 1 || is_cast_res == 1) {
-#line 5014 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5019 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int temp_origs = typechecker__get_expression_origins(value, env, ctx);
-#line 5015 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5020 "/home/garth/files/code/gust/compiler/typechecker.gst"
     origs = typechecker__typechecker_clone_origin_set(temp_origs, ctx);
     }
-#line 5017 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5022 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if ((*(( typechecker__OriginSet*)((char*)ctx->BaseAddress + origs))).map.len == 0) {
-#line 5018 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5023 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_add(origs, std_Clone_str(ctx, name), ctx);
     }
-#line 5020 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    *os_HashMapRef(&(*(env)).variable_origins, std_Clone_str(ctx, name), 1) = origs;
-#line 5022 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_HashMapRemove(&(*(env)).moved_vars, name, 1);
-#line 5024 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if ((*(env)).current_function_local_vars != 0xFFFFFFFF) {
 #line 5025 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    *os_HashMapRef(&(*(env)).variable_origins, std_Clone_str(ctx, name), 1) = origs;
+#line 5027 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_HashMapRemove(&(*(env)).moved_vars, name, 1);
+#line 5029 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if ((*(env)).current_function_local_vars != 0xFFFFFFFF) {
+#line 5030 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int local_vars = (*(env)).current_function_local_vars;
-#line 5026 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5031 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_add(local_vars, std_Clone_str(ctx, name), ctx);
     }
-#line 5029 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char prefix = (*(env)).current_prefix;
-#line 5030 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int found_idx = 0 - 1;
-#line 5031 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i_res = 0;
-#line 5032 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i_res < (*(env)).resolved_types_nested.len) {
-#line 5033 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__PrefixMapEntry entry = (*({ if (i_res < 0 || i_res >= (*(env)).resolved_types_nested.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).resolved_types_nested.data[i_res]); }));
 #line 5034 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(entry.prefix, prefix)) {
+    Slice_unsigned_char prefix = (*(env)).current_prefix;
 #line 5035 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    found_idx = i_res;
+    int found_idx = 0 - 1;
 #line 5036 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i_res = 0;
+#line 5037 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i_res < (*(env)).resolved_types_nested.len) {
+#line 5038 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__PrefixMapEntry entry = (*({ if (i_res < 0 || i_res >= (*(env)).resolved_types_nested.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).resolved_types_nested.data[i_res]); }));
+#line 5039 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(entry.prefix, prefix)) {
+#line 5040 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    found_idx = i_res;
+#line 5041 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i_res = (*(env)).resolved_types_nested.len;
     }
-#line 5038 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5043 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i_res = i_res + 1;
     }
-#line 5041 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (found_idx == 0 - 1) {
-#line 5042 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__PrefixMapEntry new_entry = ((typechecker__PrefixMapEntry){ .prefix = ((Slice_unsigned_char){ NULL, 0 }), .types = ((std_Vector_typechecker__ResolvedTypeEntry){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }) });
-#line 5044 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    new_entry.prefix = std_Clone_str(ctx, prefix);
-#line 5045 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    new_entry.types = (struct std_Vector_typechecker__ResolvedTypeEntry){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 5046 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&(*(env)).resolved_types_nested, new_entry);
+    if (found_idx == 0 - 1) {
 #line 5047 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    found_idx = (*(env)).resolved_types_nested.len - 1;
+    typechecker__PrefixMapEntry new_entry = ((typechecker__PrefixMapEntry){ .prefix = ((Slice_unsigned_char){ NULL, 0 }), .types = ((std_Vector_typechecker__ResolvedTypeEntry){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }) });
+#line 5049 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    new_entry.prefix = std_Clone_str(ctx, prefix);
 #line 5050 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (std_str_eq(prefix, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0) {
+    new_entry.types = (struct std_Vector_typechecker__ResolvedTypeEntry){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
 #line 5051 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char log_reg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"👁️ Prefix registered in type checker (Guard): ", 51 }); Slice_unsigned_char _s2 = prefix; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    os_VectorPush(&(*(env)).resolved_types_nested, new_entry);
 #line 5052 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    found_idx = (*(env)).resolved_types_nested.len - 1;
+#line 5055 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (std_str_eq(prefix, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0) {
+#line 5056 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char log_reg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"👁️ Prefix registered in type checker (Guard): ", 51 }); Slice_unsigned_char _s2 = prefix; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5057 "/home/garth/files/code/gust/compiler/typechecker.gst"
     os_LogStr(log_reg);
     }
     }
-#line 5056 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__PrefixMapEntry* entry_ref = &((*({ if (found_idx < 0 || found_idx >= (*(env)).resolved_types_nested.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).resolved_types_nested.data[found_idx]); })));
-#line 5057 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__ResolvedTypeEntry type_entry = ((typechecker__ResolvedTypeEntry){ .end_offset = 0, .start_offset = 0, .val_type = ((ast__Type){ .tag = 0 }) });
-#line 5058 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    type_entry.start_offset = span.start.offset;
-#line 5059 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    type_entry.end_offset = span.end.offset;
-#line 5060 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    type_entry.val_type = payload_type;
 #line 5061 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    os_VectorPush(&(*(entry_ref)).types, type_entry);
+    typechecker__PrefixMapEntry* entry_ref = &((*({ if (found_idx < 0 || found_idx >= (*(env)).resolved_types_nested.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).resolved_types_nested.data[found_idx]); })));
+#line 5062 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__ResolvedTypeEntry type_entry = ((typechecker__ResolvedTypeEntry){ .end_offset = 0, .start_offset = 0, .val_type = ((ast__Type){ .tag = 0 }) });
 #line 5063 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    type_entry.start_offset = span.start.offset;
+#line 5064 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    type_entry.end_offset = span.end.offset;
+#line 5065 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    type_entry.val_type = payload_type;
+#line 5066 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    os_VectorPush(&(*(entry_ref)).types, type_entry);
+#line 5068 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
-#line 5066 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5071 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return res;
     }
 }
 
-#line 5070 "/home/garth/files/code/gust/compiler/typechecker.gst"
-int typechecker__typechecker_str_compare(Slice_unsigned_char s1, Slice_unsigned_char s2) {
-#line 5071 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int len1 = s1.len;
-#line 5072 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int len2 = s2.len;
-#line 5073 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int min_len = len1;
-#line 5074 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (len2 < min_len) {
 #line 5075 "/home/garth/files/code/gust/compiler/typechecker.gst"
+int typechecker__typechecker_str_compare(Slice_unsigned_char s1, Slice_unsigned_char s2) {
+#line 5076 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int len1 = s1.len;
+#line 5077 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int len2 = s2.len;
+#line 5078 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int min_len = len1;
+#line 5079 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (len2 < min_len) {
+#line 5080 "/home/garth/files/code/gust/compiler/typechecker.gst"
     min_len = len2;
     }
-#line 5078 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 5079 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < min_len) {
-#line 5080 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    unsigned char b1 = std_str_byte_at(s1, i);
-#line 5081 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    unsigned char b2 = std_str_byte_at(s2, i);
-#line 5082 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (b1 < b2) {
 #line 5083 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 5084 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < min_len) {
+#line 5085 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    unsigned char b1 = std_str_byte_at(s1, i);
+#line 5086 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    unsigned char b2 = std_str_byte_at(s2, i);
+#line 5087 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (b1 < b2) {
+#line 5088 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0 - 1;
     }
-#line 5085 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5090 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (b1 > b2) {
-#line 5086 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5091 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
-#line 5088 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5093 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 5091 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5096 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (len1 < len2) {
-#line 5092 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5097 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0 - 1;
     }
-#line 5094 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5099 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (len1 > len2) {
-#line 5095 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5100 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 1;
     }
-#line 5097 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5102 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return 0;
 }
 
-#line 5100 "/home/garth/files/code/gust/compiler/typechecker.gst"
-void typechecker__typechecker_sort_vector_str(std_Vector_str* vec, os_Arena* ctx) {
-#line 5101 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 5102 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int n = (*(vec)).len;
-#line 5103 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 5104 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < n) {
 #line 5105 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int min_idx = i;
+void typechecker__typechecker_sort_vector_str(std_Vector_str* vec, os_Arena* ctx) {
 #line 5106 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = i + 1;
+    {
 #line 5107 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < n) {
+    int n = (*(vec)).len;
 #line 5108 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int cmp = typechecker__typechecker_str_compare((*({ if (j < 0 || j >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[j]); })), (*({ if (min_idx < 0 || min_idx >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[min_idx]); })));
+    int i = 0;
 #line 5109 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (cmp < 0) {
+    while (i < n) {
 #line 5110 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int min_idx = i;
+#line 5111 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = i + 1;
+#line 5112 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < n) {
+#line 5113 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int cmp = typechecker__typechecker_str_compare((*({ if (j < 0 || j >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[j]); })), (*({ if (min_idx < 0 || min_idx >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[min_idx]); })));
+#line 5114 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (cmp < 0) {
+#line 5115 "/home/garth/files/code/gust/compiler/typechecker.gst"
     min_idx = j;
     }
-#line 5112 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    j = j + 1;
-    }
-#line 5114 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (min_idx != i) {
-#line 5115 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char temp = (*({ if (i < 0 || i >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[i]); }));
-#line 5116 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*({ if (i < 0 || i >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[i]); })) = (*({ if (min_idx < 0 || min_idx >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[min_idx]); }));
 #line 5117 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    (*({ if (min_idx < 0 || min_idx >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[min_idx]); })) = temp;
+    j = j + 1;
     }
 #line 5119 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (min_idx != i) {
+#line 5120 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char temp = (*({ if (i < 0 || i >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[i]); }));
+#line 5121 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*({ if (i < 0 || i >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[i]); })) = (*({ if (min_idx < 0 || min_idx >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[min_idx]); }));
+#line 5122 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    (*({ if (min_idx < 0 || min_idx >= (*(vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(vec)).data[min_idx]); })) = temp;
+    }
+#line 5124 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
     }
 }
 
-#line 5124 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5129 "/home/garth/files/code/gust/compiler/typechecker.gst"
 std_Vector_str typechecker__typechecker_get_sorted_keys_int(std_HashMap_str_int* map, os_Arena* ctx) {
-#line 5125 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5130 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 5126 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5131 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(map)).capacity); _i++) {
@@ -17394,18 +17396,18 @@ std_Vector_str typechecker__typechecker_get_sorted_keys_int(std_HashMap_str_int*
         }
         _v;
     }));
-#line 5127 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_sort_vector_str(&(keys), ctx);
-#line 5128 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return keys;
-    }
-}
-
 #line 5132 "/home/garth/files/code/gust/compiler/typechecker.gst"
-std_Vector_str typechecker__typechecker_get_sorted_keys_type(std_HashMap_str_ast__Type* map, os_Arena* ctx) {
+    typechecker__typechecker_sort_vector_str(&(keys), ctx);
 #line 5133 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return keys;
+    }
+}
+
+#line 5137 "/home/garth/files/code/gust/compiler/typechecker.gst"
+std_Vector_str typechecker__typechecker_get_sorted_keys_type(std_HashMap_str_ast__Type* map, os_Arena* ctx) {
+#line 5138 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 5134 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5139 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(map)).capacity); _i++) {
@@ -17415,18 +17417,18 @@ std_Vector_str typechecker__typechecker_get_sorted_keys_type(std_HashMap_str_ast
         }
         _v;
     }));
-#line 5135 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_sort_vector_str(&(keys), ctx);
-#line 5136 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return keys;
-    }
-}
-
 #line 5140 "/home/garth/files/code/gust/compiler/typechecker.gst"
-std_Vector_str typechecker__typechecker_get_sorted_keys_layout(std_HashMap_str_typechecker__StructLayout* map, os_Arena* ctx) {
+    typechecker__typechecker_sort_vector_str(&(keys), ctx);
 #line 5141 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return keys;
+    }
+}
+
+#line 5145 "/home/garth/files/code/gust/compiler/typechecker.gst"
+std_Vector_str typechecker__typechecker_get_sorted_keys_layout(std_HashMap_str_typechecker__StructLayout* map, os_Arena* ctx) {
+#line 5146 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 5142 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5147 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(map)).capacity); _i++) {
@@ -17436,18 +17438,18 @@ std_Vector_str typechecker__typechecker_get_sorted_keys_layout(std_HashMap_str_t
         }
         _v;
     }));
-#line 5143 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_sort_vector_str(&(keys), ctx);
-#line 5144 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return keys;
-    }
-}
-
 #line 5148 "/home/garth/files/code/gust/compiler/typechecker.gst"
-std_Vector_str typechecker__typechecker_get_sorted_keys_enum(std_HashMap_str_std_Vector_str* map, os_Arena* ctx) {
+    typechecker__typechecker_sort_vector_str(&(keys), ctx);
 #line 5149 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return keys;
+    }
+}
+
+#line 5153 "/home/garth/files/code/gust/compiler/typechecker.gst"
+std_Vector_str typechecker__typechecker_get_sorted_keys_enum(std_HashMap_str_std_Vector_str* map, os_Arena* ctx) {
+#line 5154 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 5150 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5155 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(map)).capacity); _i++) {
@@ -17457,18 +17459,18 @@ std_Vector_str typechecker__typechecker_get_sorted_keys_enum(std_HashMap_str_std
         }
         _v;
     }));
-#line 5151 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_sort_vector_str(&(keys), ctx);
-#line 5152 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return keys;
-    }
-}
-
 #line 5156 "/home/garth/files/code/gust/compiler/typechecker.gst"
-std_Vector_str typechecker__typechecker_get_sorted_keys_func(std_HashMap_str_typechecker__FunctionSignature* map, os_Arena* ctx) {
+    typechecker__typechecker_sort_vector_str(&(keys), ctx);
 #line 5157 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return keys;
+    }
+}
+
+#line 5161 "/home/garth/files/code/gust/compiler/typechecker.gst"
+std_Vector_str typechecker__typechecker_get_sorted_keys_func(std_HashMap_str_typechecker__FunctionSignature* map, os_Arena* ctx) {
+#line 5162 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 5158 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5163 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(map)).capacity); _i++) {
@@ -17478,272 +17480,272 @@ std_Vector_str typechecker__typechecker_get_sorted_keys_func(std_HashMap_str_typ
         }
         _v;
     }));
-#line 5159 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5164 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__typechecker_sort_vector_str(&(keys), ctx);
-#line 5160 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5165 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return keys;
     }
 }
 
-#line 5164 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__typechecker_serialize_variables(typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 5165 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char result = ((Slice_unsigned_char){ (unsigned char*)"Variables:\n", 11 });
-#line 5166 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 5167 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str keys = typechecker__typechecker_get_sorted_keys_type(&((*(env)).variable_types), ctx);
-#line 5168 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
 #line 5169 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < keys.len) {
+Slice_unsigned_char typechecker__typechecker_serialize_variables(typechecker__TypeEnvironment* env, os_Arena* ctx) {
 #line 5170 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
+    Slice_unsigned_char result = ((Slice_unsigned_char){ (unsigned char*)"Variables:\n", 11 });
 #line 5171 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_types, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_types, key, 1); } res; });
+    {
 #line 5172 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
+    std_Vector_str keys = typechecker__typechecker_get_sorted_keys_type(&((*(env)).variable_types), ctx);
 #line 5173 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char ty_str = ast__serialize_type(lookup.Val, ctx);
+    int i = 0;
 #line 5174 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"  ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    while (i < keys.len) {
 #line 5175 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
 #line 5176 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" : ", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    LookupResult_ast__Type lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_types, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_types, key, 1); } res; });
 #line 5177 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ty_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (lookup.Ok) {
 #line 5178 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char ty_str = ast__serialize_type(lookup.Val, ctx);
+#line 5179 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"  ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5180 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5181 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" : ", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5182 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ty_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5183 "/home/garth/files/code/gust/compiler/typechecker.gst"
     result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 5180 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5185 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
     }
-#line 5183 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5188 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, result);
 }
 
-#line 5186 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__typechecker_serialize_enums(typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 5187 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char result = ((Slice_unsigned_char){ (unsigned char*)"Enums:\n", 7 });
-#line 5188 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 5189 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str keys = typechecker__typechecker_get_sorted_keys_enum(&((*(env)).enum_registry), ctx);
-#line 5190 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
 #line 5191 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < keys.len) {
+Slice_unsigned_char typechecker__typechecker_serialize_enums(typechecker__TypeEnvironment* env, os_Arena* ctx) {
 #line 5192 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
+    Slice_unsigned_char result = ((Slice_unsigned_char){ (unsigned char*)"Enums:\n", 7 });
 #line 5193 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_std_Vector_str lookup = ({ LookupResult_std_Vector_str res = {0}; res.Ok = os_HashMapContains(&(*(env)).enum_registry, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).enum_registry, key, 1); } res; });
+    {
 #line 5194 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
+    std_Vector_str keys = typechecker__typechecker_get_sorted_keys_enum(&((*(env)).enum_registry), ctx);
 #line 5195 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"  ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int i = 0;
 #line 5196 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    while (i < keys.len) {
 #line 5197 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)":\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
+#line 5198 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_std_Vector_str lookup = ({ LookupResult_std_Vector_str res = {0}; res.Ok = os_HashMapContains(&(*(env)).enum_registry, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).enum_registry, key, 1); } res; });
 #line 5199 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str variants = lookup.Val;
+    if (lookup.Ok) {
 #line 5200 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__typechecker_sort_vector_str(&(variants), ctx);
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"  ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5201 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5202 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < variants.len) {
-#line 5203 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char variant = (*({ if (j < 0 || j >= variants.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(variants.data[j]); }));
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)":\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5204 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"    ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    std_Vector_str variants = lookup.Val;
 #line 5205 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = variant; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    typechecker__typechecker_sort_vector_str(&(variants), ctx);
 #line 5206 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int j = 0;
 #line 5207 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < variants.len) {
+#line 5208 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char variant = (*({ if (j < 0 || j >= variants.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(variants.data[j]); }));
+#line 5209 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"    ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5210 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = variant; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5211 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5212 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
     }
-#line 5210 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5215 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
     }
-#line 5213 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5218 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, result);
 }
 
-#line 5216 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__typechecker_serialize_structures(typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 5217 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char result = ((Slice_unsigned_char){ (unsigned char*)"Structures:\n", 12 });
-#line 5218 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 5219 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str keys = typechecker__typechecker_get_sorted_keys_layout(&((*(env)).struct_registry), ctx);
-#line 5220 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
 #line 5221 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < keys.len) {
+Slice_unsigned_char typechecker__typechecker_serialize_structures(typechecker__TypeEnvironment* env, os_Arena* ctx) {
 #line 5222 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
+    Slice_unsigned_char result = ((Slice_unsigned_char){ (unsigned char*)"Structures:\n", 12 });
 #line 5223 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_typechecker__StructLayout lookup = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, key, 1); } res; });
+    {
 #line 5224 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
+    std_Vector_str keys = typechecker__typechecker_get_sorted_keys_layout(&((*(env)).struct_registry), ctx);
 #line 5225 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__StructLayout layout = lookup.Val;
+    int i = 0;
 #line 5226 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char brand_str = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    while (i < keys.len) {
 #line 5227 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (layout.brand != 0xFFFFFFFF) {
+    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
 #line 5228 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + layout.brand)))));
+    LookupResult_typechecker__StructLayout lookup = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, key, 1); } res; });
 #line 5229 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    brand_str = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)" [", 2 }); Slice_unsigned_char _s2 = (*(brand_str_ptr)); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (lookup.Ok) {
 #line 5230 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    typechecker__StructLayout layout = lookup.Val;
+#line 5231 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char brand_str = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 5232 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (layout.brand != 0xFFFFFFFF) {
+#line 5233 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + layout.brand)))));
+#line 5234 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    brand_str = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)" [", 2 }); Slice_unsigned_char _s2 = (*(brand_str_ptr)); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5235 "/home/garth/files/code/gust/compiler/typechecker.gst"
     brand_str = (({ Slice_unsigned_char _s1 = brand_str; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"]", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 5232 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"  ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 5233 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 5234 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = brand_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 5235 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)":\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5237 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str f_keys = typechecker__typechecker_get_sorted_keys_type(&(layout.fields), ctx);
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"  ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5238 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5239 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < f_keys.len) {
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = brand_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5240 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char f_key = (*({ if (j < 0 || j >= f_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(f_keys.data[j]); }));
-#line 5241 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_ast__Type f_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&layout.fields, f_key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&layout.fields, f_key, 1); } res; });
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)":\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5242 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (f_lookup.Ok) {
+    std_Vector_str f_keys = typechecker__typechecker_get_sorted_keys_type(&(layout.fields), ctx);
 #line 5243 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char ty_str = ast__serialize_type(f_lookup.Val, ctx);
+    int j = 0;
 #line 5244 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"    ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    while (j < f_keys.len) {
 #line 5245 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = f_key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char f_key = (*({ if (j < 0 || j >= f_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(f_keys.data[j]); }));
 #line 5246 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" : ", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    LookupResult_ast__Type f_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&layout.fields, f_key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&layout.fields, f_key, 1); } res; });
 #line 5247 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ty_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if (f_lookup.Ok) {
 #line 5248 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char ty_str = ast__serialize_type(f_lookup.Val, ctx);
+#line 5249 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"    ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5250 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = f_key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5251 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" : ", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5252 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ty_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5253 "/home/garth/files/code/gust/compiler/typechecker.gst"
     result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 5250 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5255 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
     }
-#line 5253 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5258 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
     }
-#line 5256 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5261 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, result);
 }
 
-#line 5259 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__typechecker_serialize_functions(typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 5260 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char result = ((Slice_unsigned_char){ (unsigned char*)"Functions:\n", 11 });
-#line 5261 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    {
-#line 5262 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    std_Vector_str keys = typechecker__typechecker_get_sorted_keys_func(&((*(env)).function_registry), ctx);
-#line 5263 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
 #line 5264 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < keys.len) {
+Slice_unsigned_char typechecker__typechecker_serialize_functions(typechecker__TypeEnvironment* env, os_Arena* ctx) {
 #line 5265 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
+    Slice_unsigned_char result = ((Slice_unsigned_char){ (unsigned char*)"Functions:\n", 11 });
 #line 5266 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_typechecker__FunctionSignature lookup = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&(*(env)).function_registry, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).function_registry, key, 1); } res; });
+    {
 #line 5267 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
+    std_Vector_str keys = typechecker__typechecker_get_sorted_keys_func(&((*(env)).function_registry), ctx);
 #line 5268 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    typechecker__FunctionSignature sig = lookup.Val;
+    int i = 0;
 #line 5269 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"  ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    while (i < keys.len) {
 #line 5270 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
 #line 5271 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"(", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    LookupResult_typechecker__FunctionSignature lookup = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&(*(env)).function_registry, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).function_registry, key, 1); } res; });
+#line 5272 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (lookup.Ok) {
 #line 5273 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char params_str = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    typechecker__FunctionSignature sig = lookup.Val;
 #line 5274 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int j = 0;
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"  ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5275 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (j < sig.param_names.len) {
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5276 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"(", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5278 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char params_str = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+#line 5279 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int j = 0;
+#line 5280 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (j < sig.param_names.len) {
+#line 5281 "/home/garth/files/code/gust/compiler/typechecker.gst"
     if (j > 0) {
-#line 5277 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5282 "/home/garth/files/code/gust/compiler/typechecker.gst"
     params_str = (({ Slice_unsigned_char _s1 = params_str; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 5279 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char p_name = (*({ if (j < 0 || j >= sig.param_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.param_names.data[j]); }));
-#line 5280 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    ast__Type p_type = (*({ if (j < 0 || j >= sig.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.params.data[j]); }));
-#line 5281 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char p_type_str = ast__serialize_type(p_type, ctx);
-#line 5282 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    params_str = (({ Slice_unsigned_char _s1 = params_str; Slice_unsigned_char _s2 = p_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 5283 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    params_str = (({ Slice_unsigned_char _s1 = params_str; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)": ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5284 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    params_str = (({ Slice_unsigned_char _s1 = params_str; Slice_unsigned_char _s2 = p_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char p_name = (*({ if (j < 0 || j >= sig.param_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.param_names.data[j]); }));
 #line 5285 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    ast__Type p_type = (*({ if (j < 0 || j >= sig.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.params.data[j]); }));
+#line 5286 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char p_type_str = ast__serialize_type(p_type, ctx);
+#line 5287 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    params_str = (({ Slice_unsigned_char _s1 = params_str; Slice_unsigned_char _s2 = p_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5288 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    params_str = (({ Slice_unsigned_char _s1 = params_str; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)": ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5289 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    params_str = (({ Slice_unsigned_char _s1 = params_str; Slice_unsigned_char _s2 = p_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+#line 5290 "/home/garth/files/code/gust/compiler/typechecker.gst"
     j = j + 1;
     }
-#line 5288 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5293 "/home/garth/files/code/gust/compiler/typechecker.gst"
     result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = params_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 5289 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5294 "/home/garth/files/code/gust/compiler/typechecker.gst"
     result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)") -> ", 5 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 5290 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5295 "/home/garth/files/code/gust/compiler/typechecker.gst"
     Slice_unsigned_char ret_str = ast__serialize_type(sig.return_type, ctx);
-#line 5291 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5296 "/home/garth/files/code/gust/compiler/typechecker.gst"
     result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ret_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 5292 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5297 "/home/garth/files/code/gust/compiler/typechecker.gst"
     result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
-#line 5294 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5299 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
     }
-#line 5297 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    return std_Clone_str(ctx, result);
-}
-
-#line 5300 "/home/garth/files/code/gust/compiler/typechecker.gst"
-Slice_unsigned_char typechecker__typechecker_serialize_type_environment(typechecker__TypeEnvironment* env, os_Arena* ctx) {
-#line 5301 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char result = typechecker__typechecker_serialize_variables(env, ctx);
 #line 5302 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = typechecker__typechecker_serialize_structures(env, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 5303 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = typechecker__typechecker_serialize_enums(env, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 5304 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = typechecker__typechecker_serialize_functions(env, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-#line 5305 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return std_Clone_str(ctx, result);
 }
 
+#line 5305 "/home/garth/files/code/gust/compiler/typechecker.gst"
+Slice_unsigned_char typechecker__typechecker_serialize_type_environment(typechecker__TypeEnvironment* env, os_Arena* ctx) {
+#line 5306 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char result = typechecker__typechecker_serialize_variables(env, ctx);
+#line 5307 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = typechecker__typechecker_serialize_structures(env, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5308 "/home/garth/files/code/gust/compiler/typechecker.gst"
-int typechecker__typechecker_clone_origin_set(int src, os_Arena* ctx) {
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = typechecker__typechecker_serialize_enums(env, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5309 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int dest_idx = typechecker__set_init(ctx);
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = typechecker__typechecker_serialize_functions(env, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 5310 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    return std_Clone_str(ctx, result);
+}
+
+#line 5313 "/home/garth/files/code/gust/compiler/typechecker.gst"
+int typechecker__typechecker_clone_origin_set(int src, os_Arena* ctx) {
+#line 5314 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int dest_idx = typechecker__set_init(ctx);
+#line 5315 "/home/garth/files/code/gust/compiler/typechecker.gst"
     {
-#line 5311 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5316 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < ((*(( typechecker__OriginSet*)((char*)ctx->BaseAddress + src))).map.capacity); _i++) {
@@ -17753,25 +17755,25 @@ int typechecker__typechecker_clone_origin_set(int src, os_Arena* ctx) {
         }
         _v;
     }));
-#line 5312 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5317 "/home/garth/files/code/gust/compiler/typechecker.gst"
     int i = 0;
-#line 5313 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5318 "/home/garth/files/code/gust/compiler/typechecker.gst"
     while (i < keys.len) {
-#line 5314 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5319 "/home/garth/files/code/gust/compiler/typechecker.gst"
     typechecker__set_add(dest_idx, (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); })), ctx);
-#line 5315 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5320 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
     }
-#line 5318 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5323 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return dest_idx;
 }
 
-#line 5321 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5326 "/home/garth/files/code/gust/compiler/typechecker.gst"
 std_HashMap_str_Index_typechecker__OriginSet typechecker__typechecker_clone_origins(std_HashMap_str_Index_typechecker__OriginSet src, os_Arena* ctx) {
-#line 5322 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5327 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_HashMap_str_Index_typechecker__OriginSet dest = (struct std_HashMap_str_Index_typechecker__OriginSet){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 5323 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5328 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < (src.capacity); _i++) {
@@ -17781,33 +17783,33 @@ std_HashMap_str_Index_typechecker__OriginSet typechecker__typechecker_clone_orig
         }
         _v;
     }));
-#line 5324 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 5325 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < keys.len) {
-#line 5326 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
-#line 5327 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_Index_typechecker__OriginSet lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&src, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&src, key, 1); } res; });
-#line 5328 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
 #line 5329 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int cloned_set = typechecker__typechecker_clone_origin_set(lookup.Val, ctx);
+    int i = 0;
 #line 5330 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < keys.len) {
+#line 5331 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
+#line 5332 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_Index_typechecker__OriginSet lookup = ({ LookupResult_Index_typechecker__OriginSet res = {0}; res.Ok = os_HashMapContains(&src, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&src, key, 1); } res; });
+#line 5333 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (lookup.Ok) {
+#line 5334 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int cloned_set = typechecker__typechecker_clone_origin_set(lookup.Val, ctx);
+#line 5335 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&dest, std_Clone_str(ctx, key), 1) = cloned_set;
     }
-#line 5332 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5337 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 5334 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5339 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return dest;
 }
 
-#line 5337 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5342 "/home/garth/files/code/gust/compiler/typechecker.gst"
 std_HashMap_str_int typechecker__typechecker_clone_int_map(std_HashMap_str_int src, os_Arena* ctx) {
-#line 5338 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5343 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_HashMap_str_int dest = (struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx };
-#line 5339 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5344 "/home/garth/files/code/gust/compiler/typechecker.gst"
     std_Vector_str keys = (({
         std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
         for (int _i = 0; _i < (src.capacity); _i++) {
@@ -17817,23 +17819,23 @@ std_HashMap_str_int typechecker__typechecker_clone_int_map(std_HashMap_str_int s
         }
         _v;
     }));
-#line 5340 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    int i = 0;
-#line 5341 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    while (i < keys.len) {
-#line 5342 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
-#line 5343 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    LookupResult_int lookup = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&src, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&src, key, 1); } res; });
-#line 5344 "/home/garth/files/code/gust/compiler/typechecker.gst"
-    if (lookup.Ok) {
 #line 5345 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    int i = 0;
+#line 5346 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    while (i < keys.len) {
+#line 5347 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    Slice_unsigned_char key = (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); }));
+#line 5348 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    LookupResult_int lookup = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&src, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&src, key, 1); } res; });
+#line 5349 "/home/garth/files/code/gust/compiler/typechecker.gst"
+    if (lookup.Ok) {
+#line 5350 "/home/garth/files/code/gust/compiler/typechecker.gst"
     *os_HashMapRef(&dest, std_Clone_str(ctx, key), 1) = lookup.Val;
     }
-#line 5347 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5352 "/home/garth/files/code/gust/compiler/typechecker.gst"
     i = i + 1;
     }
-#line 5349 "/home/garth/files/code/gust/compiler/typechecker.gst"
+#line 5354 "/home/garth/files/code/gust/compiler/typechecker.gst"
     return dest;
 }
 
