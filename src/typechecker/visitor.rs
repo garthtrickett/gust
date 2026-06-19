@@ -223,10 +223,9 @@ impl TypeChecker {
     fn extract_ok_checked_variable(expr: &Expression) -> HashSet<String> {
         let mut results = HashSet::new();
         match expr {
-            Expression::Selector { left, right, .. }
-                if right == "Ok" => {
-                    results.insert(expression_to_string(left));
-                }
+            Expression::Selector { left, right, .. } if right == "Ok" => {
+                results.insert(expression_to_string(left));
+            }
             Expression::Binary {
                 op, left, right, ..
             } => {
@@ -1571,23 +1570,7 @@ impl TypeChecker {
                     .insert(*span, self.variable_types.get(name).unwrap().clone());
             }
             Statement::Assignment { left, value, .. } => {
-                let left_type = match left {
-                    Expression::Identifier(name, _) => {
-                        if let Some(t) = self.symbol_table.get(name) {
-                            Ok(t.clone())
-                        } else {
-                            Err(TypeError {
-                                kind: TypeErrorKind::UndefinedVariable,
-                                message: format!(
-                                    "Semantic Error: Undefined variable '{}' in assignment LHS",
-                                    name
-                                ),
-                                span: Some(left.span()), // Tier B: Point directly to LHS identifier
-                            })
-                        }
-                    }
-                    _ => self.check_expression(left),
-                }?;
+                let left_type = self.check_expression(left)?;
                 let val_type = self.check_expression(value)?;
                 if !types_match(&left_type, &val_type) {
                     return Err(TypeError {

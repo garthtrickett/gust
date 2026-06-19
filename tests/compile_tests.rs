@@ -8119,3 +8119,37 @@ fn test_self_hosted_guard_resolver_compilation() {
         .join()
         .unwrap();
 }
+
+#[test]
+fn test_assignment_lhs_registered_in_resolved_types() {
+    let source = "
+        func main() {
+            mut brand := 10;
+            brand = 20;
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty());
+
+    let mut checker = TypeChecker::new();
+    let res = checker.check_program(&program);
+    assert!(res.is_ok());
+
+    if let Some(gust_lexer::ast::Statement::FunctionDecl { body, .. }) = program.statements.get(0) {
+        if let Some(gust_lexer::ast::Statement::Assignment { left, .. }) = body.statements.get(1) {
+            let span = left.span();
+            let left_type = checker.resolved_types.get(&span);
+            assert!(
+                left_type.is_some(),
+                "LHS of assignment should be registered in resolved_types"
+            );
+            assert_eq!(left_type.unwrap(), &Type::Int);
+        } else {
+            panic!("Expected Assignment at index 1");
+        }
+    } else {
+        panic!("Expected FunctionDecl at index 0");
+    }
+}
