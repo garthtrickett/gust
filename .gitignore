@@ -9,7 +9,7 @@
 /type_dump_failed.c
 /gust_v3.c
 /gust_v3_bin
-/gust_v4
+/gust_v4.c
 /temp.diff
 
 # Transpiled C files
