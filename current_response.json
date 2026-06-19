@@ -1,9 +1,0 @@
-{
-  "summary": "fix: resolve pointer dereference outside unsafe block in typechecker logging",
-  "files": [
-    {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[ctx], ctx: &Arena) {\n    if stmt.tag == 0 { // Import\n        mut path := stmt.Import.path;\n        mut alias := stmt.Import.alias;\n        mut stem := typechecker_get_file_stem(path, ctx);\n        mut prefix := std.Concat(stem, \"__\");\n        mut alias_name := alias;\n        if std.str_eq(alias_name, \"\") {\n            alias_name = stem;\n        }\n        unsafe {\n            (*env).imports.Insert(std.Clone(ctx, alias_name), std.Clone(ctx, prefix));\n        }\n        mut msg := std.Format(\"Import pre-register: alias_name='%s', prefix='%s', current_prefix='%s'\", alias_name, prefix, (*env).current_prefix);\n        typechecker_log_trace(\"🗄️\", msg, ctx);\n    }\n=======\nfunc env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[ctx], ctx: &Arena) {\n    if stmt.tag == 0 { // Import\n        mut path := stmt.Import.path;\n        mut alias := stmt.Import.alias;\n        mut stem := typechecker_get_file_stem(path, ctx);\n        mut prefix := std.Concat(stem, \"__\");\n        mut alias_name := alias;\n        if std.str_eq(alias_name, \"\") {\n            alias_name = stem;\n        }\n        mut cur_prefix := \"\";\n        unsafe {\n            (*env).imports.Insert(std.Clone(ctx, alias_name), std.Clone(ctx, prefix));\n            cur_prefix = (*env).current_prefix;\n        }\n        mut msg := std.Format(\"Import pre-register: alias_name='%s', prefix='%s', current_prefix='%s'\", alias_name, prefix, cur_prefix);\n        typechecker_log_trace(\"🗄️\", msg, ctx);\n    }\n>>>>>>> REPLACE"
-    }
-  ]
-}
