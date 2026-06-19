@@ -4435,18 +4435,58 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         }
 
         if stmt.tag == 5 { // Assignment
+        if tag == 5 { // Assignment
             mut left_idx := stmt.Assignment.left;
             mut val_idx := stmt.Assignment.value;
 
-            mut left_type := check_expression(left_idx, env, scope, ctx);
+            mut left_type: ast.Type[ctx];
+            left_type.tag = 3; // Void
+
             mut left := ctx[left_idx];
-            if left_type.tag == 3 {
-                mut msg := "Semantic Error: Undefined variable or invalid assignment LHS";
-                if left.tag == 0 {
-                    msg = std.Concat("Semantic Error: Undefined variable '", left.Identifier.name);
-                    msg = std.Concat(msg, "' in assignment LHS");
+            if left.tag == 0 { // Identifier
+                mut name := left.Identifier.name;
+                mut resolved_name := name;
+                mut is_local := scope_contains(scope, name, ctx);
+                if is_local == 0 {
+                    resolved_name = env_resolve_namespaced_ident(env, name, ctx);
                 }
-                report_error(2, msg, get_expression_span(left_idx, ctx), env, ctx);
+                left_type = scope_lookup(scope, resolved_name, ctx);
+                if left_type.tag == 3 {
+                    mut msg := std.Concat("Semantic Error: Undefined variable '", name);
+                    msg = std.Concat(msg, "' in assignment LHS");
+                    report_error(2, msg, left.Identifier.span, env, ctx);
+                } else {
+                    mut final_span := left.Identifier.span;
+                    mut prefix := (*env).current_prefix;
+
+                    mut found_idx := 0 - 1;
+                    mut i_res := 0;
+                    while i_res < len((*env).resolved_types_nested) {
+                        mut entry := (*env).resolved_types_nested[i_res];
+                        if std.str_eq(entry.prefix, prefix) {
+                            found_idx = i_res;
+                            i_res = len((*env).resolved_types_nested);
+                        }
+                        i_res = i_res + 1;
+                    }
+
+                    if found_idx == 0 - 1 {
+                        mut new_entry: PrefixMapEntry[ctx];
+                        new_entry.prefix = std.Clone(ctx, prefix);
+                        new_entry.types = std.VectorNew(ctx);
+                        (*env).resolved_types_nested.Push(new_entry);
+                        found_idx = len((*env).resolved_types_nested) - 1;
+                    }
+
+                    mut entry_ref := &(*env).resolved_types_nested[found_idx];
+                    mut type_entry: ResolvedTypeEntry[ctx];
+                    type_entry.start_offset = final_span.start.offset;
+                    type_entry.end_offset = final_span.end.offset;
+                    type_entry.val_type = left_type;
+                    (*entry_ref).types.Push(type_entry);
+                }
+            } else {
+                left_type = check_expression(left_idx, env, scope, ctx);
             }
 
             mut val_type := check_expression(val_idx, env, scope, ctx);

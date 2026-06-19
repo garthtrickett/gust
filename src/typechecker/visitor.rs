@@ -1570,7 +1570,22 @@ impl TypeChecker {
                     .insert(*span, self.variable_types.get(name).unwrap().clone());
             }
             Statement::Assignment { left, value, .. } => {
-                let left_type = self.check_expression(left)?;
+                let left_type = match left {
+                    Expression::Identifier(name, span) => {
+                        if let Some(t) = self.symbol_table.get(name) {
+                            self.resolved_types.insert(*span, t.clone());
+                            self.resolved_names.insert(*span, name.clone());
+                            Ok(t.clone())
+                        } else {
+                            Err(TypeError {
+                                kind: TypeErrorKind::UndefinedVariable,
+                                message: format!("Semantic Error: Undefined variable '{}' in assignment LHS", name),
+                                span: Some(*span),
+                            })
+                        }
+                    }
+                    _ => self.check_expression(left),
+                }?;
                 let val_type = self.check_expression(value)?;
                 if !types_match(&left_type, &val_type) {
                     return Err(TypeError {
