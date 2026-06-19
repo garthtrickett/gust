@@ -8149,7 +8149,46 @@ fn test_assignment_lhs_registered_in_resolved_types() {
         } else {
             panic!("Expected Assignment at index 1");
         }
-    } else {
+    } else { 
         panic!("Expected FunctionDecl at index 0");
     }
+}
+
+#[test]
+fn test_cast_aware_allocation_size_propagation() {
+    let source = "
+        type ListNode[ctx] struct {
+            val: int,
+            next: Index[ListNode, ctx]
+        }
+        func main() {
+            mut ctx := os.Arena.New();
+            defer ctx.Free();
+            
+            // unassigned or complex-assigned AsCast
+            std.Clone(ctx, os.ArenaAlloc(ctx) as Index[ListNode, ctx]);
+        }
+    ";
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(parser.errors.is_empty());
+
+    let mut checker = TypeChecker::new();
+    let res = checker.check_program(&program);
+    assert!(res.is_ok());
+
+    let codegen = Codegen::new(
+        checker.variable_types,
+        checker.struct_registry,
+        checker.function_registry,
+        checker.enum_registry,
+        checker.resolved_names,
+        checker.resolved_types,
+    );
+    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
+    let c_code = codegen.generate(&modules_for_codegen);
+
+    // Assert that the generated C code contains the correct size for ListNode in the cast
+    assert!(c_code.contains("os_ArenaAlloc(&ctx, sizeof(ListNode))"), "C code should contain os_ArenaAlloc with ListNode size, but got:\n{}", c_code);
 }

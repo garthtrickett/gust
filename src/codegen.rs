@@ -1649,7 +1649,40 @@ impl Codegen {
                 span,
                 ..
             } => {
+                let mut old_alloc = None;
+                if let Expression::Call { function, .. } = &**left {
+                    let func_path = self
+                        .resolved_names
+                        .get(&function.span())
+                        .cloned()
+                        .unwrap_or_else(|| self.gen_expression(function));
+                    if func_path == "os.ArenaAlloc" || func_path == "os_ArenaAlloc" || func_path == "os.ScratchAlloc" || func_path == "os_ScratchAlloc" {
+                        let resolved_target = self.resolved_types.get(span).unwrap_or(target_type);
+                        let mut target_struct = None;
+                        if let Type::Index(struct_name, brand) = resolved_target {
+                            target_struct = Some(erase_struct_name_with_registry(
+                                struct_name,
+                                brand,
+                                &self.struct_registry,
+                            ));
+                        } else if let Type::Struct(struct_name, brand) = resolved_target {
+                            target_struct = Some(erase_struct_name_with_registry(
+                                struct_name,
+                                brand,
+                                &self.struct_registry,
+                            ));
+                        }
+                        old_alloc = Some(self.current_alloc_struct.borrow().clone());
+                        *self.current_alloc_struct.borrow_mut() = target_struct;
+                    }
+                }
+
                 let left_str = self.gen_expression(left);
+
+                if let Some(old) = old_alloc {
+                    *self.current_alloc_struct.borrow_mut() = old;
+                }
+
                 let mut resolved_target_owned =
                     self.resolved_types.get(span).unwrap_or(target_type).clone();
                 if let Type::Struct(ref name, ref brand) = resolved_target_owned
