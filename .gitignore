@@ -11,6 +11,7 @@
 /gust_v3_bin
 /gust_v4.c
 /temp.diff
+/test_e2e_file_io_evaluation_output.txt
 
 # Transpiled C files
 /gust_output.c
