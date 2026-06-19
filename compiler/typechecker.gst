@@ -3253,9 +3253,13 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
         if std.str_eq(alias_name, "") {
             alias_name = stem;
         }
+        mut cur_prefix := "";
         unsafe {
             (*env).imports.Insert(std.Clone(ctx, alias_name), std.Clone(ctx, prefix));
+            cur_prefix = (*env).current_prefix;
         }
+        mut msg := std.Format("Import pre-register: alias_name='%s', prefix='%s', current_prefix='%s'", alias_name, prefix, cur_prefix);
+        typechecker_log_trace("🗄️", msg, ctx);
     }
     if stmt.tag == 1 { // StructDecl
         mut name := stmt.StructDecl.name;
