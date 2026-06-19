@@ -106,7 +106,7 @@ func codegen_is_ptr_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx
 func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int { 
     unsafe { 
         mut serialized_t := ast.serialize_type(t, ctx);
-        mut log_init := std.Concat("🕵️ Checking if type is Vector: ", serialized_t);
+        mut log_init := std.Concat("// 🕵️ Checking if type is Vector: ", serialized_t);
         os.LogStr(log_init);
 
         mut curr := t;
@@ -120,7 +120,7 @@ func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[
             mut idx_vector := std.str_find(erased_name, "Vector_");
             mut idx_std_vector := std.str_find(erased_name, "std_Vector_");
             
-            mut log_struct := std.Concat("  -> Struct name: ", name);
+            mut log_struct := std.Concat("//   -> Struct name: ", name);
             log_struct = std.Concat(log_struct, ", Erased name: ");
             log_struct = std.Concat(log_struct, erased_name);
             log_struct = std.Concat(log_struct, ", Vector_ find: ");
@@ -130,24 +130,24 @@ func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[
             os.LogStr(log_struct);
 
             if idx_vector == 0 {
-                os.LogStr("  -> MATCHED Vector_ at 0!");
+                os.LogStr("//   -> MATCHED Vector_ at 0!");
                 return 1;
             }
             if idx_std_vector == 0 {
-                os.LogStr("  -> MATCHED std_Vector_ at 0!");
+                os.LogStr("//   -> MATCHED std_Vector_ at 0!");
                 return 1;
             }
         }
         if curr.tag == 10 { // Generic
             mut name := curr.Generic.name;
-            mut log_generic := std.Concat("  -> Generic name: ", name);
+            mut log_generic := std.Concat("//   -> Generic name: ", name);
             os.LogStr(log_generic);
-            if std.str_eq(name, "Vector") == 1 || std.str_eq(name, "std.Vector") == 1 || std.str_eq(name, "std_Vector") == 1 {
-                os.LogStr("  -> MATCHED Generic Vector!");
+            if std.str_eq(name, "Vector") == 1 || std.str_eq(name, "std.Vector") == 1 || std.str_eq(name, "std_Vector") == 1 { 
+                os.LogStr("//   -> MATCHED Generic Vector!");
                 return 1;
             }
         }
-        os.LogStr("  -> NOT A VECTOR TYPE!");
+        os.LogStr("//   -> NOT A VECTOR TYPE!");
     }
     return 0;
 }
@@ -980,7 +980,7 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
             os.LogStr(log_pfx);
         }
 
-        mut query_msg := std.Concat("🔍 Lookup span ", std.FormatInt(span.start.offset));
+        mut query_msg := std.Concat("// 🔍 Lookup span ", std.FormatInt(span.start.offset));
         query_msg = std.Concat(query_msg, "..");
         query_msg = std.Concat(query_msg, std.FormatInt(span.end.offset));
         query_msg = std.Concat(query_msg, " prefix='");
@@ -991,23 +991,20 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
         if found_idx != 0 - 1 {
             mut entry_ref := &(*env).resolved_types_nested[found_idx];
             mut j := 0;
-            while j < len((*entry_ref).types) { 
+            while j < len((*entry_ref).types) {
                 mut t_entry := (*entry_ref).types[j];
                 if t_entry.start_offset == span.start.offset && t_entry.end_offset == span.end.offset {
-                    // Successful lookup trace (Step 3)
-                    if std.str_eq(prefix, "") == 0 {
-                        mut type_str := ast.serialize_type(t_entry.val_type, ctx);
-                        mut log_success := std.Concat("👁️ Type Resolved for ", prefix);
-                        log_success = std.Concat(log_success, ": ");
-                        log_success = std.Concat(log_success, type_str);
-                        os.LogStr(log_success);
-                    }
+                    mut type_str := ast.serialize_type(t_entry.val_type, ctx);
+                    mut log_success := std.Concat("//    -> Found: ", type_str);
+                    os.LogStr(log_success);
                     return t_entry.val_type;
                 }
                 j = j + 1;
             }
         }
+        os.LogStr("//    -> NOT FOUND (Void)");
         return dummy;
+
     }
 }
 
@@ -1364,7 +1361,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut alloc_t := codegen_get_expression_type(alloc_idx, env, ctx);
             mut idx_t := codegen_get_expression_type(index_idx, env, ctx);
 
-            mut log_idx_access := std.Concat("🔬 IndexAccess codegen: allocator type is ", ast.serialize_type(alloc_t, ctx));
+            mut log_idx_access := std.Concat("// 🔬 IndexAccess codegen: allocator type is ", ast.serialize_type(alloc_t, ctx));
             log_idx_access = std.Concat(log_idx_access, ", index type is ");
             log_idx_access = std.Concat(log_idx_access, ast.serialize_type(idx_t, ctx));
             os.LogStr(log_idx_access);
