@@ -610,126 +610,126 @@ void os_ScratchReset() {
 // ====================================================
 // FORWARD DECLARATIONS
 // ====================================================
-typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
-typedef struct std_Vector_token__Token std_Vector_token__Token;
-typedef struct token__TokenType_Bool token__TokenType_Bool;
-typedef struct token__TokenType_If token__TokenType_If;
-typedef struct token__Position token__Position;
-typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
-typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
-typedef struct token__TokenType_Defer token__TokenType_Defer;
-typedef struct ast__Expression_Dereference ast__Expression_Dereference;
-typedef struct token__TokenType_Enum token__TokenType_Enum;
-typedef struct ast__Type_Byte ast__Type_Byte;
-typedef struct ast__Expression_String ast__Expression_String;
-typedef struct token__TokenType_Slash token__TokenType_Slash;
-typedef struct token__TokenType_LBracket token__TokenType_LBracket;
-typedef struct ast__Expression ast__Expression;
-typedef struct token__TokenType_Take token__TokenType_Take;
 typedef struct token__TokenType_Ampersand token__TokenType_Ampersand;
-typedef struct token__TokenType_String token__TokenType_String;
-typedef struct token__TokenType_Ident token__TokenType_Ident;
-typedef struct token__TokenType_Struct token__TokenType_Struct;
-typedef struct token__TokenType_Guard token__TokenType_Guard;
-typedef struct ast__Type_Slice ast__Type_Slice;
-typedef struct ast__Expression_Call ast__Expression_Call;
-typedef struct token__TokenType_Eof token__TokenType_Eof;
-typedef struct ast__Expression_Take ast__Expression_Take;
-typedef struct token__Span token__Span;
-typedef struct token__TokenType_Empty token__TokenType_Empty;
-typedef struct ast__Statement_Expression ast__Statement_Expression;
-typedef struct token__TokenType_True token__TokenType_True;
-typedef struct token__TokenType_Comma token__TokenType_Comma;
-typedef struct ast__Statement_Guard ast__Statement_Guard;
-typedef struct token__TokenType_Match token__TokenType_Match;
-typedef struct parser__ParseResult parser__ParseResult;
-typedef struct token__Token token__Token;
-typedef struct ast__Expression_AddressOf ast__Expression_AddressOf;
-typedef struct ast__Expression_AsCast ast__Expression_AsCast;
-typedef struct ast__Statement ast__Statement;
-typedef struct std_Vector_ast__Expression std_Vector_ast__Expression;
-typedef struct token__TokenType_NotEq token__TokenType_NotEq;
-typedef struct ast__VariantDef ast__VariantDef;
-typedef struct ast__Expression_Integer ast__Expression_Integer;
-typedef struct token__TokenType_Colon token__TokenType_Colon;
-typedef struct ast__Statement_Defer ast__Statement_Defer;
-typedef struct ast__Statement_While ast__Statement_While;
-typedef struct ast__Expression_Bool ast__Expression_Bool;
-typedef struct token__TokenType_RParen token__TokenType_RParen;
-typedef struct ast__Expression_Binary ast__Expression_Binary;
-typedef struct token__TokenType_Assign token__TokenType_Assign;
-typedef struct ast__Expression_Selector ast__Expression_Selector;
-typedef struct ast__Expression_Empty ast__Expression_Empty;
-typedef struct ast__Expression_Identifier ast__Expression_Identifier;
-typedef struct token__TokenType_Type token__TokenType_Type;
-typedef struct token__TokenType_Return token__TokenType_Return;
-typedef struct std_Vector_ast__MatchCase std_Vector_ast__MatchCase;
-typedef struct token__TokenType_RBracket token__TokenType_RBracket;
-typedef struct token__TokenType token__TokenType;
-typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
-typedef struct ast__Statement_Return ast__Statement_Return;
-typedef struct token__TokenType_Move token__TokenType_Move;
-typedef struct std_Vector_errors__CompilerError std_Vector_errors__CompilerError;
-typedef struct APIRequest APIRequest;
-typedef struct token__TokenType_While token__TokenType_While;
-typedef struct ast__Type_RawPointer ast__Type_RawPointer;
-typedef struct ast__Statement_Import ast__Statement_Import;
-typedef struct token__TokenType_Minus token__TokenType_Minus;
-typedef struct ast__FieldDef ast__FieldDef;
-typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
-typedef struct token__TokenType_FatArrow token__TokenType_FatArrow;
-typedef struct ast__Type_Str ast__Type_Str;
-typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
-typedef struct token__TokenType_RBrace token__TokenType_RBrace;
-typedef struct errors__ErrorKind_CodegenError errors__ErrorKind_CodegenError;
-typedef struct token__TokenType_Else token__TokenType_Else;
-typedef struct errors__ErrorKind_TypeError errors__ErrorKind_TypeError;
-typedef struct token__TokenType_Lt token__TokenType_Lt;
-typedef struct ast__Statement_Assignment ast__Statement_Assignment;
-typedef struct token__TokenType_EqEq token__TokenType_EqEq;
-typedef struct ast__Type_Int ast__Type_Int;
-typedef struct errors__ErrorKind_ParserError errors__ErrorKind_ParserError;
-typedef struct errors__ErrorKind errors__ErrorKind;
-typedef struct std_Vector_ast__FieldDef std_Vector_ast__FieldDef;
-typedef struct token__TokenType_Eq token__TokenType_Eq;
-typedef struct ast__Type_Void ast__Type_Void;
-typedef struct token__TokenType_Illegal token__TokenType_Illegal;
-typedef struct token__TokenType_Gt token__TokenType_Gt;
-typedef struct token__TokenType_LBrace token__TokenType_LBrace;
-typedef struct ast__Expression_Move ast__Expression_Move;
-typedef struct token__TokenType_Import token__TokenType_Import;
-typedef struct ast__Type_Struct ast__Type_Struct;
-typedef struct token__TokenType_Unsafe token__TokenType_Unsafe;
 typedef struct ast__Program ast__Program;
-typedef struct ast__Type_Generic ast__Type_Generic;
-typedef struct std_Vector_ast__Statement std_Vector_ast__Statement;
-typedef struct lexer__Lexer lexer__Lexer;
-typedef struct token__TokenType_Func token__TokenType_Func;
-typedef struct SessionNode SessionNode;
-typedef struct ast__BlockStatement ast__BlockStatement;
-typedef struct ast__Type_Arena ast__Type_Arena;
-typedef struct token__TokenType_Dot token__TokenType_Dot;
-typedef struct token__TokenType_False token__TokenType_False;
-typedef struct ast__MatchCase ast__MatchCase;
-typedef struct token__TokenType_Semicolon token__TokenType_Semicolon;
-typedef struct errors__CompilerError errors__CompilerError;
-typedef struct errors__ErrorKind_LexerError errors__ErrorKind_LexerError;
-typedef struct token__TokenType_Plus token__TokenType_Plus;
-typedef struct ast__Type_Bool ast__Type_Bool;
-typedef struct token__TokenType_LParen token__TokenType_LParen;
-typedef struct token__TokenType_Int token__TokenType_Int;
-typedef struct ast__Statement_Match ast__Statement_Match;
-typedef struct std_Vector_ast__Type std_Vector_ast__Type;
-typedef struct parser__Parser parser__Parser;
-typedef struct ast__Type_Index ast__Type_Index;
-typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
-typedef struct ast__Type ast__Type;
-typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
+typedef struct token__TokenType_RParen token__TokenType_RParen;
+typedef struct token__TokenType_Illegal token__TokenType_Illegal;
+typedef struct ast__Type_Byte ast__Type_Byte;
+typedef struct ast__Expression_Move ast__Expression_Move;
+typedef struct token__TokenType_Lt token__TokenType_Lt;
+typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
+typedef struct parser__ParseResult parser__ParseResult;
 typedef struct ast__Statement_If ast__Statement_If;
-typedef struct token__TokenType_As token__TokenType_As;
-typedef struct token__TokenType_Asterisk token__TokenType_Asterisk;
+typedef struct token__TokenType_RBrace token__TokenType_RBrace;
+typedef struct token__Span token__Span;
+typedef struct ast__Type_Int ast__Type_Int;
+typedef struct token__TokenType_Move token__TokenType_Move;
+typedef struct ast__BlockStatement ast__BlockStatement;
+typedef struct token__TokenType_Empty token__TokenType_Empty;
 typedef struct token__TokenType_Mut token__TokenType_Mut;
 typedef struct ast__Parameter ast__Parameter;
+typedef struct ast__Type_Index ast__Type_Index;
+typedef struct ast__Statement ast__Statement;
+typedef struct ast__Expression_Take ast__Expression_Take;
+typedef struct token__TokenType_FatArrow token__TokenType_FatArrow;
+typedef struct ast__Expression_Bool ast__Expression_Bool;
+typedef struct ast__Expression_Empty ast__Expression_Empty;
+typedef struct token__TokenType_Gt token__TokenType_Gt;
+typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
+typedef struct token__TokenType_Slash token__TokenType_Slash;
+typedef struct ast__Expression_AsCast ast__Expression_AsCast;
+typedef struct parser__Parser parser__Parser;
+typedef struct ast__Type_Bool ast__Type_Bool;
+typedef struct ast__Type_Str ast__Type_Str;
+typedef struct std_Vector_token__Token std_Vector_token__Token;
+typedef struct token__TokenType_False token__TokenType_False;
+typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
+typedef struct errors__ErrorKind_CodegenError errors__ErrorKind_CodegenError;
+typedef struct SessionNode SessionNode;
+typedef struct ast__Type ast__Type;
+typedef struct ast__Statement_Match ast__Statement_Match;
+typedef struct ast__Expression_Call ast__Expression_Call;
+typedef struct errors__ErrorKind_ParserError errors__ErrorKind_ParserError;
+typedef struct token__TokenType_Comma token__TokenType_Comma;
+typedef struct token__TokenType_Plus token__TokenType_Plus;
+typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
+typedef struct ast__Expression ast__Expression;
+typedef struct token__TokenType_Ident token__TokenType_Ident;
+typedef struct token__TokenType_LParen token__TokenType_LParen;
+typedef struct std_Vector_ast__Statement std_Vector_ast__Statement;
+typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
+typedef struct token__TokenType_Colon token__TokenType_Colon;
+typedef struct token__TokenType_As token__TokenType_As;
+typedef struct errors__CompilerError errors__CompilerError;
+typedef struct token__TokenType_Asterisk token__TokenType_Asterisk;
+typedef struct token__TokenType_Dot token__TokenType_Dot;
+typedef struct APIRequest APIRequest;
+typedef struct token__TokenType_Func token__TokenType_Func;
+typedef struct token__TokenType_NotEq token__TokenType_NotEq;
+typedef struct ast__Expression_Identifier ast__Expression_Identifier;
+typedef struct ast__Expression_AddressOf ast__Expression_AddressOf;
+typedef struct ast__Statement_Defer ast__Statement_Defer;
+typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
+typedef struct token__TokenType_Bool token__TokenType_Bool;
+typedef struct token__TokenType_Eof token__TokenType_Eof;
+typedef struct token__TokenType_Import token__TokenType_Import;
+typedef struct token__TokenType_LBracket token__TokenType_LBracket;
+typedef struct ast__Statement_Return ast__Statement_Return;
+typedef struct ast__Type_Arena ast__Type_Arena;
+typedef struct std_Vector_ast__MatchCase std_Vector_ast__MatchCase;
+typedef struct errors__ErrorKind_LexerError errors__ErrorKind_LexerError;
+typedef struct token__TokenType_RBracket token__TokenType_RBracket;
+typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
+typedef struct lexer__Lexer lexer__Lexer;
+typedef struct ast__Expression_String ast__Expression_String;
+typedef struct ast__Statement_Guard ast__Statement_Guard;
+typedef struct token__TokenType_True token__TokenType_True;
+typedef struct ast__VariantDef ast__VariantDef;
+typedef struct token__TokenType_Guard token__TokenType_Guard;
+typedef struct ast__Statement_Import ast__Statement_Import;
+typedef struct token__TokenType_If token__TokenType_If;
+typedef struct token__TokenType_EqEq token__TokenType_EqEq;
+typedef struct token__TokenType_LBrace token__TokenType_LBrace;
+typedef struct token__TokenType_Type token__TokenType_Type;
+typedef struct token__TokenType_Match token__TokenType_Match;
+typedef struct token__Token token__Token;
+typedef struct ast__Expression_Dereference ast__Expression_Dereference;
+typedef struct token__TokenType_Enum token__TokenType_Enum;
+typedef struct ast__Expression_Binary ast__Expression_Binary;
+typedef struct std_Vector_errors__CompilerError std_Vector_errors__CompilerError;
+typedef struct ast__Statement_Assignment ast__Statement_Assignment;
+typedef struct std_Vector_ast__Type std_Vector_ast__Type;
+typedef struct ast__Statement_While ast__Statement_While;
+typedef struct ast__MatchCase ast__MatchCase;
+typedef struct errors__ErrorKind_TypeError errors__ErrorKind_TypeError;
+typedef struct token__TokenType_Defer token__TokenType_Defer;
+typedef struct token__TokenType_String token__TokenType_String;
+typedef struct ast__Type_Void ast__Type_Void;
+typedef struct ast__FieldDef ast__FieldDef;
+typedef struct token__TokenType_Int token__TokenType_Int;
+typedef struct ast__Type_RawPointer ast__Type_RawPointer;
+typedef struct ast__Expression_Selector ast__Expression_Selector;
+typedef struct token__TokenType_Eq token__TokenType_Eq;
+typedef struct token__TokenType token__TokenType;
+typedef struct ast__Statement_Expression ast__Statement_Expression;
+typedef struct ast__Expression_Integer ast__Expression_Integer;
+typedef struct token__TokenType_Struct token__TokenType_Struct;
+typedef struct ast__Type_Struct ast__Type_Struct;
+typedef struct token__TokenType_Else token__TokenType_Else;
+typedef struct token__TokenType_Unsafe token__TokenType_Unsafe;
+typedef struct token__TokenType_Minus token__TokenType_Minus;
+typedef struct errors__ErrorKind errors__ErrorKind;
+typedef struct token__Position token__Position;
+typedef struct token__TokenType_Return token__TokenType_Return;
+typedef struct std_Vector_ast__Expression std_Vector_ast__Expression;
+typedef struct std_Vector_ast__FieldDef std_Vector_ast__FieldDef;
+typedef struct token__TokenType_Take token__TokenType_Take;
+typedef struct token__TokenType_Semicolon token__TokenType_Semicolon;
+typedef struct ast__Type_Generic ast__Type_Generic;
+typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
+typedef struct token__TokenType_While token__TokenType_While;
+typedef struct ast__Type_Slice ast__Type_Slice;
+typedef struct token__TokenType_Assign token__TokenType_Assign;
 
 // ====================================================
 // DYNAMICALLY GENERATED SLICE STRUCTURE FORWARD DECLARATIONS
@@ -1866,102 +1866,102 @@ Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char fi
 // ====================================================
 // FUNCTION FORWARD DECLARATIONS
 // ====================================================
-int parser__Parser_ctx_IsValid(parser__Parser* req);
-void* parser__Parser_ctx_IsValid_pthread_wrapper(void* arg);
-int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int indent, os_Arena* ctx);
-int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
-LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
-Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int indent, os_Arena* ctx);
-int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
-void lexer__next_token(lexer__Lexer* l, token__Token* tok);
-token__TokenType lexer__lookup_ident(Slice_unsigned_char literal);
-void* lexer__lookup_ident_pthread_wrapper(void* arg);
-os_Arena os_Arena_New(void);
-Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx);
-Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
-void* std_Format_pthread_wrapper(void* arg);
-int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
-void* lexer__Lexer_ctx_IsValid_pthread_wrapper(void* arg);
-token__Position lexer__current_position(lexer__Lexer* l);
-void* lexer__current_position_pthread_wrapper(void* arg);
-void os_CloseDir(os_Dir arg0);
-void* os_CloseDir_pthread_wrapper(void* arg);
-int lexer__Lexer_Any_IsValid(lexer__Lexer* req);
-void* lexer__Lexer_Any_IsValid_pthread_wrapper(void* arg);
-int parser__parse_defer_statement(parser__Parser* p, os_Arena* ctx);
-LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
-token__Span parser__merge_spans(token__Span start, token__Span end);
-void lexer__read_char(lexer__Lexer* l);
-void* lexer__read_char_pthread_wrapper(void* arg);
-LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
 Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena* ctx);
-Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
-int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx);
-void lexer__init_lexer(lexer__Lexer* l, Slice_unsigned_char input);
-os_Arena os_Arena_New(void);
-void lexer__skip_whitespace(lexer__Lexer* l);
-void* lexer__skip_whitespace_pthread_wrapper(void* arg);
-void parser__error_at_current(parser__Parser* p, Slice_unsigned_char message);
-void std_Yield(void);
-int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
-LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
-token__Span parser__get_expression_span(int expr, os_Arena* ctx);
-int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
-unsigned char lexer__is_digit(unsigned char b);
-void* lexer__is_digit_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_char sep, os_Arena* ctx);
-void parser__synchronize(parser__Parser* p);
-void* parser__synchronize_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os_Arena* ctx);
-Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
-void* std_Format_pthread_wrapper(void* arg);
-int parser__cur_token_precedence(parser__Parser* p);
-void* parser__cur_token_precedence_pthread_wrapper(void* arg);
-int parser__parse_function_decl(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char lexer__read_string(lexer__Lexer* l);
-void* lexer__read_string_pthread_wrapper(void* arg);
-int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
-void parser__next_token(parser__Parser* p);
-void* parser__next_token_pthread_wrapper(void* arg);
-parser__ParseResult parser__expect_peek(parser__Parser* p, int tag, os_Arena* ctx);
-int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx);
-void parser__init_parser(parser__Parser* p, lexer__Lexer* l, os_Arena* ctx);
-unsigned char parser__cur_token_is(parser__Parser* p, int tag);
 ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char ast__serialize_variant_def(ast__VariantDef v, int indent, os_Arena* ctx);
 int parser__is_at_end(parser__Parser* p);
 void* parser__is_at_end_pthread_wrapper(void* arg);
-void os_SetThreadScratch(os_Arena* arg0);
-void* os_SetThreadScratch_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Arena* ctx);
-unsigned char parser__peek_token_is(parser__Parser* p, int tag);
-unsigned char lexer__is_letter(unsigned char b);
-void* lexer__is_letter_pthread_wrapper(void* arg);
+int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx);
+int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
+void lexer__skip_whitespace(lexer__Lexer* l);
+void* lexer__skip_whitespace_pthread_wrapper(void* arg);
+Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_char sep, os_Arena* ctx);
+int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
 Slice_unsigned_char lexer__read_identifier(lexer__Lexer* l);
 void* lexer__read_identifier_pthread_wrapper(void* arg);
-Slice_unsigned_char lexer__read_number(lexer__Lexer* l);
-void* lexer__read_number_pthread_wrapper(void* arg);
-void std_Yield(void);
-int parser__peek_token_precedence(parser__Parser* p);
-void* parser__peek_token_precedence_pthread_wrapper(void* arg);
-unsigned char lexer__peek_char(lexer__Lexer* l);
-void* lexer__peek_char_pthread_wrapper(void* arg);
-Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int indent, os_Arena* ctx);
-int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx);
-int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
-int parser__parse_unsafe_block(parser__Parser* p, os_Arena* ctx);
-Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx);
-Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
-void os_SetThreadScratch(os_Arena* arg0);
-void* os_SetThreadScratch_pthread_wrapper(void* arg);
-os_Arena os_Arena_New(void);
-int parser__parse_expression(parser__Parser* p, int precedence, os_Arena* ctx);
+int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
+Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
+unsigned char parser__cur_token_is(parser__Parser* p, int tag);
+void parser__next_token(parser__Parser* p);
+void* parser__next_token_pthread_wrapper(void* arg);
 void os_CloseDir(os_Dir arg0);
 void* os_CloseDir_pthread_wrapper(void* arg);
+void parser__init_parser(parser__Parser* p, lexer__Lexer* l, os_Arena* ctx);
+void lexer__init_lexer(lexer__Lexer* l, Slice_unsigned_char input);
+int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
+void std_Yield(void);
+Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx);
+os_Arena os_Arena_New(void);
+unsigned char lexer__is_digit(unsigned char b);
+void* lexer__is_digit_pthread_wrapper(void* arg);
+parser__ParseResult parser__expect_peek(parser__Parser* p, int tag, os_Arena* ctx);
+int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
+int parser__parse_function_decl(parser__Parser* p, os_Arena* ctx);
+int parser__Parser_ctx_IsValid(parser__Parser* req);
+void* parser__Parser_ctx_IsValid_pthread_wrapper(void* arg);
+os_Arena os_Arena_New(void);
+int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
+void* lexer__Lexer_ctx_IsValid_pthread_wrapper(void* arg);
 int parser__parse_statement(parser__Parser* p, os_Arena* ctx);
+LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
+unsigned char parser__peek_token_is(parser__Parser* p, int tag);
+int parser__cur_token_precedence(parser__Parser* p);
+void* parser__cur_token_precedence_pthread_wrapper(void* arg);
+Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int indent, os_Arena* ctx);
+unsigned char lexer__is_letter(unsigned char b);
+void* lexer__is_letter_pthread_wrapper(void* arg);
+Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Arena* ctx);
+int parser__peek_token_precedence(parser__Parser* p);
+void* parser__peek_token_precedence_pthread_wrapper(void* arg);
+Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
+void* std_Format_pthread_wrapper(void* arg);
+Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena* ctx);
+void os_SetThreadScratch(os_Arena* arg0);
+void* os_SetThreadScratch_pthread_wrapper(void* arg);
+token__Span parser__get_expression_span(int expr, os_Arena* ctx);
+void parser__error_at_current(parser__Parser* p, Slice_unsigned_char message);
+void lexer__read_char(lexer__Lexer* l);
+void* lexer__read_char_pthread_wrapper(void* arg);
+Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os_Arena* ctx);
+LookupResult_os_DirEntry os_ReadDir(os_Arena* arg0, os_Dir arg1);
+Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int indent, os_Arena* ctx);
+Slice_unsigned_char std_Format(Slice_unsigned_char arg0);
+void* std_Format_pthread_wrapper(void* arg);
+void lexer__next_token(lexer__Lexer* l, token__Token* tok);
+int parser__parse_guard_statement(parser__Parser* p, os_Arena* ctx);
 int parser__parse_type_signature(parser__Parser* p, os_Arena* ctx);
+int parser__parse_defer_statement(parser__Parser* p, os_Arena* ctx);
+os_Arena os_Arena_New(void);
+Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int indent, os_Arena* ctx);
+token__Span parser__merge_spans(token__Span start, token__Span end);
+int parser__parse_expression(parser__Parser* p, int precedence, os_Arena* ctx);
+Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
+LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
+int lexer__Lexer_Any_IsValid(lexer__Lexer* req);
+void* lexer__Lexer_Any_IsValid_pthread_wrapper(void* arg);
+Slice_unsigned_char ast__serialize_variant_def(ast__VariantDef v, int indent, os_Arena* ctx);
+void std_Yield(void);
+token__TokenType lexer__lookup_ident(Slice_unsigned_char literal);
+void* lexer__lookup_ident_pthread_wrapper(void* arg);
+void os_CloseDir(os_Dir arg0);
+void* os_CloseDir_pthread_wrapper(void* arg);
+int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char lexer__read_string(lexer__Lexer* l);
+void* lexer__read_string_pthread_wrapper(void* arg);
+LookupResult_os_Dir os_OpenDir(os_Arena* arg0, Slice_unsigned_char arg1);
+void parser__synchronize(parser__Parser* p);
+void* parser__synchronize_pthread_wrapper(void* arg);
+int parser__parse_if_statement(parser__Parser* p, os_Arena* ctx);
+Slice_unsigned_char lexer__read_number(lexer__Lexer* l);
+void* lexer__read_number_pthread_wrapper(void* arg);
+int parser__parse_block_statement(parser__Parser* p, os_Arena* ctx);
+token__Position lexer__current_position(lexer__Lexer* l);
+void* lexer__current_position_pthread_wrapper(void* arg);
+void os_SetThreadScratch(os_Arena* arg0);
+void* os_SetThreadScratch_pthread_wrapper(void* arg);
+unsigned char lexer__peek_char(lexer__Lexer* l);
+void* lexer__peek_char_pthread_wrapper(void* arg);
+int parser__parse_unsafe_block(parser__Parser* p, os_Arena* ctx);
 
 // ====================================================
 // DYNAMICALLY TRANSPILED USER STRUCTS
@@ -3494,20 +3494,20 @@ struct CastResult_std_Vector_ast__VariantDef {
 // ====================================================
 // INVARIANT VALIDATION HELPER FORWARD DECLARATIONS
 // ====================================================
-int lexer__Lexer_IsValid(lexer__Lexer* req);
 int parser__Parser_IsValid(parser__Parser* req);
+int lexer__Lexer_IsValid(lexer__Lexer* req);
 
 // ====================================================
 // INVARIANT VALIDATION HELPERS
 // ====================================================
-int lexer__Lexer_IsValid(lexer__Lexer* req) {
+int parser__Parser_IsValid(parser__Parser* req) {
     if (req == NULL) return 0;
-    if (req->ch != 0x00 && req->ch != 0x01) return 0;
     return 1;
 }
 
-int parser__Parser_IsValid(parser__Parser* req) {
+int lexer__Lexer_IsValid(lexer__Lexer* req) {
     if (req == NULL) return 0;
+    if (req->ch != 0x00 && req->ch != 0x01) return 0;
     return 1;
 }
 
@@ -4291,7 +4291,7 @@ Slice_unsigned_char ast__ast_repeat_spaces(int indent, os_Arena* ctx) {
 #line 212 "/home/garth/files/code/gust/compiler/ast.gst"
     while (i < indent) {
 #line 213 "/home/garth/files/code/gust/compiler/ast.gst"
-    spaces = (({ Slice_unsigned_char _s1 = spaces; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"  ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    spaces = (({ Slice_unsigned_char _s1 = spaces; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"  ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 214 "/home/garth/files/code/gust/compiler/ast.gst"
     i = i + 1;
     }
@@ -4310,10 +4310,10 @@ Slice_unsigned_char ast__ast_join_strings(std_Vector_str vec, Slice_unsigned_cha
 #line 223 "/home/garth/files/code/gust/compiler/ast.gst"
     if (i > 0) {
 #line 224 "/home/garth/files/code/gust/compiler/ast.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = sep; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = sep; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
 #line 226 "/home/garth/files/code/gust/compiler/ast.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = (*({ if (i < 0 || i >= vec.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(vec.data[i]); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = (*({ if (i < 0 || i >= vec.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(vec.data[i]); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 227 "/home/garth/files/code/gust/compiler/ast.gst"
     i = i + 1;
     }
@@ -4360,9 +4360,9 @@ Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx) {
 #line 253 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char inner_str = ast__serialize_type((*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner))), ctx);
 #line 254 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Slice(", 6 }); Slice_unsigned_char _s2 = inner_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Slice(", 6 }); Slice_unsigned_char _s2 = inner_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 255 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 256 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4373,30 +4373,30 @@ Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx) {
 #line 260 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char struct_name = t.Index.struct_name;
 #line 261 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Index(", 6 }); Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Index(", 6 }); Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 262 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 263 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 264 "/home/garth/files/code/gust/compiler/ast.gst"
     if (t.Index.brand == 0xFFFFFFFF) {
 #line 265 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", None)", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", None)", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
 #line 267 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Index.brand)))));
 #line 268 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char brand_str = (*(brand_str_ptr));
 #line 269 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", Some(", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", Some(", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 270 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 271 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = brand_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = brand_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 272 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 273 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"))", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"))", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
 #line 275 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
@@ -4408,30 +4408,30 @@ Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx) {
 #line 279 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char struct_name = t.Struct.struct_name;
 #line 280 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Struct(", 7 }); Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Struct(", 7 }); Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 281 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 282 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 283 "/home/garth/files/code/gust/compiler/ast.gst"
     if (t.Struct.brand == 0xFFFFFFFF) {
 #line 284 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", None)", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", None)", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
 #line 286 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char* brand_str_ptr = ((Slice_unsigned_char*)&((*(( Slice_unsigned_char*)((char*)ctx->BaseAddress + t.Struct.brand)))));
 #line 287 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char brand_str = (*(brand_str_ptr));
 #line 288 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", Some(", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", Some(", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 289 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 290 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = brand_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = brand_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 291 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 292 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"))", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"))", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
 #line 294 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
@@ -4441,9 +4441,9 @@ Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx) {
 #line 297 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char inner_str = ast__serialize_type((*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner))), ctx);
 #line 298 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"RawPointer(", 11 }); Slice_unsigned_char _s2 = inner_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"RawPointer(", 11 }); Slice_unsigned_char _s2 = inner_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 299 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 300 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4471,17 +4471,17 @@ Slice_unsigned_char ast__serialize_type(ast__Type t, os_Arena* ctx) {
 #line 313 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char joined = ast__ast_join_strings(arg_strs, ((Slice_unsigned_char){ (unsigned char*)", ", 2 }), ctx);
 #line 314 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Generic(", 8 }); Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Generic(", 8 }); Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 315 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 316 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 317 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", [", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", [", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 318 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = joined; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = joined; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 319 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"])", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"])", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 320 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4505,17 +4505,17 @@ Slice_unsigned_char ast__ast_join_fields(std_Vector_ast__FieldDef fields, int in
 #line 332 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char field_type_str = ast__serialize_type(f.field_type, ctx);
 #line 333 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char line = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"FieldDef: ", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char line = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"FieldDef: ", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 334 "/home/garth/files/code/gust/compiler/ast.gst"
-    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = f.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = f.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 335 "/home/garth/files/code/gust/compiler/ast.gst"
-    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" : ", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" : ", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 336 "/home/garth/files/code/gust/compiler/ast.gst"
-    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = field_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = field_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 337 "/home/garth/files/code/gust/compiler/ast.gst"
-    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 338 "/home/garth/files/code/gust/compiler/ast.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = line; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = line; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 339 "/home/garth/files/code/gust/compiler/ast.gst"
     i = i + 1;
     }
@@ -4538,17 +4538,17 @@ Slice_unsigned_char ast__ast_join_params(std_Vector_ast__Parameter params, int i
 #line 350 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char param_type_str = ast__serialize_type(p.param_type, ctx);
 #line 351 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char line = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Parameter: ", 11 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char line = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Parameter: ", 11 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 352 "/home/garth/files/code/gust/compiler/ast.gst"
-    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = p.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = p.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 353 "/home/garth/files/code/gust/compiler/ast.gst"
-    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" : ", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" : ", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 354 "/home/garth/files/code/gust/compiler/ast.gst"
-    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = param_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = param_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 355 "/home/garth/files/code/gust/compiler/ast.gst"
-    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    line = (({ Slice_unsigned_char _s1 = line; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 356 "/home/garth/files/code/gust/compiler/ast.gst"
-    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = line; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    result = (({ Slice_unsigned_char _s1 = result; Slice_unsigned_char _s2 = line; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 357 "/home/garth/files/code/gust/compiler/ast.gst"
     i = i + 1;
     }
@@ -4572,11 +4572,11 @@ Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena
 #line 370 "/home/garth/files/code/gust/compiler/ast.gst"
     if (expr.tag == 0) {
 #line 371 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Identifier: ", 12 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Identifier: ", 12 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 372 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr.Identifier.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr.Identifier.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 373 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 374 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4585,11 +4585,11 @@ Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena
 #line 377 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char val_str = (({ int _val = expr.Integer.val; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); }));
 #line 378 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Integer: ", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Integer: ", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 379 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = val_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = val_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 380 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 381 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4598,15 +4598,15 @@ Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena
 #line 384 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char quote = ((Slice_unsigned_char){ (unsigned char*)"\"", 1 });
 #line 385 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"String: ", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"String: ", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 386 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 387 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr.String.val; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr.String.val; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 388 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = quote; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 389 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 390 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4620,70 +4620,70 @@ Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena
     val_str = ((Slice_unsigned_char){ (unsigned char*)"true", 4 });
     }
 #line 397 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Bool: ", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Bool: ", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 398 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = val_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = val_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 399 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 400 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 402 "/home/garth/files/code/gust/compiler/ast.gst"
     if (expr.tag == 4) {
 #line 403 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Move:\n", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Move:\n", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 404 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char inner = ast__serialize_expression(expr.Move.expr, indent + 1, ctx);
 #line 405 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 406 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 408 "/home/garth/files/code/gust/compiler/ast.gst"
     if (expr.tag == 5) {
 #line 409 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Take:\n", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Take:\n", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 410 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char inner = ast__serialize_expression(expr.Take.expr, indent + 1, ctx);
 #line 411 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 412 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 414 "/home/garth/files/code/gust/compiler/ast.gst"
     if (expr.tag == 6) {
 #line 415 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"AddressOf:\n", 11 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"AddressOf:\n", 11 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 416 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char inner = ast__serialize_expression(expr.AddressOf.expr, indent + 1, ctx);
 #line 417 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 418 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 420 "/home/garth/files/code/gust/compiler/ast.gst"
     if (expr.tag == 7) {
 #line 421 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Dereference:\n", 13 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Dereference:\n", 13 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 422 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char inner = ast__serialize_expression(expr.Dereference.expr, indent + 1, ctx);
 #line 423 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 424 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 426 "/home/garth/files/code/gust/compiler/ast.gst"
     if (expr.tag == 8) {
 #line 427 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"IndexAccess:\n", 13 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"IndexAccess:\n", 13 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 428 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char alloc_str = ast__serialize_expression(expr.IndexAccess.allocator, indent + 1, ctx);
 #line 429 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char idx_str = ast__serialize_expression(expr.IndexAccess.index, indent + 1, ctx);
 #line 430 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = alloc_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = alloc_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 431 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = idx_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = idx_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 432 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4699,64 +4699,64 @@ Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena
     ref_str = ((Slice_unsigned_char){ (unsigned char*)"true", 4 });
     }
 #line 440 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"AsCast: ", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"AsCast: ", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 441 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = target_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = target_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 442 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" (ref=", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" (ref=", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 443 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ref_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ref_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 444 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 445 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char inner = ast__serialize_expression(expr.AsCast.left, indent + 1, ctx);
 #line 446 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 447 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 449 "/home/garth/files/code/gust/compiler/ast.gst"
     if (expr.tag == 10) {
 #line 450 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Binary: ", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Binary: ", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 451 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr.Binary.op; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr.Binary.op; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 452 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 453 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char left_str = ast__serialize_expression(expr.Binary.left, indent + 1, ctx);
 #line 454 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char right_str = ast__serialize_expression(expr.Binary.right, indent + 1, ctx);
 #line 455 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = left_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = left_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 456 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = right_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = right_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 457 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 459 "/home/garth/files/code/gust/compiler/ast.gst"
     if (expr.tag == 11) {
 #line 460 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Selector: ", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Selector: ", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 461 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr.Selector.right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr.Selector.right; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 462 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 463 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char inner = ast__serialize_expression(expr.Selector.left, indent + 1, ctx);
 #line 464 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = inner; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 465 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 467 "/home/garth/files/code/gust/compiler/ast.gst"
     if (expr.tag == 12) {
 #line 468 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Call:\n", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Call:\n", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 469 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char func_str = ast__serialize_expression(expr.Call.function, indent + 1, ctx);
 #line 470 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = func_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = func_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 472 "/home/garth/files/code/gust/compiler/ast.gst"
     std_Vector_ast__Expression* args_vec = ((std_Vector_ast__Expression*)&((*(( std_Vector_ast__Expression*)((char*)ctx->BaseAddress + expr.Call.arguments)))));
 #line 473 "/home/garth/files/code/gust/compiler/ast.gst"
@@ -4770,7 +4770,7 @@ Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena
 #line 477 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char arg_str = ast__serialize_expression(arg_idx, indent + 1, ctx);
 #line 478 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = arg_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = arg_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 479 "/home/garth/files/code/gust/compiler/ast.gst"
     i = i + 1;
     }
@@ -4782,11 +4782,11 @@ Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena
 #line 484 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char target_type_str = ast__serialize_type((*(( ast__Type*)((char*)ctx->BaseAddress + expr.Empty.target_type))), ctx);
 #line 485 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Empty: ", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Empty: ", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 486 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = target_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = target_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 487 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 488 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4809,7 +4809,7 @@ Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os
 #line 500 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char pad = ast__ast_repeat_spaces(indent, ctx);
 #line 501 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"BlockStatement:\n", 16 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"BlockStatement:\n", 16 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 503 "/home/garth/files/code/gust/compiler/ast.gst"
     std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + block.statements)))));
 #line 504 "/home/garth/files/code/gust/compiler/ast.gst"
@@ -4823,7 +4823,7 @@ Slice_unsigned_char ast__serialize_block_statement(int block_idx, int indent, os
 #line 508 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char stmt_str = ast__serialize_statement(stmt_idx, indent + 1, ctx);
 #line 509 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 510 "/home/garth/files/code/gust/compiler/ast.gst"
     i = i + 1;
     }
@@ -4839,17 +4839,17 @@ Slice_unsigned_char ast__serialize_variant_def(ast__VariantDef v, int indent, os
 #line 518 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char pad = ast__ast_repeat_spaces(indent, ctx);
 #line 519 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"VariantDef: ", 12 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"VariantDef: ", 12 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 520 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = v.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = v.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 521 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 523 "/home/garth/files/code/gust/compiler/ast.gst"
     std_Vector_ast__FieldDef* fields_vec = ((std_Vector_ast__FieldDef*)&((*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + v.fields)))));
 #line 524 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char fields_str = ast__ast_join_fields((*(fields_vec)), indent + 1, ctx);
 #line 525 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = fields_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = fields_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 526 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4866,19 +4866,19 @@ Slice_unsigned_char ast__serialize_match_case(ast__MatchCase case_val, int inden
 #line 534 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char joined_fields = ast__ast_join_strings((*(fields_vec)), ((Slice_unsigned_char){ (unsigned char*)", ", 2 }), ctx);
 #line 536 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"MatchCase: ", 11 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"MatchCase: ", 11 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 537 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = case_val.variant_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = case_val.variant_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 538 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" [", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" [", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 539 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = joined_fields; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = joined_fields; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 540 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"],\n", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"],\n", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 542 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char body_str = ast__serialize_block_statement(case_val.body, indent + 1, ctx);
 #line 543 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = body_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = body_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 544 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4907,15 +4907,15 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
     alias_str = ((Slice_unsigned_char){ (unsigned char*)"<none>", 6 });
     }
 #line 561 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Import: ", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Import: ", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 562 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.Import.path; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.Import.path; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 563 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" as ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" as ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 564 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = alias_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = alias_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 565 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 566 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4926,21 +4926,21 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
 #line 570 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char joined_generics = ast__ast_join_strings((*(generics_vec)), ((Slice_unsigned_char){ (unsigned char*)", ", 2 }), ctx);
 #line 571 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"StructDecl: ", 12 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"StructDecl: ", 12 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 572 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.StructDecl.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.StructDecl.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 573 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" <", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" <", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 574 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = joined_generics; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = joined_generics; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 575 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)">\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)">\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 577 "/home/garth/files/code/gust/compiler/ast.gst"
     std_Vector_ast__FieldDef* fields_vec = ((std_Vector_ast__FieldDef*)&((*(( std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + stmt.StructDecl.fields)))));
 #line 578 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char fields_str = ast__ast_join_fields((*(fields_vec)), indent + 1, ctx);
 #line 579 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = fields_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = fields_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 580 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -4951,15 +4951,15 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
 #line 584 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char joined_generics = ast__ast_join_strings((*(generics_vec)), ((Slice_unsigned_char){ (unsigned char*)", ", 2 }), ctx);
 #line 585 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"EnumDecl: ", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"EnumDecl: ", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 586 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.EnumDecl.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.EnumDecl.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 587 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" <", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" <", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 588 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = joined_generics; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = joined_generics; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 589 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)">\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)">\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 591 "/home/garth/files/code/gust/compiler/ast.gst"
     std_Vector_ast__VariantDef* variants_vec = ((std_Vector_ast__VariantDef*)&((*(( std_Vector_ast__VariantDef*)((char*)ctx->BaseAddress + stmt.EnumDecl.variants)))));
 #line 592 "/home/garth/files/code/gust/compiler/ast.gst"
@@ -4969,7 +4969,7 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
 #line 594 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char variant_str = ast__serialize_variant_def((*({ if (i < 0 || i >= (*(variants_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(variants_vec)).data[i]); })), indent + 1, ctx);
 #line 595 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = variant_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = variant_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 596 "/home/garth/files/code/gust/compiler/ast.gst"
     i = i + 1;
     }
@@ -4981,25 +4981,25 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
 #line 601 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char return_type_str = ast__serialize_type((*(( ast__Type*)((char*)ctx->BaseAddress + stmt.FunctionDecl.return_type))), ctx);
 #line 602 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"FunctionDecl: ", 14 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"FunctionDecl: ", 14 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 603 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.FunctionDecl.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.FunctionDecl.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 604 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" -> ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" -> ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 605 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = return_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = return_type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 606 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 608 "/home/garth/files/code/gust/compiler/ast.gst"
     std_Vector_ast__Parameter* params_vec = ((std_Vector_ast__Parameter*)&((*(( std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + stmt.FunctionDecl.params)))));
 #line 609 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char params_str = ast__ast_join_params((*(params_vec)), indent + 1, ctx);
 #line 610 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = params_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = params_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 612 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char body_str = ast__serialize_block_statement(stmt.FunctionDecl.body, indent + 1, ctx);
 #line 613 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = body_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = body_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 614 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -5020,25 +5020,25 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
     mut_str = ((Slice_unsigned_char){ (unsigned char*)"true", 4 });
     }
 #line 625 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"VarDecl: ", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"VarDecl: ", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 626 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.VarDecl.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.VarDecl.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 627 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" (mut=", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" (mut=", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 628 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = mut_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = mut_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 629 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)") : ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)") : ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 630 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = type_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 631 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 633 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.VarDecl.value != 0xFFFFFFFF) {
 #line 634 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char value_str = ast__serialize_expression(stmt.VarDecl.value, indent + 1, ctx);
 #line 635 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = value_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = value_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
 #line 637 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
@@ -5046,55 +5046,55 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
 #line 639 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.tag == 5) {
 #line 640 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Assignment:\n", 12 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Assignment:\n", 12 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 641 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char left_str = ast__serialize_expression(stmt.Assignment.left, indent + 1, ctx);
 #line 642 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char val_str = ast__serialize_expression(stmt.Assignment.value, indent + 1, ctx);
 #line 643 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = left_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = left_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 644 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = val_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = val_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 645 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 647 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.tag == 6) {
 #line 648 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"While:\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"While:\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 649 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char cond_str = ast__serialize_expression(stmt.While.condition, indent + 1, ctx);
 #line 650 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char body_str = ast__serialize_block_statement(stmt.While.body, indent + 1, ctx);
 #line 651 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = cond_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = cond_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 652 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = body_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = body_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 653 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 655 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.tag == 7) {
 #line 656 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"If:\n", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"If:\n", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 657 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char cond_str = ast__serialize_expression(stmt.If.condition, indent + 1, ctx);
 #line 658 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char cons_str = ast__serialize_block_statement(stmt.If.consequence, indent + 1, ctx);
 #line 659 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = cond_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = cond_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 660 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = cons_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = cons_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 662 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.If.alternative != 0xFFFFFFFF) {
 #line 663 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = pad; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = pad; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 664 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Else:\n", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Else:\n", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 665 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char alt_str = ast__serialize_block_statement(stmt.If.alternative, indent + 1, ctx);
 #line 666 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = alt_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = alt_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
 #line 668 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
@@ -5102,11 +5102,11 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
 #line 670 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.tag == 8) {
 #line 671 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Match:\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Match:\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 672 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char expr_str = ast__serialize_expression(stmt.Match.expression, indent + 1, ctx);
 #line 673 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 675 "/home/garth/files/code/gust/compiler/ast.gst"
     std_Vector_ast__MatchCase* cases_vec = ((std_Vector_ast__MatchCase*)&((*(( std_Vector_ast__MatchCase*)((char*)ctx->BaseAddress + stmt.Match.cases)))));
 #line 676 "/home/garth/files/code/gust/compiler/ast.gst"
@@ -5116,7 +5116,7 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
 #line 678 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char case_str = ast__serialize_match_case((*({ if (i < 0 || i >= (*(cases_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(cases_vec)).data[i]); })), indent + 1, ctx);
 #line 679 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = case_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = case_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 680 "/home/garth/files/code/gust/compiler/ast.gst"
     i = i + 1;
     }
@@ -5133,65 +5133,65 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
     mut_str = ((Slice_unsigned_char){ (unsigned char*)"true", 4 });
     }
 #line 689 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Guard: ", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Guard: ", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 690 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.Guard.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.Guard.name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 691 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" (mut=", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" (mut=", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 692 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = mut_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = mut_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 693 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 695 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char val_str = ast__serialize_expression(stmt.Guard.value, indent + 1, ctx);
 #line 696 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char else_str = ast__serialize_block_statement(stmt.Guard.else_body, indent + 1, ctx);
 #line 697 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = val_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = val_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 698 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = else_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = else_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 699 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 701 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.tag == 10) {
 #line 702 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"UnsafeBlock:\n", 13 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"UnsafeBlock:\n", 13 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 703 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char body_str = ast__serialize_block_statement(stmt.UnsafeBlock.body, indent + 1, ctx);
 #line 704 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = body_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = body_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 705 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 707 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.tag == 11) {
 #line 708 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Defer:\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Defer:\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 709 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char expr_str = ast__serialize_expression(stmt.Defer.expr, indent + 1, ctx);
 #line 710 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 711 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
 #line 713 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.tag == 12) {
 #line 714 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Return:\n", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Return:\n", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 715 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.Return.expr == 0xFFFFFFFF) {
 #line 716 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char void_pad = ast__ast_repeat_spaces(indent + 1, ctx);
 #line 717 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = void_pad; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = void_pad; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 718 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"<void>\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"<void>\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
 #line 720 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char expr_str = ast__serialize_expression(stmt.Return.expr, indent + 1, ctx);
 #line 721 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
 #line 723 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
@@ -5199,11 +5199,11 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
 #line 725 "/home/garth/files/code/gust/compiler/ast.gst"
     if (stmt.tag == 13) {
 #line 726 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"ExpressionStatement:\n", 21 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"ExpressionStatement:\n", 21 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 727 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char expr_str = ast__serialize_expression(stmt.Expression.expr, indent + 1, ctx);
 #line 728 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expr_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 729 "/home/garth/files/code/gust/compiler/ast.gst"
     return std_Clone_str(ctx, res);
     }
@@ -5219,7 +5219,7 @@ Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Ar
 #line 737 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char pad = ast__ast_repeat_spaces(indent, ctx);
 #line 738 "/home/garth/files/code/gust/compiler/ast.gst"
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Program:\n", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Program:\n", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 740 "/home/garth/files/code/gust/compiler/ast.gst"
     std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*(( std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (*(prog)).statements)))));
 #line 741 "/home/garth/files/code/gust/compiler/ast.gst"
@@ -5233,7 +5233,7 @@ Slice_unsigned_char ast__serialize_program(ast__Program* prog, int indent, os_Ar
 #line 745 "/home/garth/files/code/gust/compiler/ast.gst"
     Slice_unsigned_char stmt_str = ast__serialize_statement(stmt_idx, indent + 1, ctx);
 #line 746 "/home/garth/files/code/gust/compiler/ast.gst"
-    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 747 "/home/garth/files/code/gust/compiler/ast.gst"
     i = i + 1;
     }
@@ -5283,12 +5283,12 @@ Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx) {
 #line 42 "/home/garth/files/code/gust/compiler/parser.gst"
     ast__Type inner_t = (*(( ast__Type*)((char*)ctx->BaseAddress + t.Slice.inner)));
 #line 43 "/home/garth/files/code/gust/compiler/parser.gst"
-    base = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Slice_", 6 }); Slice_unsigned_char _s2 = parser__parser_get_type_ident(inner_t, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    base = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Slice_", 6 }); Slice_unsigned_char _s2 = parser__parser_get_type_ident(inner_t, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
 #line 45 "/home/garth/files/code/gust/compiler/parser.gst"
     if (t.tag == 7) {
 #line 46 "/home/garth/files/code/gust/compiler/parser.gst"
-    base = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Index_", 6 }); Slice_unsigned_char _s2 = t.Index.struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    base = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Index_", 6 }); Slice_unsigned_char _s2 = t.Index.struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
 #line 48 "/home/garth/files/code/gust/compiler/parser.gst"
     if (t.tag == 8) {
@@ -5300,7 +5300,7 @@ Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx) {
 #line 52 "/home/garth/files/code/gust/compiler/parser.gst"
     ast__Type inner_t = (*(( ast__Type*)((char*)ctx->BaseAddress + t.RawPointer.inner)));
 #line 53 "/home/garth/files/code/gust/compiler/parser.gst"
-    base = (({ Slice_unsigned_char _s1 = parser__parser_get_type_ident(inner_t, ctx); Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_ptr", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    base = (({ Slice_unsigned_char _s1 = parser__parser_get_type_ident(inner_t, ctx); Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_ptr", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
 #line 55 "/home/garth/files/code/gust/compiler/parser.gst"
     if (t.tag == 10) {
@@ -5331,12 +5331,12 @@ Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx) {
 #line 75 "/home/garth/files/code/gust/compiler/parser.gst"
     if (b == 46) {
 #line 76 "/home/garth/files/code/gust/compiler/parser.gst"
-    out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
 #line 78 "/home/garth/files/code/gust/compiler/parser.gst"
     Slice_unsigned_char char_slice = std_str_slice(base, i, i + 1);
 #line 79 "/home/garth/files/code/gust/compiler/parser.gst"
-    out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = char_slice; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = char_slice; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
 #line 81 "/home/garth/files/code/gust/compiler/parser.gst"
     i = i + 1;
@@ -5361,19 +5361,19 @@ Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char te
 #line 93 "/home/garth/files/code/gust/compiler/parser.gst"
     if (i > 0) {
 #line 94 "/home/garth/files/code/gust/compiler/parser.gst"
-    arg_names = (({ Slice_unsigned_char _s1 = arg_names; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    arg_names = (({ Slice_unsigned_char _s1 = arg_names; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
 #line 96 "/home/garth/files/code/gust/compiler/parser.gst"
     Slice_unsigned_char arg_name = parser__parser_get_type_ident((*({ if (i < 0 || i >= (*(args_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(args_vec)).data[i]); })), ctx);
 #line 97 "/home/garth/files/code/gust/compiler/parser.gst"
-    arg_names = (({ Slice_unsigned_char _s1 = arg_names; Slice_unsigned_char _s2 = arg_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    arg_names = (({ Slice_unsigned_char _s1 = arg_names; Slice_unsigned_char _s2 = arg_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 98 "/home/garth/files/code/gust/compiler/parser.gst"
     i = i + 1;
     }
 #line 100 "/home/garth/files/code/gust/compiler/parser.gst"
-    Slice_unsigned_char name = (({ Slice_unsigned_char _s1 = template_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char name = (({ Slice_unsigned_char _s1 = template_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 101 "/home/garth/files/code/gust/compiler/parser.gst"
-    name = (({ Slice_unsigned_char _s1 = name; Slice_unsigned_char _s2 = arg_names; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    name = (({ Slice_unsigned_char _s1 = name; Slice_unsigned_char _s2 = arg_names; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 103 "/home/garth/files/code/gust/compiler/parser.gst"
     Slice_unsigned_char out = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
 #line 104 "/home/garth/files/code/gust/compiler/parser.gst"
@@ -5385,12 +5385,12 @@ Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char te
 #line 107 "/home/garth/files/code/gust/compiler/parser.gst"
     if (b == 46) {
 #line 108 "/home/garth/files/code/gust/compiler/parser.gst"
-    out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     } else {
 #line 110 "/home/garth/files/code/gust/compiler/parser.gst"
     Slice_unsigned_char char_slice = std_str_slice(name, j, j + 1);
 #line 111 "/home/garth/files/code/gust/compiler/parser.gst"
-    out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = char_slice; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    out = (({ Slice_unsigned_char _s1 = out; Slice_unsigned_char _s2 = char_slice; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
 #line 113 "/home/garth/files/code/gust/compiler/parser.gst"
     j = j + 1;
@@ -5665,9 +5665,9 @@ int parser__parse_type_signature(parser__Parser* p, os_Arena* ctx) {
     return 0xFFFFFFFF;
     }
 #line 275 "/home/garth/files/code/gust/compiler/parser.gst"
-    base_name = (({ Slice_unsigned_char _s1 = base_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)".", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    base_name = (({ Slice_unsigned_char _s1 = base_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)".", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 276 "/home/garth/files/code/gust/compiler/parser.gst"
-    base_name = (({ Slice_unsigned_char _s1 = base_name; Slice_unsigned_char _s2 = (*(p)).cur_token.literal; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); memcpy(_buf, _s1.data, _s1.len); memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    base_name = (({ Slice_unsigned_char _s1 = base_name; Slice_unsigned_char _s2 = (*(p)).cur_token.literal; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
 #line 277 "/home/garth/files/code/gust/compiler/parser.gst"
     parser__next_token(p);
     }
