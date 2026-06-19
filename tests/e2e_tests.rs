@@ -5048,166 +5048,173 @@ fn filter_output_c_code(stdout: &str) -> String {
 
 #[test]
 fn test_self_hosted_compiler_full_bootstrap() {
-    gust_lexer::init_logging();
-    let resolver = gust_lexer::resolver::ModuleResolver::new();
-    let fs_impl = gust_lexer::resolver::RealFileSystem;
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
 
-    // 1. Resolve and compile the self-hosted compiler (test_runner_entry.gst) using the Rust prototype (gust_v1)
-    let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
-    let res = resolver
-        .resolve(&entry_path, &fs_impl)
-        .expect("Failed to resolve test_runner_entry.gst");
-    let (order, mut modules) = res;
+            // 1. Resolve and compile the self-hosted compiler (test_runner_entry.gst) using the Rust prototype (gust_v1)
+            let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
+            let res = resolver
+                .resolve(&entry_path, &fs_impl)
+                .expect("Failed to resolve test_runner_entry.gst");
+            let (order, mut modules) = res;
 
-    let mut checker_v1 = TypeChecker::new();
-    for path in &order {
-        if let Some(module) = modules.get(path) {
-            let stem = path.file_stem().unwrap().to_str().unwrap();
-            let is_entry = path == order.last().unwrap();
-            let prefix = if is_entry {
-                "".to_string()
-            } else {
-                format!("{}__", stem)
-            };
-            checker_v1
-                .check_module(&module.program, &prefix)
-                .expect("Typechecking failed on test_runner_entry.gst");
-        }
-    }
+            let mut checker_v1 = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    checker_v1
+                        .check_module(&module.program, &prefix)
+                        .expect("Typechecking failed on test_runner_entry.gst");
+                }
+            }
 
-    let mut modules_for_codegen = Vec::new();
-    for path in &order {
-        if let Some(module) = modules.get_mut(path) {
-            modules_for_codegen.push((path.clone(), module.program.clone()));
-        }
-    }
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
+                }
+            }
 
-    let codegen_v1 = Codegen::new(
-        checker_v1.variable_types,
-        checker_v1.struct_registry,
-        checker_v1.function_registry,
-        checker_v1.enum_registry,
-        checker_v1.resolved_names,
-        checker_v1.resolved_types,
-    );
-    let c_output_v2 = codegen_v1.generate(&modules_for_codegen);
+            let codegen_v1 = Codegen::new(
+                checker_v1.variable_types,
+                checker_v1.struct_registry,
+                checker_v1.function_registry,
+                checker_v1.enum_registry,
+                checker_v1.resolved_names,
+                checker_v1.resolved_types,
+            );
+            let c_output_v2 = codegen_v1.generate(&modules_for_codegen);
 
-    // Write the self-hosted compiler C output to disk
-    let temp_dir = std::env::temp_dir();
-    let thread_id = std::thread::current().id();
-    let process_id = std::process::id();
+            // Write the self-hosted compiler C output to disk
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
 
-    let gust_v2_c_path = temp_dir.join(format!("gust_v2_{:?}_{}.c", thread_id, process_id));
-    let gust_v2_bin_path = temp_dir.join(format!("gust_v2_{:?}_{}.bin", thread_id, process_id));
+            let gust_v2_c_path = temp_dir.join(format!("gust_v2_{:?}_{}.c", thread_id, process_id));
+            let gust_v2_bin_path = temp_dir.join(format!("gust_v2_{:?}_{}.bin", thread_id, process_id));
 
-    std::fs::write(&gust_v2_c_path, &c_output_v2).expect("Failed to write gust_v2 C file");
+            std::fs::write(&gust_v2_c_path, &c_output_v2).expect("Failed to write gust_v2 C file");
 
-    // Compile gust_v2 binary using host C compiler
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&gust_v2_c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&gust_v2_bin_path)
-        .output()
-        .expect("C compiler compilation of gust_v2 failed");
+            // Compile gust_v2 binary using host C compiler
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&gust_v2_c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&gust_v2_bin_path)
+                .output()
+                .expect("C compiler compilation of gust_v2 failed");
 
-    assert!(
-        compile_output.status.success(),
-        "C compilation of gust_v2 failed:\n{}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+            assert!(
+                compile_output.status.success(),
+                "C compilation of gust_v2 failed:\n{}",
+                String::from_utf8_lossy(&compile_output.stderr)
+            );
 
-    // 2. Compile test_runner_entry.gst using gust_v2 to produce gust_v3_c_path
-    let run_gust_v2 = std::process::Command::new(&gust_v2_bin_path)
-        .arg("compiler/test_runner_entry.gst")
-        .output()
-        .expect("Self-compilation of test_runner_entry.gst using gust_v2 failed");
+            // 2. Compile test_runner_entry.gst using gust_v2 to produce gust_v3_c_path
+            let run_gust_v2 = std::process::Command::new(&gust_v2_bin_path)
+                .arg("compiler/test_runner_entry.gst")
+                .output()
+                .expect("Self-compilation of test_runner_entry.gst using gust_v2 failed");
 
-    assert!(
-        run_gust_v2.status.success(),
-        "Compilation of test_runner_entry.gst using gust_v2 failed:\nSTDOUT:\n{}\nSTDERR:\n{}",
-        String::from_utf8_lossy(&run_gust_v2.stdout),
-        String::from_utf8_lossy(&run_gust_v2.stderr)
-    );
+            assert!(
+                run_gust_v2.status.success(),
+                "Compilation of test_runner_entry.gst using gust_v2 failed:\nSTDOUT:\n{}\nSTDERR:\n{}",
+                String::from_utf8_lossy(&run_gust_v2.stdout),
+                String::from_utf8_lossy(&run_gust_v2.stderr)
+            );
 
-    let c_output_v3_raw =
-        String::from_utf8(run_gust_v2.stdout).expect("Invalid UTF-8 from gust_v2 compilation");
-    let c_output_v3 = filter_output_c_code(&c_output_v3_raw);
+            let c_output_v3_raw =
+                String::from_utf8(run_gust_v2.stdout).expect("Invalid UTF-8 from gust_v2 compilation");
+            let c_output_v3 = filter_output_c_code(&c_output_v3_raw);
 
-    let mut full_c_output_v3 = String::new();
-    full_c_output_v3.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+            let mut full_c_output_v3 = String::new();
+            full_c_output_v3.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
 
-    // Forward declare Slice structures so COLLECTIONS_RUNTIME can utilize them
-    full_c_output_v3.push_str("typedef struct Slice_unsigned_char Slice_unsigned_char;\n");
-    full_c_output_v3
-        .push_str("struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
-    full_c_output_v3.push_str("typedef struct Slice_int Slice_int;\n");
-    full_c_output_v3.push_str("struct Slice_int {\n    int* data;\n    int len;\n};\n\n");
+            // Forward declare Slice structures so COLLECTIONS_RUNTIME can utilize them
+            full_c_output_v3.push_str("typedef struct Slice_unsigned_char Slice_unsigned_char;\n");
+            full_c_output_v3
+                .push_str("struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
+            full_c_output_v3.push_str("typedef struct Slice_int Slice_int;\n");
+            full_c_output_v3
+                .push_str("struct Slice_int {\n    int* data;\n    int len;\n};\n\n");
 
-    full_c_output_v3.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
-    full_c_output_v3.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
-    full_c_output_v3.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
-    full_c_output_v3.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
-    full_c_output_v3.push_str(gust_lexer::codegen_runtime::MOCK_PAYLOAD_RUNTIME);
-    full_c_output_v3.push_str(gust_lexer::codegen_runtime::FILE_IO_RUNTIME);
-    full_c_output_v3.push_str(&c_output_v3);
+            full_c_output_v3.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+            full_c_output_v3.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
+            full_c_output_v3.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
+            full_c_output_v3.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
+            full_c_output_v3.push_str(gust_lexer::codegen_runtime::MOCK_PAYLOAD_RUNTIME);
+            full_c_output_v3.push_str(gust_lexer::codegen_runtime::FILE_IO_RUNTIME);
+            full_c_output_v3.push_str(&c_output_v3);
 
-    let gust_v3_c_path = temp_dir.join(format!("gust_v3_{:?}_{}.c", thread_id, process_id));
-    let gust_v3_bin_path = temp_dir.join(format!("gust_v3_{:?}_{}.bin", thread_id, process_id));
+            let gust_v3_c_path = temp_dir.join(format!("gust_v3_{:?}_{}.c", thread_id, process_id));
+            let gust_v3_bin_path = temp_dir.join(format!("gust_v3_{:?}_{}.bin", thread_id, process_id));
 
-    std::fs::write(&gust_v3_c_path, &full_c_output_v3).expect("Failed to write gust_v3 C file");
-    // Compile gust_v3 binary using host C compiler
-    let mut cmd3 = std::process::Command::new(&cc_compiler);
-    cmd3.arg(&gust_v3_c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd3.arg("-fsanitize=address,undefined");
-    }
-    let compile_v3_output = cmd3
-        .arg("-o")
-        .arg(&gust_v3_bin_path)
-        .output()
-        .expect("C compiler compilation of gust_v3 failed");
+            std::fs::write(&gust_v3_c_path, &full_c_output_v3).expect("Failed to write gust_v3 C file");
+            // Compile gust_v3 binary using host C compiler
+            let mut cmd3 = std::process::Command::new(&cc_compiler);
+            cmd3.arg(&gust_v3_c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd3.arg("-fsanitize=address,undefined");
+            }
+            let compile_v3_output = cmd3
+                .arg("-o")
+                .arg(&gust_v3_bin_path)
+                .output()
+                .expect("C compiler compilation of gust_v3 failed");
 
-    assert!(
-        compile_v3_output.status.success(),
-        "C compilation of gust_v3 failed:\n{}",
-        String::from_utf8_lossy(&compile_v3_output.stderr)
-    );
+            assert!(
+                compile_v3_output.status.success(),
+                "C compilation of gust_v3 failed:\n{}",
+                String::from_utf8_lossy(&compile_v3_output.stderr)
+            );
 
-    // 3. Compile test_runner_entry.gst using gust_v3 to produce gust_v4_c_path
-    let run_gust_v3 = std::process::Command::new(&gust_v3_bin_path)
-        .arg("compiler/test_runner_entry.gst")
-        .output()
-        .expect("Self-compilation of test_runner_entry.gst using gust_v3 failed");
+            // 3. Compile test_runner_entry.gst using gust_v3 to produce gust_v4_c_path
+            let run_gust_v3 = std::process::Command::new(&gust_v3_bin_path)
+                .arg("compiler/test_runner_entry.gst")
+                .output()
+                .expect("Self-compilation of test_runner_entry.gst using gust_v3 failed");
 
-    assert!(
-        run_gust_v3.status.success(),
-        "Compilation of test_runner_entry.gst using gust_v3 failed:\nSTDOUT:\n{}\nSTDERR:\n{}",
-        String::from_utf8_lossy(&run_gust_v3.stdout),
-        String::from_utf8_lossy(&run_gust_v3.stderr)
-    );
+            assert!(
+                run_gust_v3.status.success(),
+                "Compilation of test_runner_entry.gst using gust_v3 failed:\nSTDOUT:\n{}\nSTDERR:\n{}",
+                String::from_utf8_lossy(&run_gust_v3.stdout),
+                String::from_utf8_lossy(&run_gust_v3.stderr)
+            );
 
-    let c_output_v4_raw =
-        String::from_utf8(run_gust_v3.stdout).expect("Invalid UTF-8 from gust_v3 compilation");
-    let c_output_v4 = filter_output_c_code(&c_output_v4_raw);
+            let c_output_v4_raw =
+                String::from_utf8(run_gust_v3.stdout).expect("Invalid UTF-8 from gust_v3 compilation");
+            let c_output_v4 = filter_output_c_code(&c_output_v4_raw);
 
-    // 4. Assert that c_output_v3 and c_output_v4 are 100% byte-for-byte identical (Fixed-Point Convergence!)
-    // Assert that c_output_v3 and c_output_v4 are 100% byte-for-byte identical (Fixed-Point Convergence!)
-    assert_eq!(
-        c_output_v3.trim(),
-        c_output_v4.trim(),
-        "Fixed-point bootstrap failed! gust_v3.c and gust_v4.c are not identical."
-    );
+            // 4. Assert that c_output_v3 and c_output_v4 are 100% byte-for-byte identical (Fixed-Point Convergence!)
+            assert_eq!(
+                c_output_v3.trim(),
+                c_output_v4.trim(),
+                "Fixed-point bootstrap failed! gust_v3.c and gust_v4.c are not identical."
+            );
 
-    // Clean up temporary files
-    let _ = std::fs::remove_file(&gust_v2_c_path);
-    let _ = std::fs::remove_file(&gust_v2_bin_path);
-    let _ = std::fs::remove_file(&gust_v3_c_path);
-    let _ = std::fs::remove_file(&gust_v3_bin_path);
+            // Clean up temporary files
+            let _ = std::fs::remove_file(&gust_v2_c_path);
+            let _ = std::fs::remove_file(&gust_v2_bin_path);
+            let _ = std::fs::remove_file(&gust_v3_c_path);
+            let _ = std::fs::remove_file(&gust_v3_bin_path);
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
