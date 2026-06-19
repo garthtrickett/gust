@@ -1535,10 +1535,24 @@ func parse_if_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], 
     unsafe {
         if cur_token_is(p, 36) { // Else = 36
             next_token(p); // consume 'else'
-            if cur_token_is(p, 13) { // LBrace = 13
-                alternative = parse_block_statement(p, ctx);
-                end_span = ctx[alternative].span;
-            } 
+            if cur_token_is(p, 35) { // If = 35
+                mut if_stmt := parse_if_statement(p, ctx);
+                mut if_span := ctx[if_stmt].If.span;
+                mut alt_statements: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
+                alt_statements.Push(ctx[if_stmt]);
+                mut alt_idx: Index[ast.BlockStatement[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[alt_idx].span = if_span;
+                ctx[alt_idx].statements = os.ArenaAlloc(ctx);
+                mut dest_stmts := &ctx[ctx[alt_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+                *dest_stmts = alt_statements;
+                alternative = alt_idx;
+                end_span = if_span;
+            } else {
+                if cur_token_is(p, 13) { // LBrace = 13
+                    alternative = parse_block_statement(p, ctx);
+                    end_span = ctx[alternative].span;
+                }
+            }
         }
     }
     

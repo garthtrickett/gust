@@ -1,0 +1,9 @@
+{
+  "summary": "fix: implement else-if desugaring in self-hosted parser",
+  "files": [
+    {
+      "file_path": "compiler/parser.gst",
+      "code_diff": "<<<<<<< SEARCH\n    unsafe {\n        if cur_token_is(p, 36) { // Else = 36\n            next_token(p); // consume 'else'\n            if cur_token_is(p, 13) { // LBrace = 13\n                alternative = parse_block_statement(p, ctx);\n                end_span = ctx[alternative].span;\n            } \n        }\n    }\n=======\n    unsafe {\n        if cur_token_is(p, 36) { // Else = 36\n            next_token(p); // consume 'else'\n            if cur_token_is(p, 35) { // If = 35\n                mut if_stmt := parse_if_statement(p, ctx);\n                mut if_span := ctx[if_stmt].If.span;\n                mut alt_statements: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);\n                alt_statements.Push(ctx[if_stmt]);\n                mut alt_idx: Index[ast.BlockStatement[ctx], ctx] := os.ArenaAlloc(ctx);\n                ctx[alt_idx].span = if_span;\n                ctx[alt_idx].statements = os.ArenaAlloc(ctx);\n                mut dest_stmts := &ctx[ctx[alt_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];\n                *dest_stmts = alt_statements;\n                alternative = alt_idx;\n                end_span = if_span;\n            } else {\n                if cur_token_is(p, 13) { // LBrace = 13\n                    alternative = parse_block_statement(p, ctx);\n                    end_span = ctx[alternative].span;\n                }\n            }\n        }\n    }\n>>>>>>> REPLACE"
+    }
+  ]
+}

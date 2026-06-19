@@ -32,6 +32,7 @@
             clippy
             python3
             ripgrep
+            gdb
           ];
 
           shellHook = ''

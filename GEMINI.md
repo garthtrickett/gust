@@ -86,6 +86,8 @@ cargo clippy --fix --allow-dirty
 cc gust_output.c -o gust_program && ./gust_program
 cargo run -- --test
 
+echo $TMPDIR
+
 
 ./gust_v2 compiler/test_runner_entry.gst -> to.log 2>&1
 

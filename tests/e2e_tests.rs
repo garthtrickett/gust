@@ -5142,8 +5142,8 @@ fn test_self_hosted_compiler_full_bootstrap() {
             let thread_id = std::thread::current().id();
             let process_id = std::process::id();
 
-            let gust_v2_c_path = temp_dir.join(format!("gust_v2_{:?}_{}.c", thread_id, process_id));
-            let gust_v2_bin_path = temp_dir.join(format!("gust_v2_{:?}_{}.bin", thread_id, process_id));
+            let gust_v2_c_path = std::path::PathBuf::from("gust_v2.c");
+            let gust_v2_bin_path = std::path::PathBuf::from("gust_v2_bin");
 
             std::fs::write(&gust_v2_c_path, &c_output_v2).expect("Failed to write gust_v2 C file");
 
@@ -5202,8 +5202,8 @@ fn test_self_hosted_compiler_full_bootstrap() {
             full_c_output_v3.push_str(gust_lexer::codegen_runtime::FILE_IO_RUNTIME);
             full_c_output_v3.push_str(&c_output_v3);
 
-            let gust_v3_c_path = temp_dir.join(format!("gust_v3_{:?}_{}.c", thread_id, process_id));
-            let gust_v3_bin_path = temp_dir.join(format!("gust_v3_{:?}_{}.bin", thread_id, process_id));
+            let gust_v3_c_path = std::path::PathBuf::from("gust_v3.c");
+            let gust_v3_bin_path = std::path::PathBuf::from("gust_v3_bin");
 
             std::fs::write(&gust_v3_c_path, &full_c_output_v3).expect("Failed to write gust_v3 C file");
             // Compile gust_v3 binary using host C compiler
@@ -5248,11 +5248,11 @@ fn test_self_hosted_compiler_full_bootstrap() {
                 "Fixed-point bootstrap failed! gust_v3.c and gust_v4.c are not identical."
             );
 
-            // Clean up temporary files
-            let _ = std::fs::remove_file(&gust_v2_c_path);
-            let _ = std::fs::remove_file(&gust_v2_bin_path);
-            let _ = std::fs::remove_file(&gust_v3_c_path);
-            let _ = std::fs::remove_file(&gust_v3_bin_path);
+            // Preserved for root folder debugging
+            // let _ = std::fs::remove_file(&gust_v2_c_path);
+            // let _ = std::fs::remove_file(&gust_v2_bin_path);
+            // let _ = std::fs::remove_file(&gust_v3_c_path);
+            // let _ = std::fs::remove_file(&gust_v3_bin_path);
         })
         .unwrap()
         .join()
