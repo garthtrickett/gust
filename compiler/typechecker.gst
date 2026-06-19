@@ -2701,6 +2701,10 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
 
             register_fn(env, "os.Exit", p_int, t_void, ctx);
             register_fn(env, "os_Exit", p_int, t_void, ctx);
+            register_fn(env, "os.LogInt", p_int, t_void, ctx);
+            register_fn(env, "os_LogInt", p_int, t_void, ctx);
+            register_fn(env, "os.LogStr", p_str, t_void, ctx);
+            register_fn(env, "os_LogStr", p_str, t_void, ctx);
             register_fn(env, "os.ScratchAlloc", p_int, make_type_pointer(t_byte, ctx), ctx);
             register_fn(env, "os_ScratchAlloc", p_int, make_type_pointer(t_byte, ctx), ctx);
             register_fn(env, "std.FormatInt", p_int, t_str, ctx);

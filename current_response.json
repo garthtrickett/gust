@@ -1,0 +1,9 @@
+{
+  "summary": "feat: register os.LogStr and os.LogInt in self-hosted standard library",
+  "files": [
+    {
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\n            register_fn(env, \"os.Exit\", p_int, t_void, ctx);\n            register_fn(env, \"os_Exit\", p_int, t_void, ctx);\n            register_fn(env, \"os.ScratchAlloc\", p_int, make_type_pointer(t_byte, ctx), ctx);\n            register_fn(env, \"os_ScratchAlloc\", p_int, make_type_pointer(t_byte, ctx), ctx);\n=======\n            register_fn(env, \"os.Exit\", p_int, t_void, ctx);\n            register_fn(env, \"os_Exit\", p_int, t_void, ctx);\n            register_fn(env, \"os.LogInt\", p_int, t_void, ctx);\n            register_fn(env, \"os_LogInt\", p_int, t_void, ctx);\n            register_fn(env, \"os.LogStr\", p_str, t_void, ctx);\n            register_fn(env, \"os_LogStr\", p_str, t_void, ctx);\n            register_fn(env, \"os.ScratchAlloc\", p_int, make_type_pointer(t_byte, ctx), ctx);\n            register_fn(env, \"os_ScratchAlloc\", p_int, make_type_pointer(t_byte, ctx), ctx);\n>>>>>>> REPLACE"
+    }
+  ]
+}
