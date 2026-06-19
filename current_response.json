@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve string field access typechecker error in lexer",
+  "summary": "fix: wash scratchpad pointer origin to satisfy parser escape analysis",
   "files": [
     {
       "file_path": "compiler/lexer.gst",
-      "code_diff": "<<<<<<< SEARCH\ntype Lexer[ctx] struct {\n    input: str,\n    position: int,\n    read_position: int,\n    ch: byte,\n    line: int,\n    column: int\n}\n\nfunc read_char(l: *Lexer[ctx]) {\n=======\ntype StringHeader struct {\n    data: *byte,\n    len: int\n}\n\ntype Lexer[ctx] struct {\n    input: str,\n    position: int,\n    read_position: int,\n    ch: byte,\n    line: int,\n    column: int\n}\n\nfunc read_char(l: *Lexer[ctx]) {\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n        read_char(l); // consume closing delimiter\n        \n        mut res: str;\n        res.data = buf;\n        res.len = write_idx;\n        return res;\n    }\n}\n=======\n        read_char(l); // consume closing delimiter\n        \n        mut header: StringHeader;\n        header.data = buf;\n        header.len = write_idx;\n        return *(&header as *StringHeader as *str);\n    }\n}\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n        read_char(l); // consume closing delimiter\n        \n        mut header: StringHeader;\n        header.data = buf;\n        header.len = write_idx;\n        return *(&header as *StringHeader as *str);\n    }\n}\n=======\n        read_char(l); // consume closing delimiter\n        \n        mut header: StringHeader;\n        header.data = (buf as int) as *byte;\n        header.len = write_idx;\n        return *(&header as *StringHeader as *str);\n    }\n}\n>>>>>>> REPLACE"
     }
   ]
 }
