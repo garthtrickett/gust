@@ -130,17 +130,26 @@ func main() {
     }
 
     // Print full Type Environment dump for bootstrapping diagnostics
-    os.LogStr("=== BOOTSTRAP TYPE DUMP ===");
+    os.LogStr("👁️ === BOOTSTRAP TYPE DUMP ===");
     mut serialized := typechecker.typechecker_serialize_type_environment(&env, ctx);
-    os.LogStr(serialized);
-    os.LogStr("===========================");
+    mut lines := std.str_split(serialized, "\n", ctx);
+    mut l_idx := 0;
+    while l_idx < len(lines) {
+        mut line := lines[l_idx];
+        if len(line) > 0 {
+            mut log_line := std.Concat("👁️ ", line);
+            os.LogStr(log_line);
+        }
+        l_idx = l_idx + 1;
+    }
+    os.LogStr("👁️ ===========================");
 
     // Print all nested resolved types
-    os.LogStr("=== BOOTSTRAP RESOLVED TYPES ===");
+    os.LogStr("👁️ === BOOTSTRAP RESOLVED TYPES ===");
     mut r_idx := 0;
     while r_idx < len(env.resolved_types_nested) {
         mut entry := env.resolved_types_nested[r_idx];
-        mut log_pfx := std.Concat("Prefix: ", entry.prefix);
+        mut log_pfx := std.Concat("👁️ Prefix: ", entry.prefix);
         os.LogStr(log_pfx);
         
         mut t_idx := 0;
@@ -150,7 +159,7 @@ func main() {
             mut end_str := std.FormatInt(t_entry.end_offset);
             mut type_str := ast.serialize_type(t_entry.val_type, ctx);
             
-            mut log_line := std.Concat("  Span ", start_str);
+            mut log_line := std.Concat("👁️   Span ", start_str);
             log_line = std.Concat(log_line, "..");
             log_line = std.Concat(log_line, end_str);
             log_line = std.Concat(log_line, " -> ");
@@ -161,7 +170,7 @@ func main() {
         }
         r_idx = r_idx + 1;
     }
-    os.LogStr("=================================");
+    os.LogStr("👁️ =================================");
 
     // Reset current_prefix to entry module for main call matching
     env.current_prefix = "";
