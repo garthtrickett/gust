@@ -7294,6 +7294,35 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
         .unwrap();
 }
 
+
+
+
+
+#[test]
+fn test_bootstrapped_compiler_helper_initialization() {
+    let compiler_path = common::get_compiled_compiler();
+    assert!(compiler_path.exists(), "Compiled self-hosted compiler does not exist");
+    assert!(compiler_path.is_file(), "Compiled self-hosted compiler path is not a file");
+
+    let output = std::process::Command::new(compiler_path)
+        .output()
+        .expect("Failed to execute compiled self-hosted compiler");
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("Usage: test_runner_entry"),
+        "Self-hosted compiler did not print usage information: {}",
+        stderr
+    );
+}
+
+
+
+
+
+
+
+
 #[test]
 fn test_adt_metadata_and_tag_enum_generation() {
     let source = "\n        type Status enum {\n            Pending,\n            Active,\n            Failed\n        }\n        func main() {\n            mut s: Status;\n        }\n    ";
