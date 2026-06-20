@@ -1,9 +1,0 @@
-{
-  "summary": "fix: adjust map_message_to_kind to match both past and present tense argument count errors",
-  "files": [
-    {
-      "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    } else if msg.contains(\"Template\") && msg.contains(\"expects\") && msg.contains(\"generic arguments\") {\n        TypeErrorKind::TemplateArgumentMismatch\n    } else if msg.contains(\"expects\") && msg.contains(\"arguments\") {\n        TypeErrorKind::ArgumentMismatch\n    } else if msg.contains(\"Undefined variable\") {\n=======\n    } else if msg.contains(\"Template\") && msg.contains(\"expects\") && msg.contains(\"generic arguments\") {\n        TypeErrorKind::TemplateArgumentMismatch\n    } else if (msg.contains(\"expects\") || msg.contains(\"expected\")) && msg.contains(\"arguments\") {\n        TypeErrorKind::ArgumentMismatch\n    } else if msg.contains(\"Undefined variable\") {\n>>>>>>> REPLACE"
-    }
-  ]
-}
