@@ -61,7 +61,6 @@ Slice_unsigned_char os_ReadFile(os_Arena* arena, Slice_unsigned_char path) {
     result.len = (int)read_bytes;
     return result;
 }
-
 int os_WriteFile(Slice_unsigned_char path, Slice_unsigned_char contents) {
     char* path_c = malloc(path.len + 1);
     memcpy(path_c, path.data, path.len);
@@ -78,6 +77,10 @@ int os_WriteFile(Slice_unsigned_char path, Slice_unsigned_char contents) {
     return written == (size_t)contents.len ? 1 : 0;
 }
 
+LookupResult_os_Dir os_OpenDir(os_Arena* arena, Slice_unsigned_char path) {
+    LookupResult_os_Dir result;
+    result.Ok = 0;
+    result.Val.handle = NULL;
     LookupResult_os_Dir result;
     result.Ok = 0;
     result.Val.handle = NULL;
