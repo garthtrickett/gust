@@ -1824,10 +1824,17 @@ fn test_e2e_process_args_and_exit() {
     let _ = fs::remove_file(&c_path);
     let _ = fs::remove_file(&bin_path);
 
+    let stdout_str = String::from_utf8_lossy(&run_output.stdout).to_string();
+    let stderr_str = String::from_utf8_lossy(&run_output.stderr).to_string();
+
+    if run_output.status.code() != Some(42) {
+        println!("=== TEST FAILURE DIAGNOSTICS ===");
+        println!("STDOUT:\n{}", stdout_str);
+        println!("STDERR:\n{}", stderr_str);
+    }
+
     // 5. Assert the exit code is 42
     assert_eq!(run_output.status.code(), Some(42));
-
-    let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
     assert_eq!(stdout_str.trim(), "3\ncompile\nfile.gst");
 }
 
