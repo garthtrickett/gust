@@ -1,12 +1,12 @@
 pub const CORE_HEADERS: &str = r#"#define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <pthread.h>
-#include <sched.h>
-#include <sys/types.h>
-#include <dirent.h>
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <stdint.h> 
+#include <string.h> 
+#include <pthread.h> 
+#include <sched.h> 
+#include <sys/types.h> 
+#include <dirent.h> 
 
 typedef void Any;
 
@@ -16,6 +16,60 @@ typedef struct {
     size_t Capacity;
 } os_Arena;
 
+// Forward declared structs for the FFI standard library prototypes
+struct std_Vector_str;
+struct Slice_unsigned_char;
+struct Slice_int;
+struct os_Dir;
+struct os_DirEntry;
+struct LookupResult_os_Dir;
+struct LookupResult_os_DirEntry;
+
+// Core Runtime & FFI Function Prototypes
+void* os_ScratchAlloc(size_t size);
+void os_ScratchReset(void);
+int os_ArenaAlloc(os_Arena* arena, size_t size);
+void os_Arena_Validate(os_Arena* arena);
+void os_Arena_Free(os_Arena* arena);
+void std_GenerationalSwap(os_Arena* current, os_Arena* next);
+
+int std_Mutex_Alloc(void);
+void* std_Mutex_Lock_impl(int lock_state, void* value_ptr);
+void std_Mutex_Unlock_impl(int lock_state);
+
+int std_Channel_Alloc(int capacity, size_t elem_size);
+void std_Channel_Send_impl(int chan_idx, void* val_ptr);
+void std_Channel_Recv_impl(int chan_idx, void* out_ptr);
+
+void gust_scheduler_init(int num_shards);
+void gust_scheduler_spawn(size_t stack_size, void (*entry_fn)(void*), void* arg);
+void gust_scheduler_destroy(void);
+void gust_yield(void);
+
+struct std_Vector_str os_Args(os_Arena* ctx);
+struct Slice_unsigned_char os_MockPayload(void);
+void os_LogStr(struct Slice_unsigned_char s);
+void os_LogInt(int val);
+
+int std_str_eq(struct Slice_unsigned_char s1, struct Slice_unsigned_char s2);
+struct Slice_unsigned_char std_str_slice(struct Slice_unsigned_char s, int start, int end);
+unsigned char std_str_byte_at(struct Slice_unsigned_char s, int idx);
+int std_str_find(struct Slice_unsigned_char s, struct Slice_unsigned_char target);
+struct Slice_unsigned_char std_str_trim(struct Slice_unsigned_char s);
+struct std_Vector_str std_str_split(struct Slice_unsigned_char s, struct Slice_unsigned_char delim, os_Arena* ctx);
+
+unsigned char std_is_alpha(unsigned char b);
+unsigned char std_is_digit(unsigned char b);
+unsigned char std_is_whitespace(unsigned char b);
+int std_parse_int(struct Slice_unsigned_char s);
+
+struct Slice_unsigned_char os_ReadFile(os_Arena* arena, struct Slice_unsigned_char path);
+int os_WriteFile(struct Slice_unsigned_char path, struct Slice_unsigned_char contents);
+struct LookupResult_os_Dir os_OpenDir(os_Arena* arena, struct Slice_unsigned_char path);
+struct LookupResult_os_DirEntry os_ReadDir(os_Arena* arena, struct os_Dir dir);
+void os_CloseDir(struct os_Dir dir);
+struct Slice_unsigned_char os_path_join(struct Slice_unsigned_char dir, struct Slice_unsigned_char file, os_Arena* ctx);
+struct Slice_unsigned_char std_Clone_str(os_Arena* arena, struct Slice_unsigned_char s);
 "#;
 
 pub const FIBER_RUNTIME: &str = r#"// ====================================================

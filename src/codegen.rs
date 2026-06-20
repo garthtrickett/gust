@@ -460,7 +460,7 @@ impl Codegen {
                 }
             }
             Type::Index(name, brand) => {
-                if let Some(b) = brand { 
+                if let Some(b) = brand {
                     let clean_b = crate::typechecker::types::strip_brand_prefix(b);
                     let suffix = format!("_{}", clean_b);
                     let ns_suffix = format!("__{}", clean_b);
@@ -914,8 +914,7 @@ impl Codegen {
 
         // Forward declare all CastResult structures first to prevent any ordering issues
         for struct_name in &ordered_struct_names {
-            if !struct_name.starts_with("CastResult_") && !struct_name.starts_with("CastResult_")
-            {
+            if !struct_name.starts_with("CastResult_") && !struct_name.starts_with("CastResult_") {
                 c_code.push_str(&format!(
                     "typedef struct CastResult_{} CastResult_{};\n",
                     struct_name, struct_name
@@ -1632,7 +1631,11 @@ impl Codegen {
                         .get(&function.span())
                         .cloned()
                         .unwrap_or_else(|| self.gen_expression(function));
-                    if func_path == "os.ArenaAlloc" || func_path == "os_ArenaAlloc" || func_path == "os.ScratchAlloc" || func_path == "os_ScratchAlloc" {
+                    if func_path == "os.ArenaAlloc"
+                        || func_path == "os_ArenaAlloc"
+                        || func_path == "os.ScratchAlloc"
+                        || func_path == "os_ScratchAlloc"
+                    {
                         let resolved_target = self.resolved_types.get(span).unwrap_or(target_type);
                         let mut target_struct = None;
                         if let Type::Index(struct_name, brand) = resolved_target {
@@ -2182,7 +2185,7 @@ impl Codegen {
                         {
                             src_is_ptr = true;
                         }
-                        let src_base = if src_is_ptr { 
+                        let src_base = if src_is_ptr {
                             format!("{}->BaseAddress", src_brand)
                         } else {
                             format!("{}.BaseAddress", src_brand)
@@ -2877,5 +2880,43 @@ impl Codegen {
                 self.gen_type_aware_initializer(resolved)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lexer::Lexer;
+    use crate::parser::Parser;
+    use crate::typechecker::TypeChecker;
+
+    #[test]
+    fn test_deembedded_runtime() {
+        let source = "func main() { os.LogInt(42); }";
+        let lexer = Lexer::new(source);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert!(parser.errors.is_empty());
+
+        let mut checker = TypeChecker::new();
+        let check_res = checker.check_program(&program);
+        assert!(check_res.is_ok());
+
+        let codegen = Codegen::new(
+            checker.variable_types,
+            checker.struct_registry,
+            checker.function_registry,
+            checker.enum_registry,
+            checker.resolved_names,
+            checker.resolved_types,
+        );
+        let modules = vec![(std::path::PathBuf::from("input.gst"), program)];
+        let c_code = codegen.generate(&modules);
+
+        // Assertions
+        assert!(c_code.contains("gust_user_main"));
+        assert!(!c_code.contains("GUST COOPERATIVE FIBER RUNTIME"));
+        assert!(!c_code.contains("GUST PRODUCTION-GRADE BUMP ALLOCATOR RUNTIME"));
+        assert!(!c_code.contains("GUST NATIVE COLLECTIONS RUNTIME"));
     }
 }
