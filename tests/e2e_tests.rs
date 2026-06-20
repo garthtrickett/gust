@@ -5182,6 +5182,9 @@ fn test_self_hosted_compiler_full_bootstrap() {
                 .output()
                 .expect("Self-compilation of test_runner_entry.gst using gust_v2 failed");
 
+
+
+
             assert!(
                 run_gust_v2.status.success(),
                 "Compilation of test_runner_entry.gst using gust_v2 failed:\nSTDOUT:\n{}\nSTDERR:\n{}",

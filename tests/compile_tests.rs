@@ -7721,6 +7721,15 @@ fn test_self_hosted_guard_resolver_compilation() {
 
             compile_c_program(&c_path, &bin_path, &c_output);
 
+            let mut cmd = std::process::Command::new(&bin_path);
+            cmd.arg("compiler/resolver.gst");
+
+            eprintln!("DEBUG: Executing Command: {:?}", cmd);
+
+            let run = cmd
+                .output()
+                .expect("Self-compilation of test_runner_entry.gst using gust_v2 failed");
+
             // Run the self-hosted compiler over compiler/resolver.gst
             let run = std::process::Command::new(&bin_path)
                 .arg("compiler/resolver.gst")
@@ -7732,6 +7741,13 @@ fn test_self_hosted_guard_resolver_compilation() {
 
             let _ = std::fs::remove_file(&c_path);
             let _ = std::fs::remove_file(&bin_path);
+
+            if !run.status.success() {
+                eprintln!("--- EXECUTION FAILED ---");
+                eprintln!("Status: {:?}", run.status);
+                eprintln!("STDOUT:\n{}", String::from_utf8_lossy(&run.stdout));
+                eprintln!("STDERR:\n{}", String::from_utf8_lossy(&run.stderr));
+            }
 
             assert!(
                 run.status.success(),
