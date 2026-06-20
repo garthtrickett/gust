@@ -83,6 +83,7 @@ struct std_Vector_str {
 void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size);
 int os_HashMapContains_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size);
 void os_HashMapRemove_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size);
+void os_HashMapRemove_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size);
 void os_HashMapClear_impl(void* map_void, size_t key_size, size_t val_size);
 int std_PoolAlloc_impl(void* pool_void, size_t elem_size);
 void std_PoolFree_impl(void* pool_void, int index);

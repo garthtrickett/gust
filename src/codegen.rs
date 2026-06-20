@@ -689,6 +689,17 @@ impl Codegen {
         c_code.push_str("// FORWARD DECLARATIONS\n");
         c_code.push_str("// ====================================================\n");
         for struct_name in self.struct_registry.keys() {
+            if struct_name == "main" {
+                continue;
+            }
+            if struct_name == "std_Vector_str"
+                || struct_name == "os_Dir"
+                || struct_name == "os_DirEntry"
+                || struct_name == "LookupResult_os_Dir"
+                || struct_name == "LookupResult_os_DirEntry"
+            {
+                continue;
+            }
             c_code.push_str(&format!(
                 "typedef struct {} {};\n",
                 struct_name, struct_name
@@ -861,6 +872,14 @@ impl Codegen {
 
         for struct_name in &ordered_struct_names {
             if struct_name.starts_with("CastResult_") {
+                continue;
+            }
+            if struct_name == "std_Vector_str"
+                || struct_name == "os_Dir"
+                || struct_name == "os_DirEntry"
+                || struct_name == "LookupResult_os_Dir"
+                || struct_name == "LookupResult_os_DirEntry"
+            {
                 continue;
             }
             let layout = &self.struct_registry[struct_name];
