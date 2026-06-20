@@ -701,7 +701,7 @@ static inline int os_key_eq(void* k1_ptr, void* k2_ptr, int is_str_key) {
     }
 }
 
-static inline void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {
+void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {
     typedef struct {
         os_Arena* arena;
         int capacity;
@@ -793,7 +793,7 @@ static inline void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str
     return m->values + idx * val_size;
 }
 
-static inline int os_HashMapContains_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size) {
+int os_HashMapContains_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size) {
     typedef struct {
         os_Arena* arena;
         int capacity;
@@ -817,7 +817,7 @@ static inline int os_HashMapContains_impl(void* map_void, void* key_ptr, int is_
     return 0;
 }
 
-static inline void os_HashMapRemove_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {
+void os_HashMapRemove_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size) {
     typedef struct {
         os_Arena* arena;
         int capacity;
@@ -857,7 +857,7 @@ static inline void os_HashMapRemove_impl(void* map_void, void* key_ptr, int is_s
     }
 }
 
-static inline void os_HashMapClear_impl(void* map_void, size_t key_size, size_t val_size) {
+void os_HashMapClear_impl(void* map_void, size_t key_size, size_t val_size) {
     typedef struct {
         os_Arena* arena;
         int capacity;
@@ -945,7 +945,7 @@ typedef struct {
     int* occupied;
 } GenericPool;
 
-static inline int std_PoolAlloc_impl(void* pool_void, size_t elem_size) {
+int std_PoolAlloc_impl(void* pool_void, size_t elem_size) {
     GenericPool* p = (GenericPool*)pool_void;
     
     if (p->capacity == 0) {
@@ -997,7 +997,7 @@ static inline int std_PoolAlloc_impl(void* pool_void, size_t elem_size) {
     return index;
 }
 
-static inline void std_PoolFree_impl(void* pool_void, int index) {
+void std_PoolFree_impl(void* pool_void, int index) {
     GenericPool* p = (GenericPool*)pool_void;
     if (index < 0 || index >= p->len) {
         printf("Pool index out of bounds on Free\n");
@@ -1313,7 +1313,7 @@ static inline void std_Channel_Recv_impl(int chan_idx, void* out_ptr) {
     pthread_mutex_unlock(&chan->mutex);
 }
 
-static inline Slice_unsigned_char std_Clone_str(os_Arena* arena, Slice_unsigned_char s) {
+Slice_unsigned_char std_Clone_str(os_Arena* arena, Slice_unsigned_char s) {
     if (s.data == NULL || s.len <= 0) {
         return (Slice_unsigned_char){ NULL, 0 };
     }
