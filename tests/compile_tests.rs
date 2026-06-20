@@ -2414,7 +2414,11 @@ fn test_rc_and_graph_type_checking_invalid() {
 #[test]
 fn test_diagnostic_formatting_layout() {
     let source = "func main() {\n    mut val := 42;\n    mut taken := take val;\n}";
-    let res = check_program(source);
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut checker = TypeChecker::new();
+    let res = checker.check_program(&program);
     assert!(res.is_err());
     let err = res.unwrap_err();
     let diag = gust_lexer::typechecker::format_diagnostic(source, &err);
