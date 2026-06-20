@@ -3686,6 +3686,23 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                     while j < len(*fields_vec) {
                         mut f := (*fields_vec)[j];
                         mut resolved_t := env_resolve_type(env, f.field_type, ctx);
+                        
+                        if resolved_t.tag == 8 { // Struct
+                            mut sub_layout_lookup := (*env).struct_registry.Get(resolved_t.Struct.struct_name);
+                            if sub_layout_lookup.Ok {
+                                if sub_layout_lookup.Val.fields.len > 2 {
+                                    // Skip check if the target struct is an enum (which has a "tag" field)
+                                    if sub_layout_lookup.Val.fields.Get("tag").Ok == 0 {
+                                        mut msg := std.Concat("Semantic Error: Variant '", v.name);
+                                        msg = std.Concat(msg, "' contains a large enum variant payload struct '");
+                                        msg = std.Concat(msg, resolved_t.Struct.struct_name);
+                                        msg = std.Concat(msg, "' (3 fields). Use Index, or pointer indirection to avoid memory bloat.");
+                                        report_error(2, msg, v.span, env, ctx);
+                                    }
+                                }
+                            }
+                        }
+                        
                         variant_layout.fields.Insert(std.Clone(ctx, f.name), resolved_t);
                         j = j + 1;
                     }
