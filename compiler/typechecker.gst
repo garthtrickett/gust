@@ -4794,7 +4794,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                     mut child_scope := scope_new(scope, ctx);
 
-                    if len(ctx[m_case.fields]) > 0 {
+                    if len(ctx[m_case.fields]) > 0 { 
                         mut variant_struct_name := std.Concat(std.Concat(enum_name, "_"), variant_name);
                         mut lookup_variant := (*env).struct_registry.Get(variant_struct_name);
                         if lookup_variant.Ok {
@@ -4843,6 +4843,24 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     (*env).variable_origins = parent_origins;
 
                     i = i + 1;
+                }
+
+                // Exhaustiveness check
+                mut lookup_enum := (*env).enum_registry.Get(enum_name);
+                if lookup_enum.Ok {
+                    mut expected_variants := lookup_enum.Val;
+                    mut k := 0;
+                    while k < len(expected_variants) {
+                        mut expected := expected_variants[k];
+                        if matched_variants.Get(expected).Ok == 0 {
+                            mut msg := std.Concat("Semantic Error: Match on enum '", enum_name);
+                            msg = std.Concat(msg, "' is not exhaustive. Missing variant '");
+                            msg = std.Concat(msg, expected);
+                            msg = std.Concat(msg, "'");
+                            report_error(2, msg, stmt.Match.span, env, ctx);
+                        }
+                        k = k + 1;
+                    } 
                 }
             }
 
