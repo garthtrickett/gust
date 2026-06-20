@@ -1,9 +1,9 @@
 {
-  "summary": "fix: add forward declaration for os_GetThreadScratch in src/codegen.rs to resolve implicit declaration warning",
+  "summary": "fix: resolve compilation linkage issue in namespaced template cross-module matching test",
   "files": [
     {
-      "file_path": "src/codegen.rs",
-      "code_diff": "<<<<<<< SEARCH\n        c_code.push_str(\"// ====================================================\\n\");\n        c_code.push_str(\"// TRANSPILED PROGRAM CODES\\n\");\n        c_code.push_str(\"// ====================================================\\n\");\n\n        for (path, program) in modules {\n=======\n        if self.struct_registry.contains_key(\"std_ThreadLocalContext\") {\n            c_code.push_str(\"std_ThreadLocalContext os_GetThreadScratch(void);\\n\\n\");\n        }\n\n        c_code.push_str(\"// ====================================================\\n\");\n        c_code.push_str(\"// TRANSPILED PROGRAM CODES\\n\");\n        c_code.push_str(\"// ====================================================\\n\");\n\n        for (path, program) in modules {\n>>>>>>> REPLACE"
+      "file_path": "tests/e2e_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n    let cc_compiler = env::var(\"CC\").unwrap_or_else(|_| \"cc\".to_string());\n    let mut cmd = Command::new(&cc_compiler);\n    cmd.arg(&c_path);\n    if env::var(\"GUST_NO_SANITIZERS\").is_err() {\n        cmd.arg(\"-fsanitize=address,undefined\");\n    }\n    let compile_output = cmd\n        .arg(\"-o\")\n        .arg(&bin_path)\n        .output()\n        .expect(\"Failed to run compiler command\");\n=======\n    let manifest_dir = env::var(\"CARGO_MANIFEST_DIR\").unwrap_or_else(|_| \".\".to_string());\n    let runtime_path = std::path::Path::new(&manifest_dir).join(\"src/runtime.c\");\n\n    let cc_compiler = env::var(\"CC\").unwrap_or_else(|_| \"cc\".to_string());\n    let mut cmd = Command::new(&cc_compiler);\n    cmd.arg(&runtime_path).arg(&c_path);\n    if env::var(\"GUST_NO_SANITIZERS\").is_err() {\n        cmd.arg(\"-fsanitize=address,undefined\");\n    }\n    let compile_output = cmd\n        .arg(\"-o\")\n        .arg(&bin_path)\n        .output()\n        .expect(\"Failed to run compiler command\");\n>>>>>>> REPLACE"
     }
   ]
 }
