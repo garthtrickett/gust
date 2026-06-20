@@ -4780,6 +4780,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             if expr_type.tag == 8 { // Struct
                 mut enum_name := expr_type.Struct.struct_name;
                 mut matched_variants: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+                mut lookup_enum := (*env).enum_registry.Get(enum_name);
 
                 mut i := 0;
                 while i < len(*cases_vec) {
@@ -4787,6 +4788,27 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     mut variant_name := m_case.variant_name;
 
                     matched_variants.Insert(std.Clone(ctx, variant_name), 1);
+
+                    // Check if variant is valid for this enum
+                    if lookup_enum.Ok {
+                        mut expected_variants := lookup_enum.Val;
+                        mut is_valid_variant := 0;
+                        mut v_idx := 0;
+                        while v_idx < len(expected_variants) {
+                            if std.str_eq(expected_variants[v_idx], variant_name) == 1 {
+                                is_valid_variant = 1;
+                                v_idx = len(expected_variants);
+                            }
+                            v_idx = v_idx + 1;
+                        }
+                        if is_valid_variant == 0 { 
+                            mut msg := std.Concat("Semantic Error: Variant '", variant_name);
+                            msg = std.Concat(msg, "' is not a valid variant of enum '");
+                            msg = std.Concat(msg, enum_name);
+                            msg = std.Concat(msg, "'");
+                            report_error(2, msg, m_case.span, env, ctx);
+                        }
+                    }
 
                     // Typecheck the case body in its own scope
                     mut parent_scope := scope;
@@ -4846,7 +4868,6 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
 
                 // Exhaustiveness check
-                mut lookup_enum := (*env).enum_registry.Get(enum_name);
                 if lookup_enum.Ok {
                     mut expected_variants := lookup_enum.Val;
                     mut k := 0;
