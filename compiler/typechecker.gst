@@ -664,6 +664,20 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 msg = std.Concat(msg, "'");
                 report_error(2, msg, expr.Selector.span, env, ctx);
             }
+
+            if left_t.tag == 4 { // Arena
+                if std.str_eq(expr.Selector.right, "Free") {
+                    mut t: ast.Type[ctx];
+                    t.tag = 3; // Void
+                    return t;
+                }
+                if std.str_eq(expr.Selector.right, "Offset") || std.str_eq(expr.Selector.right, "Capacity") {
+                    mut t: ast.Type[ctx];
+                    t.tag = 0; // Int
+                    return t;
+                }
+            }
+
             mut t: ast.Type[ctx];
             t.tag = 0; // Int
             return t;
@@ -679,6 +693,14 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if left_type.tag == 9 { // RawPointer
                     left_type = ctx[left_type.RawPointer.inner];
                     is_ptr = 1;
+                }
+
+                if left_type.tag == 4 { // Arena
+                    if std.str_eq(right_name, "Free") {
+                        mut t_void: ast.Type[ctx];
+                        t_void.tag = 3; // Void
+                        return t_void;
+                    }
                 }
                 
                 mut is_mutex := 0;
