@@ -719,8 +719,13 @@ impl Codegen {
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// DYNAMICALLY GENERATED SLICE STRUCTURE FORWARD DECLARATIONS\n");
         c_code.push_str("// ====================================================\n");
+        c_code.push_str("// DYNAMICALLY GENERATED SLICE STRUCTURE FORWARD DECLARATIONS\n");
+        c_code.push_str("// ====================================================\n");
         for elem_type in &slice_element_types {
             let elem_ident = self.get_c_type_ident(elem_type);
+            if elem_ident == "unsigned_char" || elem_ident == "int" {
+                continue;
+            }
             c_code.push_str(&format!(
                 "typedef struct Slice_{} Slice_{};\n",
                 elem_ident, elem_ident
@@ -735,6 +740,9 @@ impl Codegen {
         for elem_type in &slice_element_types {
             let elem_c = self.get_c_type(elem_type);
             let elem_ident = self.get_c_type_ident(elem_type);
+            if elem_ident == "unsigned_char" || elem_ident == "int" {
+                continue;
+            }
             c_code.push_str(&format!("struct Slice_{} {{\n", elem_ident));
             c_code.push_str(&format!("    {}* data;\n", elem_c));
             c_code.push_str("    int len;\n");

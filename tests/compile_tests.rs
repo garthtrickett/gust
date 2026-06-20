@@ -2441,61 +2441,12 @@ fn test_self_hosted_import_scanner_old() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
-    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
-
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&runtime_path);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    if !compile_output.status.success() {
-        eprintln!("====================================================");
-        eprintln!("❌ C COMPILATION FAILED!");
-        eprintln!("====================================================");
-        eprintln!("--- GENERATED C CODE ---");
-        for (idx, line) in c_output.lines().enumerate() {
-            eprintln!("{:4} | {}", idx + 1, line);
-        }
-        eprintln!("------------------------");
-        eprintln!(
-            "STDERR:\n{}",
-            String::from_utf8_lossy(&compile_output.stderr)
-        );
-        eprintln!("====================================================");
-    }
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
         .expect("Execution failed");
 
-    let stdout_lossy = String::from_utf8_lossy(&run_output.stdout).to_string();
-    let stderr_lossy = String::from_utf8_lossy(&run_output.stderr).to_string();
-
-    let _ = std::fs::remove_file(&c_path);
-    let _ = std::fs::remove_file(&bin_path);
-    let _ = std::fs::remove_file(entry_path);
-
-    if !run_output.status.success() {
-        panic!(
-            "Execution failed!\nSTDOUT:\n{}\nSTDERR:\n{}",
-            stdout_lossy, stderr_lossy
-        );
-    }
     let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
     assert_eq!(stdout_str.trim(), "2\nstd\nos");
@@ -8192,7 +8143,7 @@ fn test_assignment_lhs_registered_in_resolved_types() {
         } else {
             panic!("Expected Assignment at index 1");
         }
-    } else { 
+    } else {
         panic!("Expected FunctionDecl at index 0");
     }
 }
@@ -8235,5 +8186,9 @@ fn test_cast_aware_allocation_size_propagation() {
     let c_code = codegen.generate(&modules_for_codegen);
 
     // Assert that the generated C code contains the correct size for ListNode in the cast
-    assert!(c_code.contains("os_ArenaAlloc(&ctx, sizeof(ListNode))"), "C code should contain os_ArenaAlloc with ListNode size, but got:\n{}", c_code);
+    assert!(
+        c_code.contains("os_ArenaAlloc(&ctx, sizeof(ListNode))"),
+        "C code should contain os_ArenaAlloc with ListNode size, but got:\n{}",
+        c_code
+    );
 }
