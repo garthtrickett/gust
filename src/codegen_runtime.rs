@@ -151,7 +151,7 @@ static inline int os_key_eq(void* k1_ptr, void* k2_ptr, int is_str_key) {
         int new_cap = (vec_ptr)->capacity == 0 ? 8 : (vec_ptr)->capacity * 2; \
         int offset = os_ArenaAlloc((vec_ptr)->arena, new_cap * sizeof(*(vec_ptr)->data)); \
         void* new_data = (void*)((char*)(vec_ptr)->arena->BaseAddress + offset); \
-        if ((vec_ptr)->data != NULL) { \
+        if ((vec_ptr)->data != NULL && (vec_ptr)->len > 0) { \
             memcpy(new_data, (vec_ptr)->data, (vec_ptr)->len * sizeof(*(vec_ptr)->data)); \
         } \
         (vec_ptr)->data = new_data; \
@@ -907,14 +907,14 @@ struct std_Vector_str os_Args(os_Arena* ctx) {
         Slice_unsigned_char s = (Slice_unsigned_char){ (unsigned char*)data, len };
         
         if (vec.len >= vec.capacity) {
-            int new_cap = vec.capacity == 0 ? 8 : vec.capacity * 2;
-            int alloc_offset = os_ArenaAlloc(ctx, new_cap * sizeof(Slice_unsigned_char));
-            Slice_unsigned_char* new_data = (Slice_unsigned_char*)((char*)ctx->BaseAddress + alloc_offset);
-            if (vec.data != NULL) {
-                memcpy(new_data, vec.data, vec.len * sizeof(Slice_unsigned_char));
-            }
-            vec.data = new_data;
-            vec.capacity = new_cap;
+                int new_cap = vec.capacity == 0 ? 8 : vec.capacity * 2;
+                int alloc_offset = os.ArenaAlloc(ctx, new_cap * sizeof(Slice_unsigned_char));
+                Slice_unsigned_char* new_data = (Slice_unsigned_char*)((char*)ctx->BaseAddress + alloc_offset);
+                if (vec.data != NULL && vec.len > 0) {
+                    memcpy(new_data, vec.data, vec.len * sizeof(Slice_unsigned_char));
+                }
+                vec.data = new_data;
+                vec.capacity = new_cap;
         }
         vec.data[vec.len++] = s;
     }
@@ -1587,7 +1587,7 @@ static inline void os_HashMapClear_impl(void* map_void, size_t key_size, size_t 
         int new_cap = (vec_ptr)->capacity == 0 ? 8 : (vec_ptr)->capacity * 2; \
         int offset = os_ArenaAlloc((vec_ptr)->arena, new_cap * sizeof(*(vec_ptr)->data)); \
         void* new_data = (void*)((char*)(vec_ptr)->arena->BaseAddress + offset); \
-        if ((vec_ptr)->data != NULL) { \
+        if ((vec_ptr)->data != NULL && (vec_ptr)->len > 0) { \
             memcpy(new_data, (vec_ptr)->data, (vec_ptr)->len * sizeof(*(vec_ptr)->data)); \
         } \
         (vec_ptr)->data = new_data; \

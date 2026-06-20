@@ -251,6 +251,7 @@ func serialize_type(t: Type[ctx], ctx: &Arena) str {
         }
         if t.tag == 6 { // Slice
             mut inner_str := serialize_type(ctx[t.Slice.inner], ctx);
+            if std.str_eq(inner_str, "") == 1 { inner_str = "Unknown"; }
             mut res := std.Concat("Slice(", inner_str);
             res = std.Concat(res, ")");
             return std.Clone(ctx, res);

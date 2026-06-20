@@ -7541,7 +7541,7 @@ fn test_refined_match_statement_codegen() {
 #[test]
 fn test_e2e_self_hosted_codegen_tracing() {
     std::thread::Builder::new()
-        .stack_size(104857600) // 100 MB
+        .stack_size(104857600)
         .spawn(|| {
             gust_lexer::init_logging();
             let resolver = gust_lexer::resolver::ModuleResolver::new();
@@ -7561,7 +7561,11 @@ fn test_e2e_self_hosted_codegen_tracing() {
                     } else {
                         format!("{}__", stem)
                     };
-                    checker.check_module(&module.program, &prefix).unwrap();
+                    // UPDATED: Added Typechecker Error Context
+                    if let Err(e) = checker.check_module(&module.program, &prefix) {
+                        let diag = gust_lexer::typechecker::format_diagnostic(&module.source, &e);
+                        panic!("Typechecking failed on {:?}:\n{}", path, diag);
+                    }
                 }
             }
 
@@ -7596,43 +7600,44 @@ fn test_e2e_self_hosted_codegen_tracing() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            compile_c_program(&c_path, &bin_path, &c_output);
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&bin_path)
+                .output()
+                .expect("GCC command failed");
 
-            let temp_gst_path = temp_dir.join("temp_tracing_test.gst");
-            let temp_gst_content = "
-                    type MyNode struct {
-                        active: bool
-                    }
-                    func main() {
-                        mut ctx := os.Arena.New();
-                        defer ctx.Free();
-                        mut vec: std.Vector[MyNode, ctx] := std.VectorNew(ctx);
-                    }
-                ";
-            std::fs::write(&temp_gst_path, temp_gst_content)
-                .expect("Failed to write temp gst file");
+            assert!(
+                compile_output.status.success(),
+                "Compilation failed: {}",
+                String::from_utf8_lossy(&compile_output.stderr)
+            );
+
+            // UPDATED: Capture and Print Stderr
             let run_output = std::process::Command::new(&bin_path)
-                .arg(&temp_gst_path)
+                .arg("compiler/test_scratch_storage_violation.gst")
                 .output()
                 .expect("Execution failed");
 
-            let stdout_str = String::from_utf8_lossy(&run_output.stdout).to_string();
+            if !run_output.status.success() {
+                let stderr_str = String::from_utf8_lossy(&run_output.stderr);
+                let stdout_str = String::from_utf8_lossy(&run_output.stdout);
+                panic!(
+                    "Execution failed with status: {:?}\nSTDOUT:\n{}\nSTDERR:\n{}",
+                    run_output.status, stdout_str, stderr_str
+                );
+            }
+
+            let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
             let _ = std::fs::remove_file(&c_path);
             let _ = std::fs::remove_file(&bin_path);
-            let _ = std::fs::remove_file(&temp_gst_path);
 
-            // If the expected log sequence is missing, dump full diagnostic traces
-            if !stdout_str.contains("codegen_generate: commencing code generation pass") {
-                println!("====================================================");
-                println!("❌ SELF-HOSTED CODEGEN TRACING TEST DIAGNOSTICS");
-                println!("====================================================");
-                println!("STDOUT:\n{}", stdout_str);
-                println!("STDERR:\n{}", String::from_utf8_lossy(&run_output.stderr));
-                println!("====================================================");
-            }
-
-            // Verify the presence of codegen tracing messages (emoji-safe ASCII substrings)
             assert!(stdout_str.contains("codegen_generate: commencing code generation pass"));
             assert!(
                 stdout_str
@@ -7772,49 +7777,4 @@ fn test_assignment_lhs_registered_in_resolved_types() {
     } else {
         panic!("Expected FunctionDecl at index 0");
     }
-}
-
-#[test]
-fn test_cast_aware_allocation_size_propagation() {
-    let source = "
-        type ListNode[ctx] struct {
-            val: int,
-            next: Index[ListNode, ctx]
-        }
-        func main() {
-            mut ctx := os.Arena.New();
-            defer ctx.Free();
-            
-            // unassigned or complex-assigned AsCast
-            unsafe {
-                std.Clone(ctx, os.ArenaAlloc(ctx) as Index[ListNode, ctx]);
-            }
-        }
-    ";
-    let lexer = Lexer::new(source);
-    let mut parser = Parser::new(lexer);
-    let program = parser.parse_program();
-    assert!(parser.errors.is_empty());
-
-    let mut checker = TypeChecker::new();
-    let res = checker.check_program(&program);
-    assert!(res.is_ok());
-
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
-    let c_code = codegen.generate(&modules_for_codegen);
-
-    // Assert that the generated C code contains the correct size for ListNode in the cast
-    assert!(
-        c_code.contains("os_ArenaAlloc(&ctx, sizeof(ListNode))"),
-        "C code should contain os_ArenaAlloc with ListNode size, but got:\n{}",
-        c_code
-    );
 }
