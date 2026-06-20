@@ -5152,10 +5152,14 @@ fn test_self_hosted_compiler_full_bootstrap() {
 
             std::fs::write(&gust_v2_c_path, &c_output_v2).expect("Failed to write gust_v2 C file");
 
+
             // Compile gust_v2 binary using host C compiler
+            let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+            let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
             let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
             let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg("src/runtime.c");
+            cmd.arg(&runtime_path);
             cmd.arg(&gust_v2_c_path);
             if std::env::var("GUST_NO_SANITIZERS").is_err() {
                 cmd.arg("-fsanitize=address,undefined");

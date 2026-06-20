@@ -15,6 +15,44 @@ fn check_program(source: &str) -> Result<(), TypeError> {
     checker.check_program(&program)
 }
 
+fn compile_c_program(c_path: &std::path::Path, bin_path: &std::path::Path, c_code: &str) {
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
+    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg(&runtime_path);
+    cmd.arg(c_path);
+    if std::env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(bin_path)
+        .output()
+        .expect("C compilation command failed");
+
+    if !compile_output.status.success() {
+        eprintln!("====================================================");
+        eprintln!("❌ C COMPILATION FAILED!");
+        eprintln!("====================================================");
+        eprintln!("--- GENERATED C CODE ---");
+        for (idx, line) in c_code.lines().enumerate() {
+            eprintln!("{:4} | {}", idx + 1, line);
+        }
+        eprintln!("------------------------");
+        eprintln!(
+            "STDERR:\n{}",
+            String::from_utf8_lossy(&compile_output.stderr)
+        );
+        eprintln!("====================================================");
+        panic!(
+            "Compilation failed: {}",
+            String::from_utf8_lossy(&compile_output.stderr)
+        );
+    }
+}
+
 #[test]
 fn test_thread_local_context_registration_valid() {
     let source = "
