@@ -4676,9 +4676,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 if is_ephemeral == 1 {
                     mut temp_origs := get_expression_origins(val_idx, env, ctx);
                     origs = typechecker_clone_origin_set(temp_origs, ctx);
-                    if ctx[origs].map.len == 0 {
-                        set_add(origs, std.Clone(ctx, name), ctx);
-                    }
+                }
+                if ctx[origs].map.len == 0 {
+                    set_add(origs, std.Clone(ctx, name), ctx);
                 }
                 (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
             } else {
@@ -4686,9 +4686,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     mut origs := set_init(ctx);
                     mut resolved := env_resolve_type(env, ctx[var_type_idx], ctx);
                     val_type = resolved;
-                    if env_type_is_ephemeral_view(val_type, ctx) == 1 {
-                        set_add(origs, std.Clone(ctx, name), ctx);
-                    }
+                    set_add(origs, std.Clone(ctx, name), ctx);
                     (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
                 } else {
                     mut msg := std.Concat("Semantic Error: Uninitialized variable '", name);
