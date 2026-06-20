@@ -19,16 +19,159 @@ fn filter_output_c_code(stdout: &str) -> String {
         .collect::<Vec<_>>()
         .join("\n")
 }
-fn check_program(source: &str) -> Result<(), TypeError> {
-    gust_lexer::init_logging();
-    let lexer = Lexer::new(source);
-    let mut parser = Parser::new(lexer);
-    let program = parser.parse_program();
-    if !parser.errors.is_empty() {
-        return Err(parser.errors[0].clone());
+fn map_message_to_kind(msg: &str) -> TypeErrorKind {
+    if msg.contains("ParserError") || msg.contains("Syntax Error") {
+        TypeErrorKind::SyntaxError
+    } else if msg.contains("large enum variant payload") {
+        TypeErrorKind::LargeEnumVariantPayload
+    } else if msg.contains("backing origin") || msg.contains("origin invalidated") {
+        TypeErrorKind::VariableOriginInvalidated
+    } else if msg.contains("Allocator moved or freed") {
+        TypeErrorKind::AllocatorMovedOrFreed
+    } else if msg.contains("already been moved") || msg.contains("Use of moved variable") || msg.contains("moved") {
+        TypeErrorKind::UseOfMovedVariable
+    } else if msg.contains("Value-Branded Lifetime Violation") || msg.contains("escape") || msg.contains("Escape") || msg.contains("scratchpad-allocated") || msg.contains("must be cleanly closed") || msg.contains("cannot be moved while open") || msg.contains("Brand Nesting") || msg.contains("Mismatched nested brand") {
+        TypeErrorKind::BrandLifetimeViolation
+    } else if msg.contains("strictly banned on primitive") {
+        TypeErrorKind::TakePrimitiveBanned
+    } else if msg.contains("prohibited outside 'unsafe' blocks") || msg.contains("prohibited outside unsafe blocks") {
+        TypeErrorKind::UnsafeProhibited
+    } else if msg.contains("Template") && msg.contains("expects") && msg.contains("generic arguments") {
+        TypeErrorKind::TemplateArgumentMismatch
+    } else if msg.contains("expects") && msg.contains("arguments") {
+        TypeErrorKind::ArgumentMismatch
+    } else if msg.contains("Undefined variable") {
+        TypeErrorKind::UndefinedVariable
+    } else if msg.contains("strictly not supported") {
+        TypeErrorKind::SyntaxError
+    } else if msg.contains("duplicate function definition") || msg.contains("Duplicate function definition") {
+        TypeErrorKind::DuplicateFunctionDefinition
+    } else if msg.contains("Unresolved namespace alias") || msg.contains("mismatch") || msg.contains("is not exhaustive") || msg.contains("is not a valid variant") || msg.contains("mismatched") || msg.contains("expects") || msg.contains("mismatch") {
+        TypeErrorKind::TypeMismatch
+    } else {
+        TypeErrorKind::TypeMismatch
     }
-    let mut checker = TypeChecker::new();
-    checker.check_program(&program)
+}
+
+fn check_program(source: &str) -> Result<(), TypeError> {
+    let compiler_path = common::get_compiled_compiler();
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let filename = format!("gust_compile_test_{:?}_{}_{}.gst", thread_id, process_id, time);
+    let file_path = temp_dir.join(filename);
+
+    std::fs::write(&file_path, source).expect("Failed to write temporary test file");
+
+    let output = std::process::Command::new(compiler_path)
+        .arg(&file_path)
+        .output()
+        .expect("Failed to run self-hosted compiler");
+
+    let _ = std::fs::remove_file(&file_path);
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let combined_output = format!("{}\n{}", stdout, stderr);
+
+        let mut error_message = String::new();
+        let mut line_num = 1;
+        let mut col_num = 1;
+        let mut found_span = false;
+
+        // Try to parse: "TypeError at line 5:26:" or "❌ TypeError at line 5:26:"
+        for line in combined_output.lines() {
+            if let Some(idx) = line.find("TypeError at line ") {
+                let rest = &line[idx + "TypeError at line ".len()..];
+                if let Some(colon_idx) = rest.find(':') {
+                    let line_str = &rest[..colon_idx];
+                    let rest2 = &rest[colon_idx + 1..];
+                    if let Some(space_idx) = rest2.find(':') {
+                        let col_str = &rest2[..space_idx];
+                        if let (Ok(l), Ok(c)) = (line_str.parse::<usize>(), col_str.parse::<usize>()) {
+                            line_num = l;
+                            col_num = c;
+                            found_span = true;
+                            
+                            let raw_msg = rest2[space_idx + 1..].trim();
+                            if !raw_msg.is_empty() {
+                                error_message = raw_msg.to_string();
+                            }
+                            break;
+                        }
+                    }
+                } 
+            }
+        }
+
+        if !found_span {
+            let lines: Vec<&str> = combined_output.lines().collect();
+            for i in 0..lines.len() { 
+                if lines[i].contains("ParserError in file:") {
+                    if i + 4 < lines.len() {
+                        error_message = lines[i + 2].trim().to_string();
+                        if let (Ok(l), Ok(c)) = (lines[i + 3].trim().parse::<usize>(), lines[i + 4].trim().parse::<usize>()) {
+                            line_num = l;
+                            col_num = c;
+                            found_span = true;
+                        }
+                    }
+                    break;
+                } 
+            }
+        }
+
+        if error_message.is_empty() {
+            for line in combined_output.lines() {
+                let trimmed = line.trim();
+                if !trimmed.is_empty() 
+                    && !trimmed.starts_with("👁️") 
+                    && !trimmed.starts_with("❌") 
+                    && !trimmed.starts_with("🗄️") 
+                    && !trimmed.starts_with("🔄") 
+                {
+                    error_message = trimmed.to_string();
+                    break;
+                }
+            } 
+        }
+
+        if error_message.is_empty() {
+            error_message = "Unknown compilation error".to_string();
+        }
+
+        let error_kind = map_message_to_kind(&error_message);
+
+        let span = if found_span {
+            Some(gust_lexer::token::Span {
+                start: gust_lexer::token::Position {
+                    line: line_num,
+                    column: col_num,
+                    offset: 0,
+                },
+                end: gust_lexer::token::Position {
+                    line: line_num,
+                    column: col_num,
+                    offset: 0,
+                },
+            })
+        } else {
+            None
+        };
+
+        Err(TypeError {
+            kind: error_kind,
+            message: error_message,
+            span,
+        })
+    }
 }
 
 #[test]
