@@ -1090,6 +1090,10 @@ impl Codegen {
             }
         }
 
+        if self.struct_registry.contains_key("std_ThreadLocalContext") {
+            c_code.push_str("std_ThreadLocalContext os_GetThreadScratch(void);\n\n");
+        }
+
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// TRANSPILED PROGRAM CODES\n");
         c_code.push_str("// ====================================================\n");
