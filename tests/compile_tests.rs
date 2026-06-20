@@ -74,18 +74,19 @@ fn check_program(source: &str) -> Result<(), TypeError> {
 
     let _ = std::fs::remove_file(&file_path);
 
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let combined_output = format!("{}\n{}", stdout, stderr);
+
+    eprintln!("\n--- DEBUG check_program execution ---");
+    eprintln!("STATUS: {:?}", output.status);
+    eprintln!("STDOUT:\n{}", stdout);
+    eprintln!("STDERR:\n{}", stderr);
+    eprintln!("--------------------------------------\n");
+
     if output.status.success() {
         Ok(())
     } else {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        let combined_output = format!("{}\n{}", stdout, stderr);
-
-        eprintln!("\n--- DEBUG check_program FAILED ---");
-        eprintln!("STDOUT:\n{}", stdout);
-        eprintln!("STDERR:\n{}", stderr);
-        eprintln!("----------------------------------\n");
-
         let mut error_message = String::new();
         let mut line_num = 1;
         let mut col_num = 1;
