@@ -1,9 +1,13 @@
 {
-  "summary": "fix: restore missing os_OpenDir function signature in src/runtime/file_io.c",
+  "summary": "fix: resolve e2e args test compilation linkage issue and silence unused variable warning in compile tests",
   "files": [
     {
-      "file_path": "src/runtime/file_io.c",
-      "code_diff": "<<<<<<< SEARCH\nint os_WriteFile(Slice_unsigned_char path, Slice_unsigned_char contents) {\n    char* path_c = malloc(path.len + 1);\n    memcpy(path_c, path.data, path.len);\n    path_c[path.len] = '\\0';\n\n    FILE* f = fopen(path_c, \"wb\");\n    free(path_c);\n    if (f == NULL) {\n        return 0;\n    }\n\n    size_t written = fwrite(contents.data, 1, contents.len, f);\n    fclose(f);\n    return written == (size_t)contents.len ? 1 : 0;\n}\n\n        LookupResult_os_Dir result;\n        result.Ok = 0;\n        result.Val.handle = NULL;\n=======\nint os_WriteFile(Slice_unsigned_char path, Slice_unsigned_char contents) {\n    char* path_c = malloc(path.len + 1);\n    memcpy(path_c, path.data, path.len);\n    path_c[path.len] = '\\0';\n\n    FILE* f = fopen(path_c, \"wb\");\n    free(path_c);\n    if (f == NULL) {\n        return 0;\n    }\n\n    size_t written = fwrite(contents.data, 1, contents.len, f);\n    fclose(f);\n    return written == (size_t)contents.len ? 1 : 0;\n}\n\nLookupResult_os_Dir os_OpenDir(os_Arena* arena, Slice_unsigned_char path) {\n    LookupResult_os_Dir result;\n    result.Ok = 0;\n    result.Val.handle = NULL;\n>>>>>>> REPLACE"
+      "file_path": "tests/e2e_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n    // 3. Invoke a system C compiler to compile it\n    let cc_compiler = env::var(\"CC\").unwrap_or_else(|_| \"cc\".to_string());\n    let mut cmd = Command::new(&cc_compiler);\n    cmd.arg(&c_path);\n=======\n    let manifest_dir = env::var(\"CARGO_MANIFEST_DIR\").unwrap_or_else(|_| \".\".to_string());\n    let runtime_path = std::path::Path::new(&manifest_dir).join(\"src/runtime.c\");\n\n    // 3. Invoke a system C compiler to compile it\n    let cc_compiler = env::var(\"CC\").unwrap_or_else(|_| \"cc\".to_string());\n    let mut cmd = Command::new(&cc_compiler);\n    cmd.arg(&runtime_path).arg(&c_path);\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/compile_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n            let run_output = std::process::Command::new(&bin_path)\n                .arg(\"compiler/test_scratch_storage_violation.gst\")\n                .output()\n                .expect(\"Execution failed\");\n\n            let stdout_str = String::from_utf8_lossy(&run_output.stdout).to_string();\n\n            let _ = std::fs::remove_file(&c_path);\n=======\n            let run_output = std::process::Command::new(&bin_path)\n                .arg(\"compiler/test_scratch_storage_violation.gst\")\n                .output()\n                .expect(\"Execution failed\");\n\n            let _stdout_str = String::from_utf8_lossy(&run_output.stdout).to_string();\n\n            let _ = std::fs::remove_file(&c_path);\n>>>>>>> REPLACE"
     }
   ]
 }

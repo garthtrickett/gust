@@ -4596,10 +4596,11 @@ fn test_codegen_thread_local_redirection() {
             common::compile_c_program(&c_path, &bin_path, &c_output);
 
             let run_output = std::process::Command::new(&bin_path)
+                .arg("compiler/test_scratch_storage_violation.gst")
                 .output()
                 .expect("Execution failed");
 
-            let stdout_str = String::from_utf8_lossy(&run_output.stdout).to_string();
+            let _stdout_str = String::from_utf8_lossy(&run_output.stdout).to_string();
 
             let _ = std::fs::remove_file(&c_path);
             let _ = std::fs::remove_file(&bin_path);

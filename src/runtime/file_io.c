@@ -13,8 +13,8 @@ struct os_Dir {
 
 typedef struct os_DirEntry os_DirEntry;
 struct os_DirEntry {
-    Slice_unsigned_char name;
     int is_dir;
+    Slice_unsigned_char name;
 };
 
 typedef struct LookupResult_os_Dir LookupResult_os_Dir;
@@ -78,9 +78,6 @@ int os_WriteFile(Slice_unsigned_char path, Slice_unsigned_char contents) {
 }
 
 LookupResult_os_Dir os_OpenDir(os_Arena* arena, Slice_unsigned_char path) {
-    LookupResult_os_Dir result;
-    result.Ok = 0;
-    result.Val.handle = NULL;
     LookupResult_os_Dir result;
     result.Ok = 0;
     result.Val.handle = NULL;

@@ -1785,10 +1785,13 @@ fn test_e2e_process_args_and_exit() {
 
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
     // 3. Invoke a system C compiler to compile it
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = Command::new(&cc_compiler);
-    cmd.arg(&c_path);
+    cmd.arg(&runtime_path).arg(&c_path);
     if env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
