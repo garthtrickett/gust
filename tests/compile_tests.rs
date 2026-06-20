@@ -28,10 +28,10 @@ fn map_message_to_kind(msg: &str) -> TypeErrorKind {
         TypeErrorKind::VariableOriginInvalidated
     } else if msg.contains("Allocator moved or freed") {
         TypeErrorKind::AllocatorMovedOrFreed
-    } else if msg.contains("already been moved") || msg.contains("Use of moved variable") || msg.contains("moved") {
-        TypeErrorKind::UseOfMovedVariable
     } else if msg.contains("Value-Branded Lifetime Violation") || msg.contains("escape") || msg.contains("Escape") || msg.contains("scratchpad-allocated") || msg.contains("must be cleanly closed") || msg.contains("cannot be moved while open") || msg.contains("Brand Nesting") || msg.contains("Mismatched nested brand") {
         TypeErrorKind::BrandLifetimeViolation
+    } else if msg.contains("already been moved") || msg.contains("Use of moved variable") || msg.contains("moved") {
+        TypeErrorKind::UseOfMovedVariable
     } else if msg.contains("strictly banned on primitive") {
         TypeErrorKind::TakePrimitiveBanned
     } else if msg.contains("prohibited outside 'unsafe' blocks") || msg.contains("prohibited outside unsafe blocks") {
