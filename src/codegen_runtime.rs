@@ -234,6 +234,9 @@ static inline int os_key_eq(void* k1_ptr, void* k2_ptr, int is_str_key) {
     (&(graph_ptr)->nodes.data[index].value)
 
 // Core Runtime & FFI Function Prototypes
+os_Arena os_Arena_New(void);
+void os_SetThreadScratch(os_Arena* arena);
+os_Arena* os_GetThreadScratch_raw(void);
 void* os_ScratchAlloc(size_t size);
 void os_ScratchReset(void);
 int os_ArenaAlloc(os_Arena* arena, size_t size);
