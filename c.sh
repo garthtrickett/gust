@@ -22,9 +22,9 @@ for config in "${CONFIG_FILES[@]}"; do
     fi
 done
 
-# Dynamically find and append all Rust and Gust files, plus specifically runtime.c, inside src/, tests/, and compiler/
+# Dynamically find and append all Rust, Gust, C, and Header files inside src/, tests/, and compiler/
 if [ -d "$PROJECT_ROOT/src" ] || [ -d "$PROJECT_ROOT/tests" ] || [ -d "$PROJECT_ROOT/compiler" ]; then
-    # find targets, filtering for files ending in .rs, .gst, or exactly named runtime.c, sorted for consistency
+    # Find targets, filtering for files ending in .rs, .gst, .c, or .h, sorted for consistency
     while IFS= read -r file; do
         # Clean up the output boundary path representation
         display_path="${file#$PROJECT_ROOT/}"
@@ -32,7 +32,7 @@ if [ -d "$PROJECT_ROOT/src" ] || [ -d "$PROJECT_ROOT/tests" ] || [ -d "$PROJECT_
         echo "--- START OF FILE $display_path ---" >>"$OUTPUT_FILE"
         cat "$file" >>"$OUTPUT_FILE"
         echo -e "\n--- END OF FILE $display_path ---\n" >>"$OUTPUT_FILE"
-    done < <(find "$PROJECT_ROOT/src" "$PROJECT_ROOT/tests" "$PROJECT_ROOT/compiler" -type f \( -name "*.rs" -o -name "*.gst" -o -name "runtime.c" \) 2>/dev/null | sort)
+    done < <(find "$PROJECT_ROOT/src" "$PROJECT_ROOT/tests" "$PROJECT_ROOT/compiler" -type f \( -name "*.rs" -o -name "*.gst" -o -name "*.c" -o -name "*.h" \) 2>/dev/null | sort)
 fi
 
-echo "✅ Aggregated all project configuration, Rust, Gust, and runtime.c files into $OUTPUT_FILE"
+echo "✅ Aggregated all project configuration, Rust, Gust, and C/Header files into $OUTPUT_FILE"

@@ -1232,11 +1232,14 @@ fn test_e2e_thread_local_scratchpad() {
 
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
 
     // Compile NDEBUG version
     let mut cmd_ndebug = Command::new(&cc_compiler);
-    cmd_ndebug.arg(&c_path);
+    cmd_ndebug.arg(&runtime_path).arg(&c_path);
     if env::var("GUST_NO_SANITIZERS").is_err() {
         cmd_ndebug.arg("-fsanitize=address,undefined");
     }
@@ -1253,7 +1256,7 @@ fn test_e2e_thread_local_scratchpad() {
 
     // Compile DEBUG version
     let mut cmd_debug = Command::new(&cc_compiler);
-    cmd_debug.arg(&c_path).arg("-DGUST_DEBUG");
+    cmd_debug.arg(&runtime_path).arg(&c_path).arg("-DGUST_DEBUG");
     if env::var("GUST_NO_SANITIZERS").is_err() {
         cmd_debug.arg("-fsanitize=address,undefined");
     }
@@ -2257,15 +2260,20 @@ fn test_e2e_arena_canary_normal_debug() {
 
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
 
     let compile_res = Command::new(&cc_compiler)
+        .arg(&runtime_path)
         .arg(&c_path)
         .arg("-DGUST_DEBUG")
         .arg("-o")
         .arg(&bin_path)
         .output()
         .expect("Compile failed");
+
     assert!(
         compile_res.status.success(),
         "Compile failed: {}",
@@ -2351,15 +2359,20 @@ fn test_e2e_arena_canary_corruption_detection() {
 
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
 
     let compile_res = Command::new(&cc_compiler)
+        .arg(&runtime_path)
         .arg(&c_path)
         .arg("-DGUST_DEBUG")
         .arg("-o")
         .arg(&bin_path)
         .output()
         .expect("Compile failed");
+
     assert!(
         compile_res.status.success(),
         "Compile failed: {}",
