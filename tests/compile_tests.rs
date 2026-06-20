@@ -2405,6 +2405,7 @@ fn test_self_hosted_import_scanner_old() {
 
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
+    cmd.arg("src/runtime.c");
     cmd.arg(&c_path);
     if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");

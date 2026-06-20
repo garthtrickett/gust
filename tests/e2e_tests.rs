@@ -59,6 +59,7 @@ fn run_e2e_test(source: &str, expected_output: &str) {
     // 3. Invoke a system C compiler to compile it
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = Command::new(&cc_compiler);
+    cmd.arg("src/runtime.c");
     cmd.arg(&c_path);
     if env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
