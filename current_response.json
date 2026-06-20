@@ -1,10 +1,13 @@
 {
-  "summary": "debug: add verbose opendir failure diagnostics with perror to os_OpenDir",
+  "summary": "debug: add verbose opendir failure diagnostics to stdout for test runner visibility",
   "files": [
     {
       "file_path": "src/runtime/file_io.c",
-      "code_diff": "<<<<<<< SEARCH\n    DIR* dir = opendir(path_c);\n    free(path_c);\n\n    if (dir != NULL) {\n=======\n    DIR* dir = opendir(path_c);\n    if (dir == NULL) {\n        fprintf(stderr, \"os_OpenDir: opendir(\\\"%s\\\") failed! \", path_c);\n        perror(\"Reason\");\n        fflush(stderr);\n    }\n    free(path_c);\n\n    if (dir != NULL) {\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n#ifndef GUST_CORE_HEADERS_H\n#include \"core_headers.h\"\n#endif\n=======\n#ifndef GUST_CORE_HEADERS_H\n#include \"core_headers.h\"\n#endif\n#include <errno.h>\n>>>>>>> REPLACE\n<<<<<<< SEARCH\nLookupResult_os_Dir os_OpenDir(os_Arena* arena, Slice_unsigned_char path) {\n    LookupResult_os_Dir result;\n    result.Ok = 0;\n    result.Val.handle = NULL;\n\n    char* path_c = malloc(path.len + 1);\n    memcpy(path_c, path.data, path.len);\n    path_c[path.len] = '\\0';\n\n    DIR* dir = opendir(path_c);\n    if (dir == NULL) {\n        fprintf(stderr, \"os_OpenDir: opendir(\\\"%s\\\") failed! \", path_c);\n        perror(\"Reason\");\n        fflush(stderr);\n    }\n    free(path_c);\n=======\n    LookupResult_os_Dir result;\n    result.Ok = 0;\n    result.Val.handle = NULL;\n\n    char* path_c = malloc(path.len + 1);\n    memcpy(path_c, path.data, path.len); \n    path_c[path.len] = '\\0';\n\n    DIR* dir = opendir(path_c);\n    if (dir == NULL) {\n        printf(\"os_OpenDir: opendir(\\\"%s\\\") failed! errno=%d\\n\", path_c, errno);\n        fflush(stdout);\n    }\n    free(path_c);\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "src/runtime.c",
+      "code_diff": "<<<<<<< SEARCH\n#include \"runtime/core_headers.h\"\n=======\n#include \"runtime/core_headers.h\"\n#include <errno.h>\n>>>>>>> REPLACE"
     }
-    
   ]
 }

@@ -1,6 +1,7 @@
 #ifndef GUST_CORE_HEADERS_H
 #include "core_headers.h"
 #endif
+#include <errno.h>
 
 // ====================================================
 // GUST NATIVE FILE I/O RUNTIME
@@ -77,20 +78,18 @@ int os_WriteFile(Slice_unsigned_char path, Slice_unsigned_char contents) {
     return written == (size_t)contents.len ? 1 : 0;
 }
 
-LookupResult_os_Dir os_OpenDir(os_Arena* arena, Slice_unsigned_char path) {
     LookupResult_os_Dir result;
     result.Ok = 0;
     result.Val.handle = NULL;
 
     char* path_c = malloc(path.len + 1);
-    memcpy(path_c, path.data, path.len);
+    memcpy(path_c, path.data, path.len); 
     path_c[path.len] = '\0';
 
     DIR* dir = opendir(path_c);
     if (dir == NULL) {
-        fprintf(stderr, "os_OpenDir: opendir(\"%s\") failed! ", path_c);
-        perror("Reason");
-        fflush(stderr);
+        printf("os_OpenDir: opendir(\"%s\") failed! errno=%d\n", path_c, errno);
+        fflush(stdout);
     }
     free(path_c);
 
