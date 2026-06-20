@@ -10,6 +10,8 @@ pub const CORE_HEADERS: &str = r#"#define _GNU_SOURCE
 
 typedef void Any;
 
+typedef void* map_void_ptr;
+
 typedef struct {
     void* BaseAddress;
     size_t Offset;
