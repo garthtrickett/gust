@@ -313,35 +313,27 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
             // Check if resolved_name is moved
             if (*env).moved_vars.Get(resolved_name).Ok {
-                mut err: errors.CompilerError[ctx];
-                err.kind.tag = 2; // TypeError
-                err.message = std.Clone(ctx, std.Concat("Semantic Error: Use of moved variable ", resolved_name));
-                err.span = expr.Identifier.span;
-                (*env).errors.Push(err);
+                report_error(2, std.Concat("Semantic Error: Use of moved variable ", resolved_name), expr.Identifier.span, env, ctx);
             }
 
-            // Check variable origins
-            mut lookup_orig := (*env).variable_origins.Get(resolved_name);
-            if lookup_orig.Ok {
-                mut origs := lookup_orig.Val;
-                mut keys := ctx[origs].map.Keys(ctx);
-                mut i := 0;
-                while i < len(keys) {
-                    mut orig_name := keys[i];
-                    if (*env).moved_vars.Get(orig_name).Ok {
-                        mut err: errors.CompilerError[ctx];
-                        err.kind.tag = 2; // TypeError
-                        mut err_msg_orig := std.Concat("Semantic Error: Variable '", name);
-                        err_msg_orig = std.Concat(err_msg_orig, "' cannot be used because its backing origin '");
-                        err_msg_orig = std.Concat(err_msg_orig, orig_name);
-                        err_msg_orig = std.Concat(err_msg_orig, "' has been moved or invalidated");
-                        err.message = std.Clone(ctx, err_msg_orig);
-                        err.span = expr.Identifier.span;
-                        (*env).errors.Push(err);
+             // Check variable origins
+                    mut lookup_orig := (*env).variable_origins.Get(resolved_name);
+                    if lookup_orig.Ok {
+                        mut origs := lookup_orig.Val;
+                        mut keys := ctx[origs].map.Keys(ctx);
+                        mut i := 0;
+                        while i < len(keys) {
+                            mut orig_name := keys[i];
+                            if (*env).moved_vars.Get(orig_name).Ok {
+                                mut err_msg_orig := std.Concat("Semantic Error: Variable '", name);
+                                err_msg_orig = std.Concat(err_msg_orig, "' cannot be used because its backing origin '");
+                                err_msg_orig = std.Concat(err_msg_orig, orig_name);
+                                err_msg_orig = std.Concat(err_msg_orig, "' has been moved or invalidated");
+                                report_error(2, err_msg_orig, expr.Identifier.span, env, ctx);
+                            }
+                            i = i + 1;
+                        }
                     }
-                    i = i + 1;
-                }
-            }
 
             // Check allocator brand
             mut brand_name := "";
@@ -360,15 +352,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if std.str_eq(brand_name, "") == 0 {
-                mut clean_brand := strip_brand_prefix(brand_name, ctx);
-                if (*env).moved_vars.Get(clean_brand).Ok {
-                    mut err: errors.CompilerError[ctx];
-                    err.kind.tag = 2; // TypeError
-                    err.message = std.Clone(ctx, std.Concat("Semantic Error: Allocator moved or freed: ", brand_name));
-                    err.span = expr.Identifier.span;
-                    (*env).errors.Push(err);
-                }
-            }
+                        mut clean_brand := strip_brand_prefix(brand_name, ctx);
+                        if (*env).moved_vars.Get(clean_brand).Ok {
+                            report_error(2, std.Concat("Semantic Error: Allocator moved or freed: ", brand_name), expr.Identifier.span, env, ctx);
+                        }
+                    }
             return t;
         }
         if expr.tag == 1 { // Integer
@@ -1168,18 +1156,28 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if std.str_eq(resolved_func, "std_Clone") || std.str_eq(resolved_func, "std.Clone") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) == 2 {
-                    mut dest_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[dest_expr_idx] = (*args_vec)[0];
-                    check_expression(dest_expr_idx, env, scope, ctx);
+                    mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                    if len(*args_vec) == 2 {
+                        mut dest_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[dest_expr_idx] = (*args_vec)[0];
+                        check_expression(dest_expr_idx, env, scope, ctx);
 
-                    mut val_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[val_expr_idx] = (*args_vec)[1];
-                    mut val_type := check_expression(val_expr_idx, env, scope, ctx);
-                    return val_type;
+                        mut val_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[val_expr_idx] = (*args_vec)[1];
+                        mut val_type := check_expression(val_expr_idx, env, scope, ctx);
+
+                        mut brand_name := get_root_variable(dest_expr_idx, ctx);
+                        mut new_brand := empty[Index[str, ctx]];
+                        if std.str_eq(brand_name, "") == 0 {
+                            new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                            mut ptr := &ctx[new_brand] as *str;
+                            *ptr = std.Clone(ctx, brand_name);
+                        }
+
+                        mut substituted := typechecker_substitute_brand(val_type, new_brand, ctx);
+                        return substituted;
+                    }
                 }
-            }
 
             if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std.Format") {
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
