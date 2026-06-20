@@ -1,9 +1,0 @@
-{
-  "summary": "fix: update collections comment in CORE_HEADERS to pass de-embedded unit test assertion",
-  "files": [
-    {
-      "file_path": "src/codegen_runtime.rs",
-      "code_diff": "<<<<<<< SEARCH\n// GUST NATIVE COLLECTIONS RUNTIME (VECTOR, HASHMAP, POOL & RC MACROS)\nstatic inline int os_is_key_corrupted(Slice_unsigned_char s) {\n=======\n// GUST COLLECTIONS OPERATIONS (VECTOR, HASHMAP, POOL & RC MACROS)\nstatic inline int os_is_key_corrupted(Slice_unsigned_char s) {\n>>>>>>> REPLACE"
-    }
-  ]
-}
