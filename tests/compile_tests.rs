@@ -1,4 +1,5 @@
 use gust_lexer::codegen::Codegen;
+mod common;
 use gust_lexer::lexer::Lexer;
 use gust_lexer::parser::Parser;
 use gust_lexer::typechecker::{Type, TypeChecker, TypeError, TypeErrorKind};
@@ -14,44 +15,6 @@ fn check_program(source: &str) -> Result<(), TypeError> {
     }
     let mut checker = TypeChecker::new();
     checker.check_program(&program)
-}
-
-fn compile_c_program(c_path: &std::path::Path, bin_path: &std::path::Path, c_code: &str) {
-    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
-    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
-
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&runtime_path);
-    cmd.arg(c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(bin_path)
-        .output()
-        .expect("C compilation command failed");
-
-    if !compile_output.status.success() {
-        eprintln!("====================================================");
-        eprintln!("❌ C COMPILATION FAILED!");
-        eprintln!("====================================================");
-        eprintln!("--- GENERATED C CODE ---");
-        for (idx, line) in c_code.lines().enumerate() {
-            eprintln!("{:4} | {}", idx + 1, line);
-        }
-        eprintln!("------------------------");
-        eprintln!(
-            "STDERR:\n{}",
-            String::from_utf8_lossy(&compile_output.stderr)
-        );
-        eprintln!("====================================================");
-        panic!(
-            "Compilation failed: {}",
-            String::from_utf8_lossy(&compile_output.stderr)
-        );
-    }
 }
 
 #[test]
@@ -2442,7 +2405,7 @@ fn test_self_hosted_import_scanner_old() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -2576,7 +2539,7 @@ fn test_self_hosted_graph_construction() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -2705,7 +2668,7 @@ fn test_self_hosted_topological_sort() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -2824,7 +2787,7 @@ fn test_self_hosted_cycle_detection() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -3494,7 +3457,7 @@ fn test_self_hosted_codegen_initializers() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            compile_c_program(&c_path, &bin_path, &c_output);
+            common::compile_c_program(&c_path, &bin_path, &c_output);
 
             let run_output = std::process::Command::new(&bin_path)
                 .output()
@@ -3606,7 +3569,7 @@ fn test_e2e_sentinel_verification_self_hosted() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -3684,7 +3647,7 @@ fn test_e2e_recursive_invariant_safety_self_hosted() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -3762,7 +3725,7 @@ fn test_e2e_bootstrapped_self_test() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -4076,7 +4039,7 @@ fn test_ast_serialization_helpers() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -4232,7 +4195,7 @@ fn test_self_hosted_domain_model_e2e() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -4338,7 +4301,7 @@ fn test_self_hosted_program_serialization_e2e() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -4630,7 +4593,7 @@ fn test_codegen_thread_local_redirection() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            compile_c_program(&c_path, &bin_path, &c_output);
+            common::compile_c_program(&c_path, &bin_path, &c_output);
 
             let run_output = std::process::Command::new(&bin_path)
                 .output()
@@ -6121,7 +6084,7 @@ fn test_self_hosted_primitive_index_parsing() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -6245,7 +6208,7 @@ fn test_self_hosted_full_parsing() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -6352,7 +6315,7 @@ fn test_self_hosted_type_parsing() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -6536,7 +6499,7 @@ fn test_self_hosted_prefix_parsing() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -6658,7 +6621,7 @@ fn test_self_hosted_import_parsing() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -6774,7 +6737,7 @@ fn test_self_hosted_parser_recovery() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -6932,7 +6895,7 @@ fn test_self_hosted_type_serialization() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -7069,7 +7032,7 @@ fn test_self_hosted_expression_serialization() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_output);
+    common::compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -7186,7 +7149,7 @@ fn test_namespaced_generic_type_signature_mismatch_reproduction() {
 
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
-    compile_c_program(&c_path, &bin_path, &c_code);
+    common::compile_c_program(&c_path, &bin_path, &c_code);
 
     let _ = fs::remove_file(&c_path);
     let _ = fs::remove_file(&bin_path);
@@ -7287,7 +7250,7 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            compile_c_program(&c_path, &bin_path, &c_output);
+            common::compile_c_program(&c_path, &bin_path, &c_output);
 
             let run_output = std::process::Command::new(&bin_path)
                 .output()
@@ -7541,7 +7504,7 @@ fn test_refined_match_statement_codegen() {
 #[test]
 fn test_e2e_self_hosted_codegen_tracing() {
     std::thread::Builder::new()
-        .stack_size(104857600)
+        .stack_size(104857600) // 100 MB
         .spawn(|| {
             gust_lexer::init_logging();
             let resolver = gust_lexer::resolver::ModuleResolver::new();
@@ -7561,7 +7524,6 @@ fn test_e2e_self_hosted_codegen_tracing() {
                     } else {
                         format!("{}__", stem)
                     };
-                    // UPDATED: Added Typechecker Error Context
                     if let Err(e) = checker.check_module(&module.program, &prefix) {
                         let diag = gust_lexer::typechecker::format_diagnostic(&module.source, &e);
                         panic!("Typechecking failed on {:?}:\n{}", path, diag);
@@ -7600,29 +7562,17 @@ fn test_e2e_self_hosted_codegen_tracing() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-            let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg(&c_path);
-            if std::env::var("GUST_NO_SANITIZERS").is_err() {
-                cmd.arg("-fsanitize=address,undefined");
-            }
-            let compile_output = cmd
-                .arg("-o")
-                .arg(&bin_path)
-                .output()
-                .expect("GCC command failed");
+            // Use the shared compilation helper with the raw compiler output
+            common::compile_c_program(&c_path, &bin_path, &c_output);
 
-            assert!(
-                compile_output.status.success(),
-                "Compilation failed: {}",
-                String::from_utf8_lossy(&compile_output.stderr)
-            );
-
-            // UPDATED: Capture and Print Stderr
+            // Execute the compiled binary
             let run_output = std::process::Command::new(&bin_path)
                 .arg("compiler/test_scratch_storage_violation.gst")
                 .output()
                 .expect("Execution failed");
+
+            let _ = std::fs::remove_file(&c_path);
+            let _ = std::fs::remove_file(&bin_path);
 
             if !run_output.status.success() {
                 let stderr_str = String::from_utf8_lossy(&run_output.stderr);
@@ -7634,9 +7584,6 @@ fn test_e2e_self_hosted_codegen_tracing() {
             }
 
             let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
-
-            let _ = std::fs::remove_file(&c_path);
-            let _ = std::fs::remove_file(&bin_path);
 
             assert!(stdout_str.contains("codegen_generate: commencing code generation pass"));
             assert!(
@@ -7719,18 +7666,10 @@ fn test_self_hosted_guard_resolver_compilation() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            compile_c_program(&c_path, &bin_path, &c_output);
+            // Compile the generated output directly
+            common::compile_c_program(&c_path, &bin_path, &c_output);
 
-            let mut cmd = std::process::Command::new(&bin_path);
-            cmd.arg("compiler/resolver.gst");
-
-            eprintln!("DEBUG: Executing Command: {:?}", cmd);
-
-            let run = cmd
-                .output()
-                .expect("Self-compilation of test_runner_entry.gst using gust_v2 failed");
-
-            // Run the self-hosted compiler over compiler/resolver.gst
+            // Execute the self-hosted compiler over compiler/resolver.gst
             let run = std::process::Command::new(&bin_path)
                 .arg("compiler/resolver.gst")
                 .output()
@@ -7745,8 +7684,8 @@ fn test_self_hosted_guard_resolver_compilation() {
             if !run.status.success() {
                 eprintln!("--- EXECUTION FAILED ---");
                 eprintln!("Status: {:?}", run.status);
-                eprintln!("STDOUT:\n{}", String::from_utf8_lossy(&run.stdout));
-                eprintln!("STDERR:\n{}", String::from_utf8_lossy(&run.stderr));
+                eprintln!("STDOUT:\n{}", stdout_str);
+                eprintln!("STDERR:\n{}", stderr_str);
             }
 
             assert!(
