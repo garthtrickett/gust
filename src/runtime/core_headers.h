@@ -24,6 +24,16 @@ typedef struct {
     size_t Capacity;
 } os_Arena;
 
+typedef struct {
+    os_Arena* arena;
+    int capacity;
+    void* data;
+    int free_len;
+    int* free_list;
+    int len;
+    int* occupied;
+} GenericPool;
+
 // Standard Slice Structures
 typedef struct Slice_unsigned_char Slice_unsigned_char;
 struct Slice_unsigned_char {

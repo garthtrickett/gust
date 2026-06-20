@@ -1,9 +1,10 @@
 {
-  "summary": "fix: update e2e scratchpad test to link against src/runtime.c during both debug and ndebug compilations",
+  "summary": "refactor: fix static inline linkage conflicts and add missing GenericPool struct to core_headers.h",
   "files": [
     {
-      "file_path": "tests/e2e_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    let cc_compiler = env::var(\"CC\").unwrap_or_else(|_| \"cc\".to_string());\n\n    // Compile NDEBUG version\n    let mut cmd_ndebug = Command::new(&cc_compiler);\n    cmd_ndebug.arg(&c_path);\n=======\n    let manifest_dir = env::var(\"CARGO_MANIFEST_DIR\").unwrap_or_else(|_| \".\".to_string());\n    let runtime_path = std::path::Path::new(&manifest_dir).join(\"src/runtime.c\");\n\n    let cc_compiler = env::var(\"CC\").unwrap_or_else(|_| \"cc\".to_string());\n\n    // Compile NDEBUG version\n    let mut cmd_ndebug = Command::new(&cc_compiler);\n    cmd_ndebug.arg(&runtime_path).arg(&c_path);\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n    // Compile DEBUG version\n    let mut cmd_debug = Command::new(&cc_compiler);\n    cmd_debug.arg(&c_path).arg(\"-DGUST_DEBUG\");\n=======\n    // Compile DEBUG version\n    let mut cmd_debug = Command::new(&cc_compiler);\n    cmd_debug.arg(&runtime_path).arg(&c_path).arg(\"-DGUST_DEBUG\");\n>>>>>>> REPLACE"
+      "file_path": "src/runtime/core_headers.h",
+      "code_diff": "<<<<<<< SEARCH\ntypedef struct {\n    void* BaseAddress;\n    size_t Offset;\n    size_t Capacity;\n} os_Arena;\n\n// Standard Slice Structures\n=======\ntypedef struct {\n    void* BaseAddress;\n    size_t Offset;\n    size_t Capacity;\n} os_Arena;\n\ntypedef struct {\n    os_Arena* arena;\n    int capacity;\n    void* data;\n    int free_len;\n    int* free_list;\n    int len;\n    int* occupied;\n} GenericPool;\n\n// Standard Slice Structures\n>>>>>>> REPLACE"
     }
+    
   ]
 }
