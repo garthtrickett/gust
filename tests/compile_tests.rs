@@ -46,6 +46,12 @@ fn map_message_to_kind(msg: &str) -> TypeErrorKind {
         TypeErrorKind::SyntaxError
     } else if msg.contains("duplicate function definition") || msg.contains("Duplicate function definition") {
         TypeErrorKind::DuplicateFunctionDefinition
+    } else if msg.contains("not found on struct layout") || (msg.contains("Field") && msg.contains("not found")) {
+        TypeErrorKind::FieldNotFound
+    } else if msg.contains("Method") && msg.contains("not found") {
+        TypeErrorKind::MethodNotFound
+    } else if msg.contains("Undefined function") {
+        TypeErrorKind::UndefinedFunction
     } else if msg.contains("Unresolved namespace alias") || msg.contains("mismatch") || msg.contains("is not exhaustive") || msg.contains("is not a valid variant") || msg.contains("mismatched") || msg.contains("expects") || msg.contains("mismatch") {
         TypeErrorKind::TypeMismatch
     } else {
