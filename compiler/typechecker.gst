@@ -696,17 +696,34 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
                 }
 
-                if is_map == 1 {
+
+                 if is_map == 1 {
                     if std.str_eq(right_name, "Insert") {
                         mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         if len(*args_vec) == 2 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
-                            
+                            mut k_arg := check_expression(arg0_idx, env, scope, ctx);
+
                             mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg1_idx] = (*args_vec)[1];
-                            check_expression(arg1_idx, env, scope, ctx);
+                            mut v_arg := check_expression(arg1_idx, env, scope, ctx);
+
+                            mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
+                            mut v_type := typechecker_get_template_elem_type(s_name, "values", env, ctx);
+
+                            if types_match(k_type, k_arg, ctx) == 0 {
+                                mut msg := std.Concat("Semantic Error: Key type mismatch for HashMap.Insert. Expected ", ast.serialize_type(k_type, ctx));
+                                msg = std.Concat(msg, " but got ");
+                                msg = std.Concat(msg, ast.serialize_type(k_arg, ctx));
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
+                            if types_match(v_type, v_arg, ctx) == 0 {
+                                mut msg := std.Concat("Semantic Error: Value type mismatch for HashMap.Insert. Expected ", ast.serialize_type(v_type, ctx));
+                                msg = std.Concat(msg, " but got ");
+                                msg = std.Concat(msg, ast.serialize_type(v_arg, ctx));
+                                report_error(2, msg, get_expression_span(arg1_idx, ctx), env, ctx);
+                            }
                         }
                         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                         return t_void;
@@ -716,13 +733,21 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if len(*args_vec) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
+                            mut k_arg := check_expression(arg0_idx, env, scope, ctx);
+
+                            mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
+                            if types_match(k_type, k_arg, ctx) == 0 {
+                                mut msg := std.Concat("Semantic Error: Key type mismatch for HashMap.Get. Expected ", ast.serialize_type(k_type, ctx));
+                                msg = std.Concat(msg, " but got ");
+                                msg = std.Concat(msg, ast.serialize_type(k_arg, ctx));
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
                         }
-                        
+
                         mut v_type := typechecker_get_template_elem_type(s_name, "values", env, ctx);
                         mut val_type_ident := get_type_ident(v_type, ctx);
                         mut lookup_struct_name := std.Concat("LookupResult_", val_type_ident);
-                        
+
                         unsafe {
                             mut existing_lookup := (*env).struct_registry.Get(lookup_struct_name);
                             if existing_lookup.Ok == 0 {
@@ -730,7 +755,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
                                 fields.Insert("Ok", t_int);
                                 fields.Insert("Val", v_type);
-                                
+
                                 mut layout: StructLayout[ctx];
                                 layout.brand = empty[Index[str, ctx]];
                                 layout.fields = fields;
@@ -744,7 +769,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if len(*args_vec) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
+                            mut k_arg := check_expression(arg0_idx, env, scope, ctx);
+
+                            mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
+                            if types_match(k_type, k_arg, ctx) == 0 {
+                                mut msg := std.Concat("Semantic Error: Key type mismatch for HashMap.Remove. Expected ", ast.serialize_type(k_type, ctx));
+                                msg = std.Concat(msg, " but got ");
+                                msg = std.Concat(msg, ast.serialize_type(k_arg, ctx));
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
                         }
                         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                         return t_void;
@@ -762,7 +795,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             check_expression(arg0_idx, env, scope, ctx);
                             brand_name = get_root_variable(arg0_idx, ctx);
                         }
-                        
+
                         mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
                         mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
                         args.Push(k_type);
@@ -777,9 +810,17 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if len(*args_vec) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
+                            mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+
+                            mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
+                            if types_match(elem_type, arg_type, ctx) == 0 {
+                                mut msg := std.Concat("Semantic Error: Argument type mismatch for Pool.Alloc. Expected ", ast.serialize_type(elem_type, ctx));
+                                msg = std.Concat(msg, " but got ");
+                                msg = std.Concat(msg, ast.serialize_type(arg_type, ctx));
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
                         }
-                        
+
                         mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
                         mut elem_struct_name := "SessionNode";
                         if elem_type.tag == 8 { // Struct
@@ -801,13 +842,30 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if len(*args_vec) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
+                            mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+
+                            mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
+                            mut brand_name := empty[Index[str, ctx]];
+                            if left_type.tag == 8 { // Struct
+                                brand_name = left_type.Struct.brand;
+                            }
+                            mut elem_struct_name := "SessionNode";
+                            if elem_type.tag == 8 { // Struct
+                                elem_struct_name = elem_type.Struct.struct_name;
+                            }
+                            mut expected_index_type := typechecker_substitute_brand(make_type_index(elem_struct_name, "", ctx), brand_name, ctx);
+                            if types_match(expected_index_type, arg_type, ctx) == 0 {
+                                mut msg := std.Concat("Semantic Error: Argument type mismatch for Pool.Free. Expected ", ast.serialize_type(expected_index_type, ctx));
+                                msg = std.Concat(msg, " but got ");
+                                msg = std.Concat(msg, ast.serialize_type(arg_type, ctx));
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
                         }
                         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                         return t_void;
                     }
                 }
-
+                
                 if is_rc == 1 {
                     if std.str_eq(right_name, "Clone") {
                         return left_type;
@@ -845,7 +903,37 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if len(*args_vec) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
+                            mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+                            
+                            // Get value type
+                            mut t_type: ast.Type[ctx]; t_type.tag = 3; // Void
+                            mut lookup_layout := (*env).struct_registry.Get(s_name);
+                            if lookup_layout.Ok {
+                                mut nodes_t_lookup := lookup_layout.Val.fields.Get("nodes");
+                                if nodes_t_lookup.Ok {
+                                    mut nodes_t := nodes_t_lookup.Val;
+                                    if nodes_t.tag == 8 { // Struct
+                                        mut pool_name := nodes_t.Struct.struct_name;
+                                        mut data_t := typechecker_get_template_elem_type(pool_name, "data", env, ctx);
+                                        if data_t.tag == 8 { // Struct
+                                            mut gnode_name := data_t.Struct.struct_name;
+                                            mut gnode_lookup := (*env).struct_registry.Get(gnode_name);
+                                            if gnode_lookup.Ok {
+                                                mut val_t_lookup := gnode_lookup.Val.fields.Get("value");
+                                                if val_t_lookup.Ok {
+                                                    t_type = val_t_lookup.Val;
+                                                }
+                                            } 
+                                        }
+                                    }
+                                }
+                            }
+                            if t_type.tag != 3 && types_match(t_type, arg_type, ctx) == 0 {
+                                mut msg := std.Concat("Semantic Error: Graph.AddNode value type mismatch. Expected ", ast.serialize_type(t_type, ctx));
+                                msg = std.Concat(msg, " but got ");
+                                msg = std.Concat(msg, ast.serialize_type(arg_type, ctx));
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
                         }
                         mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
                         return t_int;
