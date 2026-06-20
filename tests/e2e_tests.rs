@@ -3178,7 +3178,7 @@ fn test_e2e_self_hosted_lexer() {
         }
     }
 
-    let codegen = gust_lexer::codegen::Codegen::new(
+    let codegen = Codegen::new(
         checker.variable_types,
         checker.struct_registry,
         checker.function_registry,
@@ -3186,6 +3186,12 @@ fn test_e2e_self_hosted_lexer() {
         checker.resolved_names,
         checker.resolved_types,
     );
+    let mut modules_for_codegen = Vec::new();
+    for path in &order {
+        if let Some(module) = modules.get(path) {
+            modules_for_codegen.push((path.clone(), module.program.clone()));
+        }
+    }
     let c_code = codegen.generate(&modules_for_codegen);
 
     let count = 9999;
@@ -3202,9 +3208,12 @@ fn test_e2e_self_hosted_lexer() {
 
     std::fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
+    cmd.arg(&runtime_path).arg(&c_path);
     if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
@@ -3443,9 +3452,12 @@ fn test_e2e_self_hosted_module_resolver() {
 
     std::fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
+    cmd.arg(&runtime_path).arg(&c_path);
     if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
@@ -4093,9 +4105,12 @@ fn test_e2e_self_hosted_typechecker_tracing() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
+            let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+            let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
             let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
             let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg(&c_path);
+            cmd.arg(&runtime_path).arg(&c_path);
             if std::env::var("GUST_NO_SANITIZERS").is_err() {
                 cmd.arg("-fsanitize=address,undefined");
             }
@@ -4210,9 +4225,12 @@ fn test_e2e_self_hosted_scope_resolution() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
+            let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+            let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
             let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
             let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg(&c_path);
+            cmd.arg(&runtime_path).arg(&c_path);
             if std::env::var("GUST_NO_SANITIZERS").is_err() {
                 cmd.arg("-fsanitize=address,undefined");
             }
@@ -4318,9 +4336,12 @@ fn test_e2e_self_hosted_registries() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
+            let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+            let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
             let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
             let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg(&c_path);
+            cmd.arg(&runtime_path).arg(&c_path);
             if std::env::var("GUST_NO_SANITIZERS").is_err() {
                 cmd.arg("-fsanitize=address,undefined");
             }
@@ -4424,9 +4445,12 @@ fn test_e2e_self_hosted_origins() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
+            let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+            let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
             let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
             let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg(&c_path);
+            cmd.arg(&runtime_path).arg(&c_path);
             if std::env::var("GUST_NO_SANITIZERS").is_err() {
                 cmd.arg("-fsanitize=address,undefined");
             }
