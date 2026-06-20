@@ -1401,6 +1401,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 resolved_return = env_resolve_type(env, resolved_return, ctx);
                 return resolved_return;
             }
+            mut msg := std.Concat("Semantic Error: Undefined function '", func_name);
+            msg = std.Concat(msg, "'");
+            report_error(2, msg, expr.Call.span, env, ctx);
+
             mut t: ast.Type[ctx];
             t.tag = 0; // Int
             return t;
