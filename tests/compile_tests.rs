@@ -81,6 +81,11 @@ fn check_program(source: &str) -> Result<(), TypeError> {
         let stderr = String::from_utf8_lossy(&output.stderr);
         let combined_output = format!("{}\n{}", stdout, stderr);
 
+        eprintln!("\n--- DEBUG check_program FAILED ---");
+        eprintln!("STDOUT:\n{}", stdout);
+        eprintln!("STDERR:\n{}", stderr);
+        eprintln!("----------------------------------\n");
+
         let mut error_message = String::new();
         let mut line_num = 1;
         let mut col_num = 1;
@@ -148,6 +153,9 @@ fn check_program(source: &str) -> Result<(), TypeError> {
         }
 
         let error_kind = map_message_to_kind(&error_message);
+
+        eprintln!("DEBUG: parsed error_message = {:?}", error_message);
+        eprintln!("DEBUG: mapped error_kind = {:?}", error_kind);
 
         let span = if found_span {
             Some(gust_lexer::token::Span {
