@@ -3874,9 +3874,12 @@ fn test_self_hosted_parser_ast_dump() {
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
     std::fs::write("type_dump_failed.c", &c_output).expect("Failed to write local debug C file");
 
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = Command::new(&cc_compiler);
-    cmd.arg(&c_path);
+    cmd.arg(&runtime_path).arg(&c_path);
     if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
