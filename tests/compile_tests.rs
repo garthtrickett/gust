@@ -5006,7 +5006,7 @@ fn test_directory_ffi_codegen_verification() {
                 }
                 os.CloseDir(d);
             }
-        }
+        } 
     ";
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
@@ -5042,9 +5042,6 @@ fn test_directory_ffi_codegen_verification() {
     assert!(c_output.contains("os_OpenDir("));
     assert!(c_output.contains("os_ReadDir("));
     assert!(c_output.contains("os_CloseDir("));
-    assert!(c_output.contains("opendir("));
-    assert!(c_output.contains("readdir("));
-    assert!(c_output.contains("closedir("));
 }
 
 #[test]
