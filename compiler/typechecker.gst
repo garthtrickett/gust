@@ -398,6 +398,26 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     brand_idx = idx_t.Index.brand;
                 }
 
+                if brand_idx != empty[Index[str, ctx]] {
+                    mut brand_str_ptr := &ctx[brand_idx] as *str;
+                    mut brand_name := *brand_str_ptr;
+                    mut clean_brand := strip_brand_prefix(brand_name, ctx);
+                    mut alloc_name := get_root_variable(expr.IndexAccess.allocator, ctx);
+                    mut clean_alloc := strip_brand_prefix(alloc_name, ctx);
+                    if std.str_eq(clean_brand, "Any") == 0 && std.str_eq(clean_brand, clean_alloc) == 0 {
+                        mut suffix := std.Concat(".", clean_brand);
+                        if typechecker_ends_with(clean_alloc, suffix) == 0 {
+                            mut msg := std.Concat("Semantic Error: Value-Branded Lifetime Violation! Attempted to index allocator '", alloc_name);
+                            msg = std.Concat(msg, "' with index '");
+                            msg = std.Concat(msg, expression_to_string(expr.IndexAccess.index, ctx));
+                            msg = std.Concat(msg, "' branded for '");
+                            msg = std.Concat(msg, brand_name);
+                            msg = std.Concat(msg, "'");
+                            report_error(2, msg, get_expression_span(expr.IndexAccess.index, ctx), env, ctx);
+                        }
+                    }
+                }
+
                 if std.str_eq(target_struct, "int") == 1 {
                     mut t: ast.Type[ctx]; t.tag = 0; // Int
                     return t;
