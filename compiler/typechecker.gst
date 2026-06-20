@@ -346,7 +346,12 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             return check_expression(expr.Move.expr, env, scope, ctx);
         }
         if expr.tag == 5 { // Take
-            return check_expression(expr.Take.expr, env, scope, ctx);
+            mut inner_t := check_expression(expr.Take.expr, env, scope, ctx);
+            if inner_t.tag == 0 || inner_t.tag == 1 || inner_t.tag == 2 { // Int, Byte, Bool
+                mut msg := "Semantic Error: The 'take' operator is strictly banned on primitive POD types (like Int)";
+                report_error(2, msg, expr.Take.span, env, ctx);
+            }
+            return inner_t;
         }
         if expr.tag == 6 { // AddressOf
             mut inner := check_expression(expr.AddressOf.expr, env, scope, ctx);
@@ -357,6 +362,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             return ctx[t_idx];
         }
         if expr.tag == 7 { // Dereference
+            if (*env).in_unsafe_block == 0 {
+                mut msg := "Semantic Error: Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks";
+                report_error(2, msg, expr.Dereference.span, env, ctx);
+            }
             mut inner := check_expression(expr.Dereference.expr, env, scope, ctx);
             if inner.tag == 9 {
                 return ctx[inner.RawPointer.inner];
