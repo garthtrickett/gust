@@ -10,6 +10,12 @@ pub const CORE_HEADERS: &str = r#"#define _GNU_SOURCE
 
 typedef void Any;
 
+typedef struct {
+    void* BaseAddress;
+    size_t Offset;
+    size_t Capacity;
+} os_Arena;
+
 "#;
 
 pub const FIBER_RUNTIME: &str = r#"// ====================================================

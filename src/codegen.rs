@@ -684,22 +684,11 @@ impl Codegen {
         let mut c_code = String::new();
 
         c_code.push_str(codegen_runtime::CORE_HEADERS);
-        c_code.push_str(codegen_runtime::FIBER_RUNTIME);
-        c_code.push_str(codegen_runtime::ARENA_RUNTIME);
-        c_code.push_str(codegen_runtime::SCRATCH_RUNTIME);
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// FORWARD DECLARATIONS\n");
         c_code.push_str("// ====================================================\n");
         for struct_name in self.struct_registry.keys() {
-            if struct_name == "std_Vector_str"
-                || struct_name == "os_Dir"
-                || struct_name == "os_DirEntry"
-                || struct_name == "LookupResult_os_Dir"
-                || struct_name == "LookupResult_os_DirEntry"
-            {
-                continue;
-            }
             c_code.push_str(&format!(
                 "typedef struct {} {};\n",
                 struct_name, struct_name
@@ -749,12 +738,8 @@ impl Codegen {
             c_code.push_str(&format!("struct Slice_{} {{\n", elem_ident));
             c_code.push_str(&format!("    {}* data;\n", elem_c));
             c_code.push_str("    int len;\n");
-            c_code.push_str("};\n\n");
+            c_code.push_str("}};\n\n");
         }
-
-        c_code.push_str(codegen_runtime::COLLECTIONS_RUNTIME);
-        c_code.push_str(codegen_runtime::MOCK_PAYLOAD_RUNTIME);
-        c_code.push_str(codegen_runtime::FILE_IO_RUNTIME);
 
         c_code.push_str("// ====================================================\n");
         c_code.push_str("// FUNCTION FORWARD DECLARATIONS\n");
@@ -929,10 +914,7 @@ impl Codegen {
 
         // Forward declare all CastResult structures first to prevent any ordering issues
         for struct_name in &ordered_struct_names {
-            if struct_name == "os_Dir" || struct_name == "os_DirEntry" {
-                continue;
-            }
-            if !struct_name.starts_with("LookupResult_") && !struct_name.starts_with("CastResult_")
+            if !struct_name.starts_with("CastResult_") && !struct_name.starts_with("CastResult_")
             {
                 c_code.push_str(&format!(
                     "typedef struct CastResult_{} CastResult_{};\n",
@@ -943,13 +925,7 @@ impl Codegen {
         c_code.push('\n');
 
         for struct_name in &ordered_struct_names {
-            if struct_name == "std_Vector_str"
-                || struct_name == "os_Dir"
-                || struct_name == "os_DirEntry"
-                || struct_name == "LookupResult_os_Dir"
-                || struct_name == "LookupResult_os_DirEntry"
-                || struct_name.starts_with("CastResult_")
-            {
+            if struct_name.starts_with("CastResult_") {
                 continue;
             }
             let layout = &self.struct_registry[struct_name];
