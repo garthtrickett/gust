@@ -959,6 +959,7 @@ impl Parser {
             return None;
         }
         let end_span = self.cur_token.span;
+        self.next_token(); // consume '}'
 
         Some(Statement::Match {
             expression,

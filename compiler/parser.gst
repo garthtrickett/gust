@@ -1292,6 +1292,7 @@ func parse_match_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
             return empty[Index[ast.Statement[ctx], ctx]];
         }
         mut end_span := (*p).cur_token.span;
+        next_token(p); // consume '}'
 
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
         ctx[stmt_idx].tag = 8; // Match = 8

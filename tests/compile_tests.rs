@@ -5,6 +5,20 @@ use gust_lexer::parser::Parser;
 use gust_lexer::typechecker::{Type, TypeChecker, TypeError, TypeErrorKind};
 use std::env;
 
+
+fn filter_output_c_code(stdout: &str) -> String {
+    stdout
+        .lines()
+        .filter(|l| {
+            let trimmed = l.trim_start();
+            if trimmed.is_empty() {
+                return true;
+            }
+            trimmed.chars().next().map_or(false, |c| c.is_ascii())
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
 fn check_program(source: &str) -> Result<(), TypeError> {
     gust_lexer::init_logging();
     let lexer = Lexer::new(source);
@@ -7735,4 +7749,166 @@ fn test_assignment_lhs_registered_in_resolved_types() {
     } else {
         panic!("Expected FunctionDecl at index 0");
     }
+}
+
+#[test]
+fn test_e2e_complex_bootstrap_self_hosted() {
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
+
+            // 1. Resolve and compile the self-hosted compiler (test_runner_entry.gst) using the Rust prototype (gust_v1)
+            let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
+            let res = resolver
+                .resolve(&entry_path, &fs_impl)
+                .expect("Failed to resolve test_runner_entry.gst");
+            let (order, mut modules) = res;
+
+            let mut checker_v1 = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    checker_v1
+                        .check_module(&module.program, &prefix)
+                        .expect("Typechecking failed on test_runner_entry.gst");
+                }
+            }
+
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
+                }
+            }
+
+            let codegen_v1 = Codegen::new(
+                checker_v1.variable_types,
+                checker_v1.struct_registry,
+                checker_v1.function_registry,
+                checker_v1.enum_registry,
+                checker_v1.resolved_names,
+                checker_v1.resolved_types,
+            );
+            let c_output_v2 = codegen_v1.generate(&modules_for_codegen);
+
+            // Write the self-hosted compiler C output to disk in temp dir
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
+
+            let gust_v2_c_filename = format!("gust_v2_{:?}_{}.c", thread_id, process_id);
+            let gust_v2_bin_filename = format!("gust_v2_bin_{:?}_{}", thread_id, process_id);
+            let gust_v2_c_path = temp_dir.join(&gust_v2_c_filename);
+            let gust_v2_bin_path = temp_dir.join(&gust_v2_bin_filename);
+
+            std::fs::write(&gust_v2_c_path, &c_output_v2).expect("Failed to write gust_v2 C file");
+
+            // Compile gust_v2 binary using host C compiler
+            let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+            let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
+            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
+            let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg(&runtime_path);
+            cmd.arg(&gust_v2_c_path);
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd.arg("-fsanitize=address,undefined");
+            }
+            let compile_output = cmd
+                .arg("-o")
+                .arg(&gust_v2_bin_path)
+                .output()
+                .expect("C compiler compilation of gust_v2 failed");
+
+            assert!(
+                compile_output.status.success(),
+                "C compilation of gust_v2 failed:\n{}",
+                String::from_utf8_lossy(&compile_output.stderr)
+            );
+
+            // 2. Compile compiler/e2e_complex_bootstrap_target.gst using gust_v2_bin_path
+            let run_gust_v2 = std::process::Command::new(&gust_v2_bin_path)
+                .arg("compiler/e2e_complex_bootstrap_target.gst")
+                .output()
+                .expect("Compilation of e2e_complex_bootstrap_target.gst using gust_v2 failed");
+
+            assert!(
+                run_gust_v2.status.success(),
+                "Compilation of e2e_complex_bootstrap_target.gst using gust_v2 failed:\nSTDOUT:\n{}\nSTDERR:\n{}",
+                String::from_utf8_lossy(&run_gust_v2.stdout),
+                String::from_utf8_lossy(&run_gust_v2.stderr)
+            );
+
+            let c_output_target_raw =
+                String::from_utf8(run_gust_v2.stdout).expect("Invalid UTF-8 from gust_v2 compilation");
+            let c_output_target = filter_output_c_code(&c_output_target_raw);
+
+            // 3. Prepend core_headers.h and write clean C output to target_c_path
+            let mut final_c_code = String::new();
+            final_c_code.push_str("#include \"runtime/core_headers.h\"\n\n");
+            final_c_code.push_str(&c_output_target);
+
+            let target_c_filename = format!("target_{:?}_{}.c", thread_id, process_id);
+            let target_bin_filename = format!("target_bin_{:?}_{}", thread_id, process_id);
+            let target_c_path = temp_dir.join(&target_c_filename);
+            let target_bin_path = temp_dir.join(&target_bin_filename);
+
+            std::fs::write(&target_c_path, &final_c_code).expect("Failed to write target C file");
+
+            // 4. Compile the target executable against src/runtime.c and the clean C file
+            let mut cmd2 = std::process::Command::new(&cc_compiler);
+            cmd2.arg(&runtime_path);
+            cmd2.arg(&target_c_path);
+            cmd2.arg("-Isrc"); // include path to find runtime/core_headers.h
+            if std::env::var("GUST_NO_SANITIZERS").is_err() {
+                cmd2.arg("-fsanitize=address,undefined");
+            }
+            let compile_target_output = cmd2
+                .arg("-o")
+                .arg(&target_bin_path)
+                .output()
+                .expect("C compiler compilation of target executable failed");
+
+            assert!(
+                compile_target_output.status.success(),
+                "C compilation of target executable failed:\n{}",
+                String::from_utf8_lossy(&compile_target_output.stderr)
+            );
+
+            // 5. Run the compiled executable and assert the exact expected outputs
+            let run_target = std::process::Command::new(&target_bin_path)
+                .output()
+                .expect("Execution of compiled target executable failed");
+
+            assert!(
+                run_target.status.success(),
+                "Execution of compiled target executable failed:\nSTDOUT:\n{}\nSTDERR:\n{}",
+                String::from_utf8_lossy(&run_target.stdout),
+                String::from_utf8_lossy(&run_target.stderr)
+            );
+
+            let stdout_str = String::from_utf8(run_target.stdout).expect("Invalid UTF-8 from target execution");
+
+            // Expected outputs from e2e_complex_bootstrap_target.gst
+            let expected_output = "Active: E2E_Bootstrap\n3\n1";
+            assert_eq!(stdout_str.trim(), expected_output.trim());
+
+            // Clean up temporary files
+            let _ = std::fs::remove_file(&gust_v2_c_path);
+            let _ = std::fs::remove_file(&gust_v2_bin_path);
+            let _ = std::fs::remove_file(&target_c_path);
+            let _ = std::fs::remove_file(&target_bin_path);
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }

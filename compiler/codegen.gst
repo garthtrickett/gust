@@ -3083,7 +3083,6 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     res = std.Concat(res, body_c);
                     res = std.Concat(res, "}\n\n");
                 res = std.Concat(res, "int main(int argc, char** argv) {\n");
-                res = std.Concat(res, "    printf(\"DEBUG: argc is %d\\n\", argc);\n");
                 res = std.Concat(res, "    os_argc = argc;\n");
                 res = std.Concat(res, "    os_argv = argv;\n");
                 res = std.Concat(res, "    gust_scheduler_init(1);\n");

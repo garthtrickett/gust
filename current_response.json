@@ -1,0 +1,13 @@
+{
+  "summary": "fix: consume closing brace in match statement parser",
+  "files": [
+    {
+      "file_path": "src/parser.rs",
+      "code_diff": "<<<<<<< SEARCH\n        if self.cur_token.token_type != TokenType::RBrace {\n            return None;\n        }\n        let end_span = self.cur_token.span;\n\n        Some(Statement::Match {\n            expression,\n            cases,\n            span: self.merge_spans(start_span, end_span),\n        })\n=======\n        if self.cur_token.token_type != TokenType::RBrace {\n            return None;\n        }\n        let end_span = self.cur_token.span;\n        self.next_token(); // consume '}'\n\n        Some(Statement::Match {\n            expression,\n            cases,\n            span: self.merge_spans(start_span, end_span),\n        })\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "compiler/parser.gst",
+      "code_diff": "<<<<<<< SEARCH\n        if cur_token_is(p, 14) == false { // RBrace = 14\n            return empty[Index[ast.Statement[ctx], ctx]];\n        }\n        mut end_span := (*p).cur_token.span;\n\n        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);\n=======\n        if cur_token_is(p, 14) == false { // RBrace = 14\n            return empty[Index[ast.Statement[ctx], ctx]];\n        }\n        mut end_span := (*p).cur_token.span;\n        next_token(p); // consume '}'\n\n        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);\n>>>>>>> REPLACE"
+    }
+  ]
+}
