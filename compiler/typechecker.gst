@@ -638,17 +638,6 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             if lookup.Ok {
                                 mut val_t_lookup := lookup.Val.fields.Get("value");
                                 if val_t_lookup.Ok {
-                                    return make_type_pointer(val_t_lookup.Val, ctx);
-                                } 
-                            }
-                        }
-                    }
-                    if std.str_eq(right_name, "Unlock") {
-                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
-                        return t_void;
-                    }
-                }
-
                 if is_channel == 1 {
                     if std.str_eq(right_name, "Send") {
                         // Typecheck argument
@@ -656,7 +645,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if len(*args_vec) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
+                            mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+
+                            mut elem_type := typechecker_get_template_elem_type(s_name, "_phantom", env, ctx);
+                            if types_match(elem_type, arg_type, ctx) == 0 { 
+                                mut msg := std.Concat("Semantic Error: Argument type mismatch for Channel.Send. Expected ", ast.serialize_type(elem_type, ctx));
+                                msg = std.Concat(msg, " but got ");
+                                msg = std.Concat(msg, ast.serialize_type(arg_type, ctx));
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
                         }
                         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                         return t_void;
@@ -673,7 +670,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if len(*args_vec) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
+                            mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+
+                            mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
+                            if types_match(elem_type, arg_type, ctx) == 0 { 
+                                mut msg := std.Concat("Semantic Error: Argument type mismatch for Vector.Push. Expected ", ast.serialize_type(elem_type, ctx));
+                                msg = std.Concat(msg, " but got ");
+                                msg = std.Concat(msg, ast.serialize_type(arg_type, ctx));
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
                         }
                         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                         return t_void;
