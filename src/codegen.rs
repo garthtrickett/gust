@@ -738,91 +738,19 @@ impl Codegen {
             c_code.push_str(&format!("struct Slice_{} {{\n", elem_ident));
             c_code.push_str(&format!("    {}* data;\n", elem_c));
             c_code.push_str("    int len;\n");
-            c_code.push_str("}};\n\n");
+            c_code.push_str("};\n\n");
         }
 
-        c_code.push_str("// ====================================================\n");
-        c_code.push_str("// FUNCTION FORWARD DECLARATIONS\n");
         c_code.push_str("// ====================================================\n");
         for (func_name, sig) in &self.function_registry {
             if func_name == "main" {
                 continue;
             }
-            // Skip forward declarations for compiler-intrinsic helper functions that are compiled to macros or inline initializers
-            if func_name == "std.Clone"
-                || func_name == "std_Clone"
-                || func_name == "std.GenerationalSwap"
-                || func_name == "std_GenerationalSwap"
-                || func_name == "std.PoolNew"
-                || func_name == "std_PoolNew"
-                || func_name == "os.PoolNew"
-                || func_name == "os_PoolNew"
-                || func_name == "std.VectorNew"
-                || func_name == "std_VectorNew"
-                || func_name == "os.VectorNew"
-                || func_name == "os_VectorNew"
-                || func_name == "std.HashMapNew"
-                || func_name == "std_HashMapNew"
-                || func_name == "os.HashMapNew"
-                || func_name == "os_HashMapNew"
-                || func_name == "std.GraphNew"
-                || func_name == "std_GraphNew"
-                || func_name == "os.ArenaAlloc"
-                || func_name == "os_ArenaAlloc"
-                || func_name == "os.ArenaValidate"
-                || func_name == "os_ArenaValidate"
-                || func_name == "os.ScratchAlloc"
-                || func_name == "os_ScratchAlloc"
-                || func_name == "os.ScratchReset"
-                || func_name == "os_ScratchReset"
-                || func_name == "std.FormatInt"
-                || func_name == "std_FormatInt"
-                || func_name == "std.Concat"
-                || func_name == "std_Concat"
-                || func_name == "std.MutexNew"
-                || func_name == "std_MutexNew"
-                || func_name == "std.ChannelNew"
-                || func_name == "std_ChannelNew"
-                || func_name == "os.Args"
-                || func_name == "os_Args"
-                || func_name == "os.Exit"
-                || func_name == "os_Exit"
-                || func_name == "os.ReadFile"
-                || func_name == "os_ReadFile"
-                || func_name == "os.WriteFile"
-                || func_name == "os_WriteFile"
-                || func_name == "os.path_join"
-                || func_name == "os_path_join"
-                || func_name == "os.LogInt"
-                || func_name == "os_LogInt"
-                || func_name == "os.LogStr"
-                || func_name == "os_LogStr"
-                || func_name == "os.MockPayload"
-                || func_name == "os_MockPayload"
-                || func_name == "std.str_eq"
-                || func_name == "std_str_eq"
-                || func_name == "std.str_slice"
-                || func_name == "std_str_slice"
-                || func_name == "std.str_byte_at"
-                || func_name == "std_str_byte_at"
-                || func_name == "std.str_find"
-                || func_name == "std_str_find"
-                || func_name == "std.str_trim"
-                || func_name == "std_str_trim"
-                || func_name == "std.str_split"
-                || func_name == "std_str_split"
-                || func_name == "std.Spawn"
-                || func_name == "std_Spawn"
-                || func_name == "std.is_alpha"
-                || func_name == "std_is_alpha"
-                || func_name == "std.is_digit"
-                || func_name == "std_is_digit"
-                || func_name == "std.is_whitespace"
-                || func_name == "std_is_whitespace"
-                || func_name == "std.parse_int"
-                || func_name == "std_parse_int"
-                || ((func_name == "os.GetThreadScratch" || func_name == "os_GetThreadScratch")
-                    && !self.struct_registry.contains_key("std_ThreadLocalContext"))
+            // Skip forward declarations for standard library functions as they are declared in CORE_HEADERS
+            if func_name.starts_with("os.")
+                || func_name.starts_with("os_")
+                || func_name.starts_with("std.")
+                || func_name.starts_with("std_")
             {
                 continue;
             }

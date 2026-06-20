@@ -10,6 +10,9 @@ pub const CORE_HEADERS: &str = r#"#define _GNU_SOURCE
 
 typedef void Any;
 
+extern int os_argc;
+extern char** os_argv;
+
 typedef void* map_void_ptr;
 
 typedef struct {
