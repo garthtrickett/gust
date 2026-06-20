@@ -1,11 +1,6 @@
-#include "runtime/core_headers.h"
-#include "runtime/arena.c"
-#include "runtime/scratch.c"
-#include "runtime/fiber.c"
-#include "runtime/collections.c"
-#include "runtime/file_io.c"
-#include "runtime/mock_payload.c"
-
+#ifndef GUST_CORE_HEADERS_H
+#include "core_headers.h"
+#endif
 
 // ====================================================
 // GUST STANDARD LIBRARY & SYSTEM UTILITIES
@@ -170,5 +165,3 @@ int std_parse_int(Slice_unsigned_char s) {
     }
     return result * sign;
 }
-
-

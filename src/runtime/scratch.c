@@ -1,4 +1,6 @@
+#ifndef GUST_CORE_HEADERS_H
 #include "core_headers.h"
+#endif
 
 #ifndef GUST_SCRATCH_SIZE
 #define GUST_SCRATCH_SIZE 16384

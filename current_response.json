@@ -1,0 +1,10 @@
+{
+  "summary": "debug: add verbose opendir failure diagnostics with perror to os_OpenDir",
+  "files": [
+    {
+      "file_path": "src/runtime/file_io.c",
+      "code_diff": "<<<<<<< SEARCH\n    DIR* dir = opendir(path_c);\n    free(path_c);\n\n    if (dir != NULL) {\n=======\n    DIR* dir = opendir(path_c);\n    if (dir == NULL) {\n        fprintf(stderr, \"os_OpenDir: opendir(\\\"%s\\\") failed! \", path_c);\n        perror(\"Reason\");\n        fflush(stderr);\n    }\n    free(path_c);\n\n    if (dir != NULL) {\n>>>>>>> REPLACE"
+    }
+    
+  ]
+}

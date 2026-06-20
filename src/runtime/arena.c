@@ -1,4 +1,6 @@
+#ifndef GUST_CORE_HEADERS_H
 #include "core_headers.h"
+#endif
 
 void os_Arena_Validate(os_Arena* arena) {
 #ifdef GUST_DEBUG
