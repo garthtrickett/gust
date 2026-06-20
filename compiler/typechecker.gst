@@ -5179,6 +5179,14 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                         mut local_vars := (*env).current_function_local_vars;
                                         set_add(local_vars, field_name, ctx);
                                     }
+                                } else {
+                                    mut msg := std.Concat("Semantic Error: Field '", field_name);
+                                    msg = std.Concat(msg, "' not found on variant '");
+                                    msg = std.Concat(msg, variant_name);
+                                    msg = std.Concat(msg, "' of enum '");
+                                    msg = std.Concat(msg, enum_name);
+                                    msg = std.Concat(msg, "'");
+                                    report_error(2, msg, m_case.span, env, ctx);
                                 }
                                 f = f + 1;
                             }
