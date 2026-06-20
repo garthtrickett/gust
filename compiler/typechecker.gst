@@ -5230,7 +5230,13 @@ func typechecker_serialize_enums(env: *TypeEnvironment[ctx], ctx: &Arena) str {
                 result = std.Concat(result, key);
                 result = std.Concat(result, ":\n");
                 
-                mut variants := lookup.Val;
+                mut orig_variants := lookup.Val;
+                mut variants: std.Vector[str, ctx] := std.VectorNew(ctx);
+                mut v_idx := 0;
+                while v_idx < len(orig_variants) {
+                    variants.Push(std.Clone(ctx, orig_variants[v_idx]));
+                    v_idx = v_idx + 1;
+                }
                 typechecker_sort_vector_str(&variants, ctx);
                 mut j := 0;
                 while j < len(variants) {
