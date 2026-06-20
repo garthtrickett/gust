@@ -706,7 +706,7 @@ static gust_Mutex_Internal gust_mutex_pool[MAX_MUTEXES];
 static int gust_mutex_count = 0;
 static pthread_mutex_t gust_mutex_pool_lock = PTHREAD_MUTEX_INITIALIZER;
 
-static inline int std_Mutex_Alloc() {
+int std_Mutex_Alloc() {
     pthread_mutex_lock(&gust_mutex_pool_lock);
     if (gust_mutex_count >= MAX_MUTEXES) {
         printf("Out of system mutexes!\n");
@@ -722,7 +722,7 @@ static inline int std_Mutex_Alloc() {
     return idx;
 }
 
-static inline void* std_Mutex_Lock_impl(int lock_state, void* value_ptr) {
+void* std_Mutex_Lock_impl(int lock_state, void* value_ptr) {
     gust_Mutex_Internal* m = &gust_mutex_pool[lock_state];
     pthread_mutex_lock(&m->mutex);
 
@@ -757,7 +757,7 @@ static inline void* std_Mutex_Lock_impl(int lock_state, void* value_ptr) {
     return value_ptr;
 }
 
-static inline void std_Mutex_Unlock_impl(int lock_state) {
+void std_Mutex_Unlock_impl(int lock_state) {
     gust_Mutex_Internal* m = &gust_mutex_pool[lock_state];
     pthread_mutex_lock(&m->mutex);
 
@@ -808,7 +808,7 @@ static gust_Channel_Internal gust_channel_pool[MAX_CHANNELS];
 static int gust_channel_count = 0;
 static pthread_mutex_t gust_channel_pool_lock = PTHREAD_MUTEX_INITIALIZER;
 
-static inline int std_Channel_Alloc(int capacity, size_t elem_size) {
+int std_Channel_Alloc(int capacity, size_t elem_size) {
     pthread_mutex_lock(&gust_channel_pool_lock);
     if (gust_channel_count >= MAX_CHANNELS) {
         printf("Out of system channels!\n");
@@ -831,7 +831,7 @@ static inline int std_Channel_Alloc(int capacity, size_t elem_size) {
     return idx;
 }
 
-static inline void std_Channel_Send_impl(int chan_idx, void* val_ptr) {
+void std_Channel_Send_impl(int chan_idx, void* val_ptr) {
     gust_Channel_Internal* chan = &gust_channel_pool[chan_idx];
     pthread_mutex_lock(&chan->mutex);
     while (chan->count >= chan->capacity) {
@@ -890,7 +890,7 @@ static inline void std_Channel_Send_impl(int chan_idx, void* val_ptr) {
     pthread_mutex_unlock(&chan->mutex);
 }
 
-static inline void std_Channel_Recv_impl(int chan_idx, void* out_ptr) {
+void std_Channel_Recv_impl(int chan_idx, void* out_ptr) {
     gust_Channel_Internal* chan = &gust_channel_pool[chan_idx];
     pthread_mutex_lock(&chan->mutex);
     while (chan->count <= 0) {
