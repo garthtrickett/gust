@@ -136,12 +136,22 @@ fn check_program(source: &str) -> Result<(), TypeError> {
         if error_message.is_empty() {
             for line in combined_output.lines() {
                 let trimmed = line.trim();
-                if !trimmed.is_empty() 
-                    && !trimmed.starts_with("👁️") 
-                    && !trimmed.starts_with("❌") 
-                    && !trimmed.starts_with("🗄️") 
-                    && !trimmed.starts_with("🔄") 
-                {
+                let is_log = trimmed.is_empty()
+                    || trimmed.starts_with("👁️")
+                    || trimmed.starts_with("❌")
+                    || trimmed.starts_with("🗄️")
+                    || trimmed.starts_with("🔄")
+                    || trimmed.starts_with("🔍")
+                    || trimmed.starts_with("⚖")
+                    || trimmed.starts_with("📥")
+                    || trimmed.starts_with("✅")
+                    || trimmed.starts_with("⚙️")
+                    || trimmed.starts_with("🎯")
+                    || trimmed.starts_with("DEBUG:")
+                    || trimmed.starts_with("---")
+                    || trimmed.starts_with("STDOUT:")
+                    || trimmed.starts_with("STDERR:");
+                if !is_log {
                     error_message = trimmed.to_string();
                     break;
                 }
