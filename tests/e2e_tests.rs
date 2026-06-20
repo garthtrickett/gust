@@ -1256,7 +1256,10 @@ fn test_e2e_thread_local_scratchpad() {
 
     // Compile DEBUG version
     let mut cmd_debug = Command::new(&cc_compiler);
-    cmd_debug.arg(&runtime_path).arg(&c_path).arg("-DGUST_DEBUG");
+    cmd_debug
+        .arg(&runtime_path)
+        .arg(&c_path)
+        .arg("-DGUST_DEBUG");
     if env::var("GUST_NO_SANITIZERS").is_err() {
         cmd_debug.arg("-fsanitize=address,undefined");
     }
@@ -3618,9 +3621,12 @@ fn test_e2e_canonicalized_namespacing_compilation() {
 
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
     let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = Command::new(&cc_compiler);
-    cmd.arg(&c_path);
+    cmd.arg(&runtime_path).arg(&c_path);
     if std::env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
@@ -3673,6 +3679,7 @@ fn test_e2e_c_std_clone_str() {
     c_program.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
     c_program.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
     c_program.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
+    c_program.push_str(gust_lexer::codegen_runtime::MOCK_PAYLOAD_RUNTIME);
 
     c_program.push_str(
         r#"
