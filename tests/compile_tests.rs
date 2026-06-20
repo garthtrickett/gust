@@ -2,6 +2,7 @@ use gust_lexer::codegen::Codegen;
 use gust_lexer::lexer::Lexer;
 use gust_lexer::parser::Parser;
 use gust_lexer::typechecker::{Type, TypeChecker, TypeError, TypeErrorKind};
+use std::env;
 
 fn check_program(source: &str) -> Result<(), TypeError> {
     gust_lexer::init_logging();
@@ -2563,6 +2564,7 @@ fn test_self_hosted_graph_construction() {
     );
     let c_output = codegen.generate(&modules_for_codegen);
 
+    // Compile and run E2E
     let temp_out_dir = std::env::temp_dir();
     let thread_id = std::thread::current().id();
     let process_id = std::process::id();
@@ -2574,23 +2576,7 @@ fn test_self_hosted_graph_construction() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -2719,23 +2705,7 @@ fn test_self_hosted_topological_sort() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -2854,23 +2824,7 @@ fn test_self_hosted_cycle_detection() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -3540,23 +3494,7 @@ fn test_self_hosted_codegen_initializers() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-            let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg(&c_path);
-            if std::env::var("GUST_NO_SANITIZERS").is_err() {
-                cmd.arg("-fsanitize=address,undefined");
-            }
-            let compile_output = cmd
-                .arg("-o")
-                .arg(&bin_path)
-                .output()
-                .expect("GCC command failed");
-
-            assert!(
-                compile_output.status.success(),
-                "Compilation failed: {}",
-                String::from_utf8_lossy(&compile_output.stderr)
-            );
+            compile_c_program(&c_path, &bin_path, &c_output);
 
             let run_output = std::process::Command::new(&bin_path)
                 .output()
@@ -3668,23 +3606,7 @@ fn test_e2e_sentinel_verification_self_hosted() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -3762,23 +3684,7 @@ fn test_e2e_recursive_invariant_safety_self_hosted() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -3856,23 +3762,7 @@ fn test_e2e_bootstrapped_self_test() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -4165,7 +4055,7 @@ fn test_ast_serialization_helpers() {
         }
     }
 
-    let codegen = gust_lexer::codegen::Codegen::new(
+    let codegen = Codegen::new(
         checker.variable_types,
         checker.struct_registry,
         checker.function_registry,
@@ -4186,23 +4076,7 @@ fn test_ast_serialization_helpers() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -4330,7 +4204,7 @@ fn test_self_hosted_domain_model_e2e() {
         span: gust_lexer::token::Span::dummy(),
     };
 
-    let codegen = gust_lexer::codegen::Codegen::new(
+    let codegen = Codegen::new(
         checker.variable_types,
         checker.struct_registry,
         checker.function_registry,
@@ -4358,37 +4232,7 @@ fn test_self_hosted_domain_model_e2e() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd.arg("-o").arg(&bin_path).output();
-
-    let compile_success = match compile_output {
-        Ok(output) => {
-            if !output.status.success() {
-                println!("--- GCC Compilation Failed ---");
-                println!("--- GENERATED C CODE ---");
-                for (idx, line) in c_output.lines().enumerate() {
-                    println!("{:4} | {}", idx + 1, line);
-                }
-                println!("------------------------");
-                println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
-                println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
-            }
-            output.status.success()
-        }
-        Err(e) => {
-            let _ = std::fs::remove_file(&c_path);
-            panic!("CC failed: {:?}", e);
-        }
-    };
-    assert!(
-        compile_success,
-        "C compilation of multi-module self-hosted AST & Error model failed!"
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -4472,7 +4316,7 @@ fn test_self_hosted_program_serialization_e2e() {
         }
     }
 
-    let codegen = gust_lexer::codegen::Codegen::new(
+    let codegen = Codegen::new(
         checker.variable_types,
         checker.struct_registry,
         checker.function_registry,
@@ -4494,37 +4338,7 @@ fn test_self_hosted_program_serialization_e2e() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd.arg("-o").arg(&bin_path).output();
-
-    let compile_success = match compile_output {
-        Ok(output) => {
-            if !output.status.success() {
-                println!("--- GCC Compilation Failed ---");
-                println!("--- GENERATED C CODE ---");
-                for (idx, line) in c_output.lines().enumerate() {
-                    println!("{:4} | {}", idx + 1, line);
-                }
-                println!("------------------------");
-                println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
-                println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
-            }
-            output.status.success()
-        }
-        Err(e) => {
-            let _ = std::fs::remove_file(&c_path);
-            panic!("CC failed: {:?}", e);
-        }
-    };
-    assert!(
-        compile_success,
-        "C compilation of self-hosted Program & Statement serialization failed!"
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -4760,53 +4574,76 @@ fn test_arena_validate_type_checking_invalid() {
 
 #[test]
 fn test_codegen_thread_local_redirection() {
-    let source = "
-        func main() {
-            mut ctx := os.Arena.New();
-            defer ctx.Free();
-            os.SetThreadScratch(ctx);
-            mut tl := os.GetThreadScratch();
-            mut s := std.FormatInt(123);
-        }
-    ";
-    let lexer = Lexer::new(source);
-    let mut parser = Parser::new(lexer);
-    let program = parser.parse_program();
-    assert!(
-        parser.errors.is_empty(),
-        "Parser errors: {:?}",
-        parser.errors
-    );
+    std::thread::Builder::new()
+        .stack_size(104857600) // 100 MB
+        .spawn(|| {
+            gust_lexer::init_logging();
+            let resolver = gust_lexer::resolver::ModuleResolver::new();
+            let fs_impl = gust_lexer::resolver::RealFileSystem;
+            let entry_path = std::path::Path::new("compiler/test_runner_entry.gst");
 
-    let mut checker = TypeChecker::new();
-    let check_res = checker.check_program(&program);
-    assert!(
-        check_res.is_ok(),
-        "Typechecker error: {:?}",
-        check_res.err()
-    );
+            let res = resolver.resolve(&entry_path, &fs_impl).unwrap();
+            let (order, mut modules) = res;
 
-    let codegen = Codegen::new(
-        checker.variable_types,
-        checker.struct_registry,
-        checker.function_registry,
-        checker.enum_registry,
-        checker.resolved_names,
-        checker.resolved_types,
-    );
-    let modules_for_codegen = vec![(std::path::PathBuf::from("input.gst"), program)];
-    let c_output = codegen.generate(&modules_for_codegen);
+            let mut checker = TypeChecker::new();
+            for path in &order {
+                if let Some(module) = modules.get(path) {
+                    let stem = path.file_stem().unwrap().to_str().unwrap();
+                    let is_entry = path == order.last().unwrap();
+                    let prefix = if is_entry {
+                        "".to_string()
+                    } else {
+                        format!("{}__", stem)
+                    };
+                    checker.check_module(&module.program, &prefix).unwrap();
+                }
+            }
 
-    // Assert the forward declaration FFI headers exist in generated code
-    assert!(c_output.contains("void os_SetThreadScratch(os_Arena* arg0);"));
-    assert!(c_output.contains("std_ThreadLocalContext os_GetThreadScratch(void);"));
+            let mut modules_for_codegen = Vec::new();
+            for path in &order {
+                if let Some(module) = modules.get_mut(path) {
+                    modules_for_codegen.push((path.clone(), module.program.clone()));
+                }
+            }
 
-    // Assert the calls compile to the correct C-level identifiers and pointer parameters
-    assert!(c_output.contains("os_SetThreadScratch(&ctx);"));
-    assert!(c_output.contains("std_ThreadLocalContext tl = os_GetThreadScratch();"));
+            let codegen = Codegen::new(
+                checker.variable_types,
+                checker.struct_registry,
+                checker.function_registry,
+                checker.enum_registry,
+                checker.resolved_names,
+                checker.resolved_types,
+            );
+            let c_output = codegen.generate(&modules_for_codegen);
 
-    // Assert that dynamic allocation via os_ScratchAlloc is incorporated for standard formatting
-    assert!(c_output.contains("os_ScratchAlloc(16)"));
+            let temp_dir = std::env::temp_dir();
+            let thread_id = std::thread::current().id();
+            let process_id = std::process::id();
+            let c_filename = format!("gust_e2e_codegen_tracing_{:?}_{}.c", thread_id, process_id);
+            let bin_filename = format!(
+                "gust_e2e_codegen_tracing_{:?}_{}.bin",
+                thread_id, process_id
+            );
+
+            let c_path = temp_dir.join(&c_filename);
+            let bin_path = temp_dir.join(&bin_filename);
+
+            std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
+
+            compile_c_program(&c_path, &bin_path, &c_output);
+
+            let run_output = std::process::Command::new(&bin_path)
+                .output()
+                .expect("Execution failed");
+
+            let stdout_str = String::from_utf8_lossy(&run_output.stdout).to_string();
+
+            let _ = std::fs::remove_file(&c_path);
+            let _ = std::fs::remove_file(&bin_path);
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
@@ -6287,23 +6124,7 @@ fn test_self_hosted_primitive_index_parsing() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -6427,23 +6248,7 @@ fn test_self_hosted_full_parsing() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -6550,23 +6355,7 @@ fn test_self_hosted_type_parsing() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -6659,6 +6448,7 @@ fn test_self_hosted_statement_parsing() {
 
 #[test]
 fn test_self_hosted_prefix_parsing() {
+    gust_lexer::init_logging();
     let resolver = gust_lexer::resolver::ModuleResolver::new();
     let fs_impl = gust_lexer::resolver::RealFileSystem;
     let entry_path = std::path::Path::new("compiler/parser_prefix_test_entry.gst");
@@ -6749,23 +6539,7 @@ fn test_self_hosted_prefix_parsing() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -6887,23 +6661,7 @@ fn test_self_hosted_import_parsing() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -7019,23 +6777,7 @@ fn test_self_hosted_parser_recovery() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -7193,23 +6935,7 @@ fn test_self_hosted_type_serialization() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -7346,23 +7072,7 @@ fn test_self_hosted_expression_serialization() {
 
     std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("GCC command failed");
-
-    assert!(
-        compile_output.status.success(),
-        "Compilation failed: {}",
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
+    compile_c_program(&c_path, &bin_path, &c_output);
 
     let run_output = std::process::Command::new(&bin_path)
         .output()
@@ -7399,7 +7109,7 @@ fn test_namespaced_fallback_type_matching() {
 fn test_namespaced_generic_type_signature_mismatch_reproduction() {
     gust_lexer::init_logging();
     use std::fs;
-    let temp_dir = std::env::temp_dir().join("gust_test_namespaced_reproduction");
+    let temp_dir = env::temp_dir().join("gust_test_namespaced_reproduction");
     fs::create_dir_all(&temp_dir).unwrap();
 
     let main_path = temp_dir.join("main.gst");
@@ -7479,30 +7189,13 @@ fn test_namespaced_generic_type_signature_mismatch_reproduction() {
 
     fs::write(&c_path, &c_code).expect("Failed to write temporary C file");
 
-    let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = std::process::Command::new(&cc_compiler);
-    cmd.arg(&c_path);
-    if std::env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd
-        .arg("-o")
-        .arg(&bin_path)
-        .output()
-        .expect("Failed to compile C code");
+    compile_c_program(&c_path, &bin_path, &c_code);
 
     let _ = fs::remove_file(&c_path);
     let _ = fs::remove_file(&bin_path);
     let _ = fs::remove_file(&main_path);
     let _ = fs::remove_file(&lib_path);
     let _ = fs::remove_dir(temp_dir);
-
-    assert!(
-        compile_output.status.success(),
-        "Reproduction compilation failed. STDOUT: {}, STDERR: {}",
-        String::from_utf8_lossy(&compile_output.stdout),
-        String::from_utf8_lossy(&compile_output.stderr)
-    );
 }
 
 #[test]
@@ -7597,23 +7290,7 @@ fn test_self_hosted_typechecker_monomorphize_argument_mismatch() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-            let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg(&c_path);
-            if std::env::var("GUST_NO_SANITIZERS").is_err() {
-                cmd.arg("-fsanitize=address,undefined");
-            }
-            let compile_output = cmd
-                .arg("-o")
-                .arg(&bin_path)
-                .output()
-                .expect("GCC command failed");
-
-            assert!(
-                compile_output.status.success(),
-                "Compilation failed: {}",
-                String::from_utf8_lossy(&compile_output.stderr)
-            );
+            compile_c_program(&c_path, &bin_path, &c_output);
 
             let run_output = std::process::Command::new(&bin_path)
                 .output()
@@ -7922,39 +7599,7 @@ fn test_e2e_self_hosted_codegen_tracing() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-            let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg(&c_path);
-            if std::env::var("GUST_NO_SANITIZERS").is_err() {
-                cmd.arg("-fsanitize=address,undefined");
-            }
-            let compile_output = cmd
-                .arg("-o")
-                .arg(&bin_path)
-                .output()
-                .expect("GCC command failed");
-
-            if !compile_output.status.success() {
-                eprintln!("====================================================");
-                eprintln!("❌ C COMPILATION FAILED IN TRACING TEST!");
-                eprintln!("====================================================");
-                eprintln!("--- GENERATED C CODE ---");
-                for (idx, line) in c_output.lines().enumerate() {
-                    eprintln!("{:4} | {}", idx + 1, line);
-                }
-                eprintln!("------------------------");
-                eprintln!(
-                    "STDERR:\n{}",
-                    String::from_utf8_lossy(&compile_output.stderr)
-                );
-                eprintln!("====================================================");
-            }
-
-            assert!(
-                compile_output.status.success(),
-                "Compilation failed: {}",
-                String::from_utf8_lossy(&compile_output.stderr)
-            );
+            compile_c_program(&c_path, &bin_path, &c_output);
 
             let temp_gst_path = temp_dir.join("temp_tracing_test.gst");
             let temp_gst_content = "
@@ -8072,23 +7717,7 @@ fn test_self_hosted_guard_resolver_compilation() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-            let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg(&c_path);
-            if std::env::var("GUST_NO_SANITIZERS").is_err() {
-                cmd.arg("-fsanitize=address,undefined");
-            }
-            let compile_output = cmd
-                .arg("-o")
-                .arg(&bin_path)
-                .output()
-                .expect("GCC command failed");
-
-            assert!(
-                compile_output.status.success(),
-                "Compilation of self-hosted compiler failed:\n{}",
-                String::from_utf8_lossy(&compile_output.stderr)
-            );
+            compile_c_program(&c_path, &bin_path, &c_output);
 
             // Run the self-hosted compiler over compiler/resolver.gst
             let run = std::process::Command::new(&bin_path)

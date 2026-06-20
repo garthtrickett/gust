@@ -10,6 +10,44 @@ use gust_lexer::typechecker::TypeChecker;
 
 static TEST_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
+fn compile_c_program(c_path: &std::path::Path, bin_path: &std::path::Path, c_code: &str) {
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&runtime_path);
+    cmd.arg(c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(bin_path)
+        .output()
+        .expect("C compilation command failed");
+
+    if !compile_output.status.success() {
+        eprintln!("====================================================");
+        eprintln!("❌ C COMPILATION FAILED!");
+        eprintln!("====================================================");
+        eprintln!("--- GENERATED C CODE ---");
+        for (idx, line) in c_code.lines().enumerate() {
+            eprintln!("{:4} | {}", idx + 1, line);
+        }
+        eprintln!("------------------------");
+        eprintln!(
+            "STDERR:\n{}",
+            String::from_utf8_lossy(&compile_output.stderr)
+        );
+        eprintln!("====================================================");
+        panic!(
+            "Compilation failed: {}",
+            String::from_utf8_lossy(&compile_output.stderr)
+        );
+    }
+}
+
 fn run_e2e_test(source: &str, expected_output: &str) {
     gust_lexer::init_logging();
     // 1. Compile the input Gust program
@@ -57,45 +95,7 @@ fn run_e2e_test(source: &str, expected_output: &str) {
     }
 
     // 3. Invoke a system C compiler to compile it
-    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
-    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
-
-    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
-    let mut cmd = Command::new(&cc_compiler);
-    cmd.arg(&runtime_path);
-    cmd.arg(&c_path);
-    if env::var("GUST_NO_SANITIZERS").is_err() {
-        cmd.arg("-fsanitize=address,undefined");
-    }
-    let compile_output = cmd.arg("-o").arg(&bin_path).output();
-
-    let compile_success = match compile_output {
-        Ok(output) => {
-            if !output.status.success() {
-                println!("--- GCC Compilation Failed ---");
-                println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
-                println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
-            }
-            (output.status.success(), output)
-        }
-        Err(e) => {
-            let _ = fs::remove_file(&c_path);
-            panic!(
-                "Failed to invoke system C compiler '{}'. Is gcc/clang/cc installed? Error: {:?}",
-                cc_compiler, e
-            );
-        }
-    };
-
-    if !compile_success.0 {
-        let stderr_str = String::from_utf8_lossy(&compile_success.1.stderr);
-        let _ = fs::remove_file(&c_path);
-        let _ = fs::remove_file(&bin_path);
-        panic!(
-            "Compilation of the transpiled C code failed. STDERR:\n{}",
-            stderr_str
-        );
-    }
+    compile_c_program(&c_path, &bin_path, &c_code);
 
     // 4. Run the compiled binary and capture its standard output
     let run_output = Command::new(&bin_path).output();
@@ -5827,33 +5827,7 @@ fn test_self_hosted_type_dump_consistency() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
-            let mut cmd = std::process::Command::new(&cc_compiler);
-            cmd.arg(&c_path);
-            if std::env::var("GUST_NO_SANITIZERS").is_err() {
-                cmd.arg("-fsanitize=address,undefined");
-            }
-            let compile_output = cmd
-                .arg("-o")
-                .arg(&bin_path)
-                .output()
-                .expect("GCC compile command failed");
-
-            if !compile_output.status.success() {
-                println!("--- GCC Compilation Failed ---");
-                println!(
-                    "STDOUT:\n{}",
-                    String::from_utf8_lossy(&compile_output.stdout)
-                );
-                println!(
-                    "STDERR:\n{}",
-                    String::from_utf8_lossy(&compile_output.stderr)
-                );
-            }
-            assert!(
-                compile_output.status.success(),
-                "C compilation of self-hosted type dumper failed"
-            );
+            compile_c_program(&c_path, &bin_path, &c_output);
 
             // 4. Capture bootstrapped Type serialization
             let run_output = std::process::Command::new(&bin_path)
