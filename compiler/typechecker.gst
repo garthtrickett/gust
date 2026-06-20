@@ -133,6 +133,58 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
     }
 }
 
+func typechecker_is_linear(t: ast.Type[ctx], env: *TypeEnvironment[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 0 || t.tag == 1 || t.tag == 2 || t.tag == 3 || t.tag == 7 { // Int, Byte, Bool, Void, Index
+            return 0;
+        }
+        if t.tag == 4 || t.tag == 5 || t.tag == 6 || t.tag == 9 { // Arena, Str, Slice, RawPointer
+            return 1;
+        }
+        if t.tag == 10 { // Generic
+            return 1;
+        }
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            if std.str_eq(name, "T") || std.str_eq(name, "K") || std.str_eq(name, "V") {
+                return 1;
+            }
+            mut lookup := (*visited).Get(name);
+            if lookup.Ok {
+                return 0;
+            }
+            (*visited).Insert(std.Clone(ctx, name), 1);
+            mut struct_lookup := (*env).struct_registry.Get(name);
+            if struct_lookup.Ok {
+                mut layout := struct_lookup.Val;
+                mut f_keys := typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                mut i := 0;
+                while i < len(f_keys) {
+                    mut f_key := f_keys[i];
+                    mut f_lookup := layout.fields.Get(f_key);
+                    if f_lookup.Ok {
+                        if typechecker_is_linear(f_lookup.Val, env, visited, ctx) == 1 {
+                            return 1;
+                        }
+                    }
+                    i = i + 1;
+                }
+                return 0;
+            } else {
+                return 1; // Conservative fallback
+            }
+        }
+        return 0;
+    }
+}
+
+func env_type_is_linear(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+        return typechecker_is_linear(t, env, &visited, ctx);
+    }
+}
+
 func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) Index[OriginSet[ctx], ctx] { 
     unsafe {
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
@@ -140,12 +192,28 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
         }
         mut expr := ctx[expr_idx];
         if expr.tag == 0 { // Identifier
-            mut lookup := (*env).variable_origins.Get(expr.Identifier.name);
-            if lookup.Ok {
+            mut name := expr.Identifier.name;
+            mut lookup_type := (*env).variable_types.Get(name);
+            if lookup_type.Ok {
+                mut t := lookup_type.Val;
+                mut is_pod_struct := 0;
+                if t.tag == 8 { // Struct
+                    if t.Struct.brand == empty[Index[str, ctx]] {
+                        if env_type_is_linear(t, env, ctx) == 0 && env_type_is_ephemeral_view(t, ctx) == 0 {
+                            is_pod_struct = 1;
+                        }
+                    }
+                }
+                if is_pod_struct == 1 || t.tag == 0 || t.tag == 1 || t.tag == 2 { // Int, Byte, Bool
+                    return set_init(ctx);
+                }
+            }
+            mut lookup := (*env).variable_origins.Get(name);
+            if lookup.Ok { 
                 return lookup.Val;
             } else {
                 mut s := set_init(ctx);
-                set_add(s, expr.Identifier.name, ctx);
+                set_add(s, name, ctx);
                 return s;
             }
         }

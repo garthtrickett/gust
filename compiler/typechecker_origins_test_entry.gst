@@ -531,4 +531,63 @@ func main() {
 
     mut evaluated_step2_t := typechecker.check_expression(expr_step2, &env_step2_test, scope_step2_test, ctx);
     os.LogStr(ast.serialize_type(evaluated_step2_t, ctx)); // Expected: Byte
+
+    // Step 1 Verification: Test env_type_is_linear
+    // 1. Primitive Int
+    mut t_int_test: ast.Type[ctx];
+    t_int_test.tag = 0; // Int
+    os.LogInt(typechecker.env_type_is_linear(t_int_test, &env, ctx)); // Expected: 0
+
+    // 2. Index
+    mut t_idx_test: ast.Type[ctx];
+    t_idx_test.tag = 7; // Index
+    t_idx_test.Index.struct_name = "MyNode";
+    t_idx_test.Index.brand = empty[Index[str, ctx]];
+    os.LogInt(typechecker.env_type_is_linear(t_idx_test, &env, ctx)); // Expected: 0
+
+    // 3. RawPointer
+    mut t_ptr_test: ast.Type[ctx];
+    t_ptr_test.tag = 9; // RawPointer
+    t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+    os.LogInt(typechecker.env_type_is_linear(t_ptr_test, &env, ctx)); // Expected: 1
+
+    // 4. Custom POD struct Point (registered earlier)
+    mut t_pod_test: ast.Type[ctx];
+    t_pod_test.tag = 8; // Struct
+    t_pod_test.Struct.struct_name = "Point";
+    t_pod_test.Struct.brand = empty[Index[str, ctx]];
+    os.LogInt(typechecker.env_type_is_linear(t_pod_test, &env, ctx)); // Expected: 0
+
+    // 5. Custom Linear struct (containing a pointer/linear type)
+    mut linear_layout: typechecker.StructLayout[ctx];
+    linear_layout.brand = empty[Index[str, ctx]];
+    linear_layout.fields = std.HashMapNew(ctx);
+    linear_layout.fields.Insert("value", t_ptr_test);
+    typechecker.env_register_struct(&env, "LinearStruct", linear_layout, ctx);
+
+    mut t_linear_test: ast.Type[ctx];
+    t_linear_test.tag = 8; // Struct
+    t_linear_test.Struct.struct_name = "LinearStruct";
+    t_linear_test.Struct.brand = empty[Index[str, ctx]];
+    os.LogInt(typechecker.env_type_is_linear(t_linear_test, &env, ctx)); // Expected: 1
+
+    // 6. Cyclic linked-list node
+    mut cyclic_layout: typechecker.StructLayout[ctx];
+    cyclic_layout.brand = empty[Index[str, ctx]];
+    cyclic_layout.fields = std.HashMapNew(ctx);
+
+    mut t_idx_cyclic: ast.Type[ctx];
+    t_idx_cyclic.tag = 7; // Index
+    t_idx_cyclic.Index.struct_name = "CyclicNode";
+    t_idx_cyclic.Index.brand = empty[Index[str, ctx]];
+
+    cyclic_layout.fields.Insert("next", t_idx_cyclic);
+    typechecker.env_register_struct(&env, "CyclicNode", cyclic_layout, ctx);
+
+    mut t_cyclic_test: ast.Type[ctx];
+    t_cyclic_test.tag = 8; // Struct
+    t_cyclic_test.Struct.struct_name = "CyclicNode";
+    t_cyclic_test.Struct.brand = empty[Index[str, ctx]];
+    os.LogInt(typechecker.env_type_is_linear(t_cyclic_test, &env, ctx)); // Expected: 0
 }
