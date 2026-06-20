@@ -3365,6 +3365,31 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
     }
 
 
+func codegen_sort_variants(variants: std.Vector[str, ctx], ctx: &Arena) std.Vector[str, ctx] {
+    mut sorted: std.Vector[str, ctx] := std.VectorNew(ctx);
+    mut i := 0;
+    while i < len(variants) {
+        sorted.Push(std.Clone(ctx, variants[i]));
+        i = i + 1;
+    }
+    mut n := len(sorted);
+    mut x := 0;
+    while x < n {
+        mut y := x + 1;
+        while y < n {
+            mut cmp := typechecker.typechecker_str_compare(sorted[x], sorted[y]);
+            if cmp > 0 {
+                mut temp := sorted[x];
+                sorted[x] = sorted[y];
+                sorted[y] = temp;
+            }
+            y = y + 1;
+        }
+        x = x + 1;
+    }
+    return sorted;
+}
+
 func codegen_generate(programs: std.Vector[ast.Program[ctx], ctx], prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         codegen_log_trace("⚙️", "codegen_generate: commencing code generation pass", ctx);
@@ -3420,6 +3445,21 @@ typedef void Any;
             }
             i_fwd = i_fwd + 1;
         }
+        
+        // Forward declare all CastResult structures first
+        mut i_cast_fwd := 0;
+        while i_cast_fwd < len(erased_struct_keys) {
+            mut key := erased_struct_keys[i_cast_fwd];
+            if std.str_find(key, "CastResult_") == 0 - 1 &&
+               std.str_find(key, "LookupResult_") == 0 - 1 {
+                mut fwd := std.Concat("typedef struct CastResult_", key);
+                fwd = std.Concat(fwd, " CastResult_");
+                fwd = std.Concat(fwd, key);
+                fwd = std.Concat(fwd, ";\n");
+                c_code = std.Concat(c_code, fwd);
+            }
+            i_cast_fwd = i_cast_fwd + 1;
+        }
         c_code = std.Concat(c_code, "\n");
 
         // Function Forward Declarations
@@ -3456,42 +3496,113 @@ typedef void Any;
                 }
                 
                 mut is_template_instance := 0;
-                if std.str_find(key, "_") != 0 - 1 { 
+                if std.str_find(key, "_") != 0 - 1 {
                     is_template_instance = 1;
                 }
                 if is_template_instance == 1 {
                     codegen_log_trace("👁️", std.Format("codegen_generate: transpiling custom standard template instance %s", key), ctx);
                 } else {
-                    codegen_log_trace("👁️", std.Format("codegen_generate: transpiling structure layout for %s", key), ctx); 
+                    codegen_log_trace("👁️", std.Format("codegen_generate: transpiling structure layout for %s", key), ctx);
                 }
 
                 mut layout_lookup := (*env).struct_registry.Get(orig_key);
                 if layout_lookup.Ok {
                     mut layout := layout_lookup.Val;
-                    mut struct_decl := std.Concat("typedef struct ", key);
-                    struct_decl = std.Concat(struct_decl, " ");
-                    struct_decl = std.Concat(struct_decl, key);
-                    struct_decl = std.Concat(struct_decl, ";\nstruct ");
-                    struct_decl = std.Concat(struct_decl, key);
-                    struct_decl = std.Concat(struct_decl, " {\n");
+                    mut lookup_enum := (*env).enum_registry.Get(orig_key);
                     
-                    mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
-                    mut j := 0;
-                    while j < len(f_keys) {
-                        mut f_key := f_keys[j];
-                        mut f_lookup := layout.fields.Get(f_key);
-                        if f_lookup.Ok { 
-                            mut f_c_type := codegen_get_c_type(f_lookup.Val, env, ctx);
-                            mut f_line := std.Concat("    ", f_c_type);
-                            f_line = std.Concat(f_line, " ");
-                            f_line = std.Concat(f_line, f_key);
-                            f_line = std.Concat(f_line, ";\n");
-                            struct_decl = std.Concat(struct_decl, f_line);
+                    if lookup_enum.Ok {
+                        mut variants := lookup_enum.Val;
+                        
+                        // 1. Generate typedef enum for variant tags
+                        mut enum_decl := std.Concat("typedef enum {\n", "");
+                        mut j := 0;
+                        while j < len(variants) {
+                            mut variant := variants[j];
+                            mut tag_line := std.Concat("    ", key);
+                            tag_line = std.Concat(tag_line, "_Tag__");
+                            tag_line = std.Concat(tag_line, variant);
+                            tag_line = std.Concat(tag_line, " = ");
+                            tag_line = std.Concat(tag_line, std.FormatInt(j));
+                            tag_line = std.Concat(tag_line, ",\n");
+                            enum_decl = std.Concat(enum_decl, tag_line);
+                            j = j + 1;
                         }
-                        j = j + 1;
+                        enum_decl = std.Concat(enum_decl, "} ");
+                        enum_decl = std.Concat(enum_decl, key);
+                        enum_decl = std.Concat(enum_decl, "_Tag;\n\n");
+                        c_code = std.Concat(c_code, enum_decl);
+
+                        // 2. Generate struct with anonymous union
+                        mut struct_decl := std.Concat("struct ", key);
+                        struct_decl = std.Concat(struct_decl, " {\n");
+                        struct_decl = std.Concat(struct_decl, "    int tag;\n");
+                        struct_decl = std.Concat(struct_decl, "    union {\n");
+
+                        mut sorted_variants := codegen_sort_variants(variants, ctx);
+                        mut k_var := 0;
+                        while k_var < len(sorted_variants) {
+                            mut variant := sorted_variants[k_var];
+                            mut field_type_name := std.Concat(key, "_");
+                            field_type_name = std.Concat(field_type_name, variant);
+                            
+                            mut var_line := std.Concat("        struct ", field_type_name);
+                            var_line = std.Concat(var_line, " ");
+                            var_line = std.Concat(var_line, variant);
+                            var_line = std.Concat(var_line, ";\n");
+                            struct_decl = std.Concat(struct_decl, var_line);
+                            k_var = k_var + 1;
+                        }
+                        struct_decl = std.Concat(struct_decl, "    };\n");
+                        struct_decl = std.Concat(struct_decl, "};\n\n");
+                        c_code = std.Concat(c_code, struct_decl);
+
+                        // 3. Generate CastResult struct
+                        mut cast_decl := std.Concat("struct CastResult_", key);
+                        cast_decl = std.Concat(cast_decl, " {\n");
+                        cast_decl = std.Concat(cast_decl, "    ");
+                        cast_decl = std.Concat(cast_decl, key);
+                        cast_decl = std.Concat(cast_decl, "* Val;\n");
+                        cast_decl = std.Concat(cast_decl, "    int Ok;\n");
+                        cast_decl = std.Concat(cast_decl, "};\n\n");
+                        c_code = std.Concat(c_code, cast_decl);
+                    } else {
+                        mut struct_decl := std.Concat("struct ", key);
+                        struct_decl = std.Concat(struct_decl, " {\n");
+                        
+                        mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                        if len(f_keys) == 0 {
+                            struct_decl = std.Concat(struct_decl, "    char dummy;\n");
+                        } else {
+                            mut j := 0;
+                            while j < len(f_keys) {
+                                mut f_key := f_keys[j];
+                                mut f_lookup := layout.fields.Get(f_key);
+                                if f_lookup.Ok {
+                                    mut f_c_type := codegen_get_c_type(f_lookup.Val, env, ctx);
+                                    mut f_line := std.Concat("    ", f_c_type);
+                                    f_line = std.Concat(f_line, " ");
+                                    f_line = std.Concat(f_line, f_key);
+                                    f_line = std.Concat(f_line, ";\n");
+                                    struct_decl = std.Concat(struct_decl, f_line);
+                                }
+                                j = j + 1;
+                            } 
+                        }
+                        struct_decl = std.Concat(struct_decl, "};\n\n");
+                        c_code = std.Concat(c_code, struct_decl);
+
+                        if std.str_find(key, "LookupResult_") == 0 - 1 &&
+                           std.str_find(key, "CastResult_") == 0 - 1 {
+                            mut cast_decl := std.Concat("struct CastResult_", key);
+                            cast_decl = std.Concat(cast_decl, " {\n");
+                            cast_decl = std.Concat(cast_decl, "    ");
+                            cast_decl = std.Concat(cast_decl, key);
+                            cast_decl = std.Concat(cast_decl, "* Val;\n");
+                            cast_decl = std.Concat(cast_decl, "    int Ok;\n");
+                            cast_decl = std.Concat(cast_decl, "};\n\n");
+                            c_code = std.Concat(c_code, cast_decl);
+                        }
                     }
-                    struct_decl = std.Concat(struct_decl, "};\n\n");
-                    c_code = std.Concat(c_code, struct_decl);
                 }
             }
             i = i + 1;
