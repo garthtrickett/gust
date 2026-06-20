@@ -550,6 +550,18 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         if expr.tag == 9 { // AsCast
             mut left_type := check_expression(expr.AsCast.left, env, scope, ctx);
             mut resolved_target := env_resolve_type(env, ctx[expr.AsCast.target_type], ctx);
+            if resolved_target.tag == 8 { // Struct
+                mut struct_name := resolved_target.Struct.struct_name;
+                mut lookup := (*env).struct_registry.Get(struct_name);
+                if lookup.Ok {
+                    mut cast_res_name := std.Concat("CastResult_", struct_name);
+                    mut t: ast.Type[ctx];
+                    t.tag = 8; // Struct
+                    t.Struct.struct_name = std.Clone(ctx, cast_res_name);
+                    t.Struct.brand = empty[Index[str, ctx]];
+                    return t;
+                }
+            }
             return resolved_target;
         }
         if expr.tag == 10 { // Binary
@@ -645,6 +657,12 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return t;
                     }
                 }
+
+                mut msg := std.Concat("Semantic Error: Field '", expr.Selector.right);
+                msg = std.Concat(msg, "' not found on struct layout '");
+                msg = std.Concat(msg, struct_name);
+                msg = std.Concat(msg, "'");
+                report_error(2, msg, expr.Selector.span, env, ctx);
             }
             mut t: ast.Type[ctx];
             t.tag = 0; // Int
