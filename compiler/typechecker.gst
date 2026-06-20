@@ -955,10 +955,28 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     if std.str_eq(right_name, "Keys") {
                         mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         mut brand_name := "ctx";
-                        if len(*args_vec) == 1 {
+                        if len(*args_vec) != 1 {
+                            mut msg := "Semantic Error: HashMap.Keys expects exactly 1 argument (the allocator/brand)";
+                            report_error(2, msg, expr.Call.span, env, ctx);
+                        } else {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
+                            mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+                            
+                            mut is_arena_val := 0;
+                            if arg_type.tag == 4 { // Arena
+                                is_arena_val = 1;
+                            } else if arg_type.tag == 9 { // RawPointer
+                                mut inner := ctx[arg_type.RawPointer.inner];
+                                if inner.tag == 4 { // Arena
+                                    is_arena_val = 1;
+                                }
+                            }
+                            
+                            if is_arena_val == 0 {
+                                mut msg := "Semantic Error: HashMap.Keys argument must be an Arena allocator";
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
                             brand_name = get_root_variable(arg0_idx, ctx);
                         }
 
