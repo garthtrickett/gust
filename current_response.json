@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve compilation linkage issue in e2e namespacing compilation test",
+  "summary": "fix: add std_GenerationalArena_Generic struct definition to core_headers.h",
   "files": [
     {
-      "file_path": "tests/e2e_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    let cc_compiler = std::env::var(\"CC\").unwrap_or_else(|_| \"cc\".to_string());\n    let mut cmd = Command::new(&cc_compiler);\n    cmd.arg(&c_path);\n    if std::env::var(\"GUST_NO_SANITIZERS\").is_err() {\n        cmd.arg(\"-fsanitize=address,undefined\");\n    }\n    let compile_output = cmd.arg(\"-o\").arg(&bin_path).output();\n=======\n    let manifest_dir = std::env::var(\"CARGO_MANIFEST_DIR\").unwrap_or_else(|_| \".\".to_string());\n    let runtime_path = std::path::Path::new(&manifest_dir).join(\"src/runtime.c\");\n\n    let cc_compiler = std::env::var(\"CC\").unwrap_or_else(|_| \"cc\".to_string());\n    let mut cmd = Command::new(&cc_compiler);\n    cmd.arg(&runtime_path).arg(&c_path);\n    if std::env::var(\"GUST_NO_SANITIZERS\").is_err() {\n        cmd.arg(\"-fsanitize=address,undefined\");\n    }\n    let compile_output = cmd.arg(\"-o\").arg(&bin_path).output();\n>>>>>>> REPLACE"
+      "file_path": "src/runtime/core_headers.h",
+      "code_diff": "<<<<<<< SEARCH\ntypedef struct std_Vector_str std_Vector_str;\nstruct std_Vector_str {\n    Slice_unsigned_char* data;\n    int len;\n    int capacity;\n    os_Arena* arena;\n};\n\n// Standard Library collections FFI helper functions (defined in src/runtime.c)\n=======\ntypedef struct std_Vector_str std_Vector_str;\nstruct std_Vector_str {\n    Slice_unsigned_char* data;\n    int len;\n    int capacity;\n    os_Arena* arena;\n};\n\ntypedef struct std_GenerationalArena_Generic std_GenerationalArena_Generic;\nstruct std_GenerationalArena_Generic {\n    os_Arena current_ctx;\n    os_Arena next_ctx;\n    int survivor;\n};\n\n// Standard Library collections FFI helper functions (defined in src/runtime.c)\n>>>>>>> REPLACE"
     }
   ]
 }

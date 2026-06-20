@@ -79,6 +79,13 @@ struct std_Vector_str {
     os_Arena* arena;
 };
 
+typedef struct std_GenerationalArena_Generic std_GenerationalArena_Generic;
+struct std_GenerationalArena_Generic {
+    os_Arena current_ctx;
+    os_Arena next_ctx;
+    int survivor;
+};
+
 // Standard Library collections FFI helper functions (defined in src/runtime.c)
 void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size);
 int os_HashMapContains_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size);
