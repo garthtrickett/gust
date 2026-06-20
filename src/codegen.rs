@@ -450,7 +450,7 @@ impl Codegen {
                     let clean_b = crate::typechecker::types::strip_brand_prefix(b);
                     let suffix = format!("_{}", clean_b);
                     let ns_suffix = format!("__{}", clean_b);
-                    if name.ends_with(&suffix) || name.ends_with(&ns_suffix) || name == &clean_b {
+                    if name.ends_with(&suffix) || name.ends_with(&ns_suffix) || name == clean_b {
                         name.clone()
                     } else {
                         format!("{}_{}", name, clean_b)
@@ -464,7 +464,7 @@ impl Codegen {
                     let clean_b = crate::typechecker::types::strip_brand_prefix(b);
                     let suffix = format!("_{}", clean_b);
                     let ns_suffix = format!("__{}", clean_b);
-                    if name.ends_with(&suffix) || name.ends_with(&ns_suffix) || name == &clean_b {
+                    if name.ends_with(&suffix) || name.ends_with(&ns_suffix) || name == clean_b {
                         format!("Index_{}", name)
                     } else {
                         format!("Index_{}_{}", name, clean_b)

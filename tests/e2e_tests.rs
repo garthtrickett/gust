@@ -57,9 +57,12 @@ fn run_e2e_test(source: &str, expected_output: &str) {
     }
 
     // 3. Invoke a system C compiler to compile it
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
+
     let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
     let mut cmd = Command::new(&cc_compiler);
-    cmd.arg("src/runtime.c");
+    cmd.arg(&runtime_path);
     cmd.arg(&c_path);
     if env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
@@ -5140,9 +5143,9 @@ fn test_self_hosted_compiler_full_bootstrap() {
             let c_output_v2 = codegen_v1.generate(&modules_for_codegen);
 
             // Write the self-hosted compiler C output to disk
-            let temp_dir = std::env::temp_dir();
-            let thread_id = std::thread::current().id();
-            let process_id = std::process::id();
+            let _temp_dir = std::env::temp_dir();
+            let _thread_id = std::thread::current().id();
+            let _process_id = std::process::id();
 
             let gust_v2_c_path = std::path::PathBuf::from("gust_v2.c");
             let gust_v2_bin_path = std::path::PathBuf::from("./gust_v2_bin");
@@ -5152,6 +5155,7 @@ fn test_self_hosted_compiler_full_bootstrap() {
             // Compile gust_v2 binary using host C compiler
             let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
             let mut cmd = std::process::Command::new(&cc_compiler);
+            cmd.arg("src/runtime.c");
             cmd.arg(&gust_v2_c_path);
             if std::env::var("GUST_NO_SANITIZERS").is_err() {
                 cmd.arg("-fsanitize=address,undefined");
