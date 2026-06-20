@@ -2839,6 +2839,14 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
 
             register_fn(env, "os.Exit", p_int, t_void, ctx);
             register_fn(env, "os_Exit", p_int, t_void, ctx);
+
+            mut t_slice_byte: ast.Type[ctx];
+            t_slice_byte.tag = 6; // Slice
+            t_slice_byte.Slice.inner = os.ArenaAlloc(ctx);
+            ctx[t_slice_byte.Slice.inner].tag = 1; // Byte
+            register_fn(env, "os.MockPayload", p_void, t_slice_byte, ctx);
+            register_fn(env, "os_MockPayload", p_void, t_slice_byte, ctx);
+
             register_fn(env, "os.LogInt", p_int, t_void, ctx);
             register_fn(env, "os_LogInt", p_int, t_void, ctx);
             register_fn(env, "os.LogStr", p_str, t_void, ctx);
