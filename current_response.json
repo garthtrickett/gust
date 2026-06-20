@@ -1,0 +1,13 @@
+{
+  "summary": "fix: resolve unused warnings in common test module and value-branded index access verification in self-hosted typechecker",
+  "files": [
+    {
+      "file_path": "tests/common/mod.rs",
+      "code_diff": "<<<<<<< SEARCH\nstatic COMPILED_COMPILER: OnceLock<PathBuf> = OnceLock::new();\n\npub fn get_compiled_compiler() -> &'static Path {\n=======\n#[allow(dead_code)]\nstatic COMPILED_COMPILER: OnceLock<PathBuf> = OnceLock::new();\n\n#[allow(dead_code)]\npub fn get_compiled_compiler() -> &'static Path {\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\n                if brand_idx != empty[Index[str, ctx]] {\n                    mut brand_str_ptr := &ctx[brand_idx] as *str;\n                    mut brand_name := *brand_str_ptr;\n                    mut clean_brand := strip_brand_prefix(brand_name, ctx);\n                    mut alloc_name := get_root_variable(expr.IndexAccess.allocator, ctx);\n                    mut clean_alloc := strip_brand_prefix(alloc_name, ctx);\n                    if std.str_eq(clean_brand, \"Any\") == 0 && std.str_eq(clean_brand, clean_alloc) == 0 {\n=======\n                if brand_idx != empty[Index[str, ctx]] {\n                    mut brand_str_ptr := &ctx[brand_idx] as *str;\n                    mut brand_name := *brand_str_ptr;\n                    mut clean_brand := strip_brand_prefix(brand_name, ctx);\n                    mut alloc_name := expression_to_string(expr.IndexAccess.allocator, ctx);\n                    mut clean_alloc := strip_brand_prefix(alloc_name, ctx);\n                    if std.str_eq(clean_brand, \"Any\") == 0 && std.str_eq(clean_brand, clean_alloc) == 0 {\n>>>>>>> REPLACE"
+    }
+  ]
+}

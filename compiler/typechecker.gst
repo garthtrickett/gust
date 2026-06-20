@@ -470,7 +470,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut brand_str_ptr := &ctx[brand_idx] as *str;
                     mut brand_name := *brand_str_ptr;
                     mut clean_brand := strip_brand_prefix(brand_name, ctx);
-                    mut alloc_name := get_root_variable(expr.IndexAccess.allocator, ctx);
+                    mut alloc_name := expression_to_string(expr.IndexAccess.allocator, ctx);
                     mut clean_alloc := strip_brand_prefix(alloc_name, ctx);
                     if std.str_eq(clean_brand, "Any") == 0 && std.str_eq(clean_brand, clean_alloc) == 0 {
                         mut suffix := std.Concat(".", clean_brand);

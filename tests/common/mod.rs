@@ -57,8 +57,10 @@ pub fn compile_c_program(c_path: &Path, bin_path: &Path, c_code: &str) {
     }
 }
 
+#[allow(dead_code)]
 static COMPILED_COMPILER: OnceLock<PathBuf> = OnceLock::new();
 
+#[allow(dead_code)]
 pub fn get_compiled_compiler() -> &'static Path {
     COMPILED_COMPILER.get_or_init(|| {
         std::thread::Builder::new()
