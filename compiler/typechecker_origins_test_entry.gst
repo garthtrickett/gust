@@ -590,4 +590,66 @@ func main() {
     t_cyclic_test.Struct.struct_name = "CyclicNode";
     t_cyclic_test.Struct.brand = empty[Index[str, ctx]];
     os.LogInt(typechecker.env_type_is_linear(t_cyclic_test, &env, ctx)); // Expected: 0
+
+
+    // Step 2 Verification: Test Move of Linear and POD types, and Double-Move Protection
+    mut env_move_test := typechecker.env_new(ctx);
+    mut scope_move_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+    // 1. Declare and move a Linear type (Slice)
+    mut t_slice_test: ast.Type[ctx];
+    t_slice_test.tag = 6; // Slice
+    t_slice_test.Slice.inner = os.ArenaAlloc(ctx);
+    ctx[t_slice_test.Slice.inner].tag = 1; // Byte
+
+    typechecker.scope_insert(scope_move_test, "my_linear_var", t_slice_test, ctx);
+    env_move_test.variable_types.Insert("my_linear_var", t_slice_test);
+
+    mut l_move1: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_move1, "move my_linear_var");
+    mut p_move1: parser.Parser[ctx];
+    parser.init_parser(&p_move1, &l_move1, ctx);
+    mut expr_move1 := parser.parse_expression(&p_move1, 1, ctx);
+
+    typechecker.check_expression(expr_move1, &env_move_test, scope_move_test, ctx);
+    os.LogInt(env_move_test.moved_vars.Get("my_linear_var").Ok); // Expected: 1 (Added to moved_vars)
+
+    // 2. Double-Move on Linear type
+    mut l_move2: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_move2, "move my_linear_var");
+    mut p_move2: parser.Parser[ctx];
+    parser.init_parser(&p_move2, &l_move2, ctx);
+    mut expr_move2 := parser.parse_expression(&p_move2, 1, ctx);
+
+    typechecker.check_expression(expr_move2, &env_move_test, scope_move_test, ctx);
+
+    mut has_double_move_err := 0;
+    mut idx_err := 0;
+    while idx_err < len(env_move_test.errors) {
+        mut err := env_move_test.errors[idx_err];
+        if std.str_find(err.message, "already been moved") != 0 - 1 {
+            has_double_move_err = 1;
+        }
+        idx_err = idx_err + 1;
+    }
+    os.LogInt(has_double_move_err); // Expected: 1 (Double-move rejected)
+
+    // 3. Declare and move a POD type (Int)
+    mut env_move_test2 := typechecker.env_new(ctx);
+    mut scope_move_test2 := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+    mut t_int_test: ast.Type[ctx];
+    t_int_test.tag = 0; // Int
+
+    typechecker.scope_insert(scope_move_test2, "my_pod_var", t_int_test, ctx);
+    env_move_test2.variable_types.Insert("my_pod_var", t_int_test);
+
+    mut l_move3: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_move3, "move my_pod_var");
+    mut p_move3: parser.Parser[ctx];
+    parser.init_parser(&p_move3, &l_move3, ctx);
+    mut expr_move3 := parser.parse_expression(&p_move3, 1, ctx);
+
+    typechecker.check_expression(expr_move3, &env_move_test2, scope_move_test2, ctx);
+    os.LogInt(env_move_test2.moved_vars.Get("my_pod_var").Ok); // Expected: 0 (POD move does not add to moved_vars)
 }

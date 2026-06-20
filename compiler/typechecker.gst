@@ -385,8 +385,14 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         if expr.tag == 4 { // Move
             mut inner_idx := expr.Move.expr;
             mut inner := ctx[inner_idx];
+            mut inner_type := check_expression(inner_idx, env, scope, ctx);
             if inner.tag == 0 { // Identifier
                 mut name := inner.Identifier.name;
+                if (*env).moved_vars.Get(name).Ok {
+                    mut msg := std.Concat("Semantic Error: Variable '", name);
+                    msg = std.Concat(msg, "' has already been moved");
+                    report_error(2, msg, expr.Move.span, env, ctx);
+                }
                 if (*env).open_directories.Get(name).Ok {
                     mut msg := std.Concat("Semantic Error: Directory resource variable '", name);
                     msg = std.Concat(msg, "' cannot be moved while open. Close it first.");
@@ -394,7 +400,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
                 
                 // Invalidate brand transitive use
-                mut inner_type := check_expression(inner_idx, env, scope, ctx);
+                if env_type_is_linear(inner_type, env, ctx) == 1 {
+                    (*env).moved_vars.Insert(std.Clone(ctx, name), 1);
+                }
                 if inner_type.tag == 4 { // Arena
                     mut var_origins_keys := (*env).variable_origins.Keys(ctx);
                     mut m := 0;
@@ -411,7 +419,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
                 }
             }
-            return check_expression(expr.Move.expr, env, scope, ctx);
+            return inner_type;
         }
         if expr.tag == 5 { // Take
             mut inner_t := check_expression(expr.Take.expr, env, scope, ctx);
