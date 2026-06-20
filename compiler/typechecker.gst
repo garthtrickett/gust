@@ -331,7 +331,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     if (*env).moved_vars.Get(orig_name).Ok {
                         mut err: errors.CompilerError[ctx];
                         err.kind.tag = 2; // TypeError
-                        err.message = std.Clone(ctx, std.Concat("Semantic Error: Variable origin invalidated: ", orig_name));
+                        mut err_msg_orig := std.Concat("Semantic Error: Variable '", name);
+                        err_msg_orig = std.Concat(err_msg_orig, "' cannot be used because its backing origin '");
+                        err_msg_orig = std.Concat(err_msg_orig, orig_name);
+                        err_msg_orig = std.Concat(err_msg_orig, "' has been moved or invalidated");
+                        err.message = std.Clone(ctx, err_msg_orig);
                         err.span = expr.Identifier.span;
                         (*env).errors.Push(err);
                     }

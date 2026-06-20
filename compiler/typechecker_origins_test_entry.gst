@@ -638,11 +638,11 @@ func main() {
     mut env_move_test2 := typechecker.env_new(ctx);
     mut scope_move_test2 := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
 
-    mut t_int_test: ast.Type[ctx];
+    mut t_int_move_test: ast.Type[ctx];
     t_int_test.tag = 0; // Int
 
-    typechecker.scope_insert(scope_move_test2, "my_pod_var", t_int_test, ctx);
-    env_move_test2.variable_types.Insert("my_pod_var", t_int_test);
+    typechecker.scope_insert(scope_move_test2, "my_pod_var", t_int_move_test, ctx);
+    env_move_test2.variable_types.Insert("my_pod_var", t_int_move_test);
 
     mut l_move3: lexer.Lexer[ctx];
     lexer.init_lexer(&l_move3, "move my_pod_var");
