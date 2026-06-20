@@ -940,8 +940,6 @@ impl Parser {
             }
             let body = self.parse_block_statement()?;
             let case_end = body.span;
-            // parse_block_statement leaves cur_token at '}'
-            self.next_token(); // consume '}'
 
             cases.push(MatchCase {
                 variant_name,
