@@ -940,6 +940,8 @@ impl Parser {
             }
             let body = self.parse_block_statement()?;
             let case_end = body.span;
+            // parse_block_statement leaves cur_token at '}'
+            self.next_token(); // consume '}'
 
             cases.push(MatchCase {
                 variant_name,
@@ -957,7 +959,6 @@ impl Parser {
             return None;
         }
         let end_span = self.cur_token.span;
-        self.next_token(); // consume '}'
 
         Some(Statement::Match {
             expression,

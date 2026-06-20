@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve duplicate token consumption in match statement parser",
+  "summary": "fix: revert prototype parser to its original state",
   "files": [
     {
       "file_path": "src/parser.rs",
-      "code_diff": "<<<<<<< SEARCH\n            let body = self.parse_block_statement()?;\n            let case_end = body.span;\n            // parse_block_statement leaves cur_token at '}'\n            self.next_token(); // consume '}'\n\n            cases.push(MatchCase {\n=======\n            let body = self.parse_block_statement()?;\n            let case_end = body.span;\n\n            cases.push(MatchCase {\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n            let body = self.parse_block_statement()?;\n            let case_end = body.span;\n\n            cases.push(MatchCase {\n=======\n            let body = self.parse_block_statement()?;\n            let case_end = body.span;\n            // parse_block_statement leaves cur_token at '}'\n            self.next_token(); // consume '}'\n\n            cases.push(MatchCase {\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n        if self.cur_token.token_type != TokenType::RBrace {\n            return None;\n        }\n        let end_span = self.cur_token.span;\n        self.next_token(); // consume '}'\n\n        Some(Statement::Match {\n            expression,\n            cases,\n            span: self.merge_spans(start_span, end_span),\n        })\n=======\n        if self.cur_token.token_type != TokenType::RBrace {\n            return None;\n        }\n        let end_span = self.cur_token.span;\n\n        Some(Statement::Match {\n            expression,\n            cases,\n            span: self.merge_spans(start_span, end_span),\n        })\n>>>>>>> REPLACE"
     }
   ]
 }
