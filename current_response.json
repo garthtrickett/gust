@@ -1,9 +1,9 @@
 {
-  "summary": "fix: resolve classification ordering in map_message_to_kind test helper",
+  "summary": "fix: adjust map_message_to_kind to match both past and present tense argument count errors",
   "files": [
     {
       "file_path": "tests/compile_tests.rs",
-      "code_diff": "<<<<<<< SEARCH\n    } else if msg.contains(\"already been moved\") || msg.contains(\"Use of moved variable\") || msg.contains(\"moved\") {\n        TypeErrorKind::UseOfMovedVariable\n    } else if msg.contains(\"Value-Branded Lifetime Violation\") || msg.contains(\"escape\") || msg.contains(\"Escape\") || msg.contains(\"scratchpad-allocated\") || msg.contains(\"must be cleanly closed\") || msg.contains(\"cannot be moved while open\") || msg.contains(\"Brand Nesting\") || msg.contains(\"Mismatched nested brand\") {\n        TypeErrorKind::BrandLifetimeViolation\n=======\n    } else if msg.contains(\"Value-Branded Lifetime Violation\") || msg.contains(\"escape\") || msg.contains(\"Escape\") || msg.contains(\"scratchpad-allocated\") || msg.contains(\"must be cleanly closed\") || msg.contains(\"cannot be moved while open\") || msg.contains(\"Brand Nesting\") || msg.contains(\"Mismatched nested brand\") {\n        TypeErrorKind::BrandLifetimeViolation\n    } else if msg.contains(\"already been moved\") || msg.contains(\"Use of moved variable\") || msg.contains(\"moved\") {\n        TypeErrorKind::UseOfMovedVariable\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    } else if msg.contains(\"Template\") && msg.contains(\"expects\") && msg.contains(\"generic arguments\") {\n        TypeErrorKind::TemplateArgumentMismatch\n    } else if msg.contains(\"expects\") && msg.contains(\"arguments\") {\n        TypeErrorKind::ArgumentMismatch\n    } else if msg.contains(\"Undefined variable\") {\n=======\n    } else if msg.contains(\"Template\") && msg.contains(\"expects\") && msg.contains(\"generic arguments\") {\n        TypeErrorKind::TemplateArgumentMismatch\n    } else if (msg.contains(\"expects\") || msg.contains(\"expected\")) && msg.contains(\"arguments\") {\n        TypeErrorKind::ArgumentMismatch\n    } else if msg.contains(\"Undefined variable\") {\n>>>>>>> REPLACE"
     }
   ]
 }
