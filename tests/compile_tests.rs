@@ -7308,11 +7308,11 @@ fn test_bootstrapped_compiler_helper_initialization() {
         .output()
         .expect("Failed to execute compiled self-hosted compiler");
 
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
-        stderr.contains("Usage: test_runner_entry"),
+        stdout.contains("Usage: test_runner_entry"),
         "Self-hosted compiler did not print usage information: {}",
-        stderr
+        stdout
     );
 }
 
