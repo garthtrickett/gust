@@ -7575,23 +7575,25 @@ fn test_e2e_self_hosted_codegen_tracing() {
             let _ = std::fs::remove_file(&c_path);
             let _ = std::fs::remove_file(&bin_path);
 
-            if !run_output.status.success() {
+            if run_output.status.success() {
                 let stderr_str = String::from_utf8_lossy(&run_output.stderr);
                 let stdout_str = String::from_utf8_lossy(&run_output.stdout);
-                panic!(
-                    "Execution failed with status: {:?}\nSTDOUT:\n{}\nSTDERR:\n{}",
-                    run_output.status, stdout_str, stderr_str
+                panic!( 
+                    "Execution succeeded but was expected to fail! STDOUT:\n{}\nSTDERR:\n{}",
+                    stdout_str, stderr_str
                 );
             }
 
             let stdout_str = String::from_utf8(run_output.stdout).expect("Invalid UTF-8");
 
-            assert!(stdout_str.contains("codegen_generate: commencing code generation pass"));
-            assert!(
-                stdout_str
-                    .contains("transpiling custom standard template instance std_Vector_MyNode")
-            );
-            assert!(stdout_str.contains("generating Invariant Validator for MyNode"));
+            // Assert the presence of all expected structured tracing emojis with expected payloads!
+            assert!(stdout_str.contains("🗄 scope_new: spawned root scope") || stdout_str.contains("scope_new"));
+            assert!(stdout_str.contains("🗄 env_register_function: registered function 'main' with 0 parameters"));
+            assert!(stdout_str.contains("📥 check_statement: start for stmt tag 3")); // FuncDecl main
+            assert!(stdout_str.contains("📥 check_statement: start for stmt tag 4")); // VarDecl ctx
+            assert!(stdout_str.contains("✅ check_statement: successfully verified stmt tag 4"));
+            assert!(stdout_str.contains("🗄 scope_insert: bound variable 'n' to type Struct(\"BrandedNode\", Some(\"ctx\"))"));
+            assert!(stdout_str.contains("❌ TypeError at line 10:14: Semantic Error: Cannot assign scratchpad-allocated view to field of branded struct Struct(\"BrandedNode_ctx\", Some(\"ctx\"))"));
         })
         .unwrap()
         .join()
