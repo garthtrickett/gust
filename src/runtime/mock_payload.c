@@ -8,14 +8,6 @@
 int os_argc = 0;
 char** os_argv = NULL;
 
-typedef struct std_Vector_str std_Vector_str;
-struct std_Vector_str {
-    Slice_unsigned_char* data;
-    int len;
-    int capacity;
-    os_Arena* arena;
-};
-
 struct std_Vector_str os_Args(os_Arena* ctx) {
     struct std_Vector_str vec = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
     for (int i = 0; i < os_argc; i++) {
@@ -159,9 +151,19 @@ int std_parse_int(Slice_unsigned_char s) {
         unsigned char c = s.data[index];
         if (c >= '0' && c <= '9') {
             result = result * 10 + (c - '0');
-        } else {
+        } else { 
             break;
         }
     }
     return result * sign;
+}
+
+Slice_unsigned_char std_Clone_str(os_Arena* arena, Slice_unsigned_char s) {
+    if (s.data == NULL || s.len <= 0) {
+        return (Slice_unsigned_char){ NULL, 0 };
+    }
+    int offset = os_ArenaAlloc(arena, s.len);
+    unsigned char* dest = (unsigned char*)((char*)arena->BaseAddress + offset);
+    memcpy(dest, s.data, s.len);
+    return (Slice_unsigned_char){ dest, s.len };
 }

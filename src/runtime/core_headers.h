@@ -47,12 +47,37 @@ struct Slice_int {
     int len;
 };
 
-// Forward declared structs for the FFI standard library prototypes
-struct std_Vector_str;
-struct os_Dir;
-struct os_DirEntry;
-struct LookupResult_os_Dir;
-struct LookupResult_os_DirEntry;
+// Complete structural definitions for the FFI standard library prototypes
+typedef struct os_Dir os_Dir;
+struct os_Dir {
+    unsigned char* handle;
+};
+
+typedef struct os_DirEntry os_DirEntry;
+struct os_DirEntry {
+    int is_dir;
+    Slice_unsigned_char name;
+};
+
+typedef struct LookupResult_os_Dir LookupResult_os_Dir;
+struct LookupResult_os_Dir {
+    int Ok;
+    os_Dir Val;
+};
+
+typedef struct LookupResult_os_DirEntry LookupResult_os_DirEntry;
+struct LookupResult_os_DirEntry {
+    int Ok;
+    os_DirEntry Val;
+};
+
+typedef struct std_Vector_str std_Vector_str;
+struct std_Vector_str {
+    Slice_unsigned_char* data;
+    int len;
+    int capacity;
+    os_Arena* arena;
+};
 
 // Standard Library collections FFI helper functions (defined in src/runtime.c)
 void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t key_size, size_t val_size);
