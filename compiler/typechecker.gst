@@ -638,6 +638,17 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             if lookup.Ok {
                                 mut val_t_lookup := lookup.Val.fields.Get("value");
                                 if val_t_lookup.Ok {
+                                    return make_type_pointer(val_t_lookup.Val, ctx);
+                                } 
+                            }
+                        }
+                    }
+                    if std.str_eq(right_name, "Unlock") {
+                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                        return t_void;
+                    }
+                }
+
                 if is_channel == 1 {
                     if std.str_eq(right_name, "Send") {
                         // Typecheck argument
