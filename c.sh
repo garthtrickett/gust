@@ -12,7 +12,7 @@ if [ ! -d "src" ] && [ -d "../src" ]; then
 fi
 
 # Append root configuration files if they exist
-CONFIG_FILES=("flake.nix" "Cargo.toml" "GEMINI.md" "apply_changes.py" "bridge.sh" "flake.nix")
+CONFIG_FILES=("flake.nix" "Cargo.toml" "GEMINI.md" "apply_changes.py" "bridge.sh")
 for config in "${CONFIG_FILES[@]}"; do
     file_path="$PROJECT_ROOT/$config"
     if [ -f "$file_path" ]; then
@@ -22,9 +22,9 @@ for config in "${CONFIG_FILES[@]}"; do
     fi
 done
 
-# Dynamically find and append all Rust files inside src/ and tests/
+# Dynamically find and append all Rust and Gust files, plus specifically runtime.c, inside src/, tests/, and compiler/
 if [ -d "$PROJECT_ROOT/src" ] || [ -d "$PROJECT_ROOT/tests" ] || [ -d "$PROJECT_ROOT/compiler" ]; then
-    # find targets both directories, filtering for files ending in .rs, sorted for consistency
+    # find targets, filtering for files ending in .rs, .gst, or exactly named runtime.c, sorted for consistency
     while IFS= read -r file; do
         # Clean up the output boundary path representation
         display_path="${file#$PROJECT_ROOT/}"
@@ -32,7 +32,7 @@ if [ -d "$PROJECT_ROOT/src" ] || [ -d "$PROJECT_ROOT/tests" ] || [ -d "$PROJECT_
         echo "--- START OF FILE $display_path ---" >>"$OUTPUT_FILE"
         cat "$file" >>"$OUTPUT_FILE"
         echo -e "\n--- END OF FILE $display_path ---\n" >>"$OUTPUT_FILE"
-    done < <(find "$PROJECT_ROOT/src" "$PROJECT_ROOT/tests" "$PROJECT_ROOT/compiler" -type f \( -name "*.rs" -o -name "*.gst" \) 2>/dev/null | sort)
+    done < <(find "$PROJECT_ROOT/src" "$PROJECT_ROOT/tests" "$PROJECT_ROOT/compiler" -type f \( -name "*.rs" -o -name "*.gst" -o -name "runtime.c" \) 2>/dev/null | sort)
 fi
 
-echo "✅ Aggregated all project configuration and Rust files into $OUTPUT_FILE"
+echo "✅ Aggregated all project configuration, Rust, Gust, and runtime.c files into $OUTPUT_FILE"

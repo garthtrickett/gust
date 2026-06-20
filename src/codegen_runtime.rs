@@ -49,7 +49,7 @@ void os_HashMapClear_impl(void* map_void, size_t key_size, size_t val_size);
 int std_PoolAlloc_impl(void* pool_void, size_t elem_size);
 void std_PoolFree_impl(void* pool_void, int index);
 
-// GUST NATIVE COLLECTIONS RUNTIME (VECTOR, HASHMAP, POOL & RC MACROS)
+// GUST COLLECTIONS OPERATIONS (VECTOR, HASHMAP, POOL & RC MACROS)
 static inline int os_is_key_corrupted(Slice_unsigned_char s) {
     if (s.len < 0 || s.len > 1000 || s.data == NULL) {
         return 1;
