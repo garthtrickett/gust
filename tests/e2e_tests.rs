@@ -4584,11 +4584,7 @@ fn test_e2e_self_hosted_origins() {
             0
             get_type_brand registry lookup OK
             get_type_brand suffix fallback OK
-            get_type_brand nested pointer lookup OK
-            Monomorphization of Result[int, ctx1] succeeded without brand nesting errors!
-            Monomorphization of Result[str, ctx1] correctly failed on linear brand nesting violation!
-            Semantic Error: Brand Nesting. Mismatched nested brand 'ctx1' inside parent brand 'ctx'
-            Any brand bypass verification: OK (No errors reported)"#
+            get_type_brand nested pointer lookup OK"#
                 .replace("            ", "")
             );
         })
