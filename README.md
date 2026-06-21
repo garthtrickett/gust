@@ -1,5 +1,3 @@
-
-```markdown
 # Gust Compiler
 
 Gust is a minimalist, self-hosted, expression-based programming language that transpiles directly to clean, standard C99. It is designed around "Grug-brained simplicity," focusing on locality of behavior, minimal abstraction, and robust compile-time safety invariants without garbage collection overhead.
@@ -14,7 +12,7 @@ The language features a unique memory and concurrency model:
 
 ## The Non-Rust Bootstrap Chain
 
-To build, run, and test Gust, **you do not need Rust or Cargo installed on your system.** 
+To build, run, and test Gust, **you do not need Rust or Cargo installed on your system.**
 
 Gust is fully self-hosted, meaning the compiler is written in Gust itself. To break the traditional "chicken-and-egg" bootstrap loop without forcing a Rust dependency on end-users, Gust utilizes a C-based bootstrap pipeline:
 
@@ -47,18 +45,23 @@ Gust is fully self-hosted, meaning the compiler is written in Gust itself. To br
 
 ### Building the Compiler
 To clean old artifacts and perform the full multi-stage bootstrap build, execute:
+
 ```bash
 make clean
 make
 ```
+
 This produces the production-ready `gust` compiler binary in your root directory.
 
 ### Running the Test Suite
 To verify the compiler's typechecker, code generator, and FFI standard library runtime, execute:
+
 ```bash
 make test
 ```
+
 This compiles, links, and runs the end-to-end verification suites, printing a success confirmation when complete:
+
 ```text
 ✅ Collections E2E Passed
 ✅ Formatting & Arena E2E Passed
@@ -66,9 +69,11 @@ This compiles, links, and runs the end-to-end verification suites, printing a su
 
 ### Installation
 To install the compiled `gust` binary into your system's binary path (defaults to `/usr/local/bin`), run:
+
 ```bash
 make install
 ```
+
 *(You can customize the installation path by specifying `PREFIX`, e.g., `make install PREFIX=$HOME/.local`).*
 
 ---
@@ -78,16 +83,19 @@ make install
 If you prefer a sandboxed, deterministic development environment, a reproducible Nix flake is available in the repository.
 
 1.  **Enter the Nix development shell:**
-    ```bash
+
+```bash
     nix develop
-    ```
+```
+
     This automatically loads a shell pre-configured with GCC, GNU Make, Python 3, and the optional Rust prototype compiler toolchains (rustc, cargo, rust-analyzer).
 
 2.  **Run Rust-based tests (for compiler developers):**
     If you are modifying the original Rust prototype compiler located in `src/`, you can run the Rust-based test suite inside the Nix shell:
-    ```bash
+
+```bash
     cargo test
-    ```
+```
 
 ---
 
@@ -102,4 +110,3 @@ If you prefer a sandboxed, deterministic development environment, a reproducible
 *   `tests/` - The end-to-end and integration tests written in Gust.
 *   `Makefile` - The primary build automation driver.
 *   `gust_v4.c` - The stable, converged self-hosting bootstrap compiler C seed.
-```
