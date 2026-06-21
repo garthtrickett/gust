@@ -463,22 +463,22 @@ mut lookup_param := env.variable_types.Get("ctx");
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_unbranded_linear, "ctx", ctx)); // Expected: 0
 
     mut t_branded_linear: ast.Type[ctx];
-    t_branded_linear.tag = 8; // Struct
-    t_branded_linear.Struct.struct_name = "LinearStruct_ctx";
-    t_branded_linear.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-    unsafe {
-        mut brand_ptr := &ctx[t_branded_linear.Struct.brand] as *str;
-        *brand_ptr = "ctx";
-    }
-    os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_branded_linear, "ctx", ctx)); // Expected: 1
+            t_branded_linear.tag = 8; // Struct
+            t_branded_linear.Struct.struct_name = "LinearStruct_ctx";
+            unsafe {
+                t_branded_linear.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                mut brand_ptr := &ctx[t_branded_linear.Struct.brand] as *str;
+                *brand_ptr = "ctx";
+            }
+            os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_branded_linear, "ctx", ctx)); // Expected: 1
 
-    mut t_mismatched_branded: ast.Type[ctx];
-    t_mismatched_branded.tag = 8; // Struct
-    t_mismatched_branded.Struct.struct_name = "LinearStruct_ctx1";
-    t_mismatched_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-    unsafe { 
-        mut brand_ptr := &ctx[t_mismatched_branded.Struct.brand] as *str;
-        *brand_ptr = "ctx1";
+            mut t_mismatched_branded: ast.Type[ctx];
+            t_mismatched_branded.tag = 8; // Struct
+            t_mismatched_branded.Struct.struct_name = "LinearStruct_ctx1";
+            unsafe {
+                t_mismatched_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                mut brand_ptr := &ctx[t_mismatched_branded.Struct.brand] as *str;
+                *brand_ptr = "ctx1";
     }
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_mismatched_branded, "ctx", ctx)); // Expected: 0
 
@@ -502,8 +502,8 @@ mut lookup_param := env.variable_types.Get("ctx");
     // Case B: Mismatched branded type (LinearStruct_ctx1) in a branded collection (Vector[LinearStruct_ctx1, ctx])
     // Register LinearStruct_ctx1 first so monomorphize can find it
     mut mismatched_layout: typechecker.StructLayout[ctx];
-    mismatched_layout.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
     unsafe { 
+        mismatched_layout.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
         mut brand_ptr := &ctx[mismatched_layout.brand] as *str;
         *brand_ptr = "ctx1";
     }

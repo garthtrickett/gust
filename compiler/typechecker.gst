@@ -1471,8 +1471,17 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         report_error(2, msg, get_expression_span(task_arg_idx, ctx), env, ctx);
                     }
 
+                    mut is_tl_context := 0;
+                    if resolved_arg.tag == 8 { // Struct
+                        mut name := resolved_arg.Struct.struct_name;
+                        if typechecker_starts_with(name, "ThreadLocalContext") == 1 ||
+                           typechecker_starts_with(name, "std_ThreadLocalContext") == 1 {
+                            is_tl_context = 1;
+                        }
+                    }
+
                     mut param_brand := get_type_brand(first_param_type, env, ctx);
-                    if std.str_eq(param_brand, "") == 0 {
+                    if std.str_eq(param_brand, "") == 0 && is_tl_context == 1 {
                         mut arg_origins := get_expression_origins(task_arg_idx, env, ctx);
                         if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
                             mut local_vars := (*env).current_function_local_vars;
