@@ -654,12 +654,13 @@ mut l_move3: lexer.Lexer[ctx];
     os.LogInt(env_move_test2.moved_vars.Get("my_pod_var").Ok); // Expected: 0 (POD move does not add to moved_vars)
 
     // Test Case 1: Struct with empty brand field whose layout has a registered brand
-    mut env_brand_test := typechecker.env_new(ctx);
-    mut layout_brand_test: typechecker.StructLayout[ctx];
-    mut brand_str_idx := os.ArenaAlloc(ctx) as Index[str, ctx];
-    unsafe {
-        mut brand_ptr := &ctx[brand_str_idx] as *str;
-        *brand_ptr = "my_custom_brand";
+        mut env_brand_test := typechecker.env_new(ctx);
+        mut layout_brand_test: typechecker.StructLayout[ctx];
+        mut brand_str_idx: Index[str, ctx] := empty[Index[str, ctx]];
+        unsafe {
+            brand_str_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
+            mut brand_ptr := &ctx[brand_str_idx] as *str;
+            *brand_ptr = "my_custom_brand";
     }
     layout_brand_test.brand = brand_str_idx;
     layout_brand_test.fields = std.HashMapNew(ctx);
