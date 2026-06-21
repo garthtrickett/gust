@@ -2792,6 +2792,8 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                                 msg = std.Concat(msg, "' cannot contain ephemeral slice or view field '");
                                 msg = std.Concat(msg, field.name);
                                 msg = std.Concat(msg, "'");
+                                ctx[err].message = std.Clone(ctx, msg);
+                                ctx[err].span = field.span;
                                 res.tag = 1; // Err
                                 res.Err.error = err;
                                 (*env).active_monomorphizations.Remove(template_name);
