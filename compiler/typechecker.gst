@@ -1130,11 +1130,55 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if len(*args_vec) == 2 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
+                            mut from_type := check_expression(arg0_idx, env, scope, ctx);
                             
                             mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx[arg1_idx] = (*args_vec)[1];
-                            check_expression(arg1_idx, env, scope, ctx);
+                            mut to_type := check_expression(arg1_idx, env, scope, ctx);
+
+                            mut graph_brand := left_type.Struct.brand;
+
+                            // Check "from" type
+                            mut from_ok := 0;
+                            if from_type.tag == 0 || from_type.tag == 1 { // Int or Byte
+                                from_ok = 1;
+                            } else if from_type.tag == 7 { // Index
+                                mut brand := from_type.Index.brand;
+                                if brand != empty[Index[str, ctx]] && graph_brand != empty[Index[str, ctx]] { 
+                                    mut b_ptr := &ctx[brand] as *str;
+                                    mut gb_ptr := &ctx[graph_brand] as *str;
+                                    if std.str_eq(strip_brand_prefix(*b_ptr, ctx), strip_brand_prefix(*gb_ptr, ctx)) {
+                                        from_ok = 1;
+                                    }
+                                } else {
+                                    from_ok = 1;
+                                }
+                            }
+                            if from_ok == 0 {
+                                mut msg := "Semantic Error: Graph.AddEdge 'from' argument must be an Int, Byte or branded Index";
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
+
+                            // Check "to" type
+                            mut to_ok := 0;
+                            if to_type.tag == 0 || to_type.tag == 1 { // Int or Byte
+                                to_ok = 1;
+                            } else if to_type.tag == 7 { // Index
+                                mut brand := to_type.Index.brand;
+                                if brand != empty[Index[str, ctx]] && graph_brand != empty[Index[str, ctx]] { 
+                                    mut b_ptr := &ctx[brand] as *str;
+                                    mut gb_ptr := &ctx[graph_brand] as *str;
+                                    if std.str_eq(strip_brand_prefix(*b_ptr, ctx), strip_brand_prefix(*gb_ptr, ctx)) {
+                                        to_ok = 1;
+                                    }
+                                } else {
+                                    to_ok = 1;
+                                }
+                            }
+                            if to_ok == 0 {
+                                mut msg := "Semantic Error: Graph.AddEdge 'to' argument must be an Int, Byte or branded Index";
+                                report_error(2, msg, get_expression_span(arg1_idx, ctx), env, ctx);
+                            }
                         }
                         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                         return t_void;
@@ -1144,7 +1188,28 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if len(*args_vec) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx); 
                             ctx[arg0_idx] = (*args_vec)[0];
-                            check_expression(arg0_idx, env, scope, ctx);
+                            mut index_type := check_expression(arg0_idx, env, scope, ctx);
+
+                            mut graph_brand := left_type.Struct.brand;
+                            mut idx_ok := 0;
+                            if index_type.tag == 0 || index_type.tag == 1 { // Int or Byte
+                                idx_ok = 1;
+                            } else if index_type.tag == 7 { // Index
+                                mut brand := index_type.Index.brand;
+                                if brand != empty[Index[str, ctx]] && graph_brand != empty[Index[str, ctx]] { 
+                                    mut b_ptr := &ctx[brand] as *str;
+                                    mut gb_ptr := &ctx[graph_brand] as *str;
+                                    if std.str_eq(strip_brand_prefix(*b_ptr, ctx), strip_brand_prefix(*gb_ptr, ctx)) {
+                                        idx_ok = 1;
+                                    }
+                                } else {
+                                    idx_ok = 1;
+                                }
+                            }
+                            if idx_ok == 0 {
+                                mut msg := "Semantic Error: Graph.GetNode index must be an Int, Byte or branded Index";
+                                report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                            }
                         }
                         unsafe {
                             mut lookup := (*env).struct_registry.Get(s_name);
