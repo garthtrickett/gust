@@ -1,9 +1,0 @@
-{
-  "summary": "fix: add std.RcNew and std_RcNew to codegen forward declaration skip list",
-  "files": [
-    {
-      "file_path": "compiler/codegen.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc codegen_should_skip_fwd_decl(name: str) int {\n    if std.str_eq(name, \"std.Clone\") { return 1; }\n    if std.str_eq(name, \"std_Clone\") { return 1; }\n    if std.str_eq(name, \"std.GenerationalSwap\") { return 1; }\n=======\nfunc codegen_should_skip_fwd_decl(name: str) int {\n    if std.str_eq(name, \"std.Clone\") { return 1; }\n    if std.str_eq(name, \"std_Clone\") { return 1; }\n    if std.str_eq(name, \"std.RcNew\") { return 1; }\n    if std.str_eq(name, \"std_RcNew\") { return 1; }\n    if std.str_eq(name, \"std.GenerationalSwap\") { return 1; }\n>>>>>>> REPLACE"
-    }
-  ]
-}
