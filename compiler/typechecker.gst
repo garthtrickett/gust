@@ -133,6 +133,52 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
     }
 }
 
+func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], parent_brand: Index[str, ctx], span: token.Span, ctx: &Arena) {
+    unsafe {
+        if t.tag == 9 { // RawPointer
+            mut inner := ctx[t.RawPointer.inner];
+            env_check_brand_nesting(env, inner, parent_brand, span, ctx);
+        }
+        if t.tag == 6 { // Slice
+            mut inner := ctx[t.Slice.inner];
+            env_check_brand_nesting(env, inner, parent_brand, span, ctx);
+        }
+        if t.tag == 8 { // Struct
+            mut b := t.Struct.brand;
+            if b != empty[Index[str, ctx]] && parent_brand != empty[Index[str, ctx]] {
+                if std.str_eq(ctx[b], ctx[parent_brand]) == 0 {
+                    mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ctx[b]);
+                    msg = std.Concat(msg, "' inside parent brand '");
+                    msg = std.Concat(msg, ctx[parent_brand]);
+                    msg = std.Concat(msg, "'");
+                    report_error(2, msg, span, env, ctx);
+                }
+            }
+        }
+        if t.tag == 7 { // Index
+            mut b := t.Index.brand;
+            if b != empty[Index[str, ctx]] && parent_brand != empty[Index[str, ctx]] {
+                if std.str_eq(ctx[b], ctx[parent_brand]) == 0 {
+                    mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ctx[b]);
+                    msg = std.Concat(msg, "' inside parent brand '");
+                    msg = std.Concat(msg, ctx[parent_brand]);
+                    msg = std.Concat(msg, "'");
+                    report_error(2, msg, span, env, ctx);
+                }
+            }
+        }
+        if t.tag == 10 { // Generic
+            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            mut i := 0;
+            while i < len(*args_vec) {
+                mut arg_t := (*args_vec)[i];
+                env_check_brand_nesting(env, arg_t, parent_brand, span, ctx);
+                i = i + 1;
+            }
+        }
+    }
+}
+
 func typechecker_is_linear(t: ast.Type[ctx], env: *TypeEnvironment[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) int {
     unsafe {
         if t.tag == 0 || t.tag == 1 || t.tag == 2 || t.tag == 3 || t.tag == 7 { // Int, Byte, Bool, Void, Index
