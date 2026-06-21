@@ -629,6 +629,8 @@ func codegen_is_arena_ptr(var_name: str, env: &typechecker.TypeEnvironment[ctx],
 func codegen_should_skip_fwd_decl(name: str) int {
     if std.str_eq(name, "std.Clone") { return 1; }
     if std.str_eq(name, "std_Clone") { return 1; }
+    if std.str_eq(name, "std.RcNew") { return 1; }
+    if std.str_eq(name, "std_RcNew") { return 1; }
     if std.str_eq(name, "std.GenerationalSwap") { return 1; }
     if std.str_eq(name, "std_GenerationalSwap") { return 1; }
     if std.str_eq(name, "std.PoolNew") { return 1; }
