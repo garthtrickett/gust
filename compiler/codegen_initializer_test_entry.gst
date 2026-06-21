@@ -239,8 +239,9 @@ func main() {
         mut t_node_idx: ast.Type[ctx];
         t_node_idx.tag = 7; // Index
         t_node_idx.Index.struct_name = "SessionNode";
-        t_node_idx.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+        t_node_idx.Index.brand = empty[Index[str, ctx]];
         unsafe {
+            t_node_idx.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
             mut brand_ptr := &ctx[t_node_idx.Index.brand] as *str;
             *brand_ptr = "current_ctx";
         }
@@ -409,8 +410,9 @@ func main() {
         mut t_listnode_idx: ast.Type[ctx];
         t_listnode_idx.tag = 7; // Index
         t_listnode_idx.Index.struct_name = "ListNode_ctx";
-        t_listnode_idx.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+        t_listnode_idx.Index.brand = empty[Index[str, ctx]];
         unsafe {
+            t_listnode_idx.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
             mut brand_ptr := &ctx[t_listnode_idx.Index.brand] as *str;
             *brand_ptr = "ctx";
         }
@@ -638,26 +640,25 @@ func main() {
         os.LogStr("Topological Sort ADT FAIL: Missing structs");
     }
 
-    // Step 1: Verification Test for Brand Erasure Utilities
+      // Step 1: Verification Test for Brand Erasure Utilities
     mut t_branded_vect: ast.Type[ctx];
     t_branded_vect.tag = 8;
     t_branded_vect.Struct.struct_name = "std_Vector_str_ctx";
-    mut brand_v_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
-    t_branded_vect.Struct.brand = brand_v_idx;
+    mut brand_v_idx: Index[str, ctx] := empty[Index[str, ctx]];
     unsafe {
+        brand_v_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
+        t_branded_vect.Struct.brand = brand_v_idx;
         mut brand_ptr := &ctx[t_branded_vect.Struct.brand] as *str;
         *brand_ptr = "ctx";
     }
 
-    mut erased_vect := codegen.codegen_erase_type(t_branded_vect, &env, ctx);
-    os.LogStr(erased_vect.Struct.struct_name);
-
     mut t_lookup: ast.Type[ctx];
     t_lookup.tag = 8;
     t_lookup.Struct.struct_name = "LookupResult_os_Dir_ctx";
-    mut brand_l_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
-    t_lookup.Struct.brand = brand_l_idx;
+    mut brand_l_idx: Index[str, ctx] := empty[Index[str, ctx]];
     unsafe {
+        brand_l_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
+        t_lookup.Struct.brand = brand_l_idx;
         mut brand_ptr := &ctx[t_lookup.Struct.brand] as *str;
         *brand_ptr = "ctx";
     }

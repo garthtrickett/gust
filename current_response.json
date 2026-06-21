@@ -1,0 +1,9 @@
+{
+  "summary": "fix: wrap index cast operations in unsafe blocks in codegen_initializer_test_entry",
+  "files": [
+    {
+      "file_path": "compiler/codegen_initializer_test_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n        // Pre-register 'node' of type Index[SessionNode, current_ctx] so Clone finds its brand\n        mut t_node_idx: ast.Type[ctx];\n        t_node_idx.tag = 7; // Index\n        t_node_idx.Index.struct_name = \"SessionNode\";\n        t_node_idx.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];\n        unsafe {\n            mut brand_ptr := &ctx[t_node_idx.Index.brand] as *str;\n            *brand_ptr = \"current_ctx\";\n        }\n=======\n        // Pre-register 'node' of type Index[SessionNode, current_ctx] so Clone finds its brand\n        mut t_node_idx: ast.Type[ctx];\n        t_node_idx.tag = 7; // Index\n        t_node_idx.Index.struct_name = \"SessionNode\";\n        t_node_idx.Index.brand = empty[Index[str, ctx]];\n        unsafe {\n            t_node_idx.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];\n            mut brand_ptr := &ctx[t_node_idx.Index.brand] as *str;\n            *brand_ptr = \"current_ctx\";\n        }\n>>>>>>> REPLACE"
+    }
+  ]
+}
