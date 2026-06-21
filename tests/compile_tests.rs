@@ -38,7 +38,7 @@ fn map_message_to_kind(msg: &str) -> TypeErrorKind {
         TypeErrorKind::UnsafeProhibited
     } else if msg.contains("Template") && msg.contains("expects") && msg.contains("generic arguments") {
         TypeErrorKind::TemplateArgumentMismatch
-    } else if (msg.contains("expects") || msg.contains("expected")) && msg.contains("arguments") {
+    } else if (msg.contains("expects") || msg.contains("expected")) && msg.contains("arguments") || msg.contains("must accept exactly") {
         TypeErrorKind::ArgumentMismatch
     } else if msg.contains("Undefined variable") {
         TypeErrorKind::UndefinedVariable

@@ -304,6 +304,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
         if expr.tag == 0 { // Identifier
             mut name := expr.Identifier.name;
+            if std.str_eq(name, "null") == 1 {
+                return make_type_index("Any", "", ctx);
+            }
             mut resolved_name := name;
             mut is_local := scope_contains(scope, name, ctx);
             if is_local == 0 {
@@ -1204,46 +1207,75 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             // Spawn / Concurrency Checks
             if std.str_eq(resolved_func, "std_Spawn") || std.str_eq(resolved_func, "std.Spawn") {
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) == 2 {
-                    mut task_func_expr := (*args_vec)[0];
-                    mut task_arg_expr := (*args_vec)[1];
-                    mut task_func_name := "";
-                    unsafe {
-                        if task_func_expr.tag == 0 {
-                            task_func_name = task_func_expr.Identifier.name;
-                        }
+                if len(*args_vec) != 2 {
+                    mut msg := "Semantic Error: std.Spawn expects exactly 2 arguments (func, arg)";
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                    return dummy;
+                }
+
+                mut task_func_expr := (*args_vec)[0];
+                mut task_arg_expr := (*args_vec)[1];
+
+                mut task_func_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[task_func_idx] = task_func_expr;
+                mut task_func_span := get_expression_span(task_func_idx, ctx);
+
+                mut task_func_name := "";
+                unsafe {
+                    if task_func_expr.tag == 0 {
+                        task_func_name = task_func_expr.Identifier.name;
                     }
-                    mut resolved_task_func := env_resolve_namespaced_ident(env, task_func_name, ctx);
-                    mut sig_lookup := (*env).function_registry.Get(resolved_task_func);
-                    if sig_lookup.Ok {
-                        mut sig := sig_lookup.Val;
-                        if len(sig.params) == 1 {
-                            mut first_param_type := sig.params[0];
-                            mut param_brand := get_type_brand(first_param_type, ctx);
-                            if std.str_eq(param_brand, "") == 0 {
-                                mut task_arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                                ctx[task_arg_idx] = task_arg_expr;
-                                mut arg_origins := get_expression_origins(task_arg_idx, env, ctx);
-                                if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
-                                    mut local_vars := (*env).current_function_local_vars;
-                                    mut local_keys := ctx[local_vars].map.Keys(ctx);
-                                    mut m := 0;
-                                    while m < len(local_keys) {
-                                        mut origin := local_keys[m];
-                                        if std.str_eq(origin, param_brand) == 0 {
-                                            if set_contains(arg_origins, origin, ctx) == 1 {
-                                                mut msg := "Semantic Error: Thread-safety violation. Branded context has origin tracing back to thread-local stack variable '";
-                                                msg = std.Concat(msg, origin);
-                                                msg = std.Concat(msg, "', preventing safe handoff across thread-spawning boundaries");
-                                                report_error(2, msg, get_expression_span(task_arg_idx, ctx), env, ctx);
-                                            }
-                                        }
-                                        m = m + 1;
+                }
+                mut resolved_task_func := env_resolve_namespaced_ident(env, task_func_name, ctx);
+                mut sig_lookup := (*env).function_registry.Get(resolved_task_func);
+                if sig_lookup.Ok {
+                    mut sig := sig_lookup.Val;
+                    if len(sig.params) != 1 {
+                        mut msg := std.Format("Semantic Error: Spawned function '%s' must accept exactly 1 parameter, but accepts %d",
+                            task_func_name, len(sig.params));
+                        report_error(2, msg, task_func_span, env, ctx);
+                        return dummy;
+                    }
+
+                    mut first_param_type := sig.params[0];
+                    mut task_arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[task_arg_idx] = task_arg_expr;
+                    mut arg_type := check_expression(task_arg_idx, env, scope, ctx);
+                    mut resolved_arg := env_resolve_type(env, arg_type, ctx);
+
+                    if types_match(first_param_type, resolved_arg, ctx) == 0 {
+                        mut msg := std.Concat("Semantic Error: Thread spawn argument type mismatch. Expected ", ast.serialize_type(first_param_type, ctx));
+                        msg = std.Concat(msg, " but got ");
+                        msg = std.Concat(msg, ast.serialize_type(resolved_arg, ctx));
+                        report_error(2, msg, get_expression_span(task_arg_idx, ctx), env, ctx);
+                    }
+
+                    mut param_brand := get_type_brand(first_param_type, ctx);
+                    if std.str_eq(param_brand, "") == 0 {
+                        mut arg_origins := get_expression_origins(task_arg_idx, env, ctx);
+                        if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
+                            mut local_vars := (*env).current_function_local_vars;
+                            mut local_keys := ctx[local_vars].map.Keys(ctx);
+                            mut m := 0;
+                            while m < len(local_keys) {
+                                mut origin := local_keys[m];
+                                if std.str_eq(origin, param_brand) == 0 {
+                                    if set_contains(arg_origins, origin, ctx) == 1 {
+                                        mut msg := "Semantic Error: Thread-safety violation. Branded context has origin tracing back to thread-local stack variable '";
+                                        msg = std.Concat(msg, origin);
+                                        msg = std.Concat(msg, "', preventing safe handoff across thread-spawning boundaries");
+                                        report_error(2, msg, get_expression_span(task_arg_idx, ctx), env, ctx);
                                     }
                                 }
+                                m = m + 1;
                             }
                         }
                     }
+                    return dummy;
+                } else {
+                    mut msg := std.Format("Semantic Error: Undefined function '%s' inside std.Spawn", task_func_name);
+                    report_error(2, msg, task_func_span, env, ctx);
+                    return dummy;
                 }
             }
 
@@ -3023,6 +3055,25 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             register_fn(env, "std_MutexNew", p_arena_ptr, make_type_struct("std_Mutex_Any", "ctx", ctx), ctx);
             register_fn(env, "std.ChannelNew", p_arena_ptr, make_type_struct("std_Channel_Any", "ctx", ctx), ctx);
             register_fn(env, "std_ChannelNew", p_arena_ptr, make_type_struct("std_Channel_Any", "ctx", ctx), ctx);
+
+            register_fn(env, "os.GraphNew", p_arena_ptr, make_type_struct("std_Graph_Any", "ctx", ctx), ctx);
+            register_fn(env, "os_GraphNew", p_arena_ptr, make_type_struct("std_Graph_Any", "ctx", ctx), ctx);
+            register_fn(env, "std.GraphNew", p_arena_ptr, make_type_struct("std_Graph_Any", "ctx", ctx), ctx);
+            register_fn(env, "std_GraphNew", p_arena_ptr, make_type_struct("std_Graph_Any", "ctx", ctx), ctx);
+
+            // Register std.RcNew & std_RcNew
+            mut p_rc_new: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+            mut pool_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+            pool_args.Push(make_type_struct("std_RcNode_T", "", ctx));
+            pool_args.Push(make_type_struct("ctx", "", ctx));
+            mut t_pool_generic := make_type_generic("std.Pool", pool_args, ctx);
+            mut t_pool_ptr := make_type_pointer(t_pool_generic, ctx);
+            p_rc_new.Push(t_pool_ptr);
+            p_rc_new.Push(make_type_struct("T", "", ctx));
+            mut t_rc_ret := make_type_struct("std_Rc_T_ctx", "ctx", ctx);
+
+            register_fn(env, "std.RcNew", p_rc_new, t_rc_ret, ctx);
+            register_fn(env, "std_RcNew", p_rc_new, t_rc_ret, ctx);
 
             register_fn(env, "os.Exit", p_int, t_void, ctx);
             register_fn(env, "os_Exit", p_int, t_void, ctx);
