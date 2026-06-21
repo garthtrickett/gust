@@ -769,6 +769,8 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     report_error(2, msg, get_expression_span(expr.Binary.left, ctx), env, ctx);
                 } 
             }
+
+            mut t_int: ast.Type[ctx];
             t_int.tag = 0; // Int
             return t_int;
         }
