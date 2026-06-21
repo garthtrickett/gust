@@ -1,9 +1,0 @@
-{
-  "summary": "fix: correct substitute_generics argument in struct monomorphization",
-  "files": [
-    {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n                            mut substituted_t := substitute_generics(env, field.field_type, map_keys, map_vals, ctx);\n                            mut field_type := env_resolve_type(env, substituted_t, ctx);\n                            concrete_fields.Insert(std.Clone(ctx, field.name), field_type);\n\n                            if brand != empty[Index[str, ctx]] {\n                                env_check_brand_nesting(env, field_type, brand, field.span, ctx);\n                    }\n=======\n                    mut substituted_t := substitute_generics(env, field.field_type, substitution_map, ctx);\n                    mut field_type := env_resolve_type(env, substituted_t, ctx);\n                    concrete_fields.Insert(std.Clone(ctx, field.name), field_type);\n\n                    if brand != empty[Index[str, ctx]] {\n                        env_check_brand_nesting(env, field_type, brand, field.span, ctx);\n                    }\n>>>>>>> REPLACE"
-    }
-  ]
-}
