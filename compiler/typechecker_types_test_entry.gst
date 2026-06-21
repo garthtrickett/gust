@@ -433,8 +433,52 @@ mut lookup_param := env.variable_types.Get("ctx");
         os.LogStr("Monomorphization of Result[str, ctx1] correctly failed on linear brand nesting violation!");
         unsafe {
             os.LogStr(ctx[bn_res_linear.Err.error].message);
-        }
+        } 
     } else {
         os.LogStr("Monomorphize Result[str, ctx1] unexpectedly succeeded on linear brand nesting violation!");
     }
+
+    // Step 1 Verification: Test env_is_element_allowed_in_brand directly
+    mut t_int_test: ast.Type[ctx]; t_int_test.tag = 0; // Int
+    os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_int_test, "ctx", ctx)); // Expected: 1
+
+    mut t_str_test: ast.Type[ctx]; t_str_test.tag = 5; // Str
+    os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_str_test, "ctx", ctx)); // Expected: 1
+
+    mut t_unbranded_linear: ast.Type[ctx];
+    t_unbranded_linear.tag = 8; // Struct
+    t_unbranded_linear.Struct.struct_name = "LinearStruct";
+    t_unbranded_linear.Struct.brand = empty[Index[str, ctx]];
+
+    mut t_ptr_test: ast.Type[ctx];
+    t_ptr_test.tag = 9; // RawPointer
+    t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+
+    mut linear_layout: typechecker.StructLayout[ctx];
+    linear_layout.brand = empty[Index[str, ctx]];
+    linear_layout.fields = std.HashMapNew(ctx);
+    linear_layout.fields.Insert("value", t_ptr_test);
+    typechecker.env_register_struct(&env, "LinearStruct", linear_layout, ctx);
+    os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_unbranded_linear, "ctx", ctx)); // Expected: 0
+
+    mut t_branded_linear: ast.Type[ctx];
+    t_branded_linear.tag = 8; // Struct
+    t_branded_linear.Struct.struct_name = "LinearStruct_ctx";
+    t_branded_linear.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+    unsafe {
+        mut brand_ptr := &ctx[t_branded_linear.Struct.brand] as *str;
+        *brand_ptr = "ctx";
+    }
+    os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_branded_linear, "ctx", ctx)); // Expected: 1
+
+    mut t_mismatched_branded: ast.Type[ctx];
+    t_mismatched_branded.tag = 8; // Struct
+    t_mismatched_branded.Struct.struct_name = "LinearStruct_ctx1";
+    t_mismatched_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+    unsafe {
+        mut brand_ptr := &ctx[t_mismatched_branded.Struct.brand] as *str;
+        *brand_ptr = "ctx1";
+    }
+    os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_mismatched_branded, "ctx", ctx)); // Expected: 0
 }
