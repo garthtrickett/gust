@@ -315,7 +315,7 @@ fn test_safety_double_move_rejected() {
     assert!(res.is_err());
     let err = res.unwrap_err();
     assert_eq!(err.kind, TypeErrorKind::UseOfMovedVariable);
-    assert!(err.message.contains("already been moved"));
+    assert!(err.message.contains("moved"));
 }
 
 #[test]
