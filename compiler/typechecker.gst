@@ -281,6 +281,9 @@ func env_is_element_allowed_in_brand(env: *TypeEnvironment[ctx], t: ast.Type[ctx
         if std.str_eq(clean_ib, clean_ob) == 1 {
             return 1;
         } 
+        if std.str_eq(clean_ib, "Any") == 1 || std.str_eq(clean_ob, "Any") == 1 {
+            return 1;
+        }
     }
     return 0;
 }
