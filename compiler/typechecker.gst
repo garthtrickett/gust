@@ -1428,6 +1428,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 return make_type_index("Any", brand_name, ctx);
             }
 
+
             if std.str_eq(resolved_func, "std.GenerationalSwap") || std.str_eq(resolved_func, "std_GenerationalSwap") {
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 if len(*args_vec) != 2 {
@@ -1449,39 +1450,32 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     report_error(2, msg, expr.Call.span, env, ctx);
                 }
 
-                mut current_brand := get_root_variable(arg0_idx, ctx);
-                mut next_brand := get_root_variable(arg1_idx, ctx);
-
                 // 1. Invalidate all variables branded with current_brand
                 mut var_origins_keys := (*env).variable_origins.Keys(ctx);
                 mut m := 0;
                 while m < len(var_origins_keys) {
                     mut var_name := var_origins_keys[m];
                     mut var_type_lookup := scope_lookup(scope, var_name, ctx);
-                    mut brand := get_type_brand(var_type_lookup, env, ctx);
-                    mut clean_brand := strip_brand_prefix(brand, ctx);
-                    if std.str_eq(std.Clone(ctx, clean_brand), std.Clone(ctx, current_brand)) == 1 {
+                    if std.str_eq(strip_brand_prefix(get_type_brand(var_type_lookup, env, ctx), ctx), get_root_variable(arg0_idx, ctx)) == 1 {
                         (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
                         (*env).open_directories.Remove(var_name);
                     }
                     m = m + 1;
                 }
 
-                // 2. Rebrand all variables branded with next_brand to current_brand
-                mut brand_map: std.HashMap[str, str, ctx] := std.HashMapNew(ctx);
-                brand_map.Insert(std.Clone(ctx, next_brand), std.Clone(ctx, current_brand));
-
+                // 2. Rebrand all variables branded with next_brand to current_brand in global symbol tables
                 mut updated_symbols: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
                 mut var_keys := (*env).variable_types.Keys(ctx);
                 mut i := 0;
                 while i < len(var_keys) {
                     mut var_name := var_keys[i];
-                    mut var_type := (*env).variable_types.Get(var_name).Val;
-                    mut brand := get_type_brand(var_type, env, ctx);
-                    mut clean_brand := strip_brand_prefix(brand, ctx);
-                    if std.str_eq(std.Clone(ctx, clean_brand), std.Clone(ctx, next_brand)) == 1 {
-                        mut updated_type := typechecker_substitute_brand_names(var_type, &brand_map, ctx);
-                        updated_symbols.Insert(std.Clone(ctx, var_name), updated_type);
+                    mut lookup := (*env).variable_types.Get(std.Clone(ctx, var_name));
+                    if lookup.Ok {
+                        mut var_type := lookup.Val;
+                        if std.str_eq(strip_brand_prefix(get_type_brand(var_type, env, ctx), ctx), get_root_variable(arg1_idx, ctx)) == 1 {
+                            mut updated_type := typechecker_substitute_brand_names(var_type, std.Clone(ctx, get_root_variable(arg1_idx, ctx)), std.Clone(ctx, get_root_variable(arg0_idx, ctx)), ctx);
+                            updated_symbols.Insert(std.Clone(ctx, var_name), updated_type);
+                        }
                     }
                     i = i + 1;
                 }
@@ -1490,8 +1484,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut j := 0;
                 while j < len(updated_keys) {
                     mut var_name := updated_keys[j];
-                    mut updated_type := updated_symbols.Get(var_name).Val;
-                    (*env).variable_types.Insert(std.Clone(ctx, var_name), updated_type);
+                    mut lookup_upd := updated_symbols.Get(std.Clone(ctx, var_name));
+                    if lookup_upd.Ok {
+                        mut updated_type := lookup_upd.Val;
+                        (*env).variable_types.Insert(std.Clone(ctx, var_name), updated_type);
+                    }
                     j = j + 1;
                 }
 
@@ -1503,12 +1500,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut k := 0;
                         while k < len(keys) {
                             mut var_name := keys[k];
-                            mut var_type := ctx[curr_sc].bindings.Get(var_name).Val;
-                            mut brand := get_type_brand(var_type, env, ctx);
-                            mut clean_brand := strip_brand_prefix(brand, ctx);
-                            if std.str_eq(std.Clone(ctx, clean_brand), std.Clone(ctx, next_brand)) == 1 {
-                                mut updated_type := typechecker_substitute_brand_names(var_type, &brand_map, ctx);
-                                ctx[curr_sc].bindings.Insert(std.Clone(ctx, var_name), updated_type);
+                            mut lookup_sc := ctx[curr_sc].bindings.Get(std.Clone(ctx, var_name));
+                            if lookup_sc.Ok {
+                                mut var_type := lookup_sc.Val;
+                                if std.str_eq(strip_brand_prefix(get_type_brand(var_type, env, ctx), ctx), get_root_variable(arg1_idx, ctx)) == 1 {
+                                    mut updated_type := typechecker_substitute_brand_names(var_type, std.Clone(ctx, get_root_variable(arg1_idx, ctx)), std.Clone(ctx, get_root_variable(arg0_idx, ctx)), ctx);
+                                    ctx[curr_sc].bindings.Insert(std.Clone(ctx, var_name), updated_type);
+                                }
                             }
                             k = k + 1;
                         }
@@ -1519,9 +1517,6 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                 return t_void;
             }
-            
-            // Spawn / Concurrency Checks
-            if std.str_eq(resolved_func, "std_Spawn") || std.str_eq(resolved_func, "std.Spawn") {
             
             // Spawn / Concurrency Checks
             if std.str_eq(resolved_func, "std_Spawn") || std.str_eq(resolved_func, "std.Spawn") {
@@ -4606,7 +4601,125 @@ func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
         }
     }
     return std.Clone(ctx, erased);
+    }
+
+
+
+
+func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_brand: str, ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        mut res_type: ast.Type[ctx];
+        if t.tag == 7 { // Index
+            mut struct_name := t.Index.struct_name;
+            if t.Index.brand != empty[Index[str, ctx]] {
+                mut old_b_ptr := &ctx[t.Index.brand] as *str;
+                mut old_b := *old_b_ptr;
+                
+                mut old_b_clean := strip_brand_prefix(old_b, ctx);
+                
+                if std.str_eq(std.Clone(ctx, old_b_clean), std.Clone(ctx, old_brand)) == 1 {
+                    mut new_b_clean := strip_brand_prefix(new_brand, ctx);
+                    
+                    mut suffix := std.Concat("_", old_b_clean);
+                    mut new_suffix := std.Concat("_", new_b_clean);
+                    
+                    if typechecker_ends_with(struct_name, suffix) == 1 {
+                        mut stripped := std.str_slice(struct_name, 0, len(struct_name) - len(suffix));
+                        struct_name = std.Concat(stripped, new_suffix);
+                    } else {
+                        mut suffix_full := std.Concat("_", old_b);
+                        mut new_suffix_full := std.Concat("_", new_brand);
+                        if typechecker_ends_with(struct_name, suffix_full) == 1 {
+                            mut stripped := std.str_slice(struct_name, 0, len(struct_name) - len(suffix_full));
+                            struct_name = std.Concat(stripped, new_suffix_full);
+                        }
+                    }
+                    
+                    mut new_brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+                    mut ptr := &ctx[new_brand_idx] as *str;
+                    *ptr = std.Clone(ctx, new_brand);
+                    
+                    res_type.tag = 7; // Index
+                    res_type.Index.struct_name = std.Clone(ctx, struct_name);
+                    res_type.Index.brand = new_brand_idx;
+                    return res_type;
+                }
+            }
+        }
+        if t.tag == 8 { // Struct
+            mut struct_name := t.Struct.struct_name;
+            if t.Struct.brand != empty[Index[str, ctx]] {
+                mut old_b_ptr := &ctx[t.Struct.brand] as *str;
+                mut old_b := *old_b_ptr;
+                
+                mut old_b_clean := strip_brand_prefix(old_b, ctx);
+                
+                if std.str_eq(std.Clone(ctx, old_b_clean), std.Clone(ctx, old_brand)) == 1 {
+                    mut new_b_clean := strip_brand_prefix(new_brand, ctx);
+                    
+                    mut suffix := std.Concat("_", old_b_clean);
+                    mut new_suffix := std.Concat("_", new_b_clean);
+                    
+                    if typechecker_ends_with(struct_name, suffix) == 1 {
+                        mut stripped := std.str_slice(struct_name, 0, len(struct_name) - len(suffix));
+                        struct_name = std.Concat(stripped, new_suffix);
+                    } else {
+                        mut suffix_full := std.Concat("_", old_b);
+                        mut new_suffix_full := std.Concat("_", new_brand);
+                        if typechecker_ends_with(struct_name, suffix_full) == 1 {
+                            mut stripped := std.str_slice(struct_name, 0, len(struct_name) - len(suffix_full));
+                            struct_name = std.Concat(stripped, new_suffix_full);
+                        }
+                    }
+                    
+                    mut new_brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
+                    mut ptr := &ctx[new_brand_idx] as *str;
+                    *ptr = std.Clone(ctx, new_brand);
+                    
+                    res_type.tag = 8; // Struct
+                    res_type.Struct.struct_name = std.Clone(ctx, struct_name);
+                    res_type.Struct.brand = new_brand_idx;
+                    return res_type;
+                }
+            }
+        }
+        if t.tag == 9 { // RawPointer
+            mut inner := ctx[t.RawPointer.inner];
+            mut sub_inner := typechecker_substitute_brand_names(inner, old_brand, new_brand, ctx);
+            res_type.tag = 9;
+            res_type.RawPointer.inner = os.ArenaAlloc(ctx);
+            ctx[res_type.RawPointer.inner] = sub_inner;
+            return res_type;
+        }
+        if t.tag == 6 { // Slice
+            mut inner := ctx[t.Slice.inner];
+            mut sub_inner := typechecker_substitute_brand_names(inner, old_brand, new_brand, ctx);
+            res_type.tag = 6;
+            res_type.Slice.inner = os.ArenaAlloc(ctx);
+            ctx[res_type.Slice.inner] = sub_inner;
+            return res_type;
+        }
+        if t.tag == 10 { // Generic
+            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            mut new_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+            mut i := 0;
+            while i < len(*args_vec) {
+                new_args.Push(typechecker_substitute_brand_names((*args_vec)[i], old_brand, new_brand, ctx));
+                i = i + 1;
+            }
+            res_type.tag = 10;
+            res_type.Generic.name = std.Clone(ctx, t.Generic.name);
+            res_type.Generic.args = os.ArenaAlloc(ctx);
+            mut dest_args := &ctx[res_type.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            *dest_args = new_args;
+            return res_type;
+        }
+        return t;
+    }
 }
+
+
+
 
 func typechecker_substitute_brand(t: ast.Type[ctx], new_brand: Index[str, ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {

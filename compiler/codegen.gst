@@ -1042,7 +1042,11 @@ func codegen_get_c_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
             return "int";
         }
         if erased_t.tag == 8 { // Struct
-            return std.Clone(ctx, erased_t.Struct.struct_name);
+            mut name := erased_t.Struct.struct_name;
+            if std.str_eq(name, "str") == 1 {
+                return "Slice_unsigned_char";
+            }
+            return std.Clone(ctx, name);
         }
         if erased_t.tag == 9 { // RawPointer
             mut inner_type := ctx[erased_t.RawPointer.inner];
@@ -1057,6 +1061,7 @@ func codegen_get_c_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
     }
     return "unknown";
 }
+
 
 func codegen_get_c_type_ident(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str { 
     mut c_type := codegen_get_c_type(t, env, ctx);
@@ -1356,6 +1361,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             res = std.Concat(res, "))");
             return std.Clone(ctx, res);
         }
+
         if tag == 8 { // IndexAccess
             mut alloc_idx := ctx[expr_idx].IndexAccess.allocator;
             mut index_idx := ctx[expr_idx].IndexAccess.index;
@@ -1403,27 +1409,32 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 if idx_t.tag == 7 { // Index
                     target_struct = idx_t.Index.struct_name;
                 }
+                mut erased_target := codegen_get_erased_struct_name(target_struct, env, ctx);
 
                 mut dummy_t: ast.Type[ctx];
-                if std.str_eq(target_struct, "int") {
-                    dummy_t.tag = 0;
+                if std.str_eq(erased_target, "int") == 1 {
+                    mut t: ast.Type[ctx]; t.tag = 0; // Int
+                    return t;
                 } else {
-                    if std.str_eq(target_struct, "byte") {
-                        dummy_t.tag = 1;
+                    if std.str_eq(erased_target, "byte") == 1 {
+                        mut t: ast.Type[ctx]; t.tag = 1; // Byte
+                        return t;
                     } else {
-                        if std.str_eq(target_struct, "bool") {
-                            dummy_t.tag = 2;
+                        if std.str_eq(erased_target, "bool") == 1 {
+                            mut t: ast.Type[ctx]; t.tag = 2; // Bool
+                            return t;
                         } else {
-                            if std.str_eq(target_struct, "str") {
-                                dummy_t.tag = 5;
+                            if std.str_eq(erased_target, "str") == 1 {
+                                mut t: ast.Type[ctx]; t.tag = 5; // Str
+                                return t;
                             } else {
-                                if std.str_eq(target_struct, "Any") {
+                                if std.str_eq(erased_target, "Any") == 1 {
                                     dummy_t.tag = 8;
                                     dummy_t.Struct.struct_name = "SessionNode";
                                     dummy_t.Struct.brand = empty[Index[str, ctx]];
                                 } else { 
                                     dummy_t.tag = 8;
-                                    dummy_t.Struct.struct_name = target_struct;
+                                    dummy_t.Struct.struct_name = erased_target;
                                     dummy_t.Struct.brand = empty[Index[str, ctx]];
                                 }
                             }
@@ -1539,7 +1550,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             res = std.Concat(res, "]");
             return std.Clone(ctx, res);
         }
-        if tag == 9 { // AsCast
+        
+                if tag == 9 { // AsCast
             mut left_idx := ctx[expr_idx].AsCast.left;
             mut left_expr := ctx[left_idx];
             mut old_alloc_struct := "";
@@ -2584,7 +2596,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 
                 mut src_type := codegen_get_expression_type(arg1_idx, env, ctx);
                 if src_type.tag == 7 { // Index
-                    struct_name = src_type.Index.struct_name;
+                    struct_name = codegen_get_erased_struct_name(src_type.Index.struct_name, env, ctx);
                     if src_type.Index.brand != empty[Index[str, ctx]] {
                         mut brand_str_ptr := &ctx[src_type.Index.brand] as *str;
                         src_brand = *brand_str_ptr;

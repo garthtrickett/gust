@@ -36,7 +36,7 @@ test: gust
 	@diff -u build/expected_formatting.log build/test_formatting.log && echo "✅ Formatting & Arena E2E Passed"
 
 clean:
-	rm -rf gust_bootstrap gust build
+	rm -rf gust_bootstrap gust 
 
 install: gust
 	mkdir -p ${PREFIX}/bin
