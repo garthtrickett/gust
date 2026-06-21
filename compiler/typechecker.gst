@@ -1468,7 +1468,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         report_error(2, msg, get_expression_span(task_arg_idx, ctx), env, ctx);
                     }
 
-                    mut param_brand := get_type_brand(first_param_type, ctx);
+                    mut param_brand := get_type_brand(first_param_type, env, ctx);
                     if std.str_eq(param_brand, "") == 0 {
                         mut arg_origins := get_expression_origins(task_arg_idx, env, ctx);
                         if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
@@ -5158,7 +5158,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             // Scratchpad storage restriction check (Step 3 verification)
             if left.tag == 11 { // Selector
                 mut parent_type := check_expression(left.Selector.left, env, scope, ctx);
-                mut parent_brand := get_type_brand(parent_type, ctx);
+                mut parent_brand := get_type_brand(parent_type, env, ctx);
                 if std.str_eq(parent_brand, "") == 0 {
                     mut rhs_origins := get_expression_origins(val_idx, env, ctx);
                     if set_contains(rhs_origins, "scratch", ctx) == 1 {

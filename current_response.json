@@ -1,9 +1,0 @@
-{
-  "summary": "refactor: verify and document all get_type_brand calling sites",
-  "files": [
-    {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str { \n    unsafe {\n=======\n// get_type_brand retrieves the brand string of a type, supporting struct registry lookups and suffix fallbacks.\nfunc get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str { \n    unsafe {\n>>>>>>> REPLACE"
-    }
-  ]
-}
