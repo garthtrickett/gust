@@ -4860,6 +4860,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut val_type: ast.Type[ctx];
             val_type.tag = 3; // Void
 
+            mut resolved_explicit: ast.Type[ctx];
+            resolved_explicit.tag = 3; // Void
+            if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
+                resolved_explicit = env_resolve_type(env, ctx[var_type_idx], ctx);
+            }
+
             if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
                 val_type = check_expression(val_idx, env, scope, ctx);
                 val_type = env_resolve_type(env, val_type, ctx);
@@ -4877,8 +4883,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             } else {
                 if var_type_idx != empty[Index[ast.Type[ctx], ctx]] { 
                     mut origs := set_init(ctx);
-                    mut resolved := env_resolve_type(env, ctx[var_type_idx], ctx);
-                    val_type = resolved;
+                    val_type = resolved_explicit;
                     set_add(origs, std.Clone(ctx, name), ctx);
                     (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
                 } else {
@@ -4889,8 +4894,6 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
-                mut resolved_explicit := env_resolve_type(env, ctx[var_type_idx], ctx);
-                
                 if types_match(resolved_explicit, val_type, ctx) == 0 {
                     mut msg := "Semantic Error: Explicit Type Annotation Mismatch. Declared ";
                     msg = std.Concat(msg, ast.serialize_type(resolved_explicit, ctx));

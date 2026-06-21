@@ -1492,9 +1492,15 @@ impl TypeChecker {
                 value,
                 var_type,
                 span,
-                ..
             } => {
-                let val_type = if let Some(val_expr) = value {
+                let resolved_explicit = if let Some(explicit_t) = var_type {
+                    let resolved = self.resolve_type(explicit_t)?;
+                    Some(self.resolve_type_namespacing(&resolved)?)
+                } else {
+                    None
+                };
+
+                let mut val_type = if let Some(val_expr) = value {
                     let mut t = self.check_expression(val_expr)?;
                     t = self.resolve_type(&t)?;
                     t = self.resolve_type_namespacing(&t)?;
@@ -1511,14 +1517,12 @@ impl TypeChecker {
                     self.all_variable_origins.insert(name.clone(), origs);
                     t
                 } else {
-                    if let Some(explicit_t) = var_type {
+                    if let Some(ref resolved) = resolved_explicit {
                         let mut origs = HashSet::new();
                         origs.insert(name.clone());
                         self.variable_origins.insert(name.clone(), origs.clone());
                         self.all_variable_origins.insert(name.clone(), origs);
-                        let resolved = self.resolve_type(explicit_t)?;
-
-                        self.resolve_type_namespacing(&resolved)?
+                        resolved.clone()
                     } else {
                         return Err(TypeError {
                             kind: TypeErrorKind::UninitializedVariable,
@@ -1531,12 +1535,10 @@ impl TypeChecker {
                     }
                 };
 
-                if let Some(explicit_t) = var_type {
-                    let resolved_explicit = self.resolve_type(explicit_t)?;
-                    let resolved_explicit = self.resolve_type_namespacing(&resolved_explicit)?;
+                if let Some(ref resolved_explicit) = resolved_explicit {
                     self.resolved_types.insert(*span, resolved_explicit.clone());
 
-                    if !types_match(&resolved_explicit, &val_type) {
+                    if !types_match(resolved_explicit, &val_type) {
                         return Err(TypeError {
                             kind: TypeErrorKind::TypeMismatch,
                             message: format!(
