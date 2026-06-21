@@ -3061,16 +3061,11 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             register_fn(env, "std.GraphNew", p_arena_ptr, make_type_struct("std_Graph_Any", "ctx", ctx), ctx);
             register_fn(env, "std_GraphNew", p_arena_ptr, make_type_struct("std_Graph_Any", "ctx", ctx), ctx);
 
-            // Register std.RcNew & std_RcNew
+            // Register std.RcNew & std_RcNew using Any to allow simple template type-matching
             mut p_rc_new: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
-            mut pool_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
-            pool_args.Push(make_type_struct("std_RcNode_T", "", ctx));
-            pool_args.Push(make_type_struct("ctx", "", ctx));
-            mut t_pool_generic := make_type_generic("std.Pool", pool_args, ctx);
-            mut t_pool_ptr := make_type_pointer(t_pool_generic, ctx);
-            p_rc_new.Push(t_pool_ptr);
-            p_rc_new.Push(make_type_struct("T", "", ctx));
-            mut t_rc_ret := make_type_struct("std_Rc_T_ctx", "ctx", ctx);
+            p_rc_new.Push(make_type_pointer(make_type_struct("std_Pool_Any", "ctx", ctx), ctx));
+            p_rc_new.Push(make_type_struct("Any", "", ctx));
+            mut t_rc_ret := make_type_struct("std_Rc_Any", "ctx", ctx);
 
             register_fn(env, "std.RcNew", p_rc_new, t_rc_ret, ctx);
             register_fn(env, "std_RcNew", p_rc_new, t_rc_ret, ctx);
