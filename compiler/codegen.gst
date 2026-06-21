@@ -1413,20 +1413,16 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
                 mut dummy_t: ast.Type[ctx];
                 if std.str_eq(erased_target, "int") == 1 {
-                    mut t: ast.Type[ctx]; t.tag = 0; // Int
-                    return t;
+                    dummy_t.tag = 0; // Int
                 } else {
                     if std.str_eq(erased_target, "byte") == 1 {
-                        mut t: ast.Type[ctx]; t.tag = 1; // Byte
-                        return t;
+                        dummy_t.tag = 1; // Byte
                     } else {
                         if std.str_eq(erased_target, "bool") == 1 {
-                            mut t: ast.Type[ctx]; t.tag = 2; // Bool
-                            return t;
+                            dummy_t.tag = 2; // Bool
                         } else {
                             if std.str_eq(erased_target, "str") == 1 {
-                                mut t: ast.Type[ctx]; t.tag = 5; // Str
-                                return t;
+                                dummy_t.tag = 5; // Str
                             } else {
                                 if std.str_eq(erased_target, "Any") == 1 {
                                     dummy_t.tag = 8;

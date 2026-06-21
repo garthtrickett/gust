@@ -1,11 +1,11 @@
+use gust_lexer::codegen::Codegen;
+use gust_lexer::resolver::ModuleResolver;
+use gust_lexer::resolver::RealFileSystem;
+use gust_lexer::typechecker::TypeChecker;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::OnceLock;
-use gust_lexer::resolver::ModuleResolver;
-use gust_lexer::resolver::RealFileSystem;
-use gust_lexer::typechecker::TypeChecker;
-use gust_lexer::codegen::Codegen;
 
 pub fn compile_c_program(c_path: &Path, bin_path: &Path, c_code: &str) {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
@@ -29,7 +29,6 @@ pub fn compile_c_program(c_path: &Path, bin_path: &Path, c_code: &str) {
     if env::var("GUST_NO_SANITIZERS").is_err() {
         cmd.arg("-fsanitize=address,undefined");
     }
-
     let compile_output = cmd
         .arg("-o")
         .arg(bin_path)
@@ -66,7 +65,8 @@ pub fn get_compiled_compiler() -> &'static Path {
         std::thread::Builder::new()
             .stack_size(104857600) // 100 MB
             .spawn(|| {
-                let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+                let manifest_dir =
+                    env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
                 let entry_path = Path::new(&manifest_dir).join("compiler/test_runner_entry.gst");
 
                 let resolver = ModuleResolver::new();
@@ -86,10 +86,18 @@ pub fn get_compiled_compiler() -> &'static Path {
                         } else {
                             format!("{}__", stem)
                         };
-                        checker
-                            .check_module(&module.program, &prefix)
-                            .expect("Typechecking failed during self-host bootstrap compilation");
-                    } 
+                        if let Err(err) = checker.check_module(&module.program, &prefix) {
+                            let diagnostic =
+                                gust_lexer::typechecker::format_diagnostic(&module.source, &err);
+                            eprintln!("====================================================");
+                            eprintln!("❌ TYPECHECKING FAILED DURING SELF-HOST BOOTSTRAP!");
+                            eprintln!("📁 FILE: {:?}", path);
+                            eprintln!("====================================================");
+                            eprintln!("{}", diagnostic);
+                            eprintln!("====================================================");
+                            panic!("Typechecking failed on {:?}", path);
+                        }
+                    }
                 }
 
                 let mut modules_for_codegen = Vec::new();
@@ -119,7 +127,8 @@ pub fn get_compiled_compiler() -> &'static Path {
                 let c_path = temp_dir.join(c_filename);
                 let bin_path = temp_dir.join(bin_filename);
 
-                std::fs::write(&c_path, &c_output).expect("Failed to write temporary compiler C file");
+                std::fs::write(&c_path, &c_output)
+                    .expect("Failed to write temporary compiler C file");
 
                 compile_c_program(&c_path, &bin_path, &c_output);
 

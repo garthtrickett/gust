@@ -1,152 +1,105 @@
-# Gust Compiler & Lexer
 
-Gust is a minimalist, value-branded, lifetime-tracked programming language designed for high-performance, low-latency applications. It compiles to hardware-aligned, optimized C99, facilitating safe memory reclamation without a garbage collector.
+```markdown
+# Gust Compiler
 
-## Core Architecture
+Gust is a minimalist, self-hosted, expression-based programming language that transpiles directly to clean, standard C99. It is designed around "Grug-brained simplicity," focusing on locality of behavior, minimal abstraction, and robust compile-time safety invariants without garbage collection overhead.
 
-- **Bootstrap Compiler (`src/`)**: Written in Rust to act as the primary bootstrapping pipeline. It handles lexical analysis, parsing, type checking, and C99 code generation.
-- **Self-Hosted Compiler (`compiler/`)**: Written natively in Gust, achieving full compiler bootstrapping and fixed-point convergence.
-- **Value-Branded Lifetimes**: Generates index-based safe memory layouts tied to virtual bump allocation arenas, preventing lifetime escapes at compile time.
-- **Cooperative Fiber Runtime**: Fiber-based execution (coroutines) with task schedulers, locks, and channel primitives.
+The language features a unique memory and concurrency model:
+*   **Value-Branded Lifetimes (Arenas):** Safe, index-based memory management bound statically to virtual memory arenas.
+*   **Linear & Move-Only Types:** Compile-time linear move-analysis and double-move protection on resources like strings, slices, and arenas.
+*   **Cooperative Fibers:** Low-overhead, user-level cooperative threading managed by a high-density, multi-shard thread-scheduler.
+*   **Built-in Synchronization:** Co-routine safe synchronization primitives (mutexes, channels, and pools) engineered to operate seamlessly across fiber-switching boundaries.
 
-## Project Structure
+---
 
-```text
-├── src/                  # Bootstrapping compiler (Rust)
-├── compiler/             # Self-hosted compiler source code (Gust)
-├── tests/                # Compilation and End-to-End tests
-├── flake.nix             # Nix flake for the development environment
-├── Cargo.toml            # Rust cargo package configuration
-└── LICENSE               # MIT License
+## The Non-Rust Bootstrap Chain
+
+To build, run, and test Gust, **you do not need Rust or Cargo installed on your system.** 
+
+Gust is fully self-hosted, meaning the compiler is written in Gust itself. To break the traditional "chicken-and-egg" bootstrap loop without forcing a Rust dependency on end-users, Gust utilizes a C-based bootstrap pipeline:
+
 ```
+[Seed Compiler Source] (gust_v4.c)
+        │
+        ▼  (Compiled with Host C Compiler)
+[Bootstrap Binary] (gust_bootstrap)
+        │
+        ▼  (Transpiles latest compiler source code)
+[Transpiled C Code] (build/gust_compiler.c)
+        │
+        ▼  (Assembled with src/runtime.c)
+[Production Compiler] (gust)
+```
+
+1.  **Stage 0 (The Seed):** `gust_v4.c` is a pre-compiled, fully converged C version of the self-hosted compiler committed directly to the repository.
+2.  **Stage 1 (The Bootstrap):** Running `make` compiles this seed using the host's standard C compiler (`cc`), producing a temporary bootstrap compiler binary (`gust_bootstrap`).
+3.  **Stage 2 (Self-Hosting):** The `gust_bootstrap` binary compiles the latest modular Gust compiler source code (`compiler/test_runner_entry.gst`) and outputs clean C code (`build/gust_compiler.c`).
+4.  **Stage 3 (Assembling the Runtime):** The compiled compiler code is concatenated alongside Gust's standard runtime library (`src/runtime.c`) and compiled into the final, optimized `gust` compiler executable.
+
+---
 
 ## Getting Started
 
 ### Prerequisites
+*   A standard-compliant C compiler (such as `gcc` or `clang`).
+*   The `make` utility.
+*   POSIX threads (`pthread`) support.
 
-To build and run the project, ensure you have the following installed:
-
-- [Rust Compiler Toolchain](https://www.rust-lang.org/tools/install) (edition 2024)
-- A C Compiler (e.g., `gcc` or `clang`)
-- (Optional) [Nix](https://nixos.org/) for the developer shell
-
-### Developer Shell (Nix)
-
-If you use Nix, you can enter the development shell directly:
-
+### Building the Compiler
+To clean old artifacts and perform the full multi-stage bootstrap build, execute:
 ```bash
-nix develop
+make clean
+make
+```
+This produces the production-ready `gust` compiler binary in your root directory.
+
+### Running the Test Suite
+To verify the compiler's typechecker, code generator, and FFI standard library runtime, execute:
+```bash
+make test
+```
+This compiles, links, and runs the end-to-end verification suites, printing a success confirmation when complete:
+```text
+✅ Collections E2E Passed
+✅ Formatting & Arena E2E Passed
 ```
 
-This loads the appropriate compiler tools and provides convenience helpers like `gtl` (run all tests) and `gcf` (clippy fix).
-
-### Running Tests
-
-Run the test suite to verify compiler diagnostics, type-checking rules, and C99 compilation output:
-
+### Installation
+To install the compiled `gust` binary into your system's binary path (defaults to `/usr/local/bin`), run:
 ```bash
-cargo test
+make install
 ```
-
-To run a specific test with debug logging enabled:
-
-```bash
-RUST_LOG=debug cargo test test_self_hosted_topological_sort -- --nocapture
-```
-
-### Compiling Gust Source Code
-
-You can compile a Gust source file using the bootstrapping compiler:
-
-```bash
-cargo run -- compiler/e2e_bootstrapped_self_target.gst output.c
-```
-
-Then, compile and run the generated C code:
-
-```bash
-cc output.c -o program -pthread -fsanitize=address,undefined
-./program
-```
-
-### Diagnostics and AST Dumping
-
-- **Dump the AST** as a serialized structured text format:
-  ```bash
-  cargo run -- --dump-ast src/main.gst
-  ```
-- **Dump resolved Type Environments**:
-  ```bash
-  cargo run -- --dump-types src/main.gst
-  ```
-# Gust
-
-Gust is a lightweight, strongly-typed programming language designed to compile into highly efficient, structured C code. Written with a strict, expression-based, and modular design, Gust features explicit memory management with zero garbage-collection overhead, a cooperative fiber runtime, and a production-grade bump allocator.
+*(You can customize the installation path by specifying `PREFIX`, e.g., `make install PREFIX=$HOME/.local`).*
 
 ---
 
-## Key Architectural Highlights
+## Reproducible Development (Optional)
 
-* **Self-Hosting Architecture:** The Gust compiler is fully self-hosted, with its core lexing, parsing, namespacing, typechecking, and code generation routines written entirely in Gust itself (`compiler/*.gst`).
-* **Fixed-Point Bootstrap Convergence:** The compiler successfully compiles itself recursively through subsequent generations. Compiling the self-hosted compiler using the Rust prototype produces `gust_v2` (C output, compiled to `./gust_v2_bin`). Compiling the codebase again using `gust_v2_bin` produces `gust_v3.c`. Compiling a final time using `gust_v3_bin` produces `gust_v4.c`. The outputs `gust_v3.c` and `gust_v4.c` are 100% byte-for-byte identical, demonstrating absolute determinism and compilation stability.
-* **Strict Escape Analysis:** To safeguard against dangling pointers and use-after-free errors, Gust utilizes an escape-analysis engine. Variables are assigned strict compile-time "memory origins" (such as stack, heap, or thread-local scratchpad). The compiler prevents volatile, scratchpad-allocated views from escaping their local functional scopes unless safely duplicated into long-lived memory areas.
-* **Cooperative Fibers & Scheduler:** Fast user-space task switching is implemented natively using custom assembly context-switching routines, backed by a hardware-affinity-bound scheduler shard loop.
+If you prefer a sandboxed, deterministic development environment, a reproducible Nix flake is available in the repository.
 
----
+1.  **Enter the Nix development shell:**
+    ```bash
+    nix develop
+    ```
+    This automatically loads a shell pre-configured with GCC, GNU Make, Python 3, and the optional Rust prototype compiler toolchains (rustc, cargo, rust-analyzer).
 
-## Getting Started
-
-Gust utilizes a minimalist development shell via Nix, providing pre-configured builds of the Rust compiler, Cargo, GCC compiler tools, GDB, and custom shortcuts.
-
-### 1. Enter the Development Shell
-Ensure you have Nix installed with flakes enabled, and run:
-```bash
-nix develop
-```
-
-### 2. Run the Verification Test Suite
-Once inside the shell, you can use the pre-configured shortcuts to execute the test suite (which includes the entire multi-stage bootstrapping process):
-* **Run all tests (with logs redirected to `to.log`):**
-  ```bash
-  gtl
-  ```
-* **Run a specific test (e.g., the bootstrap test):**
-  ```bash
-  gt-one test_self_hosted_compiler_full_bootstrap
-  ```
-* **Check formatting and linting rules:**
-  ```bash
-  gcf
-  ```
+2.  **Run Rust-based tests (for compiler developers):**
+    If you are modifying the original Rust prototype compiler located in `src/`, you can run the Rust-based test suite inside the Nix shell:
+    ```bash
+    cargo test
+    ```
 
 ---
 
-## Compiler Usage Guide
+## Directory Structure
 
-### Compiling with the Rust Prototype (gust_v1)
-To compile a single Gust file directly into transpiled C code using the Rust compiler prototype, execute:
-```bash
-cargo run -- <input_file.gst> [output_file.c]
+*   `compiler/` - The complete, modular self-hosted Gust compiler source files (written in Gust).
+    *   `test_runner_entry.gst` - The main entry point of the self-hosted compiler.
+    *   `lexer.gst`, `parser.gst`, `typechecker.gst`, `codegen.gst` - Core compiler passes.
+    *   `resolver.gst` - Recursive module dependency and import graph resolver.
+*   `src/` - The original Rust-based prototype compiler source files (used optionally by compiler developers to generate updated bootstrap seeds).
+*   `src/runtime/` - The standard runtime C library. Contains low-level fiber context switches, the POSIX thread pool, arena allocators, and collections helpers.
+*   `tests/` - The end-to-end and integration tests written in Gust.
+*   `Makefile` - The primary build automation driver.
+*   `gust_v4.c` - The stable, converged self-hosting bootstrap compiler C seed.
 ```
-*If no output file is provided, it defaults to writing to `gust_output.c`.*
-
-### Compiling with the Bootstrapped Compiler (gust_v3)
-To compile a Gust file using the C-compiled self-hosted compiler, run:
-```bash
-./gust_v3_bin <input_file.gst> > output_file.c
-```
-
-### Compiler Diagnostics & Dumps
-The Rust prototype provides two diagnostic flags designed to facilitate ground-truth AST and Type comparisons during compiler validation:
-
-1. **Dump Stable Abstract Syntax Tree (AST):**
-   Serializes the parsed AST into a stable, whitespace-indented text representation (stripping volatile source spans) to make it directly diffable against other compilations:
-   ```bash
-   cargo run -- --dump-ast <input_file.gst>
-   ```
-
-2. **Dump Verified Type Database:**
-   Serializes the typechecker tables (including resolved variables, alphabetically sorted structures, variant registries, and sorted function signatures) after semantic validation has succeeded:
-   ```bash
-   cargo run -- --dump-types <input_file.gst>
-   ```
