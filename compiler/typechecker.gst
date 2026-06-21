@@ -2639,9 +2639,14 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                            mut log_start := std.Format('monomorphize_impl field: %s - start', field.name);
                            typechecker_log_trace('⚙', log_start, ctx);
 
-                           mut substituted_type := substitute_generics(env, field.field_type, substitution_map, ctx);
-                           mut resolved_field_type := env_resolve_type(env, substituted_type, ctx);
-                           concrete_fields.Insert(std.Clone(ctx, field.name), resolved_field_type);
+                    mut substituted_t := substitute_generics(env, field.field_type, substitution_map, ctx);
+                    mut field_type := env_resolve_type(env, substituted_t, ctx);
+                    concrete_fields.Insert(std.Clone(ctx, field.name), field_type);
+
+                    if brand != empty[Index[str, ctx]] {
+                        env_check_brand_nesting(env, field_type, brand, field.span, ctx);
+                    }
+                            }
 
                            mut log_end := std.Format('monomorphize_impl field: %s - end', field.name);
                            typechecker_log_trace('⚙', log_end, ctx);
