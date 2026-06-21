@@ -508,20 +508,23 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             mut v := var_origins_keys[m_var];
                             if std.str_eq(v, name) == 0 {
                                 mut v_type := scope_lookup(scope, v, ctx);
-                                mut brand := get_type_brand(v_type, ctx);
-                                mut clean_brand := strip_brand_prefix(brand, ctx);
-                                if std.str_eq(clean_brand, name) == 1 {
-                                    mut lookup_origins := (*env).variable_origins.Get(v);
-                                    if lookup_origins.Ok {
-                                        mut origins := lookup_origins.Val;
-                                        mut orig_keys := ctx[origins].map.Keys(ctx);
-                                        mut o_idx := 0;
-                                        while o_idx < len(orig_keys) {
-                                            mut origin := orig_keys[o_idx];
-                                            if set_contains(local_vars, origin, ctx) == 1 && std.str_eq(origin, name) == 0 {
-                                                mut orig_type := scope_lookup(scope, origin, ctx);
-                                                mut orig_brand := get_type_brand(orig_type, ctx);
-                                                mut clean_orig_brand := strip_brand_prefix(orig_brand, ctx);
+
+                                mut brand := get_type_brand(v_type, env, ctx);
+                            mut clean_brand := strip_brand_prefix(brand, ctx);
+                            if std.str_eq(clean_brand, name) == 1 {
+                                mut lookup_origins := (*env).variable_origins.Get(v);
+                                if lookup_origins.Ok {
+                                    mut origins := lookup_origins.Val;
+                                    mut orig_keys := ctx[origins].map.Keys(ctx);
+                                    mut o_idx := 0;
+                                    while o_idx < len(orig_keys) {
+                                        mut origin := orig_keys[o_idx];
+                                        if set_contains(local_vars, origin, ctx) == 1 && std.str_eq(origin, name) == 0 {
+                                            mut orig_type := scope_lookup(scope, origin, ctx);
+                                            mut orig_brand := get_type_brand(orig_type, env, ctx);
+                                            mut clean_orig_brand := strip_brand_prefix(orig_brand, ctx);
+
+                                
                                                 mut is_origin_branded := 0;
                                                 if std.str_eq(clean_orig_brand, name) == 1 {
                                                     is_origin_branded = 1;
@@ -545,14 +548,14 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
                     }
 
-                    // Transitive Invalidation
-                    mut var_origins_keys := (*env).variable_origins.Keys(ctx);
-                    mut m := 0;
-                    while m < len(var_origins_keys) {
-                        mut var_name := var_origins_keys[m];
-                        mut var_type_lookup := scope_lookup(scope, var_name, ctx);
-                        mut brand := get_type_brand(var_type_lookup, ctx);
-                        mut clean_brand := strip_brand_prefix(brand, ctx);
+                // Transitive Invalidation
+                mut var_origins_keys := (*env).variable_origins.Keys(ctx);
+                mut m := 0;
+                while m < len(var_origins_keys) {
+                    mut var_name := var_origins_keys[m];
+                    mut var_type_lookup := scope_lookup(scope, var_name, ctx);
+                    mut brand := get_type_brand(var_type_lookup, env, ctx);
+                    mut clean_brand := strip_brand_prefix(brand, ctx);
                         if std.str_eq(clean_brand, name) == 1 {
                             (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
                             (*env).open_directories.Remove(var_name);
@@ -1704,13 +1707,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
                         j = len(sig.params);
                     } else {
-                        mut p_brand := get_type_brand(param_type, ctx);
-                        if std.str_eq(p_brand, "") == 0 {
-                            mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg_idx] = (*args_vec)[j];
-                            mut arg_type := check_expression(arg_idx, env, scope, ctx);
-                            mut a_brand := get_type_brand(arg_type, ctx);
-                            if std.str_eq(a_brand, "") == 0 {
+                        mut p_brand := get_type_brand(param_type, env, ctx);
+                    if std.str_eq(p_brand, "") == 0 {
+                        mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg_idx] = (*args_vec)[j];
+                        mut arg_type := check_expression(arg_idx, env, scope, ctx);
+                        mut a_brand := get_type_brand(arg_type, env, ctx);
+                        if std.str_eq(a_brand, "") == 0 {
                                 new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
                                 mut ptr := &ctx[new_brand] as *str;
                                 *ptr = std.Clone(ctx, strip_brand_prefix(a_brand, ctx));
@@ -4778,8 +4781,8 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
                 }
 
                 if is_prefix1 == 1 && is_prefix2 == 1 {
-                    mut brand1 := get_type_brand(expected, ctx);
-                    mut brand2 := get_type_brand(actual, ctx);
+                    mut brand1 := get_type_brand(expected, empty[*TypeEnvironment[ctx]], ctx);
+                    mut brand2 := get_type_brand(actual, empty[*TypeEnvironment[ctx]], ctx);
                     mut clean_b1 := strip_brand_prefix(brand1, ctx);
                     mut clean_b2 := strip_brand_prefix(brand2, ctx);
                     if std.str_eq(clean_b1, clean_b2) || std.str_eq(clean_b1, "Any") || std.str_eq(clean_b2, "Any") || std.str_eq(clean_b1, "") || std.str_eq(clean_b2, "") {
