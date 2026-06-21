@@ -110,8 +110,7 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
             return 1;
         }
         if t.tag == 9 { // RawPointer
-            mut inner := ctx[t.RawPointer.inner];
-            return env_type_is_ephemeral_view(inner, ctx);
+            return 1;
         }
         if t.tag == 8 { // Struct
             mut name := t.Struct.struct_name;
@@ -2779,14 +2778,20 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                         mut lookup := concrete_fields.Get(field.name);
                         if lookup.Ok {
                             mut field_type := lookup.Val;
-                            if env_type_is_ephemeral_view(field_type, ctx) == 1 {
+                            mut is_ephemeral_field := 0;
+                            if field_type.tag == 5 { // Str
+                                is_ephemeral_field = 1;
+                            }
+                            if field_type.tag == 6 { // Slice
+                                is_ephemeral_field = 1;
+                            }
+                            if is_ephemeral_field == 1 {
                                 mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
                                 ctx[err].kind.tag = 2; // TypeError
                                 mut msg := std.Concat("Semantic Error: Unbranded monomorphized struct '", concrete_name);
                                 msg = std.Concat(msg, "' cannot contain ephemeral slice or view field '");
                                 msg = std.Concat(msg, field.name);
                                 msg = std.Concat(msg, "'");
-                                ctx[err].message = std.Clone(ctx, msg);
                                 res.tag = 1; // Err
                                 res.Err.error = err;
                                 (*env).active_monomorphizations.Remove(template_name);
