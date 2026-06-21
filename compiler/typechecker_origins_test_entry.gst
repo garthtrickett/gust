@@ -644,7 +644,7 @@ func main() {
     typechecker.scope_insert(scope_move_test2, "my_pod_var", t_int_move_test, ctx);
     env_move_test2.variable_types.Insert("my_pod_var", t_int_move_test);
 
-    mut l_move3: lexer.Lexer[ctx];
+mut l_move3: lexer.Lexer[ctx];
     lexer.init_lexer(&l_move3, "move my_pod_var");
     mut p_move3: parser.Parser[ctx];
     parser.init_parser(&p_move3, &l_move3, ctx);
@@ -652,4 +652,54 @@ func main() {
 
     typechecker.check_expression(expr_move3, &env_move_test2, scope_move_test2, ctx);
     os.LogInt(env_move_test2.moved_vars.Get("my_pod_var").Ok); // Expected: 0 (POD move does not add to moved_vars)
+
+    // Test Case 1: Struct with empty brand field whose layout has a registered brand
+    mut env_brand_test := typechecker.env_new(ctx);
+    mut layout_brand_test: typechecker.StructLayout[ctx];
+    mut brand_str_idx := os.ArenaAlloc(ctx) as Index[str, ctx];
+    unsafe {
+        mut brand_ptr := &ctx[brand_str_idx] as *str;
+        *brand_ptr = "my_custom_brand";
+    }
+    layout_brand_test.brand = brand_str_idx;
+    layout_brand_test.fields = std.HashMapNew(ctx);
+    typechecker.env_register_struct(&env_brand_test, "MyBrandedStruct", layout_brand_test, ctx);
+
+    mut t_empty_brand_struct: ast.Type[ctx];
+    t_empty_brand_struct.tag = 8; // Struct
+    t_empty_brand_struct.Struct.struct_name = "MyBrandedStruct";
+    t_empty_brand_struct.Struct.brand = empty[Index[str, ctx]];
+
+    mut resolved_brand := typechecker.get_type_brand(t_empty_brand_struct, &env_brand_test, ctx);
+    if std.str_eq(resolved_brand, "my_custom_brand") == 1 {
+        os.LogStr("get_type_brand registry lookup OK");
+    } else {
+        os.LogStr("get_type_brand registry lookup FAILED");
+    }
+
+    // Test Case 2: Struct with empty brand field and no registry layout, but name ends with _ctx
+    mut t_suffix_struct: ast.Type[ctx];
+    t_suffix_struct.tag = 8; // Struct
+    t_suffix_struct.Struct.struct_name = "MyUnregisteredNode_ctx";
+    t_suffix_struct.Struct.brand = empty[Index[str, ctx]];
+
+    mut resolved_suffix := typechecker.get_type_brand(t_suffix_struct, &env_brand_test, ctx);
+    if std.str_eq(resolved_suffix, "ctx") == 1 {
+        os.LogStr("get_type_brand suffix fallback OK");
+    } else {
+        os.LogStr("get_type_brand suffix fallback FAILED");
+    }
+
+    // Test Case 3: Nested pointer type pointing to a branded struct
+    mut t_nested_ptr: ast.Type[ctx];
+    t_nested_ptr.tag = 9; // RawPointer
+    t_nested_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+    ctx[t_nested_ptr.RawPointer.inner] = t_empty_brand_struct;
+
+    mut resolved_nested := typechecker.get_type_brand(t_nested_ptr, &env_brand_test, ctx);
+    if std.str_eq(resolved_nested, "my_custom_brand") == 1 {
+        os.LogStr("get_type_brand nested pointer lookup OK");
+    } else {
+        os.LogStr("get_type_brand nested pointer lookup FAILED");
+    }
 }

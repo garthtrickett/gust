@@ -4346,6 +4346,7 @@ func typechecker_extract_ok_checked_variables(expr_idx: Index[ast.Expression[ctx
     }
 }
 
+// get_type_brand retrieves the brand string of a type, supporting struct registry lookups and suffix fallbacks.
 func get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
         if t.tag == 7 { // Index
