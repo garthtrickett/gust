@@ -384,22 +384,57 @@ func main() {
             }
         }
 
-        mut lookup_param := env.variable_types.Get("ctx");
-        if lookup_param.Ok {
-            mut t_param := lookup_param.Val;
-            if t_param.tag == 9 {
-                unsafe {
-                    mut inner_t := ctx[t_param.RawPointer.inner];
-                    if inner_t.tag == 4 {
-                        os.LogStr("Parameter ctx registered in variable_types correctly!");
-                    } else {
-                        os.LogStr("Parameter ctx registered in variable_types with incorrect inner type!");
-                    }
+mut lookup_param := env.variable_types.Get("ctx");
+    if lookup_param.Ok {
+        mut t_param := lookup_param.Val;
+        if t_param.tag == 9 {
+            unsafe {
+                mut inner_t := ctx[t_param.RawPointer.inner];
+                if inner_t.tag == 4 {
+                    os.LogStr("Parameter ctx registered in variable_types correctly!");
+                } else {
+                    os.LogStr("Parameter ctx registered in variable_types with incorrect inner type!");
                 }
-            } else {
-                os.LogStr("Parameter ctx registered in variable_types with incorrect tag!");
             }
         } else {
-            os.LogStr("Parameter ctx lookup in variable_types failed!");
+            os.LogStr("Parameter ctx registered in variable_types with incorrect tag!");
+        }
+    } else {
+        os.LogStr("Parameter ctx lookup in variable_types failed!");
+    }
+
+    // Step 1: Verification Test for Brand Nesting Linearity Bypass
+    // We already have "Result" registered from the previous test block:
+    // "type Result[T, ctx] enum { Ok { val: T }, Err { val: int } }"
+    // Now let's try to monomorphize Result[int, ctx1] under a parent brand "ctx"
+    // Since ctx1 != ctx, this is a brand nesting mismatch. But because int is non-linear, it should bypass!
+    mut bn_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    bn_args.Push(typechecker.make_type_int());
+    mut bn_ctx1: ast.Type[ctx] := typechecker.make_type_struct("ctx1", "", ctx);
+    bn_args.Push(bn_ctx1);
+
+    mut bn_res := typechecker.monomorphize(&env, "Result", bn_args, ctx);
+    if bn_res.tag == 0 {
+        os.LogStr("Monomorphization of Result[int, ctx1] succeeded without brand nesting errors!");
+    } else {
+        os.LogStr("Monomorphization of Result[int, ctx1] failed unexpectedly!");
+        unsafe {
+            os.LogStr(ctx[bn_res.Err.error].message);
         }
     }
+
+    // Now let's test a linear type: Result[str, ctx1] (which contains a linear str field)
+    mut bn_args_linear: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    bn_args_linear.Push(typechecker.make_type_str());
+    bn_args_linear.Push(bn_ctx1);
+
+    mut bn_res_linear := typechecker.monomorphize(&env, "Result", bn_args_linear, ctx);
+    if bn_res_linear.tag == 1 {
+        os.LogStr("Monomorphization of Result[str, ctx1] correctly failed on linear brand nesting violation!");
+        unsafe {
+            os.LogStr(ctx[bn_res_linear.Err.error].message);
+        }
+    } else {
+        os.LogStr("Monomorphize Result[str, ctx1] unexpectedly succeeded on linear brand nesting violation!");
+    }
+}

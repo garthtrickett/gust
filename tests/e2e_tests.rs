@@ -4231,7 +4231,8 @@ fn test_e2e_self_hosted_scope_resolution() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+            let manifest_dir =
+                std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
             let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
 
             let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
@@ -4491,82 +4492,95 @@ fn test_e2e_self_hosted_origins() {
             assert_eq!(
                 filtered_stdout.trim(),
                 r#"set1 has origin_a
-set1 missing origin_c
-set1 now has origin_c
-set1 now has origin_d
-expr1 correctly resolved to my_root
-expr2 correctly identified scratch
-expr3 correctly flagged origin_x invalidation
-expr4 correctly flagged ctx_brand invalidation
-expr5 correctly flagged var_c move
-typechecker_extract_ok_checked_variables correctly extracted result
-typechecker_extract_ok_checked_variables correctly ignored OR operator
-📥 check_statement: start for stmt tag 9
-🔍 env_resolve_type: returning ctx[res_idx]
-❌ TypeError at line 1:1: Semantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got Int
-📥 check_statement: start for stmt tag 12
-⚖ types_match: expected=Void, actual=Void
-✅ check_statement: successfully verified stmt tag 12
-1
-Semantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got Int
-📥 check_statement: start for stmt tag 9
-📥 env_resolve_type Struct: name=LookupResult_os_Dir_ctx, brand=None
-🔍 env_resolve_type: returning ctx[res_idx]
-📥 check_statement: start for stmt tag 12
-⚖ types_match: expected=Void, actual=Void
-✅ check_statement: successfully verified stmt tag 12
-✅ check_statement: successfully verified stmt tag 9
-Scenario B check: Ok
-0
-📥 check_statement: start for stmt tag 9
-📥 env_resolve_type Struct: name=LookupResult_os_Dir_ctx, brand=None
-🔍 env_resolve_type: returning ctx[res_idx]
-📥 check_statement: start for stmt tag 4
-🔍 env_resolve_type: returning ctx[res_idx]
-✅ check_statement: successfully verified stmt tag 4
-❌ TypeError at line 1:29: Semantic Error: Guard 'else' block must diverge (i.e. end with a return statement or an exit call)
-1
-Semantic Error: Guard 'else' block must diverge (i.e. end with a return statement or an exit call)
-📥 check_statement: start for stmt tag 9
-📥 env_resolve_type Struct: name=LookupResult_os_Dir_ctx, brand=None
-🔍 env_resolve_type: returning ctx[res_idx]
-📥 check_statement: start for stmt tag 13
-🔍 env_resolve_type: returning ctx[res_idx]
-⚖ types_match: expected=Int, actual=Int
-🔍 env_resolve_type: returning ctx[res_idx]
-✅ check_statement: successfully verified stmt tag 13
-✅ check_statement: successfully verified stmt tag 9
-Scenario D check: Ok
-0
-📥 env_resolve_type Struct: name=LookupResult_os_Dir_ctx, brand=None
-📥 env_resolve_type Struct: name=os_Dir_ctx, brand=ctx
-⚙ monomorphize_impl field: handle - start
-🔍 env_resolve_type: returning ctx[res_idx]
-🔍 env_resolve_type: returning ctx[res_idx]
-🔍 env_resolve_type: returning ctx[res_idx]
-🔍 env_resolve_type: returning ctx[res_idx]
-🔍 env_resolve_type: returning ctx[res_idx]
-⚙ monomorphize_impl field: handle - end
-🔍 env_resolve_type: returning ctx[res_idx]
-LookupResult_os_Dir_ctx successfully synthesized!
-Struct("os_Dir_ctx", Some("ctx"))
-📥 env_resolve_type Struct: name=CastResult_MyNode_ctx, brand=None
-📥 env_resolve_type Struct: name=MyNode_ctx, brand=ctx
-🔍 env_resolve_type: before struct_templates.Get
-🔍 env_resolve_type: after struct_templates.Get
-🔍 env_resolve_type: before enum_templates.Get
-🔍 env_resolve_type: after enum_templates.Get
-🔍 env_resolve_type: determined has_template
-🔍 env_resolve_type: returning ctx[res_idx]
-🔍 env_resolve_type: returning ctx[res_idx]
-🔍 env_resolve_type: returning ctx[res_idx]
-CastResult_MyNode_ctx successfully synthesized!
-RawPointer(Struct("MyNode_ctx", Some("ctx")))
-📥 env_resolve_type Struct: name=Node, brand=None
-🔍 env_resolve_type: returning ctx[res_idx]
-Struct("Node", None)
-Struct("MyNode", Some("ctx_var"))
-Byte"#
+            set1 missing origin_c
+            set1 now has origin_c
+            set1 now has origin_d
+            expr1 correctly resolved to my_root
+            expr2 correctly identified scratch
+            expr3 correctly flagged origin_x invalidation
+            expr4 correctly flagged ctx_brand invalidation
+            expr5 correctly flagged var_c move
+            typechecker_extract_ok_checked_variables correctly extracted result
+            typechecker_extract_ok_checked_variables correctly ignored OR operator
+            📥 check_statement: start for stmt tag 9
+            🔍 env_resolve_type: returning ctx[res_idx]
+            ❌ TypeError at line 1:1: Semantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got Int
+            📥 check_statement: start for stmt tag 12
+            ⚖ types_match: expected=Void, actual=Void
+            ✅ check_statement: successfully verified stmt tag 12
+            1
+            Semantic Error: Guard statement RHS expression must evaluate to a fallible wrapper type, but got Int
+            📥 check_statement: start for stmt tag 9
+            📥 env_resolve_type Struct: name=LookupResult_os_Dir_ctx, brand=None
+            🔍 env_resolve_type: returning ctx[res_idx]
+            📥 check_statement: start for stmt tag 12
+            ⚖ types_match: expected=Void, actual=Void
+            ✅ check_statement: successfully verified stmt tag 12
+            ✅ check_statement: successfully verified stmt tag 9
+            Scenario B check: Ok
+            0
+            📥 check_statement: start for stmt tag 9
+            📥 env_resolve_type Struct: name=LookupResult_os_Dir_ctx, brand=None
+            🔍 env_resolve_type: returning ctx[res_idx]
+            📥 check_statement: start for stmt tag 4
+            🔍 env_resolve_type: returning ctx[res_idx]
+            ✅ check_statement: successfully verified stmt tag 4
+            ❌ TypeError at line 1:29: Semantic Error: Guard 'else' block must diverge (i.e. end with a return statement or an exit call)
+            1
+            Semantic Error: Guard 'else' block must diverge (i.e. end with a return statement or an exit call)
+            📥 check_statement: start for stmt tag 9
+            📥 env_resolve_type Struct: name=LookupResult_os_Dir_ctx, brand=None
+            🔍 env_resolve_type: returning ctx[res_idx]
+            📥 check_statement: start for stmt tag 13
+            🔍 env_resolve_type: returning ctx[res_idx]
+            ⚖ types_match: expected=Int, actual=Int
+            🔍 env_resolve_type: returning ctx[res_idx]
+            ✅ check_statement: successfully verified stmt tag 13
+            ✅ check_statement: successfully verified stmt tag 9
+            Scenario D check: Ok
+            0
+            📥 env_resolve_type Struct: name=LookupResult_os_Dir_ctx, brand=None
+            📥 env_resolve_type Struct: name=os_Dir_ctx, brand=ctx
+            ⚙ monomorphize_impl field: handle - start
+            🔍 env_resolve_type: returning ctx[res_idx]
+            🔍 env_resolve_type: returning ctx[res_idx]
+            🔍 env_resolve_type: returning ctx[res_idx]
+            🔍 env_resolve_type: returning ctx[res_idx]
+            🔍 env_resolve_type: returning ctx[res_idx]
+            ⚙ monomorphize_impl field: handle - end
+            🔍 env_resolve_type: returning ctx[res_idx]
+            LookupResult_os_Dir_ctx successfully synthesized!
+            Struct("os_Dir_ctx", Some("ctx"))
+            📥 env_resolve_type Struct: name=CastResult_MyNode_ctx, brand=None
+            📥 env_resolve_type Struct: name=MyNode_ctx, brand=ctx
+            🔍 env_resolve_type: before struct_templates.Get
+            🔍 env_resolve_type: after struct_templates.Get
+            🔍 env_resolve_type: before enum_templates.Get
+            🔍 env_resolve_type: after enum_templates.Get
+            🔍 env_resolve_type: determined has_template
+            🔍 env_resolve_type: returning ctx[res_idx]
+            🔍 env_resolve_type: returning ctx[res_idx]
+            🔍 env_resolve_type: returning ctx[res_idx]
+            CastResult_MyNode_ctx successfully synthesized!
+            RawPointer(Struct("MyNode_ctx", Some("ctx")))
+            📥 env_resolve_type Struct: name=Node, brand=None
+            🔍 env_resolve_type: returning ctx[res_idx]
+            Struct("Node", None)
+            Struct("MyNode", Some("ctx_var"))
+            Byte
+            0
+            0
+            1
+            1
+            1
+            0
+            1
+            ❌ TypeError at line 1:1: Semantic Error: Variable 'my_linear_var' has already been moved
+            1
+            0
+            Monomorphization of Result[int, ctx1] succeeded without brand nesting errors!
+            Monomorphization of Result[str, ctx1] correctly failed on linear brand nesting violation!
+            Semantic Error: Brand Nesting. Mismatched nested brand 'ctx1' inside parent brand 'ctx'"#
             );
         })
         .unwrap()
@@ -5149,7 +5163,8 @@ fn test_self_hosted_typechecker_templates() {
 
             std::fs::write(&c_path, &c_output).expect("Failed to write temporary C file");
 
-            let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+            let manifest_dir =
+                std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
             let runtime_path = std::path::Path::new(&manifest_dir).join("src/runtime.c");
 
             let cc_compiler = std::env::var("CC").unwrap_or_else(|_| "cc".to_string());
