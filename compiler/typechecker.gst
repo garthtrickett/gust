@@ -1488,8 +1488,24 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             *ptr = std.Clone(ctx, actual_name);
                         }
                         j = len(sig.params);
-                    } else { 
-                        j = j + 1;
+                    } else {
+                        mut p_brand := get_type_brand(param_type, ctx);
+                        if std.str_eq(p_brand, "") == 0 {
+                            mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx[arg_idx] = (*args_vec)[j];
+                            mut arg_type := check_expression(arg_idx, env, scope, ctx);
+                            mut a_brand := get_type_brand(arg_type, ctx);
+                            if std.str_eq(a_brand, "") == 0 {
+                                new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                                mut ptr := &ctx[new_brand] as *str;
+                                *ptr = std.Clone(ctx, strip_brand_prefix(a_brand, ctx));
+                                j = len(sig.params);
+                            } else {
+                                j = j + 1;
+                            }
+                        } else {
+                            j = j + 1;
+                        }
                     }
                 }
 
