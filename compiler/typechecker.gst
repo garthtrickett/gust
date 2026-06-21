@@ -151,7 +151,7 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
                 mut clean_ob := strip_brand_prefix(ob, ctx);
                 if std.str_eq(clean_name, clean_ob) == 0 {
                     if env_is_element_allowed_in_brand(env, t, ob, ctx) == 0 {
-                        mut ib := get_type_brand(t, ctx);
+                        mut ib := get_type_brand(t, env, ctx);
                         if std.str_eq(ib, "") == 1 {
                             mut msg := std.Concat("Semantic Error: Brand Nesting Restriction violation. Element '", t.Struct.struct_name);
                             msg = std.Concat(msg, "' inside collection branded with '");
@@ -175,7 +175,7 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
             if parent_brand != empty[Index[str, ctx]] {
                 mut ob := ctx[parent_brand];
                 if env_is_element_allowed_in_brand(env, t, ob, ctx) == 0 {
-                    mut ib := get_type_brand(t, ctx);
+                    mut ib := get_type_brand(t, env, ctx);
                     if std.str_eq(ib, "") == 1 {
                         mut msg := std.Concat("Semantic Error: Brand Nesting Restriction violation. Element '", t.Index.struct_name);
                         msg = std.Concat(msg, "' inside collection branded with '");
@@ -274,7 +274,7 @@ func env_is_element_allowed_in_brand(env: *TypeEnvironment[ctx], t: ast.Type[ctx
             return 1;
         } 
     }
-    mut ib := get_type_brand(t, ctx);
+    mut ib := get_type_brand(t, env, ctx);
     if std.str_eq(ib, "") == 0 {
         mut clean_ib := strip_brand_prefix(ib, ctx);
         mut clean_ob := strip_brand_prefix(parent_brand, ctx);
@@ -4343,25 +4343,37 @@ func typechecker_extract_ok_checked_variables(expr_idx: Index[ast.Expression[ctx
     }
 }
 
-func get_type_brand(t: ast.Type[ctx], ctx: &Arena) str {
+func get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
         if t.tag == 7 { // Index
             if t.Index.brand != empty[Index[str, ctx]] {
                 mut brand_str_ptr := &ctx[t.Index.brand] as *str;
                 return *brand_str_ptr;
             }
+            return typechecker_extract_brand_from_suffix(t.Index.struct_name, ctx);
         }
         if t.tag == 8 { // Struct
             if t.Struct.brand != empty[Index[str, ctx]] {
                 mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
                 return *brand_str_ptr;
             }
+            if env != empty[*TypeEnvironment[ctx]] {
+                mut lookup := (*env).struct_registry.Get(t.Struct.struct_name);
+                if lookup.Ok {
+                    mut layout := lookup.Val;
+                    if layout.brand != empty[Index[str, ctx]] {
+                        mut brand_str_ptr := &ctx[layout.brand] as *str;
+                        return *brand_str_ptr;
+                    }
+                }
+            }
+            return typechecker_extract_brand_from_suffix(t.Struct.struct_name, ctx);
         }
         if t.tag == 9 { // RawPointer
-            return get_type_brand(ctx[t.RawPointer.inner], ctx);
+            return get_type_brand(ctx[t.RawPointer.inner], env, ctx);
         }
         if t.tag == 6 { // Slice
-            return get_type_brand(ctx[t.Slice.inner], ctx);
+            return get_type_brand(ctx[t.Slice.inner], env, ctx);
         }
         return "";
     }
