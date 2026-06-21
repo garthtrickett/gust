@@ -3757,6 +3757,17 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 while i < len(*fields_vec) {
                     mut f := (*fields_vec)[i];
                     mut resolved_t := env_resolve_type(env, f.field_type, ctx);
+
+                    if (resolved_t.tag == 5 || resolved_t.tag == 6)
+                        && std.str_eq(namespaced_name, "errors__CompilerError") == 0
+                    { 
+                        mut msg := std.Concat("Semantic Error: Unbranded struct '", namespaced_name);
+                        msg = std.Concat(msg, "' cannot contain ephemeral slice or view field '");
+                        msg = std.Concat(msg, f.name);
+                        msg = std.Concat(msg, "'");
+                        report_error(2, msg, f.span, env, ctx);
+                    }
+
                     layout.fields.Insert(std.Clone(ctx, f.name), resolved_t);
                     i = i + 1;
                 }
