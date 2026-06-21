@@ -1460,7 +1460,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut var_type_lookup := scope_lookup(scope, var_name, ctx);
                     mut brand := get_type_brand(var_type_lookup, env, ctx);
                     mut clean_brand := strip_brand_prefix(brand, ctx);
-                    if std.str_eq(clean_brand, current_brand) == 1 {
+                    if std.str_eq(std.Clone(ctx, clean_brand), std.Clone(ctx, current_brand)) == 1 {
                         (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
                         (*env).open_directories.Remove(var_name);
                     }
@@ -1479,7 +1479,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut var_type := (*env).variable_types.Get(var_name).Val;
                     mut brand := get_type_brand(var_type, env, ctx);
                     mut clean_brand := strip_brand_prefix(brand, ctx);
-                    if std.str_eq(clean_brand, next_brand) == 1 {
+                    if std.str_eq(std.Clone(ctx, clean_brand), std.Clone(ctx, next_brand)) == 1 {
                         mut updated_type := typechecker_substitute_brand_names(var_type, &brand_map, ctx);
                         updated_symbols.Insert(std.Clone(ctx, var_name), updated_type);
                     }
@@ -1506,7 +1506,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             mut var_type := ctx[curr_sc].bindings.Get(var_name).Val;
                             mut brand := get_type_brand(var_type, env, ctx);
                             mut clean_brand := strip_brand_prefix(brand, ctx);
-                            if std.str_eq(clean_brand, next_brand) == 1 {
+                            if std.str_eq(std.Clone(ctx, clean_brand), std.Clone(ctx, next_brand)) == 1 {
                                 mut updated_type := typechecker_substitute_brand_names(var_type, &brand_map, ctx);
                                 ctx[curr_sc].bindings.Insert(std.Clone(ctx, var_name), updated_type);
                             }
@@ -1519,6 +1519,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                 return t_void;
             }
+            
+            // Spawn / Concurrency Checks
+            if std.str_eq(resolved_func, "std_Spawn") || std.str_eq(resolved_func, "std.Spawn") {
             
             // Spawn / Concurrency Checks
             if std.str_eq(resolved_func, "std_Spawn") || std.str_eq(resolved_func, "std.Spawn") {
