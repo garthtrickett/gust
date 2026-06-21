@@ -805,8 +805,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             if (len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_")) ||
                                (len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_")) {
                                 if (*env).checked_results.Get(left_str).Ok == 0 {
-                                    mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper ";
+                                    mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper '";
                                     msg = std.Concat(msg, left_str);
+                                    msg = std.Concat(msg, "'");
                                     report_error(2, msg, expr.Selector.span, env, ctx);
                                 }
                             }
@@ -823,8 +824,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
                     if std.str_eq(expr.Selector.right, "Val") {
                         if (*env).checked_results.Get(left_str).Ok == 0 {
-                            mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper ";
+                            mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper '";
                             msg = std.Concat(msg, left_str);
+                            msg = std.Concat(msg, "'");
                             report_error(2, msg, expr.Selector.span, env, ctx);
                         }
                         mut target := std.str_slice(clean_name, 11, len(clean_name));
@@ -843,8 +845,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
                     if std.str_eq(expr.Selector.right, "Val") {
                         if (*env).checked_results.Get(left_str).Ok == 0 {
-                            mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper ";
+                            mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper '";
                             msg = std.Concat(msg, left_str);
+                            msg = std.Concat(msg, "'");
                             report_error(2, msg, expr.Selector.span, env, ctx);
                         }
                         mut target := std.str_slice(clean_name, 13, len(clean_name));
@@ -4347,7 +4350,6 @@ func typechecker_extract_ok_checked_variables(expr_idx: Index[ast.Expression[ctx
 }
 
 // get_type_brand retrieves the brand string of a type, supporting struct registry lookups and suffix fallbacks.
-// get_type_brand retrieves the brand string of a type, supporting struct registry lookups and suffix fallbacks.
 func get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
         if t.tag == 7 { // Index
@@ -4783,12 +4785,14 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
                 }
 
                 if is_prefix1 == 1 && is_prefix2 == 1 {
-                    mut brand1 := get_type_brand(expected, empty[*TypeEnvironment[ctx]], ctx);
-                    mut brand2 := get_type_brand(actual, empty[*TypeEnvironment[ctx]], ctx);
-                    mut clean_b1 := strip_brand_prefix(brand1, ctx);
-                    mut clean_b2 := strip_brand_prefix(brand2, ctx);
-                    if std.str_eq(clean_b1, clean_b2) || std.str_eq(clean_b1, "Any") || std.str_eq(clean_b2, "Any") || std.str_eq(clean_b1, "") || std.str_eq(clean_b2, "") {
-                        return 1;
+                    if std.str_eq(name1, base_name) || std.str_eq(name2, base_name) {
+                        mut brand1 := get_type_brand(expected, empty[*TypeEnvironment[ctx]], ctx);
+                        mut brand2 := get_type_brand(actual, empty[*TypeEnvironment[ctx]], ctx);
+                        mut clean_b1 := strip_brand_prefix(brand1, ctx);
+                        mut clean_b2 := strip_brand_prefix(brand2, ctx);
+                        if std.str_eq(clean_b1, clean_b2) || std.str_eq(clean_b1, "Any") || std.str_eq(clean_b2, "Any") || std.str_eq(clean_b1, "") || std.str_eq(clean_b2, "") {
+                            return 1;
+                        }
                     }
                 }
                 p = p + 1;
