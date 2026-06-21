@@ -147,11 +147,13 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
             mut b := t.Struct.brand;
             if b != empty[Index[str, ctx]] && parent_brand != empty[Index[str, ctx]] {
                 if std.str_eq(ctx[b], ctx[parent_brand]) == 0 {
-                    mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ctx[b]);
-                    msg = std.Concat(msg, "' inside parent brand '");
-                    msg = std.Concat(msg, ctx[parent_brand]);
-                    msg = std.Concat(msg, "'");
-                    report_error(2, msg, span, env, ctx);
+                    if env_type_is_linear(t, env, ctx) == 1 {
+                        mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ctx[b]);
+                        msg = std.Concat(msg, "' inside parent brand '");
+                        msg = std.Concat(msg, ctx[parent_brand]);
+                        msg = std.Concat(msg, "'");
+                        report_error(2, msg, span, env, ctx);
+                    }
                 }
             }
         }
@@ -159,11 +161,13 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
             mut b := t.Index.brand;
             if b != empty[Index[str, ctx]] && parent_brand != empty[Index[str, ctx]] {
                 if std.str_eq(ctx[b], ctx[parent_brand]) == 0 {
-                    mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ctx[b]);
-                    msg = std.Concat(msg, "' inside parent brand '");
-                    msg = std.Concat(msg, ctx[parent_brand]);
-                    msg = std.Concat(msg, "'");
-                    report_error(2, msg, span, env, ctx);
+                    if env_type_is_linear(t, env, ctx) == 1 {
+                        mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ctx[b]);
+                        msg = std.Concat(msg, "' inside parent brand '");
+                        msg = std.Concat(msg, ctx[parent_brand]);
+                        msg = std.Concat(msg, "'");
+                        report_error(2, msg, span, env, ctx);
+                    }
                 }
             }
         }
