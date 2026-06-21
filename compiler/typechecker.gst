@@ -134,7 +134,7 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
 }
 
 func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], parent_brand: Index[str, ctx], span: token.Span, ctx: &Arena) {
-    unsafe {
+    unsafe { 
         if t.tag == 9 { // RawPointer
             mut inner := ctx[t.RawPointer.inner];
             env_check_brand_nesting(env, inner, parent_brand, span, ctx);
@@ -144,13 +144,22 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
             env_check_brand_nesting(env, inner, parent_brand, span, ctx);
         }
         if t.tag == 8 { // Struct
-            mut b := t.Struct.brand;
-            if b != empty[Index[str, ctx]] && parent_brand != empty[Index[str, ctx]] {
-                if std.str_eq(ctx[b], ctx[parent_brand]) == 0 {
-                    if env_type_is_linear(t, env, ctx) == 1 {
-                        mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ctx[b]);
+            if parent_brand != empty[Index[str, ctx]] {
+                mut ob := ctx[parent_brand];
+                if env_is_element_allowed_in_brand(env, t, ob, ctx) == 0 {
+                    mut ib := get_type_brand(t, ctx);
+                    if std.str_eq(ib, "") == 1 {
+                        mut msg := std.Concat("Semantic Error: Brand Nesting Restriction violation. Element '", t.Struct.struct_name);
+                        msg = std.Concat(msg, "' inside collection branded with '");
+                        msg = std.Concat(msg, ob);
+                        msg = std.Concat(msg, "' must be copyable POD or branded with identical brand '");
+                        msg = std.Concat(msg, ob);
+                        msg = std.Concat(msg, "'");
+                        report_error(2, msg, span, env, ctx);
+                    } else {
+                        mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ib);
                         msg = std.Concat(msg, "' inside parent brand '");
-                        msg = std.Concat(msg, ctx[parent_brand]);
+                        msg = std.Concat(msg, ob);
                         msg = std.Concat(msg, "'");
                         report_error(2, msg, span, env, ctx);
                     }
@@ -158,13 +167,22 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
             }
         }
         if t.tag == 7 { // Index
-            mut b := t.Index.brand;
-            if b != empty[Index[str, ctx]] && parent_brand != empty[Index[str, ctx]] {
-                if std.str_eq(ctx[b], ctx[parent_brand]) == 0 {
-                    if env_type_is_linear(t, env, ctx) == 1 {
-                        mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ctx[b]);
+            if parent_brand != empty[Index[str, ctx]] {
+                mut ob := ctx[parent_brand];
+                if env_is_element_allowed_in_brand(env, t, ob, ctx) == 0 {
+                    mut ib := get_type_brand(t, ctx);
+                    if std.str_eq(ib, "") == 1 {
+                        mut msg := std.Concat("Semantic Error: Brand Nesting Restriction violation. Element '", t.Index.struct_name);
+                        msg = std.Concat(msg, "' inside collection branded with '");
+                        msg = std.Concat(msg, ob);
+                        msg = std.Concat(msg, "' must be copyable POD or branded with identical brand '");
+                        msg = std.Concat(msg, ob);
+                        msg = std.Concat(msg, "'");
+                        report_error(2, msg, span, env, ctx);
+                    } else {
+                        mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ib);
                         msg = std.Concat(msg, "' inside parent brand '");
-                        msg = std.Concat(msg, ctx[parent_brand]);
+                        msg = std.Concat(msg, ob);
                         msg = std.Concat(msg, "'");
                         report_error(2, msg, span, env, ctx);
                     }

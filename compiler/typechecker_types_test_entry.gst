@@ -476,9 +476,52 @@ mut lookup_param := env.variable_types.Get("ctx");
     t_mismatched_branded.tag = 8; // Struct
     t_mismatched_branded.Struct.struct_name = "LinearStruct_ctx1";
     t_mismatched_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-    unsafe {
+    unsafe { 
         mut brand_ptr := &ctx[t_mismatched_branded.Struct.brand] as *str;
         *brand_ptr = "ctx1";
     }
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_mismatched_branded, "ctx", ctx)); // Expected: 0
+
+    // Step 2 Verification: Test env_check_brand_nesting via monomorphize on std.Vector
+    // Case A: Unbranded linear type (LinearStruct) in a branded collection (Vector[LinearStruct, ctx])
+    mut vec_args_unbranded: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    vec_args_unbranded.Push(t_unbranded_linear);
+    mut bn_ctx: ast.Type[ctx] := typechecker.make_type_struct("ctx", "", ctx);
+    vec_args_unbranded.Push(bn_ctx);
+
+    mut vec_res_unbranded := typechecker.monomorphize(&env, "std.Vector", vec_args_unbranded, ctx);
+    if vec_res_unbranded.tag == 1 {
+        os.LogStr("Monomorphization of Vector[LinearStruct, ctx] correctly failed on unbranded brand nesting violation!");
+        unsafe {
+            os.LogStr(ctx[vec_res_unbranded.Err.error].message);
+        }
+    } else {
+        os.LogStr("Monomorphize Vector[LinearStruct, ctx] unexpectedly succeeded!");
+    }
+
+    // Case B: Mismatched branded type (LinearStruct_ctx1) in a branded collection (Vector[LinearStruct_ctx1, ctx])
+    // Register LinearStruct_ctx1 first so monomorphize can find it
+    mut mismatched_layout: typechecker.StructLayout[ctx];
+    mismatched_layout.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+    unsafe { 
+        mut brand_ptr := &ctx[mismatched_layout.brand] as *str;
+        *brand_ptr = "ctx1";
+    }
+    mismatched_layout.fields = std.HashMapNew(ctx);
+    mismatched_layout.fields.Insert("value", t_ptr_test);
+    typechecker.env_register_struct(&env, "LinearStruct_ctx1", mismatched_layout, ctx);
+
+    mut vec_args_mismatched: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    vec_args_mismatched.Push(t_mismatched_branded);
+    vec_args_mismatched.Push(bn_ctx);
+
+    mut vec_res_mismatched := typechecker.monomorphize(&env, "std.Vector", vec_args_mismatched, ctx);
+    if vec_res_mismatched.tag == 1 {
+        os.LogStr("Monomorphization of Vector[LinearStruct_ctx1, ctx] correctly failed on mismatched brand nesting violation!");
+        unsafe {
+            os.LogStr(ctx[vec_res_mismatched.Err.error].message);
+        }
+    } else {
+        os.LogStr("Monomorphize Vector[LinearStruct_ctx1, ctx] unexpectedly succeeded!");
+    }
 }
