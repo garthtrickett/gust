@@ -6096,3 +6096,101 @@ func typechecker_clone_int_map(src: std.HashMap[str, int, ctx], ctx: &Arena) std
     }
     return dest;
 }
+
+func typechecker_has_boolean_fields_recursive(t: ast.Type[ctx], env: *TypeEnvironment[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 1 || t.tag == 2 { // Byte, Bool
+            return 1;
+        }
+        if t.tag == 6 { // Slice
+            mut inner_type := ctx[t.Slice.inner];
+            return typechecker_has_boolean_fields_recursive(inner_type, env, visited, ctx);
+        }
+        if t.tag == 9 { // RawPointer
+            mut inner_type := ctx[t.RawPointer.inner];
+            return typechecker_has_boolean_fields_recursive(inner_type, env, visited, ctx);
+        }
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            mut lookup := (*visited).Get(name);
+            if lookup.Ok {
+                return 0;
+            }
+            (*visited).Insert(std.Clone(ctx, name), 1);
+            
+            mut lookup_struct := (*env).struct_registry.Get(name);
+            if lookup_struct.Ok {
+                mut layout := lookup_struct.Val;
+                mut f_keys := typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                mut i := 0;
+                while i < len(f_keys) {
+                    mut f_key := f_keys[i];
+                    mut f_lookup := layout.fields.Get(f_key);
+                    if f_lookup.Ok {
+                        mut has_bool := typechecker_has_boolean_fields_recursive(f_lookup.Val, env, visited, ctx);
+                        if has_bool == 1 {
+                            return 1;
+                        }
+                    }
+                    i = i + 1;
+                }
+            }
+            return 0;
+        }
+        if t.tag == 10 { // Generic
+            mut concrete_name := get_monomorphized_name(t.Generic.name, t.Generic.args, ctx);
+            mut struct_type: ast.Type[ctx];
+            struct_type.tag = 8;
+            struct_type.Struct.struct_name = concrete_name;
+            struct_type.Struct.brand = empty[Index[str, ctx]];
+            return typechecker_has_boolean_fields_recursive(struct_type, env, visited, ctx);
+        }
+    }
+    return 0;
+}
+
+func typechecker_has_boolean_fields(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+        return typechecker_has_boolean_fields_recursive(t, env, &visited, ctx);
+    }
+}
+
+func env_synthesize_is_valid_helpers(env: *TypeEnvironment[ctx], ctx: &Arena) {
+    unsafe {
+        mut keys := typechecker_get_sorted_keys_layout(&(*env).struct_registry, ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut key := keys[i];
+            
+            mut t_struct: ast.Type[ctx];
+            t_struct.tag = 8; // Struct
+            t_struct.Struct.struct_name = std.Clone(ctx, key);
+            t_struct.Struct.brand = empty[Index[str, ctx]];
+            
+            mut has_bool := typechecker_has_boolean_fields(t_struct, env, ctx);
+            if has_bool == 1 {
+                mut func_name := std.Concat(key, "_IsValid");
+                
+                mut sig: FunctionSignature[ctx];
+                sig.param_names = std.VectorNew(ctx);
+                sig.param_names.Push("req");
+                
+                sig.params = std.VectorNew(ctx);
+                mut t_ptr: ast.Type[ctx];
+                t_ptr.tag = 9; // RawPointer
+                t_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+                ctx[t_ptr.RawPointer.inner] = t_struct;
+                sig.params.Push(t_ptr);
+                
+                mut t_ret: ast.Type[ctx];
+                t_ret.tag = 0; // Int
+                sig.return_type = t_ret;
+                sig.return_origins = set_init(ctx);
+                
+                (*env).function_registry.Insert(std.Clone(ctx, func_name), sig);
+            }
+            i = i + 1;
+        }
+    } 
+}

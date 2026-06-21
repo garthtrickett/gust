@@ -99,6 +99,8 @@ func main() {
     }
 
     // 5. Typecheck all programs in Topological Order
+    typechecker.env_synthesize_is_valid_helpers(&env, ctx);
+
     mut j := 0;
     while j < len(order) {
         mut prog := programs[j];
