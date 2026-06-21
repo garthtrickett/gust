@@ -280,7 +280,6 @@ func env_is_element_allowed_in_brand(env: *TypeEnvironment[ctx], t: ast.Type[ctx
     return 0;
 }
 
-func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], parent_brand: Index[str, ctx], span: token.Span, ctx: &Arena) {
 func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) Index[OriginSet[ctx], ctx] { 
     unsafe {
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
