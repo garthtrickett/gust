@@ -4497,8 +4497,11 @@ fn test_e2e_self_hosted_origins() {
             set1 now has origin_d
             expr1 correctly resolved to my_root
             expr2 correctly identified scratch
+            ❌ TypeError at line 1:1: Semantic Error: Variable 'var_a' cannot be used because its backing origin 'origin_x' has been moved or invalidated
             expr3 correctly flagged origin_x invalidation
+            ❌ TypeError at line 1:1: Semantic Error: Allocator moved or freed: ctx_brand
             expr4 correctly flagged ctx_brand invalidation
+            ❌ TypeError at line 1:1: Semantic Error: Use of moved variable var_c
             expr5 correctly flagged var_c move
             typechecker_extract_ok_checked_variables correctly extracted result
             typechecker_extract_ok_checked_variables correctly ignored OR operator
@@ -4575,12 +4578,18 @@ fn test_e2e_self_hosted_origins() {
             1
             0
             1
+            ❌ TypeError at line 1:6: Semantic Error: Use of moved variable my_linear_var
             ❌ TypeError at line 1:1: Semantic Error: Variable 'my_linear_var' has already been moved
             1
             0
+            get_type_brand registry lookup OK
+            get_type_brand suffix fallback OK
+            get_type_brand nested pointer lookup OK
             Monomorphization of Result[int, ctx1] succeeded without brand nesting errors!
             Monomorphization of Result[str, ctx1] correctly failed on linear brand nesting violation!
-            Semantic Error: Brand Nesting. Mismatched nested brand 'ctx1' inside parent brand 'ctx'"#
+            Semantic Error: Brand Nesting. Mismatched nested brand 'ctx1' inside parent brand 'ctx'
+            Any brand bypass verification: OK (No errors reported)"#
+                .replace("            ", "")
             );
         })
         .unwrap()

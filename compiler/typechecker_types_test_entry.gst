@@ -524,4 +524,45 @@ mut lookup_param := env.variable_types.Get("ctx");
     } else {
         os.LogStr("Monomorphize Vector[LinearStruct_ctx1, ctx] unexpectedly succeeded!");
     }
+
+    // Step 3 Verification: Test "Any" wildcard brand nesting bypass
+    // We will verify that a type branded with "Any" is permitted inside a parent brand of "ctx"
+    unsafe {
+        mut statements_vec := &ctx[prog3.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut main_decl := (*statements_vec)[1];
+        mut body_idx := main_decl.FunctionDecl.body;
+        mut body_stmts := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut var_decl := (*body_stmts)[0];
+        mut any_test_span := var_decl.VarDecl.span;
+
+        mut t_any_branded: ast.Type[ctx];
+        t_any_branded.tag = 8; // Struct
+        t_any_branded.Struct.struct_name = "lexer__Lexer_Any";
+        t_any_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+        mut brand_ptr := &ctx[t_any_branded.Struct.brand] as *str;
+        *brand_ptr = "Any";
+
+        // A: Direct check of env_is_element_allowed_in_brand
+        mut allowed_res := typechecker.env_is_element_allowed_in_brand(&env, t_any_branded, "ctx", ctx);
+        if allowed_res == 1 {
+            os.LogStr("Any brand element correctly allowed inside parent brand 'ctx'!");
+        } else {
+            os.LogStr("Any brand element incorrectly rejected inside parent brand 'ctx'!");
+        }
+
+        // B: Direct check of env_check_brand_nesting
+        env.errors = std.VectorNew(ctx);
+
+        mut parent_brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
+        ctx[parent_brand_idx] = "ctx";
+
+        typechecker.env_check_brand_nesting(&env, t_any_branded, parent_brand_idx, any_test_span, ctx);
+
+        if len(env.errors) == 0 {
+            os.LogStr("env_check_brand_nesting with Any brand inside parent 'ctx' succeeded with 0 errors!");
+        } else {
+            os.LogStr("env_check_brand_nesting with Any brand inside parent 'ctx' incorrectly failed!");
+            os.LogStr(env.errors[0].message);
+        }
+    }
 }

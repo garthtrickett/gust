@@ -116,7 +116,7 @@ func main() {
     mut j := 0;
     while j < len(env.errors) { 
         mut err := env.errors[j];
-        if std.str_find(err.message, "origin invalidated") != 0 - 1 {
+        if std.str_find(err.message, "backing origin") != 0 - 1 {
             has_origin_err = 1;
         }
         j = j + 1;
