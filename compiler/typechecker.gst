@@ -146,22 +146,27 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
         if t.tag == 8 { // Struct
             if parent_brand != empty[Index[str, ctx]] {
                 mut ob := ctx[parent_brand];
-                if env_is_element_allowed_in_brand(env, t, ob, ctx) == 0 {
-                    mut ib := get_type_brand(t, ctx);
-                    if std.str_eq(ib, "") == 1 {
-                        mut msg := std.Concat("Semantic Error: Brand Nesting Restriction violation. Element '", t.Struct.struct_name);
-                        msg = std.Concat(msg, "' inside collection branded with '");
-                        msg = std.Concat(msg, ob);
-                        msg = std.Concat(msg, "' must be copyable POD or branded with identical brand '");
-                        msg = std.Concat(msg, ob);
-                        msg = std.Concat(msg, "'");
-                        report_error(2, msg, span, env, ctx);
-                    } else {
-                        mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ib);
-                        msg = std.Concat(msg, "' inside parent brand '");
-                        msg = std.Concat(msg, ob);
-                        msg = std.Concat(msg, "'");
-                        report_error(2, msg, span, env, ctx);
+                mut name := t.Struct.struct_name;
+                mut clean_name := strip_brand_prefix(name, ctx);
+                mut clean_ob := strip_brand_prefix(ob, ctx);
+                if std.str_eq(clean_name, clean_ob) == 0 {
+                    if env_is_element_allowed_in_brand(env, t, ob, ctx) == 0 {
+                        mut ib := get_type_brand(t, ctx);
+                        if std.str_eq(ib, "") == 1 {
+                            mut msg := std.Concat("Semantic Error: Brand Nesting Restriction violation. Element '", t.Struct.struct_name);
+                            msg = std.Concat(msg, "' inside collection branded with '");
+                            msg = std.Concat(msg, ob);
+                            msg = std.Concat(msg, "' must be copyable POD or branded with identical brand '");
+                            msg = std.Concat(msg, ob);
+                            msg = std.Concat(msg, "'");
+                            report_error(2, msg, span, env, ctx);
+                        } else {
+                            mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ib);
+                            msg = std.Concat(msg, "' inside parent brand '");
+                            msg = std.Concat(msg, ob);
+                            msg = std.Concat(msg, "'");
+                            report_error(2, msg, span, env, ctx);
+                        }
                     }
                 }
             }
