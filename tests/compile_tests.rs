@@ -8291,3 +8291,38 @@ Byte
         .join()
         .unwrap();
 }
+
+
+
+#[test]
+        fn test_nested_same_brands_accepted() {
+            let source = "
+                func main() {
+                    mut ctx := os.Arena.New();
+                    defer ctx.Free();
+                    mut vec: Vector[Vector[str, ctx], ctx] := os.VectorNew(ctx);
+                }
+            ";
+            assert!(check_program(source).is_ok());
+        }
+
+        #[test]
+        fn test_generic_branded_struct_mismatched_field_rejected() {
+            let source = "
+                type Container[T, ctx] struct {
+                    value: T
+                }
+                func main() {
+                    mut innerCtx := os.Arena.New();
+                    defer innerCtx.Free();
+                    mut outerCtx := os.Arena.New();
+                    defer outerCtx.Free();
+                    mut vec: Container[Vector[str, innerCtx], outerCtx] := empty[Container[Vector[str, innerCtx], outerCtx]];
+                }
+            ";
+            let res = check_program(source);
+            assert!(res.is_err());
+            let err = res.unwrap_err();
+            assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
+            assert!(err.message.contains("Brand Nesting") || err.message.contains("Mismatched nested brand") || err.message.contains("Brand Nesting Restriction violation"));
+        }
