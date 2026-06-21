@@ -1,0 +1,9 @@
+{
+  "summary": "fix: update env_type_is_ephemeral_view to recursively analyze raw pointer inner types",
+  "files": [
+    {
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\n        if t.tag == 9 { // RawPointer\n            return 1;\n        }\n=======\n        if t.tag == 9 { // RawPointer\n            mut inner := ctx[t.RawPointer.inner];\n            return env_type_is_ephemeral_view(inner, ctx);\n        }\n>>>>>>> REPLACE"
+    }
+  ]
+}

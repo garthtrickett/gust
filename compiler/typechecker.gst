@@ -110,7 +110,8 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
             return 1;
         }
         if t.tag == 9 { // RawPointer
-            return 1;
+            mut inner := ctx[t.RawPointer.inner];
+            return env_type_is_ephemeral_view(inner, ctx);
         }
         if t.tag == 8 { // Struct
             mut name := t.Struct.struct_name;
