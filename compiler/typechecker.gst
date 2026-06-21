@@ -1427,6 +1427,98 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut brand_name := get_root_variable(arg0_idx, ctx);
                 return make_type_index("Any", brand_name, ctx);
             }
+
+            if std.str_eq(resolved_func, "std.GenerationalSwap") || std.str_eq(resolved_func, "std_GenerationalSwap") {
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec) != 2 {
+                    mut msg := "Semantic Error: std.GenerationalSwap expects exactly 2 arguments (current_ctx, next_ctx)";
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                    mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
+                    return dummy;
+                }
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut current_type := check_expression(arg0_idx, env, scope, ctx);
+                
+                mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg1_idx] = (*args_vec)[1];
+                mut next_type := check_expression(arg1_idx, env, scope, ctx);
+
+                if current_type.tag != 4 || next_type.tag != 4 {
+                    mut msg := "Semantic Error: std.GenerationalSwap arguments must be Arena allocators";
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                }
+
+                mut current_brand := get_root_variable(arg0_idx, ctx);
+                mut next_brand := get_root_variable(arg1_idx, ctx);
+
+                // 1. Invalidate all variables branded with current_brand
+                mut var_origins_keys := (*env).variable_origins.Keys(ctx);
+                mut m := 0;
+                while m < len(var_origins_keys) {
+                    mut var_name := var_origins_keys[m];
+                    mut var_type_lookup := scope_lookup(scope, var_name, ctx);
+                    mut brand := get_type_brand(var_type_lookup, env, ctx);
+                    mut clean_brand := strip_brand_prefix(brand, ctx);
+                    if std.str_eq(clean_brand, current_brand) == 1 {
+                        (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
+                        (*env).open_directories.Remove(var_name);
+                    }
+                    m = m + 1;
+                }
+
+                // 2. Rebrand all variables branded with next_brand to current_brand
+                mut brand_map: std.HashMap[str, str, ctx] := std.HashMapNew(ctx);
+                brand_map.Insert(std.Clone(ctx, next_brand), std.Clone(ctx, current_brand));
+
+                mut updated_symbols: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
+                mut var_keys := (*env).variable_types.Keys(ctx);
+                mut i := 0;
+                while i < len(var_keys) {
+                    mut var_name := var_keys[i];
+                    mut var_type := (*env).variable_types.Get(var_name).Val;
+                    mut brand := get_type_brand(var_type, env, ctx);
+                    mut clean_brand := strip_brand_prefix(brand, ctx);
+                    if std.str_eq(clean_brand, next_brand) == 1 {
+                        mut updated_type := typechecker_substitute_brand_names(var_type, &brand_map, ctx);
+                        updated_symbols.Insert(std.Clone(ctx, var_name), updated_type);
+                    }
+                    i = i + 1;
+                }
+
+                mut updated_keys := updated_symbols.Keys(ctx);
+                mut j := 0;
+                while j < len(updated_keys) {
+                    mut var_name := updated_keys[j];
+                    mut updated_type := updated_symbols.Get(var_name).Val;
+                    (*env).variable_types.Insert(std.Clone(ctx, var_name), updated_type);
+                    j = j + 1;
+                }
+
+                // 2.5 Rebrand all variables inside the active lexical scope chain
+                mut curr_sc := scope;
+                while curr_sc != empty[Index[Scope[ctx], ctx]] {
+                    unsafe {
+                        mut keys := ctx[curr_sc].bindings.Keys(ctx);
+                        mut k := 0;
+                        while k < len(keys) {
+                            mut var_name := keys[k];
+                            mut var_type := ctx[curr_sc].bindings.Get(var_name).Val;
+                            mut brand := get_type_brand(var_type, env, ctx);
+                            mut clean_brand := strip_brand_prefix(brand, ctx);
+                            if std.str_eq(clean_brand, next_brand) == 1 {
+                                mut updated_type := typechecker_substitute_brand_names(var_type, &brand_map, ctx);
+                                ctx[curr_sc].bindings.Insert(std.Clone(ctx, var_name), updated_type);
+                            }
+                            k = k + 1;
+                        }
+                        curr_sc = ctx[curr_sc].parent;
+                    }
+                }
+
+                mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                return t_void;
+            }
             
             // Spawn / Concurrency Checks
             if std.str_eq(resolved_func, "std_Spawn") || std.str_eq(resolved_func, "std.Spawn") {
