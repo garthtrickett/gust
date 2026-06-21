@@ -740,15 +740,6 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 return t_bool;
             }
 
-            if std.str_eq(op, "+") == 1 || std.str_eq(op, "-") == 1 || std.str_eq(op, "*") == 1 || std.str_eq(op, "/") == 1 {
-                if left_type.tag != 0 && left_type.tag != 1 { // Int = 0, Byte = 1
-                    mut msg := std.Concat("Semantic Error: Math operation '", op);
-                    msg = std.Concat(msg, "' is only allowed on Int or Byte types, but got ");
-                    msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
-                    report_error(2, msg, get_expression_span(expr.Binary.left, ctx), env, ctx);
-                }
-            }
-
             if types_match(left_type, right_type, ctx) == 0 {
                 mut is_ptr_arith := 0;
                 if (std.str_eq(op, "+") == 1 || std.str_eq(op, "-") == 1) && left_type.tag == 9 && (right_type.tag == 0 || right_type.tag == 1) {
@@ -770,7 +761,14 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 report_error(2, msg, expr.Binary.span, env, ctx);
             }
 
-            mut t_int: ast.Type[ctx];
+            if std.str_eq(op, "+") == 1 || std.str_eq(op, "-") == 1 || std.str_eq(op, "*") == 1 || std.str_eq(op, "/") == 1 {
+                if left_type.tag != 0 && left_type.tag != 1 { // Int = 0, Byte = 1
+                    mut msg := std.Concat("Semantic Error: Math operation '", op);
+                    msg = std.Concat(msg, "' is only allowed on Int or Byte types, but got ");
+                    msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
+                    report_error(2, msg, get_expression_span(expr.Binary.left, ctx), env, ctx);
+                } 
+            }
             t_int.tag = 0; // Int
             return t_int;
         }
