@@ -1500,7 +1500,7 @@ impl TypeChecker {
                     None
                 };
 
-                let mut val_type = if let Some(val_expr) = value {
+                let val_type = if let Some(val_expr) = value {
                     let mut t = self.check_expression(val_expr)?;
                     t = self.resolve_type(&t)?;
                     t = self.resolve_type_namespacing(&t)?;

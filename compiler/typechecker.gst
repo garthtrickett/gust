@@ -715,11 +715,61 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             return resolved_target;
         }
         if expr.tag == 10 { // Binary
-            check_expression(expr.Binary.left, env, scope, ctx);
-            check_expression(expr.Binary.right, env, scope, ctx);
-            mut t: ast.Type[ctx];
-            t.tag = 0; // Int
-            return t;
+            mut left_type := check_expression(expr.Binary.left, env, scope, ctx);
+            mut right_type := check_expression(expr.Binary.right, env, scope, ctx);
+            mut op := expr.Binary.op;
+
+            if std.str_eq(op, "&&") == 1 || std.str_eq(op, "||") == 1 {
+                if left_type.tag != 0 && left_type.tag != 2 { // Int = 0, Bool = 2
+                    mut msg := std.Concat("Semantic Error: Left operand of logical '", op);
+                    msg = std.Concat(msg, "' must be Int or Bool, but got ");
+                    msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
+                    report_error(2, msg, get_expression_span(expr.Binary.left, ctx), env, ctx);
+                }
+                if right_type.tag != 0 && right_type.tag != 2 { // Int = 0, Bool = 2
+                    mut msg := std.Concat("Semantic Error: Right operand of logical '", op);
+                    msg = std.Concat(msg, "' must be Int or Bool, but got ");
+                    msg = std.Concat(msg, ast.serialize_type(right_type, ctx));
+                    report_error(2, msg, get_expression_span(expr.Binary.right, ctx), env, ctx);
+                }
+                mut t_bool: ast.Type[ctx];
+                t_bool.tag = 2; // Bool
+                return t_bool;
+            }
+
+            if std.str_eq(op, "+") == 1 || std.str_eq(op, "-") == 1 || std.str_eq(op, "*") == 1 || std.str_eq(op, "/") == 1 {
+                if left_type.tag != 0 && left_type.tag != 1 { // Int = 0, Byte = 1
+                    mut msg := std.Concat("Semantic Error: Math operation '", op);
+                    msg = std.Concat(msg, "' is only allowed on Int or Byte types, but got ");
+                    msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
+                    report_error(2, msg, get_expression_span(expr.Binary.left, ctx), env, ctx);
+                }
+            }
+
+            if types_match(left_type, right_type, ctx) == 0 {
+                mut is_ptr_arith := 0;
+                if (std.str_eq(op, "+") == 1 || std.str_eq(op, "-") == 1) && left_type.tag == 9 && (right_type.tag == 0 || right_type.tag == 1) {
+                    is_ptr_arith = 1;
+                }
+                if is_ptr_arith == 1 {
+                    if (*env).in_unsafe_block == 0 {
+                        mut msg := "Semantic Error: Pointer arithmetic is strictly prohibited outside 'unsafe' blocks";
+                        report_error(2, msg, expr.Binary.span, env, ctx);
+                    }
+                    return left_type;
+                }
+
+                mut msg := std.Concat("Semantic Error: Mismatched types in binary operation '", op);
+                msg = std.Concat(msg, "'. Left: ");
+                msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
+                msg = std.Concat(msg, ", Right: ");
+                msg = std.Concat(msg, ast.serialize_type(right_type, ctx));
+                report_error(2, msg, expr.Binary.span, env, ctx);
+            }
+
+            mut t_int: ast.Type[ctx];
+            t_int.tag = 0; // Int
+            return t_int;
         }
         if expr.tag == 11 { // Selector
             mut left_t := check_expression(expr.Selector.left, env, scope, ctx);
