@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
-
-OUTPUT_FILE="a.txt"
-
-# Clear the output file if it already exists
->"$OUTPUT_FILE"
+# c.sh - Main file-aggregation execution driver
 
 # Determine the project root directory
 PROJECT_ROOT="."
@@ -11,28 +7,77 @@ if [ ! -d "src" ] && [ -d "../src" ]; then
     PROJECT_ROOT=".."
 fi
 
-# Append root configuration files if they exist
-CONFIG_FILES=("flake.nix" "Cargo.toml" "GEMINI.md" "apply_changes.py" "bridge.sh")
-for config in "${CONFIG_FILES[@]}"; do
-    file_path="$PROJECT_ROOT/$config"
-    if [ -f "$file_path" ]; then
-        echo "--- START OF FILE $config ---" >>"$OUTPUT_FILE"
-        cat "$file_path" >>"$OUTPUT_FILE"
-        echo -e "\n--- END OF FILE $config ---\n" >>"$OUTPUT_FILE"
+# Load configuration from concat.config if it exists, otherwise use defaults
+CONFIG_FILE="$PROJECT_ROOT/concat.config"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+else
+    # Fallback Defaults
+    OUTPUT_FILE="a.txt"
+    ROOT_CONFIG_FILES=("flake.nix" "Cargo.toml" "GEMINI.md" "apply_changes.py" "bridge.sh")
+    TARGET_DIRS=("src" "compiler" "tests")
+    FILE_EXTENSIONS=("rs" "gst" "c" "h")
+    EXCLUDE_PATTERNS=()
+fi
+
+# Clear the output file if it already exists
+>"$PROJECT_ROOT/$OUTPUT_FILE"
+
+# Append root configuration files if they exist and are allowed
+for config in "${ROOT_CONFIG_FILES[@]}"; do
+    # Check if the config file itself matches any exclude patterns
+    is_excluded=0
+    for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        if [[ "$config" == $pattern ]]; then
+            is_excluded=1
+            break
+        fi
+    done
+
+    if [ $is_excluded -eq 0 ]; then
+        file_path="$PROJECT_ROOT/$config"
+        if [ -f "$file_path" ]; then
+            echo "--- START OF FILE $config ---" >>"$PROJECT_ROOT/$OUTPUT_FILE"
+            cat "$file_path" >>"$PROJECT_ROOT/$OUTPUT_FILE"
+            echo -e "\n--- END OF FILE $config ---\n" >>"$PROJECT_ROOT/$OUTPUT_FILE"
+        fi
     fi
 done
 
-# Dynamically find and append all Rust, Gust, C, and Header files inside src/, tests/, and compiler/
-if [ -d "$PROJECT_ROOT/src" ] || [ -d "$PROJECT_ROOT/tests" ] || [ -d "$PROJECT_ROOT/compiler" ]; then
-    # Find targets, filtering for files ending in .rs, .gst, .c, or .h, sorted for consistency
+# Build directory search paths relative to PROJECT_ROOT
+search_dirs=()
+for dir in "${TARGET_DIRS[@]}"; do
+    dir_path="$PROJECT_ROOT/$dir"
+    if [ -d "$dir_path" ]; then
+        search_dirs+=("$dir_path")
+    fi
+done
+
+# If directories exist, perform search and aggregation
+if [ ${#search_dirs[@]} -gt 0 ] && [ ${#FILE_EXTENSIONS[@]} -gt 0 ]; then
+    # Build extension name filters
+    name_args=()
+    for ext in "${FILE_EXTENSIONS[@]}"; do
+        if [ ${#name_args[@]} -gt 0 ]; then
+            name_args+=("-o")
+        fi
+        name_args+=("-name" "*.$ext")
+    done
+
+    # Build exclude arguments
+    exclude_args=()
+    for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        exclude_args+=("-not" "-path" "*/$pattern" "-not" "-name" "$pattern")
+    done
+
+    # Execute find and append matching files
     while IFS= read -r file; do
-        # Clean up the output boundary path representation
         display_path="${file#$PROJECT_ROOT/}"
 
-        echo "--- START OF FILE $display_path ---" >>"$OUTPUT_FILE"
-        cat "$file" >>"$OUTPUT_FILE"
-        echo -e "\n--- END OF FILE $display_path ---\n" >>"$OUTPUT_FILE"
-    done < <(find "$PROJECT_ROOT/src" "$PROJECT_ROOT/tests" "$PROJECT_ROOT/compiler" -type f \( -name "*.rs" -o -name "*.gst" -o -name "*.c" -o -name "*.h" \) 2>/dev/null | sort)
+        echo "--- START OF FILE $display_path ---" >>"$PROJECT_ROOT/$OUTPUT_FILE"
+        cat "$file" >>"$PROJECT_ROOT/$OUTPUT_FILE"
+        echo -e "\n--- END OF FILE $display_path ---\n" >>"$PROJECT_ROOT/$OUTPUT_FILE"
+    done < <(find "${search_dirs[@]}" -type f \( "${name_args[@]}" \) "${exclude_args[@]}" 2>/dev/null | sort)
 fi
 
-echo "✅ Aggregated all project configuration, Rust, Gust, and C/Header files into $OUTPUT_FILE"
+echo "✅ Aggregated target project files into $PROJECT_ROOT/$OUTPUT_FILE"
