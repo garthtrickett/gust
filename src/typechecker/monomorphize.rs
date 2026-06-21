@@ -122,10 +122,12 @@ impl TypeChecker {
         {
             return true;
         }
-        if let Some(ib) = self.get_type_brand(element)
-            && strip_brand_prefix(&ib) == strip_brand_prefix(ob)
-        {
-            return true;
+        if let Some(ib) = self.get_type_brand(element) {
+            let clean_ib = strip_brand_prefix(&ib);
+            let clean_ob = strip_brand_prefix(ob);
+            if clean_ib == clean_ob || clean_ib == "Any" || clean_ob == "Any" {
+                return true;
+            }
         }
         false
     }
@@ -168,6 +170,8 @@ impl TypeChecker {
                 if let Some(ib) = inner_brand
                     && let Some(ob) = outer_brand
                     && strip_brand_prefix(ib) != strip_brand_prefix(ob)
+                    && strip_brand_prefix(ib) != "Any"
+                    && strip_brand_prefix(ob) != "Any"
                 {
                     return Err(TypeError {
                         kind: TypeErrorKind::BrandLifetimeViolation,
@@ -189,6 +193,8 @@ impl TypeChecker {
                 if let Some(ib) = inner_brand
                     && let Some(ob) = outer_brand
                     && ib != ob
+                    && strip_brand_prefix(ib) != "Any"
+                    && strip_brand_prefix(ob) != "Any"
                 {
                     return Err(TypeError {
                         kind: TypeErrorKind::BrandLifetimeViolation,
@@ -1413,5 +1419,30 @@ mod tests {
         checker.current_prefix = lib_prefix;
         let check_res = checker.check_program(&program);
         assert!(check_res.is_ok());
+    }
+
+    #[test]
+    fn test_any_wildcard_brand_nesting() {
+        let mut checker = TypeChecker::new();
+        checker.current_prefix = "my_module__".to_string();
+
+        let t_lexer = Type::Struct("lexer__Lexer".to_string(), Some("Any".to_string()));
+        let mut parser_fields = HashMap::new();
+        parser_fields.insert("lexer".to_string(), t_lexer);
+
+        checker.struct_registry.insert(
+            "my_module__Parser_ctx".to_string(),
+            StructLayout {
+                brand: Some("ctx".to_string()),
+                fields: parser_fields,
+            },
+        );
+
+        let t_parser = Type::Struct("my_module__Parser_ctx".to_string(), Some("ctx".to_string()));
+        let check_res = checker.check_brand_hierarchy(&t_parser, &Some("ctx".to_string()));
+        assert!(
+            check_res.is_ok(),
+            "Expected Any brand nested inside ctx to be allowed without error"
+        );
     }
 }
