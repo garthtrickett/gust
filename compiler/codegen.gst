@@ -2992,6 +2992,30 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 return std.Clone(ctx, res);
             }
 
+            if std.str_eq(func_str, "os.ArenaValidate") || std.str_eq(func_str, "os_ArenaValidate") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.ArenaValidate FFI override", ctx);
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg_arena := codegen_generate_expression(arg0_idx, env, ctx);
+
+                mut is_ptr := 0;
+                mut arg0_expr := ctx[arg0_idx];
+                if arg0_expr.tag == 0 { // Identifier
+                    mut name := arg0_expr.Identifier.name;
+                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
+                }
+
+                mut arena_expr := std.Concat("&", arg_arena);
+                if is_ptr == 1 { 
+                    arena_expr = arg_arena;
+                }
+
+                mut res := std.Concat("os_Arena_Validate(", arena_expr);
+                res = std.Concat(res, ")");
+                return std.Clone(ctx, res);
+            }
+
             if std.str_eq(func_str, "os.path_join") || std.str_eq(func_str, "os_path_join") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.path_join FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
