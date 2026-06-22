@@ -1,0 +1,33 @@
+{
+  "summary": "feat: write remaining E2E test files and register them in the self-hosted test runner",
+  "files": [
+    {
+      "file_path": "tests/e2e_scratchpad_formatting_loop.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut i := 0;\n    while i < 5 {\n        mut s_num := std.FormatInt(i);\n        mut greeting := std.Concat(\"Num: \", s_num);\n        os.LogStr(greeting);\n        os.ScratchReset();\n        i = i + 1;\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/e2e_multithreaded_scratch_isolation.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype ThreadArg[ctx] struct {\n    val: int,\n    done: std.Channel[int, ctx]\n}\nfunc thread_task(arg: *ThreadArg[ctx]) {\n    mut t_ctx := os.Arena.New();\n    defer t_ctx.Free();\n    os.SetThreadScratch(t_ctx);\n    \n    mut val := 0;\n    unsafe {\n        val = (*arg).val;\n    }\n    mut s := std.FormatInt(val);\n    \n    mut i := 0;\n    while i < 20000 {\n        i = i + 1;\n    }\n    \n    mut s_parsed := std.parse_int(s);\n    \n    unsafe {\n        (*arg).done.Send(s_parsed);\n    }\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    \n    mut c1: std.Channel[int, ctx] := std.ChannelNew(ctx);\n    mut c2: std.Channel[int, ctx] := std.ChannelNew(ctx);\n    \n    mut arg1: ThreadArg[ctx];\n    arg1.val = 42;\n    arg1.done = c1;\n    \n    mut arg2: ThreadArg[ctx];\n    arg2.val = 100;\n    arg2.done = c2;\n    \n    std.Spawn(thread_task, &arg1);\n    std.Spawn(thread_task, &arg2);\n    \n    mut res1 := c1.Recv();\n    mut res2 := c2.Recv();\n    \n    os.LogInt(res1);\n    os.LogInt(res2);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/e2e_arena_canary_normal_debug.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype MyNode[ctx] struct {\n    val: int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut n1: Index[MyNode, ctx] := os.ArenaAlloc(ctx);\n    mut n2: Index[MyNode, ctx] := os.ArenaAlloc(ctx);\n    ctx[n1].val = 42;\n    ctx[n2].val = 84;\n    \n    os.ArenaValidate(ctx);\n    os.LogInt(ctx[n1].val);\n    os.LogInt(ctx[n2].val);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/e2e_arena_canary_corruption_detection.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype MyNode[ctx] struct {\n    val: int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut n1: Index[MyNode, ctx] := os.ArenaAlloc(ctx);\n    ctx[n1].val = 42;\n    \n    unsafe {\n        mut val_ptr := &ctx[n1].val;\n        mut byte_ptr := val_ptr as *byte;\n        *(byte_ptr + 8) = 0; // Corrupt post-canary of n1\n    }\n    \n    os.ArenaValidate(ctx);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/e2e_sanitizer_detection_of_corrupt_memory.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    mut idx := os.ArenaAlloc(ctx);\n    unsafe {\n        mut ptr := &ctx[idx].SessionID;\n        ctx.Free();\n        os.LogInt(*ptr); // Heap use-after-free!\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/e2e_line_preprocessor_validation.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut x := 10;\n    os.LogInt(x);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_runner.gst",
+      "code_diff": "<<<<<<< SEARCH\n    mut t72: Test[ctx];\n    t72.path = \"tests/e2e_thread_local_scratchpad.gst\";\n    t72.is_negative = 0;\n    t72.expected = \"42\\n84\\n42\";\n    tests.Push(t72);\n\n    os.LogStr(\"\uD83C\uDFC3 Starting self-hosted Gust test suite...\");\n=======\n    mut t72: Test[ctx];\n    t72.path = \"tests/e2e_thread_local_scratchpad.gst\";\n    t72.is_negative = 0;\n    t72.expected = \"42\\n84\\n42\";\n    tests.Push(t72);\n\n    mut t73: Test[ctx];\n    t73.path = \"tests/e2e_scratchpad_formatting_loop.gst\";\n    t73.is_negative = 0;\n    t73.expected = \"Num: 0\\nNum: 1\\nNum: 2\\nNum: 3\\nNum: 4\";\n    tests.Push(t73);\n\n    mut t74: Test[ctx];\n    t74.path = \"tests/e2e_multithreaded_scratch_isolation.gst\";\n    t74.is_negative = 0;\n    t74.expected = \"42\\n100\";\n    tests.Push(t74);\n\n    mut t75: Test[ctx];\n    t75.path = \"tests/e2e_arena_canary_normal_debug.gst\";\n    t75.is_negative = 0;\n    t75.expected = \"42\\n84\";\n    tests.Push(t75);\n\n    mut t76: Test[ctx];\n    t76.path = \"tests/e2e_arena_canary_corruption_detection.gst\";\n    t76.is_negative = 0;\n    t76.expected = \"\";\n    tests.Push(t76);\n\n    mut t77: Test[ctx];\n    t77.path = \"tests/e2e_sanitizer_detection_of_corrupt_memory.gst\";\n    t77.is_negative = 0;\n    t77.expected = \"0\";\n    tests.Push(t77);\n\n    mut t78: Test[ctx];\n    t78.path = \"tests/e2e_line_preprocessor_validation.gst\";\n    t78.is_negative = 0;\n    t78.expected = \"10\";\n    tests.Push(t78);\n\n    os.LogStr(\"\uD83C\uDFC3 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
+    }
+  ]
+}

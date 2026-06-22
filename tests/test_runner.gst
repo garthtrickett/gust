@@ -728,6 +728,42 @@ func main() {
     t72.expected = "42\n84\n42";
     tests.Push(t72);
 
+    mut t73: Test[ctx];
+    t73.path = "tests/e2e_scratchpad_formatting_loop.gst";
+    t73.is_negative = 0;
+    t73.expected = "Num: 0\nNum: 1\nNum: 2\nNum: 3\nNum: 4";
+    tests.Push(t73);
+
+    mut t74: Test[ctx];
+    t74.path = "tests/e2e_multithreaded_scratch_isolation.gst";
+    t74.is_negative = 0;
+    t74.expected = "42\n100";
+    tests.Push(t74);
+
+    mut t75: Test[ctx];
+    t75.path = "tests/e2e_arena_canary_normal_debug.gst";
+    t75.is_negative = 0;
+    t75.expected = "42\n84";
+    tests.Push(t75);
+
+    mut t76: Test[ctx];
+    t76.path = "tests/e2e_arena_canary_corruption_detection.gst";
+    t76.is_negative = 0;
+    t76.expected = "";
+    tests.Push(t76);
+
+    mut t77: Test[ctx];
+    t77.path = "tests/e2e_sanitizer_detection_of_corrupt_memory.gst";
+    t77.is_negative = 0;
+    t77.expected = "0";
+    tests.Push(t77);
+
+    mut t78: Test[ctx];
+    t78.path = "tests/e2e_line_preprocessor_validation.gst";
+    t78.is_negative = 0;
+    t78.expected = "10";
+    tests.Push(t78);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
