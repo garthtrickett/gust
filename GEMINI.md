@@ -44,6 +44,33 @@ func main() {
     mut t1: Test[ctx]; // CORRECT: Branded variable
 }
 ```
+### C. Flat Function Scope & C-Redefinition Invariants
+* **Rule:** All variables declared within a single function block (such as `func main()`) must have completely unique names across that entire block, even if they reside in separate logical phases, test steps, or conditional structures.
+* **Why:** The Gust-to-C transpiler outputs variable declarations directly into flat C function scopes. Unlike more permissive high-level languages, C strictly prohibits redefining a variable name within the same block scope [2]. Attempting to declare `mut x` twice in the same function will compile cleanly in the Gust parser but trigger a fatal C compiler `redefinition of 'x'` error during the native compilation phase [2].
+* **Action:** 
+  * Never copy-paste test scaffolding blocks that reuse identical variable names (e.g., `empty_prog_vec` or `empty_prefixes`) [2].
+  * Always append descriptive, context-specific suffixes to temporary test variables (e.g., use `empty_prog_vec_tl` and `empty_prefixes_tl` for thread-local tests, and `empty_prog_vec_dup` for deduplication tests) [2].
+
+```gust
+// ❌ Incorrect (Will transpile to C redefinitions in main's flat scope)
+func main() {
+    // Step 1
+    mut empty_prog_vec: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);
+    ...
+    // Step 2 (Scaffolding copy-pasted)
+    mut empty_prog_vec: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx); // C ERROR: Redefinition
+}
+
+// ✅ Correct (Unique names per logical context)
+func main() {
+    // Step 1
+    mut empty_prog_vec_dup: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);
+    ...
+    // Step 2 
+    mut empty_prog_vec_tl: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx); // Safe C transpilation
+}
+
+```
 
 
 ## TOOL USE CONSTRAINTS & DISCIPLINE

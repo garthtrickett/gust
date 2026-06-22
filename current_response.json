@@ -1,9 +1,0 @@
-{
-  "summary": "fix: resolve duplicate variable declarations in codegen_initializer_test_entry.gst",
-  "files": [
-    {
-      "file_path": "compiler/codegen_initializer_test_entry.gst",
-      "code_diff": "<<<<<<< SEARCH\n    // Step 1: Verification Test for os_GetThreadScratch forward declaration\n    mut env_tl_test := typechecker.env_new(ctx);\n    \n    mut tl_layout: typechecker.StructLayout[ctx];\n    tl_layout.brand = empty[Index[str, ctx]];\n    tl_layout.fields = std.HashMapNew(ctx);\n    typechecker.env_register_struct(&env_tl_test, \"std_ThreadLocalContext\", tl_layout, ctx);\n\n    mut empty_prog_vec: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);\n    mut empty_prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);\n    mut gen_tl_c := codegen.codegen_generate(empty_prog_vec, empty_prefixes, &env_tl_test, ctx);\n=======\n    // Step 1: Verification Test for os_GetThreadScratch forward declaration\n    mut env_tl_test := typechecker.env_new(ctx);\n    \n    mut tl_layout: typechecker.StructLayout[ctx];\n    tl_layout.brand = empty[Index[str, ctx]];\n    tl_layout.fields = std.HashMapNew(ctx);\n    typechecker.env_register_struct(&env_tl_test, \"std_ThreadLocalContext\", tl_layout, ctx);\n\n    mut empty_prog_vec_tl: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);\n    mut empty_prefixes_tl: std.Vector[str, ctx] := std.VectorNew(ctx);\n    mut gen_tl_c := codegen.codegen_generate(empty_prog_vec_tl, empty_prefixes_tl, &env_tl_test, ctx);\n>>>>>>> REPLACE"
-    }
-  ]
-}
