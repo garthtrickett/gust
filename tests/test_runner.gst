@@ -1069,6 +1069,208 @@ func main() {
     t126.expected = "";
     tests.Push(t126);
 
+    mut t127: Test[ctx];
+    t127.path = "tests/test_safety_escape_rejected.gst";
+    t127.is_negative = 1;
+    t127.expected = "cannot be used because its backing origin";
+    tests.Push(t127);
+
+    mut t128: Test[ctx];
+    t128.path = "tests/test_conditional_origin_union_rejected.gst";
+    t128.is_negative = 1;
+    t128.expected = "cannot be used because its backing origin";
+    tests.Push(t128);
+
+    mut t129: Test[ctx];
+    t129.path = "tests/test_function_view_origin_propagation_rejected.gst";
+    t129.is_negative = 1;
+    t129.expected = "cannot be used because its backing origin";
+    tests.Push(t129);
+
+    mut t130: Test[ctx];
+    t130.path = "tests/test_view_invalidated_on_parent_reassignment_rejected.gst";
+    t130.is_negative = 1;
+    t130.expected = "backing origin";
+    tests.Push(t130);
+
+    mut t131: Test[ctx];
+    t131.path = "tests/test_view_invalidated_on_parent_field_mutation_rejected.gst";
+    t131.is_negative = 1;
+    t131.expected = "backing origin";
+    tests.Push(t131);
+
+    mut t132: Test[ctx];
+    t132.path = "tests/test_brand_lifetime_mismatch_rejected.gst";
+    t132.is_negative = 1;
+    t132.expected = "Value-Branded";
+    tests.Push(t132);
+
+    mut t133: Test[ctx];
+    t133.path = "tests/test_branded_vector_safety_rejected.gst";
+    t133.is_negative = 1;
+    t133.expected = "Value-Branded";
+    tests.Push(t133);
+
+    mut t134: Test[ctx];
+    t134.path = "tests/test_branded_hashmap_safety_rejected.gst";
+    t134.is_negative = 1;
+    t134.expected = "Value-Branded";
+    tests.Push(t134);
+
+    mut t135: Test[ctx];
+    t135.path = "tests/test_unbranded_generic_instantiated_with_view_rejected.gst";
+    t135.is_negative = 1;
+    t135.expected = "cannot contain ephemeral slice";
+    tests.Push(t135);
+
+    mut t136: Test[ctx];
+    t136.path = "tests/test_nested_different_brands_rejected.gst";
+    t136.is_negative = 1;
+    t136.expected = "Mismatched nested brand";
+    tests.Push(t136);
+
+    mut t137: Test[ctx];
+    t137.path = "tests/test_unbranded_linear_struct_in_branded_collection_rejected.gst";
+    t137.is_negative = 1;
+    t137.expected = "Brand Nesting Restriction";
+    tests.Push(t137);
+
+    mut t138: Test[ctx];
+    t138.path = "tests/test_handoff_isolation_violation_rejected.gst";
+    t138.is_negative = 1;
+    t138.expected = "preventing safe handoff";
+    tests.Push(t138);
+
+    mut t139: Test[ctx];
+    t139.path = "tests/test_handoff_use_after_move_rejected.gst";
+    t139.is_negative = 1;
+    t139.expected = "Use of moved variable";
+    tests.Push(t139);
+
+    mut t140: Test[ctx];
+    t140.path = "tests/test_move_linear_type_invalidates_rejected.gst";
+    t140.is_negative = 1;
+    t140.expected = "Use of moved variable";
+    tests.Push(t140);
+
+    mut t141: Test[ctx];
+    t141.path = "tests/test_monomorphized_linear_collection_is_linear_rejected.gst";
+    t141.is_negative = 1;
+    t141.expected = "Use of moved variable";
+    tests.Push(t141);
+
+    mut t142: Test[ctx];
+    t142.path = "tests/test_generic_definition_enforces_strict_linear_safety_rejected.gst";
+    t142.is_negative = 1;
+    t142.expected = "already been moved";
+    tests.Push(t142);
+
+    mut t124_placeholder: Test[ctx];
+    t124.path = "tests/test_pool_type_checking_valid.gst";
+    t124.is_negative = 0;
+    t124.expected = "";
+    
+    mut t143: Test[ctx];
+    t124.path = "tests/test_pool_type_checking_valid.gst";
+    t124.is_negative = 0;
+    t124.expected = "";
+
+    mut t144: Test[ctx];
+    t144.path = "tests/test_fiber_scratchpad_escape_across_yield_boundary_rejected.gst";
+    t144.is_negative = 1;
+    t144.expected = "Cannot assign scratchpad-allocated view";
+    tests.Push(t144);
+
+    mut t145: Test[ctx];
+    t145.path = "tests/test_arena_moved_through_channel_invalid.gst"; // Wait, let's create this file!
+    t145.is_negative = 1;
+    t145.expected = "moved";
+    tests.Push(t145);
+
+    mut t146: Test[ctx];
+    t146.path = "tests/test_guard_non_diverging_else_rejected.gst";
+    t146.is_negative = 1;
+    t146.expected = "must diverge";
+    tests.Push(t146);
+
+    mut t147: Test[ctx];
+    t147.path = "tests/test_guard_non_wrapper_rhs_rejected.gst";
+    t147.is_negative = 1;
+    t147.expected = "must evaluate to a fallible wrapper type";
+    tests.Push(t147);
+
+    mut t148: Test[ctx];
+    t148.path = "tests/test_guard_escape_analysis_and_borrow_invalidation.gst";
+    t148.is_negative = 1;
+    t148.expected = "backing origin";
+    tests.Push(t148);
+
+    mut t149: Test[ctx];
+    t149.path = "tests/test_directory_leak_violation_use_after_ctx_move.gst";
+    t149.is_negative = 1;
+    t149.expected = "moved";
+    tests.Push(t149);
+
+    mut t150: Test[ctx];
+    t150.path = "tests/test_directory_leak_violation_move_open_directory.gst";
+    t150.is_negative = 1;
+    t150.expected = "cannot be moved while open";
+    tests.Push(t150);
+
+    mut t151: Test[ctx];
+    t151.path = "tests/test_directory_invalid_field_access.gst";
+    t151.is_negative = 1;
+    t151.expected = "not found";
+    tests.Push(t151);
+
+    mut t152: Test[ctx];
+    t152.path = "tests/test_directory_invalid_func_access.gst";
+    t152.is_negative = 1;
+    t152.expected = "Undefined function";
+    tests.Push(t152);
+
+    mut t153: Test[ctx];
+    t153.path = "tests/test_vector_pop_linear_ownership_enforced_rejected.gst";
+    t153.is_negative = 1;
+    t153.expected = "moved";
+    tests.Push(t153);
+
+    mut t154: Test[ctx];
+    t154.path = "tests/test_hashmap_keys_brand_lifetime_violation_invalid_arg.gst";
+    t154.is_negative = 1;
+    t154.expected = "TypeMismatch";
+    tests.Push(t154);
+
+    mut t155: Test[ctx];
+    t155.path = "tests/test_hashmap_keys_brand_lifetime_violation_mismatched_assignment.gst";
+    t155.is_negative = 1;
+    t155.expected = "TypeMismatch";
+    tests.Push(t155);
+
+    mut t156: Test[ctx];
+    t156.path = "tests/test_concurrency_template_argument_mismatch_rejected.gst";
+    t156.is_negative = 1;
+    t156.expected = "generic arguments";
+    tests.Push(t156); 
+
+    mut t157: Test[ctx];
+    t157.path = "tests/test_channel_mismatched_send_rejected.gst";
+    t157.is_negative = 1;
+    t157.expected = "TypeMismatch";
+    tests.Push(t157);
+
+    mut t158: Test[ctx];
+    t158.path = "tests/test_spawn_invalid_function_non_existent.gst";
+    t158.is_negative = 1;
+    t158.expected = "Undefined function";
+    tests.Push(t158);
+
+    mut t159: Test[ctx];
+    t159.path = "tests/test_spawn_invalid_function_multi_param.gst";
+    t159.is_negative = 1;
+    t159.expected = "must accept exactly";
+    tests.Push(t159);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
