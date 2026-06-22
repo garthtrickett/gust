@@ -781,6 +781,12 @@ func main() {
     t78.expected = "10";
     tests.Push(t78);
 
+    mut t79: Test[ctx];
+    t79.path = "tests/app.gst";
+    t79.is_negative = 0;
+    t79.expected = "42\n100";
+    tests.Push(t79);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
