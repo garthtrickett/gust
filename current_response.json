@@ -1,9 +1,9 @@
 {
-"summary": "test: add test_brand_nesting_violation_rejected.gst",
-"files": [
-{
-"file_path": "tests/test_brand_nesting_violation_rejected.gst",
-"code_diff": "<<<<<<< SEARCH\n=======\nfunc accept_context(ctx: &Arena, tl: std.ThreadLocalContext[ctx]) {\n}\n\nfunc main() {\n mut ctx1 := os.Arena.New();\n defer ctx1.Free();\n mut ctx2 := os.Arena.New();\n defer ctx2.Free();\n \n mut tl: std.ThreadLocalContext[ctx1] := os.GetThreadScratch();\n accept_context(ctx2, tl);\n}\n>>>>>>> REPLACE"
-}
-]
+  "summary": "test: register test_brand_nesting_violation_rejected.gst in tests/test_runner.gst",
+  "files": [
+    {
+      "file_path": "tests/test_runner.gst",
+      "code_diff": "<<<<<<< SEARCH\n    mut t23: Test[ctx];\n    t23.path = \"compiler/typechecker_templates_test_entry.gst\";\n    t23.is_negative = 0;\n    t23.is_substring = 1;\n    t23.expected = \"std_RcGet(rc_ptr)\";\n    tests.Push(t23);\n=======\n    mut t23: Test[ctx];\n    t23.path = \"compiler/typechecker_templates_test_entry.gst\";\n    t23.is_negative = 0;\n    t23.is_substring = 1;\n    t23.expected = \"std_RcGet(rc_ptr)\";\n    tests.Push(t23);\n\n    mut t24: Test[ctx];\n    t24.path = \"tests/test_brand_nesting_violation_rejected.gst\";\n    t24.is_negative = 1;\n    t24.expected = \"TypeMismatch\";\n    tests.Push(t24);\n>>>>>>> REPLACE"
+    }
+  ]
 }

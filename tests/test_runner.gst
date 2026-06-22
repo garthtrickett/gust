@@ -433,6 +433,12 @@ func main() {
     t23.expected = "std_RcGet(rc_ptr)";
     tests.Push(t23);
 
+    mut t24: Test[ctx];
+    t24.path = "tests/test_brand_nesting_violation_rejected.gst";
+    t24.is_negative = 1;
+    t24.expected = "TypeMismatch";
+    tests.Push(t24);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
 
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
