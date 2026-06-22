@@ -1,3 +1,4 @@
+// Force recompilation to capture core_headers.h updates
 pub const CORE_HEADERS: &str = include_str!("runtime/core_headers.h");
 
 pub const FIBER_RUNTIME: &str = include_str!("runtime/fiber.c");

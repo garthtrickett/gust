@@ -327,5 +327,6 @@ struct LookupResult_os_DirEntry os_ReadDir(os_Arena* arena, struct os_Dir dir);
 void os_CloseDir(struct os_Dir dir);
 struct Slice_unsigned_char os_path_join(struct Slice_unsigned_char dir, struct Slice_unsigned_char file, os_Arena* ctx);
 struct Slice_unsigned_char std_Clone_str(os_Arena* arena, struct Slice_unsigned_char s);
+int os_System(struct Slice_unsigned_char cmd);
 
 #endif /* GUST_CORE_HEADERS_H */

@@ -1,13 +1,13 @@
 {
-  "summary": "feat: add e2e_os_system.gst standalone test and update Makefile",
+  "summary": "feat: declare os_System in core_headers.h and touch codegen_runtime.rs",
   "files": [
     {
-      "file_path": "tests/e2e_os_system.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut code := os.System(\"echo 'FFI_SUBPROCESS_OK'\");\n    os.LogInt(code);\n}\n>>>>>>> REPLACE"
+      "file_path": "src/runtime/core_headers.h",
+      "code_diff": "<<<<<<< SEARCH\nstruct LookupResult_os_DirEntry os_ReadDir(os_Arena* arena, struct os_Dir dir);\nvoid os_CloseDir(struct os_Dir dir);\nstruct Slice_unsigned_char os_path_join(struct Slice_unsigned_char dir, struct Slice_unsigned_char file, os_Arena* ctx);\nstruct Slice_unsigned_char std_Clone_str(os_Arena* arena, struct Slice_unsigned_char s);\n\n#endif /* GUST_CORE_HEADERS_H */\n=======\nstruct LookupResult_os_DirEntry os_ReadDir(os_Arena* arena, struct os_Dir dir);\nvoid os_CloseDir(struct os_Dir dir);\nstruct Slice_unsigned_char os_path_join(struct Slice_unsigned_char dir, struct Slice_unsigned_char file, os_Arena* ctx);\nstruct Slice_unsigned_char std_Clone_str(os_Arena* arena, struct Slice_unsigned_char s);\nint os_System(struct Slice_unsigned_char cmd);\n\n#endif /* GUST_CORE_HEADERS_H */\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "Makefile",
-      "code_diff": "<<<<<<< SEARCH\n\t@# Formatting/Arena Test\n\t./gust tests/e2e_formatting_utilities.gst | grep -v -E \"^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)\" > build/test_formatting.c\n\t@cat src/runtime.c build/test_formatting.c > build/test_formatting_final.c\n\t@${CC} ${CFLAGS} ${INCLUDES} build/test_formatting_final.c -o build/test_formatting_bin\n\t@./build/test_formatting_bin > build/test_formatting.log\n\t@printf \"Loop Num: 0 - ok\\nLoop Num: 1 - ok\\nLoop Num: 2 - ok\\n42\\nroot_node\\n42\\nroot_node\\n\" > build/expected_formatting.log\n\t@diff -u build/expected_formatting.log build/test_formatting.log && echo \"✅ Formatting & Arena E2E Passed\"\n\n\t@# === 2. PHASE 1: BEDROCK STRICT TYPECHECKING TESTS ===\n=======\n\t@# Formatting/Arena Test\n\t./gust tests/e2e_formatting_utilities.gst | grep -v -E \"^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)\" > build/test_formatting.c\n\t@cat src/runtime.c build/test_formatting.c > build/test_formatting_final.c\n\t@${CC} ${CFLAGS} ${INCLUDES} build/test_formatting_final.c -o build/test_formatting_bin\n\t@./build/test_formatting_bin > build/test_formatting.log\n\t@printf \"Loop Num: 0 - ok\\nLoop Num: 1 - ok\\nLoop Num: 2 - ok\\n42\\nroot_node\\n42\\nroot_node\\n\" > build/expected_formatting.log\n\t@diff -u build/expected_formatting.log build/test_formatting.log && echo \"✅ Formatting & Arena E2E Passed\"\n\n\t@# OS System Test\n\t./gust tests/e2e_os_system.gst | grep -v -E \"^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)\" > build/test_os_system.c\n\t@cat src/runtime.c build/test_os_system.c > build/test_os_system_final.c\n\t@${CC} ${CFLAGS} ${INCLUDES} build/test_os_system_final.c -o build/test_os_system_bin\n\t@./build/test_os_system_bin > build/test_os_system.log\n\t@printf \"FFI_SUBPROCESS_OK\\n0\\n\" > build/expected_os_system.log\n\t@diff -u build/expected_os_system.log build/test_os_system.log && echo \"✅ OS System E2E Passed\"\n\n\t@# === 2. PHASE 1: BEDROCK STRICT TYPECHECKING TESTS ===\n>>>>>>> REPLACE"
+      "file_path": "src/codegen_runtime.rs",
+      "code_diff": "<<<<<<< SEARCH\npub const CORE_HEADERS: &str = include_str!(\"runtime/core_headers.h\");\n=======\n// Force recompilation to capture core_headers.h updates\npub const CORE_HEADERS: &str = include_str!(\"runtime/core_headers.h\");\n>>>>>>> REPLACE"
     }
   ]
 }
