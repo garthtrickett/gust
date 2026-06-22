@@ -3446,7 +3446,8 @@ typedef void Any;
                std.str_eq(key, "os_Dir") == 0 &&
                std.str_eq(key, "os_DirEntry") == 0 &&
                std.str_eq(key, "LookupResult_os_Dir") == 0 &&
-               std.str_eq(key, "LookupResult_os_DirEntry") == 0 {
+               std.str_eq(key, "LookupResult_os_DirEntry") == 0 &&
+               std.str_find(key, "CastResult_") == 0 - 1 {
                 mut fwd := std.Concat("typedef struct ", key);
                 fwd = std.Concat(fwd, " ");
                 fwd = std.Concat(fwd, key);
