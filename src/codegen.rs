@@ -232,6 +232,9 @@ impl Codegen {
 
     pub fn get_c_type(&self, t: &Type) -> String {
         let erased_t = erase_type_with_registry(t, &self.struct_registry);
+        if is_brand_type_with_registry(&erased_t, &self.struct_registry) {
+            return "void".to_string();
+        }
         match erased_t {
             Type::Int => "int".to_string(),
             Type::Byte => "unsigned char".to_string(),

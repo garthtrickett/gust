@@ -1014,6 +1014,9 @@ func codegen_get_c_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
     unsafe {
         mut resolved_t := typechecker.env_resolve_type(env, t, ctx);
         mut erased_t := codegen_erase_type(resolved_t, env, ctx);
+        if codegen_is_brand_type(erased_t, env, ctx) == 1 {
+            return "void";
+        }
         if erased_t.tag == 0 { // Int
             return "int";
         }
