@@ -747,7 +747,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
             if types_match(left_type, right_type, ctx) == 0 {
                 mut is_ptr_arith := 0;
-                if (std.str_eq(op, "+") == 1 || std.str_eq(op, "-") == 1) && left_type.tag == 9 && (right_type.tag == 0 || right_type.tag == 1) {
+                if (std.str_eq(op, "+") == 1 || std.str_eq(op, "-") == 1) && left_type.tag == 9 && (right_type.tag == 0 || right_type.tag == 1) { 
                     is_ptr_arith = 1;
                 }
                 if is_ptr_arith == 1 {
@@ -758,7 +758,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     return left_type;
                 }
 
-                mut msg := std.Concat("Semantic Error: Mismatched types in binary operation '", op);
+                mut msg := std.Concat("Semantic Error: [TypeMismatch] Mismatched types in binary operation '", op);
                 msg = std.Concat(msg, "'. Left: ");
                 msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
                 msg = std.Concat(msg, ", Right: ");
@@ -768,7 +768,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
             if std.str_eq(op, "+") == 1 || std.str_eq(op, "-") == 1 || std.str_eq(op, "*") == 1 || std.str_eq(op, "/") == 1 {
                 if left_type.tag != 0 && left_type.tag != 1 { // Int = 0, Byte = 1
-                    mut msg := std.Concat("Semantic Error: Math operation '", op);
+                    mut msg := std.Concat("Semantic Error: [TypeMismatch] Math operation '", op);
                     msg = std.Concat(msg, "' is only allowed on Int or Byte types, but got ");
                     msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
                     report_error(2, msg, get_expression_span(expr.Binary.left, ctx), env, ctx);
@@ -5267,7 +5267,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
                 if types_match(resolved_explicit, val_type, ctx) == 0 {
-                    mut msg := "Semantic Error: Explicit Type Annotation Mismatch. Declared ";
+                    mut msg := "Semantic Error: [TypeMismatch] Explicit Type Annotation Mismatch. Declared ";
                     msg = std.Concat(msg, ast.serialize_type(resolved_explicit, ctx));
                     msg = std.Concat(msg, " but got value ");
                     msg = std.Concat(msg, ast.serialize_type(val_type, ctx));
@@ -5403,7 +5403,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             val_type = env_resolve_type(env, val_type, ctx);
 
             if types_match(left_type, val_type, ctx) == 0 {
-                mut msg := "Semantic Error: Mismatched types in assignment. Cannot assign ";
+                mut msg := "Semantic Error: [TypeMismatch] Mismatched types in assignment. Cannot assign ";
                 msg = std.Concat(msg, ast.serialize_type(val_type, ctx));
                 msg = std.Concat(msg, " to ");
                 msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
@@ -5890,7 +5890,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             if (*env).expected_return_type != empty[Index[ast.Type[ctx], ctx]] {
                 mut expected_t := ctx[(*env).expected_return_type];
                 if types_match(expected_t, actual_return, ctx) == 0 {
-                    mut msg := "Semantic Error: Return type mismatch. Expected ";
+                    mut msg := "Semantic Error: [TypeMismatch] Return type mismatch. Expected ";
                     msg = std.Concat(msg, ast.serialize_type(expected_t, ctx));
                     msg = std.Concat(msg, " but got ");
                     msg = std.Concat(msg, ast.serialize_type(actual_return, ctx));
