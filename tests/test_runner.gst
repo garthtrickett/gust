@@ -1272,6 +1272,145 @@ func main() {
     tests.Push(t159);
 
     mut t160: Test[ctx];
+    t160.path = "tests/test_take_primitive_rejected.gst";
+    t160.is_negative = 1;
+    t160.expected = "strictly banned on primitive";
+    tests.Push(t160);
+
+    mut t161: Test[ctx];
+    t161.path = "tests/test_string_view_logint_rejected.gst";
+    t161.is_negative = 1;
+    t161.expected = "expects an Int/Byte";
+    tests.Push(t161);
+
+    mut t162: Test[ctx];
+    t162.path = "tests/test_dangling_vector_use_rejected.gst";
+    t162.is_negative = 1;
+    t162.expected = "moved or freed";
+    tests.Push(t162);
+
+    mut t163: Test[ctx];
+    t163.path = "tests/test_tuple_assignment_rejected.gst";
+    t163.is_negative = 1;
+    t163.expected = "Syntax Error";
+    tests.Push(t163);
+
+    mut t164: Test[ctx];
+    t164.path = "tests/test_malformed_empty_intrinsic_rejected.gst";
+    t164.is_negative = 1;
+    t164.expected = "Syntax Error";
+    tests.Push(t164);
+
+    mut t165: Test[ctx];
+    t165.path = "tests/test_definite_check_nested_scoping_cleanliness_rejected.gst";
+    t165.is_negative = 1;
+    t165.expected = "unchecked result wrapper";
+    tests.Push(t165);
+
+    mut t166: Test[ctx];
+    t166.path = "tests/test_nested_scoping_definite_checks_rejected.gst";
+    t166.is_negative = 1;
+    t166.expected = "unchecked result wrapper";
+    tests.Push(t166);
+
+    mut t167: Test[ctx];
+    t167.path = "tests/test_move_propagated_linear_struct_invalidates_rejected.gst";
+    t167.is_negative = 1;
+    t167.expected = "moved";
+    tests.Push(t167);
+
+    mut t168: Test[ctx];
+    t168.path = "tests/test_move_propagated_linear_enum_invalidates_rejected.gst";
+    t168.is_negative = 1;
+    t168.expected = "moved";
+    tests.Push(t168);
+
+    mut t169: Test[ctx];
+    t169.path = "tests/test_pool_type_checking_invalid_alloc_rejected.gst";
+    t169.is_negative = 1;
+    t169.expected = "TypeMismatch";
+    tests.Push(t169);
+
+    mut t170: Test[ctx];
+    t170.path = "tests/test_pool_type_checking_invalid_free_rejected.gst";
+    t170.is_negative = 1;
+    t170.expected = "TypeMismatch";
+    tests.Push(t170);
+
+    mut t171: Test[ctx];
+    t171.path = "tests/test_rc_and_graph_type_checking_invalid_rc_rejected.gst";
+    t171.is_negative = 1;
+    t171.expected = "TypeMismatch";
+    tests.Push(t171);
+
+    mut t172: Test[ctx];
+    t172.path = "tests/test_rc_and_graph_type_checking_invalid_graph_rejected.gst";
+    t172.is_negative = 1;
+    t172.expected = "TypeMismatch";
+    tests.Push(t172);
+
+    mut t173: Test[ctx];
+    t173.path = "tests/test_arena_validate_type_checking_invalid_rejected.gst";
+    t173.is_negative = 1;
+    t173.expected = "TypeMismatch";
+    tests.Push(t173);
+
+    mut t174: Test[ctx];
+    t174.path = "tests/test_match_pattern_destructuring_field_not_found_rejected.gst";
+    t174.is_negative = 1;
+    t174.expected = "not found";
+    tests.Push(t174);
+
+    mut t175: Test[ctx];
+    t175.path = "tests/test_match_pattern_destructuring_origin_invalidated_rejected.gst";
+    t175.is_negative = 1;
+    t175.expected = "backing origin";
+    tests.Push(t175);
+
+    mut t176: Test[ctx];
+    t176.path = "tests/test_move_pod_type_does_not_invalidate.gst";
+    t176.is_negative = 0;
+    t176.expected = "10\n42";
+    tests.Push(t176);
+
+    mut t177: Test[ctx];
+    t177.path = "tests/test_monomorphized_pod_collection_is_copyable.gst";
+    t177.is_negative = 0;
+    t177.expected = "42";
+    tests.Push(t177);
+
+    mut t178: Test[ctx];
+    t178.path = "tests/test_reinitialized_inout_parameter_accepted.gst";
+    t178.is_negative = 0;
+    t178.expected = "OK";
+    tests.Push(t178);
+
+    mut t179: Test[ctx];
+    t179.path = "tests/test_brand_erasure_utility_functions.gst";
+    t179.is_negative = 0;
+    t179.expected = "1";
+    tests.Push(t179);
+
+    mut t180: Test[ctx];
+    t180.path = "tests/test_vector_back_mutability_accepted.gst";
+    t180.is_negative = 0;
+    t180.expected = "20";
+    tests.Push(t180);
+
+    mut t181: Test[ctx];
+    t181.path = "tests/test_generic_enum_typechecking.gst";
+    t181.is_negative = 0;
+    t181.expected = "42";
+    tests.Push(t181);
+
+    mut t182: Test[ctx];
+    t182.path = "compiler/e2e_complex_bootstrap_target.gst";
+    t182.is_negative = 0;
+    t182.expected = "Active: E2E_Bootstrap\n3\n1";
+    tests.Push(t182);
+
+    os.LogStr("🏃 Starting self-hosted Gust test suite...");
+    mut t160: Test[ctx];
     t160.path = "tests/e2e_codegen_assertions.gst";
     t160.is_negative = 0;
     t160.expected = "ALL SELF-HOSTED CODEGEN ASSERTIONS PASSED!";
