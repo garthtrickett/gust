@@ -1423,6 +1423,30 @@ func main() {
     t185.expected = "Usage: type_dump <file>";
     tests.Push(t185);
 
+    mut t186: Test[ctx];
+    t186.path = "tests/test_scratchpad_origin_propagation.gst";
+    t186.is_negative = 0;
+    t186.expected = "";
+    tests.Push(t186);
+
+    mut t187: Test[ctx];
+    t187.path = "tests/test_scratch_assignment_to_branded_field_rejected.gst";
+    t187.is_negative = 1;
+    t187.expected = "Cannot assign scratchpad-allocated view";
+    tests.Push(t187);
+
+    mut t188: Test[ctx];
+    t188.path = "tests/test_scratch_return_rejected.gst";
+    t188.is_negative = 1;
+    t188.expected = "Escape analysis violation";
+    tests.Push(t188);
+
+    mut t189: Test[ctx];
+    t189.path = "tests/test_scratch_cloned_to_arena_accepted.gst";
+    t189.is_negative = 0;
+    t189.expected = "";
+    tests.Push(t189);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
