@@ -36,7 +36,7 @@
 
 ; Built-in primitive types represented as plain identifiers
 ((identifier) @type.builtin
-  (#anyof? @type.builtin "int" "byte" "bool" "str" "Arena" "void"))
+  (#match? @type.builtin "^(int|byte|bool|str|Arena|void)$"))
 
 
 ; --- Brand / Lifetime / Type Parameters ---
