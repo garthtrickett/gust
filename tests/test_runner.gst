@@ -1271,6 +1271,12 @@ func main() {
     t159.expected = "must accept exactly";
     tests.Push(t159);
 
+    mut t160: Test[ctx];
+    t160.path = "tests/e2e_codegen_assertions.gst";
+    t160.is_negative = 0;
+    t160.expected = "ALL SELF-HOSTED CODEGEN ASSERTIONS PASSED!";
+    tests.Push(t160);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

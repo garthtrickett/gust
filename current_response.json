@@ -1,145 +1,29 @@
 {
-  "summary": "test: port negative compile-time typechecker validations to .gst",
+  "summary": "test: implement self-hosted codegen validation driver meta-test suite",
   "files": [
     {
-      "file_path": "tests/test_safety_escape_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype CustomNode[ctx] struct {\n    val: int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut payload := os.MockPayload();\n    mut result := payload as &CustomNode[ctx];\n    mut movedPayload := move payload;\n    if result.Ok {\n        os.LogInt(result.Val.val);\n    }\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/codegen_helper_pod_move.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype MyPod struct {\n    x: int,\n    y: int\n}\nfunc main() {\n    mut p1: MyPod;\n    p1.x = 10;\n    mut p2 := move p1;\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/test_conditional_origin_union_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut temp1 := os.MockPayload();\n    mut temp2 := os.MockPayload();\n    mut view := temp1;\n    \n    mut cond := 1;\n    if cond {\n        view = temp1;\n    } else {\n        view = temp2;\n    }\n    \n    mut moved := move temp2;\n    os.LogInt(view[0]); \n}\n>>>>>>> REPLACE"
+      "file_path": "tests/codegen_helper_linear_move.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype MyLinear struct {\n    ptr: *int\n}\nfunc main() {\n    mut p1: MyLinear;\n    mut p2 := move p1;\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/test_function_view_origin_propagation_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc choose_payload(cond: int, a: []byte, b: []byte) []byte {\n    if cond {\n        return a;\n    } else {\n        return b;\n    }\n}\nfunc main() {\n    mut p1 := os.MockPayload();\n    mut p2 := os.MockPayload();\n    mut result := choose_payload(1, p1, p2);\n    mut moved := move p1;\n    os.LogInt(result[0]);\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/codegen_helper_take_ops.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype MyPod struct {\n    x: int,\n    y: int\n}\ntype MyLinear struct {\n    ptr: *int\n}\nfunc main() {\n    mut p1: MyPod;\n    p1.x = 10;\n    mut p2 := take p1;\n\n    mut l1: MyLinear;\n    mut l2 := take l1;\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/test_view_invalidated_on_parent_reassignment_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut temp := os.MockPayload();\n    mut view := temp;\n    temp = os.MockPayload();\n    os.LogInt(view[0]);\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/codegen_helper_match_destructure.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype MyEnum enum {\n    VariantA { val: int },\n    VariantB { x: int, y: int }\n}\nfunc process(e: MyEnum) int {\n    match e {\n        VariantA { val } => {\n            return val;\n        }\n        VariantB { x, y } => {\n            return x + y;\n        }\n    }\n}\nfunc main() {}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/test_view_invalidated_on_parent_field_mutation_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Packet[ctx] struct {\n    val: int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut payload: Packet[ctx];\n    payload.val = 42;\n    mut view := &payload;\n    payload.val = 100;\n    unsafe {\n        mut deref := *view;\n        os.LogInt(deref.val);\n    }\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_brand_lifetime_mismatch_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype CustomNode[ctx] struct { SessionID: int }\nfunc main() {\n    mut ctx1 := os.Arena.New();\n    defer ctx1.Free();\n    mut ctx2 := os.Arena.New();\n    defer ctx2.Free();\n    mut node: Index[CustomNode, ctx1] := os.ArenaAlloc(ctx1);\n    ctx2[node].SessionID = 42;\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_branded_vector_safety_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Node[ctx] struct { val: int }\nfunc main() {\n    mut ctx1 := os.Arena.New();\n    defer ctx1.Free();\n    mut ctx2 := os.Arena.New();\n    defer ctx2.Free();\n    mut vec: Vector[Index[Node, ctx1], ctx1] := os.VectorNew(ctx1);\n    mut n: Index[Node, ctx1] := os.ArenaAlloc(ctx1);\n    vec.Push(n);\n    ctx2[vec[0]].val = 100;\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_branded_hashmap_safety_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Node[ctx] struct { val: int }\nfunc main() {\n    mut ctx1 := os.Arena.New();\n    defer ctx1.Free();\n    mut ctx2 := os.Arena.New();\n    defer ctx2.Free();\n    mut map: HashMap[int, Index[Node, ctx1], ctx1] := os.HashMapNew(ctx1);\n    mut n: Index[Node, ctx1] := os.ArenaAlloc(ctx1);\n    map.Insert(1, n);\n    ctx2[map[1]].val = 100;\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_unbranded_generic_instantiated_with_view_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Holder[T] struct {\n    val: T\n}\nfunc main() {\n    mut h: Holder[str];\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_nested_different_brands_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut innerCtx := os.Arena.New();\n    defer innerCtx.Free();\n    mut outerCtx := os.Arena.New();\n    defer outerCtx.Free();\n    mut vec: Vector[Vector[str, innerCtx], outerCtx] := os.VectorNew(outerCtx);\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_unbranded_linear_struct_in_branded_collection_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype MyLinear struct {\n    ptr: *int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut vec: Vector[MyLinear, ctx] := os.VectorNew(ctx);\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_handoff_isolation_violation_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Packet[ctx] struct {\n    data: []byte\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut local := os.MockPayload();\n    mut p: Packet[ctx];\n    p.data = local;\n    mut movedCtx := move ctx;\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_handoff_use_after_move_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut vec: Vector[int, ctx] := os.VectorNew(ctx);\n    vec.Push(10);\n    mut movedCtx := move ctx;\n    vec.Push(20);\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_move_linear_type_invalidates_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype MyLinear struct {\n    ptr: *int\n}\nfunc main() {\n    mut p: MyLinear;\n    mut p2 := move p;\n    mut err := p.ptr;\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_monomorphized_linear_collection_is_linear_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Wrapper[T] struct {\n    val: T\n}\nfunc main() {\n    mut w1: Wrapper[*int];\n    mut w2 := move w1;\n    mut err := w1.val;\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_generic_definition_enforces_strict_linear_safety_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Holder[T] struct {\n    val: T\n}\nfunc process(h: Holder[T]) {\n    mut h2 := move h;\n    mut y := h.val;\n}\nfunc main() {}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_uninitialized_inout_parameter_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Node struct {\n    val: int\n}\nfunc process(p: *Node) {\n    mut x := move p;\n    return;\n}\nfunc main() {}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_fiber_scratchpad_escape_across_yield_boundary_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Packet[ctx] struct {\n    data: str\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut p: Packet[ctx];\n    p.data = std.Format(\"Item %d\", 1);\n    std.Yield();\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_arena_moved_through_channel_invalid_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype CustomNode[ctx] struct {\n    val: int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut n: Index[CustomNode, ctx] := os.ArenaAlloc(ctx);\n    ctx[n].val = 42;\n    mut chan: std.Channel[Arena, ctx] := std.ChannelNew(ctx);\n    chan.Send(move ctx);\n    ctx[n].val = 100;\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_guard_non_diverging_else_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);\n    mut dummy := 0;\n    guard val := map.Get(42) else {\n        dummy = 100;\n    }\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_guard_non_wrapper_rhs_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    guard val := 42 else {\n        return;\n    }\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_guard_escape_analysis_and_borrow_invalidation_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Packet struct {\n    val: int\n}\nfunc main() {\n    mut payload := os.MockPayload();\n    guard result := payload as &Packet else {\n        return;\n    }\n    mut moved_payload := move payload;\n    os.LogInt(result.val);\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/e2e_codegen_assertions.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc assert_contains(c_content: str, substring: str, msg: str) {\n    mut idx := std.str_find(c_content, substring);\n    if idx == 0 - 1 {\n        mut err := std.Concat(\"FAIL: \", msg);\n        err = std.Concat(err, \" (substring not found: \");\n        err = std.Concat(err, substring);\n        err = std.Concat(err, \")\");\n        os.LogStr(err);\n        os.Exit(1);\n    }\n}\n\nfunc assert_not_contains(c_content: str, substring: str, msg: str) {\n    mut idx := std.str_find(c_content, substring);\n    if idx != 0 - 1 {\n        mut err := std.Concat(\"FAIL: \", msg);\n        err = std.Concat(err, \" (unexpected substring found: \");\n        err = std.Concat(err, substring);\n        err = std.Concat(err, \")\");\n        os.LogStr(err);\n        os.Exit(1);\n    }\n}\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    os.SetThreadScratch(ctx);\n\n    os.System(\"mkdir -p build\");\n\n    // Test 1: POD Move\n    os.System(\"./gust tests/codegen_helper_pod_move.gst > build/codegen_helper_pod_move_temp.log 2>&1\");\n    os.System(\"grep -v -E \\\"^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)\\\" build/codegen_helper_pod_move_temp.log > build/codegen_helper_pod_move.c\");\n    mut c_pod := os.ReadFile(ctx, \"build/codegen_helper_pod_move.c\");\n    assert_not_contains(c_pod, \"memset(&p1\", \"POD move should not generate memset\");\n\n    // Test 2: Linear Move\n    os.System(\"./gust tests/codegen_helper_linear_move.gst > build/codegen_helper_linear_move_temp.log 2>&1\");\n    os.System(\"grep -v -E \\\"^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)\\\" build/codegen_helper_linear_move_temp.log > build/codegen_helper_linear_move.c\");\n    mut c_linear := os.ReadFile(ctx, \"build/codegen_helper_linear_move.c\");\n    assert_contains(c_linear, \"memset(&p1\", \"Linear move should generate memset\");\n\n    // Test 3: Take Ops\n    os.System(\"./gust tests/codegen_helper_take_ops.gst > build/codegen_helper_take_ops_temp.log 2>&1\");\n    os.System(\"grep -v -E \\\"^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)\\\" build/codegen_helper_take_ops_temp.log > build/codegen_helper_take_ops.c\");\n    mut c_take := os.ReadFile(ctx, \"build/codegen_helper_take_ops.c\");\n    assert_contains(c_take, \"memset(&l1\", \"Linear take should generate memset\");\n    assert_not_contains(c_take, \"memset(&p1\", \"POD take should not generate memset\");\n\n    // Test 4: Match Destructure\n    os.System(\"./gust tests/codegen_helper_match_destructure.gst > build/codegen_helper_match_destructure_temp.log 2>&1\");\n    os.System(\"grep -v -E \\\"^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)\\\" build/codegen_helper_match_destructure_temp.log > build/codegen_helper_match_destructure.c\");\n    mut c_match := os.ReadFile(ctx, \"build/codegen_helper_match_destructure.c\");\n    assert_contains(c_match, \"int val = e.VariantA.val;\", \"Match destructure should declare and bind val\");\n    assert_contains(c_match, \"int x = e.VariantB.x;\", \"Match destructure should declare and bind x\");\n    assert_contains(c_match, \"int y = e.VariantB.y;\", \"Match destructure should declare and bind y\");\n\n    // Cleanup\n    os.System(\"rm -f build/codegen_helper_*\");\n\n    os.LogStr(\"ALL SELF-HOSTED CODEGEN ASSERTIONS PASSED!\");\n}\n>>>>>>> REPLACE"
     },
     {
       "file_path": "tests/test_runner.gst",
-      "code_diff": "<<<<<<< SEARCH\n    mut t126: Test[ctx];\n    t126.path = \"tests/test_rc_and_graph_type_checking_valid.gst\";\n    t126.is_negative = 0;\n    t126.expected = \"\";\n    tests.Push(t126);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t126: Test[ctx];\n    t126.path = \"tests/test_rc_and_graph_type_checking_valid.gst\";\n    t126.is_negative = 0;\n    t126.expected = \"\";\n    tests.Push(t126);\n\n    mut t127: Test[ctx];\n    t127.path = \"tests/test_safety_escape_rejected.gst\";\n    t127.is_negative = 1;\n    t127.expected = \"cannot be used because its backing origin\";\n    tests.Push(t127);\n\n    mut t128: Test[ctx];\n    t128.path = \"tests/test_conditional_origin_union_rejected.gst\";\n    t128.is_negative = 1;\n    t128.expected = \"cannot be used because its backing origin\";\n    tests.Push(t128);\n\n    mut t129: Test[ctx];\n    t129.path = \"tests/test_function_view_origin_propagation_rejected.gst\";\n    t129.is_negative = 1;\n    t129.expected = \"cannot be used because its backing origin\";\n    tests.Push(t129);\n\n    mut t130: Test[ctx];\n    t130.path = \"tests/test_view_invalidated_on_parent_reassignment_rejected.gst\";\n    t130.is_negative = 1;\n    t130.expected = \"backing origin\";\n    tests.Push(t130);\n\n    mut t131: Test[ctx];\n    t131.path = \"tests/test_view_invalidated_on_parent_field_mutation_rejected.gst\";\n    t131.is_negative = 1;\n    t131.expected = \"backing origin\";\n    tests.Push(t131);\n\n    mut t132: Test[ctx];\n    t132.path = \"tests/test_brand_lifetime_mismatch_rejected.gst\";\n    t132.is_negative = 1;\n    t132.expected = \"Value-Branded\";\n    tests.Push(t132);\n\n    mut t133: Test[ctx];\n    t133.path = \"tests/test_branded_vector_safety_rejected.gst\";\n    t133.is_negative = 1;\n    t133.expected = \"Value-Branded\";\n    tests.Push(t133);\n\n    mut t134: Test[ctx];\n    t134.path = \"tests/test_branded_hashmap_safety_rejected.gst\";\n    t134.is_negative = 1;\n    t134.expected = \"Value-Branded\";\n    tests.Push(t134);\n\n    mut t135: Test[ctx];\n    t135.path = \"tests/test_unbranded_generic_instantiated_with_view_rejected.gst\";\n    t135.is_negative = 1;\n    t135.expected = \"cannot contain ephemeral slice\";\n    tests.Push(t135);\n\n    mut t136: Test[ctx];\n    t136.path = \"tests/test_nested_different_brands_rejected.gst\";\n    t136.is_negative = 1;\n    t136.expected = \"Mismatched nested brand\";\n    tests.Push(t136);\n\n    mut t137: Test[ctx];\n    t137.path = \"tests/test_unbranded_linear_struct_in_branded_collection_rejected.gst\";\n    t137.is_negative = 1;\n    t137.expected = \"Brand Nesting Restriction\";\n    tests.Push(t137);\n\n    mut t138: Test[ctx];\n    t138.path = \"tests/test_handoff_isolation_violation_rejected.gst\";\n    t138.is_negative = 1;\n    t138.expected = \"preventing safe handoff\";\n    tests.Push(t138);\n\n    mut t139: Test[ctx];\n    t139.path = \"tests/test_handoff_use_after_move_rejected.gst\";\n    t139.is_negative = 1;\n    t139.expected = \"Use of moved variable\";\n    tests.Push(t139);\n\n    mut t140: Test[ctx];\n    t140.path = \"tests/test_move_linear_type_invalidates_rejected.gst\";\n    t140.is_negative = 1;\n    t140.expected = \"Use of moved variable\";\n    tests.Push(t140);\n\n    mut t141: Test[ctx];\n    t141.path = \"tests/test_monomorphized_linear_collection_is_linear_rejected.gst\";\n    t141.is_negative = 1;\n    t141.expected = \"Use of moved variable\";\n    tests.Push(t141);\n\n    mut t142: Test[ctx];\n    t142.path = \"tests/test_generic_definition_enforces_strict_linear_safety_rejected.gst\";\n    t142.is_negative = 1;\n    t142.expected = \"already been moved\";\n    tests.Push(t142);\n\n    mut t124_placeholder: Test[ctx];\n    t124.path = \"tests/test_pool_type_checking_valid.gst\";\n    t124.is_negative = 0;\n    t124.expected = \"\";\n    \n    mut t143: Test[ctx];\n    t124.path = \"tests/test_pool_type_checking_valid.gst\";\n    t124.is_negative = 0;\n    t124.expected = \"\";\n\n    mut t144: Test[ctx];\n    t144.path = \"tests/test_fiber_scratchpad_escape_across_yield_boundary_rejected.gst\";\n    t144.is_negative = 1;\n    t144.expected = \"Cannot assign scratchpad-allocated view\";\n    tests.Push(t144);\n\n    mut t145: Test[ctx];\n    t145.path = \"tests/test_arena_moved_through_channel_invalid.gst\"; // Wait, let's create this file!\n    t145.is_negative = 1;\n    t145.expected = \"moved\";\n    tests.Push(t145);\n\n    mut t146: Test[ctx];\n    t146.path = \"tests/test_guard_non_diverging_else_rejected.gst\";\n    t146.is_negative = 1;\n    t146.expected = \"must diverge\";\n    tests.Push(t146);\n\n    mut t147: Test[ctx];\n    t147.path = \"tests/test_guard_non_wrapper_rhs_rejected.gst\";\n    t147.is_negative = 1;\n    t147.expected = \"must evaluate to a fallible wrapper type\";\n    tests.Push(t147);\n\n    mut t148: Test[ctx];\n    t148.path = \"tests/test_guard_escape_analysis_and_borrow_invalidation.gst\";\n    t148.is_negative = 1;\n    t148.expected = \"backing origin\";\n    tests.Push(t148);\n\n    mut t149: Test[ctx];\n    t149.path = \"tests/test_directory_leak_violation_use_after_ctx_move.gst\";\n    t149.is_negative = 1;\n    t149.expected = \"moved\";\n    tests.Push(t149);\n\n    mut t150: Test[ctx];\n    t150.path = \"tests/test_directory_leak_violation_move_open_directory.gst\";\n    t150.is_negative = 1;\n    t150.expected = \"cannot be moved while open\";\n    tests.Push(t150);\n\n    mut t151: Test[ctx];\n    t151.path = \"tests/test_directory_invalid_field_access.gst\";\n    t151.is_negative = 1;\n    t151.expected = \"not found\";\n    tests.Push(t151);\n\n    mut t152: Test[ctx];\n    t152.path = \"tests/test_directory_invalid_func_access.gst\";\n    t152.is_negative = 1;\n    t152.expected = \"Undefined function\";\n    tests.Push(t152);\n\n    mut t153: Test[ctx];\n    t153.path = \"tests/test_vector_pop_linear_ownership_enforced_rejected.gst\";\n    t153.is_negative = 1;\n    t153.expected = \"moved\";\n    tests.Push(t153);\n\n    mut t154: Test[ctx];\n    t154.path = \"tests/test_hashmap_keys_brand_lifetime_violation_invalid_arg.gst\";\n    t154.is_negative = 1;\n    t154.expected = \"TypeMismatch\";\n    tests.Push(t154);\n\n    mut t155: Test[ctx];\n    t155.path = \"tests/test_hashmap_keys_brand_lifetime_violation_mismatched_assignment.gst\";\n    t155.is_negative = 1;\n    t155.expected = \"TypeMismatch\";\n    tests.Push(t155);\n\n    mut t156: Test[ctx];\n    t156.path = \"tests/test_concurrency_template_argument_mismatch_rejected.gst\";\n    t156.is_negative = 1;\n    t156.expected = \"generic arguments\";\n    tests.Push(t156); \n\n    mut t157: Test[ctx];\n    t157.path = \"tests/test_channel_mismatched_send_rejected.gst\";\n    t157.is_negative = 1;\n    t157.expected = \"TypeMismatch\";\n    tests.Push(t157);\n\n    mut t158: Test[ctx];\n    t158.path = \"tests/test_spawn_invalid_function_non_existent.gst\";\n    t158.is_negative = 1;\n    t158.expected = \"Undefined function\";\n    tests.Push(t158);\n\n    mut t159: Test[ctx];\n    t159.path = \"tests/test_spawn_invalid_function_multi_param.gst\";\n    t159.is_negative = 1;\n    t159.expected = \"must accept exactly\";\n    tests.Push(t159);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_arena_moved_through_channel_invalid_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype CustomNode[ctx] struct {\n    val: int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut n: Index[CustomNode, ctx] := os.ArenaAlloc(ctx);\n    ctx[n].val = 42;\n    mut chan: std.Channel[Arena, ctx] := std.ChannelNew(ctx);\n    chan.Send(move ctx);\n    ctx[n].val = 100;\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_directory_leak_violation_use_after_ctx_move.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut opt_dir := os.OpenDir(ctx, \"src\");\n    if opt_dir.Ok {\n        mut d := opt_dir.Val;\n        mut ctx2 := move ctx;\n        os.CloseDir(d);\n    }\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_directory_leak_violation_move_open_directory.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut opt_dir := os.OpenDir(ctx, \"src\");\n    if opt_dir.Ok {\n        mut d := opt_dir.Val;\n        mut d2 := move d;\n        os.CloseDir(d2);\n    }\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_directory_invalid_field_access.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut opt_dir := os.OpenDir(ctx, \"src\");\n    if opt_dir.Ok {\n        mut d := opt_dir.Val;\n        mut err := d.handle_corrupted;\n    }\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_directory_invalid_func_access.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut opt_dir := os.OpenDir_Invalid(ctx, \"src\");\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_vector_pop_linear_ownership_enforced_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut vec: std.Vector[*int, ctx] := std.VectorNew(ctx);\n    \n    unsafe {\n        mut val := 10;\n        vec.Push(&val);\n        \n        mut p1 := vec.Pop();\n        mut p2 := move p1;\n        \n        mut err := *p1;\n    }\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_hashmap_keys_brand_lifetime_violation_invalid_arg.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);\n    mut keys := map.Keys(42);\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_hashmap_keys_brand_lifetime_violation_mismatched_assignment.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx1 := os.Arena.New();\n    defer ctx1.Free();\n    mut ctx2 := os.Arena.New();\n    defer ctx2.Free();\n    mut map: HashMap[int, int, ctx1] := os.HashMapNew(ctx1);\n    mut keys: std.Vector[int, ctx2] := map.Keys(ctx1); \n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_concurrency_template_argument_mismatch_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut m: std.Mutex[int];\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_channel_mismatched_send_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut c: std.Channel[str, ctx] := std.ChannelNew(ctx);\n    c.Send(42);\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_spawn_invalid_function_non_existent.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    std.Spawn(non_existent_func, 42);\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_spawn_invalid_function_multi_param.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc task(a: int, b: int) {\n}\nfunc main() {\n    std.Spawn(task, 42);\n}\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    mut t159: Test[ctx];\n    t159.path = \"tests/test_spawn_invalid_function_multi_param.gst\";\n    t159.is_negative = 1;\n    t159.expected = \"must accept exactly\";\n    tests.Push(t159);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t159: Test[ctx];\n    t159.path = \"tests/test_spawn_invalid_function_multi_param.gst\";\n    t159.is_negative = 1;\n    t159.expected = \"must accept exactly\";\n    tests.Push(t159);\n\n    mut t160: Test[ctx];\n    t160.path = \"tests/e2e_codegen_assertions.gst\";\n    t160.is_negative = 0;\n    t160.expected = \"ALL SELF-HOSTED CODEGEN ASSERTIONS PASSED!\";\n    tests.Push(t160);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
     }
   ]
 }
