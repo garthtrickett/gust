@@ -523,6 +523,30 @@ func main() {
     t38.expected = "Left operand of logical";
     tests.Push(t38);
 
+    mut t39: Test[ctx];
+    t39.path = "tests/e2e_zero_copy_network_processor.gst";
+    t39.is_negative = 0;
+    t39.expected = "42";
+    tests.Push(t39);
+
+    mut t40: Test[ctx];
+    t40.path = "tests/e2e_generational_arena_wrapper_migration.gst";
+    t40.is_negative = 0;
+    t40.expected = "499500\n1998";
+    tests.Push(t40);
+
+    mut t41: Test[ctx];
+    t41.path = "tests/e2e_unordered_adt_compilation.gst";
+    t41.is_negative = 0;
+    t41.expected = "42\n84";
+    tests.Push(t41);
+
+    mut t42: Test[ctx];
+    t42.path = "tests/e2e_recursive_branded_linked_list.gst";
+    t42.is_negative = 0;
+    t42.expected = "30";
+    tests.Push(t42);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

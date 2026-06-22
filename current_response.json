@@ -1,0 +1,25 @@
+{
+  "summary": "test: add e2e zero-copy network, generational arena, unordered adt, and recursive linked list tests and register in test_runner",
+  "files": [
+    {
+      "file_path": "tests/e2e_zero_copy_network_processor.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Packet struct {\n    ProtocolID: int,\n    SeqNum: int,\n    Length: int\n}\n\nfunc main() {\n    mut payload := os.MockPayload();\n    \n    // Cast the raw byte slice dynamically to a struct reference\n    mut result := payload as &Packet;\n    \n    if result.Ok {\n        os.LogInt(result.Val.ProtocolID);\n    } else {\n        os.LogInt(0);\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/e2e_generational_arena_wrapper_migration.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Node struct {\n    val: int,\n    next: Index[Node, ctx]\n}\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut arena: std.GenerationalArena[Node, ctx];\n    arena.current_ctx = os.Arena.New();\n    defer arena.current_ctx.Free();\n    arena.next_ctx = os.Arena.New();\n    defer arena.next_ctx.Free();\n\n    arena.survivor = os.ArenaAlloc(arena.current_ctx);\n    arena.current_ctx[arena.survivor].val = 0;\n    arena.current_ctx[arena.survivor].next = null;\n\n    mut i := 0;\n    while i < 1000 {\n        mut temp: Index[Node, arena.current_ctx] := os.ArenaAlloc(arena.current_ctx);\n        arena.current_ctx[temp].val = i;\n\n        mut new_child: Index[Node, arena.current_ctx] := os.ArenaAlloc(arena.current_ctx);\n        arena.current_ctx[new_child].val = i * 2;\n        arena.current_ctx[new_child].next = null;\n\n        arena.current_ctx[arena.survivor].next = new_child;\n        arena.current_ctx[arena.survivor].val = arena.current_ctx[arena.survivor].val + arena.current_ctx[temp].val;\n\n        arena.Step();\n\n        i = i + 1;\n    }\n\n    os.LogInt(arena.current_ctx[arena.survivor].val);\n    mut child_idx := arena.current_ctx[arena.survivor].next;\n    os.LogInt(arena.current_ctx[child_idx].val);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/e2e_unordered_adt_compilation.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype AOuter enum {\n    VariantA { val: ZInner }\n}\n\ntype ZInner struct {\n    x: int\n}\n\ntype ZOuter enum {\n    VariantA { val: AInner }\n}\n\ntype AInner struct {\n    x: int\n}\n\nfunc main() {\n    mut o1: AOuter;\n    o1.tag = 0; // VariantA\n    o1.VariantA.val.x = 42;\n    os.LogInt(o1.VariantA.val.x);\n\n    mut o2: ZOuter;\n    o2.tag = 0; // VariantA\n    o2.VariantA.val.x = 84;\n    os.LogInt(o2.VariantA.val.x);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/e2e_recursive_branded_linked_list.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype ListNode[ctx] struct {\n    val: int,\n    next: Index[ListNode, ctx]\n}\n\nfunc process_list(ctx: &Arena, head: Index[ListNode, ctx]) int {\n    mut curr := head;\n    mut sum := 0;\n    while curr != null {\n        sum = sum + ctx[curr].val;\n        curr = ctx[curr].next;\n    }\n    return sum;\n}\n\nfunc main() {\n    mut c := os.Arena.New();\n    defer c.Free();\n\n    mut n1: Index[ListNode, c] := os.ArenaAlloc(c);\n    c[n1].val = 10;\n\n    mut n2: Index[ListNode, c] := os.ArenaAlloc(c);\n    c[n2].val = 20;\n\n    c[n1].next = n2;\n    c[n2].next = null;\n\n    mut total := process_list(c, n1);\n    os.LogInt(total);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_runner.gst",
+      "code_diff": "<<<<<<< SEARCH\n    mut t38: Test[ctx];\n    t38.path = \"tests/test_logical_operators_invalid.gst\";\n    t38.is_negative = 1;\n    t38.expected = \"Left operand of logical\";\n    tests.Push(t38);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t38: Test[ctx];\n    t38.path = \"tests/test_logical_operators_invalid.gst\";\n    t38.is_negative = 1;\n    t38.expected = \"Left operand of logical\";\n    tests.Push(t38);\n\n    mut t39: Test[ctx];\n    t39.path = \"tests/e2e_zero_copy_network_processor.gst\";\n    t39.is_negative = 0;\n    t39.expected = \"42\";\n    tests.Push(t39);\n\n    mut t40: Test[ctx];\n    t40.path = \"tests/e2e_generational_arena_wrapper_migration.gst\";\n    t40.is_negative = 0;\n    t40.expected = \"499500\\n1998\";\n    tests.Push(t40);\n\n    mut t41: Test[ctx];\n    t41.path = \"tests/e2e_unordered_adt_compilation.gst\";\n    t41.is_negative = 0;\n    t41.expected = \"42\\n84\";\n    tests.Push(t41);\n\n    mut t42: Test[ctx];\n    t42.path = \"tests/e2e_recursive_branded_linked_list.gst\";\n    t42.is_negative = 0;\n    t42.expected = \"30\";\n    tests.Push(t42);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
+    }
+  ]
+}
