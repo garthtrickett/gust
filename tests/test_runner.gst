@@ -445,6 +445,12 @@ func main() {
     t25.expected = "Escape analysis violation";
     tests.Push(t25);
 
+    mut t26: Test[ctx];
+    t26.path = "tests/test_double_move_rejected.gst";
+    t26.is_negative = 1;
+    t26.expected = "already been moved";
+    tests.Push(t26);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
 
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);

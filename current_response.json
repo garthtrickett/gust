@@ -1,13 +1,13 @@
 {
-  "summary": "test: add test_stack_escape_rejected.gst and register in test_runner",
+  "summary": "test: add test_double_move_rejected.gst and register in test_runner",
   "files": [
     {
-      "file_path": "tests/test_stack_escape_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc leak() str {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut tl: std.ThreadLocalContext[ctx] := os.GetThreadScratch();\n    unsafe {\n        mut ptr := tl.arena as []byte;\n        mut s := ptr as str;\n        return s;\n    }\n}\n\nfunc main() {}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_double_move_rejected.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut payload := os.MockPayload();\n    mut a := move payload;\n    mut b := move payload;\n}\n>>>>>>> REPLACE"
     },
     {
       "file_path": "tests/test_runner.gst",
-      "code_diff": "<<<<<<< SEARCH\n    mut t24: Test[ctx];\n    t24.path = \"tests/test_brand_nesting_violation_rejected.gst\";\n    t24.is_negative = 1;\n    t24.expected = \"TypeMismatch\";\n    tests.Push(t24);\n=======\n    mut t24: Test[ctx];\n    t24.path = \"tests/test_brand_nesting_violation_rejected.gst\";\n    t24.is_negative = 1;\n    t24.expected = \"TypeMismatch\";\n    tests.Push(t24);\n\n    mut t25: Test[ctx];\n    t25.path = \"tests/test_stack_escape_rejected.gst\";\n    t25.is_negative = 1;\n    t25.expected = \"Escape analysis violation\";\n    tests.Push(t25);\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    mut t25: Test[ctx];\n    t25.path = \"tests/test_stack_escape_rejected.gst\";\n    t25.is_negative = 1;\n    t25.expected = \"Escape analysis violation\";\n    tests.Push(t25);\n=======\n    mut t25: Test[ctx];\n    t25.path = \"tests/test_stack_escape_rejected.gst\";\n    t25.is_negative = 1;\n    t25.expected = \"Escape analysis violation\";\n    tests.Push(t25);\n\n    mut t26: Test[ctx];\n    t26.path = \"tests/test_double_move_rejected.gst\";\n    t26.is_negative = 1;\n    t26.expected = \"already been moved\";\n    tests.Push(t26);\n>>>>>>> REPLACE"
     }
   ]
 }
