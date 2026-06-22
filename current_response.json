@@ -1,0 +1,9 @@
+{
+  "summary": "feat: register ast_test_entry and ast_dump_entry in the self-hosted test runner",
+  "files": [
+    {
+      "file_path": "tests/test_runner.gst",
+      "code_diff": "<<<<<<< SEARCH\n    mut t80: Test[ctx];\n    t80.path = \"compiler/typechecker_mismatch_test_entry.gst\";\n    t80.is_negative = 0;\n    t80.expected = \"Argument mismatch correctly detected!\\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1\";\n    tests.Push(t80);\n\n    os.LogStr(\"\uD83C\uDFC3 Starting self-hosted Gust test suite...\");\n=======\n    mut t80: Test[ctx];\n    t80.path = \"compiler/typechecker_mismatch_test_entry.gst\";\n    t80.is_negative = 0;\n    t80.expected = \"Argument mismatch correctly detected!\\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1\";\n    tests.Push(t80);\n\n    mut t81: Test[ctx];\n    t81.path = \"compiler/ast_test_entry.gst\";\n    t81.is_negative = 0;\n    t81.expected = \"\";\n    tests.Push(t81);\n\n    mut t82: Test[ctx];\n    t82.path = \"compiler/ast_dump_entry.gst\";\n    t82.is_negative = 2;\n    t82.expected = \"Usage: ast_dump <file>\";\n    tests.Push(t82);\n\n    os.LogStr(\"\uD83C\uDFC3 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
+    }
+  ]
+}

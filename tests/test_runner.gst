@@ -793,6 +793,18 @@ func main() {
     t80.expected = "Argument mismatch correctly detected!\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1";
     tests.Push(t80);
 
+    mut t81: Test[ctx];
+    t81.path = "compiler/ast_test_entry.gst";
+    t81.is_negative = 0;
+    t81.expected = "";
+    tests.Push(t81);
+
+    mut t82: Test[ctx];
+    t82.path = "compiler/ast_dump_entry.gst";
+    t82.is_negative = 2;
+    t82.expected = "Usage: ast_dump <file>";
+    tests.Push(t82);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
