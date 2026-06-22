@@ -3739,6 +3739,14 @@ typedef void Any;
             p_idx2 = p_idx2 + 1;
         }
         (*env).current_prefix = "";
+
+        mut tl_def_lookup := (*env).struct_registry.Get("std_ThreadLocalContext");
+        if tl_def_lookup.Ok {
+            c_code = std.Concat(c_code, "std_ThreadLocalContext os_GetThreadScratch(void) {\n");
+            c_code = std.Concat(c_code, "    std_ThreadLocalContext tl = { .arena = os_GetThreadScratch_raw(), ._phantom = NULL };\n");
+            c_code = std.Concat(c_code, "    return tl;\n");
+            c_code = std.Concat(c_code, "}\n\n");
+        }
         
         return std.Clone(ctx, c_code);
     }

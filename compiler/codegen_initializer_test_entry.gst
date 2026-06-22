@@ -796,6 +796,13 @@ func main() {
     } else {
         os.LogStr("ERROR: os_GetThreadScratch forward declaration missing!");
     }
+
+    mut tl_def_idx := std.str_find(gen_tl_c, "std_ThreadLocalContext os_GetThreadScratch(void) {");
+    if tl_def_idx != 0 - 1 {
+        os.LogStr("os_GetThreadScratch function definition generated correctly!");
+    } else {
+        os.LogStr("ERROR: os_GetThreadScratch function definition missing!");
+    }
 }
 
     // Step 3: Verification Test for Step 1 Type & Container Identification Helpers
