@@ -51,6 +51,14 @@ test: gust
 	@printf "Loop Num: 0 - ok\nLoop Num: 1 - ok\nLoop Num: 2 - ok\n42\nroot_node\n42\nroot_node\n" > build/expected_formatting.log
 	@diff -u build/expected_formatting.log build/test_formatting.log && echo "✅ Formatting & Arena E2E Passed"
 
+	@# OS System Test
+	./gust tests/e2e_os_system.gst | grep -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_os_system.c
+	@cat src/runtime.c build/test_os_system.c > build/test_os_system_final.c
+	@${CC} ${CFLAGS} ${INCLUDES} build/test_os_system_final.c -o build/test_os_system_bin
+	@./build/test_os_system_bin > build/test_os_system.log
+	@printf "FFI_SUBPROCESS_OK\n0\n" > build/expected_os_system.log
+	@diff -u build/expected_os_system.log build/test_os_system.log && echo "✅ OS System E2E Passed"
+
 	@# === 2. PHASE 1: BEDROCK STRICT TYPECHECKING TESTS ===
 	@# Negative Check: Assert dereferencing a non-pointer fails compilation
 	@if ./gust tests/test_deref_non_pointer_rejected.gst > build/test_deref_err.log 2>&1; then \

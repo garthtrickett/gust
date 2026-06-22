@@ -8151,3 +8151,15 @@ fn test_e2e_complex_bootstrap_self_hosted() {
             assert_eq!(err.kind, TypeErrorKind::BrandLifetimeViolation);
             assert!(err.message.contains("Brand Nesting") || err.message.contains("Mismatched nested brand") || err.message.contains("Brand Nesting Restriction violation"));
         }
+
+
+
+        #[test]
+fn test_os_system_type_checking() {
+    let source = "
+        func main() {
+            mut code := os.System(\"echo 'test'\");
+        }
+    ";
+    assert!(check_program(source).is_ok());
+}
