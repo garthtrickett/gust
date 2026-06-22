@@ -815,6 +815,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                     msg = std.Concat(msg, "'");
                                     report_error(2, msg, expr.Selector.span, env, ctx);
                                 }
+                                if resolved.tag == 9 { // RawPointer
+                                    resolved = ctx[resolved.RawPointer.inner];
+                                }
                             }
                         }
                         return resolved;
@@ -836,11 +839,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
                         mut target := std.str_slice(clean_name, 11, len(clean_name));
                         mut t: ast.Type[ctx];
-                        t.tag = 9; // RawPointer
-                        t.RawPointer.inner = os.ArenaAlloc(ctx);
-                        ctx[t.RawPointer.inner].tag = 8; // Struct
-                        ctx[t.RawPointer.inner].Struct.struct_name = std.Clone(ctx, target);
-                        ctx[t.RawPointer.inner].Struct.brand = left_t.Struct.brand;
+                        t.tag = 8; // Struct
+                        t.Struct.struct_name = std.Clone(ctx, target);
+                        t.Struct.brand = left_t.Struct.brand;
                         return t;
                     }
                 }

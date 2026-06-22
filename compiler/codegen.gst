@@ -1365,8 +1365,28 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             return codegen_generate_expression(ctx[expr_idx].Take.expr, env, ctx);
         }
         if tag == 6 { // AddressOf
-            mut inner_str := codegen_generate_expression(ctx[expr_idx].AddressOf.expr, env, ctx);
-            if codegen_ends_with(inner_str, ".Val") == 1 {
+            mut inner_idx := ctx[expr_idx].AddressOf.expr;
+            mut is_cast_val := 0;
+            if ctx[inner_idx].tag == 11 { // Selector
+                mut inner_left := ctx[inner_idx].Selector.left;
+                mut inner_left_type := codegen_get_expression_type(inner_left, env, ctx);
+                if inner_left_type.tag == 8 { // Struct
+                    mut struct_name := inner_left_type.Struct.struct_name;
+                    mut clean_name := struct_name;
+                    mut d_idx := std.str_find(struct_name, "__");
+                    if d_idx != 0 - 1 {
+                        clean_name = std.str_slice(struct_name, d_idx + 2, len(struct_name));
+                    }
+                    if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") == 1 {
+                        if std.str_eq(ctx[inner_idx].Selector.right, "Val") == 1 {
+                            is_cast_val = 1;
+                        }
+                    }
+                }
+            }
+
+            mut inner_str := codegen_generate_expression(inner_idx, env, ctx);
+            if is_cast_val == 1 {
                 return std.Clone(ctx, inner_str);
             }
             mut res := std.Concat("&(", inner_str);
@@ -1646,6 +1666,26 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             if left_t.tag == 9 { // RawPointer
                 arrow_or_dot = "->";
             }
+            
+            mut left_expr := ctx[expr_idx].Selector.left;
+            if ctx[left_expr].tag == 11 { // Selector
+                mut inner_left_expr := ctx[left_expr].Selector.left;
+                mut inner_left_type := codegen_get_expression_type(inner_left_expr, env, ctx);
+                if inner_left_type.tag == 8 { // Struct
+                    mut struct_name := inner_left_type.Struct.struct_name;
+                    mut clean_name := struct_name;
+                    mut d_idx := std.str_find(struct_name, "__");
+                    if d_idx != 0 - 1 { 
+                        clean_name = std.str_slice(struct_name, d_idx + 2, len(struct_name));
+                    }
+                    if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") == 1 {
+                        if std.str_eq(ctx[left_expr].Selector.right, "Val") == 1 {
+                            arrow_or_dot = "->";
+                        }
+                    }
+                }
+            }
+
             mut res := std.Concat(left_str, arrow_or_dot);
             res = std.Concat(res, ctx[expr_idx].Selector.right);
             return std.Clone(ctx, res);

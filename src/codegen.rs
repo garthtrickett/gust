@@ -1547,10 +1547,26 @@ impl Codegen {
             }
             Expression::AddressOf(inner, _) => {
                 let inner_str = self.gen_expression(inner);
-                if inner_str.ends_with(".Val") {
+                let mut is_cast_val = false;
+                if let Expression::Selector { left, right, .. } = &**inner
+                    && let Some(left_type) = self.get_expr_type(left)
+                {
+                    if let Type::Struct(struct_name, _) = left_type {
+                        let clean_struct_name = erase_struct_name_with_registry(
+                            &struct_name,
+                            &None,
+                            &self.struct_registry,
+                        );
+                        if clean_struct_name.starts_with("CastResult_") && right == "Val" {
+                            is_cast_val = true;
+                        }
+                    }
+                }
+
+                if is_cast_val {
                     inner_str
                 } else {
-                    format!("&({})", inner_str)
+                    format!("&({})")
                 }
             }
             Expression::Move(inner, _) => {
@@ -1861,7 +1877,7 @@ impl Codegen {
                 let mut use_arrow = false;
                 if let Some(left_type) = self.get_expr_type(left)
                     && matches!(left_type, Type::RawPointer(_))
-                {
+                { 
                     use_arrow = true;
                 }
                 if !use_arrow
@@ -1870,11 +1886,18 @@ impl Codegen {
                         right: inner_right,
                         ..
                     } = &**left
-                    && let Expression::Identifier(name, _) = &**inner_left
-                    && name == "result"
-                    && inner_right == "Val"
+                    && let Some(inner_left_type) = self.get_expr_type(inner_left)
                 {
-                    use_arrow = true;
+                    if let Type::Struct(struct_name, _) = inner_left_type {
+                        let clean_struct_name = erase_struct_name_with_registry(
+                            &struct_name,
+                            &None,
+                            &self.struct_registry,
+                        );
+                        if clean_struct_name.starts_with("CastResult_") && inner_right == "Val" {
+                            use_arrow = true;
+                        }
+                    }
                 }
 
                 if use_arrow {

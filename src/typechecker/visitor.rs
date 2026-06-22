@@ -2925,11 +2925,7 @@ impl TypeChecker {
                                 return Ok(Type::Index(suffix.to_string(), brand));
                             }
                             let brand = extract_brand_from_suffix(&target_struct);
-                            if clean_struct_name.starts_with("CastResult_") {
-                                return Ok(Type::RawPointer(Box::new(Type::Struct(target_struct, brand))));
-                            } else {
-                                return Ok(Type::Struct(target_struct, brand));
-                            }
+                            return Ok(Type::Struct(target_struct, brand));
                         }
                     }
                     if let Some(layout) = self.struct_registry.get(struct_name) {
