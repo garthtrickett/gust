@@ -1,0 +1,9 @@
+{
+  "summary": "test: add typechecker_templates_test_entry.gst to test_runner.gst",
+  "files": [
+    {
+      "file_path": "tests/test_runner.gst",
+      "code_diff": "<<<<<<< SEARCH\n        mut t22: Test[ctx];\n        t22.path = \"compiler/codegen_initializer_test_entry.gst\";\n        t22.is_negative = 0;\n        t22.is_substring = 1;\n        t22.expected = \"os_GetThreadScratch function definition generated correctly!\";\n        tests.Push(t22);\n\n        os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n        mut t22: Test[ctx];\n        t22.path = \"compiler/codegen_initializer_test_entry.gst\";\n        t22.is_negative = 0;\n        t22.is_substring = 1;\n        t22.expected = \"os_GetThreadScratch function definition generated correctly!\";\n        tests.Push(t22);\n\n        mut t23: Test[ctx];\n        t23.path = \"compiler/typechecker_templates_test_entry.gst\";\n        t23.is_negative = 0;\n        t23.is_substring = 1;\n        t23.expected = \"get_type_brand nested pointer lookup OK\";\n        tests.Push(t23);\n\n        os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
+    }
+  ]
+}

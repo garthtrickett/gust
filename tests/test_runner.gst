@@ -419,14 +419,21 @@ func main() {
     t21.expected = "Any brand element correctly allowed inside parent brand 'ctx'!";
     tests.Push(t21);
 
-    mut t22: Test[ctx];
-    t22.path = "compiler/codegen_initializer_test_entry.gst";
-    t22.is_negative = 0;
-    t22.is_substring = 1;
-    t22.expected = "os_GetThreadScratch function definition generated correctly!";
-    tests.Push(t22);
+            mut t22: Test[ctx];
+            t22.path = "compiler/codegen_initializer_test_entry.gst";
+            t22.is_negative = 0;
+            t22.is_substring = 1;
+            t22.expected = "os_GetThreadScratch function definition generated correctly!";
+            tests.Push(t22);
 
-    os.LogStr("🏃 Starting self-hosted Gust test suite...");
+            mut t23: Test[ctx];
+            t23.path = "compiler/typechecker_templates_test_entry.gst";
+            t23.is_negative = 0;
+            t23.is_substring = 1;
+            t23.expected = "get_type_brand nested pointer lookup OK";
+            tests.Push(t23);
+
+            os.LogStr("🏃 Starting self-hosted Gust test suite...");
 
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
