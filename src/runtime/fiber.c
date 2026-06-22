@@ -23,6 +23,7 @@ struct gust_Fiber {
     gust_Fiber* parent;
     gust_Fiber* next;
     void* shard;
+    os_Arena* active_arena;
 };
 
 typedef struct {
@@ -217,6 +218,8 @@ void gust_fiber_exit(gust_Fiber* fiber) {
 }
 
 void gust_fiber_switch(gust_Fiber* from, gust_Fiber* to) {
+    from->active_arena = os_GetThreadScratch_raw();
+    os_SetThreadScratch(to->active_arena);
     gust_context_switch(&from->sp, to->sp);
 }
 
@@ -233,6 +236,7 @@ gust_Fiber* gust_fiber_create(size_t stack_size, void (*entry_fn)(void*), void* 
     fiber->state = GUST_FIBER_READY;
     fiber->parent = NULL;
     fiber->next = NULL;
+    fiber->active_arena = NULL;
     void* sp = (void*)(((uintptr_t)fiber->stack_base + stack_size) & ~15UL);
 
     #if defined(__x86_64__)
@@ -413,6 +417,7 @@ void gust_scheduler_init(int num_shards) {
         gust_shards[i].shard_fiber.sp = NULL;
         gust_shards[i].shard_fiber.parent = NULL;
         gust_shards[i].shard_fiber.next = NULL;
+        gust_shards[i].shard_fiber.active_arena = NULL;
 
         pthread_create(&gust_shards[i].thread, NULL, gust_shard_loop, &gust_shards[i]);
     }

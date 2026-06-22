@@ -2478,6 +2478,7 @@ fn test_e2e_fiber_low_level_context_switch() {
             main_fiber->stack_size = 0;
             main_fiber->sp = NULL;
             main_fiber->parent = NULL;
+            main_fiber->active_arena = NULL;
 
             fiber1 = gust_fiber_create(16384, fiber1_entry, NULL);
             fiber2 = gust_fiber_create(16384, fiber2_entry, NULL);
@@ -2611,6 +2612,7 @@ fn test_e2e_fiber_register_preservation() {
             main_fiber->sp = NULL;
             main_fiber->parent = NULL;
             main_fiber->next = NULL;
+            main_fiber->active_arena = NULL;
 
             fiber1 = gust_fiber_create(16384, fiber1_entry, NULL);
             fiber1->parent = main_fiber;
