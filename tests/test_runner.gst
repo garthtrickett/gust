@@ -475,6 +475,30 @@ func main() {
     t30.expected = "large enum variant payload";
     tests.Push(t30);
 
+    mut t31: Test[ctx];
+    t31.path = "tests/test_unchecked_cast_access_rejected.gst";
+    t31.is_negative = 1;
+    t31.expected = "Accessing the .Val payload of an unchecked result wrapper";
+    tests.Push(t31);
+
+    mut t32: Test[ctx];
+    t32.path = "tests/test_unchecked_lookup_access_rejected.gst";
+    t32.is_negative = 1;
+    t32.expected = "Accessing the .Val payload of an unchecked result wrapper";
+    tests.Push(t32);
+
+    mut t33: Test[ctx];
+    t33.path = "tests/test_unchecked_else_access_rejected.gst";
+    t33.is_negative = 1;
+    t33.expected = "Accessing the .Val payload of an unchecked result wrapper";
+    tests.Push(t33);
+
+    mut t34: Test[ctx];
+    t34.path = "tests/test_mismatched_logical_check_rejected.gst";
+    t34.is_negative = 1;
+    t34.expected = "Accessing the .Val payload of an unchecked result wrapper";
+    tests.Push(t34);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
