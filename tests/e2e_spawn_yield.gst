@@ -1,13 +1,13 @@
 type TaskArg[arena] struct {
     val: int,
-    flag: Index[int, arena]
+    flag: Index[int, arena],
+    arena: *Arena
 }
 
 func task(arg: *TaskArg[arena]) { 
     unsafe {
         mut idx := (*arg).flag;
-        mut tl := os.GetThreadScratch();
-        mut arena: &Arena := tl.arena;
+        mut arena := (*arg).arena;
         mut ptr := &arena[idx] as *int;
         *ptr = *ptr + (*arg).val;
     }
@@ -16,7 +16,7 @@ func task(arg: *TaskArg[arena]) {
 func main() {
     mut arena := os.Arena.New();
     defer arena.Free();
-    os.SetThreadScratch(arena);
+    os.SetThreadScratch(&arena);
 
     mut flag_idx: Index[int, arena] := os.ArenaAlloc(arena);
     arena[flag_idx] = 0;
@@ -24,10 +24,12 @@ func main() {
     mut arg1: TaskArg[arena];
     arg1.val = 10;
     arg1.flag = flag_idx;
+    arg1.arena = &arena;
 
     mut arg2: TaskArg[arena];
     arg2.val = 20;
     arg2.flag = flag_idx;
+    arg2.arena = &arena;
 
     std.Spawn(task, &arg1);
     std.Spawn(task, &arg2);
