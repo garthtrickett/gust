@@ -361,7 +361,7 @@ func main() {
         mut found_idx := 0 - 1;
         mut p_idx := 0;
         while p_idx < len(env.resolved_types_nested) {
-            if std.str_eq(env.resolved_types_nested[p_idx].prefix, "") {
+            if std.str_eq(env.resolved_types_nested[p_idx].prefix, env.current_prefix) {
                 found_idx = p_idx;
             }
             p_idx = p_idx + 1;
@@ -370,6 +370,13 @@ func main() {
             mut entry_ref := &env.resolved_types_nested[found_idx];
             (*entry_ref).types.Push(entry_p);
             (*entry_ref).types.Push(entry_i);
+        } else {
+            mut pfx_entry: typechecker.PrefixMapEntry[ctx];
+            pfx_entry.prefix = env.current_prefix;
+            pfx_entry.types = std.VectorNew(ctx);
+            pfx_entry.types.Push(entry_p);
+            pfx_entry.types.Push(entry_i);
+            env.resolved_types_nested.Push(pfx_entry);
         }
 
         mut output_c := codegen.codegen_generate_expression(expr_pool_test, &env, ctx);
@@ -405,7 +412,7 @@ func main() {
         mut found_idx := 0 - 1;
         mut p_idx := 0;
         while p_idx < len(env.resolved_types_nested) {
-            if std.str_eq(env.resolved_types_nested[p_idx].prefix, "") {
+            if std.str_eq(env.resolved_types_nested[p_idx].prefix, env.current_prefix) {
                 found_idx = p_idx;
             }
             p_idx = p_idx + 1;
@@ -413,6 +420,12 @@ func main() {
         if found_idx != 0 - 1 {
             mut entry_ref := &env.resolved_types_nested[found_idx];
             (*entry_ref).types.Push(entry_rc);
+        } else {
+            mut pfx_entry: typechecker.PrefixMapEntry[ctx];
+            pfx_entry.prefix = env.current_prefix;
+            pfx_entry.types = std.VectorNew(ctx);
+            pfx_entry.types.Push(entry_rc);
+            env.resolved_types_nested.Push(pfx_entry);
         }
 
         mut output_c := codegen.codegen_generate_expression(expr_rc_test, &env, ctx);
