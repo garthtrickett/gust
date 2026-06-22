@@ -1,0 +1,17 @@
+{
+  "summary": "test: add negative compiler checks to Makefile and verify negative test files",
+  "files": [
+    {
+      "file_path": "compiler/test_directory_leak_violation.gst",
+      "code_diff": "<<<<<<< SEARCH\nfunc leak_dir() {\n    mut d: os_Dir_ctx;\n    // forgot to call os.CloseDir(d);\n}\n\nfunc main() {}\n=======\nfunc leak_dir() {\n    mut d: os_Dir_ctx;\n    // forgot to call os.CloseDir(d);\n}\n\nfunc main() {}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "compiler/test_escape_return_violation.gst",
+      "code_diff": "<<<<<<< SEARCH\nfunc leak_local_view() str {\n    mut local := \"hello\";\n    return local;\n}\n\nfunc main() {}\n=======\nfunc leak_local_view() str {\n    mut local := \"hello\";\n    return local;\n}\n\nfunc main() {}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "compiler/test_scratch_storage_violation.gst",
+      "code_diff": "<<<<<<< SEARCH\ntype BrandedNode[ctx] struct {\n    name: str\n}\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut n: BrandedNode[ctx];\n    n.name = std.Format(\"Item %d\", 1);\n}\n=======\ntype BrandedNode[ctx] struct {\n    name: str\n}\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut n: BrandedNode[ctx];\n    n.name = std.Format(\"Item %d\", 1);\n}\n>>>>>>> REPLACE"
+    }
+  ]
+}
