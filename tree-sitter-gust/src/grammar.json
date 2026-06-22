@@ -1776,7 +1776,7 @@
   ],
   "conflicts": [
     [
-      "type_identifier",
+      "_type_specifier",
       "type_generic"
     ],
     [
