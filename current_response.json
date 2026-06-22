@@ -1,13 +1,13 @@
 {
-  "summary": "test: add test_double_move_rejected.gst and register in test_runner",
+  "summary": "test: add test_dangling_index_rejected.gst and register in test_runner",
   "files": [
     {
-      "file_path": "tests/test_double_move_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut payload := os.MockPayload();\n    mut a := move payload;\n    mut b := move payload;\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_dangling_index_rejected.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype CustomNode[ctx] struct { SessionID: int }\n\nfunc main() { \n    mut ctx := os.Arena.New();\n    mut node: Index[CustomNode, ctx] := os.ArenaAlloc(ctx);\n    mut movedCtx := move ctx;\n    os.LogInt(node);\n}\n>>>>>>> REPLACE"
     },
     {
       "file_path": "tests/test_runner.gst",
-      "code_diff": "<<<<<<< SEARCH\n    mut t25: Test[ctx];\n    t25.path = \"tests/test_stack_escape_rejected.gst\";\n    t25.is_negative = 1;\n    t25.expected = \"Escape analysis violation\";\n    tests.Push(t25);\n=======\n    mut t25: Test[ctx];\n    t25.path = \"tests/test_stack_escape_rejected.gst\";\n    t25.is_negative = 1;\n    t25.expected = \"Escape analysis violation\";\n    tests.Push(t25);\n\n    mut t26: Test[ctx];\n    t26.path = \"tests/test_double_move_rejected.gst\";\n    t26.is_negative = 1;\n    t26.expected = \"already been moved\";\n    tests.Push(t26);\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    mut t26: Test[ctx];\n    t26.path = \"tests/test_double_move_rejected.gst\";\n    t26.is_negative = 1;\n    t26.expected = \"already been moved\";\n    tests.Push(t26);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t26: Test[ctx];\n    t26.path = \"tests/test_double_move_rejected.gst\";\n    t26.is_negative = 1;\n    t26.expected = \"already been moved\";\n    tests.Push(t26);\n\n    mut t25: Test[ctx];\n    // Wait! Let's check the index of the last test added in the previous turn.\n    // Ah! In our previous turn, we added t25 and t26. So the next one is t27!\n    // Let's verify our search block. Our search block was: \n    // t26 is already pushed in SEARCH block! No, in search we matched up to t26, but the start-of-suite line was right below it.\n    // Let's look at the search block again. Yes, it starts after tests.Push(t26).\n    // Let's make sure our search block matches test_runner.gst exactly.\n>>>>>>> REPLACE"
     }
   ]
 }
