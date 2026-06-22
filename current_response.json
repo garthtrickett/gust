@@ -1,45 +1,97 @@
 {
-  "summary": "test: port remaining extended collections, string utilities, path joins, and guard E2E tests to .gst",
+  "summary": "test: port all remaining positive compile-time typechecker, dereferencing, lifespan, and definite check tests to .gst",
   "files": [
     {
-      "file_path": "tests/e2e_hashmap_extended_utilities.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut map: HashMap[int, int, ctx] := os.HashMapNew(ctx);\n    map.Insert(10, 100);\n    map.Insert(20, 200);\n    map.Insert(30, 300);\n\n    mut keys: std.Vector[int, ctx] := map.Keys(ctx);\n    os.LogInt(len(keys));\n\n    mut sum := 0;\n    mut i := 0;\n    while i < len(keys) {\n        mut key := keys[i];\n        mut lookup := map.Get(key);\n        if lookup.Ok {\n            sum = sum + lookup.Val;\n        }\n        i = i + 1;\n    }\n    os.LogInt(sum);\n\n    map.Remove(20);\n    os.LogInt(len(map));\n\n    mut lookup_removed := map.Get(20);\n    if lookup_removed.Ok {\n        os.LogInt(1);\n    }\n    else {\n        os.LogInt(0);\n    }\n\n    map.Clear();\n    os.LogInt(len(map));\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_thread_local_context_registration_valid.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut tl: std.ThreadLocalContext[ctx];\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/e2e_character_classification_and_parsing.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut s := \"   -42069   \";\n    mut start := 0;\n    mut end := len(s);\n    \n    while start < len(s) {\n        mut b := std.str_byte_at(s, start);\n        if std.is_whitespace(b) {\n            start = start + 1;\n        } else {\n            end = start;\n            start = len(s);\n        }\n    }\n    mut num_start := end;\n    \n    mut num_end := num_start;\n    mut loop_active := 1;\n    while loop_active == 1 {\n        if num_end < len(s) {\n            mut b := std.str_byte_at(s, num_end);\n            if std.is_whitespace(b) {\n                loop_active = 0;\n            } else {                num_end = num_end + 1;\n            }\n        } else {\n            loop_active = 0;\n        }\n    }\n    \n    mut num_slice := std.str_slice(s, num_start, num_end);\n    \n    mut idx := 0;\n    mut is_valid := 1;\n    while idx < len(num_slice) {\n        mut b := std.str_byte_at(num_slice, idx);\n        if idx == 0 {\n            if b == 45 {\n                // negative sign '-'\n            } else {\n                if std.is_digit(b) {\n                    // digit\n                } else {\n                    is_valid = 0;\n                }\n            }\n        } else {\n            if std.is_digit(b) {\n                // digit\n            } else {\n                is_valid = 0;\n            }\n        }\n        idx = idx + 1;\n    }\n    \n    if is_valid == 1 {\n        mut val := std.parse_int(num_slice);\n        mut result := val * 2;\n        os.LogInt(result);\n    } else {\n        os.LogInt(0);\n    }\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_safe_branding_substitution.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Node[ctx] struct { val: int }\nfunc update(ctx: &Arena, n: Index[Node, ctx]) {\n    ctx[n].val = 100;\n}\nfunc main() {\n    mut c := os.Arena.New();\n    defer c.Free();\n    mut n: Index[Node, c] := os.ArenaAlloc(c);\n    update(c, n);\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/e2e_vector_stack_lifo_parser.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    \n    mut stack: std.Vector[int, ctx] := std.VectorNew(ctx);\n    stack.Push(10);\n    stack.Push(20);\n    stack.Push(30);\n    \n    // Inspect the tail with Back\n    unsafe {\n        mut top := stack.Back();\n        os.LogInt(*top);\n        \n        // Mutate in-place\n        *top = 35;\n    }\n    \n    // Pop off in LIFO order\n    os.LogInt(stack.Pop());\n    os.LogInt(stack.Pop());\n    \n    // Push another\n    stack.Push(40);\n    os.LogInt(len(stack));\n    \n    // Clear the stack\n    stack.Clear();\n    os.LogInt(len(stack));\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_arena_validate_type_checking_valid.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    os.ArenaValidate(ctx);\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/e2e_str_find_and_trim.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut s := \"  hello  \";\n    mut trimmed := std.str_trim(s);\n    os.LogStr(trimmed);\n\n    mut idx1 := std.str_find(trimmed, \"ll\");\n    os.LogInt(idx1);\n\n    mut idx2 := std.str_find(trimmed, \"xx\");\n    os.LogInt(idx2);\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_dereference_inside_unsafe_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut val := 42;\n    mut ptr := &val;\n    unsafe {\n        mut deref := *ptr;\n        os.LogInt(deref);\n    }\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/e2e_str_split.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut s := \"a,b,c,d\";\n    mut parts := std.str_split(s, \",\", ctx);\n    os.LogInt(len(parts));\n    os.LogStr(parts[0]);\n    os.LogStr(parts[1]);\n    os.LogStr(parts[2]);\n    os.LogStr(parts[3]);\n\n    mut s2 := \"xyz\";\n    mut parts2 := std.str_split(s2, \"\", ctx);\n    os.LogInt(len(parts2));\n    os.LogStr(parts2[0]);\n    os.LogStr(parts2[1]);\n    os.LogStr(parts2[2]);\n\n    mut parts3 := std.str_split(s, \"x\", ctx);\n    os.LogInt(len(parts3));\n    os.LogStr(parts3[0]);\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_take_pod_struct_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype MyPod struct {\n    x: int,\n    y: int\n}\nfunc main() {\n    mut p: MyPod;\n    p.x = 10;\n    mut taken := take p;\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/e2e_path_join.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut p1 := os.path_join(\"a/b\", \"c\", ctx);\n    os.LogStr(p1);\n\n    mut p2 := os.path_join(\"a/b\", \"../c\", ctx);\n    os.LogStr(p2);\n\n    mut p3 := os.path_join(\"a/./b\", \"c/../d\", ctx);\n    os.LogStr(p3);\n\n    mut p4 := os.path_join(\"/a/b/\", \"/c\", ctx);\n    os.LogStr(p4);\n\n    mut p5 := os.path_join(\"a/b\", \"../../c\", ctx);\n    os.LogStr(p5);\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_take_linear_struct_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype MyLinear struct {\n    ptr: *int\n}\nfunc main() {\n    mut p: MyLinear;\n    unsafe {\n        p.ptr = &10;\n    }\n    mut taken := take p;\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/e2e_guard_hashmap_lookup.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut map: std.HashMap[int, int, ctx] := os.HashMapNew(ctx);\n    map.Insert(42, 100);\n\n    guard val := map.Get(42) else {\n        os.LogInt(0);\n        return;\n    }\n\n    os.LogInt(val);\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_string_view_type_safety_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut msg := \"Hello Arena\";\n    os.LogStr(msg);\n    os.LogInt(len(msg));\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/e2e_guard_mutability.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut map: std.HashMap[int, int, ctx] := os.HashMapNew(ctx);\n    map.Insert(10, 50);\n\n    guard mut val := map.Get(10) else {\n        return;\n    }\n\n    val = val + 50;\n    os.LogInt(val);\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_branded_struct_containing_slice_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype CustomNode[ctx] struct {\n    name: str,\n    data: []byte\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut n: Index[CustomNode, ctx] := os.ArenaAlloc(ctx);\n    ctx[n].name = \"Hello\";\n}\n>>>>>>> REPLACE"
     },
     {
-      "file_path": "tests/e2e_guard_cast.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Packet struct {\n    ProtocolID: int,\n    Length: int\n}\n\nfunc main() {\n    mut payload := os.MockPayload();\n    \n    guard p := payload as &Packet else {\n        os.LogInt(0);\n        return;\n    }\n\n    os.LogInt(p.ProtocolID);\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_branded_generic_instantiated_with_view_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Holder[T, ctx] struct {\n    val: T\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut h: Holder[str, ctx];\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_identical_nested_brands_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut vec: Vector[Vector[str, ctx], ctx] := os.VectorNew(ctx);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_view_and_pod_in_branded_collection_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut v1: Vector[str, ctx] := os.VectorNew(ctx);\n    mut v2: Vector[int, ctx] := os.VectorNew(ctx);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_handoff_safe_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Packet[ctx] struct {\n    val: int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut p: Packet[ctx];\n    p.val = 42;\n    mut movedCtx := move ctx;\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_return_parameter_view_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc pass(p: str) str {\n    return p;\n}\nfunc main() {}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_return_static_literal_view_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc constant() str {\n    return \"Hello\";\n}\nfunc main() {}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_checked_results_scoping.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype CustomNode[connCtx] struct {\n    SessionID: int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut payload := os.MockPayload();\n    mut result := payload as &CustomNode[ctx];\n    if result.Ok {\n        os.LogInt(result.Val.SessionID);\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_definite_check_inside_if_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype CustomNode struct {\n    SessionID: int\n}\nfunc main() {\n    mut payload := os.MockPayload();\n    mut result := payload as &CustomNode;\n    if result.Ok {\n        os.LogInt(result.Val.SessionID);\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_definite_check_lookup_inside_if_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut map: std.HashMap[int, int, ctx] := os.HashMapNew(ctx);\n    map.Insert(42, 100);\n    mut lookup := map.Get(42);\n    if lookup.Ok {\n        os.LogInt(lookup.Val);\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_definite_check_compound_and_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype CustomNode struct {\n    SessionID: int\n}\nfunc main() {\n    mut payload := os.MockPayload();\n    mut result := payload as &CustomNode;\n    mut cond := true;\n    if cond && result.Ok {\n        os.LogInt(result.Val.SessionID);\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_nested_scoping_definite_checks_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype InnerNode struct {\n    val: int\n}\ntype OuterNode struct {\n    inner: LookupResult_InnerNode\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut map: HashMap[int, OuterNode, ctx] := os.HashMapNew(ctx);\n    mut outer := map.Get(42);\n    if outer.Ok {\n        if outer.Val.inner.Ok {\n            os.LogInt(outer.Val.inner.Val.val);\n        }\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_pool_type_checking_valid.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Node struct {\n    val: int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut pool: std.Pool[Node, ctx] := std.PoolNew(ctx);\n    mut item: Node;\n    item.val = 42;\n    mut idx := pool.Alloc(item);\n    pool.Free(idx);\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_brand_crossing_cloning.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Node[ctx] struct { val: int }\nfunc main() {\n    mut ctx1 := os.Arena.New();\n    defer ctx1.Free();\n    mut ctx2 := os.Arena.New();\n    defer ctx2.Free();\n    mut n1: Index[Node, ctx1] := os.ArenaAlloc(ctx1);\n    ctx1[n1].val = 42;\n    mut n2: Index[Node, ctx2] := std.Clone(ctx2, n1);\n    ctx2[n2].val = 100;\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_rc_and_graph_type_checking_valid.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Node struct {\n    val: int\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut pool: std.Pool[std.RcNode[Node], ctx] := std.PoolNew(ctx);\n    mut item: Node;\n    item.val = 42;\n    mut rc1: std.Rc[Node, ctx] := std.RcNew(&pool, item);\n    mut rc2 := rc1.Clone();\n    unsafe {\n        mut val_ptr := rc1.Get();\n    }\n    rc2.Release();\n    rc1.Release();\n    mut graph: std.Graph[Node, ctx] := std.GraphNew(ctx);\n    mut n1 := graph.AddNode(item);\n    mut n2 := graph.AddNode(item);\n    graph.AddEdge(n1, n2);\n}\n>>>>>>> REPLACE"
     },
     {
       "file_path": "tests/test_runner.gst",
-      "code_diff": "<<<<<<< SEARCH\n    mut t95: Test[ctx];\n    t95.path = \"tests/e2e_multithreaded_scratch_isolation.gst\";\n    t95.is_negative = 0;\n    t95.expected = \"42\\n100\";\n    tests.Push(t95);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t95: Test[ctx];\n    t95.path = \"tests/e2e_multithreaded_scratch_isolation.gst\";\n    t95.is_negative = 0;\n    t95.expected = \"42\\n100\";\n    tests.Push(t95);\n\n    mut t96: Test[ctx];\n    t96.path = \"tests/e2e_hashmap_extended_utilities.gst\";\n    t96.is_negative = 0;\n    t96.expected = \"3\\n600\\n2\\n0\\n0\";\n    tests.Push(t96);\n\n    mut t97: Test[ctx];\n    t97.path = \"tests/e2e_character_classification_and_parsing.gst\";\n    t97.is_negative = 0;\n    t97.expected = \"-84138\";\n    tests.Push(t97);\n\n    mut t98: Test[ctx];\n    t98.path = \"tests/e2e_vector_stack_lifo_parser.gst\";\n    t98.is_negative = 0;\n    t98.expected = \"30\\n35\\n20\\n2\\n0\";\n    tests.Push(t98);\n\n    mut t99: Test[ctx];\n    t99.path = \"tests/e2e_str_find_and_trim.gst\";\n    t99.is_negative = 0;\n    t99.expected = \"hello\\n2\\n-1\";\n    tests.Push(t99);\n\n    mut t100: Test[ctx];\n    t100.path = \"tests/e2e_str_split.gst\";\n    t100.is_negative = 0;\n    t100.expected = \"4\\na\\nb\\nc\\nd\\n3\\nx\\ny\\nz\\n1\\na,b,c,d\";\n    tests.Push(t100);\n\n    mut t101: Test[ctx];\n    t101.path = \"tests/e2e_path_join.gst\";\n    t101.is_negative = 0;\n    t101.expected = \"a/b/c\\na/c\\na/b/d\\n/a/b/c\\n../c\";\n    tests.Push(t101);\n\n    mut t102: Test[ctx];\n    t102.path = \"tests/e2e_guard_hashmap_lookup.gst\";\n    t102.is_negative = 0;\n    t102.expected = \"100\";\n    tests.Push(t102);\n\n    mut t103: Test[ctx];\n    t103.path = \"tests/e2e_guard_mutability.gst\";\n    t103.is_negative = 0;\n    t103.expected = \"100\";\n    tests.Push(t103);\n\n    mut t104: Test[ctx];\n    t104.path = \"tests/e2e_guard_cast.gst\";\n    t104.is_negative = 0;\n    t104.expected = \"42\";\n    tests.Push(t104);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    mut t104: Test[ctx];\n    t104.path = \"tests/e2e_guard_cast.gst\";\n    t104.is_negative = 0;\n    t104.expected = \"42\";\n    tests.Push(t104);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t104: Test[ctx];\n    t104.path = \"tests/e2e_guard_cast.gst\";\n    t104.is_negative = 0;\n    t104.expected = \"42\";\n    tests.Push(t104);\n\n    mut t105: Test[ctx];\n    t105.path = \"tests/test_thread_local_context_registration_valid.gst\";\n    t105.is_negative = 0;\n    t105.expected = \"\";\n    tests.Push(t105);\n\n    mut t106: Test[ctx];\n    t106.path = \"tests/test_safe_branding_substitution.gst\";\n    t106.is_negative = 0;\n    t106.expected = \"\";\n    tests.Push(t106);\n\n    mut t107: Test[ctx];\n    t107.path = \"tests/test_arena_validate_type_checking_valid.gst\";\n    t107.is_negative = 0;\n    t107.expected = \"\";\n    tests.Push(t107);\n\n    mut t108: Test[ctx];\n    t108.path = \"tests/test_dereference_inside_unsafe_accepted.gst\";\n    t108.is_negative = 0;\n    t108.expected = \"42\";\n    tests.Push(t108);\n\n    mut t109: Test[ctx];\n    t109.path = \"tests/test_take_pod_struct_accepted.gst\";\n    t109.is_negative = 0;\n    t109.expected = \"\";\n    tests.Push(t109);\n\n    mut t110: Test[ctx];\n    t110.path = \"tests/test_take_linear_struct_accepted.gst\";\n    t110.is_negative = 0;\n    t110.expected = \"\";\n    tests.Push(t110);\n\n    mut t111: Test[ctx];\n    t111.path = \"tests/test_string_view_type_safety_accepted.gst\";\n    t111.is_negative = 0;\n    t111.expected = \"Hello Arena\\n11\";\n    tests.Push(t111);\n\n    mut t112: Test[ctx];\n    t112.path = \"tests/test_branded_struct_containing_slice_accepted.gst\";\n    t112.is_negative = 0;\n    t112.expected = \"\";\n    tests.Push(t112);\n\n    mut t113: Test[ctx];\n    t113.path = \"tests/test_branded_generic_instantiated_with_view_accepted.gst\";\n    t113.is_negative = 0;\n    t113.expected = \"\";\n    tests.Push(t113);\n\n    mut t114: Test[ctx];\n    t114.path = \"tests/test_identical_nested_brands_accepted.gst\";\n    t114.is_negative = 0;\n    t114.expected = \"\";\n    tests.Push(t114);\n\n    mut t115: Test[ctx];\n    t115.path = \"tests/test_view_and_pod_in_branded_collection_accepted.gst\";\n    t115.is_negative = 0;\n    t115.expected = \"\";\n    tests.Push(t115);\n\n    mut t116: Test[ctx];\n    t116.path = \"tests/test_handoff_safe_accepted.gst\";\n    t116.is_negative = 0;\n    t116.expected = \"\";\n    tests.Push(t116);\n\n    mut t117: Test[ctx];\n    t117.path = \"tests/test_return_parameter_view_accepted.gst\";\n    t117.is_negative = 0;\n    t117.expected = \"\";\n    tests.Push(t117);\n\n    mut t118: Test[ctx];\n    t118.path = \"tests/test_return_static_literal_view_accepted.gst\";\n    t118.is_negative = 0;\n    t118.expected = \"\";\n    tests.Push(t118);\n\n    mut t119: Test[ctx];\n    t119.path = \"tests/test_checked_results_scoping.gst\";\n    t119.is_negative = 0;\n    t119.expected = \"42\";\n    tests.Push(t119);\n\n    mut t120: Test[ctx];\n    t120.path = \"tests/test_definite_check_inside_if_accepted.gst\";\n    t120.is_negative = 0;\n    t120.expected = \"42\";\n    tests.Push(t120);\n\n    mut t121: Test[ctx];\n    t121.path = \"tests/test_definite_check_lookup_inside_if_accepted.gst\";\n    t121.is_negative = 0;\n    t121.expected = \"100\";\n    tests.Push(t121);\n\n    mut t122: Test[ctx];\n    t122.path = \"tests/test_definite_check_compound_and_accepted.gst\";\n    t122.is_negative = 0;\n    t122.expected = \"42\";\n    tests.Push(t122);\n\n    mut t123: Test[ctx];\n    t123.path = \"tests/test_nested_scoping_definite_checks_accepted.gst\";\n    t123.is_negative = 0;\n    t123.expected = \"\";\n    tests.Push(t123);\n\n    mut t124: Test[ctx];\n    t124.path = \"tests/test_pool_type_checking_valid.gst\";\n    t124.is_negative = 0;\n    t124.expected = \"\";\n    tests.Push(t124);\n\n    mut t125: Test[ctx];\n    t125.path = \"tests/test_brand_crossing_cloning.gst\";\n    t125.is_negative = 0;\n    t125.expected = \"\";\n    tests.Push(t125);\n\n    mut t126: Test[ctx];\n    t126.path = \"tests/test_rc_and_graph_type_checking_valid.gst\";\n    t126.is_negative = 0;\n    t126.expected = \"\";\n    tests.Push(t126);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
     }
   ]
 }

@@ -937,6 +937,138 @@ func main() {
     t104.expected = "42";
     tests.Push(t104);
 
+    mut t105: Test[ctx];
+    t105.path = "tests/test_thread_local_context_registration_valid.gst";
+    t105.is_negative = 0;
+    t105.expected = "";
+    tests.Push(t105);
+
+    mut t106: Test[ctx];
+    t106.path = "tests/test_safe_branding_substitution.gst";
+    t106.is_negative = 0;
+    t106.expected = "";
+    tests.Push(t106);
+
+    mut t107: Test[ctx];
+    t107.path = "tests/test_arena_validate_type_checking_valid.gst";
+    t107.is_negative = 0;
+    t107.expected = "";
+    tests.Push(t107);
+
+    mut t108: Test[ctx];
+    t108.path = "tests/test_dereference_inside_unsafe_accepted.gst";
+    t108.is_negative = 0;
+    t108.expected = "42";
+    tests.Push(t108);
+
+    mut t109: Test[ctx];
+    t109.path = "tests/test_take_pod_struct_accepted.gst";
+    t109.is_negative = 0;
+    t109.expected = "";
+    tests.Push(t109);
+
+    mut t110: Test[ctx];
+    t110.path = "tests/test_take_linear_struct_accepted.gst";
+    t110.is_negative = 0;
+    t110.expected = "";
+    tests.Push(t110);
+
+    mut t111: Test[ctx];
+    t111.path = "tests/test_string_view_type_safety_accepted.gst";
+    t111.is_negative = 0;
+    t111.expected = "Hello Arena\n11";
+    tests.Push(t111);
+
+    mut t112: Test[ctx];
+    t112.path = "tests/test_branded_struct_containing_slice_accepted.gst";
+    t112.is_negative = 0;
+    t112.expected = "";
+    tests.Push(t112);
+
+    mut t113: Test[ctx];
+    t113.path = "tests/test_branded_generic_instantiated_with_view_accepted.gst";
+    t113.is_negative = 0;
+    t113.expected = "";
+    tests.Push(t113);
+
+    mut t114: Test[ctx];
+    t114.path = "tests/test_identical_nested_brands_accepted.gst";
+    t114.is_negative = 0;
+    t114.expected = "";
+    tests.Push(t114);
+
+    mut t115: Test[ctx];
+    t115.path = "tests/test_view_and_pod_in_branded_collection_accepted.gst";
+    t115.is_negative = 0;
+    t115.expected = "";
+    tests.Push(t115);
+
+    mut t116: Test[ctx];
+    t116.path = "tests/test_handoff_safe_accepted.gst";
+    t116.is_negative = 0;
+    t116.expected = "";
+    tests.Push(t116);
+
+    mut t117: Test[ctx];
+    t117.path = "tests/test_return_parameter_view_accepted.gst";
+    t117.is_negative = 0;
+    t117.expected = "";
+    tests.Push(t117);
+
+    mut t118: Test[ctx];
+    t118.path = "tests/test_return_static_literal_view_accepted.gst";
+    t118.is_negative = 0;
+    t118.expected = "";
+    tests.Push(t118);
+
+    mut t119: Test[ctx];
+    t119.path = "tests/test_checked_results_scoping.gst";
+    t119.is_negative = 0;
+    t119.expected = "42";
+    tests.Push(t119);
+
+    mut t120: Test[ctx];
+    t120.path = "tests/test_definite_check_inside_if_accepted.gst";
+    t120.is_negative = 0;
+    t120.expected = "42";
+    tests.Push(t120);
+
+    mut t121: Test[ctx];
+    t121.path = "tests/test_definite_check_lookup_inside_if_accepted.gst";
+    t121.is_negative = 0;
+    t121.expected = "100";
+    tests.Push(t121);
+
+    mut t122: Test[ctx];
+    t122.path = "tests/test_definite_check_compound_and_accepted.gst";
+    t122.is_negative = 0;
+    t122.expected = "42";
+    tests.Push(t122);
+
+    mut t123: Test[ctx];
+    t123.path = "tests/test_nested_scoping_definite_checks_accepted.gst";
+    t123.is_negative = 0;
+    t123.expected = "";
+    tests.Push(t123);
+
+    mut t124: Test[ctx];
+    t124.path = "tests/test_pool_type_checking_valid.gst";
+    t124.is_negative = 0;
+    t124.expected = "";
+    tests.Push(t124);
+
+    mut t125: Test[ctx];
+    t125.path = "tests/test_brand_crossing_cloning.gst";
+    t125.is_negative = 0;
+    t125.expected = "";
+    tests.Push(t125);
+
+    mut t126: Test[ctx];
+    t126.path = "tests/test_rc_and_graph_type_checking_valid.gst";
+    t126.is_negative = 0;
+    t126.expected = "";
+    tests.Push(t126);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
