@@ -417,8 +417,8 @@ func main() {
         j = j + 1;
     }
 
-    // mut summary_msg := std.Format("🏁 Test Suite Finished. Passed: %d, Failed: %d", passed_count, failed_count);
-    // os.LogStr(summary_msg);
+    mut summary_msg := std.Format("🏁 Test Suite Finished. Passed: %d, Failed: %d", passed_count, failed_count);
+    os.LogStr(summary_msg);
     os.LogStr("-----------------------------------------");
 
     if failed_count > 0 {
