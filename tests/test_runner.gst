@@ -406,14 +406,14 @@ func main() {
     tests.Push(t19);
 
     mut t20: Test[ctx];
-    t20.path = "compiler/typechecker_types_test_entry.gst";
+    t20.path = "compiler/typechecker_origins_test_entry.gst";
     t20.is_negative = 0;
     t20.is_substring = 1;
     t20.expected = "get_type_brand nested pointer lookup OK";
     tests.Push(t20);
 
     mut t21: Test[ctx];
-    t21.path = "compiler/typechecker_templates_test_entry.gst";
+    t21.path = "compiler/typechecker_types_test_entry.gst";
     t21.is_negative = 0;
     t21.is_substring = 1;
     t21.expected = "Any brand element correctly allowed inside parent brand 'ctx'!";
