@@ -547,6 +547,54 @@ func main() {
     t42.expected = "30";
     tests.Push(t42);
 
+    mut t43: Test[ctx];
+    t43.path = "tests/e2e_else_if_comparisons.gst";
+    t43.is_negative = 0;
+    t43.expected = "1\n2\n3";
+    tests.Push(t43);
+
+    mut t44: Test[ctx];
+    t44.path = "tests/e2e_rich_formatting_basic.gst";
+    t44.is_negative = 0;
+    t44.expected = "Welcome to Gust version 1!";
+    tests.Push(t44);
+
+    mut t45: Test[ctx];
+    t45.path = "tests/e2e_rich_formatting_bounds.gst";
+    t45.is_negative = 0;
+    t45.expected = "String: ThisIsALargeStringWithManyCharactersToTestThatOurCalculationsAreExtremelyRobustAndPreventAnyPotentialBufferOverflowInTranspiledC, Neg: -2147483648, Max: 2147483647";
+    tests.Push(t45);
+
+    mut t46: Test[ctx];
+    t46.path = "tests/e2e_rich_formatting_loop.gst";
+    t46.is_negative = 0;
+    t46.expected = "Index: 0\nIndex: 1\nIndex: 2\nIndex: 3\nIndex: 4\nIndex: 5\nIndex: 6\nIndex: 7\nIndex: 8\nIndex: 9";
+    tests.Push(t46);
+
+    mut t47: Test[ctx];
+    t47.path = "tests/e2e_bool_primitive.gst";
+    t47.is_negative = 0;
+    t47.expected = "1\n0\n1";
+    tests.Push(t47);
+
+    mut t48: Test[ctx];
+    t48.path = "tests/e2e_string_escape_sequences.gst";
+    t48.is_negative = 0;
+    t48.expected = "line1\nline2\ttab\\backslash\"quote";
+    tests.Push(t48);
+
+    mut t49: Test[ctx];
+    t49.path = "tests/e2e_arithmetic_logic.gst";
+    t49.is_negative = 0;
+    t49.expected = "50\n1";
+    tests.Push(t49);
+
+    mut t50: Test[ctx];
+    t50.path = "tests/e2e_loops_mutation.gst";
+    t50.is_negative = 0;
+    t50.expected = "0\n1\n2\n3\n4";
+    tests.Push(t50);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
