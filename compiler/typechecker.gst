@@ -895,8 +895,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     msg = std.Concat(msg, "' not found on Arena allocator");
                     report_error(2, msg, expr.Selector.span, env, ctx);
                 } else {
-                    mut msg := std.Concat("Semantic Error: [UnresolvedSelector] Cannot perform selector access on non-struct type ", ast.serialize_type(left_t, ctx));
-                    report_error(2, msg, expr.Selector.span, env, ctx);
+                    mut is_import_alias := (*env).imports.Get(left_str).Ok;
+                    if is_import_alias == 0 {
+                        mut msg := std.Concat("Semantic Error: [UnresolvedSelector] Cannot perform selector access on non-struct type ", ast.serialize_type(left_t, ctx));
+                        report_error(2, msg, expr.Selector.span, env, ctx);
+                    } else {
+                        mut t_void: ast.Type[ctx];
+                        t_void.tag = 3; // Void
+                        return t_void;
+                    }
                 }
             }
 
