@@ -3434,6 +3434,21 @@ func codegen_sort_variants(variants: std.Vector[str, ctx], ctx: &Arena) std.Vect
     return sorted;
 }
 
+func codegen_has_thread_local_context(env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut keys := (*env).struct_registry.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut key := keys[i];
+            if std.str_find(key, "ThreadLocalContext") != 0 - 1 {
+                return 1;
+            }
+            i = i + 1;
+        }
+    }
+    return 0;
+}
+
 func codegen_generate(programs: std.Vector[ast.Program[ctx], ctx], prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         codegen_log_trace("⚙️", "codegen_generate: commencing code generation pass", ctx);
@@ -3453,8 +3468,7 @@ typedef void Any;
         c_code = std.Concat(c_code, "typedef struct Slice_int Slice_int;\n");
         c_code = std.Concat(c_code, "struct Slice_int {\n    int* data;\n    int len;\n};\n\n");
 
-        mut tl_lookup := (*env).struct_registry.Get("std_ThreadLocalContext");
-        if tl_lookup.Ok {
+        if codegen_has_thread_local_context(env, ctx) == 1 {
             c_code = std.Concat(c_code, "std_ThreadLocalContext os_GetThreadScratch(void);\n\n");
         }
 
@@ -3740,8 +3754,7 @@ typedef void Any;
         }
         (*env).current_prefix = "";
 
-        mut tl_def_lookup := (*env).struct_registry.Get("std_ThreadLocalContext");
-        if tl_def_lookup.Ok {
+        if codegen_has_thread_local_context(env, ctx) == 1 {
             c_code = std.Concat(c_code, "std_ThreadLocalContext os_GetThreadScratch(void) {\n");
             c_code = std.Concat(c_code, "    std_ThreadLocalContext tl = { .arena = os_GetThreadScratch_raw(), ._phantom = NULL };\n");
             c_code = std.Concat(c_code, "    return tl;\n");
