@@ -829,6 +829,18 @@ func main() {
     t86.expected = "1\nMyStruct\n2\nMyEnum";
     tests.Push(t86);
 
+    mut t87: Test[ctx];
+    t87.path = "tests/e2e_program_b_safe_arena_cyclic_graph.gst";
+    t87.is_negative = 0;
+    t87.expected = "10\n20\n30\n10\n20\n30";
+    tests.Push(t87);
+
+    mut t88: Test[ctx];
+    t88.path = "tests/e2e_program_c_universal_ownership_operators.gst";
+    t88.is_negative = 0;
+    t88.expected = "100\n42\n1024";
+    tests.Push(t88);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

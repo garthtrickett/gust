@@ -1,0 +1,17 @@
+{
+  "summary": "test: add e2e tests for cyclic graphs and ownership operators",
+  "files": [
+    {
+      "file_path": "tests/e2e_program_b_safe_arena_cyclic_graph.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype GraphNode[ctx] struct {\n    Value: int,\n    Next: Index[GraphNode, ctx]\n}\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n\n    mut nodeA: Index[GraphNode, ctx] := os.ArenaAlloc(ctx);\n    mut nodeB: Index[GraphNode, ctx] := os.ArenaAlloc(ctx);\n    mut nodeC: Index[GraphNode, ctx] := os.ArenaAlloc(ctx);\n\n    ctx[nodeA].Value = 10;\n    ctx[nodeB].Value = 20;\n    ctx[nodeC].Value = 30;\n\n    ctx[nodeA].Next = nodeB;\n    ctx[nodeB].Next = nodeC;\n    ctx[nodeC].Next = nodeA;\n\n    mut curr := nodeA;\n    mut count := 0;\n    while count < 6 {\n        os.LogInt(ctx[curr].Value);\n        curr = ctx[curr].Next;\n        count = count + 1;\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/e2e_program_c_universal_ownership_operators.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype DataWrapper struct {\n    Value: int\n}\n\nfunc main() {\n    mut wrapper: DataWrapper;\n    wrapper.Value = 100;\n    \n    mut movedWrapper := move wrapper;\n    os.LogInt(movedWrapper.Value);\n    \n    mut payload := os.MockPayload();\n    mut taken := take payload;\n    \n    os.LogInt(taken[0]);\n    os.LogInt(len(taken));\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_runner.gst",
+      "code_diff": "<<<<<<< SEARCH\n    mut t86: Test[ctx];\n    t86.path = \"compiler/parser_type_test_entry.gst\";\n    t86.is_negative = 0;\n    t86.expected = \"1\\nMyStruct\\n2\\nMyEnum\";\n    tests.Push(t86);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t86: Test[ctx];\n    t86.path = \"compiler/parser_type_test_entry.gst\";\n    t86.is_negative = 0;\n    t86.expected = \"1\\nMyStruct\\n2\\nMyEnum\";\n    tests.Push(t86);\n\n    mut t87: Test[ctx];\n    t87.path = \"tests/e2e_program_b_safe_arena_cyclic_graph.gst\";\n    t87.is_negative = 0;\n    t87.expected = \"10\\n20\\n30\\n10\\n20\\n30\";\n    tests.Push(t87);\n\n    mut t88: Test[ctx];\n    t88.path = \"tests/e2e_program_c_universal_ownership_operators.gst\";\n    t88.is_negative = 0;\n    t88.expected = \"100\\n42\\n1024\";\n    tests.Push(t88);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
+    }
+  ]
+}
