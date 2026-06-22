@@ -451,14 +451,19 @@ func main() {
     t26.expected = "already been moved";
     tests.Push(t26);
 
-    mut t25: Test[ctx];
-    // Wait! Let's check the index of the last test added in the previous turn.
-    // Ah! In our previous turn, we added t25 and t26. So the next one is t27!
-    // Let's verify our search block. Our search block was: 
-    // t26 is already pushed in SEARCH block! No, in search we matched up to t26, but the start-of-suite line was right below it.
-    // Let's look at the search block again. Yes, it starts after tests.Push(t26).
-    // Let's make sure our search block matches test_runner.gst exactly.
+    mut t27: Test[ctx];
+    t27.path = "tests/test_dangling_index_rejected.gst";
+    t27.is_negative = 1;
+    t27.expected = "Allocator moved or freed";
+    tests.Push(t27);
 
+    mut t28: Test[ctx];
+    t28.path = "tests/test_unbranded_struct_view_rejected.gst";
+    t28.is_negative = 1;
+    t28.expected = "cannot contain ephemeral slice or view";
+    tests.Push(t28);
+
+    os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
     mut i := 0;
