@@ -1,0 +1,9 @@
+{
+  "summary": "chore: upgrade gt-one-gst in flake.nix to automatically rebuild the compiler before testing",
+  "files": [
+    {
+      "file_path": "flake.nix",
+      "code_diff": "<<<<<<< SEARCH\n            # Run a single positive or negative Gust test and pipe all compiler logs + runtime output to to.log\n            gt-one-gst() {\n              if [ -z \"$1\" ]; then\n                echo \"❌ Error: Please provide a test path (e.g., gt-one-gst tests/e2e_collections_methods.gst)\"\n                return 1\n              fi\n\n              TEST_PATH=\"$1\"\n              TEST_STEM=$(basename \"''${TEST_PATH}\" .gst)\n              mkdir -p build\n=======\n            # Run a single positive or negative Gust test and pipe all compiler logs + runtime output to to.log\n            gt-one-gst() {\n              if [ -z \"$1\" ]; then\n                echo \"❌ Error: Please provide a test path (e.g., gt-one-gst tests/e2e_collections_methods.gst)\"\n                return 1\n              fi\n\n              # Force make to recognize any compiler changes by touching the entrypoint and rebuilding\n              if [ -f compiler/test_runner_entry.gst ]; then\n                touch compiler/test_runner_entry.gst\n              fi\n              make gust >/dev/null 2>&1\n\n              TEST_PATH=\"$1\"\n              TEST_STEM=$(basename \"''${TEST_PATH}\" .gst)\n              mkdir -p build\n>>>>>>> REPLACE"
+    }
+  ]
+}

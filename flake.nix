@@ -70,6 +70,12 @@
                 return 1
               fi
 
+              # Force make to recognize any compiler changes by touching the entrypoint and rebuilding
+              if [ -f compiler/test_runner_entry.gst ]; then
+                touch compiler/test_runner_entry.gst
+              fi
+              make gust >/dev/null 2>&1
+
               TEST_PATH="$1"
               TEST_STEM=$(basename "''${TEST_PATH}" .gst)
               mkdir -p build
