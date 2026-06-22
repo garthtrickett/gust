@@ -29,6 +29,7 @@ bootstrap: gust
 	./build/gust_stage2_bin compiler/test_runner_entry.gst | grep -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c
 	@# Stage 4: Assert byte-by-byte identity between Stage 2 and Stage 3 C files
 	@diff -u build/gust_stage2.c build/gust_stage3.c && echo "✅ Fixed-point bootstrap convergence achieved!"
+	cp build/gust_stage3.c gust_v4.c
 
 test: gust
 	@mkdir -p build

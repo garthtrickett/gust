@@ -976,6 +976,25 @@ impl TypeChecker {
             .insert("std.Yield".to_string(), yield_sig.clone());
         self.function_registry
             .insert("std_Yield".to_string(), yield_sig);
+
+        self.function_registry.insert(
+            "os.System".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::Str],
+                return_type: Type::Int,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
+        self.function_registry.insert(
+            "os_System".to_string(),
+            super::types::FunctionSignature {
+                param_names: vec!["arg0".to_string()],
+                params: vec![Type::Str],
+                return_type: Type::Int,
+                return_origins: std::collections::HashSet::new(),
+            },
+        );
     }
 
     pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {
@@ -1581,7 +1600,10 @@ impl TypeChecker {
                         } else {
                             Err(TypeError {
                                 kind: TypeErrorKind::UndefinedVariable,
-                                message: format!("Semantic Error: Undefined variable '{}' in assignment LHS", name),
+                                message: format!(
+                                    "Semantic Error: Undefined variable '{}' in assignment LHS",
+                                    name
+                                ),
                                 span: Some(*span),
                             })
                         }

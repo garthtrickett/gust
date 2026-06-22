@@ -3424,7 +3424,10 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
 
             register_fn(env, "os.Exit", p_int, t_void, ctx);
             register_fn(env, "os_Exit", p_int, t_void, ctx);
+            register_fn(env, "os.System", p_str, t_int, ctx);
+            register_fn(env, "os_System", p_str, t_int, ctx);
 
+            // os.OpenDir
             mut t_slice_byte: ast.Type[ctx];
             t_slice_byte.tag = 6; // Slice
             t_slice_byte.Slice.inner = os.ArenaAlloc(ctx);
