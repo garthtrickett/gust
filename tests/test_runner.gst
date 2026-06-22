@@ -59,7 +59,7 @@ func join_lines(lines: std.Vector[str, ctx], ctx: &Arena) str {
 func test_worker_task(arg: *TestTaskArg[ctx]) {
     mut local_ctx := os.Arena.New();
     defer local_ctx.Free();
-    os.SetThreadScratch(local_ctx);
+    os.SetThreadScratch(&local_ctx);
 
     unsafe {
         mut t := (*arg).test;
