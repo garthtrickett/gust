@@ -32,4 +32,7 @@ func main() {
     
     mut rc4: std.Rc[Node, ctx] := std.RcNew(&pool, item2);
     os.LogInt(rc4.node_index);
+
+    rc3.Release();
+    rc4.Release();
 }
