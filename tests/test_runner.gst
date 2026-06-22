@@ -841,6 +841,48 @@ func main() {
     t88.expected = "100\n42\n1024";
     tests.Push(t88);
 
+    mut t89: Test[ctx];
+    t89.path = "tests/e2e_mutex_concurrency.gst";
+    t89.is_negative = 0;
+    t89.expected = "300";
+    tests.Push(t89);
+
+    mut t90: Test[ctx];
+    t90.path = "tests/e2e_channel_ping_pong.gst";
+    t90.is_negative = 0;
+    t90.expected = "142";
+    tests.Push(t90);
+
+    mut t91: Test[ctx];
+    t91.path = "tests/e2e_parallel_zero_copy_parsing.gst";
+    t91.is_negative = 0;
+    t91.expected = "250";
+    tests.Push(t91);
+
+    mut t92: Test[ctx];
+    t92.path = "tests/e2e_fiber_channel_pipeline.gst";
+    t92.is_negative = 0;
+    t92.expected = "242";
+    tests.Push(t92);
+
+    mut t93: Test[ctx];
+    t93.path = "tests/e2e_process_args_and_exit.gst";
+    t93.is_negative = 0;
+    t93.expected = "3\ncompile\nfile.gst";
+    tests.Push(t93);
+
+    mut t94: Test[ctx];
+    t94.path = "tests/e2e_thread_local_dynamic_swapping.gst";
+    t94.is_negative = 0;
+    t94.expected = "0\n16";
+    tests.Push(t94);
+
+    mut t95: Test[ctx];
+    t95.path = "tests/e2e_multithreaded_scratch_isolation.gst";
+    t95.is_negative = 0;
+    t95.expected = "42\n100";
+    tests.Push(t95);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
