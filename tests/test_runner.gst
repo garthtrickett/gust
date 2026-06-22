@@ -499,6 +499,30 @@ func main() {
     t34.expected = "Accessing the .Val payload of an unchecked result wrapper";
     tests.Push(t34);
 
+    mut t35: Test[ctx];
+    t35.path = "tests/test_deref_outside_unsafe_rejected.gst";
+    t35.is_negative = 1;
+    t35.expected = "prohibited outside 'unsafe' blocks";
+    tests.Push(t35);
+
+    mut t36: Test[ctx];
+    t36.path = "tests/test_match_non_exhaustive_rejected.gst";
+    t36.is_negative = 1;
+    t36.expected = "is not exhaustive";
+    tests.Push(t36);
+
+    mut t37: Test[ctx];
+    t37.path = "tests/test_match_invalid_variant_rejected.gst";
+    t37.is_negative = 1;
+    t37.expected = "is not a valid variant of enum";
+    tests.Push(t37);
+
+    mut t38: Test[ctx];
+    t38.path = "tests/test_logical_operators_invalid.gst";
+    t38.is_negative = 1;
+    t38.expected = "Left operand of logical";
+    tests.Push(t38);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

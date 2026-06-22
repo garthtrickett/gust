@@ -1,0 +1,25 @@
+{
+  "summary": "test: add deref outside unsafe, match exhaustiveness, match invalid variant, and logical operators error tests and register in test_runner",
+  "files": [
+    {
+      "file_path": "tests/test_deref_outside_unsafe_rejected.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut val := 42;\n    mut ptr := &val;\n    mut deref := *ptr;\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_match_non_exhaustive_rejected.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Shape enum {\n    Circle { radius: int },\n    Rectangle { width: int, height: int },\n    Point\n}\n\nfunc process(shape: Shape) int {\n    match shape {\n        Circle => {\n            return shape.Circle.radius;\n        }\n        Point => {\n            return 0;\n        }\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_match_invalid_variant_rejected.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Shape enum {\n    Circle { radius: int },\n    Point\n}\n\nfunc process(shape: Shape) int {\n    match shape {\n        Circle => {\n            return shape.Circle.radius;\n        }\n        Point => {\n            return 0;\n        }\n        Triangle => {\n            return 3;\n        }\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_logical_operators_invalid.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Node struct { val: int }\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut n: Node;\n    mut ptr := &n;\n    \n    if n && ptr {\n        os.LogInt(1);\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_runner.gst",
+      "code_diff": "<<<<<<< SEARCH\n    mut t34: Test[ctx];\n    t34.path = \"tests/test_mismatched_logical_check_rejected.gst\";\n    t34.is_negative = 1;\n    t34.expected = \"Accessing the .Val payload of an unchecked result wrapper\";\n    tests.Push(t34);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t34: Test[ctx];\n    t34.path = \"tests/test_mismatched_logical_check_rejected.gst\";\n    t34.is_negative = 1;\n    t34.expected = \"Accessing the .Val payload of an unchecked result wrapper\";\n    tests.Push(t34);\n\n    mut t35: Test[ctx];\n    t35.path = \"tests/test_deref_outside_unsafe_rejected.gst\";\n    t35.is_negative = 1;\n    t35.expected = \"prohibited outside 'unsafe' blocks\";\n    tests.Push(t35);\n\n    mut t36: Test[ctx];\n    t36.path = \"tests/test_match_non_exhaustive_rejected.gst\";\n    t36.is_negative = 1;\n    t36.expected = \"is not exhaustive\";\n    tests.Push(t36);\n\n    mut t37: Test[ctx];\n    t37.path = \"tests/test_match_invalid_variant_rejected.gst\";\n    t37.is_negative = 1;\n    t37.expected = \"is not a valid variant of enum\";\n    tests.Push(t37);\n\n    mut t38: Test[ctx];\n    t38.path = \"tests/test_logical_operators_invalid.gst\";\n    t38.is_negative = 1;\n    t38.expected = \"Left operand of logical\";\n    tests.Push(t38);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
+    }
+  ]
+}
