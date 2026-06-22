@@ -1,6 +1,7 @@
 type Test[ctx] struct {
     path: str,
     is_negative: int,
+    is_substring: int,
     expected: str
 }
 
@@ -234,7 +235,18 @@ func run_test(t: Test[ctx]) int {
         mut trimmed_actual := std.str_trim(clean_run_content);
         mut trimmed_expected := std.str_trim(exp);
 
-        if std.str_eq(trimmed_actual, trimmed_expected) == 0 {
+        mut is_match := 0;
+        if t.is_substring == 1 {
+            if std.str_find(trimmed_actual, trimmed_expected) != 0 - 1 {
+                is_match = 1;
+            }
+        } else {
+            if std.str_eq(trimmed_actual, trimmed_expected) == 1 {
+                is_match = 1;
+            }
+        }
+
+        if is_match == 0 {
             mut msg := std.Format("❌ FAIL: %s (Output mismatch!)", path);
             os.LogStr(msg);
             os.LogStr("--- EXPECTED ---");
@@ -381,12 +393,20 @@ func main() {
     tests.Push(t17);
 
     mut t18: Test[ctx];
-    t18.path = "compiler/typechecker_registry_test_entry.gst";
-    t18.is_negative = 0;
-    t18.expected = "lib__Helper\nlib__add\nmain__local_var\nint\nLookupResult_lib__Helper\nstd_Vector_lib__Helper_ctx";
+    t18.path = "tests/test_unresolved_selector_rejected.gst";
+    t18.is_negative = 1;
+    t18.expected = "UnresolvedSelector";
     tests.Push(t18);
 
+    mut t19: Test[ctx];
+    t19.path = "tests/test_sentinel_positive_sample.gst";
+    t19.is_negative = 0;
+    t19.is_substring = 1;
+    t19.expected = "SUCCESS SENTINEL MATCHED!";
+    tests.Push(t19);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
+
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
     mut i := 0;
