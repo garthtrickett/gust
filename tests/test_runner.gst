@@ -4,6 +4,11 @@ type Test[ctx] struct {
     expected: str
 }
 
+type TestTaskArg[ctx] struct {
+    test: Test[ctx],
+    chan: std.Channel[int, ctx]
+}
+
 type StringHeader struct {
     data: *byte,
     len: int
@@ -48,6 +53,18 @@ func join_lines(lines: std.Vector[str, ctx], ctx: &Arena) str {
         (*res_header).data = dest;
         (*res_header).len = total_len;
         return *(((res_header as *str) + 0) as *str);
+    }
+}
+
+func test_worker_task(arg: *TestTaskArg[ctx]) {
+    mut local_ctx := os.Arena.New();
+    defer local_ctx.Free();
+    os.SetThreadScratch(local_ctx);
+
+    unsafe {
+        mut t := (*arg).test;
+        mut ok := run_test(local_ctx, t);
+        (*arg).chan.Send(ok);
     }
 }
 
@@ -368,20 +385,34 @@ func main() {
     tests.Push(t18);
 
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
-    mut passed_count := 0;
-    mut failed_count := 0;
+    mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
     mut i := 0;
     while i < len(tests) {
         mut t := tests[i];
-        mut ok := run_test(ctx, t);
+        mut arg: TestTaskArg[ctx];
+        arg.test = t;
+        arg.chan = chan;
+
+        mut arg_idx := os.ArenaAlloc(ctx) as Index[TestTaskArg[ctx], ctx];
+        ctx[arg_idx] = arg;
+
+        std.Spawn(test_worker_task, &ctx[arg_idx]);
+        i = i + 1;
+    }
+
+    mut passed_count := 0;
+    mut failed_count := 0;
+
+    mut j := 0;
+    while j < len(tests) {
+        mut ok := chan.Recv();
         if ok == 1 {
             passed_count = passed_count + 1;
-        } else {
+        } else { 
             failed_count = failed_count + 1;
         }
-        os.ScratchReset();
-        i = i + 1;
+        j = j + 1;
     }
 
     os.LogStr("-----------------------------------------");
