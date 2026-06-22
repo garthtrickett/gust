@@ -787,6 +787,12 @@ func main() {
     t79.expected = "42\n100";
     tests.Push(t79);
 
+    mut t80: Test[ctx];
+    t80.path = "compiler/typechecker_mismatch_test_entry.gst";
+    t80.is_negative = 0;
+    t80.expected = "Argument mismatch correctly detected!\nSemantic Error: Template 'std.Vector' expects 2 generic arguments but got 1";
+    tests.Push(t80);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
