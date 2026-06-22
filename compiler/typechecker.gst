@@ -1765,7 +1765,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if std.str_eq(resolved_func, "std_ChannelNew") || std.str_eq(resolved_func, "std.ChannelNew") ||
-               std.str_eq(resolved_func, "std_MutexNew") || std.str_eq(resolved_func, "std.MutexNew") ||
+               std.str_eq(resolved_func, "std_MutexNew") || std.str_eq(resolved_func, "std_MutexNew") ||
                std.str_eq(resolved_func, "std_VectorNew") || std.str_eq(resolved_func, "std.VectorNew") ||
                std.str_eq(resolved_func, "std_HashMapNew") || std.str_eq(resolved_func, "std.HashMapNew") ||
                std.str_eq(resolved_func, "std_PoolNew") || std.str_eq(resolved_func, "std.PoolNew") ||
@@ -1791,6 +1791,45 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
                     return make_type_struct(ret_name, brand_name, ctx);
                 }
+            }
+
+            if std.str_eq(resolved_func, "os.LogInt") || std.str_eq(resolved_func, "os_LogInt") {
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec) != 1 {
+                    mut msg := "Semantic Error: os.LogInt expects exactly 1 argument";
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                } else {
+                    mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[arg0_idx] = (*args_vec)[0];
+                    mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+                    mut resolved_arg := env_resolve_type(env, arg_type, ctx);
+                    if resolved_arg.tag != 0 && resolved_arg.tag != 1 && resolved_arg.tag != 2 && resolved_arg.tag != 7 {
+                        mut msg := std.Format("Semantic Error: os.LogInt expects an Int/Byte/Index argument, but got %s", ast.serialize_type(resolved_arg, ctx));
+                        report_error(2, msg, expr.Call.span, env, ctx);
+                    }
+                }
+                mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                return t_void;
+            }
+
+            if std.str_eq(resolved_func, "os.LogStr") || std.str_eq(resolved_func, "os_LogStr") {
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec) != 1 {
+                    mut msg := "Semantic Error: os.LogStr expects exactly 1 argument";
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                } else {
+                    mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[arg0_idx] = (*args_vec)[0];
+                    mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+                    mut resolved_arg := env_resolve_type(env, arg_type, ctx);
+                    mut t_str: ast.Type[ctx]; t_str.tag = 5; // Str
+                    if types_match(t_str, resolved_arg, ctx) == 0 {
+                        mut msg := std.Format("Semantic Error: os.LogStr expects a Str argument, but got %s", ast.serialize_type(resolved_arg, ctx));
+                        report_error(2, msg, expr.Call.span, env, ctx);
+                    }
+                }
+                mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+                return t_void;
             }
 
             mut sig_lookup := (*env).function_registry.Get(resolved_func);
