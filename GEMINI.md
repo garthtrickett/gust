@@ -1,4 +1,50 @@
 
+## 10. Gust Style Guide: Branding & Ephemeral Views Consistency
+
+When writing or editing Gust (`.gst`) programs, you must strictly adhere to the following memory-safety and type-safety constraints enforced by the Gust typechecker.
+
+### A. Ephemeral View Constraints on Structs
+* **Rule:** Unbranded structs **cannot** contain ephemeral view types (such as `str` or `[]byte`). 
+* **Action:** If a struct contains a `str` or slice field, it **must** be declared as a branded struct template.
+
+```gust
+// ❌ Incorrect (Typechecker will reject due to unbranded 'str' field)
+type Test struct {
+    path: str
+}
+
+// ✅ Correct (Branded template allowed to hold ephemeral views)
+type Test[ctx] struct {
+    path: str
+}
+```
+
+### B. Strict Brand Propagation Rule
+* **Rule:** Once a struct is declared with a brand parameter (e.g., `MyStruct[ctx]`), **every single reference** to that struct in the program must propagate the brand argument.
+* **Why:** Referencing the raw template name `MyStruct` without its brand inside variable declarations, function parameters, or container types (like `std.Vector`) strips the brand. The compiler resolves it with an empty brand (`None`), triggering a **Brand Nesting Restriction violation** or an unbranded ephemeral error.
+
+```gust
+// ❌ Incorrect (RHS/LHS and vectors use unbranded 'Test' names)
+type Test[ctx] struct {
+    path: str
+}
+func run_test(ctx: &Arena, t: Test) int { ... } // ERROR: Unbranded parameter
+func main() {
+    mut tests: std.Vector[Test, ctx] := std.VectorNew(ctx); // ERROR: Unbranded vector element
+    mut t1: Test; // ERROR: Unbranded variable
+}
+
+// ✅ Correct (All types propagate '[ctx]')
+type Test[ctx] struct {
+    path: str
+}
+func run_test(ctx: &Arena, t: Test[ctx]) int { ... } // CORRECT: Branded parameter
+func main() {
+    mut tests: std.Vector[Test[ctx], ctx] := std.VectorNew(ctx); // CORRECT: Branded vector element
+    mut t1: Test[ctx]; // CORRECT: Branded variable
+}
+```
+
 
 ## TOOL USE CONSTRAINTS & DISCIPLINE
 - **Prohibition of Execution Tools**: You are strictly prohibited from calling any command execution, bash shell, terminal, or system-running tools (such as `vm_shell:execute_bash` or any equivalent system command triggers).

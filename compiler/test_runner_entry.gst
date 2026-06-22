@@ -156,33 +156,46 @@ func main() {
         os.LogStr(log_pfx);
         
         mut t_idx := 0;
-        while t_idx < len(entry.types) {
-            mut t_entry := entry.types[t_idx];
-            mut start_str := std.FormatInt(t_entry.start_offset);
-            mut end_str := std.FormatInt(t_entry.end_offset);
-            mut type_str := ast.serialize_type(t_entry.val_type, ctx);
-            
-            mut expr_text := "";
-            if std.str_eq(entry.prefix, "") == 1 {
-                if t_entry.start_offset >= 0 && t_entry.end_offset <= len(entry_source_code) && t_entry.start_offset < t_entry.end_offset {
-                    expr_text = std.str_slice(entry_source_code, t_entry.start_offset, t_entry.end_offset);
-                }
-            }
+            while t_idx < len(entry.types) {
+                mut t_entry := entry.types[t_idx];
+                mut start_str := std.FormatInt(t_entry.start_offset);
+                mut end_str := std.FormatInt(t_entry.end_offset);
+                mut type_str := ast.serialize_type(t_entry.val_type, ctx);
 
-            mut log_line := std.Concat("👁️   Span ", start_str);
-            log_line = std.Concat(log_line, "..");
-            log_line = std.Concat(log_line, end_str);
-            log_line = std.Concat(log_line, " ('");
-            log_line = std.Concat(log_line, expr_text);
-            log_line = std.Concat(log_line, "') -> ");
-            log_line = std.Concat(log_line, type_str);
-            os.LogStr(log_line);
-            
-            if std.str_find(expr_text, "env.errors") != 0 - 1 {
-                mut log_match := std.Concat("🎯 MATCH env.errors: '", expr_text);
-                log_match = std.Concat(log_match, "'");
-                os.LogStr(log_match);
-            }
+                mut expr_text := "";
+                if std.str_eq(entry.prefix, "") == 1 {
+                    if t_entry.start_offset >= 0 && t_entry.end_offset <= len(entry_source_code) && t_entry.start_offset < t_entry.end_offset {
+                        expr_text = std.str_slice(entry_source_code, t_entry.start_offset, t_entry.end_offset);
+                    }
+                }
+
+                // Sanitize expr_text to remove newlines and keep the log strictly single-line
+                mut clean_expr_text := "";
+                mut char_idx := 0;
+                while char_idx < len(expr_text) {
+                    mut b := std.str_byte_at(expr_text, char_idx);
+                    if b == 10 || b == 13 { // '\n' or '\r'
+                        clean_expr_text = std.Concat(clean_expr_text, " ");
+                    } else {
+                        clean_expr_text = std.Concat(clean_expr_text, std.str_slice(expr_text, char_idx, char_idx + 1));
+                    }
+                    char_idx = char_idx + 1;
+                }
+
+                mut log_line := std.Concat("👁   Span ", start_str);
+                log_line = std.Concat(log_line, "..");
+                log_line = std.Concat(log_line, end_str);
+                log_line = std.Concat(log_line, " ('");
+                log_line = std.Concat(log_line, clean_expr_text);
+                log_line = std.Concat(log_line, "') -> ");
+                log_line = std.Concat(log_line, type_str);
+                os.LogStr(log_line);
+
+                if std.str_find(expr_text, "env.errors") != 0 - 1 {
+                    mut log_match := std.Concat("🎯 MATCH env.errors: '", clean_expr_text);
+                    log_match = std.Concat(log_match, "'");
+                    os.LogStr(log_match);
+                }
             
             t_idx = t_idx + 1;
         }

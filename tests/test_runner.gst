@@ -12,9 +12,42 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
 
     os.System("mkdir -p build");
 
+    // Generate a unique identifier for this test based on its path
+    mut test_id := "";
+    mut char_idx := 0;
+    while char_idx < len(path) {
+        mut b := std.str_byte_at(path, char_idx);
+        if b == 47 || b == 46 { // '/' or '.'
+            test_id = std.Concat(test_id, "_");
+        } else {
+            test_id = std.Concat(test_id, std.str_slice(path, char_idx, char_idx + 1));
+        }
+        char_idx = char_idx + 1;
+    }
+
+    mut temp_log := std.Concat("build/", test_id);
+    temp_log = std.Concat(temp_log, "_temp.log");
+
+    mut clean_c := std.Concat("build/", test_id);
+    clean_c = std.Concat(clean_c, "_clean.c");
+
+    mut final_c := std.Concat("build/", test_id);
+    final_c = std.Concat(final_c, "_final.c");
+
+    mut c_comp_log := std.Concat("build/", test_id);
+    c_comp_log = std.Concat(c_comp_log, "_c_comp.log");
+
+    mut run_log := std.Concat("build/", test_id);
+    run_log = std.Concat(run_log, "_run.log");
+
+    mut bin_path := std.Concat("build/", test_id);
+    bin_path = std.Concat(bin_path, "_bin");
+
     if is_neg == 1 {
         mut cmd := std.Concat("./gust ", path);
-        cmd = std.Concat(cmd, " > build/test_temp.log 2>&1");
+        cmd = std.Concat(cmd, " > ");
+        cmd = std.Concat(cmd, temp_log);
+        cmd = std.Concat(cmd, " 2>&1");
         status = os.System(cmd);
 
         if status == 0 {
@@ -23,16 +56,17 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
             return 0;
         }
 
-        mut log_content := os.ReadFile(ctx, "build/test_temp.log");
+        mut log_content := os.ReadFile(ctx, temp_log);
         mut found_err := std.str_find(log_content, exp);
         if found_err == 0 - 1 {
             mut msg := std.Format("❌ FAIL: %s (Compilation failed as expected, but could not find expected error substring '%s')", path, exp);
             os.LogStr(msg);
-            os.LogStr("--- GUST COMPILER LOG ---");
-            os.LogStr(log_content);
-            os.LogStr("-------------------------");
             return 0;
         }
+
+        // Cleanup on PASS
+        mut rm_cmd := std.Concat("rm -f ", temp_log);
+        os.System(rm_cmd);
 
         mut msg := std.Format("✅ PASS: %s (Compilation failed with expected error: '%s')", path, exp);
         os.LogStr(msg);
@@ -46,22 +80,20 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
         }
 
         mut cmd_comp := std.Concat("./gust ", path);
-        cmd_comp = std.Concat(cmd_comp, " > build/test_temp.log 2>&1");
+        cmd_comp = std.Concat(cmd_comp, " > ");
+        cmd_comp = std.Concat(cmd_comp, temp_log);
+        cmd_comp = std.Concat(cmd_comp, " 2>&1");
         status = os.System(cmd_comp);
 
         if status != 0 {
-            mut msg := std.Format("❌ FAIL: %s (Compilation failed! See log below)", path);
+            mut msg := std.Format("❌ FAIL: %s (Compilation failed! See %s for errors)", path, temp_log);
             os.LogStr(msg);
-            mut log_content := os.ReadFile(ctx, "build/test_temp.log");
-            os.LogStr("--- GUST COMPILER LOG ---");
-            os.LogStr(log_content);
-            os.LogStr("-------------------------");
             return 0;
         }
 
-        mut comp_output := os.ReadFile(ctx, "build/test_temp.log");
+        mut comp_output := os.ReadFile(ctx, temp_log);
         mut lines := std.str_split(comp_output, "\n", ctx);
-        mut clean_c := "";
+        mut clean_c_content := "";
         mut idx := 0;
         while idx < len(lines) {
             mut line := lines[idx];
@@ -73,38 +105,45 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
                 }
             }
             if should_keep == 1 {
-                clean_c = std.Concat(clean_c, line);
-                clean_c = std.Concat(clean_c, "\n");
+                clean_c_content = std.Concat(clean_c_content, line);
+                clean_c_content = std.Concat(clean_c_content, "\n");
             }
             idx = idx + 1;
         }
 
-        os.WriteFile("build/test_temp_clean.c", clean_c);
+        os.WriteFile(clean_c, clean_c_content);
 
-        mut compile_c_cmd := "cc -O2 -Wall -pthread -Isrc src/runtime.c build/test_temp_clean.c -o build/test_temp_bin > build/test_c_comp.log 2>&1";
+        // Prepend src/runtime.c content to the cleaned C to form a unified translation unit
+        mut runtime_content := os.ReadFile(ctx, "src/runtime.c");
+        mut final_c_content := std.Concat(runtime_content, "\n\n");
+        final_c_content = std.Concat(final_c_content, clean_c_content);
+        os.WriteFile(final_c, final_c_content);
+
+        mut compile_c_cmd := std.Concat("cc -O2 -Wall -pthread -Isrc ", final_c);
+        compile_c_cmd = std.Concat(compile_c_cmd, " -o ");
+        compile_c_cmd = std.Concat(compile_c_cmd, bin_path);
+        compile_c_cmd = std.Concat(compile_c_cmd, " > ");
+        compile_c_cmd = std.Concat(compile_c_cmd, c_comp_log);
+        compile_c_cmd = std.Concat(compile_c_cmd, " 2>&1");
         status = os.System(compile_c_cmd);
         if status != 0 {
-            mut msg := std.Format("❌ FAIL: %s (Native C compilation failed! See log below)", path);
-            os.LogStr(msg); 
-            mut log_content := os.ReadFile(ctx, "build/test_c_comp.log");
-            os.LogStr("--- NATIVE C COMPILER LOG ---");
-            os.LogStr(log_content);
-            os.LogStr("-----------------------------");
-            return 0;
-        }
-
-        status = os.System("./build/test_temp_bin > build/test_run.log 2>&1");
-        if status != 0 {
-            mut msg := std.Format("❌ FAIL: %s (Execution crashed/failed! See log below)", path);
+            mut msg := std.Format("❌ FAIL: %s (Native C compilation failed! See %s for errors)", path, c_comp_log);
             os.LogStr(msg);
-            mut log_content := os.ReadFile(ctx, "build/test_run.log");
-            os.LogStr("--- RUNTIME LOG ---");
-            os.LogStr(log_content);
-            os.LogStr("-------------------");
             return 0;
         }
 
-        mut actual_output := os.ReadFile(ctx, "build/test_run.log");
+        mut run_cmd := std.Concat("./", bin_path);
+        run_cmd = std.Concat(run_cmd, " > ");
+        run_cmd = std.Concat(run_cmd, run_log);
+        run_cmd = std.Concat(run_cmd, " 2>&1");
+        status = os.System(run_cmd);
+        if status != 0 {
+            mut msg := std.Format("❌ FAIL: %s (Execution crashed/failed! See %s for errors)", path, run_log);
+            os.LogStr(msg);
+            return 0;
+        }
+
+        mut actual_output := os.ReadFile(ctx, run_log);
         actual_output = std.str_trim(actual_output);
         mut trimmed_expected := std.str_trim(exp);
 
@@ -124,6 +163,20 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
         if std.str_find(path, "e2e_filesystem_ops") != 0 - 1 {
             os.System("rm -rf temp_e2e_filesystem_dir temp_e2e_filesystem_test.txt");
         }
+
+        // Cleanup on PASS
+        mut rm_cmd := std.Concat("rm -f ", temp_log);
+        rm_cmd = std.Concat(rm_cmd, " ");
+        rm_cmd = std.Concat(rm_cmd, c_comp_log);
+        rm_cmd = std.Concat(rm_cmd, " ");
+        rm_cmd = std.Concat(rm_cmd, run_log);
+        rm_cmd = std.Concat(rm_cmd, " ");
+        rm_cmd = std.Concat(rm_cmd, clean_c);
+        rm_cmd = std.Concat(rm_cmd, " ");
+        rm_cmd = std.Concat(rm_cmd, final_c);
+        rm_cmd = std.Concat(rm_cmd, " ");
+        rm_cmd = std.Concat(rm_cmd, bin_path);
+        os.System(rm_cmd);
 
         mut msg := std.Format("✅ PASS: %s (Compiled and ran successfully with expected output)", path);
         os.LogStr(msg);
@@ -248,8 +301,6 @@ func main() {
     os.LogStr("-----------------------------------------");
     mut summary_msg := std.Format("🏁 Test Suite Finished. Passed: %d, Failed: %d", passed_count, failed_count);
     os.LogStr(summary_msg);
-
-    os.System("rm -rf build/test_temp.log build/test_temp.c build/test_temp_clean.c build/test_temp_bin build/test_c_comp.log build/test_run.log");
 
     if failed_count > 0 {
         os.Exit(1);

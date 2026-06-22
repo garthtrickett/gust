@@ -3565,16 +3565,6 @@ typedef void Any;
                         struct_decl = std.Concat(struct_decl, "    };\n");
                         struct_decl = std.Concat(struct_decl, "};\n\n");
                         c_code = std.Concat(c_code, struct_decl);
-
-                        // 3. Generate CastResult struct
-                        mut cast_decl := std.Concat("struct CastResult_", key);
-                        cast_decl = std.Concat(cast_decl, " {\n");
-                        cast_decl = std.Concat(cast_decl, "    ");
-                        cast_decl = std.Concat(cast_decl, key);
-                        cast_decl = std.Concat(cast_decl, "* Val;\n");
-                        cast_decl = std.Concat(cast_decl, "    int Ok;\n");
-                        cast_decl = std.Concat(cast_decl, "};\n\n");
-                        c_code = std.Concat(c_code, cast_decl);
                     } else {
                         mut struct_decl := std.Concat("struct ", key);
                         struct_decl = std.Concat(struct_decl, " {\n");
@@ -3600,18 +3590,6 @@ typedef void Any;
                         }
                         struct_decl = std.Concat(struct_decl, "};\n\n");
                         c_code = std.Concat(c_code, struct_decl);
-
-                        if std.str_find(key, "LookupResult_") == 0 - 1 &&
-                           std.str_find(key, "CastResult_") == 0 - 1 {
-                            mut cast_decl := std.Concat("struct CastResult_", key);
-                            cast_decl = std.Concat(cast_decl, " {\n");
-                            cast_decl = std.Concat(cast_decl, "    ");
-                            cast_decl = std.Concat(cast_decl, key);
-                            cast_decl = std.Concat(cast_decl, "* Val;\n");
-                            cast_decl = std.Concat(cast_decl, "    int Ok;\n");
-                            cast_decl = std.Concat(cast_decl, "};\n\n");
-                            c_code = std.Concat(c_code, cast_decl);
-                        }
                     }
                 }
             }
