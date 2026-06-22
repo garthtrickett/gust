@@ -1,5 +1,13 @@
 # Gust Compiler
 
+> **Why Gust? Because LLMs shouldn't fight the borrow checker.**
+> 
+> Traditional systems languages were designed for human hands typing on keyboards, leading to complex abstractions, implicit macros, and indentation dependencies that cause AI code generation to hallucinate or slip.
+> 
+> Gust is built from the ground up with Locality of Behavior (LoB) and strict monadic typing. It eliminates global lifetime complexity using regional arenas and forces explicit error paths. The result? A language that feels natural for a human to read, but functions as a deterministic, bulletproof sandbox for an AI to write.
+
+Gust is a minimalist, self-hosted, expression-based programming language that transpiles directly to clean, standard C99. It is designed around "Grug-brained simplicity," focusing on locality of behavior, minimal abstraction, and robust compile-time safety invariants without garbage collection overhead.
+
 Gust is a minimalist, self-hosted, expression-based programming language that transpiles directly to clean, standard C99. It is designed around "Grug-brained simplicity," focusing on locality of behavior, minimal abstraction, and robust compile-time safety invariants without garbage collection overhead.
 
 The language features a unique memory and concurrency model:
