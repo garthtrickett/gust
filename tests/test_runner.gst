@@ -1411,6 +1411,18 @@ func main() {
     t183.expected = "ALL SELF-HOSTED CODEGEN ASSERTIONS PASSED!";
     tests.Push(t183);
 
+    mut t184: Test[ctx];
+    t184.path = "tests/e2e_safe_branding.gst";
+    t184.is_negative = 0;
+    t184.expected = "100\nHello Arena\n11";
+    tests.Push(t184);
+
+    mut t185: Test[ctx];
+    t185.path = "compiler/type_dump_entry.gst";
+    t185.is_negative = 2;
+    t185.expected = "Usage: type_dump <file>";
+    tests.Push(t185);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
