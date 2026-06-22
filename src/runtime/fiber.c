@@ -353,10 +353,10 @@ void gust_scheduler_spawn(size_t stack_size, void (*entry_fn)(void*), void* arg)
     if (!fiber) return;
 
     gust_SchedulerShard* target = NULL;
-    if (active_shard) {
-        target = active_shard;
-    } else if (gust_num_shards > 0 && gust_shards) {
-        target = &gust_shards[0];
+    if (gust_num_shards > 0 && gust_shards) {
+        static unsigned int spawn_counter = 0;
+        unsigned int idx = __sync_fetch_and_add(&spawn_counter, 1);
+        target = &gust_shards[idx % gust_num_shards];
     }
 
     if (target) {

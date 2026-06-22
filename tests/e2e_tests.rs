@@ -2719,6 +2719,123 @@ fn test_e2e_fiber_register_preservation() {
 }
 
 #[test]
+fn test_e2e_scheduler_round_robin_distribution() {
+    let mut c_program = String::new();
+    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+
+    c_program.push_str(
+        r#"
+        #include <assert.h>
+
+        pthread_t thread_ids[10];
+        volatile int thread_ids_count = 0;
+        pthread_mutex_t ids_lock = PTHREAD_MUTEX_INITIALIZER;
+
+        void task_fn(void* arg) {
+            pthread_t curr_thread = pthread_self();
+            pthread_mutex_lock(&ids_lock);
+            if (thread_ids_count < 10) {
+                thread_ids[thread_ids_count++] = curr_thread;
+            }
+            pthread_mutex_unlock(&ids_lock);
+        }
+
+        int main() {
+            #if !defined(__x86_64__) && !defined(__aarch64__)
+            printf("GUST_ROUND_ROBIN_OK\n");
+            return 0;
+            #endif
+
+            // Initialize with 3 worker shards (threads)
+            gust_scheduler_init(3);
+
+            // Spawn 10 tasks
+            for (int i = 0; i < 10; i++) {
+                gust_scheduler_spawn(16384, task_fn, NULL);
+            }
+
+            gust_scheduler_destroy();
+
+            // Count distinct threads utilized
+            int distinct_threads = 0;
+            for (int i = 0; i < thread_ids_count; i++) {
+                int found = 0;
+                for (int j = 0; j < i; j++) {
+                    if (pthread_equal(thread_ids[i], thread_ids[j])) {
+                        found = 1;
+                        break;
+                    }
+                }
+                if (!found) {
+                    distinct_threads++;
+                }
+            }
+
+            // Assert that we used multiple shards (should be 3)
+            assert(distinct_threads == 3);
+            printf("GUST_ROUND_ROBIN_OK\n");
+            return 0;
+        }
+        "#,
+    );
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!(
+        "gust_round_robin_test_{:?}_{}_{}.c",
+        thread_id,
+        process_id,
+        count
+    );
+    let bin_filename = format!(
+        "gust_round_robin_test_{:?}_{}_{}.bin",
+        thread_id,
+        process_id,
+        count
+    );
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    let run_output = Command::new(&bin_path).output().expect("Execution failed");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert!(
+        stdout_str.contains("GUST_ROUND_ROBIN_OK"),
+        "Unexpected output: {}",
+        stdout_str
+    );
+}
+
+#[test]
 fn test_e2e_scheduler_affinity_binding() {
     let mut c_program = String::new();
     c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
