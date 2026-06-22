@@ -786,9 +786,9 @@ func main() {
     tl_layout.fields = std.HashMapNew(ctx);
     typechecker.env_register_struct(&env_tl_test, "std_ThreadLocalContext", tl_layout, ctx);
 
-    mut empty_prog_vec: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);
-    mut empty_prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
-    mut gen_tl_c := codegen.codegen_generate(empty_prog_vec, empty_prefixes, &env_tl_test, ctx);
+    mut empty_prog_vec_tl: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);
+    mut empty_prefixes_tl: std.Vector[str, ctx] := std.VectorNew(ctx);
+    mut gen_tl_c := codegen.codegen_generate(empty_prog_vec_tl, empty_prefixes_tl, &env_tl_test, ctx);
 
     mut tl_fwd_idx := std.str_find(gen_tl_c, "std_ThreadLocalContext os_GetThreadScratch(void);");
     if tl_fwd_idx != 0 - 1 {
@@ -803,7 +803,6 @@ func main() {
     } else {
         os.LogStr("ERROR: os_GetThreadScratch function definition missing!");
     }
-}
 
     // Step 3: Verification Test for Step 1 Type & Container Identification Helpers
     mut t_slice_test: ast.Type[ctx];
