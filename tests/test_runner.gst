@@ -691,6 +691,43 @@ func main() {
     t66.expected = "499500";
     tests.Push(t66);
 
+    mut t67: Test[ctx];
+    t67.path = "tests/e2e_rc_reference_counting.gst";
+    t67.is_negative = 0;
+    t67.expected = "0\n42\n0\n1\n0";
+    tests.Push(t67);
+
+    mut t68: Test[ctx];
+    t68.path = "tests/e2e_graph_cyclic_relationship.gst";
+    t68.is_negative = 0;
+    t68.expected = "10\n20\n30\n10\n20\n30";
+    tests.Push(t68);
+
+    mut t69: Test[ctx];
+    t69.path = "tests/e2e_lexical_scope_tree.gst";
+    t69.is_negative = 0;
+    t69.expected = "100\n1\n-1
+100\n2\n200\n42";
+    tests.Push(t69);
+
+    mut t70: Test[ctx];
+    t70.path = "tests/e2e_logical_and_or_operators.gst";
+    t70.is_negative = 0;
+    t70.expected = "0\n1\n1\n2\n100";
+    tests.Push(t70);
+
+    mut t71: Test[ctx];
+    t71.path = "tests/e2e_adt_pressure_test.gst";
+    t71.is_negative = 0;
+    t71.expected = "42\nsomething went wrong\nNone";
+    tests.Push(t71);
+
+    mut t72: Test[ctx];
+    t72.path = "tests/e2e_thread_local_scratchpad.gst";
+    t72.is_negative = 0;
+    t72.expected = "42\n84\n42";
+    tests.Push(t72);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
