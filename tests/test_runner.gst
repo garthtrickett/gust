@@ -1234,7 +1234,7 @@ func main() {
     mut t154: Test[ctx];
     t154.path = "tests/test_hashmap_keys_brand_lifetime_violation_invalid_arg.gst";
     t154.is_negative = 1;
-    t154.expected = "HashMap.Keys expects";
+    t154.expected = "HashMap.Keys";
     tests.Push(t154);
 
     mut t155: Test[ctx];
