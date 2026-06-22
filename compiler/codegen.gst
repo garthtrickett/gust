@@ -2199,6 +2199,69 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             mut func_str := codegen_generate_expression(ctx[expr_idx].Call.function, env, ctx);
 
+            if std.str_eq(func_str, "std.RcNew") || std.str_eq(func_str, "std_RcNew") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.RcNew FFI override", ctx);
+                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut pool_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[pool_expr_idx] = (*args_vec)[0];
+                mut pool_expr := codegen_generate_expression(pool_expr_idx, env, ctx);
+                
+                mut val_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[val_expr_idx] = (*args_vec)[1];
+                mut val_expr := codegen_generate_expression(val_expr_idx, env, ctx);
+
+                mut pool_type := codegen_get_expression_type(pool_expr_idx, env, ctx);
+                mut val_type := codegen_get_expression_type(val_expr_idx, env, ctx);
+
+                mut ctx_name := "ctx";
+                mut target_pool_type := pool_type;
+                if target_pool_type.tag == 9 { // RawPointer
+                    target_pool_type = ctx[target_pool_type.RawPointer.inner];
+                }
+
+                if target_pool_type.tag == 8 { // Struct
+                    mut struct_name := target_pool_type.Struct.struct_name;
+                    mut brand_idx := target_pool_type.Struct.brand;
+                    if brand_idx != empty[Index[str, ctx]] {
+                        mut brand_str_ptr := &ctx[brand_idx] as *str;
+                        ctx_name = typechecker.strip_brand_prefix(*brand_str_ptr, ctx);
+                    }
+                } else if target_pool_type.tag == 10 { // Generic
+                    mut args_vec2 := &ctx[target_pool_type.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+                    if len(*args_vec2) == 2 {
+                        mut arg1 := (*args_vec2)[1];
+                        if arg1.tag == 8 { // Struct
+                            ctx_name = typechecker.strip_brand_prefix(arg1.Struct.struct_name, ctx);
+                        }
+                    }
+                }
+
+                mut val_ident := typechecker.get_type_ident(val_type, ctx);
+                mut rc_type := std.Concat("std_Rc_", val_ident);
+                rc_type = std.Concat(rc_type, "_");
+                rc_type = std.Concat(rc_type, ctx_name);
+
+                mut erased_rc_type := codegen_erase_struct_name(rc_type, empty[Index[str, ctx]], env, ctx);
+
+                mut is_pool_ptr := 0;
+                if pool_type.tag == 9 { // RawPointer
+                    is_pool_ptr = 1;
+                }
+
+                mut pool_ptr_expr := pool_expr;
+                if is_pool_ptr == 0 {
+                    pool_ptr_expr = std.Concat("&", pool_expr);
+                }
+
+                mut res := std.Concat("std_RcNew(", pool_ptr_expr);
+                res = std.Concat(res, ", ");
+                res = std.Concat(res, val_expr);
+                res = std.Concat(res, ", ");
+                res = std.Concat(res, erased_rc_type);
+                res = std.Concat(res, ")");
+                return std.Clone(ctx, res);
+            }
+
             if std.str_eq(func_str, "len") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling len FFI override", ctx);
                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
