@@ -1165,15 +1165,11 @@ func main() {
     t142.expected = "already been moved";
     tests.Push(t142);
 
-    mut t124_placeholder: Test[ctx];
-    t124.path = "tests/test_pool_type_checking_valid.gst";
-    t124.is_negative = 0;
-    t124.expected = "";
-    
     mut t143: Test[ctx];
-    t124.path = "tests/test_pool_type_checking_valid.gst";
-    t124.is_negative = 0;
-    t124.expected = "";
+    t143.path = "tests/test_uninitialized_inout_parameter_rejected.gst";
+    t143.is_negative = 1;
+    t143.expected = "was moved but never re-initialized";
+    tests.Push(t143);
 
     mut t144: Test[ctx];
     t144.path = "tests/test_fiber_scratchpad_escape_across_yield_boundary_rejected.gst";
@@ -1182,7 +1178,7 @@ func main() {
     tests.Push(t144);
 
     mut t145: Test[ctx];
-    t145.path = "tests/test_arena_moved_through_channel_invalid.gst"; // Wait, let's create this file!
+    t145.path = "tests/test_arena_moved_through_channel_invalid_rejected.gst";
     t145.is_negative = 1;
     t145.expected = "moved";
     tests.Push(t145);
@@ -1200,7 +1196,7 @@ func main() {
     tests.Push(t147);
 
     mut t148: Test[ctx];
-    t148.path = "tests/test_guard_escape_analysis_and_borrow_invalidation.gst";
+    t148.path = "tests/test_guard_escape_analysis_and_borrow_invalidation_rejected.gst";
     t148.is_negative = 1;
     t148.expected = "backing origin";
     tests.Push(t148);
@@ -1409,12 +1405,11 @@ func main() {
     t182.expected = "Active: E2E_Bootstrap\n3\n1";
     tests.Push(t182);
 
-    os.LogStr("🏃 Starting self-hosted Gust test suite...");
-    mut t160: Test[ctx];
-    t160.path = "tests/e2e_codegen_assertions.gst";
-    t160.is_negative = 0;
-    t160.expected = "ALL SELF-HOSTED CODEGEN ASSERTIONS PASSED!";
-    tests.Push(t160);
+    mut t183: Test[ctx];
+    t183.path = "tests/e2e_codegen_assertions.gst";
+    t183.is_negative = 0;
+    t183.expected = "ALL SELF-HOSTED CODEGEN ASSERTIONS PASSED!";
+    tests.Push(t183);
 
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
