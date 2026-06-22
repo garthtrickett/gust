@@ -42,7 +42,7 @@ module.exports = grammar({
     // type FieldDef[ctx] struct { ... }
     struct_declaration: $ => seq(
       'type',
-      alias($.identifier, 'type_identifier'),
+      $.type_identifier,
       optional($.type_parameter_list),
       'struct',
       '{',
@@ -51,7 +51,7 @@ module.exports = grammar({
     ),
 
     field_declaration: $ => seq(
-      alias($.identifier, 'field_identifier'),
+      $.field_identifier,
       ':',
       $._type
     ),
@@ -59,7 +59,7 @@ module.exports = grammar({
     // type Type[ctx] enum { ... }
     enum_declaration: $ => seq(
       'type',
-      alias($.identifier, 'type_identifier'),
+      $.type_identifier,
       optional($.type_parameter_list),
       'enum',
       '{',
@@ -68,7 +68,7 @@ module.exports = grammar({
     ),
 
     variant_declaration: $ => seq(
-      alias($.identifier, 'type_identifier'),
+      $.type_identifier,
       optional(seq(
         '{',
         repeat(seq($.field_declaration, optional(choice(',', ';')))),
@@ -158,7 +158,7 @@ module.exports = grammar({
     ),
 
     match_case: $ => seq(
-      alias($.identifier, 'type_identifier'),
+      $.type_identifier,
       optional(seq('{', sepBy(',', $.identifier), '}')),
       '=>',
       $.block
@@ -264,7 +264,7 @@ module.exports = grammar({
     selector_expression: $ => prec(13, seq(
       $._expression,
       '.',
-      alias($.identifier, 'field_identifier')
+      $.field_identifier
     )),
 
     call_expression: $ => prec(13, seq(
@@ -317,10 +317,10 @@ module.exports = grammar({
       ']'
     ),
 
-    type_struct: $ => alias($.identifier, 'type_identifier'),
+    type_struct: $ => $.type_identifier,
 
     type_generic: $ => seq(
-      choice($.namespaced_identifier, alias($.identifier, 'type_identifier')),
+      choice($.namespaced_identifier, $.type_identifier),
       $.type_parameter_list
     ),
 
@@ -333,6 +333,10 @@ module.exports = grammar({
     // --- Core Identifiers ---
 
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
+
+    type_identifier: $ => $.identifier,
+
+    field_identifier: $ => $.identifier,
 
     // --- Helper Rules ---
 
