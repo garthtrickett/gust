@@ -4,6 +4,53 @@ type Test[ctx] struct {
     expected: str
 }
 
+type StringHeader struct {
+    data: *byte,
+    len: int
+}
+
+func join_lines(lines: std.Vector[str, ctx], ctx: &Arena) str {
+    mut total_len := 0;
+    mut i := 0;
+    while i < len(lines) {
+        total_len = total_len + len(lines[i]) + 1; // +1 for '\n'
+        i = i + 1;
+    }
+    if total_len == 0 {
+        return "";
+    }
+
+    unsafe {
+        mut dest := os.ScratchAlloc(total_len);
+        mut write_idx := 0;
+
+        mut j := 0;
+        while j < len(lines) {
+            mut line := lines[j];
+            mut line_len := len(line);
+            
+            mut header := &line as *StringHeader;
+            mut src := (*header).data;
+
+            mut k := 0;
+            while k < line_len {
+                *(dest + write_idx) = *(src + k);
+                write_idx = write_idx + 1;
+                k = k + 1;
+            }
+            *(dest + write_idx) = 10; // '\n' = 10
+            write_idx = write_idx + 1;
+            j = j + 1;
+        }
+
+        mut res_header_alloc := os.ScratchAlloc(16);
+        mut res_header := (res_header_alloc + 0) as *StringHeader;
+        (*res_header).data = dest;
+        (*res_header).len = total_len;
+        return *(((res_header as *str) + 0) as *str);
+    }
+}
+
 func run_test(ctx: &Arena, t: Test[ctx]) int {
     mut path := t.path;
     mut is_neg := t.is_negative;
@@ -93,7 +140,8 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
 
         mut comp_output := os.ReadFile(ctx, temp_log);
         mut lines := std.str_split(comp_output, "\n", ctx);
-        mut clean_c_content := "";
+        
+        mut clean_lines: std.Vector[str, ctx] := std.VectorNew(ctx);
         mut idx := 0;
         while idx < len(lines) {
             mut line := lines[idx];
@@ -105,11 +153,11 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
                 }
             }
             if should_keep == 1 {
-                clean_c_content = std.Concat(clean_c_content, line);
-                clean_c_content = std.Concat(clean_c_content, "\n");
+                clean_lines.Push(line);
             }
             idx = idx + 1;
         }
+        mut clean_c_content := join_lines(clean_lines, ctx);
 
         os.WriteFile(clean_c, clean_c_content);
 
@@ -144,16 +192,36 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
         }
 
         mut actual_output := os.ReadFile(ctx, run_log);
-        actual_output = std.str_trim(actual_output);
+        
+        // Filter out emoji-prefixed logging lines from runtime execution
+        mut run_lines := std.str_split(actual_output, "\n", ctx);
+        mut clean_run_lines: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mut r_idx := 0;
+        while r_idx < len(run_lines) {
+            mut line := run_lines[r_idx];
+            mut should_keep := 1;
+            if len(line) > 0 {
+                mut b := std.str_byte_at(line, 0);
+                if b == 226 || b == 240 || b == 243 {
+                    should_keep = 0;
+                }
+            }
+            if should_keep == 1 {
+                clean_run_lines.Push(line);
+            }
+            r_idx = r_idx + 1;
+        }
+        mut clean_run_content := join_lines(clean_run_lines, ctx);
+        mut trimmed_actual := std.str_trim(clean_run_content);
         mut trimmed_expected := std.str_trim(exp);
 
-        if std.str_eq(actual_output, trimmed_expected) == 0 {
+        if std.str_eq(trimmed_actual, trimmed_expected) == 0 {
             mut msg := std.Format("❌ FAIL: %s (Output mismatch!)", path);
             os.LogStr(msg);
             os.LogStr("--- EXPECTED ---");
             os.LogStr(trimmed_expected);
             os.LogStr("--- ACTUAL ---");
-            os.LogStr(actual_output);
+            os.LogStr(trimmed_actual);
             return 0;
         }
 
@@ -280,6 +348,24 @@ func main() {
     t15.is_negative = 1;
     t15.expected = "Cannot assign scratchpad-allocated view";
     tests.Push(t15);
+
+    mut t16: Test[ctx];
+    t16.path = "compiler/resolver_test_entry.gst";
+    t16.is_negative = 0;
+    t16.expected = "2\nstd\nos";
+    tests.Push(t16);
+
+    mut t17: Test[ctx];
+    t17.path = "compiler/typechecker_scope_test_entry.gst";
+    t17.is_negative = 0;
+    t17.expected = "0\n3\n1\n2";
+    tests.Push(t17);
+
+    mut t18: Test[ctx];
+    t18.path = "compiler/typechecker_registry_test_entry.gst";
+    t18.is_negative = 0;
+    t18.expected = "lib__Helper\nlib__add\nmain__local_var\nint\nLookupResult_lib__Helper\nstd_Vector_lib__Helper_ctx";
+    tests.Push(t18);
 
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut passed_count := 0;
