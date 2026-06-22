@@ -748,14 +748,14 @@ func main() {
 
     mut t76: Test[ctx];
     t76.path = "tests/e2e_arena_canary_corruption_detection.gst";
-    t76.is_negative = 0;
-    t76.expected = "";
+    t76.is_negative = 2;
+    t76.expected = "GUST CANARY CORRUPTION DETECTED";
     tests.Push(t76);
 
     mut t77: Test[ctx];
     t77.path = "tests/e2e_sanitizer_detection_of_corrupt_memory.gst";
-    t77.is_negative = 0;
-    t77.expected = "0";
+    t77.is_negative = 2;
+    t77.expected = "heap-use-after-free";
     tests.Push(t77);
 
     mut t78: Test[ctx];
