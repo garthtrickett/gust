@@ -883,6 +883,60 @@ func main() {
     t95.expected = "42\n100";
     tests.Push(t95);
 
+    mut t96: Test[ctx];
+    t96.path = "tests/e2e_hashmap_extended_utilities.gst";
+    t96.is_negative = 0;
+    t96.expected = "3\n600\n2\n0\n0";
+    tests.Push(t96);
+
+    mut t97: Test[ctx];
+    t97.path = "tests/e2e_character_classification_and_parsing.gst";
+    t97.is_negative = 0;
+    t97.expected = "-84138";
+    tests.Push(t97);
+
+    mut t98: Test[ctx];
+    t98.path = "tests/e2e_vector_stack_lifo_parser.gst";
+    t98.is_negative = 0;
+    t98.expected = "30\n35\n20\n2\n0";
+    tests.Push(t98);
+
+    mut t99: Test[ctx];
+    t99.path = "tests/e2e_str_find_and_trim.gst";
+    t99.is_negative = 0;
+    t99.expected = "hello\n2\n-1";
+    tests.Push(t99);
+
+    mut t100: Test[ctx];
+    t100.path = "tests/e2e_str_split.gst";
+    t100.is_negative = 0;
+    t100.expected = "4\na\nb\nc\nd\n3\nx\ny\nz\n1\na,b,c,d";
+    tests.Push(t100);
+
+    mut t101: Test[ctx];
+    t101.path = "tests/e2e_path_join.gst";
+    t101.is_negative = 0;
+    t101.expected = "a/b/c\na/c\na/b/d\n/a/b/c\n../c";
+    tests.Push(t101);
+
+    mut t102: Test[ctx];
+    t102.path = "tests/e2e_guard_hashmap_lookup.gst";
+    t102.is_negative = 0;
+    t102.expected = "100";
+    tests.Push(t102);
+
+    mut t103: Test[ctx];
+    t103.path = "tests/e2e_guard_mutability.gst";
+    t103.is_negative = 0;
+    t103.expected = "100";
+    tests.Push(t103);
+
+    mut t104: Test[ctx];
+    t104.path = "tests/e2e_guard_cast.gst";
+    t104.is_negative = 0;
+    t104.expected = "42";
+    tests.Push(t104);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
