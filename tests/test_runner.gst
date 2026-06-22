@@ -33,7 +33,7 @@ func join_lines(lines: std.Vector[str, ctx], ctx: &Arena) str {
         while j < len(lines) {
             mut line := lines[j];
             mut line_len := len(line);
-            
+
             mut header := &line as *StringHeader;
             mut src := (*header).data;
 
@@ -63,12 +63,14 @@ func test_worker_task(arg: *TestTaskArg[ctx]) {
 
     unsafe {
         mut t := (*arg).test;
-        mut ok := run_test(local_ctx, t);
+        mut ok := run_test(t);
         (*arg).chan.Send(ok);
     }
 }
 
-func run_test(ctx: &Arena, t: Test[ctx]) int {
+func run_test(t: Test[ctx]) int {
+    mut tl := os.GetThreadScratch();
+    mut local_ctx := tl.arena;
     mut path := t.path;
     mut is_neg := t.is_negative;
     mut exp := t.expected;
@@ -120,7 +122,7 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
             return 0;
         }
 
-        mut log_content := os.ReadFile(ctx, temp_log);
+        mut log_content := os.ReadFile(local_ctx, temp_log);
         mut found_err := std.str_find(log_content, exp);
         if found_err == 0 - 1 {
             mut msg := std.Format("❌ FAIL: %s (Compilation failed as expected, but could not find expected error substring '%s')", path, exp);
@@ -140,7 +142,7 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
             os.System("mkdir -p temp_e2e_guard_test_dir/nested && echo 'func main() {}' > temp_e2e_guard_test_dir/nested/file1.gst");
         }
         if std.str_find(path, "e2e_filesystem_ops") != 0 - 1 {
-            os.System("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/file2.txt");
+        os.System("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/file2.txt");
         }
 
         mut cmd_comp := std.Concat("./gust ", path);
@@ -155,10 +157,10 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
             return 0;
         }
 
-        mut comp_output := os.ReadFile(ctx, temp_log);
-        mut lines := std.str_split(comp_output, "\n", ctx);
-        
-        mut clean_lines: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mut comp_output := os.ReadFile(local_ctx, temp_log);
+        mut lines := std.str_split(comp_output, "\n", local_ctx);
+
+        mut clean_lines: std.Vector[str, local_ctx] := std.VectorNew(local_ctx);
         mut idx := 0;
         while idx < len(lines) {
             mut line := lines[idx];
@@ -174,12 +176,12 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
             }
             idx = idx + 1;
         }
-        mut clean_c_content := join_lines(clean_lines, ctx);
+        mut clean_c_content := join_lines(clean_lines, local_ctx);
 
         os.WriteFile(clean_c, clean_c_content);
 
         // Prepend src/runtime.c content to the cleaned C to form a unified translation unit
-        mut runtime_content := os.ReadFile(ctx, "src/runtime.c");
+        mut runtime_content := os.ReadFile(local_ctx, "src/runtime.c");
         mut final_c_content := std.Concat(runtime_content, "\n\n");
         final_c_content = std.Concat(final_c_content, clean_c_content);
         os.WriteFile(final_c, final_c_content);
@@ -208,11 +210,11 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
             return 0;
         }
 
-        mut actual_output := os.ReadFile(ctx, run_log);
-        
+        mut actual_output := os.ReadFile(local_ctx, run_log);
+
         // Filter out emoji-prefixed logging lines from runtime execution
-        mut run_lines := std.str_split(actual_output, "\n", ctx);
-        mut clean_run_lines: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mut run_lines := std.str_split(actual_output, "\n", local_ctx);
+        mut clean_run_lines: std.Vector[str, local_ctx] := std.VectorNew(local_ctx);
         mut r_idx := 0;
         while r_idx < len(run_lines) {
             mut line := run_lines[r_idx];
@@ -228,7 +230,7 @@ func run_test(ctx: &Arena, t: Test[ctx]) int {
             }
             r_idx = r_idx + 1;
         }
-        mut clean_run_content := join_lines(clean_run_lines, ctx);
+        mut clean_run_content := join_lines(clean_run_lines, local_ctx);
         mut trimmed_actual := std.str_trim(clean_run_content);
         mut trimmed_expected := std.str_trim(exp);
 
@@ -409,7 +411,7 @@ func main() {
         mut ok := chan.Recv();
         if ok == 1 {
             passed_count = passed_count + 1;
-        } else { 
+        } else {
             failed_count = failed_count + 1;
         }
         j = j + 1;
