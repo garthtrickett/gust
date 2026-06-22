@@ -93,10 +93,13 @@ cargo clippy --fix --allow-dirty
 cc gust_output.c -o gust_program && ./gust_program
 cargo run -- --test
 
-echo $TMPDIR
-
-
-./gust_v2 compiler/test_runner_entry.gst -> to.log 2>&1
+Updating tree sitter for helix
+git add .
+git commit
+cd ~/nixos-config  # or cd /etc/nixos
+nix flake update tree-sitter-gust
+rebuild
+reopen helix
 
 
 42069

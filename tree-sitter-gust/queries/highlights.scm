@@ -51,27 +51,27 @@
 
 ; Function declarations
 (function_declaration 
-  name: (identifier) @function)
+  (identifier) @function)
 
 ; Plain function calls: my_func()
 (call_expression 
-  function: (identifier) @function.call)
+  (identifier) @function.call)
 
 ; Method calls: object.method()
 (call_expression 
-  function: (field_expression 
-    field: (field_identifier) @function.call))
+  (selector_expression 
+    (field_identifier) @function.call))
 
 
 ; --- Properties, Fields & Variables ---
 
 ; Field declarations inside struct/enum definitions
 (field_declaration 
-  name: (field_identifier) @property)
+  (field_identifier) @property)
 
 ; Field selections: object.field
-(field_expression 
-  field: (field_identifier) @property)
+(selector_expression 
+  (field_identifier) @property)
 
 ; Standard variables
 (identifier) @variable

@@ -1,9 +1,0 @@
-{
-  "summary": "fix(tree-sitter): resolve type_generic vs _type_specifier conflict in conflicts array",
-  "files": [
-    {
-      "file_path": "tree-sitter-gust/grammar.js",
-      "code_diff": "<<<<<<< SEARCH\n  conflicts: $ => [\n    // Resolves the standalone type_identifier vs generic_type lookup after cast\n    [$.type_identifier, $.type_generic],\n    // Resolves the namespaced_identifier vs type_identifier conflict after as cast\n    [$.type_identifier, $.namespaced_identifier]\n  ],\n=======\n  conflicts: $ => [\n    // Resolves the standalone _type_specifier vs type_generic lookup after cast\n    [$._type_specifier, $.type_generic],\n    // Resolves the namespaced_identifier vs type_identifier conflict after as cast\n    [$.type_identifier, $.namespaced_identifier]\n  ],\n>>>>>>> REPLACE"
-    }
-  ]
-}
