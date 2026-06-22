@@ -322,12 +322,6 @@ module.exports = grammar({
       $.type_parameter_list
     ),
 
-    // --- Type Helpers ---
-
-    type_parameter: $ => $.identifier,
-
-    brand_identifier: $ => $.identifier,
-
     // --- Core Identifiers ---
 
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,

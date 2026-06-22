@@ -41,9 +41,10 @@
 
 ; --- Brand / Lifetime / Type Parameters ---
 
-; Targets type variables like 'ctx' in MyStruct[ctx] or Index[Node, ctx]
-(type_parameter) @type.parameter
-(brand_identifier) @type.parameter
+; Targets type variables like 'ctx' in MyStruct[ctx] or Index[Node, ctx] using context matching
+(type_parameter_list (type_identifier) @type.parameter)
+(type_index (type_identifier) @type.parameter)
+(type_generic (type_parameter_list (type_identifier) @type.parameter))
 
 
 ; --- Functions & Methods ---

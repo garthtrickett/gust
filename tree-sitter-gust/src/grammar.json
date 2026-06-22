@@ -1568,14 +1568,6 @@
         }
       ]
     },
-    "type_parameter": {
-      "type": "SYMBOL",
-      "name": "identifier"
-    },
-    "brand_identifier": {
-      "type": "SYMBOL",
-      "name": "identifier"
-    },
     "identifier": {
       "type": "PATTERN",
       "value": "[a-zA-Z_][a-zA-Z0-9_]*"
