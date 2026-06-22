@@ -1,9 +1,9 @@
 {
-  "summary": "fix(tree-sitter): resolve as-cast namespaces conflict by updating conflicts array to use type_identifier",
+  "summary": "fix(tree-sitter): resolve type_generic vs _type_specifier conflict in conflicts array",
   "files": [
     {
       "file_path": "tree-sitter-gust/grammar.js",
-      "code_diff": "<<<<<<< SEARCH\n  conflicts: $ => [\n    // Resolves the standalone type_struct vs generic_type lookup after cast\n    [$.type_struct, $.type_generic],\n    // Resolves the namespaced_identifier vs type_struct conflict after as cast\n    [$.type_struct, $.namespaced_identifier]\n  ],\n=======\n  conflicts: $ => [\n    // Resolves the standalone type_identifier vs generic_type lookup after cast\n    [$.type_identifier, $.type_generic],\n    // Resolves the namespaced_identifier vs type_identifier conflict after as cast\n    [$.type_identifier, $.namespaced_identifier]\n  ],\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n    _type_specifier: $ => choice(\n      $.primitive_type,\n      $.type_index,\n      $.type_struct,\n      $.type_generic\n    ),\n=======\n    _type_specifier: $ => choice(\n      $.primitive_type,\n      $.type_index,\n      $.type_identifier,\n      $.type_generic\n    ),\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n    type_struct: $ => $.type_identifier,\n\n    type_generic: $ => seq(\n      choice($.namespaced_identifier, $.type_identifier),\n      $.type_parameter_list\n    ),\n=======\n    type_generic: $ => seq(\n      choice($.namespaced_identifier, $.type_identifier),\n      $.type_parameter_list\n    ),\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n  conflicts: $ => [\n    // Resolves the standalone type_identifier vs generic_type lookup after cast\n    [$.type_identifier, $.type_generic],\n    // Resolves the namespaced_identifier vs type_identifier conflict after as cast\n    [$.type_identifier, $.namespaced_identifier]\n  ],\n=======\n  conflicts: $ => [\n    // Resolves the standalone _type_specifier vs type_generic lookup after cast\n    [$._type_specifier, $.type_generic],\n    // Resolves the namespaced_identifier vs type_identifier conflict after as cast\n    [$.type_identifier, $.namespaced_identifier]\n  ],\n>>>>>>> REPLACE"
     }
   ]
 }

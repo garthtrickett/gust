@@ -1437,7 +1437,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "type_struct"
+          "name": "type_identifier"
         },
         {
           "type": "SYMBOL",
@@ -1545,10 +1545,6 @@
           "value": "]"
         }
       ]
-    },
-    "type_struct": {
-      "type": "SYMBOL",
-      "name": "type_identifier"
     },
     "type_generic": {
       "type": "SEQ",
@@ -1780,11 +1776,11 @@
   ],
   "conflicts": [
     [
-      "type_struct",
+      "type_identifier",
       "type_generic"
     ],
     [
-      "type_struct",
+      "type_identifier",
       "namespaced_identifier"
     ]
   ],

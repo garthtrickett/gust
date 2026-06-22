@@ -7,8 +7,8 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
-    // Resolves the standalone type_identifier vs generic_type lookup after cast
-    [$.type_identifier, $.type_generic],
+    // Resolves the standalone _type_specifier vs type_generic lookup after cast
+    [$._type_specifier, $.type_generic],
     // Resolves the namespaced_identifier vs type_identifier conflict after as cast
     [$.type_identifier, $.namespaced_identifier]
   ],
