@@ -1237,6 +1237,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return left_type;
                     } 
                     if std.str_eq(right_name, "Release") {
+                        mut var_name := get_root_variable(left_expr_idx, ctx);
+                        if std.str_eq(var_name, "") == 0 {
+                            (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
+                        }
                         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                         return t_void;
                     }
@@ -5197,7 +5201,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 k = k + 1;
             }
 
-            // Directory leak checking
+            // Resource leak checking
             mut local_vars := (*env).current_function_local_vars;
             mut local_var_keys := ctx[local_vars].map.Keys(ctx);
             mut m := 0;
@@ -5207,6 +5211,27 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     mut msg := std.Concat("Semantic Error: Resource leak. Directory resource variable '", local_var);
                     msg = std.Concat(msg, "' must be cleanly closed with os.CloseDir before leaving local scope");
                     report_error(2, msg, stmt.FunctionDecl.span, env, ctx);
+                }
+                
+                mut var_type_lookup := (*env).variable_types.Get(local_var);
+                if var_type_lookup.Ok {
+                    mut t := var_type_lookup.Val;
+                    t = env_resolve_type(env, t, ctx);
+                    if t.tag == 8 { // Struct
+                        mut name := t.Struct.struct_name;
+                        mut is_rc := 0;
+                        if typechecker_starts_with(name, "Rc_") == 1 ||
+                           typechecker_starts_with(name, "std_Rc_") == 1 {
+                            is_rc = 1;
+                        }
+                        if is_rc == 1 {
+                            if (*env).moved_vars.Get(local_var).Ok == 0 {
+                                mut msg := std.Concat("Semantic Error: [BrandLifetimeViolation] Resource leak. Reference-counted variable '", local_var);
+                                msg = std.Concat(msg, "' must be cleanly released with .Release() before leaving local scope");
+                                report_error(2, msg, stmt.FunctionDecl.span, env, ctx);
+                            }
+                        }
+                    }
                 }
                 m = m + 1;
             }
