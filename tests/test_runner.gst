@@ -1234,7 +1234,7 @@ func main() {
     mut t154: Test[ctx];
     t154.path = "tests/test_hashmap_keys_brand_lifetime_violation_invalid_arg.gst";
     t154.is_negative = 1;
-    t154.expected = "TypeMismatch";
+    t154.expected = "HashMap.Keys expects";
     tests.Push(t154);
 
     mut t155: Test[ctx];
@@ -1252,7 +1252,7 @@ func main() {
     mut t157: Test[ctx];
     t157.path = "tests/test_channel_mismatched_send_rejected.gst";
     t157.is_negative = 1;
-    t157.expected = "TypeMismatch";
+    t157.expected = "type mismatch";
     tests.Push(t157);
 
     mut t158: Test[ctx];
@@ -1324,31 +1324,31 @@ func main() {
     mut t169: Test[ctx];
     t169.path = "tests/test_pool_type_checking_invalid_alloc_rejected.gst";
     t169.is_negative = 1;
-    t169.expected = "TypeMismatch";
+    t169.expected = "type mismatch";
     tests.Push(t169);
 
     mut t170: Test[ctx];
     t170.path = "tests/test_pool_type_checking_invalid_free_rejected.gst";
     t170.is_negative = 1;
-    t170.expected = "TypeMismatch";
+    t170.expected = "type mismatch";
     tests.Push(t170);
 
     mut t171: Test[ctx];
     t171.path = "tests/test_rc_and_graph_type_checking_invalid_rc_rejected.gst";
     t171.is_negative = 1;
-    t171.expected = "TypeMismatch";
+    t171.expected = "type mismatch";
     tests.Push(t171);
 
     mut t172: Test[ctx];
     t172.path = "tests/test_rc_and_graph_type_checking_invalid_graph_rejected.gst";
     t172.is_negative = 1;
-    t172.expected = "TypeMismatch";
+    t172.expected = "type mismatch";
     tests.Push(t172);
 
     mut t173: Test[ctx];
     t173.path = "tests/test_arena_validate_type_checking_invalid_rejected.gst";
     t173.is_negative = 1;
-    t173.expected = "TypeMismatch";
+    t173.expected = "type mismatch";
     tests.Push(t173);
 
     mut t174: Test[ctx];
