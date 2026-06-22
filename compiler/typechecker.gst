@@ -591,9 +591,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 report_error(2, msg, expr.Dereference.span, env, ctx);
             }
             mut inner := check_expression(expr.Dereference.expr, env, scope, ctx);
-            if inner.tag == 9 {
+            if inner.tag == 9 { // RawPointer
                 return ctx[inner.RawPointer.inner];
             }
+            mut msg := std.Concat("Semantic Error: [DereferenceNonPointer] Cannot dereference non-pointer type ", ast.serialize_type(inner, ctx));
+            report_error(2, msg, expr.Dereference.span, env, ctx);
             return inner;
         }
         if expr.tag == 8 { // IndexAccess
