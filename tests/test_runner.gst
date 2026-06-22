@@ -805,6 +805,30 @@ func main() {
     t82.expected = "Usage: ast_dump <file>";
     tests.Push(t82);
 
+    mut t83: Test[ctx];
+    t83.path = "compiler/parser_full_test_entry.gst";
+    t83.is_negative = 0;
+    t83.expected = "3\nadd\n8\n11\n10";
+    tests.Push(t83);
+
+    mut t84: Test[ctx];
+    t84.path = "compiler/parser_primitive_index_test_entry.gst";
+    t84.is_negative = 0;
+    t84.expected = "7\nstr\nint\nstd_Vector_int_ctx";
+    tests.Push(t84);
+
+    mut t85: Test[ctx];
+    t85.path = "compiler/parser_statement_test_entry.gst";
+    t85.is_negative = 0;
+    t85.expected = "";
+    tests.Push(t85);
+
+    mut t86: Test[ctx];
+    t86.path = "compiler/parser_type_test_entry.gst";
+    t86.is_negative = 0;
+    t86.expected = "1\nMyStruct\n2\nMyEnum";
+    tests.Push(t86);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
