@@ -2975,6 +2975,17 @@ fn test_e2e_generational_arena_wrapper_migration() {
 }
 
 #[test]
+fn test_e2e_os_system_subprocess() {
+    let source = "
+        func main() {
+            mut code := os.System(\"echo 'FFI_SUBPROCESS_OK'\");
+            os.LogInt(code);
+        }
+    ";
+    run_e2e_test(source, "FFI_SUBPROCESS_OK\n0");
+}
+
+#[test]
 fn test_e2e_sanitizer_detection_of_corrupt_memory() {
     if env::var("GUST_NO_SANITIZERS").is_ok() {
         println!(

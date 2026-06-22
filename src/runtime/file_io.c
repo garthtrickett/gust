@@ -229,3 +229,16 @@ Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char fi
     result.len = final_len;
     return result;
 }
+
+int os_System(Slice_unsigned_char cmd) {
+    if (cmd.len < 0) return -1;
+    char* buf = (char*)malloc(cmd.len + 1);
+    if (buf == NULL) return -1;
+    if (cmd.len > 0 && cmd.data != NULL) {
+        memcpy(buf, cmd.data, cmd.len);
+    }
+    buf[cmd.len] = '\0';
+    int status = system(buf);
+    free(buf);
+    return status;
+}
