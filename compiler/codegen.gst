@@ -3468,10 +3468,6 @@ typedef void Any;
         c_code = std.Concat(c_code, "typedef struct Slice_int Slice_int;\n");
         c_code = std.Concat(c_code, "struct Slice_int {\n    int* data;\n    int len;\n};\n\n");
 
-        if codegen_has_thread_local_context(env, ctx) == 1 {
-            c_code = std.Concat(c_code, "std_ThreadLocalContext os_GetThreadScratch(void);\n\n");
-        }
-
         // 2. Generate forward declarations for all structs
         c_code = std.Concat(c_code, "// Forward Declarations\n");
         mut struct_keys := codegen_get_topologically_sorted_structs(env, ctx);
@@ -3528,6 +3524,9 @@ typedef void Any;
 
         // Function Forward Declarations
         c_code = std.Concat(c_code, "// Function Forward Declarations\n");
+        if codegen_has_thread_local_context(env, ctx) == 1 {
+            c_code = std.Concat(c_code, "std_ThreadLocalContext os_GetThreadScratch(void);\n\n");
+        }
         mut func_keys := typechecker.typechecker_get_sorted_keys_func(&((*env).function_registry), ctx);
         mut f_idx := 0;
         while f_idx < len(func_keys) {
