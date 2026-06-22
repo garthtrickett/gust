@@ -7,10 +7,10 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
-    // Resolves the standalone type_struct vs generic_type lookup after cast
-    [$.type_struct, $.type_generic],
-    // Resolves the namespaced_identifier vs type_struct conflict after as cast
-    [$.type_struct, $.namespaced_identifier]
+    // Resolves the standalone type_identifier vs generic_type lookup after cast
+    [$.type_identifier, $.type_generic],
+    // Resolves the namespaced_identifier vs type_identifier conflict after as cast
+    [$.type_identifier, $.namespaced_identifier]
   ],
 
   rules: {
@@ -292,7 +292,7 @@ module.exports = grammar({
     _type_specifier: $ => choice(
       $.primitive_type,
       $.type_index,
-      $.type_struct,
+      $.type_identifier,
       $.type_generic
     ),
 
@@ -316,8 +316,6 @@ module.exports = grammar({
       optional(seq(',', $._type)),
       ']'
     ),
-
-    type_struct: $ => $.type_identifier,
 
     type_generic: $ => seq(
       choice($.namespaced_identifier, $.type_identifier),
