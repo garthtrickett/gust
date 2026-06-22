@@ -643,6 +643,54 @@ func main() {
     t58.expected = "60";
     tests.Push(t58);
 
+    mut t59: Test[ctx];
+    t59.path = "tests/e2e_universal_move_semantics_monomorphized.gst";
+    t59.is_negative = 0;
+    t59.expected = "100\n100";
+    tests.Push(t59);
+
+    mut t60: Test[ctx];
+    t60.path = "tests/e2e_relaxed_monomorphized_pod_performance.gst";
+    t60.is_negative = 0;
+    t60.expected = "101\n42\n101\n42";
+    tests.Push(t60);
+
+    mut t61: Test[ctx];
+    t61.path = "tests/e2e_take_and_empty_reinitialization.gst";
+    t61.is_negative = 0;
+    t61.expected = "World\n2\nHello\n1";
+    tests.Push(t61);
+
+    mut t62: Test[ctx];
+    t62.path = "tests/e2e_sentinel_null_protection.gst";
+    t62.is_negative = 0;
+    t62.expected = "1";
+    tests.Push(t62);
+
+    mut t63: Test[ctx];
+    t63.path = "tests/e2e_namespaced_collections.gst";
+    t63.is_negative = 0;
+    t63.expected = "2\n111\n222\n2\n888\n999";
+    tests.Push(t63);
+
+    mut t64: Test[ctx];
+    t64.path = "tests/e2e_string_utilities_evaluation.gst";
+    t64.is_negative = 0;
+    t64.expected = "Hello\nWorld\n1\n0\n87";
+    tests.Push(t64);
+
+    mut t65: Test[ctx];
+    t65.path = "tests/e2e_pool_allocation_recycling.gst";
+    t65.is_negative = 0;
+    t65.expected = "0\n111\n1\n222\n2\n333\n2\n444";
+    tests.Push(t65);
+
+    mut t66: Test[ctx];
+    t66.path = "tests/e2e_generational_arena_loop.gst";
+    t66.is_negative = 0;
+    t66.expected = "499500";
+    tests.Push(t66);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
