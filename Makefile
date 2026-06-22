@@ -43,11 +43,11 @@ test: gust
 
 test_tree_sitter:
 	@echo "🔍 Running Tree-sitter corpus tests..."
-	cd tree-sitter-gust && npx tree-sitter test
+	cd tree-sitter-gust && tree-sitter test
 	@echo "🔍 Validating all Gust files parse with zero errors..."
 	@for f in compiler/*.gst tests/*.gst; do \
 		echo "Parsing $$f..."; \
-		(cd tree-sitter-gust && npx tree-sitter parse ../$$f --quiet) || exit 1; \
+		(cd tree-sitter-gust && tree-sitter parse ../$$f --quiet) || exit 1; \
 	done
 	@echo "✅ Tree-sitter parsing validation passed!"
 
