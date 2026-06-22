@@ -1,13 +1,13 @@
 {
-  "summary": "test: add test_branded_struct_mismatch_rejected.gst and register in test_runner",
+  "summary": "test: add test_large_enum_variant_payload_rejected.gst and register in test_runner",
   "files": [
     {
-      "file_path": "tests/test_branded_struct_mismatch_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Container[T, ctx] struct {\n    value: T\n}\n\nfunc main() {\n    mut innerCtx := os.Arena.New();\n    defer innerCtx.Free();\n    mut outerCtx := os.Arena.New();\n    defer outerCtx.Free();\n    mut vec: Container[std.Vector[str, innerCtx], outerCtx] := empty[Container[std.Vector[str, innerCtx], outerCtx]];\n}\n>>>>>>> REPLACE"
+      "file_path": "tests/test_large_enum_variant_payload_rejected.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype Large struct {\n    x: int,\n    y: int,\n    z: int\n}\n\ntype MyEnum enum {\n    VariantA { val: Large },\n    VariantB\n}\n\nfunc main() {\n    mut e: MyEnum;\n    e.tag = 0;\n    e.VariantA.val.x = 42;\n}\n>>>>>>> REPLACE"
     },
     {
       "file_path": "tests/test_runner.gst",
-      "code_diff": "<<<<<<< SEARCH\n    mut t28: Test[ctx];\n    t28.path = \"tests/test_unbranded_struct_view_rejected.gst\";\n    t28.is_negative = 1;\n    t28.expected = \"cannot contain ephemeral slice or view\";\n    tests.Push(t28);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t28: Test[ctx];\n    t28.path = \"tests/test_unbranded_struct_view_rejected.gst\";\n    t28.is_negative = 1;\n    t28.expected = \"cannot contain ephemeral slice or view\";\n    tests.Push(t28);\n\n    mut t29: Test[ctx];\n    t29.path = \"tests/test_branded_struct_mismatch_rejected.gst\";\n    t29.is_negative = 1;\n    t29.expected = \"Mismatched nested brand\";\n    tests.Push(t29);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    mut t29: Test[ctx];\n    t29.path = \"tests/test_branded_struct_mismatch_rejected.gst\";\n    t29.is_negative = 1;\n    t29.expected = \"Mismatched nested brand\";\n    tests.Push(t29);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t29: Test[ctx];\n    t29.path = \"tests/test_branded_struct_mismatch_rejected.gst\";\n    t29.is_negative = 1;\n    t29.expected = \"Mismatched nested brand\";\n    tests.Push(t29);\n\n    mut t30: Test[ctx];\n    t30.path = \"tests/test_large_enum_variant_payload_rejected.gst\";\n    t30.is_negative = 1;\n    t30.expected = \"large enum variant payload\";\n    tests.Push(t30);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
     }
   ]
 }

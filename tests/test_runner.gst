@@ -469,6 +469,12 @@ func main() {
     t29.expected = "Mismatched nested brand";
     tests.Push(t29);
 
+    mut t30: Test[ctx];
+    t30.path = "tests/test_large_enum_variant_payload_rejected.gst";
+    t30.is_negative = 1;
+    t30.expected = "large enum variant payload";
+    tests.Push(t30);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
