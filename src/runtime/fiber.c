@@ -377,6 +377,23 @@ void gust_scheduler_spawn(size_t stack_size, void (*entry_fn)(void*), void* arg)
     }
 }
 
+int get_num_threads_to_use() {
+    char* env_threads = getenv("GUST_THREADS");
+    if (env_threads) {
+        int val = atoi(env_threads);
+        if (val > 0) {
+            return val;
+        }
+    }
+#ifdef _SC_NPROCESSORS_ONLN
+    long cores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (cores > 0) {
+        return (int)cores;
+    }
+#endif
+    return 4;
+}
+
 void gust_scheduler_init(int num_shards) {
     if (num_shards <= 0) num_shards = 1;
     gust_num_shards = num_shards;

@@ -2836,6 +2836,87 @@ fn test_e2e_scheduler_round_robin_distribution() {
 }
 
 #[test]
+fn test_e2e_dynamic_thread_detection() { 
+    let mut c_program = String::new();
+    c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);
+    c_program.push_str(gust_lexer::codegen_runtime::FIBER_RUNTIME);
+
+    c_program.push_str(
+        r#"
+        #include <assert.h>
+
+        int main() {
+            #if !defined(__x86_64__) && !defined(__aarch64__)
+            printf("GUST_DYNAMIC_THREADS_OK\n");
+            return 0;
+            #endif
+
+            // GUST_THREADS is set to 3 by the test environment
+            int threads = get_num_threads_to_use();
+            assert(threads == 3);
+
+            printf("GUST_DYNAMIC_THREADS_OK\n");
+            return 0;
+        }
+        "#,
+    );
+
+    let temp_dir = env::temp_dir();
+    let thread_id = std::thread::current().id();
+    let process_id = std::process::id();
+    let count = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+
+    let c_filename = format!(
+        "gust_dynamic_threads_test_{:?}_{}_{}.c",
+        thread_id, process_id, count
+    );
+    let bin_filename = format!(
+        "gust_dynamic_threads_test_{:?}_{}_{}.bin",
+        thread_id, process_id, count
+    );
+
+    let c_path = temp_dir.join(&c_filename);
+    let bin_path = temp_dir.join(&bin_filename);
+
+    fs::write(&c_path, &c_program).expect("Failed to write temporary C file");
+
+    let cc_compiler = env::var("CC").unwrap_or_else(|_| "cc".to_string());
+    let mut cmd = Command::new(&cc_compiler);
+    cmd.arg(&c_path);
+    if env::var("GUST_NO_SANITIZERS").is_err() {
+        cmd.arg("-fsanitize=address,undefined");
+    }
+    let compile_output = cmd
+        .arg("-o")
+        .arg(&bin_path)
+        .output()
+        .expect("Compile command failed");
+
+    assert!(
+        compile_output.status.success(),
+        "GCC compilation failed: {}",
+        String::from_utf8_lossy(&compile_output.stderr)
+    );
+
+    // Set GUST_THREADS=3 when executing the binary
+    let run_output = Command::new(&bin_path)
+        .env("GUST_THREADS", "3")
+        .output()
+        .expect("Execution failed");
+
+    let _ = fs::remove_file(&c_path);
+    let _ = fs::remove_file(&bin_path);
+
+    assert!(run_output.status.success());
+    let stdout_str = String::from_utf8(run_output.stdout).unwrap();
+    assert!(
+        stdout_str.contains("GUST_DYNAMIC_THREADS_OK"),
+        "Unexpected output: {}",
+        stdout_str
+    );
+}
+
+#[test]
 fn test_e2e_scheduler_affinity_binding() {
     let mut c_program = String::new();
     c_program.push_str(gust_lexer::codegen_runtime::CORE_HEADERS);

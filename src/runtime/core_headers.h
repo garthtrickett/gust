@@ -298,6 +298,7 @@ int std_Channel_Alloc(int capacity, size_t elem_size);
 void std_Channel_Send_impl(int chan_idx, void* val_ptr);
 void std_Channel_Recv_impl(int chan_idx, void* out_ptr);
 
+int get_num_threads_to_use(void);
 void gust_scheduler_init(int num_shards);
 void gust_scheduler_spawn(size_t stack_size, void (*entry_fn)(void*), void* arg);
 void gust_scheduler_destroy(void);

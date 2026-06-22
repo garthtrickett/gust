@@ -1196,7 +1196,7 @@ impl Codegen {
                     body_str.push_str("int main(int argc, char** argv) {\n");
                     body_str.push_str("    os_argc = argc;\n");
                     body_str.push_str("    os_argv = argv;\n");
-                    body_str.push_str("    gust_scheduler_init(1);\n");
+                    body_str.push_str("    gust_scheduler_init(get_num_threads_to_use());\n");
                     body_str.push_str("    gust_scheduler_spawn(8388608, gust_user_main, NULL);\n");
                     body_str.push_str("    gust_scheduler_destroy();\n");
                     body_str.push_str("    return 0;\n");

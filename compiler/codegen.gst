@@ -3129,7 +3129,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 res = std.Concat(res, "int main(int argc, char** argv) {\n");
                 res = std.Concat(res, "    os_argc = argc;\n");
                 res = std.Concat(res, "    os_argv = argv;\n");
-                res = std.Concat(res, "    gust_scheduler_init(1);\n");
+                res = std.Concat(res, "    gust_scheduler_init(get_num_threads_to_use());\n");
                 res = std.Concat(res, "    gust_scheduler_spawn(8388608, gust_user_main, NULL);\n");
                 res = std.Concat(res, "    gust_scheduler_destroy();\n");
                 res = std.Concat(res, "    return 0;\n");
