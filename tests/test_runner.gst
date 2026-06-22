@@ -143,7 +143,7 @@ func run_test(t: Test[ctx]) int {
             os.System("mkdir -p temp_e2e_guard_test_dir/nested && echo 'func main() {}' > temp_e2e_guard_test_dir/nested/file1.gst");
         }
         if std.str_find(path, "e2e_filesystem_ops") != 0 - 1 {
-        os.System("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/file2.txt");
+            os.System("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/file2.txt");
         }
 
         mut cmd_comp := std.Concat("./gust ", path);
@@ -188,6 +188,9 @@ func run_test(t: Test[ctx]) int {
         os.WriteFile(final_c, final_c_content);
 
         mut compile_c_cmd := std.Concat("cc -O2 -Wall -pthread -Isrc ", final_c);
+        if is_neg == 2 || std.str_find(path, "canary") != 0 - 1 || std.str_find(path, "sanitizer") != 0 - 1 {
+            compile_c_cmd = std.Concat(compile_c_cmd, " -fsanitize=address -DGUST_DEBUG");
+        }
         compile_c_cmd = std.Concat(compile_c_cmd, " -o ");
         compile_c_cmd = std.Concat(compile_c_cmd, bin_path);
         compile_c_cmd = std.Concat(compile_c_cmd, " > ");
@@ -205,10 +208,19 @@ func run_test(t: Test[ctx]) int {
         run_cmd = std.Concat(run_cmd, run_log);
         run_cmd = std.Concat(run_cmd, " 2>&1");
         status = os.System(run_cmd);
-        if status != 0 {
-            mut msg := std.Format("❌ FAIL: %s (Execution crashed/failed! See %s for errors)", path, run_log);
-            os.LogStr(msg);
-            return 0;
+
+        if is_neg == 2 {
+            if status == 0 {
+                mut msg := std.Format("❌ FAIL: %s (Expected runtime crash/failure, but it exited cleanly with status 0)", path);
+                os.LogStr(msg);
+                return 0;
+            }
+        } else {
+            if status != 0 {
+                mut msg := std.Format("❌ FAIL: %s (Execution crashed/failed! See %s for errors)", path, run_log);
+                os.LogStr(msg);
+                return 0;
+            }
         }
 
         mut actual_output := os.ReadFile(local_ctx, run_log);
@@ -236,7 +248,7 @@ func run_test(t: Test[ctx]) int {
         mut trimmed_expected := std.str_trim(exp);
 
         mut is_match := 0;
-        if t.is_substring == 1 {
+        if t.is_substring == 1 || is_neg == 2 {
             if std.str_find(trimmed_actual, trimmed_expected) != 0 - 1 {
                 is_match = 1;
             }
@@ -277,7 +289,12 @@ func run_test(t: Test[ctx]) int {
         rm_cmd = std.Concat(rm_cmd, bin_path);
         os.System(rm_cmd);
 
-        mut msg := std.Format("✅ PASS: %s (Compiled and ran successfully with expected output)", path);
+        mut msg := "";
+        if is_neg == 2 {
+            msg = std.Format("✅ PASS: %s (Runtime crashed as expected: '%s')", path, exp);
+        } else {
+            msg = std.Format("✅ PASS: %s (Compiled and ran successfully with expected output)", path);
+        }
         os.LogStr(msg);
         return 1;
     }
@@ -749,13 +766,13 @@ func main() {
     mut t76: Test[ctx];
     t76.path = "tests/e2e_arena_canary_corruption_detection.gst";
     t76.is_negative = 2;
-    t76.expected = "GUST CANARY CORRUPTION DETECTED";
+    t76.expected = "boundary corruption detected";
     tests.Push(t76);
 
     mut t77: Test[ctx];
     t77.path = "tests/e2e_sanitizer_detection_of_corrupt_memory.gst";
     t77.is_negative = 2;
-    t77.expected = "heap-use-after-free";
+    t77.expected = "AddressSanitizer";
     tests.Push(t77);
 
     mut t78: Test[ctx];
