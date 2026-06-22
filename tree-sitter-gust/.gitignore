@@ -1,0 +1,18 @@
+# Node.js artifacts
+node_modules/
+
+# Native build outputs (from node-gyp / tree-sitter compile)
+build/
+prebuilds/
+
+# Compiled WebAssembly grammars (e.g. tree-sitter-gust.wasm)
+*.wasm
+
+# Native binary/object volatiles
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.lib
+*.a

@@ -3,7 +3,7 @@ CFLAGS = -O2 -Wall -pthread
 INCLUDES = -Isrc
 PREFIX = /usr/local
 
-.PHONY: all clean test bootstrap install
+.PHONY: all clean test bootstrap install test_tree_sitter
 
 all: gust
 
@@ -86,6 +86,19 @@ test: gust
 	else \
 		grep -q "leak" build/test_rc_leak.log && echo "✅ Linear resource leak caught successfully"; \
 	fi
+
+	@# === 5. TREE-SITTER GRAMMAR PARSING TESTS ===
+	@$(MAKE) test_tree_sitter
+
+test_tree_sitter:
+	@echo "🔍 Running Tree-sitter corpus tests..."
+	cd tree-sitter-gust && npx tree-sitter test
+	@echo "🔍 Validating all Gust files parse with zero errors..."
+	@for f in compiler/*.gst tests/*.gst; do \
+		echo "Parsing $$f..."; \
+		(cd tree-sitter-gust && npx tree-sitter parse ../$$f --quiet) || exit 1; \
+	done
+	@echo "✅ Tree-sitter parsing validation passed!"
 
 clean:
 	rm -rf gust_bootstrap gust build/

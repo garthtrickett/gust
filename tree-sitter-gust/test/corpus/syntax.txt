@@ -1,0 +1,126 @@
+==================
+Branded Struct and Enum Declarations
+==================
+type FieldDef[ctx] struct {
+    name: str
+}
+
+type Option[T, ctx] enum {
+    Some { val: T },
+    None
+}
+
+---
+
+(source_file
+  (struct_declaration
+    (type_identifier)
+    (type_parameter_list
+      (primitive_type))
+    (field_declaration
+      (field_identifier)
+      (primitive_type)))
+  (enum_declaration
+    (type_identifier)
+    (type_parameter_list
+      (type_struct)
+      (primitive_type))
+    (variant_declaration
+      (type_identifier)
+      (field_declaration
+        (field_identifier)
+        (type_struct)))
+    (variant_declaration
+      (type_identifier))))
+
+==================
+Guard Statements and Unsafe Blocks
+==================
+func main() {
+    guard mut x := getValue() else {
+        return;
+    }
+    unsafe {
+        x = x + 1;
+    }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameter_list)
+    (block
+      (guard_statement
+        (identifier)
+        (call_expression
+          (identifier))
+        (block
+          (return_statement)))
+      (unsafe_statement
+        (block
+          (assignment_statement
+            (identifier)
+            (binary_expression
+              (identifier)
+              (integer_literal))))))))
+
+==================
+Match Statements
+==================
+func process() {
+    match shape {
+        Circle { radius } => {
+            return radius;
+        }
+        Point => {
+            return 0;
+        }
+    }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameter_list)
+    (block
+      (match_statement
+        (identifier)
+        (match_case
+          (type_identifier)
+          (identifier)
+          (block
+            (return_statement
+              (identifier))))
+        (match_case
+          (type_identifier)
+          (block
+            (return_statement
+              (integer_literal))))))))
+
+==================
+Index Access Syntax
+==================
+func main() {
+    ctx[n].val = array[0];
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameter_list)
+    (block
+      (assignment_statement
+        (selector_expression
+          (index_access
+            (identifier)
+            (identifier))
+          (field_identifier))
+        (index_access
+          (identifier)
+          (integer_literal))))))

@@ -33,12 +33,17 @@
             python3
             ripgrep
             gdb
+
+            # Tree-sitter & Node Toolchain
+            tree-sitter
+            nodejs
           ];
 
           shellHook = ''
             echo "🦀 Gust Lexer Development Environment Loaded"
             echo "Cargo: $(cargo --version)"
             echo "Rustc: $(rustc --version)"
+            echo "Tree-sitter: $(tree-sitter --version)"
             
             # Export CC to point directly to the Nix-provided linker
             export CC="${pkgs.stdenv.cc}/bin/cc"
@@ -58,13 +63,76 @@
               echo "📝 Test '$1' run. Output written to to.log"
             }
 
+            # Run a single positive or negative Gust test and pipe all compiler logs + runtime output to to.log
+            gt-one-gst() {
+              if [ -z "$1" ]; then
+                echo "❌ Error: Please provide a test path (e.g., gt-one-gst tests/e2e_collections_methods.gst)"
+                return 1
+              fi
+
+              TEST_PATH="$1"
+              TEST_STEM=$(basename "''${TEST_PATH}" .gst)
+              mkdir -p build
+
+              # Clear and initialize log
+              echo "=== [1/3] COMPILING GUST TO C ===" > to.log
+              
+              # Run the compiler. Capture stdout/stderr (which contain compile-time traces/emojis)
+              ./gust "''${TEST_PATH}" > build/temp_output.log 2>&1
+              COMP_STATUS=$?
+              cat build/temp_output.log >> to.log
+
+              # Check if this is a negative test (filenames containing 'rejected' or 'violation')
+              if [[ "''${TEST_PATH}" == *"rejected"* || "''${TEST_PATH}" == *"violation"* ]]; then
+                if [ ''${COMP_STATUS} -ne 0 ]; then
+                  echo "✅ Negative test caught compilation failure successfully! See to.log for error."
+                  return 0
+                else
+                  echo "❌ FAIL: Expected negative test to fail compilation, but it succeeded."
+                  return 1
+                fi
+              fi
+
+              if [ ''${COMP_STATUS} -ne 0 ]; then
+                echo "❌ Gust compilation failed! See to.log for diagnostic errors."
+                return ''${COMP_STATUS}
+              fi
+
+              # Filter out structural log emojis to output clean transpiled C code
+              grep -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/temp_output.log > build/''${TEST_STEM}.c
+
+              # Combine with runtime and compile C binary
+              echo -e "\n=== [2/3] COMPILING NATIVE C EXECUTABLE ===" >> to.log
+              cat src/runtime.c build/''${TEST_STEM}.c > build/''${TEST_STEM}_final.c
+              cc -O2 -Wall -pthread -Isrc build/''${TEST_STEM}_final.c -o build/''${TEST_STEM}_bin >> to.log 2>&1
+              C_STATUS=$?
+
+              if [ ''${C_STATUS} -ne 0 ]; then
+                echo "❌ Native C compilation failed! See to.log for compiler errors."
+                return ''${C_STATUS}
+              fi
+
+              # Run the compiled binary
+              echo -e "\n=== [3/3] RUNNING COMPILED BINARY ===" >> to.log
+              ./build/''${TEST_STEM}_bin >> to.log 2>&1
+              RUN_STATUS=$?
+
+              if [ ''${RUN_STATUS} -ne 0 ]; then
+                echo "❌ Runtime execution failed! See to.log for panic/segfault traces."
+                return ''${RUN_STATUS}
+              fi
+
+              echo "📝 Test '$1' executed successfully. Output written to to.log"
+            }
+
             gcf() {
               cargo clippy --fix --allow-dirty
             }
 
             echo "💡 Available Commands:"
-            echo "  gtl             - Run all tests with debug logging directed to to.log"
-            echo "  gt-one <test_name> - Run a specific test with debug logging directed to to.log"
+            echo "  gtl             - Run all Rust tests with debug logging directed to to.log"
+            echo "  gt-one <name>   - Run a specific Rust test with debug logging directed to to.log"
+            echo "  gt-one-gst <f>  - Run a self-hosted .gst test (compiles, builds, runs) to to.log"
             echo "  gcf             - Run 'cargo clippy --fix --allow-dirty'"
           '';
         };

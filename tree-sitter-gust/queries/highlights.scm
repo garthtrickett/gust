@@ -1,0 +1,131 @@
+; ==============================================================================
+; Gust Tree-sitter Highlight Queries
+; ==============================================================================
+
+; --- Keywords ---
+
+[
+  "import"
+  "as"
+  "type"
+  "struct"
+  "enum"
+  "func"
+  "mut"
+  "defer"
+  "move"
+  "take"
+  "unsafe"
+  "empty"
+] @keyword
+
+[
+  "if"
+  "else"
+  "while"
+  "match"
+  "guard"
+  "return"
+] @keyword.control
+
+
+; --- Built-in & Custom Types ---
+
+; Capitalized identifiers are conventionally types in Gust
+(type_identifier) @type
+
+; Built-in primitive types represented as plain identifiers
+((identifier) @type.builtin
+  (#anyof? @type.builtin "int" "byte" "bool" "str" "Arena" "void"))
+
+
+; --- Brand / Lifetime / Type Parameters ---
+
+; Targets type variables like 'ctx' in MyStruct[ctx] or Index[Node, ctx]
+(type_parameter) @type.parameter
+(brand_identifier) @type.parameter
+
+
+; --- Functions & Methods ---
+
+; Function declarations
+(function_declaration 
+  name: (identifier) @function)
+
+; Plain function calls: my_func()
+(call_expression 
+  function: (identifier) @function.call)
+
+; Method calls: object.method()
+(call_expression 
+  function: (field_expression 
+    field: (field_identifier) @function.call))
+
+
+; --- Properties, Fields & Variables ---
+
+; Field declarations inside struct/enum definitions
+(field_declaration 
+  name: (field_identifier) @property)
+
+; Field selections: object.field
+(field_expression 
+  field: (field_identifier) @property)
+
+; Standard variables
+(identifier) @variable
+
+
+; --- Literals ---
+
+; Double and single quoted strings
+(string_literal) @string
+
+; Integer numbers
+(integer_literal) @number
+
+; Booleans
+[
+  "true"
+  "false"
+] @boolean
+
+
+; --- Operators & Punctuation ---
+
+[
+  ":="
+  "="
+  "=="
+  "!="
+  "=>"
+  "&&"
+  "||"
+  "+"
+  "-"
+  "*"
+  "/"
+  "<"
+  ">"
+  "<="
+  ">="
+  "&"
+] @operator
+
+[
+  "("
+  ")"
+  "{"
+  "}"
+  "["
+  "]"
+  ";"
+  ","
+  "."
+  ":"
+] @punctuation.bracket
+
+
+; --- Comments ---
+
+(comment) @comment
