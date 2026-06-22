@@ -1365,7 +1365,11 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             return codegen_generate_expression(ctx[expr_idx].Take.expr, env, ctx);
         }
         if tag == 6 { // AddressOf
-            mut res := std.Concat("&(", codegen_generate_expression(ctx[expr_idx].AddressOf.expr, env, ctx));
+            mut inner_str := codegen_generate_expression(ctx[expr_idx].AddressOf.expr, env, ctx);
+            if codegen_ends_with(inner_str, ".Val") == 1 {
+                return std.Clone(ctx, inner_str);
+            }
+            mut res := std.Concat("&(", inner_str);
             res = std.Concat(res, ")");
             return std.Clone(ctx, res);
         }

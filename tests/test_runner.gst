@@ -595,6 +595,54 @@ func main() {
     t50.expected = "0\n1\n2\n3\n4";
     tests.Push(t50);
 
+    mut t51: Test[ctx];
+    t51.path = "tests/e2e_mock_payload_slicing.gst";
+    t51.is_negative = 0;
+    t51.expected = "42\n1024";
+    tests.Push(t51);
+
+    mut t52: Test[ctx];
+    t52.path = "tests/e2e_native_collections_evaluation.gst";
+    t52.is_negative = 0;
+    t52.expected = "3\n10\n20\n30\n2\n42\n84\n999";
+    tests.Push(t52);
+
+    mut t53: Test[ctx];
+    t53.path = "tests/e2e_adt_match_evaluation.gst";
+    t53.is_negative = 0;
+    t53.expected = "42\n30\n123";
+    tests.Push(t53);
+
+    mut t54: Test[ctx];
+    t54.path = "tests/e2e_adt_match_destructuring_evaluation.gst";
+    t54.is_negative = 0;
+    t54.expected = "42\n30\n123";
+    tests.Push(t54);
+
+    mut t55: Test[ctx];
+    t55.path = "tests/e2e_file_io_evaluation.gst";
+    t55.is_negative = 0;
+    t55.expected = "1\nHello from Gust Compiler File I/O!\n34";
+    tests.Push(t55);
+
+    mut t56: Test[ctx];
+    t56.path = "tests/e2e_fallible_lookup_evaluation.gst";
+    t56.is_negative = 0;
+    t56.expected = "1\n42\n0\n0";
+    tests.Push(t56);
+
+    mut t57: Test[ctx];
+    t57.path = "tests/e2e_is_valid_invariant_validation.gst";
+    t57.is_negative = 0;
+    t57.expected = "1\n0";
+    tests.Push(t57);
+
+    mut t58: Test[ctx];
+    t58.path = "tests/e2e_enum_indirection_pattern.gst";
+    t58.is_negative = 0;
+    t58.expected = "60";
+    tests.Push(t58);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
