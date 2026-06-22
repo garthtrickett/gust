@@ -463,6 +463,12 @@ func main() {
     t28.expected = "cannot contain ephemeral slice or view";
     tests.Push(t28);
 
+    mut t29: Test[ctx];
+    t29.path = "tests/test_branded_struct_mismatch_rejected.gst";
+    t29.is_negative = 1;
+    t29.expected = "Mismatched nested brand";
+    tests.Push(t29);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
