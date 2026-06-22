@@ -1,9 +1,13 @@
 {
-  "summary": "test: register test_brand_nesting_violation_rejected.gst in tests/test_runner.gst",
+  "summary": "test: add test_stack_escape_rejected.gst and register in test_runner",
   "files": [
     {
+      "file_path": "tests/test_stack_escape_rejected.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc leak() str {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut tl: std.ThreadLocalContext[ctx] := os.GetThreadScratch();\n    unsafe {\n        mut ptr := tl.arena as []byte;\n        mut s := ptr as str;\n        return s;\n    }\n}\n\nfunc main() {}\n>>>>>>> REPLACE"
+    },
+    {
       "file_path": "tests/test_runner.gst",
-      "code_diff": "<<<<<<< SEARCH\n    mut t23: Test[ctx];\n    t23.path = \"compiler/typechecker_templates_test_entry.gst\";\n    t23.is_negative = 0;\n    t23.is_substring = 1;\n    t23.expected = \"std_RcGet(rc_ptr)\";\n    tests.Push(t23);\n=======\n    mut t23: Test[ctx];\n    t23.path = \"compiler/typechecker_templates_test_entry.gst\";\n    t23.is_negative = 0;\n    t23.is_substring = 1;\n    t23.expected = \"std_RcGet(rc_ptr)\";\n    tests.Push(t23);\n\n    mut t24: Test[ctx];\n    t24.path = \"tests/test_brand_nesting_violation_rejected.gst\";\n    t24.is_negative = 1;\n    t24.expected = \"TypeMismatch\";\n    tests.Push(t24);\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    mut t24: Test[ctx];\n    t24.path = \"tests/test_brand_nesting_violation_rejected.gst\";\n    t24.is_negative = 1;\n    t24.expected = \"TypeMismatch\";\n    tests.Push(t24);\n=======\n    mut t24: Test[ctx];\n    t24.path = \"tests/test_brand_nesting_violation_rejected.gst\";\n    t24.is_negative = 1;\n    t24.expected = \"TypeMismatch\";\n    tests.Push(t24);\n\n    mut t25: Test[ctx];\n    t25.path = \"tests/test_stack_escape_rejected.gst\";\n    t25.is_negative = 1;\n    t25.expected = \"Escape analysis violation\";\n    tests.Push(t25);\n>>>>>>> REPLACE"
     }
   ]
 }

@@ -439,6 +439,12 @@ func main() {
     t24.expected = "TypeMismatch";
     tests.Push(t24);
 
+    mut t25: Test[ctx];
+    t25.path = "tests/test_stack_escape_rejected.gst";
+    t25.is_negative = 1;
+    t25.expected = "Escape analysis violation";
+    tests.Push(t25);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
 
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
