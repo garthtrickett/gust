@@ -3449,6 +3449,78 @@ func codegen_has_thread_local_context(env: &typechecker.TypeEnvironment[ctx], ct
     return 0;
 }
 
+
+func codegen_generate_clone_helper(struct_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        mut res := std.Concat('int std_GenerationalArena_Clone_', struct_name);
+        res = std.Concat(res, '(os_Arena* dest, os_Arena* src, int src_idx) {\n');
+        res = std.Concat(res, '    if (src_idx == 0xFFFFFFFF) return 0xFFFFFFFF;\n');
+        res = std.Concat(res, '    int dest_idx = os_ArenaAlloc(dest, sizeof(struct ');
+        res = std.Concat(res, struct_name);
+        res = std.Concat(res, '));\n');
+        
+        res = std.Concat(res, '    struct ');
+        res = std.Concat(res, struct_name);
+        res = std.Concat(res, '* src_ptr = (struct ');
+        res = std.Concat(res, struct_name);
+        res = std.Concat(res, '*)((char*)src->BaseAddress + src_idx);\n');
+        
+        res = std.Concat(res, '    struct ');
+        res = std.Concat(res, struct_name);
+        res = std.Concat(res, '* dest_ptr = (struct ');
+        res = std.Concat(res, struct_name);
+        res = std.Concat(res, '*)((char*)dest->BaseAddress + dest_idx);\n');
+        res = std.Concat(res, '    *dest_ptr = *src_ptr;\n');
+
+        mut orig_name := codegen_find_original_struct_name(struct_name, env, ctx);
+        mut lookup_struct := (*env).struct_registry.Get(orig_name);
+        if lookup_struct.Ok {
+            mut layout := lookup_struct.Val;
+            mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+            mut f_idx := 0;
+            while f_idx < len(f_keys) {
+                mut f_key := f_keys[f_idx];
+                mut f_type_lookup := layout.fields.Get(f_key);
+                if f_type_lookup.Ok {
+                    mut f_type := f_type_lookup.Val;
+                    if f_type.tag == 7 { // Index
+                        mut nested_struct := f_type.Index.struct_name;
+                        mut clean_nested := nested_struct;
+                        if std.str_eq(nested_struct, 'Any') == 1 {
+                            clean_nested = 'SessionNode';
+                        }
+                        mut line := std.Concat('    dest_ptr->', f_key);
+                        line = std.Concat(line, ' = std_GenerationalArena_Clone_');
+                        line = std.Concat(line, clean_nested);
+                        line = std.Concat(line, '(dest, src, src_ptr->');
+                        line = std.Concat(line, f_key);
+                        line = std.Concat(line, ');\n');
+                        res = std.Concat(res, line);
+                    }
+                }
+                f_idx = f_idx + 1;
+            }
+        }
+
+        res = std.Concat(res, '    return dest_idx;\n');
+        res = std.Concat(res, '}\n\n');
+
+        res = std.Concat(res, 'void std_GenerationalArena_Step_');
+        res = std.Concat(res, struct_name);
+        res = std.Concat(res, '(void* arena_ptr) {\n');
+        res = std.Concat(res, '    struct std_GenerationalArena_Generic* arena = (struct std_GenerationalArena_Generic*)arena_ptr;\n');
+        res = std.Concat(res, '    if (arena->survivor != 0xFFFFFFFF) {\n');
+        res = std.Concat(res, '        arena->survivor = std_GenerationalArena_Clone_');
+        res = std.Concat(res, struct_name);
+        res = std.Concat(res, '(&arena->next_ctx, &arena->current_ctx, arena->survivor);\n');
+        res = std.Concat(res, '    }\n');
+        res = std.Concat(res, '    std_GenerationalSwap(&arena->current_ctx, &arena->next_ctx);\n');
+        res = std.Concat(res, '}\n\n');
+
+        return std.Clone(ctx, res);
+    }
+}
+
 func codegen_generate(programs: std.Vector[ast.Program[ctx], ctx], prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         codegen_log_trace("⚙️", "codegen_generate: commencing code generation pass", ctx);
@@ -3488,6 +3560,79 @@ typedef void Any;
             i_erase = i_erase + 1;
         }
 
+        mut clone_helpers_needed: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+        mut i_chk := 0;
+        while i_chk < len(erased_struct_keys) {
+            mut struct_name := erased_struct_keys[i_chk];
+            mut is_gen_arena := 0;
+            mut suffix := "";
+            if std.str_find(struct_name, "std_GenerationalArena_") == 0 {
+                is_gen_arena = 1;
+                suffix = std.str_slice(struct_name, 22, len(struct_name));
+            } else if std.str_find(struct_name, "GenerationalArena_") == 0 {
+                is_gen_arena = 1;
+                suffix = std.str_slice(struct_name, 18, len(struct_name));
+            }
+            
+            if is_gen_arena == 1 {
+                mut normalized := suffix;
+                mut d_idx := std.str_find(normalized, "__");
+                while d_idx != 0 - 1 {
+                    mut left := std.str_slice(normalized, 0, d_idx);
+                    mut right := std.str_slice(normalized, d_idx + 2, len(normalized));
+                    normalized = std.Concat(std.Concat(left, "@"), right);
+                    d_idx = std.str_find(normalized, "__");
+                }
+                
+                mut pos := codegen_rfind_char(normalized, 95, len(normalized));
+                mut t_name := suffix;
+                if pos != 0 - 1 {
+                    t_name = std.str_slice(suffix, 0, pos);
+                }
+                clone_helpers_needed.Insert(std.Clone(ctx, t_name), 1);
+            }
+            i_chk = i_chk + 1;
+        }
+
+        mut work_list: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mut keys_needed := clone_helpers_needed.Keys(ctx);
+        mut i_key := 0;
+        while i_key < len(keys_needed) {
+            work_list.Push(std.Clone(ctx, keys_needed[i_key]));
+            i_key = i_key + 1;
+        }
+        
+        while len(work_list) > 0 {
+            mut current := work_list.Pop();
+            mut orig_name := codegen_find_original_struct_name(current, env, ctx);
+            mut lookup_struct := (*env).struct_registry.Get(orig_name);
+            if lookup_struct.Ok {
+                mut layout := lookup_struct.Val;
+                mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                mut f_idx := 0;
+                while f_idx < len(f_keys) {
+                    mut f_key := f_keys[f_idx];
+                    mut f_type_lookup := layout.fields.Get(f_key);
+                    if f_type_lookup.Ok {
+                        mut f_type := f_type_lookup.Val;
+                        if f_type.tag == 7 {
+                            mut nested_struct := f_type.Index.struct_name;
+                            mut clean_nested := nested_struct;
+                            if std.str_eq(nested_struct, "Any") == 1 {
+                                clean_nested = "SessionNode";
+                            }
+                            if clone_helpers_needed.Get(clean_nested).Ok == 0 {
+                                clone_helpers_needed.Insert(std.Clone(ctx, clean_nested), 1);
+                                work_list.Push(std.Clone(ctx, clean_nested));
+                            }
+                        }
+                    }
+                    f_idx = f_idx + 1;
+                }
+            } 
+        }
+        mut erased_helpers := typechecker.typechecker_get_sorted_keys_int(&clone_helpers_needed, ctx);
+
         mut i_fwd := 0;
         while i_fwd < len(erased_struct_keys) {
             mut key := erased_struct_keys[i_fwd];
@@ -3521,6 +3666,26 @@ typedef void Any;
             i_cast_fwd = i_cast_fwd + 1;
         }
         c_code = std.Concat(c_code, "\n");
+
+        // Generational Arena Clone Helper forward declarations
+        if len(erased_helpers) > 0 {
+            c_code = std.Concat(c_code, "// ====================================================\n");
+            c_code = std.Concat(c_code, "// GENERATIONAL ARENA CLONE HELPER FORWARD DECLARATIONS\n");
+            c_code = std.Concat(c_code, "// ====================================================\n");
+            mut h_idx := 0;
+            while h_idx < len(erased_helpers) {
+                mut name := erased_helpers[h_idx];
+                c_code = std.Concat(c_code, "int std_GenerationalArena_Clone_");
+                c_code = std.Concat(c_code, name);
+                c_code = std.Concat(c_code, "(os_Arena* dest, os_Arena* src, int src_idx);\n");
+                
+                c_code = std.Concat(c_code, "void std_GenerationalArena_Step_");
+                c_code = std.Concat(c_code, name);
+                c_code = std.Concat(c_code, "(void* arena_ptr);\n");
+                h_idx = h_idx + 1;
+            }
+            c_code = std.Concat(c_code, "\n");
+        }
 
         // Function Forward Declarations
         c_code = std.Concat(c_code, "// Function Forward Declarations\n");
@@ -3732,6 +3897,21 @@ typedef void Any;
                 }
             }
             m = m + 1;
+        }
+
+        // Generational Arena Clone Helper implementations
+        if len(erased_helpers) > 0 {
+            c_code = std.Concat(c_code, "// ====================================================\n");
+            c_code = std.Concat(c_code, "// GENERATIONAL ARENA CLONE HELPER DEFINITIONS\n");
+            c_code = std.Concat(c_code, "// ====================================================\n");
+            mut h_idx := 0;
+            while h_idx < len(erased_helpers) {
+                mut name := erased_helpers[h_idx];
+                mut impl := codegen_generate_clone_helper(name, env, ctx);
+                c_code = std.Concat(c_code, impl);
+                h_idx = h_idx + 1;
+            }
+            c_code = std.Concat(c_code, "\n");
         }
         
         // 4. Statements in program (transpiled C)
