@@ -778,6 +778,26 @@ func main() {
     mut empty_init_str := codegen.codegen_generate_expression(expr_empty_test, &env, ctx);
     os.LogStr(empty_init_str);
 
+    // Step 1: Verification Test for os_GetThreadScratch forward declaration
+    mut env_tl_test := typechecker.env_new(ctx);
+    
+    mut tl_layout: typechecker.StructLayout[ctx];
+    tl_layout.brand = empty[Index[str, ctx]];
+    tl_layout.fields = std.HashMapNew(ctx);
+    typechecker.env_register_struct(&env_tl_test, "std_ThreadLocalContext", tl_layout, ctx);
+
+    mut empty_prog_vec: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);
+    mut empty_prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
+    mut gen_tl_c := codegen.codegen_generate(empty_prog_vec, empty_prefixes, &env_tl_test, ctx);
+
+    mut tl_fwd_idx := std.str_find(gen_tl_c, "std_ThreadLocalContext os_GetThreadScratch(void);");
+    if tl_fwd_idx != 0 - 1 {
+        os.LogStr("os_GetThreadScratch forward declaration generated correctly!");
+    } else {
+        os.LogStr("ERROR: os_GetThreadScratch forward declaration missing!");
+    }
+}
+
     // Step 3: Verification Test for Step 1 Type & Container Identification Helpers
     mut t_slice_test: ast.Type[ctx];
     t_slice_test.tag = 6; // Slice

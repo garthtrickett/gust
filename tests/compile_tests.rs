@@ -3680,6 +3680,7 @@ fn test_self_hosted_codegen_initializers() {
             assert!(filtered_stdout.contains("p_node->val"));
             assert!(filtered_stdout.contains("node.val"));
             assert!(filtered_stdout.contains("((int)os_ArenaAlloc(&ctx, sizeof(ListNode)))"));
+            assert!(filtered_stdout.contains("os_GetThreadScratch forward declaration generated correctly!"));
 
             // Check generated C program contains full structure definitions and validation helpers
             assert!(filtered_stdout.contains("typedef struct Node Node;"));

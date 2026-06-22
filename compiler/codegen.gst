@@ -1311,6 +1311,19 @@ func codegen_gen_type_aware_initializer(t: ast.Type[ctx], env: &typechecker.Type
     return "0";
 }
 
+func codegen_strip_pointer_suffix(s: str, ctx: &Arena) str {
+    mut end_idx := len(s);
+    while end_idx > 0 {
+        mut b := std.str_byte_at(s, end_idx - 1);
+        if b == 42 || b == 32 { // '*' or ' '
+            end_idx = end_idx - 1;
+        } else {
+            return std.Clone(ctx, std.str_slice(s, 0, end_idx));
+        }
+    }
+    return s;
+}
+
 func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
@@ -1583,13 +1596,34 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 (*env).current_alloc_struct = old_alloc_struct;
             }
 
-            mut target_str := codegen_get_c_type(ctx[ctx[expr_idx].AsCast.target_type], env, ctx);
-            mut res := std.Concat("((", target_str);
-            res = std.Concat(res, ")");
-            res = std.Concat(res, left_str);
-            res = std.Concat(res, ")");
-            return std.Clone(ctx, res);
+        mut target_str := codegen_get_c_type(ctx[ctx[expr_idx].AsCast.target_type], env, ctx);
+
+                if ctx[expr_idx].AsCast.is_reference == 1 {
+                    mut clean_target := codegen_strip_pointer_suffix(target_str, ctx);
+                    mut block := std.Concat("(({ CastResult_", clean_target);
+                    block = std.Concat(block, " res; res.Ok = ((((uintptr_t)");
+                    block = std.Concat(block, left_str);
+                    block = std.Concat(block, ".data) & (__alignof__(");
+                    block = std.Concat(block, clean_target);
+                    block = std.Concat(block, ") - 1)) == 0) && (");
+                    block = std.Concat(block, left_str);
+                    block = std.Concat(block, ".len >= sizeof(");
+                    block = std.Concat(block, clean_target);
+                    block = std.Concat(block, ")); res.Val = (");
+                    block = std.Concat(block, clean_target);
+                    block = std.Concat(block, "*)");
+                    block = std.Concat(block, left_str);
+                    block = std.Concat(block, ".data; res; }))");
+                    return std.Clone(ctx, block);
+                }
+
+                mut res := std.Concat("((", target_str);
+                res = std.Concat(res, ")");
+                res = std.Concat(res, left_str);
+                res = std.Concat(res, ")");
+                return std.Clone(ctx, res);
         }
+        
         if tag == 10 { // Binary
             mut left_str := codegen_generate_expression(ctx[expr_idx].Binary.left, env, ctx);
             mut right_str := codegen_generate_expression(ctx[expr_idx].Binary.right, env, ctx);
@@ -3418,6 +3452,11 @@ typedef void Any;
         c_code = std.Concat(c_code, "struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
         c_code = std.Concat(c_code, "typedef struct Slice_int Slice_int;\n");
         c_code = std.Concat(c_code, "struct Slice_int {\n    int* data;\n    int len;\n};\n\n");
+
+        mut tl_lookup := (*env).struct_registry.Get("std_ThreadLocalContext");
+        if tl_lookup.Ok {
+            c_code = std.Concat(c_code, "std_ThreadLocalContext os_GetThreadScratch(void);\n\n");
+        }
 
         // 2. Generate forward declarations for all structs
         c_code = std.Concat(c_code, "// Forward Declarations\n");
