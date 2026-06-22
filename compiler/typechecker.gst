@@ -869,23 +869,34 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
                 }
 
-                mut msg := std.Concat("Semantic Error: Field '", expr.Selector.right);
+                mut msg := std.Concat("Semantic Error: [FieldNotFound] Field '", expr.Selector.right);
                 msg = std.Concat(msg, "' not found on struct layout '");
                 msg = std.Concat(msg, struct_name);
                 msg = std.Concat(msg, "'");
                 report_error(2, msg, expr.Selector.span, env, ctx);
-            }
-
-            if left_t.tag == 4 { // Arena
-                if std.str_eq(expr.Selector.right, "Free") {
-                    mut t: ast.Type[ctx];
-                    t.tag = 3; // Void
-                    return t;
-                }
-                if std.str_eq(expr.Selector.right, "Offset") || std.str_eq(expr.Selector.right, "Capacity") {
-                    mut t: ast.Type[ctx];
-                    t.tag = 0; // Int
-                    return t;
+                
+                mut t: ast.Type[ctx];
+                t.tag = 0; // Int
+                return t;
+            } else {
+                if left_t.tag == 4 { // Arena
+                    if std.str_eq(expr.Selector.right, "Free") {
+                        mut t: ast.Type[ctx];
+                        t.tag = 3; // Void
+                        return t;
+                    }
+                    if std.str_eq(expr.Selector.right, "Offset") || std.str_eq(expr.Selector.right, "Capacity") {
+                        mut t: ast.Type[ctx];
+                        t.tag = 0; // Int
+                        return t;
+                    }
+                    
+                    mut msg := std.Concat("Semantic Error: [MethodNotFound] Method '", expr.Selector.right);
+                    msg = std.Concat(msg, "' not found on Arena allocator");
+                    report_error(2, msg, expr.Selector.span, env, ctx);
+                } else {
+                    mut msg := std.Concat("Semantic Error: [UnresolvedSelector] Cannot perform selector access on non-struct type ", ast.serialize_type(left_t, ctx));
+                    report_error(2, msg, expr.Selector.span, env, ctx);
                 }
             }
 
