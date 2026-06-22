@@ -1,9 +1,0 @@
-{
-  "summary": "fix: bypass UnresolvedSelector check for registered import namespace aliases",
-  "files": [
-    {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n                    mut msg := std.Concat(\"Semantic Error: [MethodNotFound] Method '\", expr.Selector.right);\n                    msg = std.Concat(msg, \"' not found on Arena allocator\");\n                    report_error(2, msg, expr.Selector.span, env, ctx);\n                } else {\n                    mut msg := std.Concat(\"Semantic Error: [UnresolvedSelector] Cannot perform selector access on non-struct type \", ast.serialize_type(left_t, ctx));\n                    report_error(2, msg, expr.Selector.span, env, ctx);\n                }\n            }\n\n            mut t: ast.Type[ctx];\n            t.tag = 0; // Int\n            return t;\n        }\n=======\n                    mut msg := std.Concat(\"Semantic Error: [MethodNotFound] Method '\", expr.Selector.right);\n                    msg = std.Concat(msg, \"' not found on Arena allocator\");\n                    report_error(2, msg, expr.Selector.span, env, ctx);\n                } else {\n                    mut is_import_alias := (*env).imports.Get(left_str).Ok;\n                    if is_import_alias == 0 {\n                        mut msg := std.Concat(\"Semantic Error: [UnresolvedSelector] Cannot perform selector access on non-struct type \", ast.serialize_type(left_t, ctx));\n                        report_error(2, msg, expr.Selector.span, env, ctx);\n                    } else {\n                        mut t_void: ast.Type[ctx];\n                        t_void.tag = 3; // Void\n                        return t_void;\n                    }\n                }\n            }\n\n            mut t: ast.Type[ctx];\n            t.tag = 0; // Int\n            return t;\n        }\n>>>>>>> REPLACE"
-    }
-  ]
-}
