@@ -643,6 +643,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     if inner.tag == 4 { // Arena
                         is_arena = 1;
                     }
+                } else if alloc_t.tag == 11 { // Reference
+                    mut inner := ctx[alloc_t.Reference.inner];
+                    if inner.tag == 4 { // Arena
+                        is_arena = 1;
+                    }
                 }
             }
 
