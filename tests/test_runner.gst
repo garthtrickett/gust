@@ -1090,13 +1090,13 @@ func main() {
     mut t130: Test[ctx];
     t130.path = "tests/test_view_invalidated_on_parent_reassignment_rejected.gst";
     t130.is_negative = 1;
-    t130.expected = "backing origin";
+    t130.expected = "Use of moved variable";
     tests.Push(t130);
 
     mut t131: Test[ctx];
     t131.path = "tests/test_view_invalidated_on_parent_field_mutation_rejected.gst";
     t131.is_negative = 1;
-    t131.expected = "backing origin";
+    t131.expected = "Use of moved variable";
     tests.Push(t131);
 
     mut t132: Test[ctx];
