@@ -1691,10 +1691,11 @@ fn test_take_linear_struct_accepted() {
         }
         func main() {
             mut p: MyLinear;
+            mut val := 10;
             unsafe {
-                p.ptr = &10;
+                p.ptr = &val;
             }
-            mut taken := take p; // Accepted on Linear struct
+            mut taken := take p;
         }
     ";
     assert!(check_program(source).is_ok());

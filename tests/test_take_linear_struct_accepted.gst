@@ -3,8 +3,9 @@ type MyLinear struct {
 }
 func main() {
     mut p: MyLinear;
+    mut val := 10;
     unsafe {
-        p.ptr = &10;
+        p.ptr = &val;
     }
     mut taken := take p;
 }

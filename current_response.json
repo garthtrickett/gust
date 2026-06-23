@@ -1,0 +1,13 @@
+{
+  "summary": "fix: introduce lvalue variable for address-of operand in take_linear_struct test",
+  "files": [
+    {
+      "file_path": "tests/test_take_linear_struct_accepted.gst",
+      "code_diff": "<<<<<<< SEARCH\ntype MyLinear struct {\n    ptr: *int\n}\nfunc main() {\n    mut p: MyLinear;\n    unsafe {\n        p.ptr = &10;\n    }\n    mut taken := take p;\n}\n=======\ntype MyLinear struct {\n    ptr: *int\n}\nfunc main() {\n    mut p: MyLinear;\n    mut val := 10;\n    unsafe {\n        p.ptr = &val;\n    }\n    mut taken := take p;\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/compile_tests.rs",
+      "code_diff": "<<<<<<< SEARCH\n#[test]\nfn test_take_linear_struct_accepted() {\n    let source = \"\n        type MyLinear struct {\n            ptr: *int\n        }\n        func main() {\n            mut p: MyLinear;\n            unsafe {\n                p.ptr = &10;\n            }\n            mut taken := take p;\n        }\n    \";\n    assert!(check_program(source).is_ok());\n}\n=======\n#[test]\nfn test_take_linear_struct_accepted() {\n    let source = \"\n        type MyLinear struct {\n            ptr: *int\n        }\n        func main() {\n            mut p: MyLinear;\n            mut val := 10;\n            unsafe {\n                p.ptr = &val;\n            }\n            mut taken := take p;\n        }\n    \";\n    assert!(check_program(source).is_ok());\n}\n>>>>>>> REPLACE"
+    }
+  ]
+}
