@@ -1,9 +1,0 @@
-{
-  "summary": "test: update alignment accepted test to satisfy definite check analysis",
-  "files": [
-    {
-      "file_path": "tests/test_bool_wrapper_alignment_accepted.gst",
-      "code_diff": "<<<<<<< SEARCH\n    mut is_ok: bool := lookup.Ok;\n    if is_ok == true {\n        os.LogInt(lookup.Val);\n    }\n=======\n    mut is_ok: bool := lookup.Ok;\n    if lookup.Ok {\n        os.LogInt(lookup.Val);\n    }\n>>>>>>> REPLACE"
-    }
-  ]
-}
