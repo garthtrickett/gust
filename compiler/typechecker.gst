@@ -835,7 +835,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") {
                     if std.str_eq(expr.Selector.right, "Ok") {
                         mut t: ast.Type[ctx];
-                        t.tag = 0; // Int
+                        t.tag = 2; // Bool
                         return t;
                     }
                     if std.str_eq(expr.Selector.right, "Val") {
@@ -861,7 +861,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_") {
                     if std.str_eq(expr.Selector.right, "Ok") {
                         mut t: ast.Type[ctx];
-                        t.tag = 0; // Int
+                        t.tag = 2; // Bool
                         return t;
                     }
                     if std.str_eq(expr.Selector.right, "Val") {
@@ -3890,8 +3890,8 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                         mut resolved_v_type := env_resolve_type(env, v_type, ctx);
                         
                         mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
-                        mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
-                        fields.Insert("Ok", t_int);
+                        mut t_bool: ast.Type[ctx]; t_bool.tag = 2; // Bool
+                        fields.Insert("Ok", t_bool);
                         fields.Insert("Val", resolved_v_type);
                         
                         mut layout: StructLayout[ctx];
@@ -3910,8 +3910,8 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                             mut resolved_v_type := env_resolve_type(env, v_type, ctx);
                             
                             mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
-                            mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
-                            fields.Insert("Ok", t_int);
+                            mut t_bool: ast.Type[ctx]; t_bool.tag = 2; // Bool
+                            fields.Insert("Ok", t_bool);
                             fields.Insert("Val", resolved_v_type);
                             
                             mut layout: StructLayout[ctx];
