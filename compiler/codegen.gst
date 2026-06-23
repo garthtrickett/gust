@@ -1842,10 +1842,13 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if codegen_is_vector_type(alloc_t, env, ctx) == 1 {
                 mut arrow_or_dot := ".";
-                if alloc_t.tag == 9 { // RawPointer
+                if alloc_t.tag == 9 || alloc_t.tag == 11 { // RawPointer or Reference
                     arrow_or_dot = "->";
                 }
                 mut res := std.Concat("(*({ if (", index_str);
+
+
+                
                 res = std.Concat(res, " < 0 || ");
                 res = std.Concat(res, index_str);
                 res = std.Concat(res, " >= ");
@@ -1862,7 +1865,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if codegen_is_pool_type(alloc_t, env, ctx) == 1 {
                 mut arrow_or_dot := ".";
-                if alloc_t.tag == 9 { // RawPointer
+                if alloc_t.tag == 9 || alloc_t.tag == 11 { // RawPointer or Reference
                     arrow_or_dot = "->";
                 }
                 mut res := std.Concat("(*({ if (", index_str);
@@ -1880,11 +1883,13 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 return std.Clone(ctx, res);
             }
 
+
+
             if codegen_is_hashmap_type(alloc_t, env, ctx) == 1 {
                 mut ref_prefix := "&";
-                if alloc_t.tag == 9 { // RawPointer
+                if alloc_t.tag == 9 || alloc_t.tag == 11 { // RawPointer or Reference
                     ref_prefix = "";
-                }
+                }                
                 mut is_str_key := "0";
                 if codegen_hashmap_is_str_key(alloc_t, env, ctx) == 1 {
                     is_str_key = "1";
@@ -1984,7 +1989,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut left_str := codegen_generate_expression(ctx[expr_idx].Selector.left, env, ctx);
             mut left_t := codegen_get_expression_type(ctx[expr_idx].Selector.left, env, ctx);
             mut arrow_or_dot := ".";
-            if left_t.tag == 9 { // RawPointer
+            if left_t.tag == 9 || left_t.tag == 11 { // RawPointer = 9, Reference = 11
                 arrow_or_dot = "->";
             }
             
@@ -2022,7 +2027,10 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 if left_type.tag == 9 { // RawPointer
                     left_type = ctx[left_type.RawPointer.inner];
                     is_ptr = 1;
-                } 
+                } else if left_type.tag == 11 { // Reference
+                    left_type = ctx[left_type.Reference.inner];
+                    is_ptr = 1;
+                }
                 mut is_arena := 0;
                 if left_type.tag == 4 { // Arena
                     is_arena = 1;
