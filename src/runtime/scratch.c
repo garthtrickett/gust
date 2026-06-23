@@ -34,14 +34,14 @@ void* os_ScratchAlloc(size_t size) {
         exit(1);
     }
     void* ptr = &os_scratch_buffer.buffer[os_scratch_buffer.offset];
+    // Zero-initialize the allocated static scratch chunk
+    memset(ptr, 0, size);
     os_scratch_buffer.offset += size;
     return ptr;
 }
 
 void os_ScratchReset() {
-#ifdef GUST_DEBUG
-    // Canary poisoning of reset memory
-    memset(os_scratch_buffer.buffer, 0xA5, os_scratch_buffer.offset);
-#endif
+    // Zero-initialize the active scratch buffer range on reset to prevent cross-file pollution
+    memset(os_scratch_buffer.buffer, 0, os_scratch_buffer.offset);
     os_scratch_buffer.offset = 0;
 }
