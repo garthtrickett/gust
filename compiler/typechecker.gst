@@ -4028,7 +4028,7 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                     clean_namespaced_name = std.str_slice(clean_namespaced_name, d_idx + 2, len(clean_namespaced_name));
                 }
 
-                mut s_keys := (*env).struct_templates.Keys(ctx);
+                mut s_keys := typechecker_get_sorted_keys_struct_template(&(*env).struct_templates, ctx);
                 mut matched := 0;
                 mut matched_val: ast.Type[ctx];
 
@@ -4064,11 +4064,10 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                 }
 
                 if matched == 0 {
-                    mut e_keys := (*env).enum_templates.Keys(ctx);
+                    mut e_keys := typechecker_get_sorted_keys_enum_template(&(*env).enum_templates, ctx);
                     mut ek_idx := 0;
                     while ek_idx < len(e_keys) && matched == 0 {
-                        mut tmpl_name := e_keys[ek_idx];
-                        mut prefix := "";
+                        mut tmpl_name := e_keys[ek_idx];                        mut prefix := "";
                         mut j := 0;
                         while j < len(tmpl_name) {
                             mut b := std.str_byte_at(tmpl_name, j);
@@ -6706,6 +6705,22 @@ func typechecker_get_sorted_keys_enum(map: *std.HashMap[str, std.Vector[str, ctx
 }
 
 func typechecker_get_sorted_keys_func(map: *std.HashMap[str, FunctionSignature[ctx], ctx], ctx: &Arena) std.Vector[str, ctx] {
+    unsafe {
+        mut keys := (*map).Keys(ctx);
+        typechecker_sort_vector_str(&keys, ctx);
+        return keys;
+    }
+}
+
+func typechecker_get_sorted_keys_struct_template(map: *std.HashMap[str, StructTemplate[ctx], ctx], ctx: &Arena) std.Vector[str, ctx] {
+    unsafe {
+        mut keys := (*map).Keys(ctx);
+        typechecker_sort_vector_str(&keys, ctx);
+        return keys;
+    }
+}
+
+func typechecker_get_sorted_keys_enum_template(map: *std.HashMap[str, EnumTemplate[ctx], ctx], ctx: &Arena) std.Vector[str, ctx] {
     unsafe {
         mut keys := (*map).Keys(ctx);
         typechecker_sort_vector_str(&keys, ctx);
