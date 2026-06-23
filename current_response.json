@@ -1,9 +1,0 @@
-{
-  "summary": "fix: replace 'Any' with 'Dummy' struct in test_scratch_cloned_to_arena_accepted.gst to prevent compilation errors",
-  "files": [
-    {
-      "file_path": "tests/test_scratch_cloned_to_arena_accepted.gst",
-      "code_diff": "<<<<<<< SEARCH\ntype Node[ctx] struct {\n    data: Index[Any, ctx]\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut n: Index[Node, ctx] := os.ArenaAlloc(ctx);\n    mut p: Index[Any, ctx] := os.ArenaAlloc(ctx);\n    mut cloned := std.Clone(ctx, p);\n    ctx[n].data = cloned;\n}\n=======\ntype Dummy struct {\n    val: int\n}\ntype Node[ctx] struct {\n    data: Index[Dummy, ctx]\n}\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut n: Index[Node, ctx] := os.ArenaAlloc(ctx);\n    mut p: Index[Dummy, ctx] := os.ArenaAlloc(ctx);\n    mut cloned := std.Clone(ctx, p);\n    ctx[n].data = cloned;\n}\n>>>>>>> REPLACE"
-    }
-  ]
-}
