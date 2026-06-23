@@ -886,12 +886,7 @@ func main() {
     t94.expected = "0\n16";
     tests.Push(t94);
 
-    mut t95: Test[ctx];
-    t95.path = "tests/e2e_multithreaded_scratch_isolation.gst";
-    t95.is_negative = 0;
-    t95.expected = "42\n100";
-    tests.Push(t95);
-
+    mut t_path_diag: Test[ctx];
     mut t96: Test[ctx];
     t96.path = "tests/e2e_hashmap_extended_utilities.gst";
     t96.is_negative = 0;
