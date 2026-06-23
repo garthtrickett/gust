@@ -7,6 +7,11 @@ import "typechecker.gst" as typechecker;
 import "resolver.gst" as resolver;
 import "codegen.gst" as codegen;
 
+type FileParserError[ctx] struct {
+    file_path: str,
+    err: errors.CompilerError[ctx]
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();

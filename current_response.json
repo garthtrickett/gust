@@ -1,0 +1,9 @@
+{
+  "summary": "feat: define FileParserError struct in test_runner_entry",
+  "files": [
+    {
+      "file_path": "compiler/test_runner_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\nimport \"resolver.gst\" as resolver;\nimport \"codegen.gst\" as codegen;\n\nfunc main() {\n=======\nimport \"resolver.gst\" as resolver;\nimport \"codegen.gst\" as codegen;\n\ntype FileParserError[ctx] struct {\n    file_path: str,\n    err: errors.CompilerError[ctx]\n}\n\nfunc main() {\n>>>>>>> REPLACE"
+    }
+  ]
+}
