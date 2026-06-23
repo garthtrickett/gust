@@ -585,17 +585,32 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         if expr.tag == 6 { // AddressOf
             mut inner := check_expression(expr.AddressOf.expr, env, scope, ctx);
             mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[t_idx].tag = 9; // RawPointer
-            ctx[t_idx].RawPointer.inner = os.ArenaAlloc(ctx);
-            ctx[ctx[t_idx].RawPointer.inner] = inner;
+            ctx[t_idx].tag = 11; // Reference
+            ctx[t_idx].Reference.inner = os.ArenaAlloc(ctx);
+            ctx[ctx[t_idx].Reference.inner] = inner;
+            
+            mut brand_str := get_type_brand(inner, env, ctx);
+            if std.str_eq(brand_str, "") == 1 {
+                brand_str = get_root_variable(expr.AddressOf.expr, ctx);
+            }
+            if std.str_eq(brand_str, "") == 0 {
+                ctx[t_idx].Reference.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                mut ptr := &ctx[ctx[t_idx].Reference.brand] as *str;
+                *ptr = std.Clone(ctx, brand_str);
+            } else {
+                ctx[t_idx].Reference.brand = empty[Index[str, ctx]];
+            }
             return ctx[t_idx];
         }
         if expr.tag == 7 { // Dereference
+            mut inner := check_expression(expr.Dereference.expr, env, scope, ctx);
+            if inner.tag == 11 { // Reference
+                return ctx[inner.Reference.inner];
+            }
             if (*env).in_unsafe_block == 0 {
                 mut msg := "Semantic Error: Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks";
                 report_error(2, msg, expr.Dereference.span, env, ctx);
             }
-            mut inner := check_expression(expr.Dereference.expr, env, scope, ctx);
             if inner.tag == 9 { // RawPointer
                 return ctx[inner.RawPointer.inner];
             }
@@ -791,6 +806,8 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             left_t = env_resolve_type(env, left_t, ctx);
             if left_t.tag == 9 { // RawPointer
                 left_t = ctx[left_t.RawPointer.inner];
+            } else if left_t.tag == 11 { // Reference
+                left_t = ctx[left_t.Reference.inner];
             }
             mut left_str := expression_to_string(expr.Selector.left, ctx);
             if left_t.tag == 8 { // Struct
