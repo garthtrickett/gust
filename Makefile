@@ -3,6 +3,15 @@ CFLAGS = -O2 -Wall -pthread
 INCLUDES = -Isrc
 PREFIX = /usr/local
 
+# Force make to use bash with pipefail to prevent silent pipeline errors
+SHELL = bash
+.SHELLFLAGS = -o pipefail -c
+
+.PHONY: all clean test bootstrap install test_tree_sitter
+# Force make to use bash with pipefail to prevent silent pipeline errors
+SHELL = bash
+.SHELLFLAGS = -o pipefail -c
+
 .PHONY: all clean test bootstrap install test_tree_sitter
 
 all: gust
