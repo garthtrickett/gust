@@ -1507,6 +1507,20 @@ func main() {
     t_tcs_rejected.expected = "StackAllocationViolation";
     tests.Push(t_tcs_rejected);
 
+    mut t_fairness_loop: Test[ctx];
+    t_fairness_loop.path = "tests/e2e_scheduler_fairness_verification.gst";
+    t_fairness_loop.is_negative = 0;
+    t_fairness_loop.is_substring = 0;
+    t_fairness_loop.expected = "COOPERATIVE_FAIRNESS_SUCCEEDED";
+    tests.Push(t_fairness_loop);
+
+    mut t_fairness_rec: Test[ctx];
+    t_fairness_rec.path = "tests/e2e_scheduler_recursion_fairness.gst";
+    t_fairness_rec.is_negative = 0;
+    t_fairness_rec.is_substring = 0;
+    t_fairness_rec.expected = "RECURSION_FAIRNESS_SUCCEEDED";
+    tests.Push(t_fairness_rec);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
