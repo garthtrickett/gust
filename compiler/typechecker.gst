@@ -1123,10 +1123,14 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                         unsafe {
                             mut existing_lookup := (*env).struct_registry.Get(lookup_struct_name);
-                            if existing_lookup.Ok == 0 {
+                            mut has_existing := 0;
+                            if existing_lookup.Ok {
+                                has_existing = 1;
+                            }
+                            if has_existing == 0 {
                                 mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
-                                mut t_int: ast.Type[ctx]; t_int.tag = 0; // Int
-                                fields.Insert("Ok", t_int);
+                                mut t_bool: ast.Type[ctx]; t_bool.tag = 2; // Bool
+                                fields.Insert("Ok", t_bool);
                                 fields.Insert("Val", v_type);
 
                                 mut layout: StructLayout[ctx];
