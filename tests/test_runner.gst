@@ -1486,6 +1486,13 @@ func main() {
     t_multi_syntax.expected = "ParserError in tests/test_multi_parser_errors_rejected.gst at line";
     tests.Push(t_multi_syntax);
 
+    mut t_tcs_rejected: Test[ctx];
+    t_tcs_rejected.path = "tests/test_tcs_non_pod_on_stack_rejected.gst";
+    t_tcs_rejected.is_negative = 1;
+    t_tcs_rejected.is_substring = 1;
+    t_tcs_rejected.expected = "StackAllocationViolation";
+    tests.Push(t_tcs_rejected);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

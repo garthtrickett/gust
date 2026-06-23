@@ -1,0 +1,13 @@
+{
+  "summary": "test: establish TCS stack allocation violation baseline",
+  "files": [
+    {
+      "file_path": "tests/test_tcs_non_pod_on_stack_rejected.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\ntype NonPod[ctx] struct {\n    vec: std.Vector[int, ctx]\n}\n\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    os.SetThreadScratch(ctx);\n\n    mut x: NonPod[ctx];\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_runner.gst",
+      "code_diff": "<<<<<<< SEARCH\n    mut t_multi_syntax: Test[ctx];\n    t_multi_syntax.path = \"tests/test_multi_parser_errors_rejected.gst\";\n    t_multi_syntax.is_negative = 1;\n    t_multi_syntax.is_substring = 1;\n    t_multi_syntax.expected = \"ParserError in tests/test_multi_parser_errors_rejected.gst at line\";\n    tests.Push(t_multi_syntax);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t_multi_syntax: Test[ctx];\n    t_multi_syntax.path = \"tests/test_multi_parser_errors_rejected.gst\";\n    t_multi_syntax.is_negative = 1;\n    t_multi_syntax.is_substring = 1;\n    t_multi_syntax.expected = \"ParserError in tests/test_multi_parser_errors_rejected.gst at line\";\n    tests.Push(t_multi_syntax);\n\n    mut t_tcs_rejected: Test[ctx];\n    t_tcs_rejected.path = \"tests/test_tcs_non_pod_on_stack_rejected.gst\";\n    t_tcs_rejected.is_negative = 1;\n    t_tcs_rejected.is_substring = 1;\n    t_tcs_rejected.expected = \"StackAllocationViolation\";\n    tests.Push(t_tcs_rejected);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
+    }
+  ]
+}
