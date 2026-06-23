@@ -335,7 +335,14 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
             return get_expression_origins(expr.Take.expr, env, ctx);
         }
         if expr.tag == 6 { // AddressOf
-            return get_expression_origins(expr.AddressOf.expr, env, ctx);
+            mut s := set_init(ctx);
+            mut root_var := get_root_variable(expr.AddressOf.expr, ctx);
+            if std.str_eq(root_var, "") == 0 {
+                set_add(s, root_var, ctx);
+            }
+            mut inner_origins := get_expression_origins(expr.AddressOf.expr, env, ctx);
+            set_union(s, inner_origins, ctx);
+            return s;
         }
         if expr.tag == 7 { // Dereference
             return get_expression_origins(expr.Dereference.expr, env, ctx);
