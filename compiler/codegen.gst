@@ -3706,7 +3706,6 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             }
             if tag == 9 { // Guard
                 mut name := ctx[stmt_idx].Guard.name;
-                mut is_mut := ctx[stmt_idx].Guard.is_mut;
                 mut value := ctx[stmt_idx].Guard.value;
                 mut else_body := ctx[stmt_idx].Guard.else_body;
                 mut span := ctx[stmt_idx].Guard.span;

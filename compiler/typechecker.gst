@@ -5070,7 +5070,6 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
             return res_type;
         }
         if t.tag == 11 { // Reference
-            mut struct_name := "";
             mut new_brand_idx := t.Reference.brand;
             if t.Reference.brand != empty[Index[str, ctx]] {
                 mut old_b_ptr := &ctx[t.Reference.brand] as *str;
