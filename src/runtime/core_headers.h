@@ -10,6 +10,8 @@
 #include <sched.h> 
 #include <sys/types.h> 
 #include <dirent.h> 
+#include <spawn.h>
+#include <sys/wait.h>
 
 #if defined(_MSC_VER)
 #define GUST_THREAD_LOCAL __declspec(thread)

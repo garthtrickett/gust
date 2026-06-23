@@ -230,6 +230,8 @@ Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char fi
     return result;
 }
 
+extern char** environ;
+
 int os_System(Slice_unsigned_char cmd) {
     if (cmd.len < 0) return -1;
     char* buf = (char*)malloc(cmd.len + 1);
@@ -238,7 +240,18 @@ int os_System(Slice_unsigned_char cmd) {
         memcpy(buf, cmd.data, cmd.len);
     }
     buf[cmd.len] = '\0';
-    int status = system(buf);
+
+    char* argv[] = {"/bin/sh", "-c", buf, NULL};
+    pid_t pid;
+    int status = 0;
+    
+    int spawn_status = posix_spawn(&pid, "/bin/sh", NULL, NULL, argv, environ);
     free(buf);
-    return status;
+    
+    if (spawn_status == 0) {
+        if (waitpid(pid, &status, 0) != -1) {
+            return status;
+        }
+    }
+    return -1;
 }
