@@ -294,6 +294,12 @@ func codegen_is_ptr_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx
                 return 1;
             }
         }
+        if t.tag == 11 { // Reference
+            mut inner := ctx[t.Reference.inner];
+            if inner.tag != 4 { // NOT Arena
+                return 1;
+            }
+        }
     }
     return 0;
 }
@@ -305,8 +311,12 @@ func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[
         os.LogStr(log_init);
 
         mut curr := t;
-        while curr.tag == 9 { // RawPointer
-            curr = ctx[curr.RawPointer.inner];
+        while curr.tag == 9 || curr.tag == 11 { // RawPointer or Reference
+            if curr.tag == 9 {
+                curr = ctx[curr.RawPointer.inner];
+            } else {
+                curr = ctx[curr.Reference.inner];
+            }
         }
         if curr.tag == 8 { // Struct
             mut name := curr.Struct.struct_name;
@@ -350,8 +360,12 @@ func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[
 func codegen_is_pool_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut curr := t;
-        while curr.tag == 9 { // RawPointer
-            curr = ctx[curr.RawPointer.inner];
+        while curr.tag == 9 || curr.tag == 11 { // RawPointer or Reference
+            if curr.tag == 9 {
+                curr = ctx[curr.RawPointer.inner];
+            } else {
+                curr = ctx[curr.Reference.inner];
+            }
         }
         if curr.tag == 8 { // Struct
             mut name := curr.Struct.struct_name;
@@ -376,8 +390,12 @@ func codegen_is_pool_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ct
 func codegen_is_hashmap_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut curr := t;
-        while curr.tag == 9 { // RawPointer
-            curr = ctx[curr.RawPointer.inner];
+        while curr.tag == 9 || curr.tag == 11 { // RawPointer or Reference
+            if curr.tag == 9 {
+                curr = ctx[curr.RawPointer.inner];
+            } else {
+                curr = ctx[curr.Reference.inner];
+            }
         }
         if curr.tag == 8 { // Struct
             mut name := curr.Struct.struct_name;
@@ -399,8 +417,12 @@ func codegen_is_hashmap_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment
 func codegen_is_rc_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut curr := t;
-        while curr.tag == 9 { // RawPointer
-            curr = ctx[curr.RawPointer.inner];
+        while curr.tag == 9 || curr.tag == 11 { // RawPointer or Reference
+            if curr.tag == 9 {
+                curr = ctx[curr.RawPointer.inner];
+            } else {
+                curr = ctx[curr.Reference.inner];
+            }
         }
         if curr.tag == 8 { // Struct
             mut name := curr.Struct.struct_name;
@@ -422,8 +444,12 @@ func codegen_is_rc_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
 func codegen_is_graph_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut curr := t;
-        while curr.tag == 9 { // RawPointer
-            curr = ctx[curr.RawPointer.inner];
+        while curr.tag == 9 || curr.tag == 11 { // RawPointer or Reference
+            if curr.tag == 9 {
+                curr = ctx[curr.RawPointer.inner];
+            } else {
+                curr = ctx[curr.Reference.inner];
+            }
         }
         if curr.tag == 8 { // Struct
             mut name := curr.Struct.struct_name;
@@ -445,8 +471,12 @@ func codegen_is_graph_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[c
 func codegen_is_generational_arena_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut curr := t;
-        while curr.tag == 9 { // RawPointer
-            curr = ctx[curr.RawPointer.inner];
+        while curr.tag == 9 || curr.tag == 11 { // RawPointer or Reference
+            if curr.tag == 9 {
+                curr = ctx[curr.RawPointer.inner];
+            } else {
+                curr = ctx[curr.Reference.inner];
+            }
         }
         if curr.tag == 8 { // Struct
             mut name := curr.Struct.struct_name;
@@ -1768,7 +1798,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut c_target := codegen_get_c_type(dummy_t, env, ctx);
 
                 mut arrow_or_dot := ".";
-                if alloc_t.tag == 9 { // RawPointer
+                if alloc_t.tag == 9 || alloc_t.tag == 11 { // RawPointer or Reference
                     arrow_or_dot = "->";
                 } else {
                     if codegen_is_arena_ptr(alloc_str, env, ctx) == 1 {

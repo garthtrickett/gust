@@ -4487,7 +4487,7 @@ func is_pointer_write(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
         }
         if expr.tag == 11 { // Selector
             mut left_t := check_expression(expr.Selector.left, env, scope, ctx);
-            if left_t.tag == 9 { // RawPointer
+            if left_t.tag == 9 || left_t.tag == 11 { // RawPointer = 9, Reference = 11
                 return 1;
             }
             return is_pointer_write(expr.Selector.left, env, scope, ctx);
