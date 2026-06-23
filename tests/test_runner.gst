@@ -1473,6 +1473,12 @@ func main() {
     t_imported_path_diag.expected = "TypeError in tests/test_imported_path_error_violating.gst at line 2:5";
     tests.Push(t_imported_path_diag);
 
+    mut t_bool_align_acc: Test[ctx];
+    t_bool_align_acc.path = "tests/test_bool_wrapper_alignment_accepted.gst";
+    t_bool_align_acc.is_negative = 0;
+    t_bool_align_acc.expected = "100";
+    tests.Push(t_bool_align_acc);
+
     mut t_multi_syntax: Test[ctx];
     t_multi_syntax.path = "tests/test_multi_parser_errors_rejected.gst";
     t_multi_syntax.is_negative = 1;
