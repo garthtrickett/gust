@@ -1486,6 +1486,19 @@ func main() {
     tests.Push(t_ctx_reassign);
 
     mut t_bool_align_acc: Test[ctx];
+    mut t_ctx_mut: Test[ctx];
+    t_ctx_mut.path = "tests/test_ctx_interior_mutability_valid.gst";
+    t_ctx_mut.is_negative = 0;
+    t_ctx_mut.expected = "42";
+    tests.Push(t_ctx_mut);
+
+    mut t_ctx_reassign: Test[ctx];
+    t_ctx_reassign.path = "tests/test_ctx_reassignment_rejected.gst";
+    t_ctx_reassign.is_negative = 1;
+    t_ctx_reassign.expected = "Reassignment of immutable shared allocator reference";
+    tests.Push(t_ctx_reassign);
+
+    mut t_bool_align_acc: Test[ctx];
     t_bool_align_acc.path = "tests/test_bool_wrapper_alignment_accepted.gst";
     t_bool_align_acc.is_negative = 0;
     t_bool_align_acc.expected = "100";
