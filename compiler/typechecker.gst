@@ -4304,7 +4304,15 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             while i < len(*params_vec) {
                 mut p := (*params_vec)[i];
                 sig.param_names.Push(std.Clone(ctx, p.name));
-                sig.params.Push(env_resolve_type(env, p.param_type, ctx));
+                
+                mut resolved_param_type := env_resolve_type(env, p.param_type, ctx);
+                // Standardize direct Arena types to shared reference pointers (&Arena)
+                if resolved_param_type.tag == 4 { // Arena
+                    mut t_arena_ptr := make_type_pointer(resolved_param_type, ctx);
+                    resolved_param_type = t_arena_ptr;
+                }
+                sig.params.Push(resolved_param_type);
+                
                 i = i + 1;
             }
             sig.return_type = env_resolve_type(env, ctx[stmt.FunctionDecl.return_type], ctx);
