@@ -1184,11 +1184,13 @@ impl Parser {
                 let start_span = self.cur_token.span;
                 self.next_token(); // consume 'empty'
                 if self.cur_token.token_type != TokenType::LBracket {
+                    self.error_at_current("Syntax Error: Expected '[' after empty".to_string());
                     return None;
                 }
                 self.next_token(); // consume '['
                 let target_type = self.parse_type_signature()?;
                 if self.cur_token.token_type != TokenType::RBracket {
+                    self.error_at_current("Syntax Error: Expected ']' after empty type signature".to_string());
                     return None;
                 }
                 let end_span = self.cur_token.span;

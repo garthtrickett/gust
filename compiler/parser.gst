@@ -576,12 +576,14 @@ func parse_prefix_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[
             if cur_token_is(p, 15) { // LBracket = 15 ('[')
                 next_token(p); // consume '['
             } else {
+                error_at_current(p, "Syntax Error: Expected '[' after empty");
                 return empty[Index[ast.Expression[ctx], ctx]];
             }
             mut target_type := parse_type_signature(p, ctx);
             if cur_token_is(p, 16) { // RBracket = 16 (']')
                 next_token(p); // consume ']'
             } else {
+                error_at_current(p, "Syntax Error: Expected ']' after empty type signature");
                 return empty[Index[ast.Expression[ctx], ctx]];
             }
             ctx[e_idx].tag = 13; // Empty = 13
