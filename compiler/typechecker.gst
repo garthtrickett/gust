@@ -6637,6 +6637,32 @@ func typechecker_is_stack_allowed_recursive(t: ast.Type[ctx], env: *TypeEnvironm
                 return 1;
             }
             (*visited).Insert(std.Clone(ctx, name), 1);
+
+            // Classify monomorphized generic containers or resource-managing types as complex non-POD
+            mut clean := typechecker_strip_module_prefix(name, ctx);
+            mut is_resource := 0;
+            if typechecker_starts_with(clean, "Vector_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "std_Vector_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "HashMap_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "std_HashMap_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "Pool_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "std_Pool_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "Mutex_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "std_Mutex_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "Channel_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "std_Channel_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "Rc_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "std_Rc_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "Graph_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "std_Graph_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "GenerationalArena_") == 1 { is_resource = 1; }
+            if typechecker_starts_with(clean, "std_GenerationalArena_") == 1 { is_resource = 1; }
+
+            if is_resource == 1 {
+                (*visited).Remove(name);
+                return 0;
+            }
+
             mut lookup := (*env).struct_registry.Get(name);
             if lookup.Ok {
                 mut layout := lookup.Val;
