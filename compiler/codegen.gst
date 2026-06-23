@@ -1386,9 +1386,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut res := std.Concat("(({ __typeof__(", expr_str);
                 res = std.Concat(res, ") _tmp = ");
                 res = std.Concat(res, expr_str);
-                res = std.Concat(res, "; memset(&(");
+                res = std.Concat(res, "; memset(&");
                 res = std.Concat(res, expr_str);
-                res = std.Concat(res, "), 0, sizeof(");
+                res = std.Concat(res, ", 0, sizeof(");
                 res = std.Concat(res, expr_str);
                 res = std.Concat(res, ")); _tmp; }))");
                 return std.Clone(ctx, res);
@@ -1417,9 +1417,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut res := std.Concat("(({ __typeof__(", expr_str);
                 res = std.Concat(res, ") _tmp = ");
                 res = std.Concat(res, expr_str);
-                res = std.Concat(res, "; memset(&(");
+                res = std.Concat(res, "; memset(&");
                 res = std.Concat(res, expr_str);
-                res = std.Concat(res, "), 0, sizeof(");
+                res = std.Concat(res, ", 0, sizeof(");
                 res = std.Concat(res, expr_str);
                 res = std.Concat(res, ")); _tmp; }))");
                 return std.Clone(ctx, res);
