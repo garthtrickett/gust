@@ -1,9 +1,9 @@
 {
-  "summary": "feat: define FileParserError struct in test_runner_entry",
+  "summary": "feat: accumulate parser errors during topological compilation in test_runner_entry",
   "files": [
     {
       "file_path": "compiler/test_runner_entry.gst",
-      "code_diff": "<<<<<<< SEARCH\nimport \"resolver.gst\" as resolver;\nimport \"codegen.gst\" as codegen;\n\nfunc main() {\n=======\nimport \"resolver.gst\" as resolver;\nimport \"codegen.gst\" as codegen;\n\ntype FileParserError[ctx] struct {\n    file_path: str,\n    err: errors.CompilerError[ctx]\n}\n\nfunc main() {\n>>>>>>> REPLACE"
+      "code_diff": "<<<<<<< SEARCH\n    // 4. Parse all programs in Topological Order & Pre-register Types\n    mut programs: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);\n    mut module_prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);\n\n    mut i := 0;\n=======\n    // 4. Parse all programs in Topological Order & Pre-register Types\n    mut programs: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);\n    mut module_prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);\n    mut accumulated_parser_errors: std.Vector[FileParserError[ctx], ctx] := std.VectorNew(ctx);\n\n    mut i := 0;\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n mut prog := parser.parse_program(&p, ctx);\n            if len(p.errors) > 0 {\n                os.LogStr(\"ParserError in file: \");\n                os.LogStr(path);\n                mut err_idx := 0;\n                while err_idx < len(p.errors) {\n                    mut err := p.errors[err_idx];\n                    os.LogStr(err.message);\n                    os.LogInt(err.span.start.line);\n                    os.LogInt(err.span.start.column);\n                    err_idx = err_idx + 1;\n                }\n                os.Exit(1);\n            }\n\n        programs.Push(prog);\n=======\n        mut prog := parser.parse_program(&p, ctx);\n        if len(p.errors) > 0 {\n            mut err_idx := 0;\n            while err_idx < len(p.errors) {\n                mut f_err: FileParserError[ctx];\n                f_err.file_path = path;\n                f_err.err = p.errors[err_idx];\n                accumulated_parser_errors.Push(f_err);\n                err_idx = err_idx + 1;\n            }\n        }\n\n        programs.Push(prog);\n>>>>>>> REPLACE"
     }
   ]
 }
