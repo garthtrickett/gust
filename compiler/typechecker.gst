@@ -5304,13 +5304,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             while i < len(*params_vec) {
                 mut param := (*params_vec)[i];
                 mut resolved_param_type := env_resolve_type(env, param.param_type, ctx);
-                
+
                 // Standardize direct Arena types to shared reference pointers (&Arena)
                 if resolved_param_type.tag == 4 { // Arena
                     mut t_arena_ptr := make_type_pointer(resolved_param_type, ctx);
                     resolved_param_type = t_arena_ptr;
                 }
-                
+
                 // Exclude shared allocator reference pointers (&Arena) from the mutable inout parameters list
                 if resolved_param_type.tag == 9 { // RawPointer
                     mut is_arena_ptr := 0;
@@ -5322,14 +5322,14 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         inout_params.Push(std.Clone(ctx, param.name));
                     }
                 }
-                
+
                 scope_insert(child_scope, param.name, resolved_param_type, ctx);
                 (*env).variable_types.Insert(std.Clone(ctx, param.name), resolved_param_type);
-                
+
                 mut param_origins := set_init(ctx);
                 set_add(param_origins, param.name, ctx);
                 (*env).variable_origins.Insert(std.Clone(ctx, param.name), param_origins);
-                
+
                 i = i + 1;
             }
 
@@ -5561,7 +5561,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             return res;
         }
 
-        if stmt.tag == 5 { // Assignment
+         if stmt.tag == 5 { // Assignment
             mut left_idx := stmt.Assignment.left;
             mut val_idx := stmt.Assignment.value;
 
@@ -5571,7 +5571,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut left := ctx[left_idx];
             if left.tag == 0 { // Identifier
                 mut name := left.Identifier.name;
-                
+
                 // Enforce immutability on shared allocator reference variables
                 if std.str_eq(name, "ctx") == 1 || std.str_eq(name, "arena") == 1 {
                     mut msg := std.Concat("Semantic Error: Reassignment of immutable shared allocator reference '", name);
