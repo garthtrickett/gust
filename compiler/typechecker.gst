@@ -5634,6 +5634,70 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 report_error(2, msg, get_expression_span(val_idx, ctx), env, ctx);
             }
 
+            // Enforce Read-Write and Write-Write Hazard Prevention
+            mut root_name_hazard := get_root_variable(left_idx, ctx);
+            if std.str_eq(root_name_hazard, "") == 0 {
+                mut left_origins := get_expression_origins(left_idx, env, ctx);
+                
+                mut var_origins_keys := (*env).variable_origins.Keys(ctx);
+                mut m := 0;
+                while m < len(var_origins_keys) {
+                    mut var_name := var_origins_keys[m];
+                    
+                    // Check if var_name is active (not in moved_vars)
+                    mut is_active := 0;
+                    mut moved_lookup := (*env).moved_vars.Get(var_name);
+                    if moved_lookup.Ok == 0 {
+                        is_active = 1;
+                    }
+                    
+                    if is_active == 1 && std.str_eq(var_name, root_name_hazard) == 0 {
+                        mut lookup_origins := (*env).variable_origins.Get(var_name);
+                        if lookup_origins.Ok {
+                            mut origins := lookup_origins.Val;
+                            
+                            // Check if origins overlap with LHS root origins
+                            mut has_overlap := 0;
+                            mut o_keys := ctx[origins].map.Keys(ctx);
+                            mut o_idx := 0;
+                            while o_idx < len(o_keys) {
+                                mut orig_element := o_keys[o_idx];
+                                if set_contains(left_origins, orig_element, ctx) == 1 {
+                                    has_overlap = 1;
+                                }
+                                o_idx = o_idx + 1;
+                            }
+                            
+                            if has_overlap == 1 {
+                                // Determine if this is a Write-Write Hazard or a Read-Write Hazard
+                                mut is_lhs_borrow := 0;
+                                mut lhs_lookup_origins := (*env).variable_origins.Get(root_name_hazard);
+                                if lhs_lookup_origins.Ok {
+                                    mut lhs_origins := lhs_lookup_origins.Val;
+                                    if ctx[lhs_origins].map.len > 1 || set_contains(lhs_origins, root_name_hazard, ctx) == 0 {
+                                        is_lhs_borrow = 1;
+                                    }
+                                }
+                                
+                                if is_lhs_borrow == 1 {
+                                    mut msg := "Semantic Error: [WriteWriteHazard] Write-Write Hazard! Concurrent write borrows detected on the same memory segment. Active conflict: '";
+                                    msg = std.Concat(msg, var_name);
+                                    msg = std.Concat(msg, "'");
+                                    report_error(2, msg, stmt.Assignment.span, env, ctx);
+                                } else {
+                                    mut msg := std.Concat("Semantic Error: [ReadWriteHazard] Read-Write Hazard! Attempted to write to '", root_name_hazard);
+                                    msg = std.Concat(msg, "' while active borrow '");
+                                    msg = std.Concat(msg, var_name);
+                                    msg = std.Concat(msg, "' is outstanding");
+                                    report_error(2, msg, stmt.Assignment.span, env, ctx);
+                                }
+                            }
+                        }
+                    }
+                    m = m + 1;
+                }
+            }
+
             // Scratchpad storage restriction check (Step 3 verification)
             if left.tag == 11 { // Selector
                 mut parent_type := check_expression(left.Selector.left, env, scope, ctx);
@@ -5650,7 +5714,25 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut is_ptr_write := is_pointer_write(left_idx, env, scope, ctx);
 
-            if is_ptr_write == 0 {
+            if is_ptr_write == 1 { 
+                mut root_name := get_root_variable(left_idx, ctx);
+                if std.str_eq(root_name, "") == 0 {
+                    // Invalidate any active views that borrow from the pointer/allocator root being mutated
+                    mut var_origins_keys := (*env).variable_origins.Keys(ctx);
+                    mut m := 0;
+                    while m < len(var_origins_keys) {
+                        mut var_name := var_origins_keys[m];
+                        mut lookup_origins := (*env).variable_origins.Get(var_name);
+                        if lookup_origins.Ok {
+                            mut origins := lookup_origins.Val;
+                            if set_contains(origins, root_name, ctx) == 1 {
+                                (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
+                            }
+                        }
+                        m = m + 1;
+                    }
+                }
+            } else {
                 mut root_name := get_root_variable(left_idx, ctx);
                 if std.str_eq(root_name, "") == 0 {
                     // Invalidate any active views that borrow from the root variable being modified
@@ -5681,16 +5763,16 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                             set_add(origs, root_name, ctx);
                         }
                         (*env).variable_origins.Insert(std.Clone(ctx, root_name), origs);
-                    } else {
+                    } else { 
                         if ctx[origs].map.len > 0 {
                             mut existing_lookup := (*env).variable_origins.Get(root_name);
-                            if existing_lookup.Ok {
+                            if existing_lookup.Ok { 
                                 mut cloned_existing := typechecker_clone_origin_set(existing_lookup.Val, ctx);
                                 set_union(cloned_existing, origs, ctx);
                                 (*env).variable_origins.Insert(std.Clone(ctx, root_name), cloned_existing);
                             } else {
                                 (*env).variable_origins.Insert(std.Clone(ctx, root_name), origs);
-                            } 
+                            }
                         }
                     }
                     (*env).moved_vars.Remove(root_name); // Re-initialized!
