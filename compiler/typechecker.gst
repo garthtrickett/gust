@@ -2867,6 +2867,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                                         msg = std.Concat(msg, resolved_field_type.Struct.struct_name);
                                         msg = std.Concat(msg, "' (3 fields). Use Index, or pointer indirection to avoid memory bloat.");
                                         ctx[err].message = std.Clone(ctx, msg);
+                                        ctx[err].file_path = std.Clone(ctx, (*env).current_file);
                                         res.tag = 1; // Err
                                         res.Err.error = err;
                                         (*env).active_monomorphizations.Remove(template_name);
@@ -3028,6 +3029,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                                 msg = std.Concat(msg, "'");
                                 ctx[err].message = std.Clone(ctx, msg);
                                 ctx[err].span = field.span;
+                                ctx[err].file_path = std.Clone(ctx, (*env).current_file);
                                 res.tag = 1; // Err
                                 res.Err.error = err;
                                 (*env).active_monomorphizations.Remove(template_name);
@@ -3057,6 +3059,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
         mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
         ctx[err].kind.tag = 2; // TypeError
         ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Generic template not found: ", template_name));
+        ctx[err].file_path = std.Clone(ctx, (*env).current_file);
         res.tag = 1; // Err
         res.Err.error = err;
         (*env).active_monomorphizations.Remove(template_name);
@@ -4331,6 +4334,7 @@ func report_error(kind_tag: int, message: str, span: token.Span, env: *TypeEnvir
         err.kind.tag = kind_tag; // 2 for TypeError
         err.message = std.Clone(ctx, message);
         err.span = span;
+        err.file_path = std.Clone(ctx, current_file);
         (*env).errors.Push(err);
     }
 }
