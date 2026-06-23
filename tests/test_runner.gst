@@ -1447,6 +1447,12 @@ func main() {
     t189.expected = "";
     tests.Push(t189);
 
+    mut t190: Test[ctx];
+    t190.path = "tests/test_field_not_found_rejected.gst";
+    t190.is_negative = 1;
+    t190.expected = "FieldNotFound";
+    tests.Push(t190);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
