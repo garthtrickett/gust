@@ -68,7 +68,7 @@ fn erase_struct_name_with_registry(
     }
 
     // 2. Refactored backup suffix-replacement loop to detect and strip namespaces associated with standard brand words
-    let brand_bases = ["connCtx", "arena", "ctx", "Any", "a"];
+    let brand_bases = ["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"];
     let mut changed = true;
     while changed {
         changed = false;

@@ -58,7 +58,7 @@ pub fn normalize_struct_name(name: &str, brand: &Option<String>) -> String {
 
 pub fn clean_monomorphized_name(name: &str) -> String {
     let mut erased = name.to_string();
-    let brand_bases = ["connCtx", "arena", "ctx", "Any", "a"];
+    let brand_bases = ["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"];
     let mut changed = true;
     while changed {
         changed = false;
@@ -438,7 +438,8 @@ pub fn extract_brand_from_suffix(suffix: &str) -> Option<String> {
     let brands = [
         "ctx", "connCtx", "arena", "a", "Any", 
         "ctx1", "ctx2", "innerCtx", "outerCtx", 
-        "current_ctx", "next_ctx"
+        "current_ctx", "next_ctx", "main_ctx",
+        "bg_ctx", "file_ctx"
     ];
     if brands.contains(&suffix) {
         return Some(suffix.to_string());

@@ -2340,6 +2340,9 @@ func typechecker_extract_brand_from_suffix(suffix: str, ctx: &Arena) str {
     brands.Push("outerCtx");
     brands.Push("current_ctx");
     brands.Push("next_ctx");
+    brands.Push("main_ctx");
+    brands.Push("bg_ctx");
+    brands.Push("file_ctx");
 
     mut i := 0;
     while i < len(brands) {
@@ -4619,6 +4622,9 @@ func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
         brand_bases.Push("ctx");
         brand_bases.Push("Any");
         brand_bases.Push("a");
+        brand_bases.Push("main_ctx");
+        brand_bases.Push("bg_ctx");
+        brand_bases.Push("file_ctx");
 
         mut i := 0;
         while i < len(brand_bases) {

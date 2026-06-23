@@ -401,6 +401,9 @@ func codegen_erase_struct_name(name: str, brand: Index[str, ctx], env: &typechec
         brand_bases.Push("ctx");
         brand_bases.Push("Any");
         brand_bases.Push("a");
+        brand_bases.Push("main_ctx");
+        brand_bases.Push("bg_ctx");
+        brand_bases.Push("file_ctx");
 
         mut changed := 1;
         while changed == 1 {
