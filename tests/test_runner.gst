@@ -1533,6 +1533,18 @@ func main() {
     t_escape_ref_rej.expected = "Escape analysis violation";
     tests.Push(t_escape_ref_rej);
 
+    mut t_safe_ref_comp: Test[ctx];
+    t_safe_ref_comp.path = "tests/test_safe_references_comprehensive_accepted.gst";
+    t_safe_ref_comp.is_negative = 0;
+    t_safe_ref_comp.expected = "42\n42\n100\n200";
+    tests.Push(t_safe_ref_comp);
+
+    mut t_ref_mismatch_rej: Test[ctx];
+    t_ref_mismatch_rej.path = "tests/test_reference_mismatched_brand_rejected.gst";
+    t_ref_mismatch_rej.is_negative = 1;
+    t_ref_mismatch_rej.expected = "Explicit Type Annotation Mismatch";
+    tests.Push(t_ref_mismatch_rej);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
