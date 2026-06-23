@@ -145,7 +145,9 @@ func main() {
     if len(env.errors) > 0 {
         mut k := 0;
         while k < len(env.errors) {
-            os.LogStr(env.errors[k].message); // Should be this but this errors
+            mut err := env.errors[k];
+            mut msg := std.Format("TypeError at line %d:%d: %s", err.span.start.line, err.span.start.column, err.message);
+            os.LogStr(msg);
             k = k + 1;
         }
         os.Exit(1);

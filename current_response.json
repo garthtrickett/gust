@@ -1,9 +1,13 @@
 {
-  "summary": "test: add test_multi_parser_errors_rejected to verify parser boundary",
+  "summary": "fix: resolve variable field access error in final semantic error logging loops",
   "files": [
     {
-      "file_path": "tests/test_multi_parser_errors_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Violating struct {\n    name: str\n}\nfunc main() {\n    mut x =;\n}\n>>>>>>> REPLACE"
+      "file_path": "compiler/test_runner_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n    if len(env.errors) > 0 {\n        mut k := 0;\n        while k < len(env.errors) {\n            os.LogStr(env.errors[k].message); // Should be this but this errors\n            k = k + 1;\n        }\n        os.Exit(1);\n    }\n=======\n    if len(env.errors) > 0 {\n        mut k := 0;\n        while k < len(env.errors) {\n            mut err := env.errors[k];\n            mut msg := std.Format(\"TypeError at line %d:%d: %s\", err.span.start.line, err.span.start.column, err.message);\n            os.LogStr(msg);\n            k = k + 1;\n        }\n        os.Exit(1);\n    }\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "compiler/type_dump_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n    if len(env.errors) > 0 {\n        mut k := 0;\n        while k < len(env.errors) {\n            os.LogStr(env.errors[k].message);\n            k = k + 1;\n        }\n        os.Exit(1);\n    }\n=======\n    if len(env.errors) > 0 {\n        mut k := 0;\n        while k < len(env.errors) {\n            mut err := env.errors[k];\n            mut msg := std.Format(\"TypeError at line %d:%d: %s\", err.span.start.line, err.span.start.column, err.message);\n            os.LogStr(msg);\n            k = k + 1;\n        }\n        os.Exit(1);\n    }\n>>>>>>> REPLACE"
     }
   ]
 }
