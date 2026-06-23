@@ -68,6 +68,201 @@ func init_codegen(c: *Codegen[ctx], env: &typechecker.TypeEnvironment[ctx], ctx:
     }
 }
 
+func codegen_expr_calls_func(expr_idx: Index[ast.Expression[ctx], ctx], func_name: str, ctx: &Arena) int { 
+    unsafe {
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return 0;
+        }
+        mut expr := ctx[expr_idx];
+        mut tag := expr.tag;
+        
+        if tag == 0 { // Identifier
+            return 0;
+        }
+        if tag == 1 { // Integer
+            return 0;
+        }
+        if tag == 2 { // String
+            return 0;
+        }
+        if tag == 3 { // Bool
+            return 0;
+        }
+        if tag == 4 { // Move
+            return codegen_expr_calls_func(expr.Move.expr, func_name, ctx);
+        }
+        if tag == 5 { // Take
+            return codegen_expr_calls_func(expr.Take.expr, func_name, ctx);
+        }
+        if tag == 6 { // AddressOf
+            return codegen_expr_calls_func(expr.AddressOf.expr, func_name, ctx);
+        }
+        if tag == 7 { // Dereference
+            return codegen_expr_calls_func(expr.Dereference.expr, func_name, ctx);
+        }
+        if tag == 8 { // IndexAccess
+            if codegen_expr_calls_func(expr.IndexAccess.allocator, func_name, ctx) == 1 { return 1; }
+            if codegen_expr_calls_func(expr.IndexAccess.index, func_name, ctx) == 1 { return 1; }
+            return 0;
+        }
+        if tag == 9 { // AsCast
+            return codegen_expr_calls_func(expr.AsCast.left, func_name, ctx);
+        }
+        if tag == 10 { // Binary
+            if codegen_expr_calls_func(expr.Binary.left, func_name, ctx) == 1 { return 1; }
+            if codegen_expr_calls_func(expr.Binary.right, func_name, ctx) == 1 { return 1; }
+            return 0;
+        }
+        if tag == 11 { // Selector
+            return codegen_expr_calls_func(expr.Selector.left, func_name, ctx);
+        }
+        if tag == 12 { // Call
+            mut call_func_expr_idx := expr.Call.function;
+            mut called_name := "";
+            if call_func_expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                mut call_func := ctx[call_func_expr_idx];
+                if call_func.tag == 0 { // Identifier
+                    called_name = call_func.Identifier.name;
+                } else {
+                    if call_func.tag == 11 { // Selector
+                        mut left_expr := call_func.Selector.left;
+                        if left_expr != empty[Index[ast.Expression[ctx], ctx]] {
+                            mut left := ctx[left_expr];
+                            if left.tag == 0 { // Identifier
+                                called_name = std.Concat(std.Concat(left.Identifier.name, "."), call_func.Selector.right);
+                            }
+                        }
+                    }
+                }
+            }
+
+            mut is_match := 0;
+            if std.str_eq(called_name, func_name) == 1 {
+                is_match = 1;
+            } else {
+                mut dot_suffix := std.Concat(".", func_name);
+                if codegen_ends_with(called_name, dot_suffix) == 1 {
+                    is_match = 1;
+                }
+            }
+
+            if is_match == 1 {
+                return 1;
+            }
+
+            mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+            mut i := 0;
+            while i < len(*args_vec) {
+                mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg_idx] = (*args_vec)[i];
+                if codegen_expr_calls_func(arg_idx, func_name, ctx) == 1 {
+                    return 1;
+                }
+                i = i + 1;
+            }
+            return 0;
+        }
+        if tag == 13 { // Empty
+            return 0;
+        }
+    }
+    return 0;
+}
+
+func codegen_block_calls_func(block_idx: Index[ast.BlockStatement[ctx], ctx], func_name: str, ctx: &Arena) int {
+    unsafe {
+        if block_idx == empty[Index[ast.BlockStatement[ctx], ctx]] {
+            return 0;
+        }
+        mut body_statements := &ctx[ctx[block_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut j := 0;
+        while j < len(*body_statements) {
+            mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[child_stmt_idx] = (*body_statements)[j];
+            if codegen_stmt_calls_func(child_stmt_idx, func_name, ctx) == 1 {
+                return 1;
+            }
+            j = j + 1;
+        } 
+    }
+    return 0;
+}
+
+func codegen_stmt_calls_func(stmt_idx: Index[ast.Statement[ctx], ctx], func_name: str, ctx: &Arena) int {
+    unsafe {
+        if stmt_idx == empty[Index[ast.Statement[ctx], ctx]] {
+            return 0;
+        }
+        mut stmt := ctx[stmt_idx];
+        mut tag := stmt.tag;
+
+        if tag == 0 { // Import
+            return 0;
+        }
+        if tag == 1 { // StructDecl
+            return 0;
+        }
+        if tag == 2 { // EnumDecl
+            return 0;
+        }
+        if tag == 3 { // FunctionDecl
+            return 0;
+        }
+        if tag == 4 { // VarDecl
+            return codegen_expr_calls_func(stmt.VarDecl.value, func_name, ctx);
+        }
+        if tag == 5 { // Assignment
+            if codegen_expr_calls_func(stmt.Assignment.left, func_name, ctx) == 1 { return 1; }
+            if codegen_expr_calls_func(stmt.Assignment.value, func_name, ctx) == 1 { return 1; }
+            return 0;
+        }
+        if tag == 6 { // While
+            if codegen_expr_calls_func(stmt.While.condition, func_name, ctx) == 1 { return 1; }
+            return codegen_block_calls_func(stmt.While.body, func_name, ctx);
+        }
+        if tag == 7 { // If
+            if codegen_expr_calls_func(stmt.If.condition, func_name, ctx) == 1 { return 1; }
+            if codegen_block_calls_func(stmt.If.consequence, func_name, ctx) == 1 { return 1; }
+            if codegen_block_calls_func(stmt.If.alternative, func_name, ctx) == 1 { return 1; }
+            return 0;
+        }
+        if tag == 8 { // Match
+            if codegen_expr_calls_func(stmt.Match.expression, func_name, ctx) == 1 { return 1; }
+            mut cases_vec := &ctx[stmt.Match.cases] as *std.Vector[ast.MatchCase[ctx], ctx];
+            mut i := 0;
+            while i < len(*cases_vec) {
+                mut case_val := (*cases_vec)[i];
+                if codegen_block_calls_func(case_val.body, func_name, ctx) == 1 {
+                    return 1;
+                }
+                i = i + 1;
+            }
+            return 0;
+        }
+        if tag == 9 { // Guard
+            if codegen_expr_calls_func(stmt.Guard.value, func_name, ctx) == 1 { return 1; }
+            return codegen_block_calls_func(stmt.Guard.else_body, func_name, ctx);
+        }
+        if tag == 10 { // UnsafeBlock
+            return codegen_block_calls_func(stmt.UnsafeBlock.body, func_name, ctx);
+        }
+        if tag == 11 { // Defer
+            return codegen_expr_calls_func(stmt.Defer.expr, func_name, ctx);
+        }
+        if tag == 12 { // Return
+            return codegen_expr_calls_func(stmt.Return.expr, func_name, ctx);
+        }
+        if tag == 13 { // Expression
+            return codegen_expr_calls_func(stmt.Expression.expr, func_name, ctx);
+        }
+    }
+    return 0;
+}
+
+func codegen_is_function_recursive(body_idx: Index[ast.BlockStatement[ctx], ctx], func_name: str, ctx: &Arena) int {
+    return codegen_block_calls_func(body_idx, func_name, ctx);
+}
+
 func codegen_ends_with(s: str, suffix: str) int {
     mut len_s := len(s);
     mut len_suffix := len(suffix);

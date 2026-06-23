@@ -446,6 +446,31 @@ func main() {
         os.LogStr(out_cast_alloc_c); // Expected: ((int)os_ArenaAlloc(&ctx, sizeof(ListNode)))
     }
 
+    // Test Step 2 Recursion Detection Invariant Tests
+    mut l_rec_test1: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_rec_test1, "func factorial(n: int) int { if n <= 1 { return 1; } return n * factorial(n - 1); }");
+    mut p_rec_test1: parser.Parser[ctx];
+    parser.init_parser(&p_rec_test1, &l_rec_test1, ctx);
+    mut prog_rec_test1 := parser.parse_program(&p_rec_test1, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog_rec_test1.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut body := (*statements_vec)[0].FunctionDecl.body;
+        mut is_rec := codegen.codegen_is_function_recursive(body, "factorial", ctx);
+        os.LogInt(is_rec); // Expected: 1
+    }
+
+    mut l_rec_test2: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_rec_test2, "func non_recursive(n: int) int { return n + 1; }");
+    mut p_rec_test2: parser.Parser[ctx];
+    parser.init_parser(&p_rec_test2, &l_rec_test2, ctx);
+    mut prog_rec_test2 := parser.parse_program(&p_rec_test2, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog_rec_test2.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut body := (*statements_vec)[0].FunctionDecl.body;
+        mut is_rec := codegen.codegen_is_function_recursive(body, "non_recursive", ctx);
+        os.LogInt(is_rec); // Expected: 0
+    }
+
     // 1. Test primitive types
     mut t_int: ast.Type[ctx];
     t_int.tag = 0; // Int
