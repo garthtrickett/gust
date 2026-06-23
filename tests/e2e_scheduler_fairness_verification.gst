@@ -15,6 +15,12 @@ func heavy_loop_task(arg: *FairnessArg[arena]) {
             }
         }
     }
+    unsafe {
+        mut idx := (*arg).flag;
+        mut arena := (*arg).allocator;
+        mut ptr := &arena[idx] as *int;
+        *ptr = 2;
+    }
 }
 
 func helper_task(arg: *FairnessArg[arena]) {
@@ -45,7 +51,7 @@ func main() {
     mut loop_active := 1;
     while loop_active == 1 {
         std.Yield();
-        if arena[flag_idx] == 1 {
+        if arena[flag_idx] == 2 {
             loop_active = 0;
         }
     }

@@ -4,13 +4,23 @@ type RecurseArg[arena] struct {
 }
 
 func deep_recurse_task(arg: *RecurseArg[arena]) {
+    mut stop := 0;
     unsafe {
         mut idx := (*arg).flag;
         mut arena := (*arg).allocator;
         mut ptr := &arena[idx] as *int;
         if *ptr == 1 {
-            return;
+            stop = 1;
         }
+    }
+    if stop == 1 {
+        unsafe {
+            mut idx := (*arg).flag;
+            mut arena := (*arg).allocator;
+            mut ptr := &arena[idx] as *int;
+            *ptr = 2;
+        }
+        return;
     }
     deep_recurse_task(arg);
 }
@@ -43,7 +53,7 @@ func main() {
     mut loop_active := 1;
     while loop_active == 1 {
         std.Yield();
-        if arena[flag_idx] == 1 {
+        if arena[flag_idx] == 2 {
             loop_active = 0;
         }
     }
