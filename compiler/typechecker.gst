@@ -812,7 +812,12 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if std.str_eq(expr.Selector.right, "Val") {
                             if (len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_")) ||
                                (len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_")) {
-                                if (*env).checked_results.Get(left_str).Ok == 0 {
+                                mut has_checked := 0;
+                                mut checked_lookup := (*env).checked_results.Get(left_str);
+                                if checked_lookup.Ok {
+                                    has_checked = 1;
+                                }
+                                if has_checked == 0 {
                                     mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper '";
                                     msg = std.Concat(msg, left_str);
                                     msg = std.Concat(msg, "'");
@@ -834,7 +839,12 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return t;
                     }
                     if std.str_eq(expr.Selector.right, "Val") {
-                        if (*env).checked_results.Get(left_str).Ok == 0 {
+                        mut has_checked := 0;
+                        mut checked_lookup := (*env).checked_results.Get(left_str);
+                        if checked_lookup.Ok {
+                            has_checked = 1;
+                        }
+                        if has_checked == 0 {
                             mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper '";
                             msg = std.Concat(msg, left_str);
                             msg = std.Concat(msg, "'");
@@ -855,7 +865,12 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return t;
                     }
                     if std.str_eq(expr.Selector.right, "Val") {
-                        if (*env).checked_results.Get(left_str).Ok == 0 {
+                        mut has_checked := 0;
+                        mut checked_lookup := (*env).checked_results.Get(left_str);
+                        if checked_lookup.Ok {
+                            has_checked = 1;
+                        }
+                        if has_checked == 0 {
                             mut msg := "Semantic Error: Accessing the .Val payload of an unchecked result wrapper '";
                             msg = std.Concat(msg, left_str);
                             msg = std.Concat(msg, "'");
@@ -2246,7 +2261,14 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
         mut struct_lookup := (*env).struct_templates.Get(normalized_template_name);
         mut enum_lookup := (*env).enum_templates.Get(normalized_template_name);
 
-        if struct_lookup.Ok == 0 && enum_lookup.Ok == 0 {
+        mut has_tmpl := 0;
+        if struct_lookup.Ok {
+            has_tmpl = 1;
+        }
+        if enum_lookup.Ok {
+            has_tmpl = 1;
+        }
+        if has_tmpl == 0 {
             if len(template_name) >= 4 && std.str_eq(std.str_slice(template_name, 0, 4), "std_") {
                 normalized_template_name = std.Concat("std.", std.str_slice(template_name, 4, len(template_name)));
             } else if len(template_name) >= 3 && std.str_eq(std.str_slice(template_name, 0, 3), "os_") {
@@ -2770,7 +2792,11 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             }
 
             mut existing := (*env).struct_registry.Get(concrete_name);
-            if existing.Ok == 0 {
+            mut has_existing := 0;
+            if existing.Ok {
+                has_existing = 1;
+            }
+            if has_existing == 0 {
                 mut placeholder: StructLayout[ctx];
                 placeholder.brand = brand;
                 placeholder.fields = std.HashMapNew(ctx);
@@ -2802,9 +2828,14 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                             mut sub_layout_lookup := (*env).struct_registry.Get(resolved_field_type.Struct.struct_name);
                             if sub_layout_lookup.Ok {
                                 if sub_layout_lookup.Val.fields.len > 2 {
-                                // Skip check if the target struct is an enum (which has a "tag" field)
-                                if sub_layout_lookup.Val.fields.Get("tag").Ok == 0 {
-                                    mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
+                                    // Skip check if the target struct is an enum (which has a "tag" field)
+                                    mut has_tag := 0;
+                                    mut tag_lookup := sub_layout_lookup.Val.fields.Get("tag");
+                                    if tag_lookup.Ok {
+                                        has_tag = 1;
+                                    }
+                                    if has_tag == 0 {
+                                        mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
                                         ctx[err].kind.tag = 2; // TypeError
                                         mut msg := std.Concat("Semantic Error: Variant '", variant.name);
                                         msg = std.Concat(msg, "' contains a large enum variant payload struct '");
@@ -2908,7 +2939,11 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             }
 
             mut existing := (*env).struct_registry.Get(concrete_name);
-            if existing.Ok == 0 {
+            mut has_existing := 0;
+            if existing.Ok {
+                has_existing = 1;
+            }
+            if has_existing == 0 {
                 mut placeholder: StructLayout[ctx];
                 placeholder.brand = brand;
                 placeholder.fields = std.HashMapNew(ctx); 
@@ -3727,7 +3762,7 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
     
 
     // 3. Primitives & already namespaced types
-            if std.str_eq(name, "len") || std.str_eq(name, "int") || std.str_eq(name, "byte") || std.str_eq(name, "bool") ||
+            if std.str_eq(name, "main") || std.str_eq(name, "len") || std.str_eq(name, "int") || std.str_eq(name, "byte") || std.str_eq(name, "bool") ||
                std.str_eq(name, "str") || std.str_eq(name, "Arena") || std.str_eq(name, "void") ||
                std.str_eq(name, "Any") || std.str_eq(name, "SessionNode") || std.str_eq(name, "APIRequest") ||
                std.str_eq(name, "Vector_Any") || std.str_eq(name, "HashMap_Any") ||
@@ -3840,7 +3875,11 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                 }
 
                 mut exists := (*env).struct_registry.Get(namespaced_name).Ok;
-                if exists == 0 {
+                mut has_exists := 0;
+                if exists {
+                    has_exists = 1;
+                }
+                if has_exists == 0 {
                     if typechecker_starts_with(clean_name, "LookupResult_") == 1 {
                         mut target_struct := std.str_slice(clean_name, 13, len(clean_name));
                         mut v_type := typechecker_parse_type_from_string(target_struct, ctx);
@@ -3856,7 +3895,7 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                         layout.fields = fields;
                         
                         env_register_struct(env, namespaced_name, layout, ctx);
-                        exists = 1;
+                        has_exists = 1;
                     } else {
                         if typechecker_starts_with(clean_name, "CastResult_") == 1 {
                             mut target_struct := std.str_slice(clean_name, 11, len(clean_name));
@@ -3876,12 +3915,12 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                             layout.fields = fields;
                             
                             env_register_struct(env, namespaced_name, layout, ctx);
-                            exists = 1;
+                            has_exists = 1;
                         }
                     }
                 }
 
-                if exists == 0 {
+                if has_exists == 0 {
                     mut clean_namespaced_name := namespaced_name;
                 mut d_idx := std.str_find(clean_namespaced_name, "__");
                 if d_idx != 0 - 1 {
@@ -4177,7 +4216,12 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                             if sub_layout_lookup.Ok {
                                 if sub_layout_lookup.Val.fields.len > 2 {
                                     // Skip check if the target struct is an enum (which has a "tag" field)
-                                    if sub_layout_lookup.Val.fields.Get("tag").Ok == 0 {
+                                    mut has_tag := 0;
+                                    mut tag_lookup := sub_layout_lookup.Val.fields.Get("tag");
+                                    if tag_lookup.Ok {
+                                        has_tag = 1;
+                                    }
+                                    if has_tag == 0 {
                                         mut msg := std.Concat("Semantic Error: Variant '", v.name);
                                         msg = std.Concat(msg, "' contains a large enum variant payload struct '");
                                         msg = std.Concat(msg, resolved_t.Struct.struct_name);

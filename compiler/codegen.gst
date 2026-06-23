@@ -512,7 +512,11 @@ func codegen_is_brand_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[c
 
             if is_brand_name == 1 {
                 mut lookup := (*env).struct_registry.Get(name);
-                if lookup.Ok == 0 {
+                mut has_lookup := 0;
+                if lookup.Ok {
+                    has_lookup = 1;
+                }
+                if has_lookup == 0 {
                     return 1;
                 }
             }
@@ -3741,11 +3745,16 @@ typedef void Any;
         mut seen_structs: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
         mut erased_to_original: std.HashMap[str, str, ctx] := std.HashMapNew(ctx); 
         
-        mut i_erase := 0;
+        mut i_erase := 0; 
         while i_erase < len(struct_keys) {
             mut key := struct_keys[i_erase];
             mut erased_name := codegen_get_erased_struct_name(key, env, ctx);
-            if seen_structs.Get(erased_name).Ok == 0 {
+            mut has_seen := 0;
+            mut seen_lookup := seen_structs.Get(erased_name);
+            if seen_lookup.Ok {
+                has_seen = 1;
+            }
+            if has_seen == 0 {
                 erased_struct_keys.Push(erased_name);
                 seen_structs.Insert(std.Clone(ctx, erased_name), 1);
                 erased_to_original.Insert(std.Clone(ctx, erased_name), std.Clone(ctx, key));
@@ -3814,7 +3823,12 @@ typedef void Any;
                             if std.str_eq(nested_struct, "Any") == 1 {
                                 clean_nested = "SessionNode";
                             }
-                            if clone_helpers_needed.Get(clean_nested).Ok == 0 {
+                            mut has_helper := 0;
+                            mut helper_lookup := clone_helpers_needed.Get(clean_nested);
+                            if helper_lookup.Ok {
+                                has_helper = 1;
+                            }
+                            if has_helper == 0 {
                                 clone_helpers_needed.Insert(std.Clone(ctx, clean_nested), 1);
                                 work_list.Push(std.Clone(ctx, clean_nested));
                             }
