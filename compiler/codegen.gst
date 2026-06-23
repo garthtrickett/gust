@@ -4202,6 +4202,8 @@ typedef void Any;
                std.str_eq(key, "LookupResult_os_Dir") == 0 &&
                std.str_eq(key, "LookupResult_os_DirEntry") == 0 {
                 guard orig_key := erased_to_original.Get(key) else {
+                    os.LogStr(std.Concat("🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", key));
+                    os.Exit(1);
                     return std.Clone(ctx, "");
                 }
                 
