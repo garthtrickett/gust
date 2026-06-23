@@ -5297,8 +5297,22 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut param := (*params_vec)[i];
                 mut resolved_param_type := env_resolve_type(env, param.param_type, ctx);
                 
+                // Standardize direct Arena types to shared reference pointers (&Arena)
+                if resolved_param_type.tag == 4 { // Arena
+                    mut t_arena_ptr := make_type_pointer(resolved_param_type, ctx);
+                    resolved_param_type = t_arena_ptr;
+                }
+                
+                // Exclude shared allocator reference pointers (&Arena) from the mutable inout parameters list
                 if resolved_param_type.tag == 9 { // RawPointer
-                    inout_params.Push(std.Clone(ctx, param.name));
+                    mut is_arena_ptr := 0;
+                    mut inner := ctx[resolved_param_type.RawPointer.inner];
+                    if inner.tag == 4 { // Arena
+                        is_arena_ptr = 1;
+                    }
+                    if is_arena_ptr == 0 {
+                        inout_params.Push(std.Clone(ctx, param.name));
+                    }
                 }
                 
                 scope_insert(child_scope, param.name, resolved_param_type, ctx);
@@ -5549,6 +5563,14 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut left := ctx[left_idx];
             if left.tag == 0 { // Identifier
                 mut name := left.Identifier.name;
+                
+                // Enforce immutability on shared allocator reference variables
+                if std.str_eq(name, "ctx") == 1 || std.str_eq(name, "arena") == 1 {
+                    mut msg := std.Concat("Semantic Error: Reassignment of immutable shared allocator reference '", name);
+                    msg = std.Concat(msg, "' is strictly prohibited");
+                    report_error(2, msg, left.Identifier.span, env, ctx);
+                }
+
                 mut resolved_name := name;
                 mut is_local := scope_contains(scope, name, ctx);
                 if is_local == 0 {
