@@ -596,7 +596,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
             mut msg := std.Concat("Semantic Error: [DereferenceNonPointer] Cannot dereference non-pointer type ", ast.serialize_type(inner, ctx));
             report_error(2, msg, expr.Dereference.span, env, ctx);
-            return inner;
+            mut t_void: ast.Type[ctx];
+            t_void.tag = 3; // Void
+            return t_void;
         }
         if expr.tag == 8 { // IndexAccess
             mut alloc_t := check_expression(expr.IndexAccess.allocator, env, scope, ctx);

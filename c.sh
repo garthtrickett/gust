@@ -16,7 +16,7 @@ else
     OUTPUT_FILE="a.txt"
     ROOT_CONFIG_FILES=("flake.nix" "Cargo.toml" "GEMINI.md" "bridge.sh" "Makefile")
     TARGET_DIRS=("src" "compiler" "tests")
-    FILE_EXTENSIONS=("rs" "gst" "c" "h")
+    FILE_EXTENSIONS=("gst" "c" "h")
     EXCLUDE_PATTERNS=()
 fi
 
