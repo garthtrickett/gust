@@ -12,6 +12,83 @@ type FileParserError[ctx] struct {
     err: errors.CompilerError[ctx]
 }
 
+func print_error_with_frame(err: errors.CompilerError[ctx], ctx: &Arena) {
+    mut msg := "";
+    if std.str_eq(err.file_path, "") == 1 {
+        msg = std.Format("TypeError at line %d:%d: %s", err.span.start.line, err.span.start.column, err.message);
+    } else {
+        msg = std.Format("TypeError in %s at line %d:%d: %s", err.file_path, err.span.start.line, err.span.start.column, err.message);
+    }
+    os.LogStr(msg);
+
+    if std.str_eq(err.file_path, "") == 0 {
+        mut content := os.ReadFile(ctx, err.file_path);
+        if len(content) > 0 {
+            mut lines := std.str_split(content, "\n", ctx);
+            mut target_line := err.span.start.line;
+            mut start_line := target_line - 3;
+            if start_line < 1 {
+                start_line = 1;
+            }
+            mut end_line := target_line + 2;
+            if end_line > len(lines) {
+                end_line = len(lines);
+            }
+
+            mut idx := start_line - 1;
+            while idx < end_line {
+                mut line := lines[idx];
+                mut num_str := std.FormatInt(idx + 1);
+                
+                mut pad := "";
+                if idx + 1 < 10 {
+                    pad = "   ";
+                } else if idx + 1 < 100 {
+                    pad = "  ";
+                } else if idx + 1 < 1000 {
+                    pad = " ";
+                }
+                
+                mut formatted_line := std.Format("%s%s | %s", pad, num_str, line);
+                os.LogStr(formatted_line);
+
+                if idx + 1 == target_line {
+                    mut caret_pad := "";
+                    mut c_idx := 0;
+                    mut target_col := err.span.start.column;
+                    while c_idx < target_col - 1 {
+                        caret_pad = std.Concat(caret_pad, " ");
+                        c_idx = c_idx + 1;
+                    }
+                    
+                    mut space_pad := "";
+                    if idx + 1 < 10 {
+                        space_pad = "   ";
+                    } else if idx + 1 < 100 {
+                        space_pad = "  ";
+                    } else if idx + 1 < 1000 {
+                        space_pad = " ";
+                    }
+                    
+                    mut len_num_str := len(num_str);
+                    mut caret_line := std.Concat(space_pad, "");
+                    mut spaces_count := 0;
+                    while spaces_count < len_num_str {
+                        caret_line = std.Concat(caret_line, " ");
+                        spaces_count = spaces_count + 1;
+                    }
+                    caret_line = std.Concat(caret_line, " | ");
+                    caret_line = std.Concat(caret_line, caret_pad);
+                    caret_line = std.Concat(caret_line, "^");
+                    os.LogStr(caret_line);
+                }
+                idx = idx + 1;
+            }
+            os.LogStr("");
+        }
+    }
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -146,13 +223,7 @@ func main() {
         mut k := 0;
         while k < len(env.errors) {
             mut err := env.errors[k];
-            mut msg := "";
-            if std.str_eq(err.file_path, "") == 1 {
-                msg = std.Format("TypeError at line %d:%d: %s", err.span.start.line, err.span.start.column, err.message);
-            } else {
-                msg = std.Format("TypeError in %s at line %d:%d: %s", err.file_path, err.span.start.line, err.span.start.column, err.message);
-            }
-            os.LogStr(msg);
+            print_error_with_frame(err, ctx);
             k = k + 1;
         }
         os.Exit(1);
