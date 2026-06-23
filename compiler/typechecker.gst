@@ -4236,7 +4236,17 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
 }
 
 func report_error(kind_tag: int, message: str, span: token.Span, env: *TypeEnvironment[ctx], ctx: &Arena) { 
-    mut err_msg := std.Format("TypeError at line %d:%d: %s", span.start.line, span.start.column, message);
+    mut current_file := "";
+    unsafe {
+        current_file = (*env).current_file;
+    }
+
+    mut err_msg := "";
+    if std.str_eq(current_file, "") == 1 {
+        err_msg = std.Format("TypeError at line %d:%d: %s", span.start.line, span.start.column, message);
+    } else {
+        err_msg = std.Format("TypeError in %s at line %d:%d: %s", current_file, span.start.line, span.start.column, message);
+    }
     typechecker_log_trace("❌", err_msg, ctx);
 
     unsafe {
