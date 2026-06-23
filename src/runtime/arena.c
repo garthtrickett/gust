@@ -73,6 +73,9 @@ int os_ArenaAlloc(os_Arena* arena, size_t size) {
     *(uint64_t*)((char*)arena->BaseAddress + pre_canary_offset) = 0xDEADBEEFDEADBEEFULL;
     *(uint64_t*)((char*)arena->BaseAddress + post_canary_offset) = 0xDEADBEEFDEADBEEFULL;
 
+    // Zero-initialize the allocated payload chunk
+    memset((char*)arena->BaseAddress + payload_offset, 0, size);
+
     arena->Offset += total_size;
     return (int)payload_offset;
 #else
@@ -81,6 +84,10 @@ int os_ArenaAlloc(os_Arena* arena, size_t size) {
         abort();
     }
     size_t assigned_offset = arena->Offset;
+
+    // Zero-initialize the allocated payload chunk
+    memset((char*)arena->BaseAddress + assigned_offset, 0, size);
+
     arena->Offset += size;
     return (int)assigned_offset;
 #endif
