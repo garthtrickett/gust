@@ -1,9 +1,9 @@
 {
-  "summary": "feat: set current_file in topological compilation passes of test_runner_entry",
+  "summary": "feat: integrate path tracking in type_dump_entry utility driver",
   "files": [
     {
-      "file_path": "compiler/test_runner_entry.gst",
-      "code_diff": "<<<<<<< SEARCH\n        // Set current prefix and pre-register statements\n        env.current_prefix = prefix;\n        unsafe {\n            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];\n=======\n        // Set current prefix and pre-register statements\n        env.current_prefix = prefix;\n        env.current_file = path;\n        unsafe {\n            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n    mut j := 0;\n    while j < len(order) {\n        mut prog := programs[j];\n        mut prefix := module_prefixes[j];\n\n        env.current_prefix = prefix;\n\n        unsafe {\n            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];\n=======\n    mut j := 0;\n    while j < len(order) {\n        mut prog := programs[j];\n        mut prefix := module_prefixes[j];\n\n        env.current_prefix = prefix;\n        env.current_file = order[j];\n\n        unsafe {\n            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];\n>>>>>>> REPLACE"
+      "file_path": "compiler/type_dump_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n    mut env := typechecker.env_new(ctx);\n    mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);\n=======\n    mut env := typechecker.env_new(ctx);\n    env.current_file = file_path;\n    mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);\n>>>>>>> REPLACE"
     }
   ]
 }

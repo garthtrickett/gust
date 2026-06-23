@@ -35,6 +35,7 @@ func main() {
     }
 
     mut env := typechecker.env_new(ctx);
+    env.current_file = file_path;
     mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
 
     unsafe {
