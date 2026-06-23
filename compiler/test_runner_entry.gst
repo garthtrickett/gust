@@ -102,6 +102,21 @@ func main() {
         i = i + 1;
     }
 
+    if len(accumulated_parser_errors) > 0 {
+        mut err_idx := 0;
+        while err_idx < len(accumulated_parser_errors) {
+            mut f_err := accumulated_parser_errors[err_idx];
+            mut msg := std.Format("ParserError in %s at line %d:%d: %s", 
+                f_err.file_path, 
+                f_err.err.span.start.line, 
+                f_err.err.span.start.column, 
+                f_err.err.message);
+            os.LogStr(msg);
+            err_idx = err_idx + 1;
+        }
+        os.Exit(1);
+    }
+
     // 5. Typecheck all programs in Topological Order
     typechecker.env_synthesize_is_valid_helpers(&env, ctx);
 
