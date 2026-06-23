@@ -206,7 +206,8 @@ func main() {
     mut checked_map: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
     typechecker.typechecker_extract_ok_checked_variables(expr6, &checked_map, ctx);
 
-    if checked_map.Get("result").Ok == 1 {
+    mut lookup_result := checked_map.Get("result");
+    if lookup_result.Ok {
         os.LogStr("typechecker_extract_ok_checked_variables correctly extracted result");
     } else {
         os.LogStr("typechecker_extract_ok_checked_variables failed to extract result");
@@ -222,7 +223,12 @@ func main() {
     mut checked_map2: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
     typechecker.typechecker_extract_ok_checked_variables(expr7, &checked_map2, ctx);
 
-    if checked_map2.Get("result").Ok == 0 {
+    mut has_res := 0;
+    mut lookup_res := checked_map2.Get("result");
+    if lookup_res.Ok {
+        has_res = 1;
+    }
+    if has_res == 0 {
         os.LogStr("typechecker_extract_ok_checked_variables correctly ignored OR operator");
     } else {
         os.LogStr("typechecker_extract_ok_checked_variables incorrectly extracted result under OR");
