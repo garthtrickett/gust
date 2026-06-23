@@ -565,4 +565,39 @@ mut lookup_param := env.variable_types.Get("ctx");
             os.LogStr(env.errors[0].message);
         }
     }
+
+    // Step 2 Verification: Recursive Type Validation (TCS Stack Safety)
+    mut t_int: ast.Type[ctx]; t_int.tag = 0;
+    os.LogInt(typechecker.typechecker_is_stack_allowed(t_int, &env, ctx));
+
+    mut t_vec: ast.Type[ctx]; t_vec.tag = 10;
+    os.LogInt(typechecker.typechecker_is_stack_allowed(t_vec, &env, ctx));
+
+    mut pod_layout: typechecker.StructLayout[ctx];
+    pod_layout.brand = empty[Index[str, ctx]];
+    pod_layout.fields = std.HashMapNew(ctx);
+    mut t_bool: ast.Type[ctx]; t_bool.tag = 2;
+    pod_layout.fields.Insert("x", t_int);
+    pod_layout.fields.Insert("y", t_bool);
+    typechecker.env_register_struct(&env, "PODStruct", pod_layout, ctx);
+
+    mut t_pod: ast.Type[ctx];
+    t_pod.tag = 8;
+    t_pod.Struct.struct_name = "PODStruct";
+    t_pod.Struct.brand = empty[Index[str, ctx]];
+    os.LogInt(typechecker.typechecker_is_stack_allowed(t_pod, &env, ctx));
+
+    mut complex_layout: typechecker.StructLayout[ctx];
+    complex_layout.brand = empty[Index[str, ctx]];
+    complex_layout.fields = std.HashMapNew(ctx);
+    complex_layout.fields.Insert("vec", t_vec);
+    typechecker.env_register_struct(&env, "ComplexStruct", complex_layout, ctx);
+
+    mut t_complex: ast.Type[ctx];
+    t_complex.tag = 8;
+    t_complex.Struct.struct_name = "ComplexStruct";
+    t_complex.Struct.brand = empty[Index[str, ctx]];
+    os.LogInt(typechecker.typechecker_is_stack_allowed(t_complex, &env, ctx));
+
+    os.LogStr("TCS Recursive Type Validation checks verified!");
 }

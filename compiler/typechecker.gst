@@ -6599,6 +6599,57 @@ func typechecker_has_boolean_fields(t: ast.Type[ctx], env: *TypeEnvironment[ctx]
     }
 }
 
+func typechecker_is_stack_allowed_recursive(t: ast.Type[ctx], env: *TypeEnvironment[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 0 || t.tag == 1 || t.tag == 2 || t.tag == 3 || t.tag == 4 || t.tag == 5 || t.tag == 6 || t.tag == 7 || t.tag == 9 {
+            return 1;
+        }
+        if t.tag == 10 {
+            return 0;
+        }
+        if t.tag == 8 {
+            mut name := t.Struct.struct_name;
+            mut has_visited := 0;
+            mut lookup_visited := (*visited).Get(name);
+            if lookup_visited.Ok {
+                return 1;
+            }
+            (*visited).Insert(std.Clone(ctx, name), 1);
+            mut lookup := (*env).struct_registry.Get(name);
+            if lookup.Ok {
+                mut layout := lookup.Val;
+                mut f_keys := typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                mut i := 0;
+                while i < len(f_keys) {
+                    mut f_key := f_keys[i];
+                    mut f_lookup := layout.fields.Get(f_key);
+                    if f_lookup.Ok {
+                        mut field_type := f_lookup.Val;
+                        mut field_allowed := typechecker_is_stack_allowed_recursive(field_type, env, visited, ctx);
+                        if field_allowed == 0 {
+                            (*visited).Remove(name);
+                            return 0;
+                        }
+                    }
+                    i = i + 1;
+                }
+                (*visited).Remove(name);
+                return 1;
+            }
+            (*visited).Remove(name);
+            return 1;
+        }
+        return 0;
+    } 
+}
+
+func typechecker_is_stack_allowed(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+        return typechecker_is_stack_allowed_recursive(t, env, &visited, ctx);
+    }
+}
+
 func env_synthesize_is_valid_helpers(env: *TypeEnvironment[ctx], ctx: &Arena) {
     unsafe {
         mut keys := typechecker_get_sorted_keys_layout(&(*env).struct_registry, ctx);
