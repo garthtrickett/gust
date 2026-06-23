@@ -2253,17 +2253,30 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
             joined_dot = std.Concat(joined_dot, next_part);
 
             mut is_tmpl := (*env).struct_templates.Get(joined_underscore).Ok;
-            if is_tmpl == 0 {
-                is_tmpl = (*env).struct_templates.Get(joined_dot).Ok;
+            mut has_tmpl := 0;
+            if is_tmpl {
+                has_tmpl = 1;
             }
-            if is_tmpl == 0 {
-                is_tmpl = (*env).enum_templates.Get(joined_underscore).Ok;
+            if has_tmpl == 0 {
+                mut lookup := (*env).struct_templates.Get(joined_dot);
+                if lookup.Ok {
+                    has_tmpl = 1;
+                }
             }
-            if is_tmpl == 0 {
-                is_tmpl = (*env).enum_templates.Get(joined_dot).Ok;
+            if has_tmpl == 0 {
+                mut lookup := (*env).enum_templates.Get(joined_underscore);
+                if lookup.Ok {
+                    has_tmpl = 1;
+                }
+            }
+            if has_tmpl == 0 {
+                mut lookup := (*env).enum_templates.Get(joined_dot);
+                if lookup.Ok {
+                    has_tmpl = 1;
+                }
             }
 
-            if is_tmpl == 1 {
+            if has_tmpl == 1 {
                 template_name = joined_underscore;
                 *start_idx = idx + 2;
             }
@@ -4020,13 +4033,21 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                     mut is_struct_tmpl := (*env).struct_templates.Get(namespaced_name).Ok;
                     typechecker_log_trace('🔍', 'env_resolve_type: after struct_templates.Get', ctx);
                     
-                    if is_struct_tmpl == 1 {
+                    mut has_struct_tmpl := 0;
+                    if is_struct_tmpl {
+                        has_struct_tmpl = 1;
+                    }
+                    if has_struct_tmpl == 1 {
                         has_template = 1;
                     } else {
                         typechecker_log_trace('🔍', 'env_resolve_type: before enum_templates.Get', ctx);
                         mut is_enum_tmpl := (*env).enum_templates.Get(namespaced_name).Ok;
                         typechecker_log_trace('🔍', 'env_resolve_type: after enum_templates.Get', ctx);
-                        if is_enum_tmpl == 1 {
+                        mut has_enum_tmpl := 0;
+                        if is_enum_tmpl {
+                            has_enum_tmpl = 1;
+                        }
+                        if has_enum_tmpl == 1 {
                             has_template = 1;
                         }
                     }
@@ -4970,7 +4991,12 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
             if t.Index.brand != empty[Index[str, ctx]] {
                 mut original_brand_ptr := &ctx[t.Index.brand] as *str;
                 mut original_brand := *original_brand_ptr;
-                if layout.fields.Get(original_brand).Ok == 1 {
+                mut has_orig_brand := 0;
+                mut orig_brand_lookup := layout.fields.Get(original_brand);
+                if orig_brand_lookup.Ok {
+                    has_orig_brand = 1;
+                }
+                if has_orig_brand == 1 {
                     mut res := std.Concat(parent_path, ".");
                     res = std.Concat(res, original_brand);
                     
@@ -4996,7 +5022,12 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
             if t.Struct.brand != empty[Index[str, ctx]] {
                 mut original_brand_ptr := &ctx[t.Struct.brand] as *str; 
                 mut original_brand := *original_brand_ptr;
-                if layout.fields.Get(original_brand).Ok == 1 {
+                mut has_orig_brand := 0;
+                mut orig_brand_lookup := layout.fields.Get(original_brand);
+                if orig_brand_lookup.Ok {
+                    has_orig_brand = 1;
+                }
+                if has_orig_brand == 1 {
                     mut res := std.Concat(parent_path, ".");
                     res = std.Concat(res, original_brand);
                     
@@ -5009,7 +5040,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
                     res_t.Struct.struct_name = std.Clone(ctx, t.Struct.struct_name);
                     res_t.Struct.brand = new_brand;
                     return res_t;
-                } else {
+                } else { 
                     mut res_t: ast.Type[ctx];
                     res_t.tag = 8;
                     res_t.Struct.struct_name = std.Clone(ctx, t.Struct.struct_name);
