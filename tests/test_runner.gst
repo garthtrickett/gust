@@ -1162,7 +1162,7 @@ func main() {
     mut t142: Test[ctx];
     t142.path = "tests/test_generic_definition_enforces_strict_linear_safety_rejected.gst";
     t142.is_negative = 1;
-    t142.expected = "already been moved";
+    t142.expected = "Use of moved variable";
     tests.Push(t142);
 
     mut t143: Test[ctx];

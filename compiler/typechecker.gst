@@ -1341,7 +1341,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 }
                             }
                             if from_ok == 0 {
-                                mut msg := "Semantic Error: Graph.AddEdge 'from' argument must be an Int, Byte or branded Index";
+                                mut msg := "Semantic Error: Graph.AddEdge 'from' argument type mismatch. Must be an Int, Byte or branded Index";
                                 report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
                             }
 
@@ -1354,7 +1354,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 if brand != empty[Index[str, ctx]] && graph_brand != empty[Index[str, ctx]] { 
                                     mut b_ptr := &ctx[brand] as *str;
                                     mut gb_ptr := &ctx[graph_brand] as *str;
-                                    if std.str_eq(strip_brand_prefix(*b_ptr, ctx), strip_brand_prefix(*gb_ptr, ctx)) {
+                                    if std.str_eq(strip_brand_prefix(*b_ptr, ctx), strip_brand_prefix(*gb_ptr, ctx)) { 
                                         to_ok = 1;
                                     }
                                 } else {
@@ -1362,7 +1362,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 }
                             }
                             if to_ok == 0 {
-                                mut msg := "Semantic Error: Graph.AddEdge 'to' argument must be an Int, Byte or branded Index";
+                                mut msg := "Semantic Error: Graph.AddEdge 'to' argument type mismatch. Must be an Int, Byte or branded Index";
                                 report_error(2, msg, get_expression_span(arg1_idx, ctx), env, ctx);
                             }
                         }
