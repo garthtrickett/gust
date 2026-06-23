@@ -1446,19 +1446,19 @@ func parse_block_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.BlockStatemen
 
         next_token(p);
 
-        while is_at_end(p) == 0 {
-            mut before_errors := len((*p).errors);
-            mut stmt := parse_statement(p, ctx);
-            if stmt != empty[Index[ast.Statement[ctx], ctx]] {
-                (*dest_ptr).Push(ctx[stmt]);
-                if cur_token_is(p, 10) { // Semicolon = 10
-                    next_token(p);
-                }
-            } else {
-                if len((*p).errors) == before_errors {
-                    error_at_current(p, "Expected valid statement inside block");
-                }
-                mut before_sync := (*p).cur_token.token_type.tag;
+               while is_at_end(p) == 0 {
+                    mut before_errors := len((*p).errors);
+                    mut stmt := parse_statement(p, ctx);
+                    if stmt != empty[Index[ast.Statement[ctx], ctx]] {
+                        (*dest_ptr).Push(ctx[stmt]);
+                        if cur_token_is(p, 10) { // Semicolon = 10
+                            next_token(p);
+                        }
+                    } else {
+                        if len((*p).errors) == before_errors {
+                            error_at_current(p, "Syntax Error: Expected valid statement inside block");
+                        }
+                        mut before_sync := (*p).cur_token.token_type.tag;
                 synchronize(p);
                 if (*p).cur_token.token_type.tag == before_sync {
                     next_token(p);

@@ -563,11 +563,13 @@ impl Parser {
                 statements.push(stmt);
                 if self.peek_token.token_type == TokenType::Semicolon {
                     self.next_token();
+                    self.next_token();
                 }
-                self.next_token();
             } else {
                 if self.errors.len() == before_errors {
-                    self.error_at_current("Expected valid statement inside block".to_string());
+                    self.error_at_current(
+                        "Syntax Error: Expected valid statement inside block".to_string(),
+                    );
                 }
                 self.synchronize();
             }
@@ -1190,7 +1192,9 @@ impl Parser {
                 self.next_token(); // consume '['
                 let target_type = self.parse_type_signature()?;
                 if self.cur_token.token_type != TokenType::RBracket {
-                    self.error_at_current("Syntax Error: Expected ']' after empty type signature".to_string());
+                    self.error_at_current(
+                        "Syntax Error: Expected ']' after empty type signature".to_string(),
+                    );
                     return None;
                 }
                 let end_span = self.cur_token.span;
