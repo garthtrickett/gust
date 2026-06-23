@@ -1,9 +1,13 @@
 {
-  "summary": "fix: remove quiet selector fallbacks and return Type::Void on missing fields or unresolved selectors",
+  "summary": "test: add negative test for bool wrapper alignment comparison to integer",
   "files": [
     {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n                mut msg := std.Concat(\"Semantic Error: [FieldNotFound] Field '\", expr.Selector.right);\n                msg = std.Concat(msg, \"' not found on struct layout '\");\n                msg = std.Concat(msg, struct_name);\n                msg = std.Concat(msg, \"'\");\n                report_error(2, msg, expr.Selector.span, env, ctx);\n                \n                mut t: ast.Type[ctx];\n                t.tag = 0; // Int\n                return t;\n            } else {\n=======\n                mut msg := std.Concat(\"Semantic Error: [FieldNotFound] Field '\", expr.Selector.right);\n                msg = std.Concat(msg, \"' not found on struct layout '\");\n                msg = std.Concat(msg, struct_name);\n                msg = std.Concat(msg, \"'\");\n                report_error(2, msg, expr.Selector.span, env, ctx);\n                \n                mut t_void: ast.Type[ctx];\n                t_void.tag = 3; // Void\n                return t_void;\n            } else {\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n                    } else {\n                        mut t_void: ast.Type[ctx];\n                        t_void.tag = 3; // Void\n                        return t_void;\n                    }\n                }\n            }\n\n            mut t: ast.Type[ctx];\n            t.tag = 0; // Int\n            return t;\n        }\n=======\n                    } else {\n                        mut t_void: ast.Type[ctx];\n                        t_void.tag = 3; // Void\n                        return t_void;\n                    }\n                }\n            }\n\n            mut t_void_final: ast.Type[ctx];\n            t_void_final.tag = 3; // Void\n            return t_void_final;\n        }\n>>>>>>> REPLACE"
+      "file_path": "tests/test_bool_wrapper_alignment_rejected.gst",
+      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut map: std.HashMap[int, int, ctx] := std.HashMapNew(ctx);\n    mut lookup := map.Get(42);\n    if lookup.Ok == 0 {\n        os.LogInt(1);\n    }\n}\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "tests/test_runner.gst",
+      "code_diff": "<<<<<<< SEARCH\n    mut t190: Test[ctx];\n    t190.path = \"tests/test_field_not_found_rejected.gst\";\n    t190.is_negative = 1;\n    t190.expected = \"FieldNotFound\";\n    tests.Push(t190);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t190: Test[ctx];\n    t190.path = \"tests/test_field_not_found_rejected.gst\";\n    t190.is_negative = 1;\n    t190.expected = \"FieldNotFound\";\n    tests.Push(t190);\n\n    mut t191: Test[ctx];\n    t191.path = \"tests/test_bool_wrapper_alignment_rejected.gst\";\n    t191.is_negative = 1;\n    t191.expected = \"TypeMismatch\";\n    tests.Push(t191);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
     }
   ]
 }

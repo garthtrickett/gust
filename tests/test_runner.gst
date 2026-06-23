@@ -1453,6 +1453,12 @@ func main() {
     t190.expected = "FieldNotFound";
     tests.Push(t190);
 
+    mut t191: Test[ctx];
+    t191.path = "tests/test_bool_wrapper_alignment_rejected.gst";
+    t191.is_negative = 1;
+    t191.expected = "TypeMismatch";
+    tests.Push(t191);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
