@@ -754,6 +754,14 @@ func codegen_erase_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
             ctx[erased_t.Slice.inner] = erased_inner;
             return erased_t;
         }
+        if t.tag == 11 { // Reference
+            mut inner := ctx[t.Reference.inner];
+            mut erased_inner := codegen_erase_type(inner, env, ctx);
+            erased_t.Reference.inner = os.ArenaAlloc(ctx);
+            ctx[erased_t.Reference.inner] = erased_inner;
+            erased_t.Reference.brand = empty[Index[str, ctx]];
+            return erased_t;
+        }
         if t.tag == 10 {
             mut name := t.Generic.name;
             mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
@@ -1271,6 +1279,12 @@ func codegen_get_c_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
         }
         if erased_t.tag == 9 { // RawPointer
             mut inner_type := ctx[erased_t.RawPointer.inner];
+            mut inner_c := codegen_get_c_type(inner_type, env, ctx);
+            mut res := std.Concat(inner_c, "*");
+            return std.Clone(ctx, res);
+        }
+        if erased_t.tag == 11 { // Reference
+            mut inner_type := ctx[erased_t.Reference.inner];
             mut inner_c := codegen_get_c_type(inner_type, env, ctx);
             mut res := std.Concat(inner_c, "*");
             return std.Clone(ctx, res);

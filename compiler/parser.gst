@@ -51,6 +51,9 @@ func parser_get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
                                             if t.tag == 9 { // RawPointer
                                                 mut inner_t := ctx[t.RawPointer.inner];
                                                 base = std.Concat(parser_get_type_ident(inner_t, ctx), "_ptr");
+                                            } else if t.tag == 11 { // Reference
+                                                mut inner_t := ctx[t.Reference.inner];
+                                                base = std.Concat(parser_get_type_ident(inner_t, ctx), "_ptr");
                                             } else {
                                                 if t.tag == 10 { // Generic
                                                     base = parser_get_monomorphized_name(t.Generic.name, t.Generic.args, ctx);
@@ -232,7 +235,7 @@ func synchronize(p: *Parser[ctx]) {
 
 func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx] {
     unsafe {
-        if cur_token_is(p, 21) || cur_token_is(p, 17) { // Asterisk = 21, Ampersand = 17
+        if cur_token_is(p, 21) { // Asterisk = 21
             next_token(p);
             mut target := parse_type_signature(p, ctx);
             if target == empty[Index[ast.Type[ctx], ctx]] {
@@ -241,6 +244,19 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
             mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx[t_idx].tag = 9; // RawPointer = 9
             ctx[t_idx].RawPointer.inner = target;
+            return t_idx;
+        }
+
+        if cur_token_is(p, 17) { // Ampersand = 17
+            next_token(p);
+            mut target := parse_type_signature(p, ctx);
+            if target == empty[Index[ast.Type[ctx], ctx]] {
+                return empty[Index[ast.Type[ctx], ctx]];
+            }
+            mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[t_idx].tag = 11; // Reference = 11
+            ctx[t_idx].Reference.inner = target;
+            ctx[t_idx].Reference.brand = empty[Index[str, ctx]];
             return t_idx;
         }
 
