@@ -1466,6 +1466,13 @@ func main() {
     t_path_diag.expected = "TypeError in tests/test_path_error_diagnostic_rejected.gst at line 2:5";
     tests.Push(t_path_diag);
 
+    mut t_imported_path_diag: Test[ctx];
+    t_imported_path_diag.path = "tests/test_imported_path_error_rejected.gst";
+    t_imported_path_diag.is_negative = 1;
+    t_imported_path_diag.is_substring = 1;
+    t_imported_path_diag.expected = "TypeError in tests/test_imported_path_error_violating.gst at line 2:5";
+    tests.Push(t_imported_path_diag);
+
     mut t_multi_syntax: Test[ctx];
     t_multi_syntax.path = "tests/test_multi_parser_errors_rejected.gst";
     t_multi_syntax.is_negative = 1;
