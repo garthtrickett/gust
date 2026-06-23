@@ -174,6 +174,8 @@ nix flake update tree-sitter-gust
 rebuild
 reopen helix
 
+make gust to.log 2>&1
+
 
 42069
 

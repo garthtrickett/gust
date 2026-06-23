@@ -1,9 +1,0 @@
-{
-  "summary": "fix: remove quiet dereference fallback and return Type::Void on non-pointer dereference",
-  "files": [
-    {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\n        if expr.tag == 7 { // Dereference\n            if (*env).in_unsafe_block == 0 {\n                mut msg := \"Semantic Error: Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks\";\n                report_error(2, msg, expr.Dereference.span, env, ctx);\n            }\n            mut inner := check_expression(expr.Dereference.expr, env, scope, ctx);\n            if inner.tag == 9 { // RawPointer\n                return ctx[inner.RawPointer.inner];\n            }\n            mut msg := std.Concat(\"Semantic Error: [DereferenceNonPointer] Cannot dereference non-pointer type \", ast.serialize_type(inner, ctx));\n            report_error(2, msg, expr.Dereference.span, env, ctx);\n            return inner;\n        }\n=======\n        if expr.tag == 7 { // Dereference\n            if (*env).in_unsafe_block == 0 {\n                mut msg := \"Semantic Error: Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks\";\n                report_error(2, msg, expr.Dereference.span, env, ctx);\n            }\n            mut inner := check_expression(expr.Dereference.expr, env, scope, ctx);\n            if inner.tag == 9 { // RawPointer\n                return ctx[inner.RawPointer.inner];\n            }\n            mut msg := std.Concat(\"Semantic Error: [DereferenceNonPointer] Cannot dereference non-pointer type \", ast.serialize_type(inner, ctx));\n            report_error(2, msg, expr.Dereference.span, env, ctx);\n            mut t_void: ast.Type[ctx];\n            t_void.tag = 3; // Void\n            return t_void;\n        }\n>>>>>>> REPLACE"
-    }
-  ]
-}

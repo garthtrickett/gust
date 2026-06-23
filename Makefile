@@ -7,8 +7,10 @@ PREFIX = /usr/local
 
 all: gust
 
-gust_bootstrap: gust_v4.c
-	${CC} ${CFLAGS} gust_v4.c -o gust_bootstrap
+gust_bootstrap: gust_v4.c src/runtime.c
+	mkdir -p build
+	cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c
+	${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c -o gust_bootstrap
 
 build/gust_compiler.c: gust_bootstrap compiler/test_runner_entry.gst
 	mkdir -p build
