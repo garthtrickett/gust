@@ -50,3 +50,6 @@
 /a.txt
 
 /to.log
+
+/current_response.json
+/tree-sitter-gust/node_modules/

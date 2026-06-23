@@ -286,6 +286,7 @@ module.exports = grammar({
     _type: $ => choice(
       $._type_specifier,
       $.pointer_type,
+      $.reference_type,
       $.slice_type
     ),
 
@@ -306,6 +307,8 @@ module.exports = grammar({
     ),
 
     pointer_type: $ => seq('*', $._type),
+
+    reference_type: $ => seq('&', $._type),
 
     slice_type: $ => seq('[', ']', $._type),
 

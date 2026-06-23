@@ -54,6 +54,10 @@ type Type[ctx] enum {
     Generic {
         name: str,
         args: Index[std.Vector[Type[ctx], ctx], ctx]
+    },
+    Reference {
+        inner: Index[Type[ctx], ctx],
+        brand: Index[str, ctx]
     }
 }
 
@@ -298,6 +302,23 @@ func serialize_type(t: Type[ctx], ctx: &Arena) str {
             mut inner_str := serialize_type(ctx[t.RawPointer.inner], ctx);
             mut res := std.Concat("RawPointer(", inner_str);
             res = std.Concat(res, ")");
+            return std.Clone(ctx, res);
+        }
+        if t.tag == 11 { // Reference
+            mut quote := '"';
+            mut inner_str := serialize_type(ctx[t.Reference.inner], ctx);
+            mut res := std.Concat("Reference(", inner_str);
+            if t.Reference.brand == empty[Index[str, ctx]] {
+                res = std.Concat(res, ", None)");
+            } else {
+                mut brand_str_ptr := &ctx[t.Reference.brand] as *str;
+                mut brand_str := *brand_str_ptr;
+                res = std.Concat(res, ", Some(");
+                res = std.Concat(res, quote);
+                res = std.Concat(res, brand_str);
+                res = std.Concat(res, quote);
+                res = std.Concat(res, "))");
+            }
             return std.Clone(ctx, res);
         }
         if t.tag == 10 { // Generic
