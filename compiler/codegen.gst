@@ -813,7 +813,12 @@ func codegen_get_by_value_dependencies_recursive(t: ast.Type[ctx], deps: *std.Ha
             mut lookup_struct := env.struct_registry.Get(name);
             if lookup_struct.Ok {
                 mut inserted := 0;
-                if (*deps).Get(name).Ok == 0 {
+                mut has_dep := 0;
+                mut dep_lookup := (*deps).Get(name);
+                if dep_lookup.Ok {
+                    has_dep = 1;
+                }
+                if has_dep == 0 {
                     (*deps).Insert(std.Clone(ctx, name), 1);
                     inserted = 1;
                 }
@@ -851,10 +856,21 @@ func codegen_get_by_value_dependencies_recursive(t: ast.Type[ctx], deps: *std.Ha
 
 func codegen_topological_visit(name: str, visited: *std.HashMap[str, int, ctx], temp_visited: *std.HashMap[str, int, ctx], ordered: *std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
-        if (*visited).Get(name).Ok == 1 {
+        mut has_visited := 0;
+        mut visited_lookup := (*visited).Get(name);
+        if visited_lookup.Ok {
+            has_visited = 1;
+        }
+        if has_visited == 1 {
             return 1;
         }
-        if (*temp_visited).Get(name).Ok == 1 {
+        
+        mut has_temp_visited := 0;
+        mut temp_visited_lookup := (*temp_visited).Get(name);
+        if temp_visited_lookup.Ok {
+            has_temp_visited = 1;
+        }
+        if has_temp_visited == 1 {
             return 0;
         }
         (*temp_visited).Insert(std.Clone(ctx, name), 1);

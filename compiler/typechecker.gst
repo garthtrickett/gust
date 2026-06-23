@@ -5967,7 +5967,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     mut k := 0;
                     while k < len(expected_variants) {
                         mut expected := expected_variants[k];
-                        if matched_variants.Get(expected).Ok == 0 {
+                        mut has_matched := 0;
+                        mut matched_lookup := matched_variants.Get(expected);
+                        if matched_lookup.Ok {
+                            has_matched = 1;
+                        }
+                        if has_matched == 0 {
                             mut msg := std.Concat("Semantic Error: Match on enum '", enum_name);
                             msg = std.Concat(msg, "' is not exhaustive. Missing variant '");
                             msg = std.Concat(msg, expected);
