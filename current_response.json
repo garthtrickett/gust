@@ -1,9 +1,0 @@
-{
-  "summary": "feat: integrate path tracking in type_dump_entry utility driver",
-  "files": [
-    {
-      "file_path": "compiler/type_dump_entry.gst",
-      "code_diff": "<<<<<<< SEARCH\n    mut env := typechecker.env_new(ctx);\n    mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);\n=======\n    mut env := typechecker.env_new(ctx);\n    env.current_file = file_path;\n    mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);\n>>>>>>> REPLACE"
-    }
-  ]
-}

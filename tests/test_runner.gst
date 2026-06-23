@@ -1459,6 +1459,13 @@ func main() {
     t191.expected = "TypeMismatch";
     tests.Push(t191);
 
+    mut t_path_diag: Test[ctx];
+    t_path_diag.path = "tests/test_path_error_diagnostic_rejected.gst";
+    t_path_diag.is_negative = 1;
+    t_path_diag.is_substring = 1;
+    t_path_diag.expected = "TypeError in tests/test_path_error_diagnostic_rejected.gst at line 2:5";
+    tests.Push(t_path_diag);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
