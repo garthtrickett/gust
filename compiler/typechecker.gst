@@ -5249,6 +5249,38 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
                         return 1;
                     }
                 }
+                // Handle Reference(Arena) vs Arena match
+                if expected.tag == 11 && actual.tag == 4 {
+                    mut inner := ctx[expected.Reference.inner];
+                    if inner.tag == 4 {
+                        return 1;
+                    }
+                }
+                if expected.tag == 4 && actual.tag == 11 {
+                    mut inner := ctx[actual.Reference.inner];
+                    if inner.tag == 4 {
+                        return 1;
+                    }
+                }
+                // Handle Reference(Arena) vs RawPointer(Arena) match
+                if expected.tag == 9 && actual.tag == 11 {
+                    mut inner_e := ctx[expected.RawPointer.inner];
+                    mut inner_a := ctx[actual.Reference.inner];
+                    if inner_e.tag == 4 && inner_a.tag == 4 {
+                        return 1;
+                    }
+                }
+                if expected.tag == 11 && actual.tag == 9 {
+                    mut inner_e := ctx[expected.Reference.inner];
+                    mut inner_a := ctx[actual.RawPointer.inner];
+                    if inner_e.tag == 4 && inner_a.tag == 4 {
+                        return 1;
+                    }
+                }
+                // Handle RawPointer vs Reference match
+                if expected.tag == 9 && actual.tag == 11 {
+                    return types_match(ctx[expected.RawPointer.inner], ctx[actual.Reference.inner], ctx);
+                }
                 // Handle Int/Byte match
                 if (expected.tag == 0 && actual.tag == 1) || (expected.tag == 1 && actual.tag == 0) {
                     return 1;
