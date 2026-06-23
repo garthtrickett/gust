@@ -5778,7 +5778,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut n := 0;
                 while n < len(alt_keys) {
                     mut key := alt_keys[n];
-                    if consequence_origins.Get(key).Ok == 0 {
+                    mut has_conseq_key := 0;
+                    mut conseq_lookup := consequence_origins.Get(key);
+                    if conseq_lookup.Ok {
+                        has_conseq_key = 1;
+                    }
+                    if has_conseq_key == 0 {
                         mut lookup_alt := alternative_origins.Get(key);
                         if lookup_alt.Ok {
                             mut orig_alt := lookup_alt.Val;
