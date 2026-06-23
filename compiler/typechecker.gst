@@ -117,6 +117,9 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
         if t.tag == 9 { // RawPointer
             return 1;
         }
+        if t.tag == 11 { // Reference
+            return 1;
+        }
         if t.tag == 8 { // Struct
             mut name := t.Struct.struct_name;
             if std.str_eq(name, "str") {
@@ -3070,6 +3073,9 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                             if field_type.tag == 6 { // Slice
                                 is_ephemeral_field = 1;
                             }
+                            if field_type.tag == 11 { // Reference
+                                is_ephemeral_field = 1;
+                            }
                             if is_ephemeral_field == 1 {
                                 mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
                                 ctx[err].kind.tag = 2; // TypeError
@@ -4241,7 +4247,7 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                     mut f := (*fields_vec)[i];
                     mut resolved_t := env_resolve_type(env, f.field_type, ctx);
 
-                    if (resolved_t.tag == 5 || resolved_t.tag == 6)
+                    if (resolved_t.tag == 5 || resolved_t.tag == 6 || resolved_t.tag == 11)
                         && std.str_eq(namespaced_name, "errors__CompilerError") == 0
                     { 
                         mut msg := std.Concat("Semantic Error: Unbranded struct '", namespaced_name);

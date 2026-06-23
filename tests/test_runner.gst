@@ -1521,6 +1521,18 @@ func main() {
     t_fairness_rec.expected = "RECURSION_FAIRNESS_SUCCEEDED";
     tests.Push(t_fairness_rec);
 
+    mut t_unbranded_struct_ref_rej: Test[ctx];
+    t_unbranded_struct_ref_rej.path = "tests/test_unbranded_struct_reference_rejected.gst";
+    t_unbranded_struct_ref_rej.is_negative = 1;
+    t_unbranded_struct_ref_rej.expected = "cannot contain ephemeral slice or view field";
+    tests.Push(t_unbranded_struct_ref_rej);
+
+    mut t_escape_ref_rej: Test[ctx];
+    t_escape_ref_rej.path = "tests/test_escape_reference_rejected.gst";
+    t_escape_ref_rej.is_negative = 1;
+    t_escape_ref_rej.expected = "Escape analysis violation";
+    tests.Push(t_escape_ref_rej);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
