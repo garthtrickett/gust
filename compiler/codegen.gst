@@ -4124,6 +4124,11 @@ typedef void Any;
                std.str_eq(key, "LookupResult_os_Dir") == 0 &&
                std.str_eq(key, "LookupResult_os_DirEntry") == 0 &&
                std.str_find(key, "CastResult_") == 0 - 1 {
+                guard orig_key := erased_to_original.Get(key) else {
+                    os.LogStr(std.Concat("🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", key));
+                    os.Exit(1);
+                    return std.Clone(ctx, "");
+                }
                 mut fwd := std.Concat("typedef struct ", key);
                 fwd = std.Concat(fwd, " ");
                 fwd = std.Concat(fwd, key);

@@ -886,7 +886,6 @@ func main() {
     t94.expected = "0\n16";
     tests.Push(t94);
 
-    mut t_path_diag: Test[ctx];
     mut t96: Test[ctx];
     t96.path = "tests/e2e_hashmap_extended_utilities.gst";
     t96.is_negative = 0;
