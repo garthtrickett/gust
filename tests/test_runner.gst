@@ -1336,7 +1336,7 @@ func main() {
     mut t171: Test[ctx];
     t171.path = "tests/test_rc_and_graph_type_checking_invalid_rc_rejected.gst";
     t171.is_negative = 1;
-    t171.expected = "type mismatch";
+    t171.expected = "TypeMismatch";
     tests.Push(t171);
 
     mut t172: Test[ctx];
