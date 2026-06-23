@@ -98,7 +98,11 @@ func set_union(dest: Index[OriginSet[ctx], ctx], src: Index[OriginSet[ctx], ctx]
 
 func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) int {
     unsafe {
-        return ctx[set].map.Get(element).Ok;
+        mut lookup := ctx[set].map.Get(element);
+        if lookup.Ok {
+            return 1;
+        }
+        return 0;
     }
 }
 
