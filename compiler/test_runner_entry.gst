@@ -146,7 +146,12 @@ func main() {
         mut k := 0;
         while k < len(env.errors) {
             mut err := env.errors[k];
-            mut msg := std.Format("TypeError at line %d:%d: %s", err.span.start.line, err.span.start.column, err.message);
+            mut msg := "";
+            if std.str_eq(err.file_path, "") == 1 {
+                msg = std.Format("TypeError at line %d:%d: %s", err.span.start.line, err.span.start.column, err.message);
+            } else {
+                msg = std.Format("TypeError in %s at line %d:%d: %s", err.file_path, err.span.start.line, err.span.start.column, err.message);
+            }
             os.LogStr(msg);
             k = k + 1;
         }

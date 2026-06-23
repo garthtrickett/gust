@@ -1,0 +1,14 @@
+{
+  "summary": "refactor: add file_path tracking to CompilerError for cleaner final error reports",
+  "files": [
+    {
+      "file_path": "compiler/errors.gst",
+      "code_diff": "<<<<<<< SEARCH\ntype CompilerError[ctx] struct {\n    kind: ErrorKind,\n    message: str,\n    span: token.Span\n}\n=======\ntype CompilerError[ctx] struct {\n    kind: ErrorKind,\n    message: str,\n    span: token.Span,\n    file_path: str\n}\n>>>>>>> REPLACE"
+    },
+    
+    {
+      "file_path": "compiler/test_runner_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n    if len(env.errors) > 0 {\n        mut k := 0;\n        while k < len(env.errors) {\n            mut err := env.errors[k];\n            mut msg := std.Format(\"TypeError at line %d:%d: %s\", err.span.start.line, err.span.start.column, err.message);\n            os.LogStr(msg);\n            k = k + 1;\n        }\n        os.Exit(1);\n    }\n=======\n    if len(env.errors) > 0 {\n        mut k := 0;\n        while k < len(env.errors) {\n            mut err := env.errors[k];\n            mut msg := \"\";\n            if std.str_eq(err.file_path, \"\") == 1 {\n                msg = std.Format(\"TypeError at line %d:%d: %s\", err.span.start.line, err.span.start.column, err.message);\n            } else {\n                msg = std.Format(\"TypeError in %s at line %d:%d: %s\", err.file_path, err.span.start.line, err.span.start.column, err.message);\n            }\n            os.LogStr(msg);\n            k = k + 1;\n        }\n        os.Exit(1);\n    }\n>>>>>>> REPLACE"
+    }
+  ]
+}

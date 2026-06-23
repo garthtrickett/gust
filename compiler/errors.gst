@@ -10,7 +10,8 @@ type ErrorKind enum {
 type CompilerError[ctx] struct {
     kind: ErrorKind,
     message: str,
-    span: token.Span
+    span: token.Span,
+    file_path: str
 }
 
 type Result[T, ctx] enum {
