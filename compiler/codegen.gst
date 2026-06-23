@@ -398,12 +398,12 @@ func codegen_erase_struct_name(name: str, brand: Index[str, ctx], env: &typechec
         mut brand_bases: std.Vector[str, ctx] := std.VectorNew(ctx);
         brand_bases.Push("connCtx");
         brand_bases.Push("arena");
-        brand_bases.Push("ctx");
         brand_bases.Push("Any");
         brand_bases.Push("a");
         brand_bases.Push("main_ctx");
         brand_bases.Push("bg_ctx");
         brand_bases.Push("file_ctx");
+        brand_bases.Push("ctx");
 
         mut changed := 1;
         while changed == 1 {

@@ -4619,12 +4619,12 @@ func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
         mut brand_bases: std.Vector[str, ctx] := std.VectorNew(ctx);
         brand_bases.Push("connCtx");
         brand_bases.Push("arena");
-        brand_bases.Push("ctx");
         brand_bases.Push("Any");
         brand_bases.Push("a");
         brand_bases.Push("main_ctx");
         brand_bases.Push("bg_ctx");
         brand_bases.Push("file_ctx");
+        brand_bases.Push("ctx");
 
         mut i := 0;
         while i < len(brand_bases) {

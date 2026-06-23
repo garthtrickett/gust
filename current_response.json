@@ -1,0 +1,13 @@
+{
+  "summary": "fix: resolve greedy brand suffix erasure order in self-hosted compiler",
+  "files": [
+    {
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\nfunc typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {\n    mut erased := name;\n    mut changed := 1;\n    while changed == 1 {\n        changed = 0;\n        mut brand_bases: std.Vector[str, ctx] := std.VectorNew(ctx);\n        brand_bases.Push(\"connCtx\");\n        brand_bases.Push(\"arena\");\n        brand_bases.Push(\"ctx\");\n        brand_bases.Push(\"Any\");\n        brand_bases.Push(\"a\");\n        brand_bases.Push(\"main_ctx\");\n        brand_bases.Push(\"bg_ctx\");\n        brand_bases.Push(\"file_ctx\");\n=======\nfunc typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {\n    mut erased := name;\n    mut changed := 1;\n    while changed == 1 {\n        changed = 0;\n        mut brand_bases: std.Vector[str, ctx] := std.VectorNew(ctx);\n        brand_bases.Push(\"connCtx\");\n        brand_bases.Push(\"arena\");\n        brand_bases.Push(\"Any\");\n        brand_bases.Push(\"a\");\n        brand_bases.Push(\"main_ctx\");\n        brand_bases.Push(\"bg_ctx\");\n        brand_bases.Push(\"file_ctx\");\n        brand_bases.Push(\"ctx\");\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "compiler/codegen.gst",
+      "code_diff": "<<<<<<< SEARCH\n        mut brand_bases: std.Vector[str, ctx] := std.VectorNew(ctx);\n        brand_bases.Push(\"connCtx\");\n        brand_bases.Push(\"arena\");\n        brand_bases.Push(\"ctx\");\n        brand_bases.Push(\"Any\");\n        brand_bases.Push(\"a\");\n        brand_bases.Push(\"main_ctx\");\n        brand_bases.Push(\"bg_ctx\");\n        brand_bases.Push(\"file_ctx\");\n\n        mut changed := 1;\n        while changed == 1 {\n            changed = 0;\n=======\n        mut brand_bases: std.Vector[str, ctx] := std.VectorNew(ctx);\n        brand_bases.Push(\"connCtx\");\n        brand_bases.Push(\"arena\");\n        brand_bases.Push(\"Any\");\n        brand_bases.Push(\"a\");\n        brand_bases.Push(\"main_ctx\");\n        brand_bases.Push(\"bg_ctx\");\n        brand_bases.Push(\"file_ctx\");\n        brand_bases.Push(\"ctx\");\n\n        mut changed := 1;\n        while changed == 1 {\n            changed = 0;\n>>>>>>> REPLACE"
+    }
+  ]
+}
