@@ -916,8 +916,12 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     msg = std.Concat(msg, "' not found on Arena allocator");
                     report_error(2, msg, expr.Selector.span, env, ctx);
                 } else {
-                    mut is_import_alias := (*env).imports.Get(left_str).Ok;
-                    if is_import_alias == 0 {
+                    mut has_alias := 0;
+                    mut alias_lookup := (*env).imports.Get(left_str);
+                    if alias_lookup.Ok {
+                        has_alias = 1;
+                    }
+                    if has_alias == 0 {
                         mut msg := std.Concat("Semantic Error: [UnresolvedSelector] Cannot perform selector access on non-struct type ", ast.serialize_type(left_t, ctx));
                         report_error(2, msg, expr.Selector.span, env, ctx);
                     } else {
@@ -5331,7 +5335,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                             is_rc = 1;
                         }
                         if is_rc == 1 {
-                            if (*env).moved_vars.Get(local_var).Ok == 0 {
+                            mut has_moved := 0;
+                            mut moved_lookup := (*env).moved_vars.Get(local_var);
+                            if moved_lookup.Ok {
+                                has_moved = 1;
+                            }
+                            if has_moved == 0 {
                                 mut msg := std.Concat("Semantic Error: [BrandLifetimeViolation] Resource leak. Reference-counted variable '", local_var);
                                 msg = std.Concat(msg, "' must be cleanly released with .Release() before leaving local scope");
                                 report_error(2, msg, stmt.FunctionDecl.span, env, ctx);
