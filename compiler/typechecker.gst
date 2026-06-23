@@ -1218,6 +1218,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 if inner.tag == 4 { // Arena
                                     is_arena_val = 1;
                                 }
+                            } else if arg_type.tag == 11 { // Reference
+                                mut inner := ctx[arg_type.Reference.inner];
+                                if inner.tag == 4 { // Arena
+                                    is_arena_val = 1;
+                                }
                             }
                             
                             if is_arena_val == 0 {
