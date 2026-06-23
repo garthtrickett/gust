@@ -6,7 +6,7 @@ func main() {
     mut lookup := map.Get(42);
     
     mut is_ok: bool := lookup.Ok;
-    if is_ok == true {
+    if lookup.Ok {
         os.LogInt(lookup.Val);
     }
 }
