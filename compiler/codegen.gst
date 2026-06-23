@@ -3592,6 +3592,13 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
 
             mut body_idx := ctx[stmt_idx].FunctionDecl.body;
             mut body_c := codegen_generate_block_statement(body_idx, env, ctx);
+            
+            mut is_recursive := codegen_is_function_recursive(body_idx, f_name, ctx);
+            if is_recursive == 1 {
+                mut check_str := "    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }\n";
+                body_c = std.Concat(check_str, body_c);
+            }
+            
             res = std.Concat(res, body_c);
             res = std.Concat(res, "}\n\n");
 
@@ -3722,6 +3729,10 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             if tag == 6 { // While
                 mut cond_str := codegen_generate_expression(ctx[stmt_idx].While.condition, env, ctx);
                 mut body_str := codegen_generate_block_statement(ctx[stmt_idx].While.body, env, ctx);
+                
+                mut check_str := "        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }\n";
+                body_str = std.Concat(check_str, body_str);
+                
                 mut res := std.Concat("    while (", cond_str);
                 res = std.Concat(res, ") {\n");
                 res = std.Concat(res, body_str);

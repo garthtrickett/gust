@@ -1199,8 +1199,24 @@ func main() {
         mut while_c := codegen.codegen_generate_statement(while_stmt_idx, &env, ctx);
         os.LogStr(while_c); // Expected:
                             //     while ((x < 10)) {
+                            //         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
                             //         x = (x + 1);
                             //     }
+    }
+
+    // Test Step 3: Recursive Function Prologue Injection
+    mut l_rec_gen: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_rec_gen, "func recurse(n: int) int { return recurse(n - 1); }");
+    mut p_rec_gen: parser.Parser[ctx];
+    parser.init_parser(&p_rec_gen, &l_rec_gen, ctx);
+    mut prog_rec_gen := parser.parse_program(&p_rec_gen, ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog_rec_gen.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        typechecker.env_pre_register_statement(&env, (*statements_vec)[0], ctx);
+        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[stmt_idx] = (*statements_vec)[0];
+        mut rec_c := codegen.codegen_generate_statement(stmt_idx, &env, ctx);
+        os.LogStr(rec_c); // Expected prologue: if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { ... }
     }
 
     // Test Step 2.2: If Statement (Tag 7) statement transpilation (Consequence block only)
