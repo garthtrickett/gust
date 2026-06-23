@@ -2546,6 +2546,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut target_pool_type := pool_type;
                 if target_pool_type.tag == 9 { // RawPointer
                     target_pool_type = ctx[target_pool_type.RawPointer.inner];
+                } else if target_pool_type.tag == 11 { // Reference
+                    target_pool_type = ctx[target_pool_type.Reference.inner];
                 }
 
                 if target_pool_type.tag == 8 { // Struct
@@ -2573,7 +2575,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut erased_rc_type := codegen_erase_struct_name(rc_type, empty[Index[str, ctx]], env, ctx);
 
                 mut is_pool_ptr := 0;
-                if pool_type.tag == 9 { // RawPointer
+                if pool_type.tag == 9 || pool_type.tag == 11 { // RawPointer = 9, Reference = 11
                     is_pool_ptr = 1;
                 }
 
