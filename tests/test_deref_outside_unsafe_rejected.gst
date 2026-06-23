@@ -1,5 +1,5 @@
 func main() {
     mut val := 42;
-    mut ptr := &val;
+    mut ptr: *int := &val as *int;
     mut deref := *ptr;
 }
