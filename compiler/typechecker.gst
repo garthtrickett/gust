@@ -66,7 +66,8 @@ type TypeEnvironment[ctx] struct {
     in_unsafe_block: int,
     active_monomorphizations: std.HashMap[str, int, ctx],
     current_alloc_struct: str,
-    current_params: std.Vector[str, ctx]
+    current_params: std.Vector[str, ctx],
+    current_file: str
 }
 
 func set_init(ctx: &Arena) Index[OriginSet[ctx], ctx] {
@@ -3595,6 +3596,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         ctx[env_idx].active_monomorphizations = std.HashMapNew(ctx);
         ctx[env_idx].current_alloc_struct = "";
         ctx[env_idx].current_params = std.VectorNew(ctx);
+        ctx[env_idx].current_file = "";
 
         env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
         env_register_std_structs(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);

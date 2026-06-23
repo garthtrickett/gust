@@ -1,13 +1,9 @@
 {
-  "summary": "test: add negative test for bool wrapper alignment comparison to integer",
+  "summary": "feat: extend TypeEnvironment to support current_file tracking",
   "files": [
     {
-      "file_path": "tests/test_bool_wrapper_alignment_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\nfunc main() {\n    mut ctx := os.Arena.New();\n    defer ctx.Free();\n    mut map: std.HashMap[int, int, ctx] := std.HashMapNew(ctx);\n    mut lookup := map.Get(42);\n    if lookup.Ok == 0 {\n        os.LogInt(1);\n    }\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_runner.gst",
-      "code_diff": "<<<<<<< SEARCH\n    mut t190: Test[ctx];\n    t190.path = \"tests/test_field_not_found_rejected.gst\";\n    t190.is_negative = 1;\n    t190.expected = \"FieldNotFound\";\n    tests.Push(t190);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n=======\n    mut t190: Test[ctx];\n    t190.path = \"tests/test_field_not_found_rejected.gst\";\n    t190.is_negative = 1;\n    t190.expected = \"FieldNotFound\";\n    tests.Push(t190);\n\n    mut t191: Test[ctx];\n    t191.path = \"tests/test_bool_wrapper_alignment_rejected.gst\";\n    t191.is_negative = 1;\n    t191.expected = \"TypeMismatch\";\n    tests.Push(t191);\n\n    os.LogStr(\"🏃 Starting self-hosted Gust test suite...\");\n>>>>>>> REPLACE"
+      "file_path": "compiler/typechecker.gst",
+      "code_diff": "<<<<<<< SEARCH\n    in_unsafe_block: int,\n    active_monomorphizations: std.HashMap[str, int, ctx],\n    current_alloc_struct: str,\n    current_params: std.Vector[str, ctx]\n}\n=======\n    in_unsafe_block: int,\n    active_monomorphizations: std.HashMap[str, int, ctx],\n    current_alloc_struct: str,\n    current_params: std.Vector[str, ctx],\n    current_file: str\n}\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n        ctx[env_idx].active_monomorphizations = std.HashMapNew(ctx);\n        ctx[env_idx].current_alloc_struct = \"\";\n        ctx[env_idx].current_params = std.VectorNew(ctx);\n\n        env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);\n=======\n        ctx[env_idx].active_monomorphizations = std.HashMapNew(ctx);\n        ctx[env_idx].current_alloc_struct = \"\";\n        ctx[env_idx].current_params = std.VectorNew(ctx);\n        ctx[env_idx].current_file = \"\";\n\n        env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);\n>>>>>>> REPLACE"
     }
   ]
 }
