@@ -1362,10 +1362,68 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             return "0";
         }
         if tag == 4 { // Move
-            return codegen_generate_expression(ctx[expr_idx].Move.expr, env, ctx);
+            mut inner_idx := ctx[expr_idx].Move.expr;
+            mut inner := ctx[inner_idx];
+            mut expr_str := codegen_generate_expression(inner_idx, env, ctx);
+            
+            mut is_lin := 0;
+            mut inner_t := codegen_get_expression_type(inner_idx, env, ctx);
+            if inner_t.tag != 3 { // Void - check if linear
+                is_lin = typechecker.env_type_is_linear(inner_t, env, ctx);
+            }
+            
+            mut can_memset := 0;
+            if is_lin == 1 {
+                if inner.tag == 0 || inner.tag == 11 || inner.tag == 8 || inner.tag == 7 {
+                    // Identifier = 0, Selector = 11, IndexAccess = 8, Dereference = 7
+                    can_memset = 1;
+                }
+            }
+            
+            if can_memset == 1 {
+                mut res := std.Concat("(({ __typeof__(", expr_str);
+                res = std.Concat(res, ") _tmp = ");
+                res = std.Concat(res, expr_str);
+                res = std.Concat(res, "; memset(&(");
+                res = std.Concat(res, expr_str);
+                res = std.Concat(res, "), 0, sizeof(");
+                res = std.Concat(res, expr_str);
+                res = std.Concat(res, ")); _tmp; }))");
+                return std.Clone(ctx, res);
+            }
+            return expr_str;
         }
         if tag == 5 { // Take
-            return codegen_generate_expression(ctx[expr_idx].Take.expr, env, ctx);
+            mut inner_idx := ctx[expr_idx].Take.expr;
+            mut inner := ctx[inner_idx];
+            mut expr_str := codegen_generate_expression(inner_idx, env, ctx);
+            
+            mut is_lin := 0;
+            mut inner_t := codegen_get_expression_type(inner_idx, env, ctx);
+            if inner_t.tag != 3 { // Void - check if linear
+                is_lin = typechecker.env_type_is_linear(inner_t, env, ctx);
+            }
+            
+            mut can_memset := 0;
+            if is_lin == 1 {
+                if inner.tag == 0 || inner.tag == 11 || inner.tag == 8 || inner.tag == 7 {
+                    // Identifier = 0, Selector = 11, IndexAccess = 8, Dereference = 7
+                    can_memset = 1;
+                }
+            }
+            
+            if can_memset == 1 {
+                mut res := std.Concat("(({ __typeof__(", expr_str);
+                res = std.Concat(res, ") _tmp = ");
+                res = std.Concat(res, expr_str);
+                res = std.Concat(res, "; memset(&(");
+                res = std.Concat(res, expr_str);
+                res = std.Concat(res, "), 0, sizeof(");
+                res = std.Concat(res, expr_str);
+                res = std.Concat(res, ")); _tmp; }))");
+                return std.Clone(ctx, res);
+            }
+            return expr_str;
         }
         if tag == 6 { // AddressOf
             mut inner_idx := ctx[expr_idx].AddressOf.expr;

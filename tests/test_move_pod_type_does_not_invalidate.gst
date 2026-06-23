@@ -8,7 +8,7 @@ func main() {
     p.y = 20;
     mut p2 := move p;
     os.LogInt(p.x);
-    mut a := 42;
-    mut b := move a;
-    os.LogInt(a);
+    mut val := 42;
+    mut moved_val := move val;
+    os.LogInt(val);
 }
