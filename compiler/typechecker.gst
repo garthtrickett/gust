@@ -880,9 +880,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 msg = std.Concat(msg, "'");
                 report_error(2, msg, expr.Selector.span, env, ctx);
                 
-                mut t: ast.Type[ctx];
-                t.tag = 0; // Int
-                return t;
+                mut t_void: ast.Type[ctx];
+                t_void.tag = 3; // Void
+                return t_void;
             } else {
                 if left_t.tag == 4 { // Arena
                     if std.str_eq(expr.Selector.right, "Free") {
@@ -912,9 +912,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
             }
 
-            mut t: ast.Type[ctx];
-            t.tag = 0; // Int
-            return t;
+            mut t_void_final: ast.Type[ctx];
+            t_void_final.tag = 3; // Void
+            return t_void_final;
         }
         if expr.tag == 12 { // Call
             // Intercept standard template methods (Vector, HashMap, Pool, Mutex, Channel, Rc, Graph)
