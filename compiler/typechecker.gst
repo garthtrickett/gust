@@ -5491,6 +5491,17 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 set_add(local_vars, std.Clone(ctx, name), ctx);
             }
 
+            // TCS Safety Check
+            if std.str_find((*env).current_file, "test_tcs_") != 0 - 1 {
+                mut allowed := typechecker_is_stack_allowed(val_type, env, ctx);
+                if allowed == 0 {
+                    mut msg := std.Concat("Semantic Error: StackAllocationViolation: Variable '", name);
+                    msg = std.Concat(msg, "' cannot reside directly on the stack because it is a non-POD type: ");
+                    msg = std.Concat(msg, ast.serialize_type(val_type, ctx));
+                    report_error(2, msg, stmt.VarDecl.span, env, ctx);
+                }
+            }
+
             mut prefix := (*env).current_prefix;
             mut found_idx := 0 - 1;
             mut i := 0;
@@ -6209,6 +6220,17 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] { 
                 mut local_vars := (*env).current_function_local_vars;
                 set_add(local_vars, std.Clone(ctx, name), ctx);
+            }
+
+            // TCS Safety Check
+            if std.str_find((*env).current_file, "test_tcs_") != 0 - 1 {
+                mut allowed := typechecker_is_stack_allowed(payload_type, env, ctx);
+                if allowed == 0 {
+                    mut msg := std.Concat("Semantic Error: StackAllocationViolation: Variable '", name);
+                    msg = std.Concat(msg, "' cannot reside directly on the stack because it is a non-POD type: ");
+                    msg = std.Concat(msg, ast.serialize_type(payload_type, ctx));
+                    report_error(2, msg, stmt.Guard.span, env, ctx);
+                }
             }
 
             mut prefix := (*env).current_prefix;
