@@ -11,6 +11,25 @@
 #include <sys/types.h> 
 #include <dirent.h> 
 
+#if defined(_MSC_VER)
+#define GUST_THREAD_LOCAL __declspec(thread)
+#elif defined(__GNUC__) || defined(__clang__)
+#define GUST_THREAD_LOCAL __thread
+#elif __STDC_VERSION__ >= 201112L
+#define GUST_THREAD_LOCAL _Thread_local
+#else
+#define GUST_THREAD_LOCAL
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define GUST_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+#define GUST_UNLIKELY(x) (x)
+#endif
+
+#define GUST_TICK_INTERVAL 4096
+extern GUST_THREAD_LOCAL int gust_loop_ticks;
+
 typedef void Any;
 
 extern int os_argc;

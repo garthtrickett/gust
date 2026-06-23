@@ -1,0 +1,17 @@
+{
+  "summary": "refactor: add thread-local loop tick structures for starvation control",
+  "files": [
+    {
+      "file_path": "src/runtime/core_headers.h",
+      "code_diff": "<<<<<<< SEARCH\n#ifndef GUST_CORE_HEADERS_H\n#define GUST_CORE_HEADERS_H\n\n#define _GNU_SOURCE\n#include <stdio.h> \n#include <stdlib.h> \n#include <stdint.h> \n#include <string.h> \n#include <pthread.h> \n#include <sched.h> \n#include <sys/types.h> \n#include <dirent.h> \n\ntypedef void Any;\n=======\n#ifndef GUST_CORE_HEADERS_H\n#define GUST_CORE_HEADERS_H\n\n#define _GNU_SOURCE\n#include <stdio.h> \n#include <stdlib.h> \n#include <stdint.h> \n#include <string.h> \n#include <pthread.h> \n#include <sched.h> \n#include <sys/types.h> \n#include <dirent.h> \n\n#if defined(_MSC_VER)\n#define GUST_THREAD_LOCAL __declspec(thread)\n#elif defined(__GNUC__) || defined(__clang__)\n#define GUST_THREAD_LOCAL __thread\n#elif __STDC_VERSION__ >= 201112L\n#define GUST_THREAD_LOCAL _Thread_local\n#else\n#define GUST_THREAD_LOCAL\n#endif\n\n#if defined(__GNUC__) || defined(__clang__)\n#define GUST_UNLIKELY(x) __builtin_expect(!!(x), 0)\n#else\n#define GUST_UNLIKELY(x) (x)\n#endif\n\n#define GUST_TICK_INTERVAL 4096\nextern GUST_THREAD_LOCAL int gust_loop_ticks;\n\ntypedef void Any;\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "src/runtime/scratch.c",
+      "code_diff": "<<<<<<< SEARCH\n#ifndef GUST_SCRATCH_SIZE\n#define GUST_SCRATCH_SIZE 16384\n#endif\n\n#if defined(_MSC_VER)\n#define GUST_THREAD_LOCAL __declspec(thread)\n#elif defined(__GNUC__) || defined(__clang__)\n#define GUST_THREAD_LOCAL __thread\n#elif __STDC_VERSION__ >= 201112L\n#define GUST_THREAD_LOCAL _Thread_local\n#else\n#define GUST_THREAD_LOCAL\n#endif\n\ntypedef struct {\n=======\n#ifndef GUST_SCRATCH_SIZE\n#define GUST_SCRATCH_SIZE 16384\n#endif\n\ntypedef struct {\n>>>>>>> REPLACE"
+    },
+    {
+      "file_path": "src/runtime/fiber.c",
+      "code_diff": "<<<<<<< SEARCH\ntypedef struct {\n    int id;\n    pthread_t thread;\n    gust_Fiber* run_queue_head;\n    gust_Fiber* run_queue_tail;\n    pthread_mutex_t lock;\n    gust_Fiber* active_fiber;\n    gust_Fiber shard_fiber;\n} gust_SchedulerShard;\n\n#if defined(_MSC_VER)\n#define GUST_THREAD_LOCAL __declspec(thread)\n#elif defined(__GNUC__) || defined(__clang__)\n#define GUST_THREAD_LOCAL __thread\n#elif __STDC_VERSION__ >= 201112L\n#define GUST_THREAD_LOCAL _Thread_local\n#else\n#define GUST_THREAD_LOCAL\n#endif\n\nstatic GUST_THREAD_LOCAL gust_SchedulerShard* active_shard = NULL;\n=======\ntypedef struct {\n    int id;\n    pthread_t thread;\n    gust_Fiber* run_queue_head;\n    gust_Fiber* run_queue_tail;\n    pthread_mutex_t lock;\n    gust_Fiber* active_fiber;\n    gust_Fiber shard_fiber;\n} gust_SchedulerShard;\n\nGUST_THREAD_LOCAL int gust_loop_ticks = GUST_TICK_INTERVAL;\n\nstatic GUST_THREAD_LOCAL gust_SchedulerShard* active_shard = NULL;\n>>>>>>> REPLACE"
+    }
+  ]
+}

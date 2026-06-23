@@ -6,16 +6,6 @@
 #define GUST_SCRATCH_SIZE 16384
 #endif
 
-#if defined(_MSC_VER)
-#define GUST_THREAD_LOCAL __declspec(thread)
-#elif defined(__GNUC__) || defined(__clang__)
-#define GUST_THREAD_LOCAL __thread
-#elif __STDC_VERSION__ >= 201112L
-#define GUST_THREAD_LOCAL _Thread_local
-#else
-#define GUST_THREAD_LOCAL
-#endif
-
 typedef struct {
     unsigned char buffer[GUST_SCRATCH_SIZE];
     size_t offset;

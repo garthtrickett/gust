@@ -36,15 +36,7 @@ typedef struct {
     gust_Fiber shard_fiber;
 } gust_SchedulerShard;
 
-#if defined(_MSC_VER)
-#define GUST_THREAD_LOCAL __declspec(thread)
-#elif defined(__GNUC__) || defined(__clang__)
-#define GUST_THREAD_LOCAL __thread
-#elif __STDC_VERSION__ >= 201112L
-#define GUST_THREAD_LOCAL _Thread_local
-#else
-#define GUST_THREAD_LOCAL
-#endif
+GUST_THREAD_LOCAL int gust_loop_ticks = GUST_TICK_INTERVAL;
 
 static GUST_THREAD_LOCAL gust_SchedulerShard* active_shard = NULL;
 static int gust_num_shards = 0;
