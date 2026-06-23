@@ -1,13 +1,9 @@
 {
-  "summary": "feat: implement conditional path formatting in report_error and add test_path_error_diagnostic_rejected",
+  "summary": "feat: set current_file in topological compilation passes of test_runner_entry",
   "files": [
     {
-      "file_path": "compiler/typechecker.gst",
-      "code_diff": "<<<<<<< SEARCH\nfunc report_error(kind_tag: int, message: str, span: token.Span, env: *TypeEnvironment[ctx], ctx: &Arena) { \n    mut err_msg := std.Format(\"TypeError at line %d:%d: %s\", span.start.line, span.start.column, message);\n    typechecker_log_trace(\"❌\", err_msg, ctx);\n\n    unsafe {\n        mut err: errors.CompilerError[ctx];\n        err.kind.tag = kind_tag; // 2 for TypeError\n        err.message = std.Clone(ctx, message);\n        err.span = span;\n        (*env).errors.Push(err);\n    }\n}\n=======\nfunc report_error(kind_tag: int, message: str, span: token.Span, env: *TypeEnvironment[ctx], ctx: &Arena) { \n    mut current_file := \"\";\n    unsafe {\n        current_file = (*env).current_file;\n    }\n\n    mut err_msg := \"\";\n    if std.str_eq(current_file, \"\") == 1 {\n        err_msg = std.Format(\"TypeError at line %d:%d: %s\", span.start.line, span.start.column, message);\n    } else {\n        err_msg = std.Format(\"TypeError in %s at line %d:%d: %s\", current_file, span.start.line, span.start.column, message);\n    }\n    typechecker_log_trace(\"❌\", err_msg, ctx);\n\n    unsafe {\n        mut err: errors.CompilerError[ctx];\n        err.kind.tag = kind_tag; // 2 for TypeError\n        err.message = std.Clone(ctx, message);\n        err.span = span;\n        (*env).errors.Push(err);\n    }\n}\n>>>>>>> REPLACE"
-    },
-    {
-      "file_path": "tests/test_path_error_diagnostic_rejected.gst",
-      "code_diff": "<<<<<<< SEARCH\n=======\ntype Violating struct {\n    name: str\n}\nfunc main() {}\n>>>>>>> REPLACE"
+      "file_path": "compiler/test_runner_entry.gst",
+      "code_diff": "<<<<<<< SEARCH\n        // Set current prefix and pre-register statements\n        env.current_prefix = prefix;\n        unsafe {\n            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];\n=======\n        // Set current prefix and pre-register statements\n        env.current_prefix = prefix;\n        env.current_file = path;\n        unsafe {\n            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];\n>>>>>>> REPLACE\n<<<<<<< SEARCH\n    mut j := 0;\n    while j < len(order) {\n        mut prog := programs[j];\n        mut prefix := module_prefixes[j];\n\n        env.current_prefix = prefix;\n\n        unsafe {\n            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];\n=======\n    mut j := 0;\n    while j < len(order) {\n        mut prog := programs[j];\n        mut prefix := module_prefixes[j];\n\n        env.current_prefix = prefix;\n        env.current_file = order[j];\n\n        unsafe {\n            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];\n>>>>>>> REPLACE"
     }
   ]
 }

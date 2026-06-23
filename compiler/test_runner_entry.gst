@@ -86,6 +86,7 @@ func main() {
 
         // Set current prefix and pre-register statements
         env.current_prefix = prefix;
+        env.current_file = path;
         unsafe {
             mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
             mut k := 0;
@@ -107,6 +108,7 @@ func main() {
         mut prefix := module_prefixes[j];
 
         env.current_prefix = prefix;
+        env.current_file = order[j];
 
         unsafe {
             mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
