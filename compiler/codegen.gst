@@ -4072,7 +4072,7 @@ typedef void Any;
         }
 
         mut work_list: std.Vector[str, ctx] := std.VectorNew(ctx);
-        mut keys_needed := clone_helpers_needed.Keys(ctx);
+        mut keys_needed := typechecker.typechecker_get_sorted_keys_int(&clone_helpers_needed, ctx);
         mut i_key := 0;
         while i_key < len(keys_needed) {
             work_list.Push(std.Clone(ctx, keys_needed[i_key]));
