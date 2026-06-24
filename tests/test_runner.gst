@@ -1557,6 +1557,18 @@ func main() {
     t_ref_mismatch_rej.expected = "Explicit Type Annotation Mismatch";
     tests.Push(t_ref_mismatch_rej);
 
+    mut t_string_esc_viol: Test[ctx];
+    t_string_esc_viol.path = "tests/test_string_escape_return_violation_rejected.gst";
+    t_string_esc_viol.is_negative = 1;
+    t_string_esc_viol.expected = "Escape analysis violation";
+    tests.Push(t_string_esc_viol);
+
+    mut t_string_no_ctx: Test[ctx];
+    t_string_no_ctx.path = "tests/test_string_concat_no_ctx_rejected.gst";
+    t_string_no_ctx.is_negative = 1;
+    t_string_no_ctx.expected = "expects 3 arguments";
+    tests.Push(t_string_no_ctx);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
