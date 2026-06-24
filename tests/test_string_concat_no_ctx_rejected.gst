@@ -1,3 +1,3 @@
 func main() {
-    mut s := std.Concat("Hello ", "World");
+    mut s := std.Concat("Hello ", "World", 42);
 }

@@ -1566,7 +1566,7 @@ func main() {
     mut t_string_no_ctx: Test[ctx];
     t_string_no_ctx.path = "tests/test_string_concat_no_ctx_rejected.gst";
     t_string_no_ctx.is_negative = 1;
-    t_string_no_ctx.expected = "expects 3 arguments";
+    t_string_no_ctx.expected = "type mismatch";
     tests.Push(t_string_no_ctx);
 
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
