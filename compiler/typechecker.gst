@@ -1918,9 +1918,48 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 return t_void;
             }
 
+            mut has_custom_sig := 0;
+            mut sig: FunctionSignature[ctx];
+            
+            if std.str_eq(resolved_func, "std_Concat") || std.str_eq(resolved_func, "std.Concat") {
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg_len := len(*args_vec);
+                sig.param_names = std.VectorNew(ctx);
+                sig.params = std.VectorNew(ctx);
+                sig.return_origins = set_init(ctx);
+                sig.return_type.tag = 5; // Str
+                
+                sig.param_names.Push("s1");
+                sig.param_names.Push("s2");
+                sig.params.Push(make_type_str());
+                sig.params.Push(make_type_str());
+                if arg_len >= 3 { 
+                    sig.param_names.Push("ctx");
+                    sig.params.Push(make_type_pointer(make_type_arena(), ctx));
+                }
+                has_custom_sig = 1;
+            } else if std.str_eq(resolved_func, "std_FormatInt") || std.str_eq(resolved_func, "std.FormatInt") {
+                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut arg_len := len(*args_vec);
+                sig.param_names = std.VectorNew(ctx); 
+                sig.params = std.VectorNew(ctx);
+                sig.return_origins = set_init(ctx);
+                sig.return_type.tag = 5; // Str
+                
+                sig.param_names.Push("val");
+                sig.params.Push(make_type_int());
+                if arg_len >= 2 { 
+                    sig.param_names.Push("ctx");
+                    sig.params.Push(make_type_pointer(make_type_arena(), ctx));
+                }
+                has_custom_sig = 1;
+            }
+
             mut sig_lookup := (*env).function_registry.Get(resolved_func);
-            if sig_lookup.Ok {
-                mut sig := sig_lookup.Val;
+            if has_custom_sig == 1 || sig_lookup.Ok { 
+                if has_custom_sig == 0 {
+                    sig = sig_lookup.Val;
+                }
 
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut evaluated_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
