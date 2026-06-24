@@ -828,7 +828,7 @@ func codegen_get_erased_struct_name(name: str, env: &typechecker.TypeEnvironment
 
 func codegen_find_original_struct_name(erased_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
-        mut keys := (*env).struct_registry.Keys(ctx);
+        mut keys := typechecker.typechecker_get_sorted_keys_layout(&(*env).struct_registry, ctx);
         mut i := 0;
         while i < len(keys) {
             mut key := keys[i];
