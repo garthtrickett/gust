@@ -74,7 +74,6 @@ func test_worker_task(arg: *TestTaskArg[ctx]) {
 }
 
 
-REPLACEMENT:
 func run_test(t: Test[ctx]) int {
     mut tl := os.GetThreadScratch();
     mut local_ctx := tl.arena;
@@ -149,7 +148,7 @@ func run_test(t: Test[ctx]) int {
             run_system_cmd("mkdir -p temp_e2e_guard_test_dir/nested && echo 'func main() {}' > temp_e2e_guard_test_dir/nested/file1.gst");
         }
         if std.str_find(path, "e2e_filesystem_ops") != 0 - 1 {
-            run_system_cmd("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/f
+            run_system_cmd("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/file2.txt");
         }
 
         mut cmd_comp := std.Concat("./gust ", path);
