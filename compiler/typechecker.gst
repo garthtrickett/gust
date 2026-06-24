@@ -1736,7 +1736,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std.Format") {
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 if len(*args_vec) < 1 {
-                    mut msg := "Semantic Error: std.Format expects at least 1 argument (the format string literal)";
+                    mut msg := "Semantic Error: std.Format expects at least 1 argument";
                     report_error(2, msg, expr.Call.span, env, ctx);
                     mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
                     return dummy;
@@ -1744,18 +1744,37 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[arg0_idx] = (*args_vec)[0];
                 mut arg0_type := check_expression(arg0_idx, env, scope, ctx);
-                if arg0_type.tag != 5 { // Str
-                    mut msg := "Semantic Error: First argument to std.Format must be a string literal";
-                    report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                mut resolved_arg0 := env_resolve_type(env, arg0_type, ctx);
+
+                mut format_arg_idx := 0;
+                mut has_ctx_param := 0;
+                if resolved_arg0.tag == 4 || resolved_arg0.tag == 9 || resolved_arg0.tag == 11 {
+                    format_arg_idx = 1;
+                    has_ctx_param = 1;
                 }
 
-                mut format_expr := ctx[arg0_idx];
+                if len(*args_vec) <= format_arg_idx {
+                    mut msg := "Semantic Error: std.Format expects a format string literal";
+                    report_error(2, msg, expr.Call.span, env, ctx);
+                    mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
+                    return dummy;
+                }
+
+                mut format_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[format_expr_idx] = (*args_vec)[format_arg_idx];
+                mut format_expr_type := check_expression(format_expr_idx, env, scope, ctx);
+                if format_expr_type.tag != 5 { // Str
+                    mut msg := "Semantic Error: Format argument to std.Format must be a string literal";
+                    report_error(2, msg, get_expression_span(format_expr_idx, ctx), env, ctx);
+                }
+
+                mut format_expr := ctx[format_expr_idx];
                 mut format_str := "";
                 if format_expr.tag == 2 { // String
                     format_str = format_expr.String.val;
                 } else {
-                    mut msg := "Semantic Error: First argument to std.Format must be a string literal";
-                    report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
+                    mut msg := "Semantic Error: Format argument to std.Format must be a string literal";
+                    report_error(2, msg, get_expression_span(format_expr_idx, ctx), env, ctx);
                 }
 
                 mut specifier_types: std.Vector[int, ctx] := std.VectorNew(ctx);
@@ -1789,7 +1808,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 mut expected_count := len(specifier_types);
-                mut trailing_args_count := len(*args_vec) - 1;
+                mut trailing_args_count := len(*args_vec) - 1 - format_arg_idx;
                 if trailing_args_count != expected_count {
                     mut msg := std.Format("Semantic Error: std.Format template expected %d arguments, but got %d", expected_count, trailing_args_count);
                     report_error(2, msg, expr.Call.span, env, ctx);
@@ -1799,7 +1818,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                 mut j := 0;
                 while j < expected_count {
-                    mut arg_idx := j + 1;
+                    mut arg_idx := j + 1 + format_arg_idx;
                     mut expected_t := specifier_types[j];
                     
                     mut param_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
@@ -1814,10 +1833,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
                     } else {
                         mut is_compatible := 0;
-                        if resolved_arg.tag == 0 { is_compatible = 1; } // Int
-                        if resolved_arg.tag == 1 { is_compatible = 1; } // Byte
-                        if resolved_arg.tag == 2 { is_compatible = 1; } // Bool
-                        if resolved_arg.tag == 7 { is_compatible = 1; } // Index
+                        if resolved_arg.tag == 0 { is_compatible = 1; }
+                        if resolved_arg.tag == 1 { is_compatible = 1; }
+                        if resolved_arg.tag == 2 { is_compatible = 1; }
+                        if resolved_arg.tag == 7 { is_compatible = 1; }
                         
                         if is_compatible == 0 {
                             mut msg := std.Format("Semantic Error: std.Format argument %d expected Int, Byte, Bool, or Index, but got %s", arg_idx, ast.serialize_type(resolved_arg, ctx));
