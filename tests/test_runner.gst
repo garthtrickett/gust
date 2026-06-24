@@ -73,7 +73,9 @@ func test_worker_task(arg: *TestTaskArg[ctx]) {
     }
 }
 
-func run_test(t: Test[ctx], mutex: std.Mutex[SysLock, ctx]) int {
+
+REPLACEMENT:
+func run_test(t: Test[ctx]) int {
     mut tl := os.GetThreadScratch();
     mut local_ctx := tl.arena;
     mut path := t.path;
@@ -81,7 +83,7 @@ func run_test(t: Test[ctx], mutex: std.Mutex[SysLock, ctx]) int {
     mut exp := t.expected;
     mut status := 0;
 
-    run_system_cmd("mkdir -p build", mutex);
+    run_system_cmd("mkdir -p build");
 
     // Generate a unique identifier for this test based on its path
     mut test_id := "";
@@ -119,7 +121,7 @@ func run_test(t: Test[ctx], mutex: std.Mutex[SysLock, ctx]) int {
         cmd = std.Concat(cmd, " > ");
         cmd = std.Concat(cmd, temp_log);
         cmd = std.Concat(cmd, " 2>&1");
-        status = run_system_cmd(cmd, mutex);
+        status = run_system_cmd(cmd);
 
         if status == 0 {
             mut msg := std.Format("❌ FAIL: %s (Expected compilation failure, but it succeeded)", path);
@@ -137,24 +139,24 @@ func run_test(t: Test[ctx], mutex: std.Mutex[SysLock, ctx]) int {
 
         // Cleanup on PASS
         mut rm_cmd := std.Concat("rm -f ", temp_log);
-        run_system_cmd(rm_cmd, mutex);
+        run_system_cmd(rm_cmd);
 
         mut msg := std.Format("✅ PASS: %s (Compilation failed with expected error: '%s')", path, exp);
         os.LogStr(msg);
         return 1;
     } else {
         if std.str_find(path, "e2e_fallible_guard_bootstrap") != 0 - 1 {
-            run_system_cmd("mkdir -p temp_e2e_guard_test_dir/nested && echo 'func main() {}' > temp_e2e_guard_test_dir/nested/file1.gst", mutex);
+            run_system_cmd("mkdir -p temp_e2e_guard_test_dir/nested && echo 'func main() {}' > temp_e2e_guard_test_dir/nested/file1.gst");
         }
         if std.str_find(path, "e2e_filesystem_ops") != 0 - 1 {
-            run_system_cmd("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/file2.txt", mutex);
+            run_system_cmd("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/f
         }
 
         mut cmd_comp := std.Concat("./gust ", path);
         cmd_comp = std.Concat(cmd_comp, " > ");
         cmd_comp = std.Concat(cmd_comp, temp_log);
         cmd_comp = std.Concat(cmd_comp, " 2>&1");
-        status = run_system_cmd(cmd_comp, mutex);
+        status = run_system_cmd(cmd_comp);
 
         if status != 0 {
             mut msg := std.Format("❌ FAIL: %s (Compilation failed! See %s for errors)", path, temp_log);
@@ -200,11 +202,11 @@ func run_test(t: Test[ctx], mutex: std.Mutex[SysLock, ctx]) int {
         compile_c_cmd = std.Concat(compile_c_cmd, " > ");
         compile_c_cmd = std.Concat(compile_c_cmd, c_comp_log);
         compile_c_cmd = std.Concat(compile_c_cmd, " 2>&1");
-        status = run_system_cmd(compile_c_cmd, mutex);
+        status = run_system_cmd(compile_c_cmd);
         if status != 0 {
             mut msg := std.Format("❌ FAIL: %s (Native C compilation failed! See %s for errors)", path, c_comp_log);
             os.LogStr(msg);
-            
+
             // SYSTEMATIC DIAGNOSTIC DUMP
             os.LogStr("🚨 --- SYSTEMATIC DIAGNOSTICS FOR NATIVE C FAILURE ---");
             mut temp_out := os.ReadFile(local_ctx, temp_log);
@@ -221,7 +223,7 @@ func run_test(t: Test[ctx], mutex: std.Mutex[SysLock, ctx]) int {
                 }
             }
             os.LogStr("------------------------------------------------------");
-            
+
             return 0;
         }
 
@@ -229,7 +231,7 @@ func run_test(t: Test[ctx], mutex: std.Mutex[SysLock, ctx]) int {
         run_cmd = std.Concat(run_cmd, " > ");
         run_cmd = std.Concat(run_cmd, run_log);
         run_cmd = std.Concat(run_cmd, " 2>&1");
-        status = run_system_cmd(run_cmd, mutex);
+        status = run_system_cmd(run_cmd);
 
         if is_neg == 2 {
             if status == 0 {
@@ -291,10 +293,10 @@ func run_test(t: Test[ctx], mutex: std.Mutex[SysLock, ctx]) int {
         }
 
         if std.str_find(path, "e2e_fallible_guard_bootstrap") != 0 - 1 {
-            run_system_cmd("rm -rf temp_e2e_guard_test_dir", mutex);
+            run_system_cmd("rm -rf temp_e2e_guard_test_dir");
         }
         if std.str_find(path, "e2e_filesystem_ops") != 0 - 1 {
-            run_system_cmd("rm -rf temp_e2e_filesystem_dir temp_e2e_filesystem_test.txt", mutex);
+            run_system_cmd("rm -rf temp_e2e_filesystem_dir temp_e2e_filesystem_test.txt");
         }
 
         // Cleanup on PASS
@@ -309,7 +311,7 @@ func run_test(t: Test[ctx], mutex: std.Mutex[SysLock, ctx]) int {
         rm_cmd = std.Concat(rm_cmd, final_c);
         rm_cmd = std.Concat(rm_cmd, " ");
         rm_cmd = std.Concat(rm_cmd, bin_path);
-        run_system_cmd(rm_cmd, mutex);
+        run_system_cmd(rm_cmd);
 
         mut msg := "";
         if is_neg == 2 {
@@ -321,6 +323,7 @@ func run_test(t: Test[ctx], mutex: std.Mutex[SysLock, ctx]) int {
         return 1;
     }
 }
+
 
 func main() {
     mut ctx := os.Arena.New();
@@ -1557,7 +1560,6 @@ func main() {
 
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
-    mut m: std.Mutex[SysLock, ctx] := std.MutexNew(ctx);
 
     mut i := 0;
     while i < len(tests) { 
@@ -1565,7 +1567,6 @@ func main() {
         mut arg: TestTaskArg[ctx];
         arg.test = t;
         arg.chan = chan;
-        arg.mutex = m;
 
         mut arg_idx := os.ArenaAlloc(ctx) as Index[TestTaskArg[ctx], ctx];
         ctx[arg_idx] = arg;
