@@ -200,6 +200,24 @@ func run_test(t: Test[ctx]) int {
         if status != 0 {
             mut msg := std.Format("❌ FAIL: %s (Native C compilation failed! See %s for errors)", path, c_comp_log);
             os.LogStr(msg);
+            
+            // SYSTEMATIC DIAGNOSTIC DUMP
+            os.LogStr("🚨 --- SYSTEMATIC DIAGNOSTICS FOR NATIVE C FAILURE ---");
+            mut temp_out := os.ReadFile(local_ctx, temp_log);
+            os.LogStr(std.Format("Temp Log Length: %d bytes", len(temp_out)));
+            if len(temp_out) > 0 {
+                os.LogStr("--- Last 15 Lines of Temp Log ---");
+                mut t_lines := std.str_split(temp_out, "\n", local_ctx);
+                mut start_line := len(t_lines) - 15;
+                if start_line < 0 { start_line = 0; }
+                mut line_idx := start_line;
+                while line_idx < len(t_lines) {
+                    os.LogStr(t_lines[line_idx]);
+                    line_idx = line_idx + 1;
+                }
+            }
+            os.LogStr("------------------------------------------------------");
+            
             return 0;
         }
 
