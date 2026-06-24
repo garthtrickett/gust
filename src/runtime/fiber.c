@@ -299,18 +299,24 @@ void* gust_shard_loop(void* arg) {
                 shard->run_queue_tail = NULL;
             }
             next->next = NULL;
-        }
-        pthread_mutex_unlock(&shard->lock);
 
-        if (next) {
+            // Safely transition the fiber state inside the locked critical section
+            // to prevent TOCTOU races during scheduler shutdown/destruction.
             next->parent = &shard->shard_fiber;
             shard->active_fiber = next;
             next->shard = shard;
             next->state = GUST_FIBER_RUNNING;
+        }
+        pthread_mutex_unlock(&shard->lock);
 
+        if (next) {
             gust_fiber_switch(&shard->shard_fiber, next);
 
+            // Re-lock to safely nullify active_fiber before scheduler checks can see it.
+            pthread_mutex_lock(&shard->lock);
             shard->active_fiber = NULL;
+            pthread_mutex_unlock(&shard->lock);
+
             if (next->state == GUST_FIBER_DEAD) {
                 gust_fiber_free(next);
             }

@@ -105,7 +105,7 @@
               fi
 
               # Filter out structural log emojis to output clean transpiled C code
-              grep -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/temp_output.log > build/''${TEST_STEM}.c
+              grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/temp_output.log > build/''${TEST_STEM}.c
 
               # Combine with runtime and compile C binary
               echo -e "\n=== [2/3] COMPILING NATIVE C EXECUTABLE ===" >> to.log
