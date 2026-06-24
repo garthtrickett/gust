@@ -4376,6 +4376,8 @@ typedef void Any;
             mut has_bool := codegen_has_boolean_fields(t_struct, env, ctx);
             if has_bool == 1 {
                 guard orig_key := erased_to_original.Get(key) else {
+                    os.LogStr(std.Concat("🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", key));
+                    os.Exit(1);
                     return std.Clone(ctx, "");
                 }
                 mut layout_lookup := (*env).struct_registry.Get(orig_key);
