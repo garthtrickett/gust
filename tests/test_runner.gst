@@ -5,14 +5,9 @@ type Test[ctx] struct {
     expected: str
 }
 
-type SysLock struct {
-    dummy: int
-}
-
 type TestTaskArg[ctx] struct {
     test: Test[ctx],
-    chan: std.Channel[int, ctx],
-    mutex: std.Mutex[SysLock, ctx]
+    chan: std.Channel[int, ctx]
 }
 
 type StringHeader struct {
@@ -62,13 +57,8 @@ func join_lines(lines: std.Vector[str, ctx], ctx: &Arena) str {
     }
 }
 
-func run_system_cmd(cmd: str, mutex: std.Mutex[SysLock, ctx]) int {
-    unsafe {
-        mutex.Lock();
-        mut status := os.System(cmd);
-        mutex.Unlock();
-        return status;
-    }
+func run_system_cmd(cmd: str) int {
+    return os.System(cmd);
 }
 
 func test_worker_task(arg: *TestTaskArg[ctx]) {
@@ -78,8 +68,7 @@ func test_worker_task(arg: *TestTaskArg[ctx]) {
 
     unsafe {
         mut t := (*arg).test;
-        mut mutex := (*arg).mutex;
-        mut ok := run_test(t, mutex);
+        mut ok := run_test(t);
         (*arg).chan.Send(ok);
     }
 }
