@@ -234,6 +234,8 @@ Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char fi
 
 extern char** environ;
 
+static pthread_mutex_t os_system_spawn_lock = PTHREAD_MUTEX_INITIALIZER;
+
 int os_System(Slice_unsigned_char cmd) {
     if (cmd.len < 0) return -1;
     char* buf = (char*)malloc(cmd.len + 1);
@@ -247,7 +249,11 @@ int os_System(Slice_unsigned_char cmd) {
     pid_t pid;
     int status = 0;
     
+    // Serialize only the posix_spawn process-creation phase to resolve glibc deadlocks
+    pthread_mutex_lock(&os_system_spawn_lock);
     int spawn_status = posix_spawn(&pid, "/bin/sh", NULL, NULL, argv, environ);
+    pthread_mutex_unlock(&os_system_spawn_lock);
+    
     free(buf);
     
     if (spawn_status == 0) {
