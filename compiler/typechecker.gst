@@ -1820,7 +1820,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 while j < expected_count {
                     mut arg_idx := j + 1 + format_arg_idx;
                     mut expected_t := specifier_types[j];
-                    
+
                     mut param_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[param_idx] = (*args_vec)[arg_idx];
                     mut arg_type := check_expression(param_idx, env, scope, ctx);
@@ -1837,7 +1837,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if resolved_arg.tag == 1 { is_compatible = 1; }
                         if resolved_arg.tag == 2 { is_compatible = 1; }
                         if resolved_arg.tag == 7 { is_compatible = 1; }
-                        
+
                         if is_compatible == 0 {
                             mut msg := std.Format("Semantic Error: std.Format argument %d expected Int, Byte, Bool, or Index, but got %s", arg_idx, ast.serialize_type(resolved_arg, ctx));
                             report_error(2, msg, get_expression_span(param_idx, ctx), env, ctx);
@@ -1955,12 +1955,18 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 has_custom_sig = 1;
             }
 
-            mut sig_lookup := (*env).function_registry.Get(resolved_func);
-            if has_custom_sig == 1 || sig_lookup.Ok { 
-                if has_custom_sig == 0 {
+            mut is_valid_func := 0;
+            if has_custom_sig == 1 {
+                is_valid_func = 1;
+            } else {
+                mut sig_lookup := (*env).function_registry.Get(resolved_func);
+                if sig_lookup.Ok {
                     sig = sig_lookup.Val;
+                    is_valid_func = 1;
                 }
+            }
 
+            if is_valid_func == 1 {
                 mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                 mut evaluated_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
                 
