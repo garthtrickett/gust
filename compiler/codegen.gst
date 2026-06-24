@@ -1178,8 +1178,6 @@ func codegen_get_topologically_sorted_structs(env: &typechecker.TypeEnvironment[
 }
 
 func codegen_log_trace(emoji: str, message: str, ctx: &Arena) {
-    mut formatted := std.Format("%s %s", emoji, message);
-    os.LogStr(formatted);
 }
 
 func codegen_get_expression_span(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) token.Span {

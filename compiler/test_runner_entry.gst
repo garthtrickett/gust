@@ -229,82 +229,10 @@ func main() {
         os.Exit(1);
     }
 
-    // Print full Type Environment dump for bootstrapping diagnostics
-    os.LogStr("👁️ === BOOTSTRAP TYPE DUMP ===");
-    mut serialized := typechecker.typechecker_serialize_type_environment(&env, ctx);
-    mut lines := std.str_split(serialized, "\n", ctx);
-    mut l_idx := 0;
-    while l_idx < len(lines) {
-        mut line := lines[l_idx];
-        if len(line) > 0 {
-            mut log_line := std.Concat("👁️ ", line);
-            os.LogStr(log_line);
-        }
-        l_idx = l_idx + 1;
-    }
-    os.LogStr("👁️ ===========================");
-
-    // Print all nested resolved types
-    os.LogStr("👁️ === BOOTSTRAP RESOLVED TYPES ===");
-    mut entry_source_code := os.ReadFile(ctx, file_path);
-    mut r_idx := 0;
-    while r_idx < len(env.resolved_types_nested) {
-        mut entry := env.resolved_types_nested[r_idx];
-        mut log_pfx := std.Concat("👁️ Prefix: ", entry.prefix);
-        os.LogStr(log_pfx);
-        
-        mut t_idx := 0;
-            while t_idx < len(entry.types) {
-                mut t_entry := entry.types[t_idx];
-                mut start_str := std.FormatInt(t_entry.start_offset);
-                mut end_str := std.FormatInt(t_entry.end_offset);
-                mut type_str := ast.serialize_type(t_entry.val_type, ctx);
-
-                mut expr_text := "";
-                if std.str_eq(entry.prefix, "") == 1 {
-                    if t_entry.start_offset >= 0 && t_entry.end_offset <= len(entry_source_code) && t_entry.start_offset < t_entry.end_offset {
-                        expr_text = std.str_slice(entry_source_code, t_entry.start_offset, t_entry.end_offset);
-                    }
-                }
-
-                // Sanitize expr_text to remove newlines and keep the log strictly single-line
-                mut clean_expr_text := "";
-                mut char_idx := 0;
-                while char_idx < len(expr_text) {
-                    mut b := std.str_byte_at(expr_text, char_idx);
-                    if b == 10 || b == 13 { // '\n' or '\r'
-                        clean_expr_text = std.Concat(clean_expr_text, " ");
-                    } else {
-                        clean_expr_text = std.Concat(clean_expr_text, std.str_slice(expr_text, char_idx, char_idx + 1));
-                    }
-                    char_idx = char_idx + 1;
-                }
-
-                mut log_line := std.Concat("👁   Span ", start_str);
-                log_line = std.Concat(log_line, "..");
-                log_line = std.Concat(log_line, end_str);
-                log_line = std.Concat(log_line, " ('");
-                log_line = std.Concat(log_line, clean_expr_text);
-                log_line = std.Concat(log_line, "') -> ");
-                log_line = std.Concat(log_line, type_str);
-                os.LogStr(log_line);
-
-                if std.str_find(expr_text, "env.errors") != 0 - 1 {
-                    mut log_match := std.Concat("🎯 MATCH env.errors: '", clean_expr_text);
-                    log_match = std.Concat(log_match, "'");
-                    os.LogStr(log_match);
-                }
-            
-            t_idx = t_idx + 1;
-        }
-        r_idx = r_idx + 1;
-    }
-    os.LogStr("👁️ =================================");
-
     // Reset current_prefix to entry module for main call matching
     env.current_prefix = "";
 
     // 7. Generate Code
-        mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);
-        os.LogStr(c_code);
+    mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);
+    os.LogStr(c_code);
 }

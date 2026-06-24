@@ -4431,8 +4431,6 @@ func report_error(kind_tag: int, message: str, span: token.Span, env: *TypeEnvir
 }
 
 func typechecker_log_trace(emoji: str, message: str, ctx: &Arena) {
-    mut formatted := std.Format("%s %s", emoji, message);
-    os.LogStr(formatted);
 }
 
 func get_expression_span(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) token.Span {
