@@ -2721,9 +2721,18 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 if len(*args_vec) == 0 {
                     return std.Clone(ctx, "((Slice_unsigned_char){ NULL, 0 })");
                 }
+
+                mut format_arg_idx := 0;
+                mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[arg0_idx] = (*args_vec)[0];
+                mut arg0_type := codegen_get_expression_type(arg0_idx, env, ctx);
+                mut resolved_arg0 := typechecker.env_resolve_type(env, arg0_type, ctx);
+                if resolved_arg0.tag == 4 || resolved_arg0.tag == 9 || resolved_arg0.tag == 11 { 
+                    format_arg_idx = 1;
+                }
                 
                 mut format_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[format_expr_idx] = (*args_vec)[0];
+                ctx[format_expr_idx] = (*args_vec)[format_arg_idx];
                 mut format_expr := ctx[format_expr_idx];
                 
                 mut format_str := "";
@@ -2748,7 +2757,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                                 idx = idx + 2;
                             } else {
                                 spec_count = spec_count + 1;
-                                mut arg_idx := spec_count;
+                                mut arg_idx := spec_count + format_arg_idx;
                                 mut arg_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                                 ctx[arg_expr_idx] = (*args_vec)[arg_idx];
                                 mut arg_str := codegen_generate_expression(arg_expr_idx, env, ctx);
