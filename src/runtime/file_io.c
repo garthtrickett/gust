@@ -50,6 +50,8 @@ int os_WriteFile(Slice_unsigned_char path, Slice_unsigned_char contents) {
     }
 
     size_t written = fwrite(contents.data, 1, contents.len, f);
+    fflush(f);
+    fsync(fileno(f));
     fclose(f);
     return written == (size_t)contents.len ? 1 : 0;
 }

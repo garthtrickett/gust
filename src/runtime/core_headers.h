@@ -12,6 +12,7 @@
 #include <dirent.h> 
 #include <spawn.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #if defined(_MSC_VER)
 #define GUST_THREAD_LOCAL __declspec(thread)
