@@ -23,7 +23,9 @@ gust_bootstrap: gust_v4.c src/runtime.c
 
 build/gust_compiler.c: gust_bootstrap compiler/test_runner_entry.gst
 	mkdir -p build
-	./gust_bootstrap compiler/test_runner_entry.gst | grep -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_compiler.c && sync
+	./gust_bootstrap compiler/test_runner_entry.gst | grep -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_compiler.tmp
+	mv build/gust_compiler.tmp build/gust_compiler.c
+	sync
 
 gust: build/gust_compiler.c src/runtime.c
 	cat src/runtime.c build/gust_compiler.c > build/gust_final.c
@@ -33,20 +35,18 @@ gust: build/gust_compiler.c src/runtime.c
 bootstrap: gust
 	@echo "⚙️  Beginning fixed-point bootstrap verification..."
 	@# Stage 2: Use the new 'gust' binary to compile the compiler again
-	./gust compiler/test_runner_entry.gst | grep -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage2.c && sync
+	./gust compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage2.c && sync
 	@cat src/runtime.c build/gust_stage2.c > build/gust_stage2_final.c
 	@${CC} ${CFLAGS} ${INCLUDES} build/gust_stage2_final.c -o build/gust_stage2_bin
 	@# Stage 3: Use the Stage 2 binary to compile the compiler a third time
-	./build/gust_stage2_bin compiler/test_runner_entry.gst | grep -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c && sync
-	@# Stage 4: Assert byte-by-byte identity between Stage 2 and Stage 3 C files
+	./build/gust_stage2_bin compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c && sync	@# Stage 4: Assert byte-by-byte identity between Stage 2 and Stage 3 C files
 	@diff -u build/gust_stage2.c build/gust_stage3.c && echo "✅ Fixed-point bootstrap convergence achieved!"
 	cp build/gust_stage3.c gust_v4.c
 
 test: gust
 	@mkdir -p build
 	@echo "⚙️  Compiling native Gust test runner..."
-	@./gust tests/test_runner.gst | grep -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
-	@cat src/runtime.c build/test_runner.c > build/test_runner_final.c
+	@./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c	@cat src/runtime.c build/test_runner.c > build/test_runner_final.c
 	@${CC} ${CFLAGS} ${INCLUDES} build/test_runner_final.c -o build/test_runner_bin
 	@echo "🏃 Running native Gust test runner..."
 	@./build/test_runner_bin
