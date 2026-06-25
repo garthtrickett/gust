@@ -9,20 +9,24 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter
 
+# Track all compiler and runtime source files to ensure correct incremental builds
+COMPILER_SRCS = $(wildcard compiler/*.gst)
+RUNTIME_SRCS  = src/runtime.c $(wildcard src/runtime/*.c) $(wildcard src/runtime/*.h)
+
 all: gust
 
-gust_bootstrap: gust_v4.c src/runtime.c
+gust_bootstrap: gust_v4.c $(RUNTIME_SRCS)
 	mkdir -p build
 	cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c
 	${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c -o gust_bootstrap
 
-build/gust_compiler.c: gust_bootstrap compiler/test_runner_entry.gst
+build/gust_compiler.c: gust_bootstrap $(COMPILER_SRCS)
 	mkdir -p build
 	./gust_bootstrap compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_compiler.tmp
 	mv build/gust_compiler.tmp build/gust_compiler.c
 	sync
 
-gust: build/gust_compiler.c src/runtime.c
+gust: build/gust_compiler.c $(RUNTIME_SRCS)
 	cat src/runtime.c build/gust_compiler.c > build/gust_final.c
 	${CC} ${CFLAGS} ${INCLUDES} build/gust_final.c -o gust
 
@@ -38,6 +42,9 @@ bootstrap: gust
 	@# Stage 4: Assert byte-by-byte identity between Stage 2 and Stage 3 C files
 	@diff -u build/gust_stage2.c build/gust_stage3.c && echo "✅ Fixed-point bootstrap convergence achieved!"
 	cp build/gust_stage3.c gust_v4.c
+	cp build/gust_stage2_bin gust_bootstrap
+	touch build/gust_compiler.c
+	touch gust
 
 test: gust
 	@mkdir -p build
