@@ -84,7 +84,9 @@ func main() {
     mut t_generic_placeholder := typechecker.make_type_struct("T", "", ctx);
     mut res_struct := typechecker.substitute_generics(&env, t_generic_placeholder, subst_map, ctx);
     if res_struct.tag == 8 {
-        os.LogStr(res_struct.Struct.struct_name); // Should print: lib_module__MyStruct
+        unsafe {
+            os.LogStr(res_struct.Struct.struct_name); // Should print: lib_module__MyStruct
+        }
     }
 
     // Test 3: Test pointer-to-T '*T' substitution -> should resolve to *lib_module__MyStruct
@@ -101,9 +103,9 @@ func main() {
 
     // Test 4: Test slice-of-T '[]T' substitution -> should resolve to []lib_module__MyStruct
     mut t_slice: ast.Type[ctx];
-    t_slice.tag = 6;
-    t_slice.Slice.inner = os.ArenaAlloc(ctx);
-    unsafe {
+    unsafe { 
+        t_slice.tag = 6;
+        t_slice.Slice.inner = os.ArenaAlloc(ctx);
         ctx[t_slice.Slice.inner] = t_generic_placeholder;
     }
     mut res_slice := typechecker.substitute_generics(&env, t_slice, subst_map, ctx);
@@ -118,23 +120,22 @@ func main() {
 
     // Test 5: Namespaced generic type std.Vector[lib.MyStruct, ctx] -> std_Vector[lib_module__MyStruct, ctx]
     mut t_namespaced_vector: ast.Type[ctx];
-    t_namespaced_vector.tag = 10; // Generic
-    t_namespaced_vector.Generic.name = std.Clone(ctx, "std.Vector");
-    
     mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     args.Push(typechecker.make_type_struct("lib.MyStruct", "", ctx));
     args.Push(typechecker.make_type_struct("ctx", "", ctx));
     
-    t_namespaced_vector.Generic.args = os.ArenaAlloc(ctx);
     unsafe {
+        t_namespaced_vector.tag = 10; // Generic
+        t_namespaced_vector.Generic.name = std.Clone(ctx, "std.Vector");
+        t_namespaced_vector.Generic.args = os.ArenaAlloc(ctx);
         mut args_ptr := &ctx[t_namespaced_vector.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
         *args_ptr = args;
     }
 
     mut res_namespaced := typechecker.env_resolve_type(&env, t_namespaced_vector, ctx);
     if res_namespaced.tag == 10 {
-        os.LogStr(res_namespaced.Generic.name); // Should print: std_Vector
         unsafe {
+            os.LogStr(res_namespaced.Generic.name); // Should print: std_Vector
             mut res_args := &ctx[res_namespaced.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
             os.LogStr((*res_args)[0].Struct.struct_name); // Should print: lib_module__MyStruct
         }
@@ -193,8 +194,10 @@ func main() {
         mut field_lookup := layout.fields.Get("Next");
         if field_lookup.Ok {
             mut field_type := field_lookup.Val;
-            mut sub_field := typechecker.typechecker_substitute_field_brand(field_type, t_parent.Struct.brand, "n", layout, ctx);
-            os.LogStr(ast.serialize_type(sub_field, ctx)); // Expected: Index("SessionNode", Some("my_brand"))
+            unsafe {
+                mut sub_field := typechecker.typechecker_substitute_field_brand(field_type, t_parent.Struct.brand, "n", layout, ctx);
+                os.LogStr(ast.serialize_type(sub_field, ctx)); // Expected: Index("SessionNode", Some("my_brand"))
+            }
         } 
     }
 
@@ -207,7 +210,9 @@ func main() {
     // Test 11: Verify fallback monomorphization on env_resolve_type (Phase 2 Step 2 Fix)
     mut t_test := typechecker.make_type_struct("std_GraphNode_int_ctx", "", ctx);
     mut resolved_test := typechecker.env_resolve_type(&env, t_test, ctx);
-    os.LogStr(resolved_test.Struct.struct_name); // Expected: std_GraphNode_int_ctx
+    unsafe {
+        os.LogStr(resolved_test.Struct.struct_name); // Expected: std_GraphNode_int_ctx
+    }
     
     mut layout_test_lookup := env.struct_registry.Get("std_GraphNode_int_ctx");
     if layout_test_lookup.Ok {
@@ -219,9 +224,9 @@ func main() {
     // Test 12: Verify typechecker_parse_type_from_string (Step 1 Fix)
     mut parsed_t1 := typechecker.typechecker_parse_type_from_string("Index_MyNode_ctx", ctx);
     os.LogInt(parsed_t1.tag); // Expected: 7 (Index)
-    os.LogStr(parsed_t1.Index.struct_name); // Expected: MyNode_ctx
-    if parsed_t1.Index.brand != empty[Index[str, ctx]] { 
-        unsafe {
+    unsafe {
+        os.LogStr(parsed_t1.Index.struct_name); // Expected: MyNode_ctx
+        if parsed_t1.Index.brand != empty[Index[str, ctx]] { 
             mut b_ptr := &ctx[parsed_t1.Index.brand] as *str;
             os.LogStr(*b_ptr); // Expected: ctx
         }
@@ -237,8 +242,10 @@ func main() {
 
     // Step 2 Verification: Test String expression escaping
     mut expr_str_esc_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx[expr_str_esc_idx].tag = 2; // String
-    ctx[expr_str_esc_idx].String.val = "\"";
+    unsafe {
+        ctx[expr_str_esc_idx].tag = 2; // String
+        ctx[expr_str_esc_idx].String.val = "\"";
+    }
     mut res_str_esc := codegen.codegen_generate_expression(expr_str_esc_idx, &env, ctx);
     os.LogStr(res_str_esc); // Expected: ((Slice_unsigned_char){ (unsigned char*)"\"", 1 })
 
@@ -271,55 +278,71 @@ func main() {
 
     // Step 1: Verification Test for codegen_is_pool_type, codegen_is_rc_type, codegen_is_graph_type
     mut t_pool_direct: ast.Type[ctx];
-    t_pool_direct.tag = 8; // Struct
-    t_pool_direct.Struct.struct_name = "std_Pool_int_ctx";
-    t_pool_direct.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_pool_direct.tag = 8; // Struct
+        t_pool_direct.Struct.struct_name = "std_Pool_int_ctx";
+        t_pool_direct.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut t_pool_ptr: ast.Type[ctx];
-    t_pool_ptr.tag = 9; // RawPointer
-    t_pool_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_pool_ptr.RawPointer.inner] = t_pool_direct;
+    unsafe {
+        t_pool_ptr.tag = 9; // RawPointer
+        t_pool_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_pool_ptr.RawPointer.inner] = t_pool_direct;
+    }
 
     os.LogInt(codegen.codegen_is_pool_type(t_pool_direct, &env, ctx)); // Expected: 1
     os.LogInt(codegen.codegen_is_pool_type(t_pool_ptr, &env, ctx)); // Expected: 1
 
     mut t_rc_direct: ast.Type[ctx];
-    t_rc_direct.tag = 8; // Struct
-    t_rc_direct.Struct.struct_name = "std_Rc_int_ctx";
-    t_rc_direct.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_rc_direct.tag = 8; // Struct
+        t_rc_direct.Struct.struct_name = "std_Rc_int_ctx";
+        t_rc_direct.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut t_rc_ptr: ast.Type[ctx];
-    t_rc_ptr.tag = 9; // RawPointer
-    t_rc_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_rc_ptr.RawPointer.inner] = t_rc_direct;
+    unsafe {
+        t_rc_ptr.tag = 9; // RawPointer
+        t_rc_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_rc_ptr.RawPointer.inner] = t_rc_direct;
+    }
 
     os.LogInt(codegen.codegen_is_rc_type(t_rc_direct, &env, ctx)); // Expected: 1
     os.LogInt(codegen.codegen_is_rc_type(t_rc_ptr, &env, ctx)); // Expected: 1
 
     mut t_graph_direct: ast.Type[ctx];
-    t_graph_direct.tag = 8; // Struct
-    t_graph_direct.Struct.struct_name = "std_Graph_int_ctx";
-    t_graph_direct.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_graph_direct.tag = 8; // Struct
+        t_graph_direct.Struct.struct_name = "std_Graph_int_ctx";
+        t_graph_direct.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut t_graph_ptr: ast.Type[ctx];
-    t_graph_ptr.tag = 9; // RawPointer
-    t_graph_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_graph_ptr.RawPointer.inner] = t_graph_direct;
+    unsafe {
+        t_graph_ptr.tag = 9; // RawPointer
+        t_graph_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_graph_ptr.RawPointer.inner] = t_graph_direct;
+    }
 
     os.LogInt(codegen.codegen_is_graph_type(t_graph_direct, &env, ctx)); // Expected: 1
     os.LogInt(codegen.codegen_is_graph_type(t_graph_ptr, &env, ctx)); // Expected: 1
 
     mut t_gena_direct: ast.Type[ctx];
-    t_gena_direct.tag = 8; // Struct
-    t_gena_direct.Struct.struct_name = "std_GenerationalArena_int_ctx";
-    t_gena_direct.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_gena_direct.tag = 8; // Struct
+        t_gena_direct.Struct.struct_name = "std_GenerationalArena_int_ctx";
+        t_gena_direct.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut t_gena_ptr: ast.Type[ctx];
-    t_gena_ptr.tag = 9; // RawPointer
-    t_gena_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_gena_ptr.RawPointer.inner] = t_gena_direct;
+    unsafe {
+        t_gena_ptr.tag = 9; // RawPointer
+        t_gena_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_gena_ptr.RawPointer.inner] = t_gena_direct;
+    }
 
- os.LogInt(codegen.codegen_is_generational_arena_type(t_gena_direct, &env, ctx)); // Expected: 1
+    os.LogInt(codegen.codegen_is_generational_arena_type(t_gena_direct, &env, ctx)); // Expected: 1
     os.LogInt(codegen.codegen_is_generational_arena_type(t_gena_ptr, &env, ctx)); // Expected: 1
 
     // Step 2: Verification Test for std.Pool and std.Rc FFI Overrides
