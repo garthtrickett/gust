@@ -57,7 +57,7 @@ func main() {
             os.LogStr("Pending");
         }
         Active { name } => {
-            mut msg := std.Concat("Active: ", name);
+            mut msg := std.Concat("Active: ", *name);
             os.LogStr(msg);
         }
         Completed { duration } => {

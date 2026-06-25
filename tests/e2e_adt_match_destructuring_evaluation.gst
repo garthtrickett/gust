@@ -7,15 +7,15 @@ type Shape enum {
 func process(shape: Shape) int {
     match shape {
         Circle { radius } => {
-            return radius;
+            return *radius;
         }
         Rectangle { width, height } => {
-            return width + height;
+            return *width + *height;
         }
         Point => {
             return 123;
         }
-    }
+    } 
 }
 
 func main() {

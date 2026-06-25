@@ -3820,57 +3820,93 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 }
             }
             if tag == 8 { // Match
-                mut expr_idx := ctx[stmt_idx].Match.expression;
-                mut expr_str := codegen_generate_expression(expr_idx, env, ctx);
-                mut expr_t := codegen_get_expression_type(expr_idx, env, ctx);
-                
-                mut enum_name := "Shape";
-                if expr_t.tag == 8 { // Struct
-                    enum_name = expr_t.Struct.struct_name;
+            mut expr_idx := ctx[stmt_idx].Match.expression;
+            mut expr_str := codegen_generate_expression(expr_idx, env, ctx);
+            mut expr_t := codegen_get_expression_type(expr_idx, env, ctx);
+
+            mut enum_name := "Shape";
+            if expr_t.tag == 8 { // Struct
+                enum_name = expr_t.Struct.struct_name;
+            } else if expr_t.tag == 11 { // Reference
+                mut inner_t := ctx[expr_t.Reference.inner];
+                if inner_t.tag == 8 {
+                    enum_name = inner_t.Struct.struct_name;
                 }
-                mut erased_enum_name := codegen_get_erased_struct_name(enum_name, env, ctx);
-                
-                mut res := std.Concat("    switch (", expr_str);
-                res = std.Concat(res, ".tag) {\n");
-                
-                mut cases_vec := &ctx[ctx[stmt_idx].Match.cases] as *std.Vector[ast.MatchCase[ctx], ctx];
-                mut i := 0;
-                while i < len(*cases_vec) {
-                    mut case_val := (*cases_vec)[i];
-                    mut tag_name := std.Concat(erased_enum_name, "_Tag__");
-                    tag_name = std.Concat(tag_name, case_val.variant_name);
-                    
-                    res = std.Concat(res, "        case ");
-                    res = std.Concat(res, tag_name);
-                    res = std.Concat(res, ": {\n");
-                    
-                    mut variant_struct_name := std.Concat(erased_enum_name, "_");
-                    variant_struct_name = std.Concat(variant_struct_name, case_val.variant_name);
-                    mut layout_lookup := (*env).struct_registry.Get(variant_struct_name);
-                    if layout_lookup.Ok {
-                        mut fields_vec := &ctx[case_val.fields] as *std.Vector[str, ctx];
-                        mut f_idx := 0;
-                        while f_idx < len(*fields_vec) {
-                            mut field_name := (*fields_vec)[f_idx];
-                            mut f_type_lookup := layout_lookup.Val.fields.Get(field_name);
-                            if f_type_lookup.Ok {
-                                mut field_c_type := codegen_get_c_type(f_type_lookup.Val, env, ctx);
-                                mut bind_line := std.Concat("            ", field_c_type);
-                                bind_line = std.Concat(bind_line, " ");
-                                bind_line = std.Concat(bind_line, field_name);
-                                bind_line = std.Concat(bind_line, " = ");
-                                bind_line = std.Concat(bind_line, expr_str);
-                                bind_line = std.Concat(bind_line, ".");
-                                bind_line = std.Concat(bind_line, case_val.variant_name);
-                                bind_line = std.Concat(bind_line, ".");
-                                bind_line = std.Concat(bind_line, field_name);
-                                bind_line = std.Concat(bind_line, ";\n");
-                                res = std.Concat(res, bind_line);
-                            }
-                            f_idx = f_idx + 1;
+            } else if expr_t.tag == 9 { // RawPointer
+                mut inner_t := ctx[expr_t.RawPointer.inner];
+                if inner_t.tag == 8 {
+                    enum_name = inner_t.Struct.struct_name;
+                }
+            }
+            mut erased_enum_name := codegen_get_erased_struct_name(enum_name, env, ctx);
+
+            mut arrow_or_dot := ".";
+            if expr_t.tag == 9 || expr_t.tag == 11 {
+                arrow_or_dot = "->";
+            }
+
+            mut parent_brand := empty[Index[str, ctx]];
+            mut curr_t := expr_t;
+            while curr_t.tag == 9 || curr_t.tag == 11 {
+                if curr_t.tag == 9 {
+                    curr_t = ctx[curr_t.RawPointer.inner];
+                } else {
+                    curr_t = ctx[curr_t.Reference.inner];
+                }
+            }
+            if curr_t.tag == 8 {
+                parent_brand = curr_t.Struct.brand;
+            }
+
+            mut res := std.Concat("    switch (", expr_str);
+            res = std.Concat(res, arrow_or_dot);
+            res = std.Concat(res, "tag) {
+");
+
+            mut cases_vec := &ctx[ctx[stmt_idx].Match.cases] as *std.Vector[ast.MatchCase[ctx], ctx];
+            mut i := 0;
+            while i < len(*cases_vec) {
+                mut case_val := (*cases_vec)[i];
+                mut tag_name := std.Concat(erased_enum_name, "_Tag__");
+                tag_name = std.Concat(tag_name, case_val.variant_name);
+
+                res = std.Concat(res, "        case ");
+                res = std.Concat(res, tag_name);
+                res = std.Concat(res, ": {
+");
+
+                mut variant_struct_name := std.Concat(erased_enum_name, "_");
+                variant_struct_name = std.Concat(variant_struct_name, case_val.variant_name);
+                mut layout_lookup := (*env).struct_registry.Get(variant_struct_name);
+                if layout_lookup.Ok {
+                    mut fields_vec := &ctx[case_val.fields] as *std.Vector[str, ctx];
+                    mut f_idx := 0;
+                    while f_idx < len(*fields_vec) {
+                        mut field_name := (*fields_vec)[f_idx];
+                        mut f_type_lookup := layout_lookup.Val.fields.Get(field_name);
+                        if f_type_lookup.Ok {
+                            mut ref_t: ast.Type[ctx];
+                            ref_t.tag = 11; // Reference
+                            ref_t.Reference.inner = os.ArenaAlloc(ctx);
+                            ctx[ref_t.Reference.inner] = f_type_lookup.Val;
+                            ref_t.Reference.brand = parent_brand;
+
+                            mut field_c_type := codegen_get_c_type(ref_t, env, ctx);
+                            mut bind_line := std.Concat("            ", field_c_type);
+                            bind_line = std.Concat(bind_line, " ");
+                            bind_line = std.Concat(bind_line, field_name);
+                            bind_line = std.Concat(bind_line, " = &(");
+                            bind_line = std.Concat(bind_line, expr_str);
+                            bind_line = std.Concat(bind_line, arrow_or_dot);
+                            bind_line = std.Concat(bind_line, case_val.variant_name);
+                            bind_line = std.Concat(bind_line, ".");
+                            bind_line = std.Concat(bind_line, field_name);
+                            bind_line = std.Concat(bind_line, ");\n");
+                            res = std.Concat(res, bind_line);
                         }
+                        f_idx = f_idx + 1;
                     }
-                    
+                }                    
                     mut body_str := codegen_generate_block_statement(case_val.body, env, ctx);
                     res = std.Concat(res, body_str);
                     

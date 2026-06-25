@@ -7,10 +7,14 @@ type Shape enum {
 func process(shape: Shape) int {
     match shape {
         Circle => {
-            return shape.Circle.radius;
+            unsafe {
+                return shape.Circle.radius;
+            }
         }
         Rectangle => {
-            return shape.Rectangle.width + shape.Rectangle.height;
+            unsafe {
+                return shape.Rectangle.width + shape.Rectangle.height;
+            }
         }
         Point => {
             return 123;

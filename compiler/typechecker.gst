@@ -827,6 +827,23 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             mut left_str := expression_to_string(expr.Selector.left, ctx);
             if left_t.tag == 8 { // Struct
                 mut struct_name := left_t.Struct.struct_name;
+                
+                // --- Safe Selector Enum Access Control ---
+                mut is_enum := 0;
+                mut lookup_enum := (*env).enum_registry.Get(struct_name);
+                if lookup_enum.Ok {
+                    is_enum = 1;
+                }
+                if is_enum == 1 {
+                    if (*env).in_unsafe_block == 0 {
+                        if std.str_eq(expr.Selector.right, "tag") == 0 {
+                            mut msg := std.Concat("Semantic Error: DirectEnumAccessForbidden. Direct variant access to '", struct_name);
+                            msg = std.Concat(msg, "' is prohibited in safe code. Use match destructuring instead.");
+                            report_error(2, msg, expr.Selector.span, env, ctx);
+                        }
+                    }
+                }
+
                 mut clean_name := struct_name;
                 mut d_idx := std.str_find(struct_name, "__");
                 if d_idx != 0 - 1 {
@@ -5820,6 +5837,33 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             left_type.tag = 3; // Void
 
             mut left := ctx[left_idx];
+            
+            // --- Safe Assignment Enum Mutation Control ---
+            if left.tag == 11 { // Selector
+                mut base_expr_idx := left.Selector.left;
+                mut base_type := check_expression(base_expr_idx, env, scope, ctx);
+                base_type = env_resolve_type(env, base_type, ctx);
+                if base_type.tag == 9 { // RawPointer
+                    base_type = ctx[base_type.RawPointer.inner];
+                } else if base_type.tag == 11 { // Reference
+                    base_type = ctx[base_type.Reference.inner];
+                }
+                if base_type.tag == 8 { // Struct
+                    mut is_enum := 0;
+                    mut lookup_enum := (*env).enum_registry.Get(base_type.Struct.struct_name);
+                    if lookup_enum.Ok {
+                        is_enum = 1;
+                    }
+                    if is_enum == 1 {
+                        if (*env).in_unsafe_block == 0 {
+                            mut msg := std.Concat("Semantic Error: EnumMutationForbidden. Mutating enum tag or variant fields of '", base_type.Struct.struct_name);
+                            msg = std.Concat(msg, "' is prohibited in safe code.");
+                            report_error(2, msg, stmt.Assignment.span, env, ctx);
+                        }
+                    }
+                }
+            }
+
             if left.tag == 0 { // Identifier
                 mut name := left.Identifier.name;
 
@@ -6300,8 +6344,14 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut cases_vec := &ctx[stmt.Match.cases] as *std.Vector[ast.MatchCase[ctx], ctx];
 
             mut expr_type := check_expression(expr_idx, env, scope, ctx);
-            if expr_type.tag == 8 { // Struct
-                mut enum_name := expr_type.Struct.struct_name;
+            mut real_struct_type := expr_type;
+            if real_struct_type.tag == 9 { // RawPointer
+                real_struct_type = ctx[real_struct_type.RawPointer.inner];
+            } else if real_struct_type.tag == 11 { // Reference
+                real_struct_type = ctx[real_struct_type.Reference.inner];
+            }
+            if real_struct_type.tag == 8 { // Struct
+                mut enum_name := real_struct_type.Struct.struct_name;
                 mut matched_variants: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
                 mut lookup_enum := (*env).enum_registry.Get(enum_name);
 
@@ -6321,7 +6371,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                             if std.str_eq(expected_variants[v_idx], variant_name) == 1 {
                                 is_valid_variant = 1;
                                 v_idx = len(expected_variants);
-                            }
+                            } 
                             v_idx = v_idx + 1;
                         }
                         if is_valid_variant == 0 { 
@@ -6347,9 +6397,17 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                             mut f_type_lookup := layout.fields.Get(field_name);
                             if f_type_lookup.Ok {
                                 mut f_type := f_type_lookup.Val;
-                                mut substituted := typechecker_substitute_field_brand(f_type, expr_type.Struct.brand, expression_to_string(expr_idx, ctx), layout, ctx);
-                                scope_insert(child_scope, field_name, substituted, ctx);
-                                (*env).variable_types.Insert(std.Clone(ctx, field_name), substituted);
+                                mut substituted := typechecker_substitute_field_brand(f_type, real_struct_type.Struct.brand, expression_to_string(expr_idx, ctx), layout, ctx);
+                                
+                                // Wrap in Reference &T[ctx]
+                                mut ref_type: ast.Type[ctx];
+                                ref_type.tag = 11; // Reference
+                                ref_type.Reference.inner = os.ArenaAlloc(ctx);
+                                ctx[ref_type.Reference.inner] = substituted;
+                                ref_type.Reference.brand = real_struct_type.Struct.brand;
+                                
+                                scope_insert(child_scope, field_name, ref_type, ctx);
+                                (*env).variable_types.Insert(std.Clone(ctx, field_name), ref_type);
 
                                 mut arg_origins := get_expression_origins(expr_idx, env, ctx);
                                 (*env).variable_origins.Insert(std.Clone(ctx, field_name), arg_origins);

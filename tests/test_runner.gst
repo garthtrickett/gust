@@ -1045,6 +1045,36 @@ func main() {
     t120.expected = "42";
     tests.Push(t120);
 
+    mut t_safe_sel_rej: Test[ctx];
+    t_safe_sel_rej.path = "tests/test_enum_safe_selector_rejected.gst";
+    t_safe_sel_rej.is_negative = 1;
+    t_safe_sel_rej.expected = "DirectEnumAccessForbidden";
+    tests.Push(t_safe_sel_rej);
+
+    mut t_safe_tag_rej: Test[ctx];
+    t_safe_tag_rej.path = "tests/test_enum_safe_tag_write_rejected.gst";
+    t_safe_tag_rej.is_negative = 1;
+    t_safe_tag_rej.expected = "EnumMutationForbidden";
+    tests.Push(t_safe_tag_rej);
+
+    mut t_unsafe_acc_acc: Test[ctx];
+    t_unsafe_acc_acc.path = "tests/test_enum_unsafe_access_accepted.gst";
+    t_unsafe_acc_acc.is_negative = 0;
+    t_unsafe_acc_acc.expected = "";
+    tests.Push(t_unsafe_acc_acc);
+
+    mut t_match_dest_ref_rej: Test[ctx];
+    t_match_dest_ref_rej.path = "tests/test_match_destructure_type_is_reference.gst";
+    t_match_dest_ref_rej.is_negative = 1;
+    t_match_dest_ref_rej.expected = "TypeMismatch";
+    tests.Push(t_match_dest_ref_rej);
+
+    mut t_match_dest_deref_acc: Test[ctx];
+    t_match_dest_deref_acc.path = "tests/test_match_destructure_deref_accepted.gst";
+    t_match_dest_deref_acc.is_negative = 0;
+    t_match_dest_deref_acc.expected = "42";
+    tests.Push(t_match_dest_deref_acc);
+
     mut t121: Test[ctx];
     t121.path = "tests/test_definite_check_lookup_inside_if_accepted.gst";
     t121.is_negative = 0;

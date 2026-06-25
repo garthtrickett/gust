@@ -12,7 +12,10 @@ type MyEnum[ctx] enum {
 func process(e: MyEnum[ctx], ctx: &Arena) int {
     match e {
         VariantA => {
-            mut index := e.VariantA.val;
+            mut index := empty[Index[LargePayload, ctx]];
+            unsafe {
+                index = e.VariantA.val;
+            }
             return ctx[index].x + ctx[index].y + ctx[index].z;
         }
         VariantB => {
