@@ -52,9 +52,9 @@ func main() {
     os.System("./gust tests/codegen_helper_match_destructure.gst > build/codegen_helper_match_destructure_temp.log 2>&1");
     os.System("grep -v -E \"^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)\" build/codegen_helper_match_destructure_temp.log > build/codegen_helper_match_destructure.c");
     mut c_match := os.ReadFile(ctx, "build/codegen_helper_match_destructure.c");
-    assert_contains(c_match, "int val = e.VariantA.val;", "Match destructure should declare and bind val");
-    assert_contains(c_match, "int x = e.VariantB.x;", "Match destructure should declare and bind x");
-    assert_contains(c_match, "int y = e.VariantB.y;", "Match destructure should declare and bind y");
+    assert_contains(c_match, "int* val = &(e.VariantA.val);", "Match destructure should declare and bind val");
+    assert_contains(c_match, "int* x = &(e.VariantB.x);", "Match destructure should declare and bind x");
+    assert_contains(c_match, "int* y = &(e.VariantB.y);", "Match destructure should declare and bind y");
 
     // Cleanup
     os.System("rm -f build/codegen_helper_*");
