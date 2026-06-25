@@ -71,8 +71,6 @@ func main() {
 }
 
 ```
-
-
 ## TOOL USE CONSTRAINTS & DISCIPLINE
 - **Prohibition of Execution Tools**: You are strictly prohibited from calling any command execution, bash shell, terminal, or system-running tools (such as `vm_shell:execute_bash` or any equivalent system command triggers).
 - **Allowed Tool Scope**: You must only use information-retrieval and text-generation tools (such as `google:search` and `browsing:browse` to gather context, and text responses to supply code patches). 
