@@ -1030,12 +1030,16 @@ func main() {
 
     // Setup types in env
     mut t_slice: ast.Type[ctx];
-    t_slice.tag = 6; // Slice
-    t_slice.Slice.inner = os.ArenaAlloc(ctx);
-    ctx[t_slice.Slice.inner].tag = 0; // Int
+    unsafe {
+        t_slice.tag = 6; // Slice
+        t_slice.Slice.inner = os.ArenaAlloc(ctx);
+        ctx[t_slice.Slice.inner].tag = 0; // Int
+    }
 
     mut t_int_test: ast.Type[ctx];
-    t_int_test.tag = 0; // Int
+    unsafe {
+        t_int_test.tag = 0; // Int
+    }
 
     mut entry_slice: typechecker.ResolvedTypeEntry[ctx];
     entry_slice.start_offset = 100;
@@ -1081,9 +1085,11 @@ func main() {
     }
 
     mut t_ptr_test: ast.Type[ctx];
-    t_ptr_test.tag = 9; // RawPointer
-    t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+    unsafe {
+        t_ptr_test.tag = 9; // RawPointer
+        t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+    }
 
     mut entry_ptr: typechecker.ResolvedTypeEntry[ctx];
     entry_ptr.start_offset = 200;
@@ -1156,23 +1162,23 @@ func main() {
 
     // Test HashMap index access
     mut e_map_access: ast.Expression[ctx];
-    unsafe {
+    unsafe { 
         e_map_access.tag = 8; // IndexAccess
-        e_map_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
-        e_map_access.IndexAccess.index = os.ArenaAlloc(ctx);
-
-        ctx[e_map_access.IndexAccess.allocator].tag = 0; // Identifier
-        ctx[e_map_access.IndexAccess.allocator].Identifier.name = "my_map";
-        ctx[e_map_access.IndexAccess.allocator].Identifier.span.start.offset = 400;
-        ctx[e_map_access.IndexAccess.allocator].Identifier.span.end.offset = 406;
-
-        ctx[e_map_access.IndexAccess.index].tag = 0; // Identifier
-        ctx[e_map_access.IndexAccess.index].Identifier.name = "my_key";
-        ctx[e_map_access.IndexAccess.index].Identifier.span.start.offset = 407;
-        ctx[e_map_access.IndexAccess.index].Identifier.span.end.offset = 413;
-
-        e_map_access.IndexAccess.span.start.offset = 400;
-        e_map_access.IndexAccess.span.end.offset = 414;
+        e_map_access.IndexAccess.allocator = os.ArenaAlloc(ctx); 
+        e_map_access.IndexAccess.index = os.ArenaAlloc(ctx); 
+        
+        ctx[e_map_access.IndexAccess.allocator].tag = 0; // Identifier 
+        ctx[e_map_access.IndexAccess.allocator].Identifier.name = "my_map"; 
+        ctx[e_map_access.IndexAccess.allocator].Identifier.span.start.offset = 400; 
+        ctx[e_map_access.IndexAccess.allocator].Identifier.span.end.offset = 406; 
+        
+        ctx[e_map_access.IndexAccess.index].tag = 0; // Identifier 
+        ctx[e_map_access.IndexAccess.index].Identifier.name = "my_key"; 
+        ctx[e_map_access.IndexAccess.index].Identifier.span.start.offset = 407; 
+        ctx[e_map_access.IndexAccess.index].Identifier.span.end.offset = 413; 
+        
+        e_map_access.IndexAccess.span.start.offset = 400; 
+        e_map_access.IndexAccess.span.end.offset = 414; 
     }
 
     mut t_map: ast.Type[ctx];
