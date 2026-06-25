@@ -6399,7 +6399,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                 mut f_type := f_type_lookup.Val;
                                 mut substituted := typechecker_substitute_field_brand(f_type, real_struct_type.Struct.brand, expression_to_string(expr_idx, ctx), layout, ctx);
                                 
-                                // Wrap in Reference &T[ctx]
+                                // Step 2: Wrap in Reference &T[ctx] for Match Case Reference Binding
                                 mut ref_type: ast.Type[ctx];
                                 ref_type.tag = 11; // Reference
                                 ref_type.Reference.inner = os.ArenaAlloc(ctx);
