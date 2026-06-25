@@ -52,13 +52,15 @@ func process_vector(vec: std.Vector[MyOption[MyResult[int, str, ctx], ctx], ctx]
         mut opt := vec[i];
         match opt {
             Some => {
-                mut res := opt.Some.val;
-                match res {
-                    Ok => {
-                        os.LogInt(res.Ok.val);
-                    }
-                    Err => {
-                        os.LogStr(res.Err.error);
+                unsafe {
+                    mut res := opt.Some.val;
+                    match res {
+                        Ok => {
+                            os.LogInt(res.Ok.val);
+                        }
+                        Err => {
+                            os.LogStr(res.Err.error);
+                        }
                     }
                 }
             }
