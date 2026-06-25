@@ -158,30 +158,31 @@ func read_string(l: *Lexer[ctx]) str {
 
 func lookup_ident(literal: str) token.TokenType {
     mut t: token.TokenType;
-    t.tag = 2; // Default TokenType::Ident
-    
-    if std.str_eq(literal, "guard") { t.tag = 27; return t; }
-    if std.str_eq(literal, "import") { t.tag = 28; return t; }
-    if std.str_eq(literal, "mut") { t.tag = 29; return t; }
-    if std.str_eq(literal, "func") { t.tag = 30; return t; }
-    if std.str_eq(literal, "defer") { t.tag = 31; return t; }
-    if std.str_eq(literal, "move") { t.tag = 32; return t; }
-    if std.str_eq(literal, "take") { t.tag = 33; return t; }
-    if std.str_eq(literal, "while") { t.tag = 34; return t; }
-    if std.str_eq(literal, "if") { t.tag = 35; return t; }
-    if std.str_eq(literal, "else") { t.tag = 36; return t; }
-    if std.str_eq(literal, "as") { t.tag = 37; return t; }
-    if std.str_eq(literal, "unsafe") { t.tag = 38; return t; }
-    if std.str_eq(literal, "type") { t.tag = 39; return t; }
-    if std.str_eq(literal, "struct") { t.tag = 40; return t; }
-    if std.str_eq(literal, "enum") { t.tag = 41; return t; }
-    if std.str_eq(literal, "match") { t.tag = 42; return t; }
-    if std.str_eq(literal, "return") { t.tag = 43; return t; }
-    if std.str_eq(literal, "empty") { t.tag = 44; return t; }
-    if std.str_eq(literal, "bool") { t.tag = 45; return t; }
-    if std.str_eq(literal, "true") { t.tag = 46; return t; }
-    if std.str_eq(literal, "false") { t.tag = 47; return t; }
-    
+    unsafe {
+        t.tag = 2; // Default TokenType::Ident
+        
+        if std.str_eq(literal, "guard") { t.tag = 27; return t; }
+        if std.str_eq(literal, "import") { t.tag = 28; return t; } 
+        if std.str_eq(literal, "mut") { t.tag = 29; return t; }
+        if std.str_eq(literal, "func") { t.tag = 30; return t; }
+        if std.str_eq(literal, "defer") { t.tag = 31; return t; }
+        if std.str_eq(literal, "move") { t.tag = 32; return t; }
+        if std.str_eq(literal, "take") { t.tag = 33; return t; } 
+        if std.str_eq(literal, "while") { t.tag = 34; return t; } 
+        if std.str_eq(literal, "if") { t.tag = 35; return t; }
+        if std.str_eq(literal, "else") { t.tag = 36; return t; }
+        if std.str_eq(literal, "as") { t.tag = 37; return t; }
+        if std.str_eq(literal, "unsafe") { t.tag = 38; return t; }
+        if std.str_eq(literal, "type") { t.tag = 39; return t; }
+        if std.str_eq(literal, "struct") { t.tag = 40; return t; }
+        if std.str_eq(literal, "enum") { t.tag = 41; return t; }
+        if std.str_eq(literal, "match") { t.tag = 42; return t; }
+        if std.str_eq(literal, "return") { t.tag = 43; return t; }
+        if std.str_eq(literal, "empty") { t.tag = 44; return t; }
+        if std.str_eq(literal, "bool") { t.tag = 45; return t; }
+        if std.str_eq(literal, "true") { t.tag = 46; return t; }
+        if std.str_eq(literal, "false") { t.tag = 47; return t; }
+    }
     return t;
 }
 

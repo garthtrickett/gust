@@ -22,7 +22,9 @@ func main() {
     mut sig: typechecker.FunctionSignature[ctx];
     sig.param_names = std.VectorNew(ctx);
     sig.params = std.VectorNew(ctx);
-    sig.return_type.tag = 0; // Int
+    unsafe { 
+        sig.return_type.tag = 0; // Int
+    }
     typechecker.env_register_function(&env, "lib__add", sig, ctx);
 
     // Resolve lookups
