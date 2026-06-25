@@ -13,8 +13,12 @@ func main() {
     mut p1: parser.Parser[ctx];
     parser.init_parser(&p1, &l1, ctx);
     mut stmt1 := parser.parse_statement(&p1, ctx);
+    mut s1_name := "";
+    unsafe {
+        s1_name = ctx[stmt1].FunctionDecl.name;
+    }
     os.LogInt(ctx[stmt1].tag);
-    os.LogStr(ctx[stmt1].FunctionDecl.name);
+    os.LogStr(s1_name);
 
     // 2. Parse a match statement
     mut l2: lexer.Lexer[ctx];

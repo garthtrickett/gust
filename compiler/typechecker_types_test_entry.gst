@@ -42,13 +42,20 @@ func main() {
     }
 
     // Monomorphize Result[str, ctx]
-    mut res_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    mut res_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx); 
     res_args.Push(typechecker.make_type_str());
     res_args.Push(typechecker.make_type_struct("ctx", "", ctx));
 
     mut mono_res := typechecker.monomorphize(&env, "Result", res_args, ctx);
-    if mono_res.tag == 0 {
-        mut concrete_t := mono_res.Ok.val;
+    mut mono_ok := 0;
+    mut concrete_t: ast.Type[ctx];
+    unsafe {
+        if mono_res.tag == 0 {
+            mono_ok = 1;
+            concrete_t = mono_res.Ok.val;
+        }
+    }
+    if mono_ok == 1 {
         os.LogStr(std.Concat("Monomorphized Result name: ", concrete_t.Struct.struct_name));
 
         guard parent_layout := env.struct_registry.Get(concrete_t.Struct.struct_name) else {
@@ -330,17 +337,23 @@ func main() {
     graph_args.Push(typechecker.make_type_struct("ctx", "", ctx));
 
     mut graph_res := typechecker.monomorphize(&env, "std.Graph", graph_args, ctx);
-    if graph_res.tag == 0 {
-        mut concrete_t := graph_res.Ok.val;
-        os.LogStr(std.Concat("Monomorphized Graph name: ", concrete_t.Struct.struct_name));
+    mut graph_ok := 0;
+    mut concrete_t_graph: ast.Type[ctx];
+    unsafe {
+        if graph_res.tag == 0 {
+            graph_ok = 1;
+            concrete_t_graph = graph_res.Ok.val;
+        }
+    }
+    if graph_ok == 1 {
+        os.LogStr(std.Concat("Monomorphized Graph name: ", concrete_t_graph.Struct.struct_name));
 
-        mut layout_graph_lookup := env.struct_registry.Get(concrete_t.Struct.struct_name);
+        mut layout_graph_lookup := env.struct_registry.Get(concrete_t_graph.Struct.struct_name);
         if layout_graph_lookup.Ok {
             os.LogStr("std_Graph_int_ctx successfully registered!");
         } else {
             os.LogStr("std_Graph_int_ctx registration failed!");
         }
-
 // Check if the nested std_GraphNode_int_ctx was dynamically monomorphized and registered!
             mut layout_node_lookup := env.struct_registry.Get("std_GraphNode_int_ctx");
             if layout_node_lookup.Ok {

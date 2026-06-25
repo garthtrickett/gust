@@ -14,8 +14,12 @@ func main() {
     parser.init_parser(&p, &l, ctx);
 
     mut stmt := parser.parse_statement(&p, ctx);
+    mut s_name := "";
+    unsafe {
+        s_name = ctx[stmt].StructDecl.name;
+    }
     os.LogInt(ctx[stmt].tag);
-    os.LogStr(ctx[stmt].StructDecl.name);
+    os.LogStr(s_name);
 
     mut l2: lexer.Lexer[ctx];
     lexer.init_lexer(&l2, "type MyEnum enum { Circle { r: int }, Point }");
@@ -24,6 +28,10 @@ func main() {
     parser.init_parser(&p2, &l2, ctx);
 
     mut stmt2 := parser.parse_statement(&p2, ctx);
+    mut s2_name := "";
+    unsafe {
+        s2_name = ctx[stmt2].EnumDecl.name;
+    }
     os.LogInt(ctx[stmt2].tag);
-    os.LogStr(ctx[stmt2].EnumDecl.name);
+    os.LogStr(s2_name);
 }

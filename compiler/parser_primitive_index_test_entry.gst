@@ -16,7 +16,9 @@ func main() {
     mut t_sig := parser.parse_type_signature(&p, ctx);
 
     os.LogInt(ctx[t_sig].tag); // Expected: 7 (Index)
-    os.LogStr(ctx[t_sig].Index.struct_name); // Expected: str
+    unsafe {
+        os.LogStr(ctx[t_sig].Index.struct_name); // Expected: str
+    }
 
     mut l2: lexer.Lexer[ctx];
     lexer.init_lexer(&l2, "Index[int, ctx]");
@@ -25,7 +27,9 @@ func main() {
     parser.init_parser(&p2, &l2, ctx);
 
     mut t_sig2 := parser.parse_type_signature(&p2, ctx);
-    os.LogStr(ctx[t_sig2].Index.struct_name); // Expected: int
+    unsafe {
+        os.LogStr(ctx[t_sig2].Index.struct_name); // Expected: int
+    }
 
     mut l3: lexer.Lexer[ctx];
     lexer.init_lexer(&l3, "Index[std.Vector[int, ctx], ctx]");
@@ -34,5 +38,7 @@ func main() {
     parser.init_parser(&p3, &l3, ctx);
 
     mut t_sig3 := parser.parse_type_signature(&p3, ctx);
-    os.LogStr(ctx[t_sig3].Index.struct_name); // Expected: std_Vector_int_ctx
+    unsafe {
+        os.LogStr(ctx[t_sig3].Index.struct_name); // Expected: std_Vector_int_ctx
+    }
 }
