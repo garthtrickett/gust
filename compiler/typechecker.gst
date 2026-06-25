@@ -107,21 +107,21 @@ func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) in
 }
 
 func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
-    unsafe {
-        if t.tag == 5 { // Str
+    match t {
+        Str => {
             return 1;
         }
-        if t.tag == 6 { // Slice
+        Slice { inner } => {
             return 1;
         }
-        if t.tag == 9 { // RawPointer
+        RawPointer { inner } => {
             return 1;
         }
-        if t.tag == 11 { // Reference
+        Reference { inner, brand } => {
             return 1;
         }
-        if t.tag == 8 { // Struct
-            mut name := t.Struct.struct_name;
+        Struct { struct_name, brand } => {
+            mut name := *struct_name;
             if std.str_eq(name, "str") == 1 {
                 return 1;
             }
@@ -137,8 +137,15 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
                 return 1;
             }
         }
-        return 0;
+        Int => {}
+        Byte => {}
+        Bool => {}
+        Void => {}
+        Arena => {}
+        Index { struct_name, brand } => {}
+        Generic { name, args } => {}
     }
+    return 0;
 }
 
 func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], parent_brand: Index[str, ctx], span: token.Span, ctx: &Arena) {
@@ -267,35 +274,44 @@ func env_type_is_linear(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Aren
 }
 
 func env_is_element_allowed_in_brand(env: *TypeEnvironment[ctx], t: ast.Type[ctx], parent_brand: str, ctx: &Arena) int { 
-    unsafe {
-        if env_type_is_linear(t, env, ctx) == 0 {
+    if env_type_is_linear(t, env, ctx) == 0 {
+        return 1;
+    }
+    match t {
+        Str => {
             return 1;
         }
-        if t.tag == 5 { // Str
+        Slice { inner } => {
             return 1;
         }
-        if t.tag == 6 { // Slice
-            return 1;
-        }
-        if t.tag == 8 { // Struct
-            mut name := t.Struct.struct_name;
+        Struct { struct_name, brand } => {
+            mut name := *struct_name;
             if std.str_eq(name, "str") == 1 {
                 return 1;
             } 
         }
-        mut ib := get_type_brand(t, env, ctx);
-        if std.str_eq(ib, "") == 0 {
-            mut clean_ib := strip_brand_prefix(ib, ctx);
-            mut clean_ob := strip_brand_prefix(parent_brand, ctx);
-            if std.str_eq(clean_ib, clean_ob) == 1 {
-                return 1;
-            } 
-            if std.str_eq(clean_ib, "Any") == 1 || std.str_eq(clean_ob, "Any") == 1 {
-                return 1;
-            } 
-        }
-        return 0;
+        Int => {}
+        Byte => {}
+        Bool => {}
+        Void => {}
+        Arena => {}
+        Index { struct_name, brand } => {}
+        RawPointer { inner } => {}
+        Generic { name, args } => {}
+        Reference { inner, brand } => {}
     }
+    mut ib := get_type_brand(t, env, ctx);
+    if std.str_eq(ib, "") == 0 {
+        mut clean_ib := strip_brand_prefix(ib, ctx);
+        mut clean_ob := strip_brand_prefix(parent_brand, ctx);
+        if std.str_eq(clean_ib, clean_ob) == 1 {
+            return 1;
+        } 
+        if std.str_eq(clean_ib, "Any") == 1 || std.str_eq(clean_ob, "Any") == 1 {
+            return 1;
+        } 
+    }
+    return 0;
 }
 
 func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) Index[OriginSet[ctx], ctx] { 
