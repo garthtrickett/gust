@@ -4,8 +4,10 @@ func accept_val(x: int) {
 }
 func main() {
     mut s: Shape;
-    s.tag = 0;
-    s.Circle.radius = 42;
+    unsafe {
+        s.tag = 0;
+        s.Circle.radius = 42;
+    }
     match s {
         Circle { radius } => {
             // Step 2: Explicit dereference gets the underlying plain 'int'

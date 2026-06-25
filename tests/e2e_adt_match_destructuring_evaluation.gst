@@ -20,16 +20,18 @@ func process(shape: Shape) int {
 
 func main() {
     mut s1: Shape;
-    s1.tag = 0;
-    s1.Circle.radius = 42;
-
     mut s2: Shape;
-    s2.tag = 1;
-    s2.Rectangle.width = 10;
-    s2.Rectangle.height = 20;
-
     mut s3: Shape;
-    s3.tag = 2;
+    unsafe {
+        s1.tag = 0;
+        s1.Circle.radius = 42;
+
+        s2.tag = 1;
+        s2.Rectangle.width = 10;
+        s2.Rectangle.height = 20;
+
+        s3.tag = 2;
+    }
 
     os.LogInt(process(s1));
     os.LogInt(process(s2));

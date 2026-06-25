@@ -12,27 +12,34 @@ func create_vector(ctx: &Arena) std.Vector[MyOption[MyResult[int, str, ctx], ctx
     mut vec: std.Vector[MyOption[MyResult[int, str, ctx], ctx], ctx] := std.VectorNew(ctx);
 
     mut r1: MyResult[int, str, ctx];
-    r1.tag = 0; // Ok
-    r1.Ok.val = 42;
-
     mut o1: MyOption[MyResult[int, str, ctx], ctx];
-    o1.tag = 0; // Some
-    o1.Some.val = r1;
+    mut r2: MyResult[int, str, ctx];
+    mut o2: MyOption[MyResult[int, str, ctx], ctx];
+    mut o3: MyOption[MyResult[int, str, ctx], ctx];
+
+    unsafe {
+        r1.tag = 0; // Ok
+        r1.Ok.val = 42;
+
+        o1.tag = 0; // Some
+        o1.Some.val = r1;
+    }
 
     vec.Push(o1);
 
-    mut r2: MyResult[int, str, ctx];
-    r2.tag = 1; // Err
-    r2.Err.error = "something went wrong";
+    unsafe {
+        r2.tag = 1; // Err
+        r2.Err.error = "something went wrong";
 
-    mut o2: MyOption[MyResult[int, str, ctx], ctx];
-    o2.tag = 0; // Some
-    o2.Some.val = r2;
+        o2.tag = 0; // Some
+        o2.Some.val = r2;
+    }
 
     vec.Push(o2);
 
-    mut o3: MyOption[MyResult[int, str, ctx], ctx];
-    o3.tag = 1; // None
+    unsafe {
+        o3.tag = 1; // None
+    }
 
     vec.Push(o3);
 

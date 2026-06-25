@@ -1055,29 +1055,33 @@ func main() {
     // Step 5: Verification Test for Step 3 Vector, Pool, and HashMap IndexAccess Branches
     // 1. Vector indexing test
     mut e_vec_access: ast.Expression[ctx];
-    e_vec_access.tag = 8; // IndexAccess
-    e_vec_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
-    e_vec_access.IndexAccess.index = os.ArenaAlloc(ctx);
-    
-    // Set allocator as identifier "my_vec"
-    ctx[e_vec_access.IndexAccess.allocator].tag = 0; // Identifier
-    ctx[e_vec_access.IndexAccess.allocator].Identifier.name = "my_vec";
-    ctx[e_vec_access.IndexAccess.allocator].Identifier.span.start.offset = 300;
-    ctx[e_vec_access.IndexAccess.allocator].Identifier.span.end.offset = 306;
+    unsafe {
+        e_vec_access.tag = 8; // IndexAccess
+        e_vec_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
+        e_vec_access.IndexAccess.index = os.ArenaAlloc(ctx);
+        
+        // Set allocator as identifier "my_vec"
+        ctx[e_vec_access.IndexAccess.allocator].tag = 0; // Identifier
+        ctx[e_vec_access.IndexAccess.allocator].Identifier.name = "my_vec";
+        ctx[e_vec_access.IndexAccess.allocator].Identifier.span.start.offset = 300;
+        ctx[e_vec_access.IndexAccess.allocator].Identifier.span.end.offset = 306;
 
-    // Set index as integer 4
-    ctx[e_vec_access.IndexAccess.index].tag = 1; // Integer
-    ctx[e_vec_access.IndexAccess.index].Integer.val = 4;
-    ctx[e_vec_access.IndexAccess.index].Integer.span.start.offset = 307;
-    ctx[e_vec_access.IndexAccess.index].Integer.span.end.offset = 308;
+        // Set index as integer 4
+        ctx[e_vec_access.IndexAccess.index].tag = 1; // Integer
+        ctx[e_vec_access.IndexAccess.index].Integer.val = 4;
+        ctx[e_vec_access.IndexAccess.index].Integer.span.start.offset = 307;
+        ctx[e_vec_access.IndexAccess.index].Integer.span.end.offset = 308;
+    }
 
     e_vec_access.IndexAccess.span.start.offset = 300;
     e_vec_access.IndexAccess.span.end.offset = 309;
 
     mut t_vec: ast.Type[ctx];
-    t_vec.tag = 8; // Struct
-    t_vec.Struct.struct_name = "std_Vector_int_ctx";
-    t_vec.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_vec.tag = 8; // Struct
+        t_vec.Struct.struct_name = "std_Vector_int_ctx";
+        t_vec.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut entry_vec: typechecker.ResolvedTypeEntry[ctx];
     entry_vec.start_offset = 300;
@@ -1097,27 +1101,31 @@ func main() {
 
     // Test HashMap index access
     mut e_map_access: ast.Expression[ctx];
-    e_map_access.tag = 8; // IndexAccess
-    e_map_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
-    e_map_access.IndexAccess.index = os.ArenaAlloc(ctx);
+    unsafe {
+        e_map_access.tag = 8; // IndexAccess
+        e_map_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
+        e_map_access.IndexAccess.index = os.ArenaAlloc(ctx);
 
-    ctx[e_map_access.IndexAccess.allocator].tag = 0; // Identifier
-    ctx[e_map_access.IndexAccess.allocator].Identifier.name = "my_map";
-    ctx[e_map_access.IndexAccess.allocator].Identifier.span.start.offset = 400;
-    ctx[e_map_access.IndexAccess.allocator].Identifier.span.end.offset = 406;
+        ctx[e_map_access.IndexAccess.allocator].tag = 0; // Identifier
+        ctx[e_map_access.IndexAccess.allocator].Identifier.name = "my_map";
+        ctx[e_map_access.IndexAccess.allocator].Identifier.span.start.offset = 400;
+        ctx[e_map_access.IndexAccess.allocator].Identifier.span.end.offset = 406;
 
-    ctx[e_map_access.IndexAccess.index].tag = 0; // Identifier
-    ctx[e_map_access.IndexAccess.index].Identifier.name = "my_key";
-    ctx[e_map_access.IndexAccess.index].Identifier.span.start.offset = 407;
-    ctx[e_map_access.IndexAccess.index].Identifier.span.end.offset = 413;
+        ctx[e_map_access.IndexAccess.index].tag = 0; // Identifier
+        ctx[e_map_access.IndexAccess.index].Identifier.name = "my_key";
+        ctx[e_map_access.IndexAccess.index].Identifier.span.start.offset = 407;
+        ctx[e_map_access.IndexAccess.index].Identifier.span.end.offset = 413;
+    }
 
     e_map_access.IndexAccess.span.start.offset = 400;
     e_map_access.IndexAccess.span.end.offset = 414;
 
     mut t_map: ast.Type[ctx];
-    t_map.tag = 8; // Struct
-    t_map.Struct.struct_name = "std_HashMap_str_int_ctx";
-    t_map.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_map.tag = 8; // Struct
+        t_map.Struct.struct_name = "std_HashMap_str_int_ctx";
+        t_map.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut entry_map: typechecker.ResolvedTypeEntry[ctx];
     entry_map.start_offset = 400;

@@ -6,7 +6,9 @@ func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
     mut res: MyResult[int, ctx];
-    res.tag = 0;
-    res.Ok.val = 42;
+    unsafe {
+        res.tag = 0;
+        res.Ok.val = 42;
+    }
     os.LogInt(res.Ok.val);
 }

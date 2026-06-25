@@ -2185,38 +2185,48 @@ func scope_lookup(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) ast.Typ
 
 func make_type_int() ast.Type[ctx] {
     mut t: ast.Type[ctx];
-    t.tag = 0; // Int
+    unsafe {
+        t.tag = 0; // Int
+    }
     return t;
 }
 
 func make_type_byte() ast.Type[ctx] {
     mut t: ast.Type[ctx];
-    t.tag = 1; // Byte
+    unsafe {
+        t.tag = 1; // Byte
+    }
     return t;
 }
 
 func make_type_bool() ast.Type[ctx] {
     mut t: ast.Type[ctx];
-    t.tag = 2; // Bool
+    unsafe {
+        t.tag = 2; // Bool
+    }
     return t;
 }
 
 func make_type_arena() ast.Type[ctx] {
     mut t: ast.Type[ctx];
-    t.tag = 4; // Arena
+    unsafe {
+        t.tag = 4; // Arena
+    }
     return t;
 }
 
 func make_type_str() ast.Type[ctx] {
     mut t: ast.Type[ctx];
-    t.tag = 5; // Str
+    unsafe {
+        t.tag = 5; // Str
+    }
     return t;
 }
 
-func make_type_pointer(inner: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
+func make_type_pointer(inner: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] { 
     mut t: ast.Type[ctx];
-    t.tag = 9; // RawPointer
     unsafe {
+        t.tag = 9; // RawPointer
         t.RawPointer.inner = os.ArenaAlloc(ctx);
         ctx[t.RawPointer.inner] = inner;
     }
@@ -2225,12 +2235,12 @@ func make_type_pointer(inner: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
 
 func make_type_struct(name: str, brand_name: str, ctx: &Arena) ast.Type[ctx] {
     mut t: ast.Type[ctx];
-    t.tag = 8; // Struct
-    t.Struct.struct_name = std.Clone(ctx, name);
-    if std.str_eq(brand_name, "") {
-        t.Struct.brand = empty[Index[str, ctx]];
-    } else {
-        unsafe {
+    unsafe {
+        t.tag = 8; // Struct
+        t.Struct.struct_name = std.Clone(ctx, name);
+        if std.str_eq(brand_name, "") {
+            t.Struct.brand = empty[Index[str, ctx]];
+        } else {
             t.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
             mut ptr := &ctx[t.Struct.brand] as *str;
             *ptr = std.Clone(ctx, brand_name);
@@ -2241,12 +2251,12 @@ func make_type_struct(name: str, brand_name: str, ctx: &Arena) ast.Type[ctx] {
 
 func make_type_index(struct_name: str, brand_name: str, ctx: &Arena) ast.Type[ctx] {
     mut t: ast.Type[ctx];
-    t.tag = 7; // Index
-    t.Index.struct_name = std.Clone(ctx, struct_name);
-    if std.str_eq(brand_name, "") {
-        t.Index.brand = empty[Index[str, ctx]];
-    } else {
-        unsafe {
+    unsafe {
+        t.tag = 7; // Index
+        t.Index.struct_name = std.Clone(ctx, struct_name);
+        if std.str_eq(brand_name, "") {
+            t.Index.brand = empty[Index[str, ctx]];
+        } else {
             t.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
             mut ptr := &ctx[t.Index.brand] as *str;
             *ptr = std.Clone(ctx, brand_name);
@@ -2257,9 +2267,9 @@ func make_type_index(struct_name: str, brand_name: str, ctx: &Arena) ast.Type[ct
 
 func make_type_generic(name: str, args: std.Vector[ast.Type[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
     mut t: ast.Type[ctx];
-    t.tag = 10; // Generic
-    t.Generic.name = std.Clone(ctx, name);
     unsafe {
+        t.tag = 10; // Generic
+        t.Generic.name = std.Clone(ctx, name);
         t.Generic.args = os.ArenaAlloc(ctx);
         mut dest_args := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
         *dest_args = args;

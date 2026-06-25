@@ -328,9 +328,11 @@ func main() {
 
         // Register variable res_val of type LookupResult_os_Dir_ctx
         mut t_wrapper: ast.Type[ctx];
-        t_wrapper.tag = 8; // Struct
-        t_wrapper.Struct.struct_name = "LookupResult_os_Dir_ctx";
-        t_wrapper.Struct.brand = empty[Index[str, ctx]];
+        unsafe {
+            t_wrapper.tag = 8; // Struct
+            t_wrapper.Struct.struct_name = "LookupResult_os_Dir_ctx";
+            t_wrapper.Struct.brand = empty[Index[str, ctx]];
+        }
         env_tc_test.variable_types.Insert("res_val", t_wrapper);
         typechecker.scope_insert(scope_tc_test, "res_val", t_wrapper, ctx);
 
