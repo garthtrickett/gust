@@ -17,13 +17,15 @@ func main() {
 
     mut vec_res := typechecker.monomorphize(&env, "std.Vector", vec_args, ctx);
      if vec_res.tag == 0 {
-         mut concrete_t := vec_res.Ok.val;
-         os.LogStr(std.Concat("Monomorphized Vector name: ", concrete_t.Struct.struct_name));
+         unsafe {
+             mut concrete_t := vec_res.Ok.val;
+             os.LogStr(std.Concat("Monomorphized Vector name: ", concrete_t.Struct.struct_name));
 
-         guard layout := env.struct_registry.Get(concrete_t.Struct.struct_name) else {
-             return;
+             guard layout := env.struct_registry.Get(concrete_t.Struct.struct_name) else {
+                 return;
+             }
+             os.LogInt(layout.fields.len);
          }
-         os.LogInt(layout.fields.len);
      } else {
          os.LogStr("Vector monomorphization failed");
      }
@@ -56,19 +58,21 @@ func main() {
         }
     }
     if mono_ok == 1 {
-        os.LogStr(std.Concat("Monomorphized Result name: ", concrete_t.Struct.struct_name));
+        unsafe {
+            os.LogStr(std.Concat("Monomorphized Result name: ", concrete_t.Struct.struct_name));
 
-        guard parent_layout := env.struct_registry.Get(concrete_t.Struct.struct_name) else {
-            return;
-        }
-        os.LogInt(parent_layout.fields.len);
+            guard parent_layout := env.struct_registry.Get(concrete_t.Struct.struct_name) else {
+                return;
+            }
+            os.LogInt(parent_layout.fields.len);
 
-        // Verify sub-variant structure
-        guard ok_variant_t := parent_layout.fields.Get("Ok") else {
-            return;
-        }
-        guard ok_layout := env.struct_registry.Get(ok_variant_t.Struct.struct_name) else {
-            return;
+            // Verify sub-variant structure
+            guard ok_variant_t := parent_layout.fields.Get("Ok") else {
+                return;
+            }
+            guard ok_layout := env.struct_registry.Get(ok_variant_t.Struct.struct_name) else {
+                return;
+            }
         }
         guard val_field_t := ok_layout.fields.Get("val") else {
             return;
@@ -346,11 +350,14 @@ func main() {
         }
     }
     if graph_ok == 1 {
-        os.LogStr(std.Concat("Monomorphized Graph name: ", concrete_t_graph.Struct.struct_name));
+        unsafe {
+            os.LogStr(std.Concat("Monomorphized Graph name: ", concrete_t_graph.Struct.struct_name));
 
-        mut layout_graph_lookup := env.struct_registry.Get(concrete_t_graph.Struct.struct_name);
-        if layout_graph_lookup.Ok {
-            os.LogStr("std_Graph_int_ctx successfully registered!");
+            mut layout_graph_lookup := env.struct_registry.Get(concrete_t_graph.Struct.struct_name);
+            if layout_graph_lookup.Ok {
+                os.LogStr("std_Graph_int_ctx successfully registered!");
+            }
+        }
         } else {
             os.LogStr("std_Graph_int_ctx registration failed!");
         }
@@ -452,21 +459,31 @@ mut lookup_param := env.variable_types.Get("ctx");
     }
 
     // Step 1 Verification: Test env_is_element_allowed_in_brand directly
-    mut t_int_test: ast.Type[ctx]; t_int_test.tag = 0; // Int
+    mut t_int_test: ast.Type[ctx];
+    unsafe {
+        t_int_test.tag = 0; // Int
+    }
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_int_test, "ctx", ctx)); // Expected: 1
 
-    mut t_str_test: ast.Type[ctx]; t_str_test.tag = 5; // Str
+    mut t_str_test: ast.Type[ctx];
+    unsafe {
+        t_str_test.tag = 5; // Str
+    }
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_str_test, "ctx", ctx)); // Expected: 1
 
     mut t_unbranded_linear: ast.Type[ctx];
-    t_unbranded_linear.tag = 8; // Struct
-    t_unbranded_linear.Struct.struct_name = "LinearStruct";
-    t_unbranded_linear.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_unbranded_linear.tag = 8; // Struct
+        t_unbranded_linear.Struct.struct_name = "LinearStruct";
+        t_unbranded_linear.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut t_ptr_test: ast.Type[ctx];
-    t_ptr_test.tag = 9; // RawPointer
-    t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+    unsafe {
+        t_ptr_test.tag = 9; // RawPointer
+        t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+    }
 
     mut linear_layout: typechecker.StructLayout[ctx];
     linear_layout.brand = empty[Index[str, ctx]];
@@ -476,9 +493,9 @@ mut lookup_param := env.variable_types.Get("ctx");
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_unbranded_linear, "ctx", ctx)); // Expected: 0
 
     mut t_branded_linear: ast.Type[ctx];
-            t_branded_linear.tag = 8; // Struct
-            t_branded_linear.Struct.struct_name = "LinearStruct_ctx";
             unsafe {
+                t_branded_linear.tag = 8; // Struct
+                t_branded_linear.Struct.struct_name = "LinearStruct_ctx";
                 t_branded_linear.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
                 mut brand_ptr := &ctx[t_branded_linear.Struct.brand] as *str;
                 *brand_ptr = "ctx";
@@ -486,13 +503,13 @@ mut lookup_param := env.variable_types.Get("ctx");
             os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_branded_linear, "ctx", ctx)); // Expected: 1
 
             mut t_mismatched_branded: ast.Type[ctx];
-            t_mismatched_branded.tag = 8; // Struct
-            t_mismatched_branded.Struct.struct_name = "LinearStruct_ctx1";
             unsafe {
+                t_mismatched_branded.tag = 8; // Struct
+                t_mismatched_branded.Struct.struct_name = "LinearStruct_ctx1";
                 t_mismatched_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
                 mut brand_ptr := &ctx[t_mismatched_branded.Struct.brand] as *str;
                 *brand_ptr = "ctx1";
-    }
+            }
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_mismatched_branded, "ctx", ctx)); // Expected: 0
 
     // Step 2 Verification: Test env_check_brand_nesting via monomorphize on std.Vector
@@ -580,24 +597,35 @@ mut lookup_param := env.variable_types.Get("ctx");
     }
 
     // Step 2 Verification: Recursive Type Validation (TCS Stack Safety)
-    mut t_int: ast.Type[ctx]; t_int.tag = 0;
+    mut t_int: ast.Type[ctx];
+    unsafe {
+        t_int.tag = 0;
+    }
     os.LogInt(typechecker.typechecker_is_stack_allowed(t_int, &env, ctx));
 
-    mut t_vec: ast.Type[ctx]; t_vec.tag = 10;
+    mut t_vec: ast.Type[ctx];
+    unsafe {
+        t_vec.tag = 10;
+    }
     os.LogInt(typechecker.typechecker_is_stack_allowed(t_vec, &env, ctx));
 
     mut pod_layout: typechecker.StructLayout[ctx];
     pod_layout.brand = empty[Index[str, ctx]];
     pod_layout.fields = std.HashMapNew(ctx);
-    mut t_bool: ast.Type[ctx]; t_bool.tag = 2;
+    mut t_bool: ast.Type[ctx];
+    unsafe {
+        t_bool.tag = 2;
+    }
     pod_layout.fields.Insert("x", t_int);
     pod_layout.fields.Insert("y", t_bool);
     typechecker.env_register_struct(&env, "PODStruct", pod_layout, ctx);
 
     mut t_pod: ast.Type[ctx];
-    t_pod.tag = 8;
-    t_pod.Struct.struct_name = "PODStruct";
-    t_pod.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_pod.tag = 8;
+        t_pod.Struct.struct_name = "PODStruct";
+        t_pod.Struct.brand = empty[Index[str, ctx]];
+    }
     os.LogInt(typechecker.typechecker_is_stack_allowed(t_pod, &env, ctx));
 
     mut complex_layout: typechecker.StructLayout[ctx];
@@ -607,9 +635,11 @@ mut lookup_param := env.variable_types.Get("ctx");
     typechecker.env_register_struct(&env, "ComplexStruct", complex_layout, ctx);
 
     mut t_complex: ast.Type[ctx];
-    t_complex.tag = 8;
-    t_complex.Struct.struct_name = "ComplexStruct";
-    t_complex.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_complex.tag = 8;
+        t_complex.Struct.struct_name = "ComplexStruct";
+        t_complex.Struct.brand = empty[Index[str, ctx]];
+    }
     os.LogInt(typechecker.typechecker_is_stack_allowed(t_complex, &env, ctx));
 
     os.LogStr("TCS Recursive Type Validation checks verified!");
