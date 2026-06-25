@@ -3820,6 +3820,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 }
             }
             if tag == 8 { // Match
+        if tag == 8 { // Match
             mut expr_idx := ctx[stmt_idx].Match.expression;
             mut expr_str := codegen_generate_expression(expr_idx, env, ctx);
             mut expr_t := codegen_get_expression_type(expr_idx, env, ctx);
@@ -3907,15 +3908,15 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                         f_idx = f_idx + 1;
                     }
                 }                    
-                    mut body_str := codegen_generate_block_statement(case_val.body, env, ctx);
-                    res = std.Concat(res, body_str);
-                    
-                    res = std.Concat(res, "            break;\n        }\n");
-                    i = i + 1;
-                }
-                res = std.Concat(res, "    }\n");
-                return std.Clone(ctx, res);
+                mut body_str := codegen_generate_block_statement(case_val.body, env, ctx);
+                res = std.Concat(res, body_str);
+                
+                res = std.Concat(res, "            break;\n        }\n");
+                i = i + 1;
             }
+            res = std.Concat(res, "    }\n");
+            return std.Clone(ctx, res);
+        }
             if tag == 11 { // Defer
                 return "";
             }
