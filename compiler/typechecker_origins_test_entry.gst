@@ -59,7 +59,9 @@ func main() {
     mut sig: typechecker.FunctionSignature[ctx];
     sig.param_names = std.VectorNew(ctx);
     sig.params = std.VectorNew(ctx);
-    sig.return_type.tag = 5; // Str
+    unsafe {
+        sig.return_type.tag = 5; // Str
+    }
     typechecker.env_register_function(&env, "std_Format", sig, ctx);
 
     // Initialize Lexer & Parser for: "my_var.field[index_val]"
@@ -95,7 +97,9 @@ func main() {
 
     // Case 1: Variable Origin Invalidated Check
     mut t_int: ast.Type[ctx];
-    t_int.tag = 0; // Int
+    unsafe {
+        t_int.tag = 0; // Int
+    }
     typechecker.scope_insert(scope, "var_a", t_int, ctx);
 
     mut orig_a := typechecker.set_init(ctx);
@@ -130,15 +134,14 @@ func main() {
 
     // Case 2: Allocator Moved Or Freed Check
     mut t_index: ast.Type[ctx];
-    t_index.tag = 7; // Index
-    t_index.Index.struct_name = std.Clone(ctx, "Node");
     mut brand_idx: Index[str, ctx] := empty[Index[str, ctx]];
     unsafe {
-        brand_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
+        t_index.tag = 7; // Index
+        t_index.Index.struct_name = std.Clone(ctx, "Node");
         mut brand_ptr := &ctx[brand_idx] as *str;
         *brand_ptr = "ctx_brand";
+        t_index.Index.brand = brand_idx;
     }
-    t_index.Index.brand = brand_idx;
     typechecker.scope_insert(scope, "var_b", t_index, ctx);
 
     env.moved_vars.Insert(std.Clone(ctx, "ctx_brand"), 1);
@@ -543,28 +546,36 @@ func main() {
     // Step 1 Verification: Test env_type_is_linear
     // 1. Primitive Int
     mut t_int_test: ast.Type[ctx];
-    t_int_test.tag = 0; // Int
+    unsafe {
+        t_int_test.tag = 0; // Int
+    }
     os.LogInt(typechecker.env_type_is_linear(t_int_test, &env, ctx)); // Expected: 0
 
     // 2. Index
     mut t_idx_test: ast.Type[ctx];
-    t_idx_test.tag = 7; // Index
-    t_idx_test.Index.struct_name = "MyNode";
-    t_idx_test.Index.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_idx_test.tag = 7; // Index
+        t_idx_test.Index.struct_name = "MyNode";
+        t_idx_test.Index.brand = empty[Index[str, ctx]];
+    }
     os.LogInt(typechecker.env_type_is_linear(t_idx_test, &env, ctx)); // Expected: 0
 
     // 3. RawPointer
     mut t_ptr_test: ast.Type[ctx];
-    t_ptr_test.tag = 9; // RawPointer
-    t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+    unsafe {
+        t_ptr_test.tag = 9; // RawPointer
+        t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+    }
     os.LogInt(typechecker.env_type_is_linear(t_ptr_test, &env, ctx)); // Expected: 1
 
     // 4. Custom POD struct Point (registered earlier)
     mut t_pod_test: ast.Type[ctx];
-    t_pod_test.tag = 8; // Struct
-    t_pod_test.Struct.struct_name = "Point";
-    t_pod_test.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_pod_test.tag = 8; // Struct
+        t_pod_test.Struct.struct_name = "Point";
+        t_pod_test.Struct.brand = empty[Index[str, ctx]];
+    }
     os.LogInt(typechecker.env_type_is_linear(t_pod_test, &env, ctx)); // Expected: 0
 
     // 5. Custom Linear struct (containing a pointer/linear type)
@@ -575,9 +586,11 @@ func main() {
     typechecker.env_register_struct(&env, "LinearStruct", linear_layout, ctx);
 
     mut t_linear_test: ast.Type[ctx];
-    t_linear_test.tag = 8; // Struct
-    t_linear_test.Struct.struct_name = "LinearStruct";
-    t_linear_test.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_linear_test.tag = 8; // Struct
+        t_linear_test.Struct.struct_name = "LinearStruct";
+        t_linear_test.Struct.brand = empty[Index[str, ctx]];
+    }
     os.LogInt(typechecker.env_type_is_linear(t_linear_test, &env, ctx)); // Expected: 1
 
     // 6. Cyclic linked-list node
@@ -586,17 +599,21 @@ func main() {
     cyclic_layout.fields = std.HashMapNew(ctx);
 
     mut t_idx_cyclic: ast.Type[ctx];
-    t_idx_cyclic.tag = 7; // Index
-    t_idx_cyclic.Index.struct_name = "CyclicNode";
-    t_idx_cyclic.Index.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_idx_cyclic.tag = 7; // Index
+        t_idx_cyclic.Index.struct_name = "CyclicNode";
+        t_idx_cyclic.Index.brand = empty[Index[str, ctx]];
+    }
 
     cyclic_layout.fields.Insert("next", t_idx_cyclic);
     typechecker.env_register_struct(&env, "CyclicNode", cyclic_layout, ctx);
 
     mut t_cyclic_test: ast.Type[ctx];
-    t_cyclic_test.tag = 8; // Struct
-    t_cyclic_test.Struct.struct_name = "CyclicNode";
-    t_cyclic_test.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_cyclic_test.tag = 8; // Struct
+        t_cyclic_test.Struct.struct_name = "CyclicNode";
+        t_cyclic_test.Struct.brand = empty[Index[str, ctx]];
+    }
     os.LogInt(typechecker.env_type_is_linear(t_cyclic_test, &env, ctx)); // Expected: 0
 
 
@@ -606,9 +623,11 @@ func main() {
 
     // 1. Declare and move a Linear type (Slice)
     mut t_slice_test: ast.Type[ctx];
-    t_slice_test.tag = 6; // Slice
-    t_slice_test.Slice.inner = os.ArenaAlloc(ctx);
-    ctx[t_slice_test.Slice.inner].tag = 1; // Byte
+    unsafe {
+        t_slice_test.tag = 6; // Slice
+        t_slice_test.Slice.inner = os.ArenaAlloc(ctx);
+        ctx[t_slice_test.Slice.inner].tag = 1; // Byte
+    }
 
     typechecker.scope_insert(scope_move_test, "my_linear_var", t_slice_test, ctx);
     env_move_test.variable_types.Insert("my_linear_var", t_slice_test);
@@ -647,7 +666,9 @@ func main() {
     mut scope_move_test2 := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
 
     mut t_int_move_test: ast.Type[ctx];
-    t_int_test.tag = 0; // Int
+    unsafe {
+        t_int_test.tag = 0; // Int
+    }
 
     typechecker.scope_insert(scope_move_test2, "my_pod_var", t_int_move_test, ctx);
     env_move_test2.variable_types.Insert("my_pod_var", t_int_move_test);
@@ -675,9 +696,11 @@ mut l_move3: lexer.Lexer[ctx];
     typechecker.env_register_struct(&env_brand_test, "MyBrandedStruct", layout_brand_test, ctx);
 
     mut t_empty_brand_struct: ast.Type[ctx];
-    t_empty_brand_struct.tag = 8; // Struct
-    t_empty_brand_struct.Struct.struct_name = "MyBrandedStruct";
-    t_empty_brand_struct.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_empty_brand_struct.tag = 8; // Struct
+        t_empty_brand_struct.Struct.struct_name = "MyBrandedStruct";
+        t_empty_brand_struct.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut resolved_brand := typechecker.get_type_brand(t_empty_brand_struct, &env_brand_test, ctx);
     if std.str_eq(resolved_brand, "my_custom_brand") == 1 {
@@ -688,9 +711,11 @@ mut l_move3: lexer.Lexer[ctx];
 
     // Test Case 2: Struct with empty brand field and no registry layout, but name ends with _ctx
     mut t_suffix_struct: ast.Type[ctx];
-    t_suffix_struct.tag = 8; // Struct
-    t_suffix_struct.Struct.struct_name = "MyUnregisteredNode_ctx";
-    t_suffix_struct.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_suffix_struct.tag = 8; // Struct
+        t_suffix_struct.Struct.struct_name = "MyUnregisteredNode_ctx";
+        t_suffix_struct.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut resolved_suffix := typechecker.get_type_brand(t_suffix_struct, &env_brand_test, ctx);
     if std.str_eq(resolved_suffix, "ctx") == 1 {
@@ -701,9 +726,11 @@ mut l_move3: lexer.Lexer[ctx];
 
     // Test Case 3: Nested pointer type pointing to a branded struct
     mut t_nested_ptr: ast.Type[ctx];
-    t_nested_ptr.tag = 9; // RawPointer
-    t_nested_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_nested_ptr.RawPointer.inner] = t_empty_brand_struct;
+    unsafe {
+        t_nested_ptr.tag = 9; // RawPointer
+        t_nested_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_nested_ptr.RawPointer.inner] = t_empty_brand_struct;
+    }
 
     mut resolved_nested := typechecker.get_type_brand(t_nested_ptr, &env_brand_test, ctx);
     if std.str_eq(resolved_nested, "my_custom_brand") == 1 {
