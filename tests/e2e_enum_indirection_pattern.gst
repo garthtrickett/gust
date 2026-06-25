@@ -34,8 +34,10 @@ func main() {
     ctx[p].z = 30;
 
     mut e: MyEnum[ctx];
-    e.tag = 0;
-    e.VariantA.val = p;
+    unsafe {
+        e.tag = 0;
+        e.VariantA.val = p;
+    }
 
     mut res := process(e, ctx);
     os.LogInt(res);
