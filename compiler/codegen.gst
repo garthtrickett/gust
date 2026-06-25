@@ -3819,7 +3819,6 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                     return std.Clone(ctx, res);
                 }
             }
-            if tag == 8 { // Match
         if tag == 8 { // Match
             mut expr_idx := ctx[stmt_idx].Match.expression;
             mut expr_str := codegen_generate_expression(expr_idx, env, ctx);
