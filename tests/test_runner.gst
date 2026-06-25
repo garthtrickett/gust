@@ -1064,9 +1064,9 @@ func main() {
     tests.Push(t_unsafe_acc_acc);
 
     mut t_match_dest_ref_rej: Test[ctx];
-    t_match_dest_ref_rej.path = "tests/test_match_destructure_type_is_reference.gst";
+    t_match_dest_ref_rej.path = "tests/test_match_destructure_type_is_reference_rejected.gst";
     t_match_dest_ref_rej.is_negative = 1;
-    t_match_dest_ref_rej.expected = "TypeMismatch";
+    t_match_dest_ref_rej.expected = "type mismatch";
     tests.Push(t_match_dest_ref_rej);
 
     mut t_match_dest_deref_acc: Test[ctx];
