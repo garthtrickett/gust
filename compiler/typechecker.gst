@@ -107,22 +107,22 @@ func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) in
 }
 
 func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
-    unsafe {
-        if t.tag == 5 { // Str
+    match t {
+        Str => {
             return 1;
         }
-        if t.tag == 6 { // Slice
+        Slice { inner } => {
             return 1;
         }
-        if t.tag == 9 { // RawPointer
+        RawPointer { inner } => {
             return 1;
         }
-        if t.tag == 11 { // Reference
+        Reference { inner, brand } => {
             return 1;
         }
-        if t.tag == 8 { // Struct
-            mut name := t.Struct.struct_name;
-            if std.str_eq(name, "str") {
+        Struct { struct_name, brand } => {
+            mut name := *struct_name;
+            if std.str_eq(name, "str") == 1 {
                 return 1;
             }
             mut clean_name := name;
@@ -130,14 +130,35 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
             if d_idx != 0 - 1 {
                 clean_name = std.str_slice(name, d_idx + 2, len(name));
             }
-            if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") {
+            if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") == 1 {
                 return 1;
             }
-            if len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_") {
+            if len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_") == 1 {
                 return 1;
             }
+            return 0;
         }
-        return 0;
+        Int => {
+            return 0;
+        }
+        Byte => {
+            return 0;
+        }
+        Bool => {
+            return 0;
+        }
+        Void => {
+            return 0;
+        }
+        Arena => {
+            return 0;
+        }
+        Index { struct_name, brand } => {
+            return 0;
+        }
+        Generic { name, args } => {
+            return 0;
+        }
     }
 }
 
