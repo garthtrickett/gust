@@ -107,36 +107,38 @@ func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) in
 }
 
 func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
-    if t.tag == 5 { // Str
-        return 1;
-    }
-    if t.tag == 6 { // Slice
-        return 1;
-    }
-    if t.tag == 9 { // RawPointer
-        return 1;
-    }
-    if t.tag == 11 { // Reference
-        return 1;
-    }
-    if t.tag == 8 { // Struct
-        mut name := get_type_ident(t, ctx);
-        if std.str_eq(name, "str") == 1 {
+    unsafe {
+        if t.tag == 5 { // Str
             return 1;
         }
-        mut clean_name := name;
-        mut d_idx := std.str_find(name, "__");
-        if d_idx != 0 - 1 {
-            clean_name = std.str_slice(name, d_idx + 2, len(name));
-        }
-        if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") == 1 {
+        if t.tag == 6 { // Slice
             return 1;
         }
-        if len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_") == 1 {
+        if t.tag == 9 { // RawPointer
             return 1;
         }
+        if t.tag == 11 { // Reference
+            return 1;
+        }
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            if std.str_eq(name, "str") == 1 {
+                return 1;
+            }
+            mut clean_name := name;
+            mut d_idx := std.str_find(name, "__");
+            if d_idx != 0 - 1 {
+                clean_name = std.str_slice(name, d_idx + 2, len(name));
+            }
+            if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") == 1 {
+                return 1;
+            }
+            if len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_") == 1 {
+                return 1;
+            }
+        }
+        return 0;
     }
-    return 0;
 }
 
 func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], parent_brand: Index[str, ctx], span: token.Span, ctx: &Arena) {
@@ -265,33 +267,35 @@ func env_type_is_linear(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Aren
 }
 
 func env_is_element_allowed_in_brand(env: *TypeEnvironment[ctx], t: ast.Type[ctx], parent_brand: str, ctx: &Arena) int { 
-    if env_type_is_linear(t, env, ctx) == 0 {
-        return 1;
-    }
-    if t.tag == 5 { // Str
-        return 1;
-    }
-    if t.tag == 6 { // Slice
-        return 1;
-    }
-    if t.tag == 8 { // Struct
-        mut name := t.Struct.struct_name;
-        if std.str_eq(name, "str") == 1 {
-            return 1;
-        } 
-    }
-    mut ib := get_type_brand(t, env, ctx);
-    if std.str_eq(ib, "") == 0 {
-        mut clean_ib := strip_brand_prefix(ib, ctx);
-        mut clean_ob := strip_brand_prefix(parent_brand, ctx);
-        if std.str_eq(clean_ib, clean_ob) == 1 {
-            return 1;
-        } 
-        if std.str_eq(clean_ib, "Any") == 1 || std.str_eq(clean_ob, "Any") == 1 {
+    unsafe {
+        if env_type_is_linear(t, env, ctx) == 0 {
             return 1;
         }
+        if t.tag == 5 { // Str
+            return 1;
+        }
+        if t.tag == 6 { // Slice
+            return 1;
+        }
+        if t.tag == 8 { // Struct
+            mut name := t.Struct.struct_name;
+            if std.str_eq(name, "str") == 1 {
+                return 1;
+            } 
+        }
+        mut ib := get_type_brand(t, env, ctx);
+        if std.str_eq(ib, "") == 0 {
+            mut clean_ib := strip_brand_prefix(ib, ctx);
+            mut clean_ob := strip_brand_prefix(parent_brand, ctx);
+            if std.str_eq(clean_ib, clean_ob) == 1 {
+                return 1;
+            } 
+            if std.str_eq(clean_ib, "Any") == 1 || std.str_eq(clean_ob, "Any") == 1 {
+                return 1;
+            } 
+        }
+        return 0;
     }
-    return 0;
 }
 
 func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) Index[OriginSet[ctx], ctx] { 
@@ -2571,7 +2575,7 @@ func typechecker_parse_type_from_string(target_struct: str, ctx: &Arena) ast.Typ
             mut suffix := std.str_slice(target_struct, 6, len(target_struct));
             mut brand_name := typechecker_extract_brand_from_suffix(suffix, ctx);
             return make_type_index(suffix, brand_name, ctx);
-        } 
+        }
 
         mut brand_name := typechecker_extract_brand_from_suffix(target_struct, ctx);
         return make_type_struct(target_struct, brand_name, ctx);
