@@ -49,8 +49,10 @@ func main() {
 
     // 1. ADT / Match testing
     mut s: Status;
-    s.tag = 1; // Active
-    s.Active.name = "E2E_Bootstrap";
+    unsafe {
+        s.tag = 1; // Active
+        s.Active.name = "E2E_Bootstrap";
+    }
 
     match s {
         Pending => {
