@@ -88,26 +88,31 @@ func main() {
     sig_test.param_names = std.VectorNew(ctx);
     sig_test.params = std.VectorNew(ctx);
 
-    sig_test.return_type.tag = 2; // Bool -> unsigned char
+    mut t_param_int: ast.Type[ctx];
+    mut t_param_arena_ptr: ast.Type[ctx];
+    mut t_param_arena: ast.Type[ctx];
+
+    unsafe {
+        sig_test.return_type.tag = 2; // Bool -> unsigned char
+
+        t_param_int.tag = 0;
+        t_param_arena_ptr.tag = 9; // RawPointer
+        t_param_arena_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_param_arena_ptr.RawPointer.inner].tag = 4; // Arena
+
+        t_param_arena.tag = 4; // Arena
+    }
 
     // Param 1: x: int
     sig_test.param_names.Push("x");
-    mut t_param_int: ast.Type[ctx];
-    t_param_int.tag = 0;
     sig_test.params.Push(t_param_int);
 
     // Param 2: arena_ptr: &Arena
     sig_test.param_names.Push("arena_ptr");
-    mut t_param_arena_ptr: ast.Type[ctx];
-    t_param_arena_ptr.tag = 9; // RawPointer
-    t_param_arena_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_param_arena_ptr.RawPointer.inner].tag = 4; // Arena
     sig_test.params.Push(t_param_arena_ptr);
 
     // Param 3: arena_val: Arena
     sig_test.param_names.Push("arena_val");
-    mut t_param_arena: ast.Type[ctx];
-    t_param_arena.tag = 4; // Arena
     sig_test.params.Push(t_param_arena);
 
     mut fwd_decl := codegen.codegen_gen_function_fwd_decl("lib.my_awesome_func", sig_test, &env, ctx);
@@ -473,24 +478,30 @@ func main() {
 
     // 1. Test primitive types
     mut t_int: ast.Type[ctx];
-    t_int.tag = 0; // Int
+    unsafe {
+        t_int.tag = 0; // Int
+    }
     mut init_int := codegen.codegen_gen_type_aware_initializer(t_int, &env, ctx);
     os.LogStr(init_int); // Expected: 0
 
     // 2. Test Index type
     mut t_index: ast.Type[ctx];
-    t_index.tag = 7; // Index
-    t_index.Index.struct_name = "Node";
-    t_index.Index.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_index.tag = 7; // Index
+        t_index.Index.struct_name = "Node";
+        t_index.Index.brand = empty[Index[str, ctx]];
+    }
     mut init_index := codegen.codegen_gen_type_aware_initializer(t_index, &env, ctx);
     os.LogStr(init_index); // Expected: 0xFFFFFFFF
 
     // 3. Test RawPointer type
     mut t_ptr: ast.Type[ctx];
-    t_ptr.tag = 9; // RawPointer
     mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-    t_ptr.RawPointer.inner = inner_idx;
-    ctx[t_ptr.RawPointer.inner].tag = 0; // Int
+    unsafe {
+        t_ptr.tag = 9; // RawPointer
+        t_ptr.RawPointer.inner = inner_idx;
+        ctx[t_ptr.RawPointer.inner].tag = 0; // Int
+    }
     mut init_ptr := codegen.codegen_gen_type_aware_initializer(t_ptr, &env, ctx);
     os.LogStr(init_ptr); // Expected: NULL
 
@@ -508,9 +519,11 @@ func main() {
     }
 
     mut t_point: ast.Type[ctx];
-    t_point.tag = 8; // Struct
-    t_point.Struct.struct_name = "Point";
-    t_point.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_point.tag = 8; // Struct
+        t_point.Struct.struct_name = "Point";
+        t_point.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut init_point := codegen.codegen_gen_type_aware_initializer(t_point, &env, ctx);
     os.LogStr(init_point); // Expected: ((Point){ .x = 0, .y = 0 }) (alphabetically sorted!)
@@ -534,9 +547,11 @@ func main() {
     }
 
     mut t_node: ast.Type[ctx];
-    t_node.tag = 8; // Struct
-    t_node.Struct.struct_name = "Node";
-    t_node.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_node.tag = 8; // Struct
+        t_node.Struct.struct_name = "Node";
+        t_node.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut has_bool_node := codegen.codegen_has_boolean_fields(t_node, &env, ctx);
     os.LogInt(has_bool_node); // Expected: 1
@@ -555,9 +570,11 @@ func main() {
     }
 
     mut t_parent: ast.Type[ctx];
-    t_parent.tag = 8; // Struct
-    t_parent.Struct.struct_name = "ParentNode";
-    t_parent.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_parent.tag = 8; // Struct
+        t_parent.Struct.struct_name = "ParentNode";
+        t_parent.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut has_bool_parent := codegen.codegen_has_boolean_fields(t_parent, &env, ctx);
     os.LogInt(has_bool_parent); // Expected: 1
@@ -667,10 +684,10 @@ func main() {
 
       // Step 1: Verification Test for Brand Erasure Utilities
     mut t_branded_vect: ast.Type[ctx];
-    t_branded_vect.tag = 8;
-    t_branded_vect.Struct.struct_name = "std_Vector_str_ctx";
     mut brand_v_idx: Index[str, ctx] := empty[Index[str, ctx]];
     unsafe {
+        t_branded_vect.tag = 8;
+        t_branded_vect.Struct.struct_name = "std_Vector_str_ctx";
         brand_v_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
         t_branded_vect.Struct.brand = brand_v_idx;
         mut brand_ptr := &ctx[t_branded_vect.Struct.brand] as *str;
@@ -678,10 +695,10 @@ func main() {
     }
 
     mut t_lookup: ast.Type[ctx];
-    t_lookup.tag = 8;
-    t_lookup.Struct.struct_name = "LookupResult_os_Dir_ctx";
     mut brand_l_idx: Index[str, ctx] := empty[Index[str, ctx]];
     unsafe {
+        t_lookup.tag = 8;
+        t_lookup.Struct.struct_name = "LookupResult_os_Dir_ctx";
         brand_l_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
         t_lookup.Struct.brand = brand_l_idx;
         mut brand_ptr := &ctx[t_lookup.Struct.brand] as *str;
@@ -689,31 +706,37 @@ func main() {
     }
 
     mut erased_lookup := codegen.codegen_erase_type(t_lookup, &env, ctx);
-    os.LogStr(erased_lookup.Struct.struct_name);
+    unsafe {
+        os.LogStr(erased_lookup.Struct.struct_name);
+    }
 
     // Step 2: Verification Test for C Type Generation
     mut t_gen_vector: ast.Type[ctx];
-    t_gen_vector.tag = 10; // Generic
-    t_gen_vector.Generic.name = "std.Vector";
-    
     mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     
     mut arg1: ast.Type[ctx];
-    arg1.tag = 5; // Str
+    mut arg2: ast.Type[ctx];
+    unsafe {
+        t_gen_vector.tag = 10; // Generic
+        t_gen_vector.Generic.name = "std.Vector";
+        
+        arg1.tag = 5; // Str
+    }
     args.Push(arg1);
     
-    mut arg2: ast.Type[ctx];
-    arg2.tag = 8; // Struct
-    arg2.Struct.struct_name = "ctx";
-    arg2.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        arg2.tag = 8; // Struct
+        arg2.Struct.struct_name = "ctx";
+        arg2.Struct.brand = empty[Index[str, ctx]];
+    }
     args.Push(arg2);
     
     mut args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
         mut args_ptr := &ctx[args_idx] as *std.Vector[ast.Type[ctx], ctx];
         *args_ptr = args;
+        t_gen_vector.Generic.args = args_idx;
     }
-    t_gen_vector.Generic.args = args_idx;
     
     mut c_type_str := codegen.codegen_get_c_type(t_gen_vector, &env, ctx);
     os.LogStr(c_type_str);
@@ -731,7 +754,10 @@ func main() {
     }
     layout1.brand = brand1;
     layout1.fields = std.HashMapNew(ctx);
-    mut t_int_dup: ast.Type[ctx]; t_int_dup.tag = 0; // Int
+    mut t_int_dup: ast.Type[ctx];
+    unsafe {
+        t_int_dup.tag = 0; // Int
+    }
     layout1.fields.Insert("val", t_int_dup);
     typechecker.env_register_struct(&env_dup, "MyNode_ctx1", layout1, ctx);
 
@@ -769,11 +795,11 @@ func main() {
 
     // Step 1: Verification Test for codegen_gen_type_aware_initializer Erasure
     mut t_branded_prog: ast.Type[ctx];
-    t_branded_prog.tag = 8;
-    t_branded_prog.Struct.struct_name = "ast__Program_ctx";
     mut brand_prog_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
-    t_branded_prog.Struct.brand = brand_prog_idx;
     unsafe { 
+        t_branded_prog.tag = 8;
+        t_branded_prog.Struct.struct_name = "ast__Program_ctx";
+        t_branded_prog.Struct.brand = brand_prog_idx;
         mut brand_ptr := &ctx[t_branded_prog.Struct.brand] as *str;
         *brand_ptr = "ctx";
     }
@@ -831,42 +857,56 @@ func main() {
 
     // Step 3: Verification Test for Step 1 Type & Container Identification Helpers
     mut t_slice_test: ast.Type[ctx];
-    t_slice_test.tag = 6; // Slice
+    unsafe {
+        t_slice_test.tag = 6; // Slice
+    }
     os.LogInt(codegen.codegen_is_slice_type(t_slice_test)); // Expected: 1
 
     mut t_str_test: ast.Type[ctx];
-    t_str_test.tag = 5; // Str
+    unsafe {
+        t_str_test.tag = 5; // Str
+    }
     os.LogInt(codegen.codegen_is_slice_type(t_str_test)); // Expected: 1
 
     mut t_vec_test: ast.Type[ctx];
-    t_vec_test.tag = 8; // Struct
-    t_vec_test.Struct.struct_name = "std_Vector_int_ctx";
-    t_vec_test.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_vec_test.tag = 8; // Struct
+        t_vec_test.Struct.struct_name = "std_Vector_int_ctx";
+        t_vec_test.Struct.brand = empty[Index[str, ctx]];
+    }
     os.LogInt(codegen.codegen_is_vector_type(t_vec_test, &env, ctx)); // Expected: 1
 
     // Sub-Step 1.1 Verification: Test codegen_is_vector_type and codegen_is_pool_type with RawPointer (tag 9)
     mut t_vec_ptr: ast.Type[ctx];
-    t_vec_ptr.tag = 9; // RawPointer
-    t_vec_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_vec_ptr.RawPointer.inner] = t_vec_test;
+    unsafe {
+        t_vec_ptr.tag = 9; // RawPointer
+        t_vec_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_vec_ptr.RawPointer.inner] = t_vec_test;
+    }
     os.LogInt(codegen.codegen_is_vector_type(t_vec_ptr, &env, ctx)); // Expected: 1
 
     mut t_pool_test: ast.Type[ctx];
-    t_pool_test.tag = 8; // Struct
-    t_pool_test.Struct.struct_name = "std_Pool_int_ctx";
-    t_pool_test.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_pool_test.tag = 8; // Struct
+        t_pool_test.Struct.struct_name = "std_Pool_int_ctx";
+        t_pool_test.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut t_pool_ptr: ast.Type[ctx];
-    t_pool_ptr.tag = 9; // RawPointer
-    t_pool_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_pool_ptr.RawPointer.inner] = t_pool_test;
+    unsafe {
+        t_pool_ptr.tag = 9; // RawPointer
+        t_pool_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_pool_ptr.RawPointer.inner] = t_pool_test;
+    }
     os.LogInt(codegen.codegen_is_pool_type(t_pool_ptr, &env, ctx)); // Expected: 1
 
     // Sub-Step 1.2 Verification: Test codegen_is_hashmap_type with RawPointer (tag 9)
     mut t_map_str_test: ast.Type[ctx];
-    t_map_str_test.tag = 8; // Struct
-    t_map_str_test.Struct.struct_name = "std_HashMap_str_int_ctx";
-    t_map_str_test.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_map_str_test.tag = 8; // Struct
+        t_map_str_test.Struct.struct_name = "std_HashMap_str_int_ctx";
+        t_map_str_test.Struct.brand = empty[Index[str, ctx]];
+    }
     
     // Register the standard std_HashMap_str_int_ctx layout
     mut map_str_layout: typechecker.StructLayout[ctx];
@@ -874,9 +914,11 @@ func main() {
     map_str_layout.fields = std.HashMapNew(ctx);
     
     mut keys_ptr_type: ast.Type[ctx];
-    keys_ptr_type.tag = 9; // RawPointer
-    keys_ptr_type.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[keys_ptr_type.RawPointer.inner].tag = 5; // Str
+    unsafe {
+        keys_ptr_type.tag = 9; // RawPointer
+        keys_ptr_type.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[keys_ptr_type.RawPointer.inner].tag = 5; // Str
+    }
     
     map_str_layout.fields.Insert("keys", keys_ptr_type);
     typechecker.env_register_struct(&env, "std_HashMap_str_int_ctx", map_str_layout, ctx);
@@ -885,15 +927,19 @@ func main() {
     os.LogInt(codegen.codegen_hashmap_is_str_key(t_map_str_test, &env, ctx)); // Expected: 1
 
     mut t_map_ptr: ast.Type[ctx];
-    t_map_ptr.tag = 9; // RawPointer
-    t_map_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[t_map_ptr.RawPointer.inner] = t_map_str_test;
+    unsafe {
+        t_map_ptr.tag = 9; // RawPointer
+        t_map_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[t_map_ptr.RawPointer.inner] = t_map_str_test;
+    }
     os.LogInt(codegen.codegen_is_hashmap_type(t_map_ptr, &env, ctx)); // Expected: 1
 
     mut t_map_int_test: ast.Type[ctx];
-    t_map_int_test.tag = 8; // Struct
-    t_map_int_test.Struct.struct_name = "std_HashMap_int_int_ctx";
-    t_map_int_test.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        t_map_int_test.tag = 8; // Struct
+        t_map_int_test.Struct.struct_name = "std_HashMap_int_int_ctx";
+        t_map_int_test.Struct.brand = empty[Index[str, ctx]];
+    }
 
     // Register custom std_HashMap_int_int_ctx layout
     mut map_int_layout: typechecker.StructLayout[ctx];
@@ -901,9 +947,11 @@ func main() {
     map_int_layout.fields = std.HashMapNew(ctx);
     
     mut keys_int_ptr_type: ast.Type[ctx];
-    keys_int_ptr_type.tag = 9; // RawPointer
-    keys_int_ptr_type.RawPointer.inner = os.ArenaAlloc(ctx);
-    ctx[keys_int_ptr_type.RawPointer.inner].tag = 0; // Int
+    unsafe {
+        keys_int_ptr_type.tag = 9; // RawPointer
+        keys_int_ptr_type.RawPointer.inner = os.ArenaAlloc(ctx);
+        ctx[keys_int_ptr_type.RawPointer.inner].tag = 0; // Int
+    }
     
     map_int_layout.fields.Insert("keys", keys_int_ptr_type);
     typechecker.env_register_struct(&env, "std_HashMap_int_int_ctx", map_int_layout, ctx);
@@ -919,7 +967,10 @@ func main() {
     mut node_layout_test: typechecker.StructLayout[ctx];
     node_layout_test.brand = empty[Index[str, ctx]];
     node_layout_test.fields = std.HashMapNew(ctx);
-    mut t_bool_test: ast.Type[ctx]; t_bool_test.tag = 2; // Bool
+    mut t_bool_test: ast.Type[ctx];
+    unsafe {
+        t_bool_test.tag = 2; // Bool
+    }
     node_layout_test.fields.Insert("val", t_bool_test);
     typechecker.env_register_struct(&env_sel_test, "MyNode", node_layout_test, ctx);
 
@@ -957,23 +1008,25 @@ func main() {
 
     // Step 4: Verification Test for Step 2 Slice, Str, and RawPointer IndexAccess Branches
     mut e_slice_access: ast.Expression[ctx];
-    e_slice_access.tag = 8; // IndexAccess
-    e_slice_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
-    e_slice_access.IndexAccess.index = os.ArenaAlloc(ctx);
-    
-    // Set allocator as identifier "my_slice"
-    ctx[e_slice_access.IndexAccess.allocator].tag = 0; // Identifier
-    ctx[e_slice_access.IndexAccess.allocator].Identifier.span.start.offset = 100;
-    ctx[e_slice_access.IndexAccess.allocator].Identifier.span.end.offset = 108;
+    unsafe {
+        e_slice_access.tag = 8; // IndexAccess
+        e_slice_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
+        e_slice_access.IndexAccess.index = os.ArenaAlloc(ctx);
+        
+        // Set allocator as identifier "my_slice"
+        ctx[e_slice_access.IndexAccess.allocator].tag = 0; // Identifier
+        ctx[e_slice_access.IndexAccess.allocator].Identifier.span.start.offset = 100;
+        ctx[e_slice_access.IndexAccess.allocator].Identifier.span.end.offset = 108;
 
-    // Set index as integer 2
-    ctx[e_slice_access.IndexAccess.index].tag = 1; // Integer
-    ctx[e_slice_access.IndexAccess.index].Integer.val = 2;
-    ctx[e_slice_access.IndexAccess.index].Integer.span.start.offset = 109;
-    ctx[e_slice_access.IndexAccess.index].Integer.span.end.offset = 110;
+        // Set index as integer 2
+        ctx[e_slice_access.IndexAccess.index].tag = 1; // Integer
+        ctx[e_slice_access.IndexAccess.index].Integer.val = 2;
+        ctx[e_slice_access.IndexAccess.index].Integer.span.start.offset = 109;
+        ctx[e_slice_access.IndexAccess.index].Integer.span.end.offset = 110;
 
-    e_slice_access.IndexAccess.span.start.offset = 100;
-    e_slice_access.IndexAccess.span.end.offset = 111;
+        e_slice_access.IndexAccess.span.start.offset = 100;
+        e_slice_access.IndexAccess.span.end.offset = 111;
+    }
 
     // Setup types in env
     mut t_slice: ast.Type[ctx];
@@ -1008,22 +1061,24 @@ func main() {
 
     // Test RawPointer index access
     mut e_ptr_access: ast.Expression[ctx];
-    e_ptr_access.tag = 8; // IndexAccess
-    e_ptr_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
-    e_ptr_access.IndexAccess.index = os.ArenaAlloc(ctx);
+    unsafe {
+        e_ptr_access.tag = 8; // IndexAccess
+        e_ptr_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
+        e_ptr_access.IndexAccess.index = os.ArenaAlloc(ctx);
 
-    ctx[e_ptr_access.IndexAccess.allocator].tag = 0; // Identifier
-    ctx[e_ptr_access.IndexAccess.allocator].Identifier.name = "my_ptr";
-    ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.start.offset = 200;
-    ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.end.offset = 206;
+        ctx[e_ptr_access.IndexAccess.allocator].tag = 0; // Identifier
+        ctx[e_ptr_access.IndexAccess.allocator].Identifier.name = "my_ptr";
+        ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.start.offset = 200;
+        ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.end.offset = 206;
 
-    ctx[e_ptr_access.IndexAccess.index].tag = 1; // Integer
-    ctx[e_ptr_access.IndexAccess.index].Integer.val = 3;
-    ctx[e_ptr_access.IndexAccess.index].Integer.span.start.offset = 207;
-    ctx[e_ptr_access.IndexAccess.index].Integer.span.end.offset = 208;
+        ctx[e_ptr_access.IndexAccess.index].tag = 1; // Integer
+        ctx[e_ptr_access.IndexAccess.index].Integer.val = 3;
+        ctx[e_ptr_access.IndexAccess.index].Integer.span.start.offset = 207;
+        ctx[e_ptr_access.IndexAccess.index].Integer.span.end.offset = 208;
 
-    e_ptr_access.IndexAccess.span.start.offset = 200;
-    e_ptr_access.IndexAccess.span.end.offset = 209;
+        e_ptr_access.IndexAccess.span.start.offset = 200;
+        e_ptr_access.IndexAccess.span.end.offset = 209;
+    }
 
     mut t_ptr_test: ast.Type[ctx];
     t_ptr_test.tag = 9; // RawPointer
@@ -1071,10 +1126,10 @@ func main() {
         ctx[e_vec_access.IndexAccess.index].Integer.val = 4;
         ctx[e_vec_access.IndexAccess.index].Integer.span.start.offset = 307;
         ctx[e_vec_access.IndexAccess.index].Integer.span.end.offset = 308;
-    }
 
-    e_vec_access.IndexAccess.span.start.offset = 300;
-    e_vec_access.IndexAccess.span.end.offset = 309;
+        e_vec_access.IndexAccess.span.start.offset = 300;
+        e_vec_access.IndexAccess.span.end.offset = 309;
+    }
 
     mut t_vec: ast.Type[ctx];
     unsafe {
@@ -1115,10 +1170,10 @@ func main() {
         ctx[e_map_access.IndexAccess.index].Identifier.name = "my_key";
         ctx[e_map_access.IndexAccess.index].Identifier.span.start.offset = 407;
         ctx[e_map_access.IndexAccess.index].Identifier.span.end.offset = 413;
-    }
 
-    e_map_access.IndexAccess.span.start.offset = 400;
-    e_map_access.IndexAccess.span.end.offset = 414;
+        e_map_access.IndexAccess.span.start.offset = 400;
+        e_map_access.IndexAccess.span.end.offset = 414;
+    }
 
     mut t_map: ast.Type[ctx];
     unsafe {
