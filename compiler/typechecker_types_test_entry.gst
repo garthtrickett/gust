@@ -16,19 +16,19 @@ func main() {
     vec_args.Push(typechecker.make_type_struct("ctx", "", ctx));
 
     mut vec_res := typechecker.monomorphize(&env, "std.Vector", vec_args, ctx);
-     if vec_res.tag == 0 {
-         unsafe {
-             mut concrete_t := vec_res.Ok.val;
-             os.LogStr(std.Concat("Monomorphized Vector name: ", concrete_t.Struct.struct_name));
+    if vec_res.tag == 0 {
+        unsafe {
+            mut concrete_t := vec_res.Ok.val;
+            os.LogStr(std.Concat("Monomorphized Vector name: ", concrete_t.Struct.struct_name));
 
-             guard layout := env.struct_registry.Get(concrete_t.Struct.struct_name) else {
-                 return;
-             }
-             os.LogInt(layout.fields.len);
-         }
-     } else {
-         os.LogStr("Vector monomorphization failed");
-     }
+            guard layout := env.struct_registry.Get(concrete_t.Struct.struct_name) else {
+                return;
+            }
+            os.LogInt(layout.fields.len);
+        }
+    } else {
+        os.LogStr("Vector monomorphization failed");
+    }
 
     // 2. Parse and Register Custom Enum Template Result[T, ctx]
     mut l: lexer.Lexer[ctx];
@@ -73,11 +73,11 @@ func main() {
             guard ok_layout := env.struct_registry.Get(ok_variant_t.Struct.struct_name) else {
                 return;
             }
+            guard val_field_t := ok_layout.fields.Get("val") else {
+                return;
+            }
+            os.LogStr(std.Concat("Ok variant field type tag: ", std.FormatInt(val_field_t.tag)));
         }
-        guard val_field_t := ok_layout.fields.Get("val") else {
-            return;
-        }
-        os.LogStr(std.Concat("Ok variant field type tag: ", std.FormatInt(val_field_t.tag)));
     } else {
         os.LogStr("Result monomorphization failed");
     }
@@ -357,54 +357,51 @@ func main() {
             if layout_graph_lookup.Ok {
                 os.LogStr("std_Graph_int_ctx successfully registered!");
             }
-        }
-        } else {
-            os.LogStr("std_Graph_int_ctx registration failed!");
-        }
-// Check if the nested std_GraphNode_int_ctx was dynamically monomorphized and registered!
+            // Check if the nested std_GraphNode_int_ctx was dynamically monomorphized and registered!
             mut layout_node_lookup := env.struct_registry.Get("std_GraphNode_int_ctx");
             if layout_node_lookup.Ok {
                 os.LogStr("std_GraphNode_int_ctx successfully registered dynamically!");
             } else {
                 os.LogStr("std_GraphNode_int_ctx dynamic registration failed!");
             }
-        } else {
-            os.LogStr("Graph monomorphization failed!");
+        }
+    } else {
+        os.LogStr("Graph monomorphization failed!");
+    }
+
+    // 9. Test Function Parameter Registration in variable_types
+    mut l_func: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_func, "func process(ctx: &Arena) {}");
+
+    mut p_func: parser.Parser[ctx];
+    parser.init_parser(&p_func, &l_func, ctx);
+
+    mut prog_func := parser.parse_program(&p_func, ctx);
+    if len(p_func.errors) > 0 {
+        os.LogStr("ParserError in step 9");
+        os.Exit(1);
+    }
+
+    mut scope_func := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+    unsafe {
+        mut statements_vec := &ctx[prog_func.statements] as *std.Vector[ast.Statement[ctx], ctx];
+
+        mut i := 0;
+        while i < len(*statements_vec) {
+            typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+            i = i + 1;
         }
 
-        // 9. Test Function Parameter Registration in variable_types
-        mut l_func: lexer.Lexer[ctx];
-        lexer.init_lexer(&l_func, "func process(ctx: &Arena) {}");
-
-        mut p_func: parser.Parser[ctx];
-        parser.init_parser(&p_func, &l_func, ctx);
-
-        mut prog_func := parser.parse_program(&p_func, ctx);
-        if len(p_func.errors) > 0 {
-            os.LogStr("ParserError in step 9");
-            os.Exit(1);
+        mut j := 0;
+        while j < len(*statements_vec) {
+            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[stmt_idx] = (*statements_vec)[j];
+            typechecker.check_statement(stmt_idx, &env, scope_func, ctx);
+            j = j + 1;
         }
+    }
 
-        mut scope_func := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
-        unsafe {
-            mut statements_vec := &ctx[prog_func.statements] as *std.Vector[ast.Statement[ctx], ctx];
-
-            mut i := 0;
-            while i < len(*statements_vec) {
-                typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
-                i = i + 1;
-            }
-
-            mut j := 0;
-            while j < len(*statements_vec) {
-                mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[stmt_idx] = (*statements_vec)[j];
-                typechecker.check_statement(stmt_idx, &env, scope_func, ctx);
-                j = j + 1;
-            }
-        }
-
-mut lookup_param := env.variable_types.Get("ctx");
+    mut lookup_param := env.variable_types.Get("ctx");
     if lookup_param.Ok {
         mut t_param := lookup_param.Val;
         if t_param.tag == 9 {
@@ -493,23 +490,23 @@ mut lookup_param := env.variable_types.Get("ctx");
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_unbranded_linear, "ctx", ctx)); // Expected: 0
 
     mut t_branded_linear: ast.Type[ctx];
-            unsafe {
-                t_branded_linear.tag = 8; // Struct
-                t_branded_linear.Struct.struct_name = "LinearStruct_ctx";
-                t_branded_linear.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                mut brand_ptr := &ctx[t_branded_linear.Struct.brand] as *str;
-                *brand_ptr = "ctx";
-            }
-            os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_branded_linear, "ctx", ctx)); // Expected: 1
+    unsafe {
+        t_branded_linear.tag = 8; // Struct
+        t_branded_linear.Struct.struct_name = "LinearStruct_ctx";
+        t_branded_linear.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+        mut brand_ptr := &ctx[t_branded_linear.Struct.brand] as *str;
+        *brand_ptr = "ctx";
+    }
+    os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_branded_linear, "ctx", ctx)); // Expected: 1
 
-            mut t_mismatched_branded: ast.Type[ctx];
-            unsafe {
-                t_mismatched_branded.tag = 8; // Struct
-                t_mismatched_branded.Struct.struct_name = "LinearStruct_ctx1";
-                t_mismatched_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                mut brand_ptr := &ctx[t_mismatched_branded.Struct.brand] as *str;
-                *brand_ptr = "ctx1";
-            }
+    mut t_mismatched_branded: ast.Type[ctx];
+    unsafe {
+        t_mismatched_branded.tag = 8; // Struct
+        t_mismatched_branded.Struct.struct_name = "LinearStruct_ctx1";
+        t_mismatched_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+        mut brand_ptr := &ctx[t_mismatched_branded.Struct.brand] as *str;
+        *brand_ptr = "ctx1";
+    }
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_mismatched_branded, "ctx", ctx)); // Expected: 0
 
     // Step 2 Verification: Test env_check_brand_nesting via monomorphize on std.Vector

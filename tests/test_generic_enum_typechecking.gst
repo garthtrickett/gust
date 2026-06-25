@@ -9,6 +9,6 @@ func main() {
     unsafe {
         res.tag = 0;
         res.Ok.val = 42;
+        os.LogInt(res.Ok.val);
     }
-    os.LogInt(res.Ok.val);
 }
