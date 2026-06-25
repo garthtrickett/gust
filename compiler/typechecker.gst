@@ -107,59 +107,36 @@ func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) in
 }
 
 func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
-    match t {
-        Str => {
+    if t.tag == 5 { // Str
+        return 1;
+    }
+    if t.tag == 6 { // Slice
+        return 1;
+    }
+    if t.tag == 9 { // RawPointer
+        return 1;
+    }
+    if t.tag == 11 { // Reference
+        return 1;
+    }
+    if t.tag == 8 { // Struct
+        mut name := get_type_ident(t, ctx);
+        if std.str_eq(name, "str") == 1 {
             return 1;
         }
-        Slice { inner } => {
+        mut clean_name := name;
+        mut d_idx := std.str_find(name, "__");
+        if d_idx != 0 - 1 {
+            clean_name = std.str_slice(name, d_idx + 2, len(name));
+        }
+        if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") == 1 {
             return 1;
         }
-        RawPointer { inner } => {
+        if len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_") == 1 {
             return 1;
-        }
-        Reference { inner, brand } => {
-            return 1;
-        }
-        Struct { struct_name, brand } => {
-            mut name := *struct_name;
-            if std.str_eq(name, "str") == 1 {
-                return 1;
-            }
-            mut clean_name := name;
-            mut d_idx := std.str_find(name, "__");
-            if d_idx != 0 - 1 {
-                clean_name = std.str_slice(name, d_idx + 2, len(name));
-            }
-            if len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_") == 1 {
-                return 1;
-            }
-            if len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_") == 1 {
-                return 1;
-            }
-            return 0;
-        }
-        Int => {
-            return 0;
-        }
-        Byte => {
-            return 0;
-        }
-        Bool => {
-            return 0;
-        }
-        Void => {
-            return 0;
-        }
-        Arena => {
-            return 0;
-        }
-        Index { struct_name, brand } => {
-            return 0;
-        }
-        Generic { name, args } => {
-            return 0;
         }
     }
+    return 0;
 }
 
 func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], parent_brand: Index[str, ctx], span: token.Span, ctx: &Arena) {
