@@ -1,0 +1,45 @@
+==================
+Reference access on allocator
+==================
+ctx.get_ref(idx);
+
+---
+
+(source_file
+  (expression_statement
+    (call_expression
+      (selector_expression
+        (identifier)
+        (field_identifier))
+      (identifier))))
+
+==================
+Reference access on vector container
+==================
+vec.GetRef(idx);
+
+---
+
+(source_file
+  (expression_statement
+    (call_expression
+      (selector_expression
+        (identifier)
+        (field_identifier))
+      (identifier))))
+
+==================
+Reference access inside variable declaration
+==================
+mut r := ctx.get_ref(idx);
+
+---
+
+(source_file
+  (variable_declaration
+    (identifier)
+    (call_expression
+      (selector_expression
+        (identifier)
+        (field_identifier))
+      (identifier))))
