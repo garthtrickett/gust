@@ -856,7 +856,8 @@ func main() {
     mut t_ref_passive: Test[ctx];
     t_ref_passive.path = "tests/test_reference_access_parsing_accepted.gst";
     t_ref_passive.is_negative = 1;
-    t_ref_passive.expected = "MethodNotFound";
+    t_ref_passive.is_substring = 0;
+    t_ref_passive.expected = "Arena.get_ref expected Index";
     tests.Push(t_ref_passive);
 
     mut t87: Test[ctx];
@@ -1610,6 +1611,41 @@ func main() {
     t_string_no_ctx.is_negative = 1;
     t_string_no_ctx.expected = "type mismatch";
     tests.Push(t_string_no_ctx);
+
+    mut t_arena_get_ref_e2e: Test[ctx];
+    t_arena_get_ref_e2e.path = "tests/e2e_arena_get_ref.gst";
+    t_arena_get_ref_e2e.is_negative = 0;
+    t_arena_get_ref_e2e.is_substring = 0;
+    t_arena_get_ref_e2e.expected = "41\n42";
+    tests.Push(t_arena_get_ref_e2e);
+
+    mut t_vector_get_ref_e2e: Test[ctx];
+    t_vector_get_ref_e2e.path = "tests/e2e_vector_get_ref.gst";
+    t_vector_get_ref_e2e.is_negative = 2;
+    t_vector_get_ref_e2e.is_substring = 1;
+    t_vector_get_ref_e2e.expected = "Vector bounds check failed";
+    tests.Push(t_vector_get_ref_e2e);
+
+    mut t_arena_get_ref_brand_rej: Test[ctx];
+    t_arena_get_ref_brand_rej.path = "tests/test_arena_get_ref_brand_mismatch_rejected.gst";
+    t_arena_get_ref_brand_rej.is_negative = 1;
+    t_arena_get_ref_brand_rej.is_substring = 0;
+    t_arena_get_ref_brand_rej.expected = "BrandMismatch";
+    tests.Push(t_arena_get_ref_brand_rej);
+
+    mut t_vector_get_ref_escape_rej: Test[ctx];
+    t_vector_get_ref_escape_rej.path = "tests/test_vector_get_ref_escape_rejected.gst";
+    t_vector_get_ref_escape_rej.is_negative = 1;
+    t_vector_get_ref_escape_rej.is_substring = 0;
+    t_vector_get_ref_escape_rej.expected = "Escape analysis violation";
+    tests.Push(t_vector_get_ref_escape_rej);
+
+    mut t_vector_get_ref_non_vec_rej: Test[ctx];
+    t_vector_get_ref_non_vec_rej.path = "tests/test_vector_get_ref_non_vector_rejected.gst";
+    t_vector_get_ref_non_vec_rej.is_negative = 1;
+    t_vector_get_ref_non_vec_rej.is_substring = 0;
+    t_vector_get_ref_non_vec_rej.expected = "Undefined function";
+    tests.Push(t_vector_get_ref_non_vec_rej);
 
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
