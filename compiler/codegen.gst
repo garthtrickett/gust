@@ -2326,18 +2326,26 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     mut is_str_key := 0;
                     mut erased_s_name := codegen_get_erased_struct_name(s_name, env, ctx);
                     mut orig_s_name := codegen_find_original_struct_name(erased_s_name, env, ctx);
-                    mut lookup_struct := (*env).struct_registry.Get(orig_s_name);
-                    if lookup_struct.Ok {
-                        mut layout := lookup_struct.Val;
-                        mut keys_type_lookup := layout.fields.Get("keys");
-                        if keys_type_lookup.Ok {
-                            mut keys_type := keys_type_lookup.Val;
-                            if keys_type.tag == 9 { // RawPointer
-                                mut key_elem_type := ctx[keys_type.RawPointer.inner];
-                                if key_elem_type.tag == 5 { // Str
-                                    is_str_key = 1;
+                    mut lookup_struct := (*env).struct_registry.get_opt(orig_s_name);
+                    match lookup_struct {
+                        Some { val } => {
+                            mut layout := *val;
+                            mut keys_type_lookup := layout.fields.get_opt("keys");
+                            match keys_type_lookup {
+                                Some { val } => {
+                                    mut keys_type := *val;
+                                    if keys_type.tag == 9 { // RawPointer
+                                        mut key_elem_type := ctx[keys_type.RawPointer.inner];
+                                        if key_elem_type.tag == 5 { // Str
+                                            is_str_key = 1;
+                                        }
+                                    }
+                                }
+                                None => {
                                 }
                             }
+                        }
+                        None => {
                         }
                     }
 
@@ -2379,20 +2387,24 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         mut k_str := codegen_generate_expression(arg0_idx, env, ctx);
                         
                         mut val_type_ident := "int";
-                        if lookup_struct.Ok {
-                            mut layout := lookup_struct.Val;
-                            mut val_type_lookup := layout.fields.get_opt("values");
-                            match val_type_lookup {
-                                Some { val } => {
-                                    mut val_type := *val;
-                                    if val_type.tag == 9 { // RawPointer
-                                        mut val_elem_type := ctx[val_type.RawPointer.inner];
-                                        mut erased_val_elem_type := codegen_erase_type(val_elem_type, env, ctx);
-                                        val_type_ident = typechecker.get_type_ident(erased_val_elem_type, ctx);
-                                    } 
+                        match lookup_struct {
+                            Some { val } => {
+                                mut layout := *val;
+                                mut val_type_lookup := layout.fields.get_opt("values");
+                                match val_type_lookup {
+                                    Some { val } => {
+                                        mut val_type := *val;
+                                        if val_type.tag == 9 { // RawPointer
+                                            mut val_elem_type := ctx[val_type.RawPointer.inner];
+                                            mut erased_val_elem_type := codegen_erase_type(val_elem_type, env, ctx);
+                                            val_type_ident = typechecker.get_type_ident(erased_val_elem_type, ctx);
+                                        } 
+                                    }
+                                    None => {
+                                    }
                                 }
-                                None => {
-                                }
+                            }
+                            None => {
                             }
                         }
                         
@@ -2519,16 +2531,24 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         mut vec_type_str := "";
                         if (expr_type.tag == 3) { // Void - fallback
                             mut key_type_ident := "int";
-                            if lookup_struct.Ok {
-                                mut layout := lookup_struct.Val;
-                                mut keys_type_lookup := layout.fields.Get("keys");
-                                if keys_type_lookup.Ok {
-                                    mut keys_type := keys_type_lookup.Val;
-                                    if keys_type.tag == 9 { // RawPointer
-                                        mut key_elem_type := ctx[keys_type.RawPointer.inner];
-                                        mut erased_key_elem_type := codegen_erase_type(key_elem_type, env, ctx);
-                                        key_type_ident = typechecker.get_type_ident(erased_key_elem_type, ctx);
+                            match lookup_struct {
+                                Some { val } => {
+                                    mut layout := *val;
+                                    mut keys_type_lookup := layout.fields.get_opt("keys");
+                                    match keys_type_lookup {
+                                        Some { val } => {
+                                            mut keys_type := *val;
+                                            if keys_type.tag == 9 { // RawPointer
+                                                mut key_elem_type := ctx[keys_type.RawPointer.inner];
+                                                mut erased_key_elem_type := codegen_erase_type(key_elem_type, env, ctx);
+                                                key_type_ident = typechecker.get_type_ident(erased_key_elem_type, ctx);
+                                            }
+                                        }
+                                        None => {
+                                        }
                                     }
+                                }
+                                None => {
                                 }
                             }
                             mut brand_name := "ctx";
@@ -4323,32 +4343,40 @@ func codegen_generate_clone_helper(struct_name: str, env: &typechecker.TypeEnvir
         res = std.Concat(res, '    *dest_ptr = *src_ptr;\n');
 
         mut orig_name := codegen_find_original_struct_name(struct_name, env, ctx);
-        mut lookup_struct := (*env).struct_registry.Get(orig_name);
-        if lookup_struct.Ok {
-            mut layout := lookup_struct.Val;
-            mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
-            mut f_idx := 0;
-            while f_idx < len(f_keys) {
-                mut f_key := f_keys[f_idx];
-                mut f_type_lookup := layout.fields.Get(f_key);
-                if f_type_lookup.Ok {
-                    mut f_type := f_type_lookup.Val;
-                    if f_type.tag == 7 { // Index
-                        mut nested_struct := f_type.Index.struct_name;
-                        mut clean_nested := nested_struct;
-                        if std.str_eq(nested_struct, 'Any') == 1 {
-                            clean_nested = 'SessionNode';
+        mut lookup_struct := (*env).struct_registry.get_opt(orig_name);
+        match lookup_struct {
+            Some { val } => {
+                mut layout := *val;
+                mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                mut f_idx := 0;
+                while f_idx < len(f_keys) {
+                    mut f_key := f_keys[f_idx];
+                    mut f_type_lookup := layout.fields.get_opt(f_key);
+                    match f_type_lookup {
+                        Some { val } => {
+                            mut f_type := *val;
+                            if f_type.tag == 7 { // Index
+                                mut nested_struct := f_type.Index.struct_name;
+                                mut clean_nested := nested_struct;
+                                if std.str_eq(nested_struct, 'Any') == 1 {
+                                    clean_nested = 'SessionNode';
+                                }
+                                mut line := std.Concat('    dest_ptr->', f_key);
+                                line = std.Concat(line, ' = std_GenerationalArena_Clone_');
+                                line = std.Concat(line, clean_nested);
+                                line = std.Concat(line, '(dest, src, src_ptr->');
+                                line = std.Concat(line, f_key);
+                                line = std.Concat(line, ');\n');
+                                res = std.Concat(res, line);
+                            }
                         }
-                        mut line := std.Concat('    dest_ptr->', f_key);
-                        line = std.Concat(line, ' = std_GenerationalArena_Clone_');
-                        line = std.Concat(line, clean_nested);
-                        line = std.Concat(line, '(dest, src, src_ptr->');
-                        line = std.Concat(line, f_key);
-                        line = std.Concat(line, ');\n');
-                        res = std.Concat(res, line);
+                        None => {
+                        }
                     }
+                    f_idx = f_idx + 1;
                 }
-                f_idx = f_idx + 1;
+            }
+            None => {
             }
         }
 
@@ -4403,9 +4431,13 @@ typedef void Any;
             mut key := struct_keys[i_erase];
             mut erased_name := codegen_get_erased_struct_name(key, env, ctx);
             mut has_seen := 0;
-            mut seen_lookup := seen_structs.Get(erased_name);
-            if seen_lookup.Ok {
-                has_seen = 1;
+            mut seen_lookup := seen_structs.get_opt(erased_name);
+            match seen_lookup {
+                Some { val } => {
+                    has_seen = 1;
+                }
+                None => {
+                }
             }
             if has_seen == 0 {
                 erased_struct_keys.Push(erased_name);
@@ -4460,34 +4492,46 @@ typedef void Any;
         while len(work_list) > 0 {
             mut current := work_list.Pop();
             mut orig_name := codegen_find_original_struct_name(current, env, ctx);
-            mut lookup_struct := (*env).struct_registry.Get(orig_name);
-            if lookup_struct.Ok {
-                mut layout := lookup_struct.Val;
-                mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
-                mut f_idx := 0;
-                while f_idx < len(f_keys) {
-                    mut f_key := f_keys[f_idx];
-                    mut f_type_lookup := layout.fields.Get(f_key);
-                    if f_type_lookup.Ok {
-                        mut f_type := f_type_lookup.Val;
-                        if f_type.tag == 7 {
-                            mut nested_struct := f_type.Index.struct_name;
-                            mut clean_nested := nested_struct;
-                            if std.str_eq(nested_struct, "Any") == 1 {
-                                clean_nested = "SessionNode";
+            mut lookup_struct := (*env).struct_registry.get_opt(orig_name);
+            match lookup_struct {
+                Some { val } => {
+                    mut layout := *val;
+                    mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                    mut f_idx := 0;
+                    while f_idx < len(f_keys) {
+                        mut f_key := f_keys[f_idx];
+                        mut f_type_lookup := layout.fields.get_opt(f_key);
+                        match f_type_lookup {
+                            Some { val } => {
+                                mut f_type := *val;
+                                if f_type.tag == 7 {
+                                    mut nested_struct := f_type.Index.struct_name;
+                                    mut clean_nested := nested_struct;
+                                    if std.str_eq(nested_struct, "Any") == 1 {
+                                        clean_nested = "SessionNode";
+                                    }
+                                    mut has_helper := 0;
+                                    mut helper_lookup := clone_helpers_needed.get_opt(clean_nested);
+                                    match helper_lookup {
+                                        Some { val } => {
+                                            has_helper = 1;
+                                        }
+                                        None => {
+                                        }
+                                    }
+                                    if has_helper == 0 {
+                                        clone_helpers_needed.Insert(std.Clone(ctx, clean_nested), 1);
+                                        work_list.Push(std.Clone(ctx, clean_nested));
+                                    }
+                                }
                             }
-                            mut has_helper := 0;
-                            mut helper_lookup := clone_helpers_needed.Get(clean_nested);
-                            if helper_lookup.Ok {
-                                has_helper = 1;
-                            }
-                            if has_helper == 0 {
-                                clone_helpers_needed.Insert(std.Clone(ctx, clean_nested), 1);
-                                work_list.Push(std.Clone(ctx, clean_nested));
+                            None => {
                             }
                         }
+                        f_idx = f_idx + 1;
                     }
-                    f_idx = f_idx + 1;
+                }
+                None => {
                 }
             } 
         }
@@ -4758,11 +4802,15 @@ typedef void Any;
                     os.Exit(1);
                     return std.Clone(ctx, "");
                 }
-                mut layout_lookup := (*env).struct_registry.Get(orig_key);
-                if layout_lookup.Ok {
-                    mut impl := codegen_gen_is_valid_helper(key, layout_lookup.Val, env, ctx);
-                    c_code = std.Concat(c_code, impl);
-                    c_code = std.Concat(c_code, "\n");
+                mut layout_lookup := (*env).struct_registry.get_opt(orig_key);
+                match layout_lookup {
+                    Some { val } => {
+                        mut impl := codegen_gen_is_valid_helper(key, *val, env, ctx);
+                        c_code = std.Concat(c_code, impl);
+                        c_code = std.Concat(c_code, "\n");
+                    }
+                    None => {
+                    }
                 }
             }
             m = m + 1;
