@@ -10,8 +10,10 @@ func main() {
     }
 
     match opt_missing {
-        Some { val } => {
-            os.LogInt(*val);
+        Some => {
+            unsafe {
+                os.LogInt(opt_missing.Some.val);
+            }
         }
     }
 }
