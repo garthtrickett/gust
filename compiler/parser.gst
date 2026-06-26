@@ -89,14 +89,14 @@ func parser_get_type_ident(t: ast.Type[ctx], ctx: &Arena) str {
 
 func parser_get_monomorphized_name(template_name: str, args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx], ctx: &Arena) str {
     unsafe {
-        mut args_vec := &ctx[args_idx] as *std.Vector[ast.Type[ctx], ctx];
+        mut args_vec: std.Vector[ast.Type[ctx], ctx] := ctx[args_idx];
         mut arg_names := "";
         mut i := 0;
-        while i < len(*args_vec) {
+        while i < len(args_vec) {
             if i > 0 {
                 arg_names = std.Concat(arg_names, "_");
             }
-            mut arg_name := parser_get_type_ident((*args_vec)[i], ctx);
+            mut arg_name := parser_get_type_ident(args_vec[i], ctx);
             arg_names = std.Concat(arg_names, arg_name);
             i = i + 1;
         }
@@ -330,10 +330,9 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                     ctx[t_idx].tag = 7; // Index = 7
                     ctx[t_idx].Index.struct_name = "SessionNode";
                     
-                    mut brand_idx: Index[ast.Parameter[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[t_idx].Index.brand = brand_idx as Index[str, ctx];
-                    mut dest_ptr := &ctx[brand_idx] as *str;
-                    *dest_ptr = std.Clone(*ctx, brand_name);
+                    mut brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
+                    ctx[t_idx].Index.brand = brand_idx;
+                    ctx[brand_idx] = std.Clone(*ctx, brand_name);
                     return t_idx;
                 } else {
                     if len(args_vec) == 2 {
@@ -375,10 +374,9 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                         ctx[t_idx].tag = 7; // Index = 7
                         ctx[t_idx].Index.struct_name = std.Clone(*ctx, struct_name);
                         
-                        mut brand_idx: Index[ast.Parameter[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[t_idx].Index.brand = brand_idx as Index[str, ctx];
-                        mut dest_ptr := &ctx[brand_idx] as *str;
-                        *dest_ptr = std.Clone(*ctx, brand_name);
+                        mut brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
+                        ctx[t_idx].Index.brand = brand_idx;
+                        ctx[brand_idx] = std.Clone(*ctx, brand_name);
                         return t_idx;
                     }
                 }
@@ -407,18 +405,16 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
                     ctx[t_idx].tag = 8; // Struct = 8
                     ctx[t_idx].Struct.struct_name = std.Clone(*ctx, base_name);
                     
-                    mut brand_idx: Index[ast.Parameter[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[t_idx].Struct.brand = brand_idx as Index[str, ctx];
-                    mut dest_ptr := &ctx[brand_idx] as *str;
-                    *dest_ptr = std.Clone(*ctx, brand_name);
+                    mut brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
+                    ctx[t_idx].Struct.brand = brand_idx;
+                    ctx[brand_idx] = std.Clone(*ctx, brand_name);
                     return t_idx;
                 } else {
                     mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[t_idx].tag = 10; // Generic = 10
                     ctx[t_idx].Generic.name = std.Clone(*ctx, base_name);
                     ctx[t_idx].Generic.args = os.ArenaAlloc(ctx);
-                    mut dest_args := &ctx[ctx[t_idx].Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-                    *dest_args = args_vec;
+                    ctx[ctx[t_idx].Generic.args] = args_vec;
                     return t_idx;
                 }
             }
@@ -427,8 +423,7 @@ func parse_type_signature(p: *Parser[ctx], ctx: &Arena) Index[ast.Type[ctx], ctx
             ctx[t_idx].tag = 10; // Generic = 10
             ctx[t_idx].Generic.name = std.Clone(*ctx, base_name);
             ctx[t_idx].Generic.args = os.ArenaAlloc(ctx);
-            mut dest_args := &ctx[ctx[t_idx].Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-            *dest_args = args_vec;
+            ctx[ctx[t_idx].Generic.args] = args_vec;
             return t_idx;
         }
 
@@ -696,8 +691,7 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
                 ctx[next_expr].tag = 12; // Call = 12
                 ctx[next_expr].Call.function = left;
                 ctx[next_expr].Call.arguments = os.ArenaAlloc(ctx);
-                mut dest_args := &ctx[ctx[next_expr].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                *dest_args = args_vec;
+                ctx[ctx[next_expr].Call.arguments] = args_vec;
                 ctx[next_expr].Call.span = merge_spans(start_span, end_span);
                 left = next_expr;
             } else if cur_tag == 15 { // LBracket = 15
@@ -873,12 +867,10 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
             ctx[stmt_idx].StructDecl.name = name;
 
             ctx[stmt_idx].StructDecl.generics = os.ArenaAlloc(ctx);
-            mut dest_generics := &ctx[ctx[stmt_idx].StructDecl.generics] as *std.Vector[str, ctx];
-            *dest_generics = generics_vec;
+            ctx[ctx[stmt_idx].StructDecl.generics] = generics_vec;
 
             ctx[stmt_idx].StructDecl.fields = os.ArenaAlloc(ctx);
-            mut dest_fields := &ctx[ctx[stmt_idx].StructDecl.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
-            *dest_fields = fields_vec;
+            ctx[ctx[stmt_idx].StructDecl.fields] = fields_vec;
 
             ctx[stmt_idx].StructDecl.span = merge_spans(start_span, end_span);
             return stmt_idx;
@@ -965,8 +957,7 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
                     mut variant: ast.VariantDef[ctx];
                     variant.name = variant_name;
                     variant.fields = os.ArenaAlloc(ctx);
-                    mut dest_vfields := &ctx[variant.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
-                    *dest_vfields = fields_vec;
+                    ctx[variant.fields] = fields_vec;
                     variant.span = merge_spans(variant_start, variant_end);
                     variants_vec.Push(variant);
 
@@ -1000,12 +991,10 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
             ctx[stmt_idx].EnumDecl.name = name;
 
             ctx[stmt_idx].EnumDecl.generics = os.ArenaAlloc(ctx);
-            mut dest_generics := &ctx[ctx[stmt_idx].EnumDecl.generics] as *std.Vector[str, ctx];
-            *dest_generics = generics_vec;
+            ctx[ctx[stmt_idx].EnumDecl.generics] = generics_vec;
 
             ctx[stmt_idx].EnumDecl.variants = os.ArenaAlloc(ctx);
-            mut dest_variants := &ctx[ctx[stmt_idx].EnumDecl.variants] as *std.Vector[ast.VariantDef[ctx], ctx];
-            *dest_variants = variants_vec;
+            ctx[ctx[stmt_idx].EnumDecl.variants] = variants_vec;
 
             ctx[stmt_idx].EnumDecl.span = merge_spans(start_span, end_span);
             return stmt_idx;
@@ -1136,8 +1125,7 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
         ctx[stmt_idx].FunctionDecl.name = name;
 
         ctx[stmt_idx].FunctionDecl.params = os.ArenaAlloc(ctx);
-        mut dest_params := &ctx[ctx[stmt_idx].FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
-        *dest_params = params_vec;
+        ctx[ctx[stmt_idx].FunctionDecl.params] = params_vec;
 
         ctx[stmt_idx].FunctionDecl.return_type = r_type;
         ctx[stmt_idx].FunctionDecl.body = body;
@@ -1294,8 +1282,7 @@ func parse_match_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
             mut mcase: ast.MatchCase[ctx];
             mcase.variant_name = variant_name;
             mcase.fields = os.ArenaAlloc(ctx);
-            mut dest_cfields := &ctx[mcase.fields] as *std.Vector[str, ctx];
-            *dest_cfields = fields_vec;
+            ctx[mcase.fields] = fields_vec;
             mcase.body = body;
             mcase.span = merge_spans(case_start, case_end);
 
@@ -1316,8 +1303,7 @@ func parse_match_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
         ctx[stmt_idx].tag = 8; // Match = 8
         ctx[stmt_idx].Match.expression = expression;
         ctx[stmt_idx].Match.cases = os.ArenaAlloc(ctx);
-        mut dest_cases := &ctx[ctx[stmt_idx].Match.cases] as *std.Vector[ast.MatchCase[ctx], ctx];
-        *dest_cases = cases_vec;
+        ctx[ctx[stmt_idx].Match.cases] = cases_vec;
         ctx[stmt_idx].Match.span = merge_spans(start_span, end_span);
 
         return stmt_idx;
@@ -1483,8 +1469,7 @@ func parse_block_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.BlockStatemen
         }
         
         ctx[block_idx].statements = os.ArenaAlloc(ctx);
-        mut dest_arena_ptr := &ctx[ctx[block_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
-        *dest_arena_ptr = statements_vec;
+        ctx[ctx[block_idx].statements] = statements_vec;
         
         ctx[block_idx].span = merge_spans(ctx[block_idx].span, (*p).cur_token.span);
         if cur_token_is(p, 14) { // RBrace = 14
@@ -1562,8 +1547,7 @@ func parse_if_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], 
                 mut alt_idx: Index[ast.BlockStatement[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[alt_idx].span = if_span;
                 ctx[alt_idx].statements = os.ArenaAlloc(ctx);
-                mut dest_stmts := &ctx[ctx[alt_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
-                *dest_stmts = alt_statements;
+                ctx[ctx[alt_idx].statements] = alt_statements;
                 alternative = alt_idx;
                 end_span = if_span;
             } else {
@@ -1684,8 +1668,7 @@ func parse_program(p: *Parser[ctx], ctx: &Arena) ast.Program[ctx] {
         }
         
         prog.statements = os.ArenaAlloc(ctx);
-        mut dest_arena_ptr := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        *dest_arena_ptr = statements_vec;
+        ctx[prog.statements] = statements_vec;
         
         prog.span = merge_spans(start_span, (*p).cur_token.span);
     }
