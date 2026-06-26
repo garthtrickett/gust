@@ -855,10 +855,17 @@ func main() {
 
     mut t_ref_passive: Test[ctx];
     t_ref_passive.path = "tests/test_reference_access_parsing_accepted.gst";
-    t_ref_passive.is_negative = 1;
+    t_ref_passive.is_negative = 0;
     t_ref_passive.is_substring = 0;
-    t_ref_passive.expected = "Arena.get_ref expected Index";
+    t_ref_passive.expected = "";
     tests.Push(t_ref_passive);
+
+    mut t_collection_dual_signatures: Test[ctx];
+    t_collection_dual_signatures.path = "tests/e2e_collection_dual_signatures.gst";
+    t_collection_dual_signatures.is_negative = 0;
+    t_collection_dual_signatures.is_substring = 0;
+    t_collection_dual_signatures.expected = "11\n20\n25\nNone\n100\nlegacy miss\n200\nNone";
+    tests.Push(t_collection_dual_signatures);
 
     mut t87: Test[ctx];
     t87.path = "tests/e2e_program_b_safe_arena_cyclic_graph.gst";

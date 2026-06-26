@@ -3,15 +3,25 @@ type MyNode struct {
 }
 
 func dummy_test(ctx: &Arena) {
-    mut vec: std.Vector[MyNode, ctx] := std.VectorNew(ctx);
-    mut idx := 0;
+    // Positive smoke coverage for explicit reference-access method calls.
+    // These selectors are now parsed, typechecked, and code-generated as safe
+    // branded references, so this test should compile and run cleanly.
+    mut node_idx: Index[MyNode, ctx] := os.ArenaAlloc(ctx);
+    ctx[node_idx].val = 41;
+    mut node_ref := ctx.get_ref(node_idx);
+    node_ref.val = node_ref.val + 1;
 
-    // Passive syntax validation for explicit reference-access method calls.
-    // Since the typechecker does not yet support these selectors, this file
-    // is tested as a negative-compilation test verifying it successfully
-    // parses but fails with MethodNotFound in the typechecker.
-    ctx.get_ref(idx);
-    vec.GetRef(idx);
+    mut vec: std.Vector[MyNode, ctx] := std.VectorNew(ctx);
+    mut item: MyNode;
+    item.val = 7;
+    vec.Push(item);
+    mut vec_ref := vec.GetRef(0);
+    vec_ref.val = vec_ref.val + 1;
 }
 
-func main() {}
+func main() {
+    mut ctx := os.Arena.New();
+    defer ctx.Free();
+    os.SetThreadScratch(ctx);
+    dummy_test(ctx);
+}
