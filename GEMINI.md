@@ -45,7 +45,7 @@ func main() {
 ```
 ### C. Flat Function Scope & C-Redefinition Invariants
 * **Rule:** All variables declared within a single function block (such as `func main()`) must have completely unique names across that entire block, even if they reside in separate logical phases, test steps, or conditional structures.
-* **Why:** The Gust-to-C transpiler outputs variable declarations directly into flat C function scopes. Unlike more permissive high-level languages, C strictly prohibits redefining a variable name within the same block scope [2]. Attempting to declare `mut x` twice in the same function will compile cleanly in the Gust parser but trigger a fatal C compiler `redefinition of 'x'` error during the native compilation phase [2].
+* **Why:** The Gust-to-C transpiler outputs variable declarations directly into flat C function scopes. Unlike more permissive high-level languages, C strictly prohibits redefining a variable name within the same block scope [2]. Attempting to declare `mut x` twice within the same function will compile cleanly in the Gust parser but trigger a fatal C compiler `redefinition of 'x'` error during the native compilation phase [2].
 * **Action:** 
   * Never copy-paste test scaffolding blocks that reuse identical variable names (e.g., `empty_prog_vec` or `empty_prefixes`) [2].
   * Always append descriptive, context-specific suffixes to temporary test variables (e.g., use `empty_prog_vec_tl` and `empty_prefixes_tl` for thread-local tests, and `empty_prog_vec_dup` for deduplication tests) [2].
@@ -69,6 +69,26 @@ func main() {
     mut empty_prog_vec_tl: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx); // Safe C transpilation
 }
 
+```
+
+### D. Arena-Stored Vector Accessor Migration Pattern
+* **Rule:** High-level compiler logic should not introduce new direct arena-to-vector casts such as `&ctx[some_index] as *std.Vector[...]` when a safe branded reference accessor can express the same operation.
+* **Why:** Step 4.4 standardizes collection access around compiler-verified references before the later unsafe-gating phase. This keeps compiler traversal code aligned with branded lifetime checks while avoiding a broad raw-cast ban before Step 5.1.
+* **Action:** Use `ctx.get_ref(vector_index)` to borrow the arena-stored vector, then use normal vector operations or `GetRef` to borrow individual elements. Keep low-level legacy casts only where a later migration step has not reached that file yet.
+
+```gust
+// ❌ Legacy migration target
+unsafe {
+    mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+    mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx[stmt_idx] = (*statements_vec)[0];
+}
+
+// ✅ Preferred Step 4.4 pattern
+mut statements_ref := ctx.get_ref(prog.statements);
+mut first_stmt_ref := statements_ref.GetRef(0);
+mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+ctx[stmt_idx] = *first_stmt_ref;
 ```
 ## TOOL USE CONSTRAINTS & DISCIPLINE
 - **Prohibition of Execution Tools**: You are strictly prohibited from calling any command execution, bash shell, terminal, or system-running tools (such as `vm_shell:execute_bash` or any equivalent system command triggers).
