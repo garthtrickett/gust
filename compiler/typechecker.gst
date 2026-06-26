@@ -2342,9 +2342,11 @@ func typechecker_is_arena_value_or_ref(t: ast.Type[ctx], ctx: &Arena) int {
 }
 
 func typechecker_get_index_element_type(idx_t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) ast.Type[ctx] {
-    mut brand_name := get_type_brand(idx_t, env, ctx);
-    mut elem_t := make_type_struct(idx_t.Index.struct_name, brand_name, ctx);
-    return env_resolve_type(env, elem_t, ctx);
+    unsafe {
+        mut brand_name := get_type_brand(idx_t, env, ctx);
+        mut elem_t := make_type_struct(idx_t.Index.struct_name, brand_name, ctx);
+        return env_resolve_type(env, elem_t, ctx);
+    }
 }
 
 func make_type_struct(name: str, brand_name: str, ctx: &Arena) ast.Type[ctx] {
