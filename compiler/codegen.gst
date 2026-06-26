@@ -1175,20 +1175,16 @@ func codegen_topological_visit(name: str, visited: *std.HashMap[str, int, ctx], 
                     j = j + 1;
                 }
 
-                mut lookup_enum := (*env).enum_registry.get_opt(name);
-                match lookup_enum {
-                    Some { val } => {
-                        mut variants := *val;
-                        mut v_idx := 0;
-                        while v_idx < len(variants) {
-                            mut variant_name := variants[v_idx];
-                            mut variant_struct_name := std.Concat(name, "_");
-                            variant_struct_name = std.Concat(variant_struct_name, variant_name);
-                            deps_map.Insert(std.Clone(ctx, variant_struct_name), 1);
-                            v_idx = v_idx + 1;
-                        }
-                    }
-                    None => {
+                mut lookup_enum := env.enum_registry.Get(name);
+                if lookup_enum.Ok {
+                    mut variants := lookup_enum.Val;
+                    mut v_idx := 0;
+                    while v_idx < len(variants) {
+                        mut variant_name := variants[v_idx];
+                        mut variant_struct_name := std.Concat(name, "_");
+                        variant_struct_name = std.Concat(variant_struct_name, variant_name);
+                        deps_map.Insert(std.Clone(ctx, variant_struct_name), 1);
+                        v_idx = v_idx + 1;
                     }
                 }
 
