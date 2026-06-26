@@ -361,7 +361,7 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
         if expr.tag == 12 { // Call
             mut func_expr := ctx[expr.Call.function];
             if func_expr.tag == 11 { // Selector
-                if std.str_eq(func_expr.Selector.right, "get_ref") == 1 {
+                if std.str_eq(func_expr.Selector.right, "get_ref") == 1 || std.str_eq(func_expr.Selector.right, "GetRef") == 1 {
                     mut s := set_init(ctx);
                     mut arena_root := get_root_variable(func_expr.Selector.left, ctx);
                     if std.str_eq(arena_root, "") == 0 {
@@ -1189,6 +1189,32 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     if std.str_eq(right_name, "Back") {
                         mut elem_t := typechecker_get_template_elem_type(s_name, "data", env, ctx);
                         return make_type_pointer(elem_t, ctx);
+                    }
+                    if std.str_eq(right_name, "GetRef") {
+                        mut args_vec_getref := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec_getref) != 1 {
+                            mut msg_getref_arity := "Semantic Error: Vector.GetRef expects exactly 1 int or Index argument";
+                            report_error(2, msg_getref_arity, expr.Call.span, env, ctx);
+                            return dummy;
+                        }
+
+                        mut arg0_idx_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx_getref] = (*args_vec_getref)[0];
+                        mut arg_type_getref := check_expression(arg0_idx_getref, env, scope, ctx);
+                        arg_type_getref = env_resolve_type(env, arg_type_getref, ctx);
+
+                        if arg_type_getref.tag != 0 && arg_type_getref.tag != 7 { // Int or Index
+                            mut msg_getref_type := std.Concat("Semantic Error: Vector.GetRef expected int or Index argument but got ", ast.serialize_type(arg_type_getref, ctx));
+                            report_error(2, msg_getref_type, get_expression_span(arg0_idx_getref, ctx), env, ctx);
+                            return dummy;
+                        }
+
+                        mut elem_t_getref := typechecker_get_template_elem_type(s_name, "data", env, ctx);
+                        mut brand_name_getref := get_type_brand(left_type, env, ctx);
+                        if std.str_eq(brand_name_getref, "") == 1 {
+                            brand_name_getref = get_root_variable(left_expr_idx, ctx);
+                        }
+                        return make_type_reference(elem_t_getref, brand_name_getref, ctx);
                     }
                 }
 
