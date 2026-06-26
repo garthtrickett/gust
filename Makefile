@@ -7,7 +7,7 @@ PREFIX = /usr/local
 SHELL = bash
 .SHELLFLAGS = -o pipefail -c
 
-.PHONY: all clean test bootstrap install test_tree_sitter
+.PHONY: all clean test bootstrap install test_tree_sitter guard_no_compiler_get_opt
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -65,6 +65,16 @@ test_tree_sitter:
 		(cd tree-sitter-gust && tree-sitter parse ../$$f --quiet) || exit 1; \
 	done
 	@echo "✅ Tree-sitter parsing validation passed!"
+
+guard_no_compiler_get_opt:
+	@echo "🔒 Checking compiler sources do not call .get_opt during bootstrap-sensitive phase..."
+	@if rg -n '\.get_opt[[:space:]]*\(' compiler/*.gst; then \
+		echo "❌ Bootstrap guard failed: compiler/*.gst must not call .get_opt yet."; \
+		echo "   .get_opt is available for user programs and tests, but compiler lookup migration is deferred."; \
+		exit 1; \
+	else \
+		echo "✅ Bootstrap guard passed: compiler/*.gst has no .get_opt calls."; \
+	fi
 
 clean:
 	rm -rf gust_bootstrap gust build/
