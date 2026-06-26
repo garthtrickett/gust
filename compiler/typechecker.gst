@@ -1321,6 +1321,41 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
                         return make_type_struct(lookup_struct_name, "", ctx);
                     }
+                    if std.str_eq(right_name, "get_opt") {
+                        mut args_vec_getopt_map := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec_getopt_map) != 1 {
+                            mut msg_getopt_map_arity := "Semantic Error: HashMap.get_opt expects exactly 1 key argument";
+                            report_error(2, msg_getopt_map_arity, expr.Call.span, env, ctx);
+                            return dummy;
+                        }
+
+                        mut arg0_idx_getopt_map: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx_getopt_map] = (*args_vec_getopt_map)[0];
+                        mut k_arg_getopt_map := check_expression(arg0_idx_getopt_map, env, scope, ctx);
+                        k_arg_getopt_map = env_resolve_type(env, k_arg_getopt_map, ctx);
+
+                        mut k_type_getopt_map := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
+                        k_type_getopt_map = env_resolve_type(env, k_type_getopt_map, ctx);
+                        if types_match(k_type_getopt_map, k_arg_getopt_map, ctx) == 0 {
+                            mut msg_getopt_map_type := std.Concat("Semantic Error: Key type mismatch for HashMap.get_opt. Expected ", ast.serialize_type(k_type_getopt_map, ctx));
+                            msg_getopt_map_type = std.Concat(msg_getopt_map_type, " but got ");
+                            msg_getopt_map_type = std.Concat(msg_getopt_map_type, ast.serialize_type(k_arg_getopt_map, ctx));
+                            report_error(2, msg_getopt_map_type, get_expression_span(arg0_idx_getopt_map, ctx), env, ctx);
+                            return dummy;
+                        }
+
+                        mut v_type_getopt_map := typechecker_get_template_elem_type(s_name, "values", env, ctx);
+                        mut brand_name_getopt_map := get_type_brand(left_type, env, ctx);
+                        if std.str_eq(brand_name_getopt_map, "") == 1 {
+                            brand_name_getopt_map = get_root_variable(left_expr_idx, ctx);
+                        }
+
+                        mut opt_args_getopt_map: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                        opt_args_getopt_map.Push(v_type_getopt_map);
+                        opt_args_getopt_map.Push(make_type_struct(brand_name_getopt_map, "", ctx));
+                        mut opt_generic_getopt_map := make_type_generic("std.Option", opt_args_getopt_map, ctx);
+                        return env_resolve_type(env, opt_generic_getopt_map, ctx);
+                    }
                     if std.str_eq(right_name, "Remove") {
                         mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         if len(*args_vec) == 1 {
@@ -1385,7 +1420,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 if std.str_eq(right_name, "get_opt") == 1 && is_vec == 0 && is_map == 0 {
-                    mut msg_getopt_receiver := "Semantic Error: get_opt is only supported on std.Vector receivers in this phase";
+                    mut msg_getopt_receiver := "Semantic Error: get_opt is only supported on std.Vector or std.HashMap receivers";
                     report_error(2, msg_getopt_receiver, expr.Call.span, env, ctx);
                     return dummy;
                 }
