@@ -46,7 +46,7 @@ bootstrap: gust
 	touch build/gust_compiler.c
 	touch gust
 
-test: gust
+test: gust guard_parser_high_level_raw_casts
 	@mkdir -p build
 	@echo "⚙️  Compiling native Gust test runner..."
 	@./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
