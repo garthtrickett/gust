@@ -11,7 +11,7 @@ func main() {
 
     match opt_missing {
         Some { val } => {
-            os.LogInt(val);
+            os.LogInt(*val);
         }
     }
 }

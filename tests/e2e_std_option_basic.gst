@@ -7,7 +7,7 @@ func check_some(ctx: &Arena) {
 
     match opt_some {
         Some { val } => {
-            os.LogInt(val);
+            os.LogInt(*val);
         }
         None => {
             os.LogStr("unexpected none");
@@ -23,7 +23,7 @@ func check_none(ctx: &Arena) {
 
     match opt_none {
         Some { val } => {
-            os.LogInt(val);
+            os.LogInt(*val);
         }
         None => {
             os.LogStr("none");
