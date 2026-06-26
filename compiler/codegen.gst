@@ -3893,17 +3893,18 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             mut expr_idx := ctx[stmt_idx].Match.expression;
             mut expr_str := codegen_generate_expression(expr_idx, env, ctx);
             mut expr_t := codegen_get_expression_type(expr_idx, env, ctx);
+            mut resolved_expr_t := typechecker.env_resolve_type(env, expr_t, ctx);
 
             mut enum_name := "Shape";
-            if expr_t.tag == 8 { // Struct
-                enum_name = expr_t.Struct.struct_name;
-            } else if expr_t.tag == 11 { // Reference
-                mut inner_t := ctx[expr_t.Reference.inner];
+            if resolved_expr_t.tag == 8 { // Struct
+                enum_name = resolved_expr_t.Struct.struct_name;
+            } else if resolved_expr_t.tag == 11 { // Reference
+                mut inner_t := ctx[resolved_expr_t.Reference.inner];
                 if inner_t.tag == 8 {
                     enum_name = inner_t.Struct.struct_name;
                 }
-            } else if expr_t.tag == 9 { // RawPointer
-                mut inner_t := ctx[expr_t.RawPointer.inner];
+            } else if resolved_expr_t.tag == 9 { // RawPointer
+                mut inner_t := ctx[resolved_expr_t.RawPointer.inner];
                 if inner_t.tag == 8 {
                     enum_name = inner_t.Struct.struct_name;
                 }
@@ -3916,7 +3917,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             }
 
             mut parent_brand := empty[Index[str, ctx]];
-            mut curr_t := expr_t;
+            mut curr_t := resolved_expr_t;
             while curr_t.tag == 9 || curr_t.tag == 11 {
                 if curr_t.tag == 9 {
                     curr_t = ctx[curr_t.RawPointer.inner];
