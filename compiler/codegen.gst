@@ -2171,6 +2171,38 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         res = std.Concat(res, ")");
                         return std.Clone(ctx, res);
                     }
+                    if std.str_eq(right_name, "get_opt") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector get_opt Option override for %s", left_str), ctx);
+                        mut args_vec_getopt := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx_getopt: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx_getopt] = (*args_vec_getopt)[0];
+                        mut idx_str_getopt := codegen_generate_expression(arg0_idx_getopt, env, ctx);
+
+                        mut expr_type_getopt := codegen_get_expression_type(expr_idx, env, ctx);
+                        expr_type_getopt = typechecker.env_resolve_type(env, expr_type_getopt, ctx);
+                        mut option_c_type_getopt := codegen_get_c_type(expr_type_getopt, env, ctx);
+
+                        mut vector_getopt_arrow_or_dot := ".";
+                        if is_ptr == 1 {
+                            vector_getopt_arrow_or_dot = "->";
+                        }
+
+                        mut vector_get_opt_res := std.Concat("({ ", option_c_type_getopt);
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, " _gust_get_opt_result; int _gust_get_opt_idx = ");
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, idx_str_getopt);
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, "; if (_gust_get_opt_idx < 0 || _gust_get_opt_idx >= ");
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, left_str);
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, vector_getopt_arrow_or_dot);
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, "len) { _gust_get_opt_result.tag = ");
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, option_c_type_getopt);
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, "_Tag__None; } else { _gust_get_opt_result.tag = ");
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, option_c_type_getopt);
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, "_Tag__Some; _gust_get_opt_result.Some.val = ");
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, left_str);
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, vector_getopt_arrow_or_dot);
+                        vector_get_opt_res = std.Concat(vector_get_opt_res, "data[_gust_get_opt_idx]; } _gust_get_opt_result; })");
+                        return std.Clone(ctx, vector_get_opt_res);
+                    }
                     if std.str_eq(right_name, "GetRef") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector GetRef FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
