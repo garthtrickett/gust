@@ -3946,9 +3946,29 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 res = std.Concat(res, ": {
 ");
 
-                mut variant_struct_name := std.Concat(erased_enum_name, "_");
+                mut variant_struct_name := std.Concat(enum_name, "_");
                 variant_struct_name = std.Concat(variant_struct_name, case_val.variant_name);
                 mut layout_lookup := (*env).struct_registry.Get(variant_struct_name);
+
+                if layout_lookup.Ok == false {
+                    mut erased_variant_struct_name := std.Concat(erased_enum_name, "_");
+                    erased_variant_struct_name = std.Concat(erased_variant_struct_name, case_val.variant_name);
+                    layout_lookup = (*env).struct_registry.Get(erased_variant_struct_name);
+                }
+
+                if layout_lookup.Ok == false {
+                    mut enum_layout_lookup := (*env).struct_registry.Get(enum_name);
+                    if enum_layout_lookup.Ok {
+                        mut variant_type_lookup := enum_layout_lookup.Val.fields.Get(case_val.variant_name);
+                        if variant_type_lookup.Ok {
+                            mut variant_type := variant_type_lookup.Val;
+                            if variant_type.tag == 8 {
+                                layout_lookup = (*env).struct_registry.Get(variant_type.Struct.struct_name);
+                            }
+                        }
+                    }
+                }
+
                 if layout_lookup.Ok {
                     mut fields_vec := &ctx[case_val.fields] as *std.Vector[str, ctx];
                     mut f_idx := 0;
