@@ -2334,6 +2334,39 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         res = std.Concat(res, "); } res; })");
                         return std.Clone(ctx, res);
                     }
+                    if std.str_eq(right_name, "get_opt") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap get_opt Option override for %s", left_str), ctx);
+                        mut args_vec_getopt_map := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx_getopt_map: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx_getopt_map] = (*args_vec_getopt_map)[0];
+                        mut k_str_getopt_map := codegen_generate_expression(arg0_idx_getopt_map, env, ctx);
+
+                        mut expr_type_getopt_map := codegen_get_expression_type(expr_idx, env, ctx);
+                        expr_type_getopt_map = typechecker.env_resolve_type(env, expr_type_getopt_map, ctx);
+                        mut option_c_type_getopt_map := codegen_get_c_type(expr_type_getopt_map, env, ctx);
+
+                        mut res_getopt_map := std.Concat("({ ", option_c_type_getopt_map);
+                        res_getopt_map = std.Concat(res_getopt_map, " _gust_map_get_opt_result = {0}; int _gust_map_get_opt_ok = os_HashMapContains(");
+                        res_getopt_map = std.Concat(res_getopt_map, ref_prefix);
+                        res_getopt_map = std.Concat(res_getopt_map, left_str);
+                        res_getopt_map = std.Concat(res_getopt_map, ", ");
+                        res_getopt_map = std.Concat(res_getopt_map, k_str_getopt_map);
+                        res_getopt_map = std.Concat(res_getopt_map, ", ");
+                        res_getopt_map = std.Concat(res_getopt_map, is_str_key_str);
+                        res_getopt_map = std.Concat(res_getopt_map, "); if (_gust_map_get_opt_ok) { _gust_map_get_opt_result.tag = ");
+                        res_getopt_map = std.Concat(res_getopt_map, option_c_type_getopt_map);
+                        res_getopt_map = std.Concat(res_getopt_map, "_Tag__Some; _gust_map_get_opt_result.Some.val = *os_HashMapRef(");
+                        res_getopt_map = std.Concat(res_getopt_map, ref_prefix);
+                        res_getopt_map = std.Concat(res_getopt_map, left_str);
+                        res_getopt_map = std.Concat(res_getopt_map, ", ");
+                        res_getopt_map = std.Concat(res_getopt_map, k_str_getopt_map);
+                        res_getopt_map = std.Concat(res_getopt_map, ", ");
+                        res_getopt_map = std.Concat(res_getopt_map, is_str_key_str);
+                        res_getopt_map = std.Concat(res_getopt_map, "); } else { _gust_map_get_opt_result.tag = ");
+                        res_getopt_map = std.Concat(res_getopt_map, option_c_type_getopt_map);
+                        res_getopt_map = std.Concat(res_getopt_map, "_Tag__None; } _gust_map_get_opt_result; })");
+                        return std.Clone(ctx, res_getopt_map);
+                    }
                     if std.str_eq(right_name, "Remove") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Remove FFI override for %s", left_str), ctx);
                         mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
