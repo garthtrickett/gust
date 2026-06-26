@@ -2567,22 +2567,21 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         } else {
                             inner_type.tag = 3; // Void fallback; Step 1 should resolve this as Reference.
                         }
-                        mut vector_get_ref_c_type := codegen_get_c_type(inner_type, env, ctx);
+                        mut arena_get_ref_c_type := codegen_get_c_type(inner_type, env, ctx);
 
-                        mut arrow_or_dot := ".";
+                        mut arena_get_ref_arrow_or_dot := ".";
                         if is_ptr == 1 {
-                            arrow_or_dot = "->";
+                            arena_get_ref_arrow_or_dot = "->";
                         }
 
-                        mut res := std.Concat("((", vector_get_ref_c_type);
-                        res = std.Concat(res, "*)({ if (");
-                        res = std.Concat(res, "*)((char*)");
-                        res = std.Concat(res, left_str);
-                        res = std.Concat(res, arrow_or_dot);
-                        res = std.Concat(res, "BaseAddress + ");
-                        res = std.Concat(res, idx_str);
-                        res = std.Concat(res, "))");
-                        return std.Clone(ctx, res);
+                        mut arena_get_ref_res := std.Concat("((", arena_get_ref_c_type);
+                        arena_get_ref_res = std.Concat(arena_get_ref_res, "*)((char*)");
+                        arena_get_ref_res = std.Concat(arena_get_ref_res, left_str);
+                        arena_get_ref_res = std.Concat(arena_get_ref_res, arena_get_ref_arrow_or_dot);
+                        arena_get_ref_res = std.Concat(arena_get_ref_res, "BaseAddress + ");
+                        arena_get_ref_res = std.Concat(arena_get_ref_res, idx_str);
+                        arena_get_ref_res = std.Concat(arena_get_ref_res, "))");
+                        return std.Clone(ctx, arena_get_ref_res);
                     }
 
                     if std.str_eq(right_name, "Free") {
