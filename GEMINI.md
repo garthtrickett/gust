@@ -89,6 +89,23 @@ mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
 mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
 ctx[stmt_idx] = statements_vec[0];
 ```
+
+### E. Step 4.4 Checkpoint Validation Discipline
+* **Rule:** Step 4.4 migration patches should be medium-sized coherent checkpoints, not microscopic edits. Each checkpoint must be large enough to justify the full validation cost, but small enough to revert or bisect cleanly.
+* **Accessor Contract:** Before migrating compiler internals, keep the additive accessor surface stable: legacy `.Get()`, additive `.get_opt()`, `Vector.GetRef`, `std.VectorGetRef`, and `HashMap.GetRef` must continue to coexist.
+* **Inventory Before Enforcement:** Use `make report_high_level_raw_collection_casts` to inventory remaining high-level compiler raw casts. This target is report-only during Step 4.4. Do not convert it into a failing guard until the relevant file or migration slice is clean.
+* **Checkpoint Commands:** Before committing any Step 4.4 patch that touches compiler, runtime, tests, Makefile validation, or bootstrap-sensitive files, run:
+
+```bash
+make
+make report_step44_accessor_contract
+# Run the focused gt-one-gst commands printed by report_step44_accessor_contract.
+make test
+make bootstrap
+git diff --check
+```
+
+* **Known Red Tests:** If the full suite has pre-existing failures, they must be explicitly documented before the checkpoint. A Step 4.4 patch may only proceed when it introduces no new full-suite failures and `make bootstrap` still converges.
 ## TOOL USE CONSTRAINTS & DISCIPLINE
 - **Prohibition of Execution Tools**: You are strictly prohibited from calling any command execution, bash shell, terminal, or system-running tools (such as `vm_shell:execute_bash` or any equivalent system command triggers).
 - **Allowed Tool Scope**: You must only use information-retrieval and text-generation tools (such as `google:search` and `browsing:browse` to gather context, and text responses to supply code patches). 

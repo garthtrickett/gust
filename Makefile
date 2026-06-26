@@ -7,7 +7,7 @@ PREFIX = /usr/local
 SHELL = bash
 .SHELLFLAGS = -o pipefail -c
 
-.PHONY: all clean test bootstrap install test_tree_sitter report_compiler_get_opt_migration guard_parser_high_level_raw_casts
+.PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_compiler_get_opt_migration report_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -66,9 +66,30 @@ test_tree_sitter:
 	done
 	@echo "✅ Tree-sitter parsing validation passed!"
 
+report_step44_accessor_contract:
+	@echo "🧪 Step 4.4 accessor contract focused checks:"
+	@echo "   gt-one-gst tests/e2e_collection_dual_signatures.gst"
+	@echo "   gt-one-gst tests/e2e_vector_get_ref_alias.gst"
+	@echo "   gt-one-gst tests/e2e_hashmap_get_ref.gst"
+	@echo "   gt-one-gst tests/test_vector_get_ref_alias_bad_index_type_rejected.gst"
+	@echo "   gt-one-gst tests/test_vector_get_ref_alias_non_vector_rejected.gst"
+	@echo "   gt-one-gst tests/test_hashmap_get_ref_bad_key_rejected.gst"
+	@echo "   gt-one-gst tests/test_hashmap_get_ref_missing_runtime_violation.gst"
+	@echo "✅ Accessor contract list complete. Run these before make test/bootstrap for Step 4.4 patches."
+
 report_compiler_get_opt_migration:
 	@echo "📊 Reporting compiler .get_opt migration sites..."
 	@rg -n '\.get_opt[[:space:]]*\(' compiler/*.gst || true
+
+report_high_level_raw_collection_casts:
+	@echo "📊 Reporting Step 4.4 high-level raw collection/string cast migration sites..."
+	@echo "   Direct arena-to-vector casts:"
+	@rg -n '&ctx\[[^]]+\][[:space:]]+as[[:space:]]+\*std\.Vector' compiler/*.gst || true
+	@echo "   Direct arena-to-hashmap casts:"
+	@rg -n '&ctx\[[^]]+\][[:space:]]+as[[:space:]]+\*std\.HashMap' compiler/*.gst || true
+	@echo "   Direct arena-to-string-view casts:"
+	@rg -n '&ctx\[[^]]+\][[:space:]]+as[[:space:]]+\*str' compiler/*.gst || true
+	@echo "✅ Report complete. This target is inventory-only and does not fail."
 
 guard_parser_high_level_raw_casts:
 	@echo "🔒 Checking parser raw casts are limited to lexer/token compatibility shims..."
