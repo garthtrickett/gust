@@ -504,18 +504,26 @@ func codegen_hashmap_is_str_key(t: ast.Type[ctx], env: &typechecker.TypeEnvironm
             mut name := t.Struct.struct_name;
             mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
             mut orig_name := codegen_find_original_struct_name(erased_name, env, ctx);
-            mut lookup_struct := (*env).struct_registry.Get(orig_name);
-            if lookup_struct.Ok { 
-                mut layout := lookup_struct.Val;
-                mut keys_type_lookup := layout.fields.Get("keys");
-                if keys_type_lookup.Ok {
-                    mut keys_type := keys_type_lookup.Val;
-                    if keys_type.tag == 9 { // RawPointer
-                        mut key_elem_type := ctx[keys_type.RawPointer.inner];
-                        if key_elem_type.tag == 5 { // Str
-                            return 1;
+            mut lookup_struct := (*env).struct_registry.get_opt(orig_name);
+            match lookup_struct {
+                Some { val } => {
+                    mut layout := *val;
+                    mut keys_type_lookup := layout.fields.get_opt("keys");
+                    match keys_type_lookup {
+                        Some { val } => {
+                            mut keys_type := *val;
+                            if keys_type.tag == 9 { // RawPointer
+                                mut key_elem_type := ctx[keys_type.RawPointer.inner];
+                                if key_elem_type.tag == 5 { // Str
+                                    return 1;
+                                }
+                            }
+                        }
+                        None => {
                         }
                     }
+                }
+                None => {
                 }
             }
         }
@@ -1061,30 +1069,42 @@ func codegen_get_by_value_dependencies_recursive(t: ast.Type[ctx], deps: *std.Ha
     unsafe {
         if t.tag == 8 { // Struct
             mut name := t.Struct.struct_name;
-            mut lookup_struct := env.struct_registry.Get(name);
-            if lookup_struct.Ok {
-                mut inserted := 0;
-                mut has_dep := 0;
-                mut dep_lookup := (*deps).Get(name);
-                if dep_lookup.Ok {
-                    has_dep = 1;
-                }
-                if has_dep == 0 {
-                    (*deps).Insert(std.Clone(ctx, name), 1);
-                    inserted = 1;
-                }
-                if inserted == 1 {
-                    mut layout := lookup_struct.Val;
-                    mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
-                    mut j := 0;
-                    while j < len(f_keys) {
-                        mut f_key := f_keys[j];
-                        mut f_lookup := layout.fields.Get(f_key);
-                        if f_lookup.Ok {
-                            codegen_get_by_value_dependencies_recursive(f_lookup.Val, deps, env, ctx);
+            mut lookup_struct := (*env).struct_registry.get_opt(name);
+            match lookup_struct {
+                Some { val } => {
+                    mut inserted := 0;
+                    mut has_dep := 0;
+                    mut dep_lookup := (*deps).get_opt(name);
+                    match dep_lookup {
+                        Some { val } => {
+                            has_dep = 1;
                         }
-                        j = j + 1;
+                        None => {
+                        }
                     }
+                    if has_dep == 0 {
+                        (*deps).Insert(std.Clone(ctx, name), 1);
+                        inserted = 1;
+                    }
+                    if inserted == 1 {
+                        mut layout := *val;
+                        mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                        mut j := 0;
+                        while j < len(f_keys) {
+                            mut f_key := f_keys[j];
+                            mut f_lookup := layout.fields.get_opt(f_key);
+                            match f_lookup {
+                                Some { val } => {
+                                    codegen_get_by_value_dependencies_recursive(*val, deps, env, ctx);
+                                }
+                                None => {
+                                }
+                            }
+                            j = j + 1;
+                        }
+                    }
+                }
+                None => {
                 }
             }
         } else {
@@ -1108,62 +1128,82 @@ func codegen_get_by_value_dependencies_recursive(t: ast.Type[ctx], deps: *std.Ha
 func codegen_topological_visit(name: str, visited: *std.HashMap[str, int, ctx], temp_visited: *std.HashMap[str, int, ctx], ordered: *std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut has_visited := 0;
-        mut visited_lookup := (*visited).Get(name);
-        if visited_lookup.Ok {
-            has_visited = 1;
+        mut visited_lookup := (*visited).get_opt(name);
+        match visited_lookup {
+            Some { val } => {
+                has_visited = 1;
+            }
+            None => {
+            }
         }
         if has_visited == 1 {
             return 1;
         }
         
         mut has_temp_visited := 0;
-        mut temp_visited_lookup := (*temp_visited).Get(name);
-        if temp_visited_lookup.Ok {
-            has_temp_visited = 1;
+        mut temp_visited_lookup := (*temp_visited).get_opt(name);
+        match temp_visited_lookup {
+            Some { val } => {
+                has_temp_visited = 1;
+            }
+            None => {
+            }
         }
         if has_temp_visited == 1 {
             return 0;
         }
         (*temp_visited).Insert(std.Clone(ctx, name), 1);
 
-        mut lookup_struct := env.struct_registry.Get(name);
-        if lookup_struct.Ok {
-            mut layout := lookup_struct.Val;
-            mut deps_map: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
-            
-            mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
-            mut j := 0;
-            while j < len(f_keys) {
-                mut f_key := f_keys[j];
-                mut f_lookup := layout.fields.Get(f_key);
-                if f_lookup.Ok {
-                    codegen_get_by_value_dependencies_recursive(f_lookup.Val, &deps_map, env, ctx);
+        mut lookup_struct := (*env).struct_registry.get_opt(name);
+        match lookup_struct {
+            Some { val } => {
+                mut layout := *val;
+                mut deps_map: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+                
+                mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                mut j := 0;
+                while j < len(f_keys) {
+                    mut f_key := f_keys[j];
+                    mut f_lookup := layout.fields.get_opt(f_key);
+                    match f_lookup {
+                        Some { val } => {
+                            codegen_get_by_value_dependencies_recursive(*val, &deps_map, env, ctx);
+                        }
+                        None => {
+                        }
+                    }
+                    j = j + 1;
                 }
-                j = j + 1;
-            }
 
-            mut lookup_enum := env.enum_registry.Get(name);
-            if lookup_enum.Ok {
-                mut variants := lookup_enum.Val;
-                mut v_idx := 0;
-                while v_idx < len(variants) {
-                    mut variant_name := variants[v_idx];
-                    mut variant_struct_name := std.Concat(name, "_");
-                    variant_struct_name = std.Concat(variant_struct_name, variant_name);
-                    deps_map.Insert(std.Clone(ctx, variant_struct_name), 1);
-                    v_idx = v_idx + 1;
+                mut lookup_enum := (*env).enum_registry.get_opt(name);
+                match lookup_enum {
+                    Some { val } => {
+                        mut variants := *val;
+                        mut v_idx := 0;
+                        while v_idx < len(variants) {
+                            mut variant_name := variants[v_idx];
+                            mut variant_struct_name := std.Concat(name, "_");
+                            variant_struct_name = std.Concat(variant_struct_name, variant_name);
+                            deps_map.Insert(std.Clone(ctx, variant_struct_name), 1);
+                            v_idx = v_idx + 1;
+                        }
+                    }
+                    None => {
+                    }
+                }
+
+                mut sorted_deps := typechecker.typechecker_get_sorted_keys_int(&deps_map, ctx);
+                mut d_idx := 0;
+                while d_idx < len(sorted_deps) {
+                    mut dep := sorted_deps[d_idx];
+                    mut ok := codegen_topological_visit(dep, visited, temp_visited, ordered, env, ctx);
+                    if ok == 0 {
+                        return 0;
+                    }
+                    d_idx = d_idx + 1;
                 }
             }
-
-            mut sorted_deps := typechecker.typechecker_get_sorted_keys_int(&deps_map, ctx);
-            mut d_idx := 0;
-            while d_idx < len(sorted_deps) {
-                mut dep := sorted_deps[d_idx];
-                mut ok := codegen_topological_visit(dep, visited, temp_visited, ordered, env, ctx);
-                if ok == 0 {
-                    return 0;
-                }
-                d_idx = d_idx + 1;
+            None => {
             }
         }
 
