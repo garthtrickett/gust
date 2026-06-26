@@ -359,6 +359,26 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
             return get_expression_origins(expr.Selector.left, env, ctx);
         }
         if expr.tag == 12 { // Call
+            mut func_expr := ctx[expr.Call.function];
+            if func_expr.tag == 11 { // Selector
+                if std.str_eq(func_expr.Selector.right, "get_ref") == 1 {
+                    mut s := set_init(ctx);
+                    mut arena_root := get_root_variable(func_expr.Selector.left, ctx);
+                    if std.str_eq(arena_root, "") == 0 {
+                        set_add(s, arena_root, ctx);
+                    }
+
+                    mut args_vec_ref := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                    if len(*args_vec_ref) == 1 {
+                        mut arg0_idx_ref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx_ref] = (*args_vec_ref)[0];
+                        mut arg_origins_ref := get_expression_origins(arg0_idx_ref, env, ctx);
+                        set_union(s, arg_origins_ref, ctx);
+                    }
+                    return s;
+                }
+            }
+
             mut func_name := expression_to_string(expr.Call.function, ctx);
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
             if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std.Format") || 
@@ -1002,6 +1022,54 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if left_type.tag == 9 { // RawPointer
                     left_type = ctx[left_type.RawPointer.inner];
                     is_ptr = 1;
+                }
+
+                if std.str_eq(right_name, "get_ref") == 1 && typechecker_is_arena_value_or_ref(left_type, ctx) == 1 {
+                    mut args_vec_ref := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                    if len(*args_vec_ref) != 1 {
+                        mut msg := "Semantic Error: Arena.get_ref expects exactly 1 Index[T, ctx] argument";
+                        report_error(2, msg, expr.Call.span, env, ctx);
+                        return dummy;
+                    }
+
+                    mut arg0_idx_ref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[arg0_idx_ref] = (*args_vec_ref)[0];
+                    mut idx_type_ref := check_expression(arg0_idx_ref, env, scope, ctx);
+                    idx_type_ref = env_resolve_type(env, idx_type_ref, ctx);
+
+                    if idx_type_ref.tag != 7 { // Index
+                        mut msg := std.Concat("Semantic Error: Arena.get_ref expected Index[T, ctx] but got ", ast.serialize_type(idx_type_ref, ctx));
+                        report_error(2, msg, get_expression_span(arg0_idx_ref, ctx), env, ctx);
+                        return dummy;
+                    }
+
+                    mut arena_brand_name := get_root_variable(left_expr_idx, ctx);
+                    if std.str_eq(arena_brand_name, "") == 1 {
+                        mut msg := "Semantic Error: [BrandMismatch] Arena.get_ref requires a named arena variable as its receiver";
+                        report_error(2, msg, expr.Call.span, env, ctx);
+                        return dummy;
+                    }
+
+                    mut index_brand_name := get_type_brand(idx_type_ref, env, ctx);
+                    if std.str_eq(index_brand_name, "") == 1 {
+                        mut msg := "Semantic Error: [BrandMismatch] Arena.get_ref requires a branded Index[T, ctx] argument";
+                        report_error(2, msg, get_expression_span(arg0_idx_ref, ctx), env, ctx);
+                        return dummy;
+                    }
+
+                    mut clean_index_brand := strip_brand_prefix(index_brand_name, ctx);
+                    mut clean_arena_brand := strip_brand_prefix(arena_brand_name, ctx);
+                    if std.str_eq(clean_index_brand, clean_arena_brand) == 0 {
+                        mut msg := std.Concat("Semantic Error: [BrandMismatch] Arena.get_ref index brand '", index_brand_name);
+                        msg = std.Concat(msg, "' does not match arena receiver '");
+                        msg = std.Concat(msg, arena_brand_name);
+                        msg = std.Concat(msg, "'");
+                        report_error(2, msg, get_expression_span(arg0_idx_ref, ctx), env, ctx);
+                        return dummy;
+                    }
+
+                    mut elem_type_ref := typechecker_get_index_element_type(idx_type_ref, env, ctx);
+                    return make_type_reference(elem_type_ref, index_brand_name, ctx);
                 }
 
                 if left_type.tag == 4 { // Arena
@@ -2233,6 +2301,50 @@ func make_type_pointer(inner: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
         ctx[t.RawPointer.inner] = inner;
     }
     return t;
+}
+
+func make_type_reference(inner: ast.Type[ctx], brand_name: str, ctx: &Arena) ast.Type[ctx] {
+    mut t: ast.Type[ctx];
+    unsafe {
+        t.tag = 11; // Reference
+        t.Reference.inner = os.ArenaAlloc(ctx);
+        ctx[t.Reference.inner] = inner;
+        if std.str_eq(brand_name, "") {
+            t.Reference.brand = empty[Index[str, ctx]];
+        } else {
+            t.Reference.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+            mut ptr := &ctx[t.Reference.brand] as *str;
+            *ptr = std.Clone(ctx, brand_name);
+        }
+    }
+    return t;
+}
+
+func typechecker_is_arena_value_or_ref(t: ast.Type[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 4 { // Arena
+            return 1;
+        }
+        if t.tag == 9 { // RawPointer
+            mut inner := ctx[t.RawPointer.inner];
+            if inner.tag == 4 { // Arena
+                return 1;
+            }
+        }
+        if t.tag == 11 { // Reference
+            mut inner := ctx[t.Reference.inner];
+            if inner.tag == 4 { // Arena
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func typechecker_get_index_element_type(idx_t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) ast.Type[ctx] {
+    mut brand_name := get_type_brand(idx_t, env, ctx);
+    mut elem_t := make_type_struct(idx_t.Index.struct_name, brand_name, ctx);
+    return env_resolve_type(env, elem_t, ctx);
 }
 
 func make_type_struct(name: str, brand_name: str, ctx: &Arena) ast.Type[ctx] {
