@@ -70,11 +70,20 @@
                 return 1
               fi
 
+              if [ ! -f "$1" ]; then
+                echo "❌ Error: Test file '$1' does not exist."
+                return 1
+              fi
+
               # Force make to recognize any compiler changes by touching the entrypoint and rebuilding
               if [ -f compiler/test_runner_entry.gst ]; then
                 touch compiler/test_runner_entry.gst
               fi
               make gust >/dev/null 2>&1
+              if [ $? -ne 0 ]; then
+                echo "❌ Error: 'make gust' failed. Aborting."
+                return 1
+              fi
 
               TEST_PATH="$1"
               TEST_STEM=$(basename "''${TEST_PATH}" .gst)
