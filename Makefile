@@ -7,7 +7,7 @@ PREFIX = /usr/local
 SHELL = bash
 .SHELLFLAGS = -o pipefail -c
 
-.PHONY: all clean test bootstrap install test_tree_sitter guard_no_compiler_get_opt
+.PHONY: all clean test bootstrap install test_tree_sitter guard_no_compiler_get_opt guard_parser_high_level_raw_casts
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -74,6 +74,20 @@ guard_no_compiler_get_opt:
 		exit 1; \
 	else \
 		echo "✅ Bootstrap guard passed: compiler/*.gst has no .get_opt calls."; \
+	fi
+
+guard_parser_high_level_raw_casts:
+	@echo "🔒 Checking parser raw casts are limited to lexer/token compatibility shims..."
+	@if rg -n '&ctx\[' compiler/parser.gst; then \
+		echo "❌ Parser guard failed: compiler/parser.gst must not use direct &ctx[...] arena casts."; \
+		exit 1; \
+	fi
+	@if rg -n ' as \*' compiler/parser.gst | rg -v 'lexer\.Lexer|token\.Token'; then \
+		echo "❌ Parser guard failed: compiler/parser.gst has a non-compat raw pointer cast."; \
+		echo "   Only lexer/token compatibility casts should remain in parser.gst after Step 6B."; \
+		exit 1; \
+	else \
+		echo "✅ Parser guard passed: only lexer/token compatibility casts remain."; \
 	fi
 
 clean:

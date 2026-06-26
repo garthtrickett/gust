@@ -162,8 +162,7 @@ func peek_token_is(p: *Parser[ctx], tag: int) bool {
 
 func expect_peek(p: *Parser[ctx], tag: int, ctx: &Arena) ParseResult {
     unsafe {
-        mut res_ptr := p as *ParseResult;
-        mut res := *res_ptr;
+        mut res: ParseResult;
         if (*p).peek_token.token_type.tag == tag {
             res.Ok = 1;
             res.Val = (*p).peek_token;
