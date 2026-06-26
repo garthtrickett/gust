@@ -59,7 +59,7 @@ test: gust
 test_tree_sitter:
 	@echo "🔍 Running Tree-sitter corpus tests..."
 	cd tree-sitter-gust && tree-sitter test
-	@echo "🔍 Validating all Gust files parse with zero errors..."
+	@echo "🔍 Validating all Gust files parse with zero errors (including explicit reference-access tests)..."
 	@for f in compiler/*.gst tests/*.gst; do \
 		echo "Parsing $$f..."; \
 		(cd tree-sitter-gust && tree-sitter parse ../$$f --quiet) || exit 1; \

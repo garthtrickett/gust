@@ -853,6 +853,12 @@ func main() {
     t_ref_access.expected = "SUCCESS: Explicit reference-access method call parsing verified!";
     tests.Push(t_ref_access);
 
+    mut t_ref_passive: Test[ctx];
+    t_ref_passive.path = "tests/test_reference_access_parsing_accepted.gst";
+    t_ref_passive.is_negative = 1;
+    t_ref_passive.expected = "MethodNotFound";
+    tests.Push(t_ref_passive);
+
     mut t87: Test[ctx];
     t87.path = "tests/e2e_program_b_safe_arena_cyclic_graph.gst";
     t87.is_negative = 0;
