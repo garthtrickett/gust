@@ -120,19 +120,20 @@ func main() {
 
     // Test Step 2: Statement Traversal Tracking
     // Parse a function declaration with parameters and read statement 0 using
-    // the Step 4.4 arena-stored vector accessor pattern:
-    //   ctx.get_ref(program.statements) -> vector.GetRef(0)
+    // the Step 4.4 arena-stored vector safe value-read pattern:
+    //   ctx[program.statements] -> vector[0]
+    // This avoids direct arena-to-vector raw casts without requiring reference
+    // receiver method lookup inside compiler sources yet.
     mut l_func_test: lexer.Lexer[ctx];
     lexer.init_lexer(&l_func_test, "func my_test_func(param_a: int, param_b: bool) {}");
     mut p_func_test: parser.Parser[ctx];
     parser.init_parser(&p_func_test, &l_func_test, ctx);
     mut prog_func_test := parser.parse_program(&p_func_test, ctx);
-    mut statements_vec_ref_func_test := ctx.get_ref(prog_func_test.statements);
-    mut first_stmt_ref_func_test := statements_vec_ref_func_test.GetRef(0);
-    typechecker.env_pre_register_statement(&env, *first_stmt_ref_func_test, ctx);
+    mut statements_vec_func_test: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_func_test.statements];
+    typechecker.env_pre_register_statement(&env, statements_vec_func_test[0], ctx);
     
     mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx[stmt_idx] = *first_stmt_ref_func_test;
+    ctx[stmt_idx] = statements_vec_func_test[0];
     
     // Execute statement generation
     mut _discard := codegen.codegen_generate_statement(stmt_idx, &env, ctx);

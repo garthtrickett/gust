@@ -74,7 +74,7 @@ func main() {
 ### D. Arena-Stored Vector Accessor Migration Pattern
 * **Rule:** High-level compiler logic should not introduce new direct arena-to-vector casts such as `&ctx[some_index] as *std.Vector[...]` when a safe branded reference accessor can express the same operation.
 * **Why:** Step 4.4 standardizes collection access around compiler-verified references before the later unsafe-gating phase. This keeps compiler traversal code aligned with branded lifetime checks while avoiding a broad raw-cast ban before Step 5.1.
-* **Action:** Use `ctx.get_ref(vector_index)` to borrow the arena-stored vector, then use normal vector operations or `GetRef` to borrow individual elements. Keep low-level legacy casts only where a later migration step has not reached that file yet.
+* **Action:** In current compiler code, prefer a simple safe value-read pattern first: copy the arena-stored vector through `ctx[vector_index]`, then use normal vector indexing. Keep `ctx.get_ref(...).GetRef(...)` migration deferred until method lookup on branded reference receivers is fully supported in compiler sources. Keep low-level legacy casts only where a later migration step has not reached that file yet.
 
 ```gust
 // ❌ Legacy migration target
@@ -84,11 +84,10 @@ unsafe {
     ctx[stmt_idx] = (*statements_vec)[0];
 }
 
-// ✅ Preferred Step 4.4 pattern
-mut statements_ref := ctx.get_ref(prog.statements);
-mut first_stmt_ref := statements_ref.GetRef(0);
+// ✅ Preferred Step 4.4 compiler-source pattern for now
+mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
 mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-ctx[stmt_idx] = *first_stmt_ref;
+ctx[stmt_idx] = statements_vec[0];
 ```
 ## TOOL USE CONSTRAINTS & DISCIPLINE
 - **Prohibition of Execution Tools**: You are strictly prohibited from calling any command execution, bash shell, terminal, or system-running tools (such as `vm_shell:execute_bash` or any equivalent system command triggers).
@@ -180,13 +179,6 @@ The patching tool uses Tree-sitter to validate the syntax of JavaScript, TypeScr
 * Ensure every block is completely precise. If you output changes for multiple files and one block fails, none of the files will be modified on disk.
 
 
-COMMANDS
-RUST_LOG=debug cargo test -- --nocapture --test-threads=1 > to.log 2>&1
-RUST_LOG=debug cargo test test_self_hosted_import_scanner_old -- --nocapture > to.log 2>&1
-RUST_LOG=debug cargo test test_self_hosted_type_dump_diff -- --nocapture 
-cargo clippy --fix --allow-dirty
-cc gust_output.c -o gust_program && ./gust_program
-cargo run -- --test
 
 Updating tree sitter for helix
 git add .
