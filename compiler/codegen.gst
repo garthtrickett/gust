@@ -1445,39 +1445,47 @@ func codegen_gen_struct_initializer(name: str, env: &typechecker.TypeEnvironment
             return std.Clone(ctx, res);
         }
         
-        mut lookup_struct := env.struct_registry.Get(orig_name);
-        if lookup_struct.Ok {
-            mut layout := lookup_struct.Val;
-            mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
-            if len(f_keys) == 0 {
+        mut lookup_struct := (*env).struct_registry.get_opt(orig_name);
+        match lookup_struct {
+            Some { val } => {
+                mut layout := *val;
+                mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                if len(f_keys) == 0 {
+                    mut res := std.Concat("((", erased_name);
+                    res = std.Concat(res, "){0})");
+                    return std.Clone(ctx, res);
+                }
+                
+                mut fields_init := "";
+                mut i := 0;
+                while i < len(f_keys) {
+                    mut f_key := f_keys[i];
+                    mut f_lookup := layout.fields.get_opt(f_key);
+                    match f_lookup {
+                        Some { val } => {
+                            if i > 0 {
+                                fields_init = std.Concat(fields_init, ", ");
+                            }
+                            mut f_init := codegen_gen_type_aware_initializer(*val, env, ctx);
+                            mut field_assign := std.Concat(".", f_key);
+                            field_assign = std.Concat(field_assign, " = ");
+                            field_assign = std.Concat(field_assign, f_init);
+                            fields_init = std.Concat(fields_init, field_assign);
+                        }
+                        None => {
+                        }
+                    }
+                    i = i + 1;
+                }
+                
                 mut res := std.Concat("((", erased_name);
-                res = std.Concat(res, "){0})");
+                res = std.Concat(res, "){ ");
+                res = std.Concat(res, fields_init);
+                res = std.Concat(res, " })");
                 return std.Clone(ctx, res);
             }
-            
-            mut fields_init := "";
-            mut i := 0;
-            while i < len(f_keys) {
-                mut f_key := f_keys[i];
-                mut f_lookup := layout.fields.Get(f_key);
-                if f_lookup.Ok {
-                    if i > 0 {
-                        fields_init = std.Concat(fields_init, ", ");
-                    }
-                    mut f_init := codegen_gen_type_aware_initializer(f_lookup.Val, env, ctx);
-                    mut field_assign := std.Concat(".", f_key);
-                    field_assign = std.Concat(field_assign, " = ");
-                    field_assign = std.Concat(field_assign, f_init);
-                    fields_init = std.Concat(fields_init, field_assign);
-                }
-                i = i + 1;
+            None => {
             }
-            
-            mut res := std.Concat("((", erased_name);
-            res = std.Concat(res, "){ ");
-            res = std.Concat(res, fields_init);
-            res = std.Concat(res, " })");
-            return std.Clone(ctx, res);
         }
         
         mut res := std.Concat("((", erased_name);
@@ -1570,27 +1578,31 @@ func codegen_gen_is_valid_helper(struct_name: str, layout: typechecker.StructLay
         mut i := 0;
         while i < len(f_keys) {
             mut f_key := f_keys[i];
-            mut f_lookup := layout.fields.Get(f_key);
-            if f_lookup.Ok {
-                mut f_type := f_lookup.Val;
-                if f_type.tag == 1 || f_type.tag == 2 { // Byte or Bool
-                    mut check_line := std.Concat("    if (req->", f_key);
-                    check_line = std.Concat(check_line, " != 0x00 && req->");
-                    check_line = std.Concat(check_line, f_key);
-                    check_line = std.Concat(check_line, " != 0x01) return 0;\n");
-                    res = std.Concat(res, check_line);
-                } else {
-                    if f_type.tag == 8 { // Struct
-                        mut has_bool := codegen_has_boolean_fields(f_type, env, ctx);
-                        if has_bool == 1 {
-                            mut nested_name := f_type.Struct.struct_name;
-                            mut check_line := std.Concat("    if (!", nested_name);
-                            check_line = std.Concat(check_line, "_IsValid(&req->");
-                            check_line = std.Concat(check_line, f_key);
-                            check_line = std.Concat(check_line, ")) return 0;\n");
-                            res = std.Concat(res, check_line);
+            mut f_lookup := layout.fields.get_opt(f_key);
+            match f_lookup {
+                Some { val } => {
+                    mut f_type := *val;
+                    if f_type.tag == 1 || f_type.tag == 2 { // Byte or Bool
+                        mut check_line := std.Concat("    if (req->", f_key);
+                        check_line = std.Concat(check_line, " != 0x00 && req->");
+                        check_line = std.Concat(check_line, f_key);
+                        check_line = std.Concat(check_line, " != 0x01) return 0;\n");
+                        res = std.Concat(res, check_line);
+                    } else {
+                        if f_type.tag == 8 { // Struct
+                            mut has_bool := codegen_has_boolean_fields(f_type, env, ctx);
+                            if has_bool == 1 {
+                                mut nested_name := f_type.Struct.struct_name;
+                                mut check_line := std.Concat("    if (!", nested_name);
+                                check_line = std.Concat(check_line, "_IsValid(&req->");
+                                check_line = std.Concat(check_line, f_key);
+                                check_line = std.Concat(check_line, ")) return 0;\n");
+                                res = std.Concat(res, check_line);
+                            }
                         }
                     }
+                }
+                None => {
                 }
             }
             i = i + 1;
@@ -2369,14 +2381,18 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         mut val_type_ident := "int";
                         if lookup_struct.Ok {
                             mut layout := lookup_struct.Val;
-                            mut val_type_lookup := layout.fields.Get("values");
-                            if val_type_lookup.Ok {
-                                mut val_type := val_type_lookup.Val;
-                                if val_type.tag == 9 { // RawPointer
-                                    mut val_elem_type := ctx[val_type.RawPointer.inner];
-                                    mut erased_val_elem_type := codegen_erase_type(val_elem_type, env, ctx);
-                                    val_type_ident = typechecker.get_type_ident(erased_val_elem_type, ctx);
-                                } 
+                            mut val_type_lookup := layout.fields.get_opt("values");
+                            match val_type_lookup {
+                                Some { val } => {
+                                    mut val_type := *val;
+                                    if val_type.tag == 9 { // RawPointer
+                                        mut val_elem_type := ctx[val_type.RawPointer.inner];
+                                        mut erased_val_elem_type := codegen_erase_type(val_elem_type, env, ctx);
+                                        val_type_ident = typechecker.get_type_ident(erased_val_elem_type, ctx);
+                                    } 
+                                }
+                                None => {
+                                }
                             }
                         }
                         
@@ -4017,9 +4033,13 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 mut wrapper_c_type := codegen_get_c_type(rhs_type, env, ctx);
 
                 mut var_c_type := "unknown";
-                mut lookup := (*env).variable_types.Get(name);
-                if lookup.Ok {
-                    var_c_type = codegen_get_c_type(lookup.Val, env, ctx);
+                mut lookup := (*env).variable_types.get_opt(name);
+                match lookup {
+                    Some { val } => {
+                        var_c_type = codegen_get_c_type(*val, env, ctx);
+                    }
+                    None => {
+                    }
                 }
 
                 mut line_str := std.FormatInt(span.start.line);
