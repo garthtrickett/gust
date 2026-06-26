@@ -48,13 +48,13 @@ func test_ctx_access(ctx: &Arena) {
             os.Exit(1);
         }
 
-        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-        if len(*args_vec) != 1 {
+        mut args_vec: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+        if len(args_vec) != 1 {
             os.LogStr("Error: expected exactly 1 argument");
             os.Exit(1);
         }
 
-        mut arg_expr := (*args_vec)[0];
+        mut arg_expr := args_vec[0];
         if arg_expr.tag != 0 { // Identifier = 0
             os.LogStr("Error: expected argument to be Identifier (tag 0)");
             os.Exit(1);
@@ -112,13 +112,13 @@ func test_vec_access(ctx: &Arena) {
             os.Exit(1);
         }
 
-        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-        if len(*args_vec) != 1 {
+        mut args_vec: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+        if len(args_vec) != 1 {
             os.LogStr("Error: expected exactly 1 argument");
             os.Exit(1);
         }
 
-        mut arg_expr := (*args_vec)[0];
+        mut arg_expr := args_vec[0];
         if arg_expr.tag != 0 { // Identifier = 0
             os.LogStr("Error: expected argument to be Identifier (tag 0)");
             os.Exit(1);

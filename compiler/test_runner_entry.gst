@@ -167,13 +167,11 @@ func main() {
         // Set current prefix and pre-register statements
         env.current_prefix = prefix;
         env.current_file = path;
-        unsafe {
-            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
-            mut k := 0;
-            while k < len(*statements_vec) {
-                typechecker.env_pre_register_statement(&env, (*statements_vec)[k], ctx);
-                k = k + 1;
-            }
+        mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
+        mut k := 0;
+        while k < len(statements_vec) {
+            typechecker.env_pre_register_statement(&env, statements_vec[k], ctx);
+            k = k + 1;
         }
 
         i = i + 1;
@@ -205,15 +203,13 @@ func main() {
         env.current_prefix = prefix;
         env.current_file = order[j];
 
-        unsafe {
-            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
-            mut k := 0;
-            while k < len(*statements_vec) {
-                mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[stmt_idx] = (*statements_vec)[k];
-                typechecker.check_statement(stmt_idx, &env, scope, ctx);
-                k = k + 1;
-            }
+        mut statements_vec_check: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
+        mut k_check := 0;
+        while k_check < len(statements_vec_check) {
+            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx[stmt_idx] = statements_vec_check[k_check];
+            typechecker.check_statement(stmt_idx, &env, scope, ctx);
+            k_check = k_check + 1;
         }
 
         j = j + 1;

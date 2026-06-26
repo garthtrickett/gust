@@ -38,22 +38,20 @@ func main() {
     env.current_file = file_path;
     mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
 
-    unsafe {
-        mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+    mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
 
-        mut i := 0;
-        while i < len(*statements_vec) {
-            typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
-            i = i + 1;
-        }
+    mut i := 0;
+    while i < len(statements_vec) {
+        typechecker.env_pre_register_statement(&env, statements_vec[i], ctx);
+        i = i + 1;
+    }
 
-        mut j := 0;
-        while j < len(*statements_vec) {
-            mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = (*statements_vec)[j];
-            typechecker.check_statement(stmt_idx, &env, scope, ctx);
-            j = j + 1;
-        }
+    mut j := 0;
+    while j < len(statements_vec) {
+        mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[stmt_idx] = statements_vec[j];
+        typechecker.check_statement(stmt_idx, &env, scope, ctx);
+        j = j + 1;
     }
 
     if len(env.errors) > 0 {
