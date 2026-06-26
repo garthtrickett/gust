@@ -1338,6 +1338,36 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
                         return make_type_struct(lookup_struct_name, "", ctx);
                     }
+                    if std.str_eq(right_name, "GetRef") {
+                        mut args_vec_getref_map := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec_getref_map) != 1 {
+                            mut msg_getref_map_arity := "Semantic Error: HashMap.GetRef expects exactly 1 key argument";
+                            report_error(2, msg_getref_map_arity, expr.Call.span, env, ctx);
+                            return dummy;
+                        }
+
+                        mut arg0_idx_getref_map: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx_getref_map] = (*args_vec_getref_map)[0];
+                        mut k_arg_getref_map := check_expression(arg0_idx_getref_map, env, scope, ctx);
+                        k_arg_getref_map = env_resolve_type(env, k_arg_getref_map, ctx);
+
+                        mut k_type_getref_map := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
+                        k_type_getref_map = env_resolve_type(env, k_type_getref_map, ctx);
+                        if types_match(k_type_getref_map, k_arg_getref_map, ctx) == 0 {
+                            mut msg_getref_map_type := std.Concat("Semantic Error: Key type mismatch for HashMap.GetRef. Expected ", ast.serialize_type(k_type_getref_map, ctx));
+                            msg_getref_map_type = std.Concat(msg_getref_map_type, " but got ");
+                            msg_getref_map_type = std.Concat(msg_getref_map_type, ast.serialize_type(k_arg_getref_map, ctx));
+                            report_error(2, msg_getref_map_type, get_expression_span(arg0_idx_getref_map, ctx), env, ctx);
+                            return dummy;
+                        }
+
+                        mut v_type_getref_map := typechecker_get_template_elem_type(s_name, "values", env, ctx);
+                        mut brand_name_getref_map := get_type_brand(left_type, env, ctx);
+                        if std.str_eq(brand_name_getref_map, "") == 1 {
+                            brand_name_getref_map = get_root_variable(left_expr_idx, ctx);
+                        }
+                        return make_type_reference(v_type_getref_map, brand_name_getref_map, ctx);
+                    }
                     if std.str_eq(right_name, "get_opt") {
                         mut args_vec_getopt_map := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
                         if len(*args_vec_getopt_map) != 1 {

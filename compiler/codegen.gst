@@ -2336,6 +2336,41 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         res = std.Concat(res, "); } res; })");
                         return std.Clone(ctx, res);
                     }
+                    if std.str_eq(right_name, "GetRef") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap GetRef FFI override for %s", left_str), ctx);
+                        mut args_vec_getref_map := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx_getref_map: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx_getref_map] = (*args_vec_getref_map)[0];
+                        mut k_str_getref_map := codegen_generate_expression(arg0_idx_getref_map, env, ctx);
+
+                        mut expr_type_getref_map := codegen_get_expression_type(expr_idx, env, ctx);
+                        expr_type_getref_map = typechecker.env_resolve_type(env, expr_type_getref_map, ctx);
+                        mut inner_type_getref_map: ast.Type[ctx];
+                        if expr_type_getref_map.tag == 11 { // Reference
+                            inner_type_getref_map = ctx[expr_type_getref_map.Reference.inner];
+                        } else {
+                            inner_type_getref_map = typechecker.typechecker_get_template_elem_type(s_name, "values", env, ctx);
+                        }
+                        mut hashmap_get_ref_c_type := codegen_get_c_type(inner_type_getref_map, env, ctx);
+
+                        mut res_getref_map := std.Concat("((", hashmap_get_ref_c_type);
+                        res_getref_map = std.Concat(res_getref_map, "*)({ if (!os_HashMapContains(");
+                        res_getref_map = std.Concat(res_getref_map, ref_prefix);
+                        res_getref_map = std.Concat(res_getref_map, left_str);
+                        res_getref_map = std.Concat(res_getref_map, ", ");
+                        res_getref_map = std.Concat(res_getref_map, k_str_getref_map);
+                        res_getref_map = std.Concat(res_getref_map, ", ");
+                        res_getref_map = std.Concat(res_getref_map, is_str_key_str);
+                        res_getref_map = std.Concat(res_getref_map, ")) { printf(\"HashMap GetRef missing key at line %d\\n\", __LINE__); exit(1); } os_HashMapRef(");
+                        res_getref_map = std.Concat(res_getref_map, ref_prefix);
+                        res_getref_map = std.Concat(res_getref_map, left_str);
+                        res_getref_map = std.Concat(res_getref_map, ", ");
+                        res_getref_map = std.Concat(res_getref_map, k_str_getref_map);
+                        res_getref_map = std.Concat(res_getref_map, ", ");
+                        res_getref_map = std.Concat(res_getref_map, is_str_key_str);
+                        res_getref_map = std.Concat(res_getref_map, "); }))");
+                        return std.Clone(ctx, res_getref_map);
+                    }
                     if std.str_eq(right_name, "get_opt") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap get_opt Option override for %s", left_str), ctx);
                         mut args_vec_getopt_map := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];

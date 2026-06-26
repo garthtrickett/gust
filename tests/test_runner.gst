@@ -1675,6 +1675,27 @@ func main() {
     t_vector_get_ref_alias_non_vec_rej.expected = "std.VectorGetRef first argument must be std.Vector receiver";
     tests.Push(t_vector_get_ref_alias_non_vec_rej);
 
+    mut t_hashmap_get_ref_e2e: Test[ctx];
+    t_hashmap_get_ref_e2e.path = "tests/e2e_hashmap_get_ref.gst";
+    t_hashmap_get_ref_e2e.is_negative = 0;
+    t_hashmap_get_ref_e2e.is_substring = 0;
+    t_hashmap_get_ref_e2e.expected = "10\n15\n20";
+    tests.Push(t_hashmap_get_ref_e2e);
+
+    mut t_hashmap_get_ref_bad_key_rej: Test[ctx];
+    t_hashmap_get_ref_bad_key_rej.path = "tests/test_hashmap_get_ref_bad_key_rejected.gst";
+    t_hashmap_get_ref_bad_key_rej.is_negative = 1;
+    t_hashmap_get_ref_bad_key_rej.is_substring = 1;
+    t_hashmap_get_ref_bad_key_rej.expected = "Key type mismatch for HashMap.GetRef";
+    tests.Push(t_hashmap_get_ref_bad_key_rej);
+
+    mut t_hashmap_get_ref_missing_runtime: Test[ctx];
+    t_hashmap_get_ref_missing_runtime.path = "tests/test_hashmap_get_ref_missing_runtime_violation.gst";
+    t_hashmap_get_ref_missing_runtime.is_negative = 2;
+    t_hashmap_get_ref_missing_runtime.is_substring = 1;
+    t_hashmap_get_ref_missing_runtime.expected = "HashMap GetRef missing key";
+    tests.Push(t_hashmap_get_ref_missing_runtime);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
