@@ -1501,27 +1501,39 @@ func codegen_has_boolean_fields_recursive(t: ast.Type[ctx], env: &typechecker.Ty
         }
         if t.tag == 8 { // Struct
             mut name := t.Struct.struct_name;
-            mut lookup := (*visited).Get(name);
-            if lookup.Ok {
-                return 0;
+            mut lookup := (*visited).get_opt(name);
+            match lookup {
+                Some { val } => {
+                    return 0;
+                }
+                None => {
+                }
             }
             (*visited).Insert(std.Clone(ctx, name), 1);
             
-            mut lookup_struct := env.struct_registry.Get(name);
-            if lookup_struct.Ok {
-                mut layout := lookup_struct.Val;
-                mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
-                mut i := 0;
-                while i < len(f_keys) {
-                    mut f_key := f_keys[i];
-                    mut f_lookup := layout.fields.Get(f_key);
-                    if f_lookup.Ok {
-                        mut has_bool := codegen_has_boolean_fields_recursive(f_lookup.Val, env, visited, ctx);
-                        if has_bool == 1 {
-                            return 1;
+            mut lookup_struct := (*env).struct_registry.get_opt(name);
+            match lookup_struct {
+                Some { val } => {
+                    mut layout := *val;
+                    mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                    mut i := 0;
+                    while i < len(f_keys) {
+                        mut f_key := f_keys[i];
+                        mut f_lookup := layout.fields.get_opt(f_key);
+                        match f_lookup {
+                            Some { val } => {
+                                mut has_bool := codegen_has_boolean_fields_recursive(*val, env, visited, ctx);
+                                if has_bool == 1 {
+                                    return 1;
+                                }
+                            }
+                            None => {
+                            }
                         }
+                        i = i + 1;
                     }
-                    i = i + 1;
+                }
+                None => {
                 }
             }
             return 0;
