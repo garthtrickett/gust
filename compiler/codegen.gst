@@ -2552,6 +2552,38 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     if is_ptr == 1 {
                         ref_prefix = "";
                     }
+
+                    if std.str_eq(right_name, "get_ref") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Arena get_ref FFI override for %s", left_str), ctx);
+                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx] = (*args_vec)[0];
+                        mut idx_str := codegen_generate_expression(arg0_idx, env, ctx);
+
+                        mut expr_type := codegen_get_expression_type(expr_idx, env, ctx);
+                        mut inner_type: ast.Type[ctx];
+                        if expr_type.tag == 11 { // Reference
+                            inner_type = ctx[expr_type.Reference.inner];
+                        } else {
+                            inner_type.tag = 3; // Void fallback; Step 1 should resolve this as Reference.
+                        }
+                        mut c_type := codegen_get_c_type(inner_type, env, ctx);
+
+                        mut arrow_or_dot := ".";
+                        if is_ptr == 1 {
+                            arrow_or_dot = "->";
+                        }
+
+                        mut res := std.Concat("((", c_type);
+                        res = std.Concat(res, "*)((char*)");
+                        res = std.Concat(res, left_str);
+                        res = std.Concat(res, arrow_or_dot);
+                        res = std.Concat(res, "BaseAddress + ");
+                        res = std.Concat(res, idx_str);
+                        res = std.Concat(res, "))");
+                        return std.Clone(ctx, res);
+                    }
+
                     if std.str_eq(right_name, "Free") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Arena Free FFI override for %s", left_str), ctx);
                         mut res := std.Concat("os_Arena_Free(", ref_prefix);
