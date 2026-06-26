@@ -3435,7 +3435,47 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         (*env).struct_templates.Insert(std.Clone(ctx, "std.HashMap"), map_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "HashMap"), map_tmpl);
 
-        // 3. Pool[T, ctx]
+        // 3. Option[T, ctx]
+        mut opt_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        opt_gen.Push(std.Clone(ctx, "T"));
+        opt_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut opt_some_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+        opt_some_fields.Push(make_field("val", make_type_struct("T", "", ctx), ctx));
+
+        mut opt_none_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
+
+        mut opt_some_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        mut opt_none_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[opt_some_fields_idx] = opt_some_fields;
+        ctx[opt_none_fields_idx] = opt_none_fields;
+
+        mut opt_some_variant: ast.VariantDef[ctx];
+        opt_some_variant.name = std.Clone(ctx, "Some");
+        opt_some_variant.fields = opt_some_fields_idx;
+
+        mut opt_none_variant: ast.VariantDef[ctx];
+        opt_none_variant.name = std.Clone(ctx, "None");
+        opt_none_variant.fields = opt_none_fields_idx;
+
+        mut opt_variants: std.Vector[ast.VariantDef[ctx], ctx] := std.VectorNew(ctx);
+        opt_variants.Push(opt_some_variant);
+        opt_variants.Push(opt_none_variant);
+
+        mut opt_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut opt_variants_idx: Index[std.Vector[ast.VariantDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx[opt_gen_idx] = opt_gen;
+        ctx[opt_variants_idx] = opt_variants;
+
+        mut opt_tmpl: EnumTemplate[ctx];
+        opt_tmpl.generics = opt_gen_idx;
+        opt_tmpl.variants = opt_variants_idx;
+
+        (*env).enum_templates.Insert(std.Clone(ctx, "std_Option"), opt_tmpl);
+        (*env).enum_templates.Insert(std.Clone(ctx, "std.Option"), opt_tmpl);
+        (*env).enum_templates.Insert(std.Clone(ctx, "Option"), opt_tmpl);
+
+        // 4. Pool[T, ctx]
         mut pool_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
         pool_gen.Push(std.Clone(ctx, "T"));
         pool_gen.Push(std.Clone(ctx, "ctx"));
@@ -3996,6 +4036,7 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
     mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
     prefixes.Push("std_Vector_");
     prefixes.Push("std_HashMap_");
+    prefixes.Push("std_Option_");
     prefixes.Push("std_Pool_");
     prefixes.Push("std_RcNode_");
     prefixes.Push("std_Rc_");
