@@ -269,8 +269,7 @@ func serialize_type(t: Type[ctx], ctx: &Arena) str {
             if t.Index.brand == empty[Index[str, ctx]] {
                 res = std.Concat(res, ", None)");
             } else {
-                mut brand_str_ptr := &ctx[t.Index.brand] as *str;
-                mut brand_str := *brand_str_ptr;
+                mut brand_str := ctx[t.Index.brand];
                 res = std.Concat(res, ", Some(");
                 res = std.Concat(res, quote);
                 res = std.Concat(res, brand_str);
@@ -288,8 +287,7 @@ func serialize_type(t: Type[ctx], ctx: &Arena) str {
             if t.Struct.brand == empty[Index[str, ctx]] {
                 res = std.Concat(res, ", None)");
             } else {
-                mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
-                mut brand_str := *brand_str_ptr;
+                mut brand_str := ctx[t.Struct.brand];
                 res = std.Concat(res, ", Some(");
                 res = std.Concat(res, quote);
                 res = std.Concat(res, brand_str);
@@ -311,8 +309,7 @@ func serialize_type(t: Type[ctx], ctx: &Arena) str {
             if t.Reference.brand == empty[Index[str, ctx]] {
                 res = std.Concat(res, ", None)");
             } else {
-                mut brand_str_ptr := &ctx[t.Reference.brand] as *str;
-                mut brand_str := *brand_str_ptr;
+                mut brand_str := ctx[t.Reference.brand];
                 res = std.Concat(res, ", Some(");
                 res = std.Concat(res, quote);
                 res = std.Concat(res, brand_str);
@@ -324,11 +321,11 @@ func serialize_type(t: Type[ctx], ctx: &Arena) str {
         if t.tag == 10 { // Generic
             mut quote := '"';
             mut name := t.Generic.name;
-            mut args_vec := &ctx[t.Generic.args] as *std.Vector[Type[ctx], ctx];
+            mut args_vec: std.Vector[Type[ctx], ctx] := ctx[t.Generic.args];
             mut arg_strs: std.Vector[str, ctx] := std.VectorNew(ctx);
             mut i := 0;
-            while i < len(*args_vec) {
-                mut arg_str := serialize_type((*args_vec)[i], ctx);
+            while i < len(args_vec) {
+                mut arg_str := serialize_type(args_vec[i], ctx);
                 arg_strs.Push(arg_str);
                 i = i + 1;
             }
@@ -491,11 +488,11 @@ func serialize_expression(expr_idx: Index[Expression[ctx], ctx], indent: int, ct
             mut func_str := serialize_expression(expr.Call.function, indent + 1, ctx);
             res = std.Concat(res, func_str);
             
-            mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[Expression[ctx], ctx];
+            mut args_vec: std.Vector[Expression[ctx], ctx] := ctx[expr.Call.arguments];
             mut i := 0;
-            while i < len(*args_vec) {
+            while i < len(args_vec) {
                 mut arg_idx: Index[Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg_idx] = (*args_vec)[i];
+                ctx[arg_idx] = args_vec[i];
                 mut arg_str := serialize_expression(arg_idx, indent + 1, ctx);
                 res = std.Concat(res, arg_str);
                 i = i + 1;
@@ -522,11 +519,11 @@ func serialize_block_statement(block_idx: Index[BlockStatement[ctx], ctx], inden
         mut pad := ast_repeat_spaces(indent, ctx);
         mut res := std.Concat(pad, "BlockStatement:\n");
         
-        mut statements_vec := &ctx[block.statements] as *std.Vector[Statement[ctx], ctx];
+        mut statements_vec: std.Vector[Statement[ctx], ctx] := ctx[block.statements];
         mut i := 0;
-        while i < len(*statements_vec) {
+        while i < len(statements_vec) {
             mut stmt_idx: Index[Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = (*statements_vec)[i];
+            ctx[stmt_idx] = statements_vec[i];
             mut stmt_str := serialize_statement(stmt_idx, indent + 1, ctx);
             res = std.Concat(res, stmt_str);
             i = i + 1;
@@ -542,8 +539,8 @@ func serialize_variant_def(v: VariantDef[ctx], indent: int, ctx: &Arena) str {
         res = std.Concat(res, v.name);
         res = std.Concat(res, "\n");
         
-        mut fields_vec := &ctx[v.fields] as *std.Vector[FieldDef[ctx], ctx];
-        mut fields_str := ast_join_fields(*fields_vec, indent + 1, ctx);
+        mut fields_vec: std.Vector[FieldDef[ctx], ctx] := ctx[v.fields];
+        mut fields_str := ast_join_fields(fields_vec, indent + 1, ctx);
         res = std.Concat(res, fields_str);
         return std.Clone(ctx, res);
     }
@@ -552,8 +549,8 @@ func serialize_variant_def(v: VariantDef[ctx], indent: int, ctx: &Arena) str {
 func serialize_match_case(case_val: MatchCase[ctx], indent: int, ctx: &Arena) str {
     unsafe {
         mut pad := ast_repeat_spaces(indent, ctx);
-        mut fields_vec := &ctx[case_val.fields] as *std.Vector[str, ctx];
-        mut joined_fields := ast_join_strings(*fields_vec, ", ", ctx);
+        mut fields_vec: std.Vector[str, ctx] := ctx[case_val.fields];
+        mut joined_fields := ast_join_strings(fields_vec, ", ", ctx);
         
         mut res := std.Concat(pad, "MatchCase: ");
         res = std.Concat(res, case_val.variant_name);
@@ -588,32 +585,32 @@ func serialize_statement(stmt_idx: Index[Statement[ctx], ctx], indent: int, ctx:
             return std.Clone(ctx, res);
         }
         if stmt.tag == 1 { // StructDecl
-            mut generics_vec := &ctx[stmt.StructDecl.generics] as *std.Vector[str, ctx];
-            mut joined_generics := ast_join_strings(*generics_vec, ", ", ctx);
+            mut generics_vec: std.Vector[str, ctx] := ctx[stmt.StructDecl.generics];
+            mut joined_generics := ast_join_strings(generics_vec, ", ", ctx);
             mut res := std.Concat(pad, "StructDecl: ");
             res = std.Concat(res, stmt.StructDecl.name);
             res = std.Concat(res, " <");
             res = std.Concat(res, joined_generics);
             res = std.Concat(res, ">\n");
             
-            mut fields_vec := &ctx[stmt.StructDecl.fields] as *std.Vector[FieldDef[ctx], ctx];
-            mut fields_str := ast_join_fields(*fields_vec, indent + 1, ctx);
+            mut fields_vec: std.Vector[FieldDef[ctx], ctx] := ctx[stmt.StructDecl.fields];
+            mut fields_str := ast_join_fields(fields_vec, indent + 1, ctx);
             res = std.Concat(res, fields_str);
             return std.Clone(ctx, res);
         }
         if stmt.tag == 2 { // EnumDecl
-            mut generics_vec := &ctx[stmt.EnumDecl.generics] as *std.Vector[str, ctx];
-            mut joined_generics := ast_join_strings(*generics_vec, ", ", ctx);
+            mut generics_vec: std.Vector[str, ctx] := ctx[stmt.EnumDecl.generics];
+            mut joined_generics := ast_join_strings(generics_vec, ", ", ctx);
             mut res := std.Concat(pad, "EnumDecl: ");
             res = std.Concat(res, stmt.EnumDecl.name);
             res = std.Concat(res, " <");
             res = std.Concat(res, joined_generics);
             res = std.Concat(res, ">\n");
             
-            mut variants_vec := &ctx[stmt.EnumDecl.variants] as *std.Vector[VariantDef[ctx], ctx];
+            mut variants_vec: std.Vector[VariantDef[ctx], ctx] := ctx[stmt.EnumDecl.variants];
             mut i := 0;
-            while i < len(*variants_vec) {
-                mut variant_str := serialize_variant_def((*variants_vec)[i], indent + 1, ctx);
+            while i < len(variants_vec) {
+                mut variant_str := serialize_variant_def(variants_vec[i], indent + 1, ctx);
                 res = std.Concat(res, variant_str);
                 i = i + 1;
             }
@@ -627,8 +624,8 @@ func serialize_statement(stmt_idx: Index[Statement[ctx], ctx], indent: int, ctx:
             res = std.Concat(res, return_type_str);
             res = std.Concat(res, "\n");
             
-            mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[Parameter[ctx], ctx];
-            mut params_str := ast_join_params(*params_vec, indent + 1, ctx);
+            mut params_vec: std.Vector[Parameter[ctx], ctx] := ctx[stmt.FunctionDecl.params];
+            mut params_str := ast_join_params(params_vec, indent + 1, ctx);
             res = std.Concat(res, params_str);
             
             mut body_str := serialize_block_statement(stmt.FunctionDecl.body, indent + 1, ctx);
@@ -694,10 +691,10 @@ func serialize_statement(stmt_idx: Index[Statement[ctx], ctx], indent: int, ctx:
             mut expr_str := serialize_expression(stmt.Match.expression, indent + 1, ctx);
             res = std.Concat(res, expr_str);
             
-            mut cases_vec := &ctx[stmt.Match.cases] as *std.Vector[MatchCase[ctx], ctx];
+            mut cases_vec: std.Vector[MatchCase[ctx], ctx] := ctx[stmt.Match.cases];
             mut i := 0;
-            while i < len(*cases_vec) {
-                mut case_str := serialize_match_case((*cases_vec)[i], indent + 1, ctx);
+            while i < len(cases_vec) {
+                mut case_str := serialize_match_case(cases_vec[i], indent + 1, ctx);
                 res = std.Concat(res, case_str);
                 i = i + 1;
             }
@@ -759,11 +756,11 @@ func serialize_program(prog: *Program[ctx], indent: int, ctx: &Arena) str {
         mut pad := ast_repeat_spaces(indent, ctx);
         mut res := std.Concat(pad, "Program:\n");
         
-        mut statements_vec := &ctx[(*prog).statements] as *std.Vector[Statement[ctx], ctx];
+        mut statements_vec: std.Vector[Statement[ctx], ctx] := ctx[(*prog).statements];
         mut i := 0;
-        while i < len(*statements_vec) {
+        while i < len(statements_vec) {
             mut stmt_idx: Index[Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = (*statements_vec)[i];
+            ctx[stmt_idx] = statements_vec[i];
             mut stmt_str := serialize_statement(stmt_idx, indent + 1, ctx);
             res = std.Concat(res, stmt_str);
             i = i + 1;
