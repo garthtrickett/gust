@@ -582,10 +582,14 @@ func main() {
     os.LogInt(has_bool_parent); // Expected: 1
 
     // 6. Test codegen_gen_is_valid_helper
-    mut lookup_node := env.struct_registry.Get("Node");
-    if lookup_node.Ok {
-        mut is_valid_str := codegen.codegen_gen_is_valid_helper("Node", lookup_node.Val, &env, ctx);
-        os.LogStr(is_valid_str);
+    mut lookup_node := env.struct_registry.get_opt("Node");
+    match lookup_node {
+        Some { val } => {
+            mut is_valid_str := codegen.codegen_gen_is_valid_helper("Node", *val, &env, ctx);
+            os.LogStr(is_valid_str);
+        }
+        None => {
+        }
     }
 
     // 7. Test codegen_generate
