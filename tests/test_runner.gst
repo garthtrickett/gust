@@ -847,6 +847,12 @@ func main() {
     t86.expected = "1\nMyStruct\n2\nMyEnum";
     tests.Push(t86);
 
+    mut t_ref_access: Test[ctx];
+    t_ref_access.path = "compiler/parser_reference_access_test_entry.gst";
+    t_ref_access.is_negative = 0;
+    t_ref_access.expected = "SUCCESS: Explicit reference-access method call parsing verified!";
+    tests.Push(t_ref_access);
+
     mut t87: Test[ctx];
     t87.path = "tests/e2e_program_b_safe_arena_cyclic_graph.gst";
     t87.is_negative = 0;
