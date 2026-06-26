@@ -1654,6 +1654,27 @@ func main() {
     t_vector_get_ref_non_vec_rej.expected = "Undefined function";
     tests.Push(t_vector_get_ref_non_vec_rej);
 
+    mut t_vector_get_ref_alias_e2e: Test[ctx];
+    t_vector_get_ref_alias_e2e.path = "tests/e2e_vector_get_ref_alias.gst";
+    t_vector_get_ref_alias_e2e.is_negative = 0;
+    t_vector_get_ref_alias_e2e.is_substring = 0;
+    t_vector_get_ref_alias_e2e.expected = "22\n44";
+    tests.Push(t_vector_get_ref_alias_e2e);
+
+    mut t_vector_get_ref_alias_bad_index_rej: Test[ctx];
+    t_vector_get_ref_alias_bad_index_rej.path = "tests/test_vector_get_ref_alias_bad_index_type_rejected.gst";
+    t_vector_get_ref_alias_bad_index_rej.is_negative = 1;
+    t_vector_get_ref_alias_bad_index_rej.is_substring = 1;
+    t_vector_get_ref_alias_bad_index_rej.expected = "std.VectorGetRef expected int or Index argument";
+    tests.Push(t_vector_get_ref_alias_bad_index_rej);
+
+    mut t_vector_get_ref_alias_non_vec_rej: Test[ctx];
+    t_vector_get_ref_alias_non_vec_rej.path = "tests/test_vector_get_ref_alias_non_vector_rejected.gst";
+    t_vector_get_ref_alias_non_vec_rej.is_negative = 1;
+    t_vector_get_ref_alias_non_vec_rej.is_substring = 1;
+    t_vector_get_ref_alias_non_vec_rej.expected = "std.VectorGetRef first argument must be std.Vector receiver";
+    tests.Push(t_vector_get_ref_alias_non_vec_rej);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

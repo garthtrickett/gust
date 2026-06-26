@@ -881,6 +881,8 @@ func codegen_should_skip_fwd_decl(name: str) int {
     if std.str_eq(name, "std_VectorNew") { return 1; }
     if std.str_eq(name, "os.VectorNew") { return 1; }
     if std.str_eq(name, "os_VectorNew") { return 1; }
+    if std.str_eq(name, "std.VectorGetRef") { return 1; }
+    if std.str_eq(name, "std_VectorGetRef") { return 1; }
     if std.str_eq(name, "std.HashMapNew") { return 1; }
     if std.str_eq(name, "std_HashMapNew") { return 1; }
     if std.str_eq(name, "os.HashMapNew") { return 1; }
@@ -3050,6 +3052,64 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 res = std.Concat(res, arena_expr);
                 res = std.Concat(res, " })");
                 return std.Clone(ctx, res);
+            }
+
+            if std.str_eq(func_str, "std.VectorGetRef") || std.str_eq(func_str, "std_VectorGetRef") {
+                codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.VectorGetRef alias via Vector GetRef override", ctx);
+                mut args_vec_vector_getref_alias := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+
+                mut vec_arg_idx_vector_getref_alias: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[vec_arg_idx_vector_getref_alias] = (*args_vec_vector_getref_alias)[0];
+                mut vec_str_vector_getref_alias := codegen_generate_expression(vec_arg_idx_vector_getref_alias, env, ctx);
+
+                mut idx_arg_idx_vector_getref_alias: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[idx_arg_idx_vector_getref_alias] = (*args_vec_vector_getref_alias)[1];
+                mut idx_str_vector_getref_alias := codegen_generate_expression(idx_arg_idx_vector_getref_alias, env, ctx);
+
+                mut vec_type_vector_getref_alias := codegen_get_expression_type(vec_arg_idx_vector_getref_alias, env, ctx);
+                mut vec_is_ptr_vector_getref_alias := 0;
+                if vec_type_vector_getref_alias.tag == 9 { // RawPointer
+                    vec_type_vector_getref_alias = ctx[vec_type_vector_getref_alias.RawPointer.inner];
+                    vec_is_ptr_vector_getref_alias = 1;
+                } else if vec_type_vector_getref_alias.tag == 11 { // Reference
+                    vec_type_vector_getref_alias = ctx[vec_type_vector_getref_alias.Reference.inner];
+                    vec_is_ptr_vector_getref_alias = 1;
+                }
+
+                mut vec_struct_name_vector_getref_alias := "";
+                if vec_type_vector_getref_alias.tag == 8 { // Struct
+                    vec_struct_name_vector_getref_alias = vec_type_vector_getref_alias.Struct.struct_name;
+                }
+
+                mut expr_type_vector_getref_alias := codegen_get_expression_type(expr_idx, env, ctx);
+                mut inner_type_vector_getref_alias: ast.Type[ctx];
+                if expr_type_vector_getref_alias.tag == 11 { // Reference
+                    inner_type_vector_getref_alias = ctx[expr_type_vector_getref_alias.Reference.inner];
+                } else {
+                    inner_type_vector_getref_alias = typechecker.typechecker_get_template_elem_type(vec_struct_name_vector_getref_alias, "data", env, ctx);
+                }
+                mut vector_get_ref_alias_c_type := codegen_get_c_type(inner_type_vector_getref_alias, env, ctx);
+
+                mut vector_get_ref_alias_arrow_or_dot := ".";
+                if vec_is_ptr_vector_getref_alias == 1 {
+                    vector_get_ref_alias_arrow_or_dot = "->";
+                }
+
+                mut vector_get_ref_alias_res := std.Concat("((", vector_get_ref_alias_c_type);
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, "*)({ if (");
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, idx_str_vector_getref_alias);
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, " < 0 || ");
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, idx_str_vector_getref_alias);
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, " >= ");
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, vec_str_vector_getref_alias);
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, vector_get_ref_alias_arrow_or_dot);
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, "len) { printf(\"Vector bounds check failed at line %d\\n\", __LINE__); exit(1); } &(");
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, vec_str_vector_getref_alias);
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, vector_get_ref_alias_arrow_or_dot);
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, "data[");
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, idx_str_vector_getref_alias);
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, "]); }))");
+                return std.Clone(ctx, vector_get_ref_alias_res);
             }
 
             if std.str_eq(func_str, "os.HashMapNew") || std.str_eq(func_str, "os_HashMapNew") ||

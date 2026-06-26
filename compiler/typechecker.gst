@@ -381,6 +381,23 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
 
             mut func_name := expression_to_string(expr.Call.function, ctx);
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
+            if std.str_eq(resolved_func, "std_VectorGetRef") == 1 || std.str_eq(resolved_func, "std.VectorGetRef") == 1 {
+                mut s_alias_getref := set_init(ctx);
+                mut args_vec_alias_getref := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec_alias_getref) >= 1 {
+                    mut vec_arg_idx_alias_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[vec_arg_idx_alias_getref] = (*args_vec_alias_getref)[0];
+                    mut vec_arg_origins_alias_getref := get_expression_origins(vec_arg_idx_alias_getref, env, ctx);
+                    set_union(s_alias_getref, vec_arg_origins_alias_getref, ctx);
+                }
+                if len(*args_vec_alias_getref) >= 2 {
+                    mut idx_arg_idx_alias_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[idx_arg_idx_alias_getref] = (*args_vec_alias_getref)[1];
+                    mut idx_arg_origins_alias_getref := get_expression_origins(idx_arg_idx_alias_getref, env, ctx);
+                    set_union(s_alias_getref, idx_arg_origins_alias_getref, ctx);
+                }
+                return s_alias_getref;
+            }
             if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std.Format") || 
                std.str_eq(resolved_func, "std_FormatInt") || std.str_eq(resolved_func, "std.FormatInt") || 
                std.str_eq(resolved_func, "std_Concat") || std.str_eq(resolved_func, "std.Concat") || 
@@ -1692,6 +1709,61 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut t_int: ast.Type[ctx];
                 t_int.tag = 0; // Int
                 return t_int;
+            }
+
+            if std.str_eq(resolved_func, "std_VectorGetRef") == 1 || std.str_eq(resolved_func, "std.VectorGetRef") == 1 {
+                mut args_vec_vector_getref_alias := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                if len(*args_vec_vector_getref_alias) != 2 {
+                    mut msg_vector_getref_alias_arity := "Semantic Error: std.VectorGetRef expects exactly 2 arguments (vector, int-or-Index)";
+                    report_error(2, msg_vector_getref_alias_arity, expr.Call.span, env, ctx);
+                    return dummy;
+                }
+
+                mut vec_arg_idx_vector_getref_alias: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[vec_arg_idx_vector_getref_alias] = (*args_vec_vector_getref_alias)[0];
+                mut vec_arg_type_vector_getref_alias := check_expression(vec_arg_idx_vector_getref_alias, env, scope, ctx);
+                vec_arg_type_vector_getref_alias = env_resolve_type(env, vec_arg_type_vector_getref_alias, ctx);
+
+                mut vec_receiver_type_vector_getref_alias := vec_arg_type_vector_getref_alias;
+                if vec_receiver_type_vector_getref_alias.tag == 9 { // RawPointer
+                    vec_receiver_type_vector_getref_alias = ctx[vec_receiver_type_vector_getref_alias.RawPointer.inner];
+                } else if vec_receiver_type_vector_getref_alias.tag == 11 { // Reference
+                    vec_receiver_type_vector_getref_alias = ctx[vec_receiver_type_vector_getref_alias.Reference.inner];
+                }
+
+                mut is_vec_vector_getref_alias := 0;
+                mut s_name_vector_getref_alias := "";
+                if vec_receiver_type_vector_getref_alias.tag == 8 { // Struct
+                    s_name_vector_getref_alias = vec_receiver_type_vector_getref_alias.Struct.struct_name;
+                    mut clean_vector_getref_alias := typechecker_strip_module_prefix(s_name_vector_getref_alias, ctx);
+                    if std.str_find(clean_vector_getref_alias, "Vector_") == 0 || std.str_find(clean_vector_getref_alias, "std_Vector_") == 0 {
+                        is_vec_vector_getref_alias = 1;
+                    }
+                }
+
+                if is_vec_vector_getref_alias == 0 {
+                    mut msg_vector_getref_alias_receiver := std.Concat("Semantic Error: std.VectorGetRef first argument must be std.Vector receiver, got ", ast.serialize_type(vec_arg_type_vector_getref_alias, ctx));
+                    report_error(2, msg_vector_getref_alias_receiver, get_expression_span(vec_arg_idx_vector_getref_alias, ctx), env, ctx);
+                    return dummy;
+                }
+
+                mut idx_arg_idx_vector_getref_alias: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx[idx_arg_idx_vector_getref_alias] = (*args_vec_vector_getref_alias)[1];
+                mut idx_arg_type_vector_getref_alias := check_expression(idx_arg_idx_vector_getref_alias, env, scope, ctx);
+                idx_arg_type_vector_getref_alias = env_resolve_type(env, idx_arg_type_vector_getref_alias, ctx);
+
+                if idx_arg_type_vector_getref_alias.tag != 0 && idx_arg_type_vector_getref_alias.tag != 7 { // Int or Index
+                    mut msg_vector_getref_alias_index := std.Concat("Semantic Error: std.VectorGetRef expected int or Index argument but got ", ast.serialize_type(idx_arg_type_vector_getref_alias, ctx));
+                    report_error(2, msg_vector_getref_alias_index, get_expression_span(idx_arg_idx_vector_getref_alias, ctx), env, ctx);
+                    return dummy;
+                }
+
+                mut elem_t_vector_getref_alias := typechecker_get_template_elem_type(s_name_vector_getref_alias, "data", env, ctx);
+                mut brand_name_vector_getref_alias := get_type_brand(vec_arg_type_vector_getref_alias, env, ctx);
+                if std.str_eq(brand_name_vector_getref_alias, "") == 1 {
+                    brand_name_vector_getref_alias = get_root_variable(vec_arg_idx_vector_getref_alias, ctx);
+                }
+                return make_type_reference(elem_t_vector_getref_alias, brand_name_vector_getref_alias, ctx);
             }
 
             if std.str_eq(resolved_func, "os_ArenaAlloc") || std.str_eq(resolved_func, "os.ArenaAlloc") {
