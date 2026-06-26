@@ -1216,6 +1216,37 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
                         return make_type_reference(elem_t_getref, brand_name_getref, ctx);
                     }
+                    if std.str_eq(right_name, "get_opt") {
+                        mut args_vec_getopt := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        if len(*args_vec_getopt) != 1 {
+                            mut msg_getopt_arity := "Semantic Error: Vector.get_opt expects exactly 1 int or Index argument";
+                            report_error(2, msg_getopt_arity, expr.Call.span, env, ctx);
+                            return dummy;
+                        }
+
+                        mut arg0_idx_getopt: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[arg0_idx_getopt] = (*args_vec_getopt)[0];
+                        mut arg_type_getopt := check_expression(arg0_idx_getopt, env, scope, ctx);
+                        arg_type_getopt = env_resolve_type(env, arg_type_getopt, ctx);
+
+                        if arg_type_getopt.tag != 0 && arg_type_getopt.tag != 7 { // Int or Index
+                            mut msg_getopt_type := std.Concat("Semantic Error: Vector.get_opt expected int or Index argument but got ", ast.serialize_type(arg_type_getopt, ctx));
+                            report_error(2, msg_getopt_type, get_expression_span(arg0_idx_getopt, ctx), env, ctx);
+                            return dummy;
+                        }
+
+                        mut elem_t_getopt := typechecker_get_template_elem_type(s_name, "data", env, ctx);
+                        mut brand_name_getopt := get_type_brand(left_type, env, ctx);
+                        if std.str_eq(brand_name_getopt, "") == 1 {
+                            brand_name_getopt = get_root_variable(left_expr_idx, ctx);
+                        }
+
+                        mut opt_args_getopt: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                        opt_args_getopt.Push(elem_t_getopt);
+                        opt_args_getopt.Push(make_type_struct(brand_name_getopt, "", ctx));
+                        mut opt_generic_getopt := make_type_generic("std.Option", opt_args_getopt, ctx);
+                        return env_resolve_type(env, opt_generic_getopt, ctx);
+                    }
                 }
 
 
@@ -1351,6 +1382,12 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         args.Push(make_type_struct(brand_name, "", ctx));
                         return make_type_generic("std.Vector", args, ctx);
                     }
+                }
+
+                if std.str_eq(right_name, "get_opt") == 1 && is_vec == 0 && is_map == 0 {
+                    mut msg_getopt_receiver := "Semantic Error: get_opt is only supported on std.Vector receivers in this phase";
+                    report_error(2, msg_getopt_receiver, expr.Call.span, env, ctx);
+                    return dummy;
                 }
 
                 if is_pool == 1 {
