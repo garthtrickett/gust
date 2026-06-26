@@ -97,9 +97,13 @@ func discover_source_files(dir_path: str, ctx: &Arena) std.Vector[str, ctx] {
 
 func resolve_imports_recursive(entry_path: str, graph: *std.Graph[str, ctx], path_to_node: *std.HashMap[str, int, ctx], ctx: &Arena) {
     unsafe {
-        mut lookup := (*path_to_node).Get(entry_path);
-        if lookup.Ok {
-            return;
+        mut lookup := (*path_to_node).get_opt(entry_path);
+        match lookup {
+            Some { val } => {
+                return;
+            }
+            None => {
+            }
         }
 
         // Add file as a node in the dependency graph
@@ -125,10 +129,15 @@ func resolve_imports_recursive(entry_path: str, graph: *std.Graph[str, ctx], pat
             resolve_imports_recursive(canonical_path, graph, path_to_node, ctx);
 
             // Add directed edge representing dependency flow
-            guard dep_idx := (*path_to_node).Get(canonical_path) else {
-                return;
+            mut dep_lookup := (*path_to_node).get_opt(canonical_path);
+            match dep_lookup {
+                Some { val } => {
+                    (*graph).AddEdge(node_idx, *val);
+                }
+                None => {
+                    return;
+                }
             }
-            (*graph).AddEdge(node_idx, dep_idx);
 
             i = i + 1;
         }
@@ -140,16 +149,28 @@ func dfs(node_idx: int, graph: *std.Graph[str, ctx], visiting: *std.HashMap[str,
         mut name_ptr := (*graph).GetNode(node_idx);
         mut name := *name_ptr;
         
-        mut lookup_visiting := (*visiting).Get(name);
-        if lookup_visiting.Ok {
-            os.LogStr("Cyclic dependency detected: ");
-            os.LogStr(name);
-            os.Exit(1);
+        mut lookup_visiting := (*visiting).get_opt(name);
+        match lookup_visiting {
+            Some { val } => {
+                if *val == 1 {
+                    os.LogStr("Cyclic dependency detected: ");
+                    os.LogStr(name);
+                    os.Exit(1);
+                }
+            }
+            None => {
+            }
         }
         
-        mut lookup_visited := (*visited).Get(name);
-        if lookup_visited.Ok {
-            return;
+        mut lookup_visited := (*visited).get_opt(name);
+        match lookup_visited {
+            Some { val } => {
+                if *val == 1 {
+                    return;
+                }
+            }
+            None => {
+            }
         }
         
         (*visiting).Insert(name, 1);
@@ -174,11 +195,15 @@ func resolve_topological_sort(entry_path: str, graph: *std.Graph[str, ctx], path
     mut order: std.Vector[str, ctx] := std.VectorNew(ctx);
     
     unsafe {
-        guard entry_idx := (*path_to_node).Get(entry_path) else {
-            return order;
+        mut entry_lookup := (*path_to_node).get_opt(entry_path);
+        match entry_lookup {
+            Some { val } => {
+                dfs(*val, graph, &visiting, &visited, &order, ctx);
+            }
+            None => {
+                return order;
+            }
         }
-        
-        dfs(entry_idx, graph, &visiting, &visited, &order, ctx);
     }
     
     return order;
