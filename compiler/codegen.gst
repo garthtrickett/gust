@@ -736,10 +736,14 @@ func codegen_is_brand_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[c
             if codegen_ends_with(name, "_Any") == 1 { is_brand_name = 1; }
 
             if is_brand_name == 1 {
-                mut lookup := (*env).struct_registry.Get(name);
+                mut lookup := (*env).struct_registry.get_opt(name);
                 mut has_lookup := 0;
-                if lookup.Ok {
-                    has_lookup = 1;
+                match lookup {
+                    Some { val } => {
+                        has_lookup = 1;
+                    }
+                    None => {
+                    }
                 }
                 if has_lookup == 0 {
                     return 1;
@@ -817,10 +821,14 @@ func codegen_erase_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
 
 func codegen_get_erased_struct_name(name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
-        mut lookup := (*env).struct_registry.Get(name);
-        if lookup.Ok {
-            mut b := lookup.Val.brand;
-            return std.Clone(ctx, codegen_erase_struct_name(name, b, env, ctx));
+        mut lookup := (*env).struct_registry.get_opt(name);
+        match lookup {
+            Some { val } => {
+                mut b := (*val).brand;
+                return std.Clone(ctx, codegen_erase_struct_name(name, b, env, ctx));
+            }
+            None => {
+            }
         }
         return std.Clone(ctx, codegen_erase_struct_name(name, empty[Index[str, ctx]], env, ctx));
     }
@@ -855,11 +863,15 @@ func codegen_is_arena_ptr(var_name: str, env: &typechecker.TypeEnvironment[ctx],
         if std.str_eq(var_name, "ctx") == 1 || std.str_eq(var_name, "arena") == 1 || std.str_eq(var_name, "connCtx") == 1 || std.str_eq(var_name, "a") == 1 {
             return 0;
         }
-        mut lookup := (*env).variable_types.Get(var_name);
-        if lookup.Ok {
-            mut t := lookup.Val;
-            if t.tag == 9 { // RawPointer
-                return 1;
+        mut lookup := (*env).variable_types.get_opt(var_name);
+        match lookup {
+            Some { val } => {
+                mut t := *val;
+                if t.tag == 9 { // RawPointer
+                    return 1;
+                }
+            }
+            None => {
             }
         }
     }
@@ -1030,11 +1042,15 @@ func codegen_is_arena_val(var_name: str, env: &typechecker.TypeEnvironment[ctx],
         if std.str_eq(var_name, "ctx") == 1 || std.str_eq(var_name, "arena") == 1 || std.str_eq(var_name, "connCtx") == 1 || std.str_eq(var_name, "a") == 1 {
             return 1;
         }
-        mut lookup := (*env).variable_types.Get(var_name);
-        if lookup.Ok {
-            mut t := lookup.Val;
-            if t.tag == 4 { // Arena
-                return 1;
+        mut lookup := (*env).variable_types.get_opt(var_name);
+        match lookup {
+            Some { val } => {
+                mut t := *val;
+                if t.tag == 4 { // Arena
+                    return 1;
+                }
+            }
+            None => {
             }
         }
     }
