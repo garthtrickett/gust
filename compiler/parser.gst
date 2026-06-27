@@ -1191,17 +1191,30 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
             r_type = parsed_r_type;
         }
 
-        if cur_token_is(p, 13) == false { // LBrace = 13
+        mut body: Index[ast.BlockStatement[ctx], ctx] := empty[Index[ast.BlockStatement[ctx], ctx]];
+        mut end_span := (*p).cur_token.span;
+        if cur_token_is(p, 13) { // LBrace = 13
+            body = parse_block_statement(p, ctx);
+            end_span = ctx[body].span;
+        } else if is_extern_decl == 1 && cur_token_is(p, 10) { // Semicolon = 10
+            body = os.ArenaAlloc(ctx);
+            mut extern_empty_statements_idx: Index[std.Vector[ast.Statement[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+            mut extern_empty_statements: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
+            ctx.Set(extern_empty_statements_idx, extern_empty_statements);
+            mut extern_empty_body: ast.BlockStatement[ctx];
+            extern_empty_body.statements = extern_empty_statements_idx;
+            extern_empty_body.span = (*p).cur_token.span;
+            ctx.Set(body, extern_empty_body);
+            end_span = (*p).cur_token.span;
+            next_token(p); // consume ';'
+        } else {
             mut err: errors.CompilerError[Any];
             err.kind.tag = 1; // ParserError
-            err.message = "Expected opening brace '{' for function body";
+            err.message = "Expected opening brace '{' for function body or ';' for extern declaration";
             err.span = (*p).cur_token.span;
             (*p).errors.Push(err);
             return empty[Index[ast.Statement[ctx], ctx]];
         }
-
-        mut body := parse_block_statement(p, ctx);
-        mut end_span := ctx[body].span;
 
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
         mut function_params_idx_parse: Index[std.Vector[ast.Parameter[ctx], ctx], ctx] := os.ArenaAlloc(ctx);

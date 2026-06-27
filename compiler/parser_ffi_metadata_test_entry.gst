@@ -45,5 +45,38 @@ func main() {
         }
     }
 
+    mut l_bodyless: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_bodyless, "extern func c_sub(x: int) int;");
+
+    mut p_bodyless: parser.Parser[ctx];
+    parser.init_parser(&p_bodyless, &l_bodyless, ctx);
+
+    mut stmt_bodyless := parser.parse_statement(&p_bodyless, ctx);
+    unsafe {
+        if ctx[stmt_bodyless].tag != 3 { // FunctionDecl = 3
+            os.LogStr("Error: expected bodyless extern declaration statement");
+            os.Exit(1);
+        }
+        if ctx[stmt_bodyless].FunctionDecl.is_extern != 1 {
+            os.LogStr("Error: expected bodyless extern metadata to be enabled");
+            os.Exit(1);
+        }
+        if ctx[stmt_bodyless].FunctionDecl.requires_unsafe_call != 1 {
+            os.LogStr("Error: expected bodyless extern calls to require unsafe metadata");
+            os.Exit(1);
+        }
+        if std.str_eq(ctx[stmt_bodyless].FunctionDecl.extern_symbol_name, "c_sub") == 0 {
+            os.LogStr("Error: expected bodyless extern symbol name to default to function name");
+            os.Exit(1);
+        }
+        mut bodyless_body_idx := ctx[stmt_bodyless].FunctionDecl.body;
+        mut bodyless_statements_idx := ctx[bodyless_body_idx].statements;
+        mut bodyless_statements: std.Vector[ast.Statement[ctx], ctx] := ctx[bodyless_statements_idx];
+        if len(bodyless_statements) != 0 {
+            os.LogStr("Error: expected bodyless extern declaration to synthesize an empty AST body");
+            os.Exit(1);
+        }
+    }
+
     os.LogStr("SUCCESS: extern function parser metadata verified!");
 }

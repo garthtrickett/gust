@@ -214,7 +214,8 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   Inert compiler carrier: FunctionSignature has direct FFI metadata fields."
 	@echo "   Inert AST carrier: FunctionDecl carries matching direct FFI metadata defaults."
 	@echo "   Inert extern syntax: parser accepts extern func with C ABI defaults and unsafe-call metadata."
-	@echo "   Next semantic checkpoint: bodyless extern declarations and/or call-site gating, not regex enforcement."
+	@echo "   Bodyless extern declarations: parser accepts extern func signatures terminated with ';' and synthesizes an empty AST body."
+	@echo "   Next semantic checkpoint: FFI call-site gating, not regex enforcement."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
 
