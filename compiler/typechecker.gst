@@ -6059,12 +6059,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut old_local_vars := (*env).current_function_local_vars;
 
             mut resolved_ret_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[resolved_ret_idx] = env_resolve_type(env, ctx[return_type_idx], ctx);
+            ctx.Set(resolved_ret_idx, env_resolve_type(env, ctx[return_type_idx], ctx));
             (*env).expected_return_type = resolved_ret_idx;
             (*env).current_function_return_origins = set_init(ctx);
             
             mut inout_params_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[inout_params_idx] = inout_params;
+            ctx.Set(inout_params_idx, inout_params);
             (*env).current_function_inout_params = inout_params_idx;
             (*env).current_function_local_vars = set_init(ctx);
 
@@ -6075,7 +6075,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut j := 0;
                 while j < len(statements_vec_function_body_check) {
                     mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = statements_vec_function_body_check[j];
+                    ctx.Set(s_idx, statements_vec_function_body_check[j]);
                     check_statement(s_idx, env, child_scope, ctx);
                     j = j + 1;
                 }
@@ -6606,7 +6606,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut j := 0;
                 while j < len(statements_vec_while_body) {
                     mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = statements_vec_while_body[j];
+                    ctx.Set(s_idx, statements_vec_while_body[j]);
                     check_statement(s_idx, env, scope, ctx);
                     j = j + 1;
                 }
@@ -6642,7 +6642,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut j := 0;
                 while j < len(statements_vec_if_consequence) {
                     mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = statements_vec_if_consequence[j];
+                    ctx.Set(s_idx, statements_vec_if_consequence[j]);
                     check_statement(s_idx, env, scope, ctx);
                     j = j + 1;
                 }
@@ -6662,7 +6662,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut j := 0;
                 while j < len(statements_vec_if_alternative) {
                     mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = statements_vec_if_alternative[j];
+                    ctx.Set(s_idx, statements_vec_if_alternative[j]);
                     check_statement(s_idx, env, scope, ctx);
                     j = j + 1;
                 }
@@ -6847,7 +6847,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                 mut ref_type: ast.Type[ctx];
                                 ref_type.tag = 11; // Reference
                                 ref_type.Reference.inner = os.ArenaAlloc(ctx);
-                                ctx[ref_type.Reference.inner] = substituted;
+                                ctx.Set(ref_type.Reference.inner, substituted);
                                 ref_type.Reference.brand = real_struct_type.Struct.brand;
                                 
                                 scope_insert(child_scope, field_name, ref_type, ctx);
@@ -6873,7 +6873,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         mut j := 0;
                         while j < len(statements_vec_match_body) {
                             mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[s_idx] = statements_vec_match_body[j];
+                            ctx.Set(s_idx, statements_vec_match_body[j]);
                             check_statement(s_idx, env, child_scope, ctx);
                             j = j + 1;
                         }
@@ -6927,7 +6927,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut j := 0;
                 while j < len(statements_vec_unsafe_block) {
                     mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = statements_vec_unsafe_block[j];
+                    ctx.Set(s_idx, statements_vec_unsafe_block[j]);
                     check_statement(s_idx, env, scope, ctx);
                     j = j + 1;
                 }
@@ -7085,7 +7085,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut i := 0;
             while i < len(else_statements_guard_block) { 
                 mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[s_idx] = else_statements_guard_block[i];
+                ctx.Set(s_idx, else_statements_guard_block[i]);
                 check_statement(s_idx, env, child_scope, ctx);
                 i = i + 1;
             }
@@ -7646,7 +7646,7 @@ func env_synthesize_is_valid_helpers(env: *TypeEnvironment[ctx], ctx: &Arena) {
                 mut t_ptr: ast.Type[ctx];
                 t_ptr.tag = 9; // RawPointer
                 t_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-                ctx[t_ptr.RawPointer.inner] = t_struct;
+                ctx.Set(t_ptr.RawPointer.inner, t_struct);
                 sig.params.Push(t_ptr);
                 
                 mut t_ret: ast.Type[ctx];
