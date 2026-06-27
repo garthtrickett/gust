@@ -182,4 +182,22 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_status_matrix:' "$
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_linear_resource_inventory:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step52_linear_resource_inventory ---"
+        (cd "$PROJECT_ROOT" && make report_step52_linear_resource_inventory)
+        echo "--- END OF REPORT make report_step52_linear_resource_inventory ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_phase_a_status:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step52_phase_a_status ---"
+        (cd "$PROJECT_ROOT" && make report_step52_phase_a_status)
+        echo "--- END OF REPORT make report_step52_phase_a_status ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 echo "✅ Aggregated target project files into $PROJECT_ROOT/$OUTPUT_FILE"
