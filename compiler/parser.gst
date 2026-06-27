@@ -1191,6 +1191,12 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
 
         stmt_function_parse.FunctionDecl.name = name;
         stmt_function_parse.FunctionDecl.is_unsafe = is_unsafe_decl;
+        stmt_function_parse.FunctionDecl.is_extern = 0;
+        stmt_function_parse.FunctionDecl.extern_symbol_name = "";
+        stmt_function_parse.FunctionDecl.extern_abi = "C";
+        stmt_function_parse.FunctionDecl.requires_unsafe_call = 0;
+        stmt_function_parse.FunctionDecl.requires_layout_metadata = 0;
+        stmt_function_parse.FunctionDecl.requires_sandbox_arena = 0;
 
         stmt_function_parse.FunctionDecl.params = function_params_idx_parse;
         ctx.Set(function_params_idx_parse, params_vec);

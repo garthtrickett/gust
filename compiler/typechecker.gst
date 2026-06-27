@@ -4978,6 +4978,12 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             sig.return_type = env_resolve_type(env, ctx[stmt.FunctionDecl.return_type], ctx);
             sig.return_origins = set_init(ctx);
             sig.is_unsafe = stmt.FunctionDecl.is_unsafe;
+            sig.is_extern = stmt.FunctionDecl.is_extern;
+            sig.extern_symbol_name = stmt.FunctionDecl.extern_symbol_name;
+            sig.extern_abi = stmt.FunctionDecl.extern_abi;
+            sig.requires_unsafe_call = stmt.FunctionDecl.requires_unsafe_call;
+            sig.requires_layout_metadata = stmt.FunctionDecl.requires_layout_metadata;
+            sig.requires_sandbox_arena = stmt.FunctionDecl.requires_sandbox_arena;
 
             env_register_function(env, namespaced_name, sig, ctx);
         }

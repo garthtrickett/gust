@@ -82,6 +82,12 @@ type Statement[ctx] enum {
     FunctionDecl {
         name: str,
         is_unsafe: int,
+        is_extern: int,
+        extern_symbol_name: str,
+        extern_abi: str,
+        requires_unsafe_call: int,
+        requires_layout_metadata: int,
+        requires_sandbox_arena: int,
         params: Index[std.Vector[Parameter[ctx], ctx], ctx],
         return_type: Index[Type[ctx], ctx],
         body: Index[BlockStatement[ctx], ctx],
