@@ -104,7 +104,7 @@ func main() {
     unsafe { 
         t_slice.tag = 6;
         t_slice.Slice.inner = os.ArenaAlloc(ctx);
-        ctx[t_slice.Slice.inner] = t_generic_placeholder;
+        ctx.Set(t_slice.Slice.inner, t_generic_placeholder);
     }
     mut res_slice := typechecker.substitute_generics(&env, t_slice, subst_map, ctx);
     if res_slice.tag == 6 {
@@ -126,7 +126,7 @@ func main() {
         t_namespaced_vector.tag = 10; // Generic
         t_namespaced_vector.Generic.name = std.Clone(ctx, "std.Vector");
         t_namespaced_vector.Generic.args = os.ArenaAlloc(ctx);
-        ctx[t_namespaced_vector.Generic.args] = args;
+        ctx.Set(t_namespaced_vector.Generic.args, args);
     }
 
     mut res_namespaced := typechecker.env_resolve_type(&env, t_namespaced_vector, ctx);
@@ -144,7 +144,7 @@ func main() {
     mono_args.Push(typechecker.make_type_struct("ctx", "", ctx));
     
     mut mono_args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx[mono_args_idx] = mono_args;
+    ctx.Set(mono_args_idx, mono_args);
 
     mut mono_name := typechecker.get_monomorphized_name("std.Vector", mono_args_idx, ctx);
     os.LogStr(mono_name); // Should print: std_Vector_lib_module__ctx_MyNode
@@ -237,8 +237,9 @@ func main() {
     // Step 2 Verification: Test String expression escaping
     mut expr_str_esc_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        ctx[expr_str_esc_idx].tag = 2; // String
-        ctx[expr_str_esc_idx].String.val = "\"";
+        mut expr_str_esc_ref_templates := ctx.get_ref(expr_str_esc_idx);
+        expr_str_esc_ref_templates.tag = 2; // String
+        expr_str_esc_ref_templates.String.val = "\"";
     }
     mut res_str_esc := codegen.codegen_generate_expression(expr_str_esc_idx, &env, ctx);
     os.LogStr(res_str_esc); // Expected: ((Slice_unsigned_char){ (unsigned char*)"\"", 1 })
@@ -263,7 +264,7 @@ func main() {
 
     // Sub-Step 3.1 Verification: Test codegen_erase_struct_name with namespaced brands
     mut test_brand: Index[str, ctx] := os.ArenaAlloc(ctx);
-    ctx[test_brand] = "typechecker__ctx";
+    ctx.Set(test_brand, "typechecker__ctx");
     mut erased_res := codegen.codegen_erase_struct_name("std_HashMap_str_int_typechecker__ctx", test_brand, &env, ctx);
     os.LogStr(erased_res); // Expected: std_HashMap_str_int
 
@@ -279,7 +280,7 @@ func main() {
     unsafe {
         t_pool_ptr.tag = 9; // RawPointer
         t_pool_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_pool_ptr.RawPointer.inner] = t_pool_direct;
+        ctx.Set(t_pool_ptr.RawPointer.inner, t_pool_direct);
     }
 
     os.LogInt(codegen.codegen_is_pool_type(t_pool_direct, &env, ctx)); // Expected: 1
@@ -296,7 +297,7 @@ func main() {
     unsafe {
         t_rc_ptr.tag = 9; // RawPointer
         t_rc_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_rc_ptr.RawPointer.inner] = t_rc_direct;
+        ctx.Set(t_rc_ptr.RawPointer.inner, t_rc_direct);
     }
 
     os.LogInt(codegen.codegen_is_rc_type(t_rc_direct, &env, ctx)); // Expected: 1
@@ -313,7 +314,7 @@ func main() {
     unsafe {
         t_graph_ptr.tag = 9; // RawPointer
         t_graph_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_graph_ptr.RawPointer.inner] = t_graph_direct;
+        ctx.Set(t_graph_ptr.RawPointer.inner, t_graph_direct);
     }
 
     os.LogInt(codegen.codegen_is_graph_type(t_graph_direct, &env, ctx)); // Expected: 1
@@ -330,7 +331,7 @@ func main() {
     unsafe {
         t_gena_ptr.tag = 9; // RawPointer
         t_gena_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_gena_ptr.RawPointer.inner] = t_gena_direct;
+        ctx.Set(t_gena_ptr.RawPointer.inner, t_gena_direct);
     }
 
     os.LogInt(codegen.codegen_is_generational_arena_type(t_gena_direct, &env, ctx)); // Expected: 1
@@ -365,7 +366,7 @@ func main() {
         mut expr_pool_value: ast.Expression[ctx] := ctx[expr_pool_test];
         mut args_vec_pool_test: std.Vector[ast.Expression[ctx], ctx] := ctx[expr_pool_value.Call.arguments];
         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[arg0_idx] = args_vec_pool_test[0];
+        ctx.Set(arg0_idx, args_vec_pool_test[0]);
         mut arg0_span := parser.get_expression_span(arg0_idx, ctx);
 
         mut entry_i: typechecker.ResolvedTypeEntry[ctx];
@@ -412,7 +413,7 @@ func main() {
         mut t_rc_ptr: ast.Type[ctx];
         t_rc_ptr.tag = 9; // RawPointer
         t_rc_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_rc_ptr.RawPointer.inner] = t_rc_inner;
+        ctx.Set(t_rc_ptr.RawPointer.inner, t_rc_inner);
 
         // Setup resolved type mapping for rc_ptr
         mut left_expr := ctx[expr_rc_test].Call.function; // selector
