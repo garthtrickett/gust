@@ -9,8 +9,8 @@ func main() {
 
     // Arena.get_ref baseline: explicit branded arena borrowing remains supported.
     mut node_idx: Index[DualSigNode, ctx] := os.ArenaAlloc(ctx);
-    ctx[node_idx].val = 10;
     mut node_ref := ctx.get_ref(node_idx);
+    node_ref.val = 10;
     node_ref.val = node_ref.val + 1;
     os.LogInt(ctx[node_idx].val);
 

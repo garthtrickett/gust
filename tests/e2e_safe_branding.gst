@@ -4,7 +4,8 @@ type CustomNode[connCtx] struct {
 }
 
 func updateNode(ctx: &Arena, node: Index[CustomNode, ctx]) {
-    ctx[node].SessionID = 100;
+    mut node_ref_update := ctx.get_ref(node);
+    node_ref_update.SessionID = 100;
 }
 
 func main() {
@@ -12,7 +13,8 @@ func main() {
     defer connCtx.Free();
     
     mut node: Index[CustomNode, connCtx] := os.ArenaAlloc(connCtx);
-    connCtx[node].SessionID = 42;
+    mut node_ref_main := connCtx.get_ref(node);
+    node_ref_main.SessionID = 42;
     
     updateNode(connCtx, node);
     

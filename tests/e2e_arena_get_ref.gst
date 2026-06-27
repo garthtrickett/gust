@@ -8,9 +8,8 @@ func main() {
     os.SetThreadScratch(ctx);
 
     mut node_idx: Index[ArenaRefNode, ctx] := os.ArenaAlloc(ctx);
-    ctx[node_idx].val = 41;
-
     mut node_ref := ctx.get_ref(node_idx);
+    node_ref.val = 41;
     os.LogInt(node_ref.val);
 
     node_ref.val = node_ref.val + 1;

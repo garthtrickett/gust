@@ -3,6 +3,7 @@ type CoreNode[ctx] struct {
 }
 func make_core_node(ctx: &Arena) Index[CoreNode, ctx] {
     mut n: Index[CoreNode, ctx] := os.ArenaAlloc(ctx);
-    ctx[n].id = 100;
+    mut node_ref := ctx.get_ref(n);
+    node_ref.id = 100;
     return n;
 }

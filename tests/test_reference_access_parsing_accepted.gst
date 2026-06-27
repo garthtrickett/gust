@@ -7,8 +7,8 @@ func dummy_test(ctx: &Arena) {
     // These selectors are now parsed, typechecked, and code-generated as safe
     // branded references, so this test should compile and run cleanly.
     mut node_idx: Index[MyNode, ctx] := os.ArenaAlloc(ctx);
-    ctx[node_idx].val = 41;
     mut node_ref := ctx.get_ref(node_idx);
+    node_ref.val = 41;
     node_ref.val = node_ref.val + 1;
 
     mut vec: std.Vector[MyNode, ctx] := std.VectorNew(ctx);

@@ -6,8 +6,10 @@ func main() {
     defer ctx.Free();
     mut n1: Index[MyNode, ctx] := os.ArenaAlloc(ctx);
     mut n2: Index[MyNode, ctx] := os.ArenaAlloc(ctx);
-    ctx[n1].val = 42;
-    ctx[n2].val = 84;
+    mut n1_ref := ctx.get_ref(n1);
+    n1_ref.val = 42;
+    mut n2_ref := ctx.get_ref(n2);
+    n2_ref.val = 84;
     
     os.ArenaValidate(ctx);
     os.LogInt(ctx[n1].val);
