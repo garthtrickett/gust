@@ -2,7 +2,9 @@ type MyNode struct {
     val: int
 }
 func print_val(r: &int) {
-    os.LogInt(*r);
+    unsafe {
+        os.LogInt(*r);
+    }
 }
 func main() {
     mut ctx := os.Arena.New();
@@ -12,14 +14,18 @@ func main() {
     // 1. Reference to primitive stack variable
     mut x := 42;
     mut rx: &int := &x;
-    os.LogInt(*rx);
+    unsafe {
+        os.LogInt(*rx);
+    }
     print_val(rx);
 
     // 2. Reference to struct field on stack
     mut n: MyNode;
     n.val = 100;
     mut rn_val: &int := &n.val;
-    os.LogInt(*rn_val);
+    unsafe {
+        os.LogInt(*rn_val);
+    }
 
     // 3. Reference to heap-allocated data
     mut n_idx: Index[MyNode, ctx] := os.ArenaAlloc(ctx);

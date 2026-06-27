@@ -11,7 +11,9 @@ func main() {
     match s {
         Circle { radius } => {
             // Step 2: Explicit dereference gets the underlying plain 'int'
-            accept_val(*radius);
+            unsafe {
+                accept_val(*radius);
+            }
         }
     }
 }

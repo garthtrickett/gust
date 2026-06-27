@@ -5,10 +5,14 @@ type MyEnum enum {
 func process(e: MyEnum) int {
     match e {
         VariantA { val } => {
-            return *val;
+            unsafe {
+                return *val;
+            }
         }
         VariantB { x, y } => {
-            return *x + *y;
+            unsafe {
+                return *x + *y;
+            }
         }
     }
 }
