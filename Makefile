@@ -168,6 +168,7 @@ report_step51_final_validation:
 	@echo "   make guard_step51_raw_cast_unsafe_enforcement"
 	@echo "   make guard_step51_pointer_arithmetic_unsafe_enforcement"
 	@echo "   make guard_step51_unsafe_func_call_enforcement"
+	@echo "   gt-one-gst tests/e2e_unsafe_func_body_raw_ops.gst"
 	@echo "   gt-one-gst tests/e2e_unsafe_function_signature_noop.gst"
 	@echo "   make report_step45_final_validation"
 	@echo "   make report_phase4_formatter_tools"
@@ -394,6 +395,14 @@ guard_step51_unsafe_func_call_enforcement: gust
 	status=$$?; \
 	if [ $$status -ne 0 ]; then \
 		echo "❌ Step 5.1 unsafe function call guard failed: unsafe function call inside unsafe should compile."; \
+		cat build/step51_unsafe_func_call_guard.log; \
+		exit 1; \
+	fi
+	@echo "Checking unsafe function bodies accept raw operations without nested unsafe..."
+	@./gust tests/e2e_unsafe_func_body_raw_ops.gst > build/step51_unsafe_func_call_guard.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "❌ Step 5.1 unsafe function call guard failed: unsafe function body raw operations should compile."; \
 		cat build/step51_unsafe_func_call_guard.log; \
 		exit 1; \
 	fi
