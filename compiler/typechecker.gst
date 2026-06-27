@@ -1474,10 +1474,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                 if is_pool == 1 {
                     if std.str_eq(right_name, "Alloc") {
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec) == 1 {
+                        mut args_vec_pool_alloc: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_pool_alloc) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_pool_alloc[0];
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
@@ -1497,19 +1497,16 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut brand_name := "";
                         if left_type.tag == 8 { // Struct
                             if left_type.Struct.brand != empty[Index[str, ctx]] {
-                                unsafe {
-                                    mut brand_str_ptr := &ctx[left_type.Struct.brand] as *str;
-                                    brand_name = *brand_str_ptr;
-                                }
+                                brand_name = ctx[left_type.Struct.brand];
                             }
                         }
                         return make_type_index(elem_struct_name, brand_name, ctx);
                     }
                     if std.str_eq(right_name, "Free") {
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec) == 1 {
+                        mut args_vec_pool_free: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_pool_free) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_pool_free[0];
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
@@ -1571,10 +1568,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                 if is_graph == 1 {
                     if std.str_eq(right_name, "AddNode") {
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec) == 1 {
+                        mut args_vec_graph_addnode: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_graph_addnode) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_graph_addnode[0];
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                             
                             // Get value type
@@ -1611,14 +1608,14 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return t_int;
                     }
                     if std.str_eq(right_name, "AddEdge") {
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec) == 2 {
+                        mut args_vec_graph_addedge: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_graph_addedge) == 2 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_graph_addedge[0];
                             mut from_type := check_expression(arg0_idx, env, scope, ctx);
                             
                             mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg1_idx] = (*args_vec)[1];
+                            ctx[arg1_idx] = args_vec_graph_addedge[1];
                             mut to_type := check_expression(arg1_idx, env, scope, ctx);
 
                             mut graph_brand := left_type.Struct.brand;
@@ -1630,9 +1627,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             } else if from_type.tag == 7 { // Index
                                 mut brand := from_type.Index.brand;
                                 if brand != empty[Index[str, ctx]] && graph_brand != empty[Index[str, ctx]] { 
-                                    mut b_ptr := &ctx[brand] as *str;
-                                    mut gb_ptr := &ctx[graph_brand] as *str;
-                                    if std.str_eq(strip_brand_prefix(*b_ptr, ctx), strip_brand_prefix(*gb_ptr, ctx)) {
+                                    mut brand_val_addedge_from: str := ctx[brand];
+                                    mut graph_brand_val_addedge_from: str := ctx[graph_brand];
+                                    if std.str_eq(strip_brand_prefix(brand_val_addedge_from, ctx), strip_brand_prefix(graph_brand_val_addedge_from, ctx)) {
                                         from_ok = 1;
                                     }
                                 } else {
@@ -1651,9 +1648,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             } else if to_type.tag == 7 { // Index
                                 mut brand := to_type.Index.brand;
                                 if brand != empty[Index[str, ctx]] && graph_brand != empty[Index[str, ctx]] { 
-                                    mut b_ptr := &ctx[brand] as *str;
-                                    mut gb_ptr := &ctx[graph_brand] as *str;
-                                    if std.str_eq(strip_brand_prefix(*b_ptr, ctx), strip_brand_prefix(*gb_ptr, ctx)) { 
+                                    mut brand_val_addedge_to: str := ctx[brand];
+                                    mut graph_brand_val_addedge_to: str := ctx[graph_brand];
+                                    if std.str_eq(strip_brand_prefix(brand_val_addedge_to, ctx), strip_brand_prefix(graph_brand_val_addedge_to, ctx)) { 
                                         to_ok = 1;
                                     }
                                 } else {
@@ -1669,10 +1666,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return t_void;
                     }
                     if std.str_eq(right_name, "GetNode") {
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec) == 1 {
+                        mut args_vec_graph_getnode: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_graph_getnode) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx); 
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_graph_getnode[0];
                             mut index_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut graph_brand := left_type.Struct.brand;
@@ -1682,9 +1679,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             } else if index_type.tag == 7 { // Index
                                 mut brand := index_type.Index.brand;
                                 if brand != empty[Index[str, ctx]] && graph_brand != empty[Index[str, ctx]] { 
-                                    mut b_ptr := &ctx[brand] as *str;
-                                    mut gb_ptr := &ctx[graph_brand] as *str;
-                                    if std.str_eq(strip_brand_prefix(*b_ptr, ctx), strip_brand_prefix(*gb_ptr, ctx)) {
+                                    mut brand_val_getnode: str := ctx[brand];
+                                    mut graph_brand_val_getnode: str := ctx[graph_brand];
+                                    if std.str_eq(strip_brand_prefix(brand_val_getnode, ctx), strip_brand_prefix(graph_brand_val_getnode, ctx)) {
                                         idx_ok = 1;
                                     }
                                 } else {
@@ -1727,13 +1724,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
 
             if std.str_eq(resolved_func, "len") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) != 1 {
+                mut args_vec_len_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_len_call) != 1 {
                     mut msg := "Semantic Error: len expects exactly 1 argument";
                     report_error(2, msg, expr.Call.span, env, ctx);
                 } else {
                     mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg0_idx] = (*args_vec)[0];
+                    ctx[arg0_idx] = args_vec_len_call[0];
                     check_expression(arg0_idx, env, scope, ctx);
                 }
                 mut t_int: ast.Type[ctx];
@@ -1742,15 +1739,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if std.str_eq(resolved_func, "std_VectorGetRef") == 1 || std.str_eq(resolved_func, "std.VectorGetRef") == 1 {
-                mut args_vec_vector_getref_alias := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec_vector_getref_alias) != 2 {
+                mut args_vec_vector_getref_alias: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_vector_getref_alias) != 2 {
                     mut msg_vector_getref_alias_arity := "Semantic Error: std.VectorGetRef expects exactly 2 arguments (vector, int-or-Index)";
                     report_error(2, msg_vector_getref_alias_arity, expr.Call.span, env, ctx);
                     return dummy;
                 }
 
                 mut vec_arg_idx_vector_getref_alias: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[vec_arg_idx_vector_getref_alias] = (*args_vec_vector_getref_alias)[0];
+                ctx[vec_arg_idx_vector_getref_alias] = args_vec_vector_getref_alias[0];
                 mut vec_arg_type_vector_getref_alias := check_expression(vec_arg_idx_vector_getref_alias, env, scope, ctx);
                 vec_arg_type_vector_getref_alias = env_resolve_type(env, vec_arg_type_vector_getref_alias, ctx);
 
@@ -1778,7 +1775,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 mut idx_arg_idx_vector_getref_alias: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[idx_arg_idx_vector_getref_alias] = (*args_vec_vector_getref_alias)[1];
+                ctx[idx_arg_idx_vector_getref_alias] = args_vec_vector_getref_alias[1];
                 mut idx_arg_type_vector_getref_alias := check_expression(idx_arg_idx_vector_getref_alias, env, scope, ctx);
                 idx_arg_type_vector_getref_alias = env_resolve_type(env, idx_arg_type_vector_getref_alias, ctx);
 
@@ -1797,13 +1794,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if std.str_eq(resolved_func, "os_ArenaAlloc") || std.str_eq(resolved_func, "os.ArenaAlloc") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) != 1 {
+                mut args_vec_arena_alloc_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_arena_alloc_call) != 1 {
                     mut msg := "Semantic Error: os_ArenaAlloc expects exactly 1 argument (the allocator variable)";
                     report_error(2, msg, expr.Call.span, env, ctx);
                 }
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_arena_alloc_call[0];
                 mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                 mut brand_name := get_root_variable(arg0_idx, ctx);
                 return make_type_index("Any", brand_name, ctx);
@@ -1811,19 +1808,19 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
 
             if std.str_eq(resolved_func, "std.GenerationalSwap") || std.str_eq(resolved_func, "std_GenerationalSwap") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) != 2 {
+                mut args_vec_generational_swap: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_generational_swap) != 2 {
                     mut msg := "Semantic Error: std.GenerationalSwap expects exactly 2 arguments (current_ctx, next_ctx)";
                     report_error(2, msg, expr.Call.span, env, ctx);
                     mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
                     return dummy;
                 }
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_generational_swap[0];
                 mut current_type := check_expression(arg0_idx, env, scope, ctx);
                 
                 mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg1_idx] = (*args_vec)[1];
+                ctx[arg1_idx] = args_vec_generational_swap[1];
                 mut next_type := check_expression(arg1_idx, env, scope, ctx);
 
                 if current_type.tag != 4 || next_type.tag != 4 {
