@@ -196,9 +196,11 @@ report_step51_phase_f_non_laundering_status:
 	@echo "   make report_step51_phase_d_ffi_status"
 	@echo "   make report_step51_phase_e_address_escape_status"
 	@echo "   make report_step51_raw_pointer_safe_code_candidates"
-	@echo "   Do not add non-laundering enforcement until provenance/origin metadata can distinguish raw-derived values from safe references through assignments, returns, calls, and container storage."
+	@echo "   Provenance design anchor: STEP51_DEFERRED_UNSAFE_SEMANTICS.md"
+	@echo "   The next implementation slice should add inert typechecker-side expression provenance carriers before rejecting new programs."
+	@echo "   Propagation must preserve raw-derived and sandbox-derived origins through assignments, calls, returns, aggregate fields, and container storage."
 	@echo "   Existing narrow escape-analysis coverage remains guarded by make guard_step51_raw_pointer_local_escape_enforcement."
-	@echo "   Still deferred: broader non-laundering/provenance tracking."
+	@echo "   Still deferred: compiler-backed broad non-laundering enforcement and safe-branding rejection guards."
 	@echo "✅ Step 5.1F non-laundering/provenance status report complete. This target is report-only and does not run guards."
 
 report_step51_deferred_unsafe_semantics_status:
@@ -224,7 +226,8 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   Sandboxed FFI semantics: transient sub-arena ownership/destruction is documented; wrapper codegen remains deferred."
 	@echo "   Inert sandbox policy helpers: function signatures expose sandbox/aggregate FFI policy predicates."
 	@echo "   Inert address-origin metadata: safe-arena, raw-derived, sandbox-derived, and unknown origins are represented."
-	@echo "   Next semantic checkpoint: broader provenance/non-laundering propagation through assignments, calls, returns, and containers."
+	@echo "   Provenance propagation design: assignments, calls, returns, aggregate fields, and containers must preserve origin metadata."
+	@echo "   Next implementation checkpoint: inert expression provenance carrier in the typechecker, then narrow non-laundering fixtures."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
 

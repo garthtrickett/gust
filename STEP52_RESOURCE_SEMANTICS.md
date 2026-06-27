@@ -23,7 +23,8 @@ A compiler-backed Resource design needs all of the following before enforcement:
 4. **Destructor identity:** destructors must be registered semantically, so `drop_func` / `os.CloseDir`-style cleanup can be validated without string matching.
 5. **Transfer state:** resources must distinguish at least owned, borrowed, moved, closed, and destructor-scheduled states.
 6. **Defer semantics:** `defer` must have explicit AST/typechecker representation before it can satisfy cleanup obligations.
-7. **Directory parity:** `open_linear_resources` must cover the existing directory-handle safety behavior before `open_directories` can be removed.
+7. **Provenance eligibility:** trusted resource handles must originate from safe arena construction, validated OS-resource constructors, or a future explicit validation/copy API. Raw-derived, sandbox-derived, and unknown unsafe-origin values must not enter `open_linear_resources` as safe branded handles.
+8. **Directory parity:** `open_linear_resources` must cover the existing directory-handle safety behavior before `open_directories` can be removed.
 
 ## Proposed inert metadata shape
 
@@ -81,6 +82,8 @@ The first parity implementation should mirror the existing directory lane withou
 7. Remove `open_directories` in a later cleanup-only patch once generalized coverage is equivalent.
 
 ## Step 5.1 dependency
+
+Generalized resource enforcement depends on the Step 5.1 provenance/non-laundering lane. Before `Resource[ctx, T]` can become a trusted linear handle, the typechecker must be able to distinguish safe arena or validated OS-resource origins from raw-derived, sandbox-derived, and unknown unsafe origins. This prevents a raw pointer, sandbox scratch address, or external native address from being laundered into the future `open_linear_resources` registry as if it were a compiler-verified safe handle.
 
 Step 5.2 report-only scaffolding may stay in place, but compiler-backed Step 5.2 enforcement should remain paused until the Step 5.1 deferred unsafe lanes have semantic designs. Generalized resource ownership depends on knowing whether a handle or reference came from safe arena construction, raw pointer manipulation, address escape, or external FFI.
 

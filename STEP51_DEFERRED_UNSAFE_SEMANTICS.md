@@ -79,7 +79,32 @@ The compiler now has an inert `AddressOriginMetadata` carrier for classifying wh
 - `sandbox_derived`: a value whose origin traces to transient sandbox-FFI storage and must not be rebranded into caller-owned safe storage without an explicit future copy/validation rule.
 - `unknown`: an intentionally conservative default for values whose address origin has not yet been classified.
 
-The helper predicates classify whether an origin allows safe branding, whether it requires an unsafe boundary, and whether it is raw-or-sandbox-derived. These helpers are inert metadata utilities only. They do not yet propagate through assignments, calls, returns, or containers, and they do not replace the existing narrow local raw-derived pointer return guard.
+The helper predicates classify whether an origin allows safe branding, whether it requires an unsafe boundary, and whether it is raw-or-sandbox-derived. These helpers are inert metadata utilities only. They do not yet replace the existing narrow local raw-derived pointer return guard.
+
+### Provenance propagation and non-laundering design checkpoint
+
+This checkpoint freezes the semantic propagation plan for broad unsafe non-laundering before Step 5.2 compiler-backed resource enforcement resumes. It is still a design checkpoint, not a diagnostic patch: no new rejection is enabled until the typechecker carries provenance state and focused guards exist.
+
+The future typechecker should attach origin metadata to expression-check results, variable bindings, temporary values, return values, and container payload observations. The propagation model is conservative:
+
+- `safe_arena` may only be produced by compiler-verified safe arena construction, safe arena reads, safe branded index access, or explicit future copy/validation APIs.
+- `raw_derived` is produced by raw pointer casts, raw pointer dereferences that materialize an address-like value, pointer arithmetic, manual allocation, direct native address materialization, or values returned from direct external/native calls without a validated copy boundary.
+- `sandbox_derived` is produced by transient sandbox-FFI storage, sandbox marshalling buffers, and values returned from sandbox calls before explicit caller-arena copying/validation.
+- `unknown` is the conservative default for values whose origin cannot be proven. Unknown values are not eligible for safe branding until a later rule proves otherwise.
+
+The join rule should never downgrade tainted origins into safe origins. Combining safe and raw-derived values yields raw-derived. Combining safe and sandbox-derived values yields sandbox-derived. Combining raw-derived and sandbox-derived values yields an unsafe-derived origin that must be treated as non-brandable; until a distinct combined tag exists, this may be represented as `unknown` plus a `requires_unsafe_boundary` predicate that returns true.
+
+Propagation points for the first compiler-backed implementation should be:
+
+1. **Expression results:** every checked expression returns both its resolved type and origin metadata. Existing pure value expressions default to safe or unknown according to their construction path.
+2. **Assignments and local bindings:** assigning `rhs` to `lhs` copies or joins the RHS origin into the variable's tracked provenance state. Safe-looking target types do not erase raw-derived or sandbox-derived origin.
+3. **Field writes and aggregate construction:** writing a tainted value into a struct, enum payload, `Option`, `LookupResult`, or other aggregate marks the stored field/payload tainted. Later field or payload reads recover that taint.
+4. **Container storage:** storing tainted values in `std.Vector`, `std.HashMap`, or future containers marks the element/cell provenance. Reads through `.Get()`, `.get_opt()`, subscript copies, or reference accessors must preserve the stored origin rather than laundering it through the container API.
+5. **Function calls:** direct external/native calls produce raw-derived or sandbox-derived return origins according to signature metadata and sandbox policy. Safe Gust calls propagate from declared or inferred return provenance. A safe wrapper may return safe-branded data only after an explicit validated copy into caller-owned safe arena storage.
+6. **Returns:** returning raw-derived, sandbox-derived, or unknown unsafe-origin values as `Index[T, ctx]` or `&T[ctx]` must eventually reject with a non-laundering diagnostic. Returning raw pointers remains governed by unsafe context and existing escape-analysis rules until the broader guard lands.
+7. **Brand construction:** safe branded `Index[T, ctx]` and `&T[ctx]` values can only be constructed from formal compiler-verified arena operations or later explicit validation/copy APIs. Unsafe blocks do not grant permission to rebrand raw-derived addresses as safe arena values.
+
+The first implementation slice should add inert typechecker-side carriers and helper functions only: expression-origin result plumbing, join predicates, and default-safe/default-unknown constructors. The first enforcement slice should be narrow and fixture-backed: reject returning a raw-derived or sandbox-derived value as `Index[T, ctx]` or `&T[ctx]` from a safe wrapper. Assignment, call, and container enforcement can then be added incrementally after the carrier is stable.
 
 ### Layout-aware FFI validation helper checkpoint
 
@@ -118,12 +143,14 @@ Direct external/native calls reject outside an explicit unsafe context with the 
 13. Define inert address-origin metadata that separates safe-arena, raw-derived, sandbox-derived, and unknown origins.
 14. Add inert layout-aware FFI helper predicates that connect signature layout requirements to payload-safe struct layout metadata.
 15. Add inert type/signature-level C FFI layout helpers over resolved params and return types without rejecting declarations.
-16. Extend provenance tracking so raw-derived and sandbox-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
-17. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
+16. Add an inert typechecker-side expression provenance carrier so resolved types can travel with `safe_arena`, `raw_derived`, `sandbox_derived`, or `unknown` origin metadata.
+17. Propagate provenance through assignments, aggregate fields, container storage, function calls, returns, and safe-branding construction points without rejecting programs yet.
+18. Add the first narrow non-laundering guard only after propagation is represented: reject raw-derived or sandbox-derived values returned as safe `Index[T, ctx]` or `&T[ctx]`.
+19. Add further compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
 
 ## Step 5.2 sequencing rule
 
-Step 5.2 report-only scaffolding may remain in place, but Step 5.2 compiler-backed resource enforcement should not advance beyond inert design until these Step 5.1 deferred lanes are resolved or explicitly scoped as non-blocking. Resource ownership, destructor safety, and generalized handle tracking depend on knowing whether a value originated from safe arena construction, raw pointer manipulation, or external FFI.
+Step 5.2 report-only scaffolding may remain in place, but Step 5.2 compiler-backed resource enforcement should not advance beyond inert design until these Step 5.1 deferred lanes are resolved or explicitly scoped as non-blocking. Resource ownership, destructor safety, and generalized handle tracking depend on knowing whether a value originated from safe arena construction, raw pointer manipulation, sandbox storage, or external FFI. In particular, `Resource[ctx, T]` handles and their future linear `Index[T, ctx]` aliases must only be born from safe arena or validated OS-resource constructors; raw-derived, sandbox-derived, and unknown unsafe-origin values must not be allowed to enter the generalized resource registry as trusted safe handles.
 
 ## Guardrails
 
