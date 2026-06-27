@@ -2636,8 +2636,34 @@ func typechecker_is_arena_value_or_ref(t: ast.Type[ctx], ctx: &Arena) int {
 
 func typechecker_get_index_element_type(idx_t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
+        mut index_struct_name := idx_t.Index.struct_name;
+
+        if std.str_eq(index_struct_name, "int") == 1 {
+            mut t_int_index_elem: ast.Type[ctx];
+            t_int_index_elem.tag = 0; // Int
+            return t_int_index_elem;
+        }
+
+        if std.str_eq(index_struct_name, "byte") == 1 {
+            mut t_byte_index_elem: ast.Type[ctx];
+            t_byte_index_elem.tag = 1; // Byte
+            return t_byte_index_elem;
+        }
+
+        if std.str_eq(index_struct_name, "bool") == 1 {
+            mut t_bool_index_elem: ast.Type[ctx];
+            t_bool_index_elem.tag = 2; // Bool
+            return t_bool_index_elem;
+        }
+
+        if std.str_eq(index_struct_name, "str") == 1 {
+            mut t_str_index_elem: ast.Type[ctx];
+            t_str_index_elem.tag = 5; // Str
+            return t_str_index_elem;
+        }
+
         mut brand_name := get_type_brand(idx_t, env, ctx);
-        mut elem_t := make_type_struct(idx_t.Index.struct_name, brand_name, ctx);
+        mut elem_t := make_type_struct(index_struct_name, brand_name, ctx);
         return env_resolve_type(env, elem_t, ctx);
     }
 }
