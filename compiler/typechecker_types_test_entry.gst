@@ -180,16 +180,18 @@ func main() {
         mut lookup_resolved_ok := 0;
         mut lookup_resolved_val: ast.Type[ctx];
         if found_idx != 0 - 1 {
-            mut entry_ref := &env.resolved_types_nested[found_idx];
-            mut j := 0;
-            while j < len((*entry_ref).types) {
-                mut t_entry := (*entry_ref).types[j];
-                if t_entry.start_offset == span.start.offset && t_entry.end_offset == span.end.offset {
-                    lookup_resolved_val = t_entry.val_type;
-                    lookup_resolved_ok = 1;
-                    j = len((*entry_ref).types);
+            unsafe {
+                mut entry_ref := &env.resolved_types_nested[found_idx];
+                mut j := 0;
+                while j < len((*entry_ref).types) {
+                    mut t_entry := (*entry_ref).types[j];
+                    if t_entry.start_offset == span.start.offset && t_entry.end_offset == span.end.offset {
+                        lookup_resolved_val = t_entry.val_type;
+                        lookup_resolved_ok = 1;
+                        j = len((*entry_ref).types);
+                    }
+                    j = j + 1;
                 }
-                j = j + 1;
             }
         }
         
@@ -231,16 +233,18 @@ func main() {
         mut lookup_resolved_ok := 0;
         mut lookup_resolved_val: ast.Type[ctx];
         if found_idx != 0 - 1 {
-            mut entry_ref := &env.resolved_types_nested[found_idx];
-            mut j := 0;
-            while j < len((*entry_ref).types) { 
-                mut t_entry := (*entry_ref).types[j];
-                if t_entry.start_offset == span.start.offset && t_entry.end_offset == span.end.offset {
-                    lookup_resolved_val = t_entry.val_type;
-                    lookup_resolved_ok = 1;
-                    j = len((*entry_ref).types);
+            unsafe {
+                mut entry_ref := &env.resolved_types_nested[found_idx];
+                mut j := 0;
+                while j < len((*entry_ref).types) { 
+                    mut t_entry := (*entry_ref).types[j];
+                    if t_entry.start_offset == span.start.offset && t_entry.end_offset == span.end.offset {
+                        lookup_resolved_val = t_entry.val_type;
+                        lookup_resolved_ok = 1;
+                        j = len((*entry_ref).types);
+                    }
+                    j = j + 1;
                 }
-                j = j + 1;
             }
         }
         

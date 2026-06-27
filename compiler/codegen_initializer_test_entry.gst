@@ -275,8 +275,10 @@ func main() {
                 p_idx = p_idx + 1;
             }
             if found_idx != 0 - 1 {
-                mut entry_ref := &env.resolved_types_nested[found_idx];
-                (*entry_ref).types.Push(entry_node);
+                unsafe {
+                    mut entry_ref := &env.resolved_types_nested[found_idx];
+                    (*entry_ref).types.Push(entry_node);
+                }
             }
         }
 
@@ -323,8 +325,10 @@ func main() {
                 p_idx = p_idx + 1;
             }
             if found_idx != 0 - 1 {
-                mut entry_ref := &env.resolved_types_nested[found_idx];
-                (*entry_ref).types.Push(entry_str);
+                unsafe {
+                    mut entry_ref := &env.resolved_types_nested[found_idx];
+                    (*entry_ref).types.Push(entry_str);
+                }
             }
         }
 
@@ -439,8 +443,10 @@ func main() {
             idx_cast = idx_cast + 1;
         }
         if found_cast_idx != 0 - 1 {
-            mut entry_ref_cast := &env.resolved_types_nested[found_cast_idx];
-            (*entry_ref_cast).types.Push(entry_cast_alloc);
+            unsafe {
+                mut entry_ref_cast := &env.resolved_types_nested[found_cast_idx];
+                (*entry_ref_cast).types.Push(entry_cast_alloc);
+            }
         } else {
             mut pfx_entry_cast: typechecker.PrefixMapEntry[ctx];
             pfx_entry_cast.prefix = "";
@@ -587,8 +593,10 @@ func main() {
     mut lookup_node := env.struct_registry.get_opt("Node");
     match lookup_node {
         Some { val } => {
-            mut is_valid_str := codegen.codegen_gen_is_valid_helper("Node", *val, &env, ctx);
-            os.LogStr(is_valid_str);
+            unsafe {
+                mut is_valid_str := codegen.codegen_gen_is_valid_helper("Node", *val, &env, ctx);
+                os.LogStr(is_valid_str);
+            }
         }
         None => {
         }
@@ -1256,8 +1264,10 @@ func main() {
             unsafe_test_p_idx = unsafe_test_p_idx + 1;
         }
         if unsafe_test_found_idx != 0 - 1 {
-            mut unsafe_test_entry_ref := &env.resolved_types_nested[unsafe_test_found_idx];
-            (*unsafe_test_entry_ref).types.Push(unsafe_test_entry);
+            unsafe {
+                mut unsafe_test_entry_ref := &env.resolved_types_nested[unsafe_test_found_idx];
+                (*unsafe_test_entry_ref).types.Push(unsafe_test_entry);
+            }
         }
 
         mut unsafe_test_c := codegen.codegen_generate_statement(unsafe_stmt_idx, &env, ctx);
@@ -1454,8 +1464,10 @@ func main() {
             idx_nested = idx_nested + 1;
         }
         if found_nested_idx != 0 - 1 { 
-            mut match_entry_ref := &env.resolved_types_nested[found_nested_idx];
-            (*match_entry_ref).types.Push(match_entry_status);
+            unsafe {
+                mut match_entry_ref := &env.resolved_types_nested[found_nested_idx];
+                (*match_entry_ref).types.Push(match_entry_status);
+            }
         } else {
             mut pfx_entry: typechecker.PrefixMapEntry[ctx];
             pfx_entry.prefix = "";
@@ -1523,8 +1535,10 @@ func main() {
             idx_nested = idx_nested + 1;
         }
         if found_nested_idx != 0 - 1 {
-            mut match_entry_ref_4_2 := &env.resolved_types_nested[found_nested_idx];
-            (*match_entry_ref_4_2).types.Push(match_entry_status_4_2);
+            unsafe {
+                mut match_entry_ref_4_2 := &env.resolved_types_nested[found_nested_idx];
+                (*match_entry_ref_4_2).types.Push(match_entry_status_4_2);
+            }
         } else {
             mut pfx_entry: typechecker.PrefixMapEntry[ctx];
             pfx_entry.prefix = "";

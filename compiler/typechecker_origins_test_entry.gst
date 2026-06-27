@@ -276,16 +276,18 @@ func main() {
         }
 
         if found_idx != 0 - 1 {
-            mut entry_ref := &env_tc_test.resolved_types_nested[found_idx];
-            mut found_type := 0;
-            mut j := 0;
-            while j < len((*entry_ref).types) {
-                mut t_entry := (*entry_ref).types[j];
-                if t_entry.start_offset == value_span.start.offset && t_entry.end_offset == value_span.end.offset {
-                    found_type = 1;
-                    j = len((*entry_ref).types);
+            unsafe {
+                mut entry_ref := &env_tc_test.resolved_types_nested[found_idx];
+                mut found_type := 0;
+                mut j := 0;
+                while j < len((*entry_ref).types) {
+                    mut t_entry := (*entry_ref).types[j];
+                    if t_entry.start_offset == value_span.start.offset && t_entry.end_offset == value_span.end.offset {
+                        found_type = 1;
+                        j = len((*entry_ref).types);
+                    }
+                    j = j + 1;
                 }
-                j = j + 1;
             }
         }
         

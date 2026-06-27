@@ -383,9 +383,11 @@ func main() {
             p_idx = p_idx + 1;
         }
         if found_idx != 0 - 1 {
-            mut entry_ref := &env.resolved_types_nested[found_idx];
-            (*entry_ref).types.Push(entry_p);
-            (*entry_ref).types.Push(entry_i);
+            unsafe {
+                mut entry_ref := &env.resolved_types_nested[found_idx];
+                (*entry_ref).types.Push(entry_p);
+                (*entry_ref).types.Push(entry_i);
+            }
         } else {
             mut pfx_entry: typechecker.PrefixMapEntry[ctx];
             pfx_entry.prefix = env.current_prefix;
@@ -434,8 +436,10 @@ func main() {
             p_idx = p_idx + 1;
         }
         if found_idx != 0 - 1 {
-            mut entry_ref := &env.resolved_types_nested[found_idx];
-            (*entry_ref).types.Push(entry_rc);
+            unsafe {
+                mut entry_ref := &env.resolved_types_nested[found_idx];
+                (*entry_ref).types.Push(entry_rc);
+            }
         } else {
             mut pfx_entry: typechecker.PrefixMapEntry[ctx];
             pfx_entry.prefix = env.current_prefix;
