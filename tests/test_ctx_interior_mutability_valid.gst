@@ -4,7 +4,8 @@ type Node[ctx] struct {
 
 func allocate_node(ctx: Arena) Index[Node, ctx] {
     mut n: Index[Node, ctx] := os.ArenaAlloc(ctx);
-    ctx[n].val = 42;
+    mut n_ref_ctx_interior := ctx.get_ref(n);
+    n_ref_ctx_interior.val = 42;
     return n;
 }
 
