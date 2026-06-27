@@ -211,7 +211,8 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   - sandboxed FFI sub-arenas"
 	@echo "   - address-origin metadata and address-escape enforcement"
 	@echo "   - full raw-derived provenance/non-laundering through assignments, calls, returns, and containers"
-	@echo "   Next semantic checkpoint: inert direct FFI signature metadata, not regex enforcement."
+	@echo "   Inert compiler carrier: FunctionSignature has direct FFI metadata fields."
+	@echo "   Next semantic checkpoint: default initialization/population for direct FFI signature metadata, not regex enforcement."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
 

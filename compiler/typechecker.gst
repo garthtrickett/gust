@@ -16,7 +16,13 @@ type FunctionSignature[ctx] struct {
     params: std.Vector[ast.Type[ctx], ctx],
     return_type: ast.Type[ctx],
     return_origins: Index[OriginSet[ctx], ctx],
-    is_unsafe: int
+    is_unsafe: int,
+    is_extern: int,
+    extern_symbol_name: str,
+    extern_abi: str,
+    requires_unsafe_call: int,
+    requires_layout_metadata: int,
+    requires_sandbox_arena: int
 }
 
 type Scope[ctx] struct {
