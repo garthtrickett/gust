@@ -37,17 +37,18 @@ func main() {
     }
 
     mut lookup_alias_varprov := env.variable_provenance.Get("alias_view");
-    if lookup_alias_varprov.Ok == false {
+    if lookup_alias_varprov.Ok {
+        mut alias_prov_varprov := lookup_alias_varprov.Val;
+        if typechecker.set_contains(alias_prov_varprov.legacy_origins, "root_ctx", ctx) != 1 {
+            os.LogStr("Error: declaration provenance did not preserve source legacy origin");
+            os.Exit(1);
+        }
+        if alias_prov_varprov.address_origin.is_unknown != 1 {
+            os.LogStr("Error: declaration provenance should keep inert unknown address origin");
+            os.Exit(1);
+        }
+    } else {
         os.LogStr("Error: declaration did not record alias_view provenance");
-        os.Exit(1);
-    }
-    mut alias_prov_varprov := lookup_alias_varprov.Val;
-    if typechecker.set_contains(alias_prov_varprov.legacy_origins, "root_ctx", ctx) != 1 {
-        os.LogStr("Error: declaration provenance did not preserve source legacy origin");
-        os.Exit(1);
-    }
-    if alias_prov_varprov.address_origin.is_unknown != 1 {
-        os.LogStr("Error: declaration provenance should keep inert unknown address origin");
         os.Exit(1);
     }
 
@@ -72,17 +73,18 @@ func main() {
     }
 
     mut lookup_target_varprov := env.variable_provenance.Get("target_view");
-    if lookup_target_varprov.Ok == false {
+    if lookup_target_varprov.Ok {
+        mut target_prov_varprov := lookup_target_varprov.Val;
+        if typechecker.set_contains(target_prov_varprov.legacy_origins, "root_ctx", ctx) != 1 {
+            os.LogStr("Error: assignment provenance did not preserve source legacy origin");
+            os.Exit(1);
+        }
+        if target_prov_varprov.address_origin.is_unknown != 1 {
+            os.LogStr("Error: assignment provenance should keep inert unknown address origin");
+            os.Exit(1);
+        }
+    } else {
         os.LogStr("Error: assignment did not record target_view provenance");
-        os.Exit(1);
-    }
-    mut target_prov_varprov := lookup_target_varprov.Val;
-    if typechecker.set_contains(target_prov_varprov.legacy_origins, "root_ctx", ctx) != 1 {
-        os.LogStr("Error: assignment provenance did not preserve source legacy origin");
-        os.Exit(1);
-    }
-    if target_prov_varprov.address_origin.is_unknown != 1 {
-        os.LogStr("Error: assignment provenance should keep inert unknown address origin");
         os.Exit(1);
     }
 
