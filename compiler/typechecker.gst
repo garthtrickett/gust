@@ -25,6 +25,17 @@ type FunctionSignature[ctx] struct {
     requires_sandbox_arena: int
 }
 
+func init_function_signature_ffi_defaults(sig: *FunctionSignature[ctx]) {
+    unsafe {
+        (*sig).is_extern = 0;
+        (*sig).extern_symbol_name = "";
+        (*sig).extern_abi = "C";
+        (*sig).requires_unsafe_call = 0;
+        (*sig).requires_layout_metadata = 0;
+        (*sig).requires_sandbox_arena = 0;
+    }
+}
+
 type Scope[ctx] struct {
     parent: Index[Scope[ctx], ctx],
     bindings: std.HashMap[str, ast.Type[ctx], ctx]
@@ -2306,6 +2317,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
             mut has_custom_sig := 0;
             mut sig: FunctionSignature[ctx];
+            init_function_signature_ffi_defaults(&sig);
             sig.is_unsafe = 0;
             
             if std.str_eq(resolved_func, "std_Concat") || std.str_eq(resolved_func, "std.Concat") {
@@ -4058,6 +4070,7 @@ func env_register_std_structs(env: *TypeEnvironment[ctx], ctx: &Arena) {
 func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.Type[ctx], ctx], ret_t: ast.Type[ctx], ctx: &Arena) {
     unsafe {
         mut sig: FunctionSignature[ctx];
+        init_function_signature_ffi_defaults(&sig);
         sig.params = params;
         sig.return_type = ret_t;
         sig.return_origins = set_init(ctx);
@@ -4150,6 +4163,7 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
 
             // os.Arena.New
             mut sig_arena_new: FunctionSignature[ctx];
+            init_function_signature_ffi_defaults(&sig_arena_new);
             mut arena_new_names: std.Vector[str, ctx] := std.VectorNew(ctx);
             mut arena_new_params: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
             sig_arena_new.param_names = arena_new_names;
@@ -4941,6 +4955,7 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             mut namespaced_name := env_resolve_namespaced_ident(env, name, ctx);
 
             mut sig: FunctionSignature[ctx];
+            init_function_signature_ffi_defaults(&sig);
             sig.param_names = std.VectorNew(ctx);
             sig.params = std.VectorNew(ctx);
 
@@ -7706,6 +7721,7 @@ func env_synthesize_is_valid_helpers(env: *TypeEnvironment[ctx], ctx: &Arena) {
                 mut func_name := std.Concat(key, "_IsValid");
                 
                 mut sig: FunctionSignature[ctx];
+                init_function_signature_ffi_defaults(&sig);
                 sig.param_names = std.VectorNew(ctx);
                 sig.param_names.Push("req");
                 

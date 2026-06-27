@@ -53,7 +53,7 @@ This metadata may be introduced inertly before enforcement. It must not change o
 - `requires_layout_metadata`
 - `requires_sandbox_arena`
 
-Until a later patch adds default initialization and parser population, these fields are only structural carriers. Existing Gust functions, builtins, methods, and generated runtime helper calls must continue to behave as non-extern signatures.
+`init_function_signature_ffi_defaults` initializes these fields for compiler-created signatures. Existing Gust functions, builtins, methods, and generated runtime helper calls continue to behave as non-extern signatures because the defaults are `is_extern = 0`, `extern_abi = "C"`, and all FFI/layout/sandbox requirements disabled. Parser population and enforcement remain deferred.
 
 ### Classification rule
 
@@ -72,12 +72,13 @@ Once the metadata exists, the compiler-backed guard should reject direct externa
 ## Design order
 
 1. Add inert direct FFI/native-call signature metadata fields to `FunctionSignature[ctx]` without parser population or enforcement.
-2. Add default initialization/population for direct FFI/native-call signature metadata and classify existing runtime/native boundaries separately from user-facing Gust source calls.
-3. Add inert AST/type metadata for layout attributes without changing codegen.
-4. Define sandbox sub-arena ownership and destruction semantics for external calls.
-5. Define address-origin metadata that separates safe branded references from raw-derived addresses.
-6. Extend provenance tracking so raw-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
-7. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
+2. Add default initialization for compiler-created direct FFI/native-call signature metadata without parser population or enforcement.
+3. Add parser population for direct FFI/native-call signature metadata and classify existing runtime/native boundaries separately from user-facing Gust source calls.
+4. Add inert AST/type metadata for layout attributes without changing codegen.
+5. Define sandbox sub-arena ownership and destruction semantics for external calls.
+6. Define address-origin metadata that separates safe branded references from raw-derived addresses.
+7. Extend provenance tracking so raw-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
+8. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
 
 ## Step 5.2 sequencing rule
 
