@@ -2743,8 +2743,35 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
 
 func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ExpressionProvenance[ctx] {
     mut t := check_expression(expr_idx, env, scope, ctx);
-    mut prov := expression_provenance_unknown(t, ctx);
     mut legacy_origins := get_expression_origins(expr_idx, env, ctx);
+
+    unsafe {
+        if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+            mut expr := ctx[expr_idx];
+            if expr.tag == 0 { // Identifier
+                mut name := expr.Identifier.name;
+
+                mut direct_lookup := (*env).variable_provenance.Get(name);
+                if direct_lookup.Ok {
+                    mut found_direct := direct_lookup.Val;
+                    found_direct.resolved_type = t;
+                    return found_direct;
+                }
+
+                if scope_contains(scope, name, ctx) == 0 {
+                    mut resolved_name := env_resolve_namespaced_ident(env, name, ctx);
+                    mut resolved_lookup := (*env).variable_provenance.Get(resolved_name);
+                    if resolved_lookup.Ok {
+                        mut found_resolved := resolved_lookup.Val;
+                        found_resolved.resolved_type = t;
+                        return found_resolved;
+                    }
+                }
+            }
+        }
+    }
+
+    mut prov := expression_provenance_unknown(t, ctx);
     prov.legacy_origins = legacy_origins;
     return prov;
 }

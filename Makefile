@@ -229,7 +229,7 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   Inert address-origin metadata: safe-arena, raw-derived, sandbox-derived, and unknown origins are represented."
 	@echo "   Provenance propagation design: assignments, calls, returns, aggregate fields, and containers must preserve origin metadata."
 	@echo "   Inert expression provenance carrier: make guard_step51_expression_provenance_carrier"
-	@echo "   Inert variable binding/assignment provenance: make guard_step51_variable_provenance_bindings"
+	@echo "   Inert variable binding/assignment/readback provenance: make guard_step51_variable_provenance_bindings"
 	@echo "   Next implementation checkpoint: thread expression provenance through calls/returns/aggregate fields/containers, then narrow non-laundering fixtures."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
@@ -250,7 +250,7 @@ report_step51_status_matrix:
 	@echo "   ✅ sandbox policy defaults and helpers: make guard_step51_sandbox_policy_defaults"
 	@echo "   ✅ address-origin metadata helpers: make guard_step51_address_origin_metadata"
 	@echo "   ✅ expression provenance carrier helpers: make guard_step51_expression_provenance_carrier"
-	@echo "   ✅ variable binding/assignment provenance metadata: make guard_step51_variable_provenance_bindings"
+	@echo "   ✅ variable binding/assignment/readback provenance metadata: make guard_step51_variable_provenance_bindings"
 	@echo "   Aggregate: make guard_step51_basic_unsafe_enforcement"
 	@echo "   Report-only / deferred lanes:"
 	@echo "   🧭 FFI layout annotations and sandboxed FFI: make report_step51_phase_d_ffi_status"
@@ -941,7 +941,7 @@ guard_step51_expression_provenance_carrier: gust
 	@echo "✅ Step 5.1 expression provenance carrier helpers guard passed."
 
 guard_step51_variable_provenance_bindings: gust
-	@echo "🔒 Checking Step 5.1 variable provenance binding/assignment metadata..."
+	@echo "🔒 Checking Step 5.1 variable provenance binding/assignment/readback metadata..."
 	@mkdir -p build
 	@./gust compiler/typechecker_variable_provenance_test_entry.gst > build/step51_variable_provenance_bindings.log 2>&1; \
 	status=$$?; \
@@ -960,7 +960,7 @@ guard_step51_variable_provenance_bindings: gust
 		cat build/step51_variable_provenance_bindings.log; \
 		exit $$status; \
 	fi
-	@echo "✅ Step 5.1 variable provenance binding/assignment metadata guard passed."
+	@echo "✅ Step 5.1 variable provenance binding/assignment/readback metadata guard passed."
 
 guard_step51_basic_unsafe_enforcement: guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement
 	@echo "✅ Step 5.1 basic unsafe enforcement aggregate passed."

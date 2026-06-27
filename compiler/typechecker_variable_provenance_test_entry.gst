@@ -23,6 +23,10 @@ func main() {
     typechecker.set_add(source_origins_varprov, "root_ctx", ctx);
     env.variable_origins.Insert("source_view", source_origins_varprov);
 
+    mut source_prov_varprov := typechecker.expression_provenance_raw_derived(t_str_src, ctx);
+    source_prov_varprov.legacy_origins = source_origins_varprov;
+    typechecker.env_record_variable_provenance(&env, "source_view", source_prov_varprov, ctx);
+
     mut lex_decl_varprov: lexer.Lexer[ctx];
     lexer.init_lexer(&lex_decl_varprov, "mut alias_view: str := source_view;");
     mut parser_decl_varprov: parser.Parser[ctx];
@@ -43,8 +47,8 @@ func main() {
             os.LogStr("Error: declaration provenance did not preserve source legacy origin");
             os.Exit(1);
         }
-        if alias_prov_varprov.address_origin.is_unknown != 1 {
-            os.LogStr("Error: declaration provenance should keep inert unknown address origin");
+        if alias_prov_varprov.address_origin.is_raw_derived != 1 {
+            os.LogStr("Error: declaration provenance did not preserve raw-derived address origin");
             os.Exit(1);
         }
     } else {
@@ -79,8 +83,8 @@ func main() {
             os.LogStr("Error: assignment provenance did not preserve source legacy origin");
             os.Exit(1);
         }
-        if target_prov_varprov.address_origin.is_unknown != 1 {
-            os.LogStr("Error: assignment provenance should keep inert unknown address origin");
+        if target_prov_varprov.address_origin.is_raw_derived != 1 {
+            os.LogStr("Error: assignment provenance did not preserve raw-derived address origin");
             os.Exit(1);
         }
     } else {
