@@ -110,6 +110,15 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_ffi_calls:' "$PROJ
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_ffi_focused:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step51_ffi_focused ---"
+        (cd "$PROJECT_ROOT" && make report_step51_ffi_focused)
+        echo "--- END OF REPORT make report_step51_ffi_focused ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_phase_b_wrapping_status:' "$PROJECT_ROOT/Makefile"; then
     {
         echo "--- START OF REPORT make report_step51_phase_b_wrapping_status ---"
