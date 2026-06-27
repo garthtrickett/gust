@@ -3238,13 +3238,13 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
         mut enum_lookup := (*env).enum_templates.Get(template_name);
             if enum_lookup.Ok {
                 mut template := enum_lookup.Val;
-                mut generics_vec := &ctx[template.generics] as *std.Vector[str, ctx];
-                if len(*generics_vec) != len(args) {
+                mut generics_vec_enum_template: std.Vector[str, ctx] := ctx[template.generics];
+                if len(generics_vec_enum_template) != len(args) {
                     mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[err].kind.tag = 2; // TypeError
                     mut msg := std.Concat("Semantic Error: Template '", template_name);
                     msg = std.Concat(msg, "' expects ");
-                    msg = std.Concat(msg, std.FormatInt(len(*generics_vec)));
+                    msg = std.Concat(msg, std.FormatInt(len(generics_vec_enum_template)));
                     msg = std.Concat(msg, " generic arguments but got ");
                     msg = std.Concat(msg, std.FormatInt(len(args)));
                     ctx[err].message = std.Clone(ctx, msg);
@@ -3256,8 +3256,8 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
             mut substitution_map: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
             mut i := 0;
-            while i < len(*generics_vec) {
-                substitution_map.Insert(std.Clone(ctx, (*generics_vec)[i]), args[i]);
+            while i < len(generics_vec_enum_template) {
+                substitution_map.Insert(std.Clone(ctx, generics_vec_enum_template[i]), args[i]);
                 i = i + 1;
             }
 
@@ -3267,14 +3267,13 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
             mut brand: Index[str, ctx] := empty[Index[str, ctx]];
             mut j := 0;
-            while j < len(*generics_vec) {
-                mut g_name := (*generics_vec)[j];
+            while j < len(generics_vec_enum_template) {
+                mut g_name := generics_vec_enum_template[j];
                 if std.str_eq(g_name, "ctx") || std.str_eq(g_name, "connCtx") || std.str_eq(g_name, "arena") || std.str_eq(g_name, "a") {
                     mut arg := args[j];
                     if arg.tag == 8 { // Struct
                         brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                        mut ptr := &ctx[brand] as *str;
-                        *ptr = std.Clone(ctx, arg.Struct.struct_name);
+                        ctx[brand] = std.Clone(ctx, arg.Struct.struct_name);
                     }
                 }
                 j = j + 1;
@@ -3296,20 +3295,20 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                 t_int.tag = 0; // Int
                 enum_fields.Insert(std.Clone(ctx, "tag"), t_int);
 
-                mut variants_vec := &ctx[template.variants] as *std.Vector[ast.VariantDef[ctx], ctx];
+                mut variants_vec_enum_template: std.Vector[ast.VariantDef[ctx], ctx] := ctx[template.variants];
                 mut concrete_variants: std.Vector[str, ctx] := std.VectorNew(ctx);
                 mut v_idx := 0;
-                while v_idx < len(*variants_vec) {
-                    mut variant := (*variants_vec)[v_idx];
+                while v_idx < len(variants_vec_enum_template) {
+                    mut variant := variants_vec_enum_template[v_idx];
                     concrete_variants.Push(std.Clone(ctx, variant.name));
                     mut concrete_variant_struct_name := std.Concat(concrete_name, "_");
                     concrete_variant_struct_name = std.Concat(concrete_variant_struct_name, variant.name);
 
                     mut variant_fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
-                    mut vfields_vec := &ctx[variant.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+                    mut vfields_vec_enum_template: std.Vector[ast.FieldDef[ctx], ctx] := ctx[variant.fields];
                     mut f_idx := 0;
-                    while f_idx < len(*vfields_vec) {
-                        mut field := (*vfields_vec)[f_idx];
+                    while f_idx < len(vfields_vec_enum_template) {
+                        mut field := vfields_vec_enum_template[f_idx];
                         mut substituted_type := substitute_generics(env, field.field_type, substitution_map, ctx);
                         mut resolved_field_type := env_resolve_type(env, substituted_type, ctx);
 
@@ -3386,13 +3385,13 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
         mut struct_lookup := (*env).struct_templates.Get(template_name);
         if struct_lookup.Ok {
             mut template := struct_lookup.Val;
-            mut generics_vec := &ctx[template.generics] as *std.Vector[str, ctx];
-            if len(*generics_vec) != len(args) {
+            mut generics_vec_struct_template: std.Vector[str, ctx] := ctx[template.generics];
+            if len(generics_vec_struct_template) != len(args) {
                 mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[err].kind.tag = 2; // TypeError
                 mut msg := std.Concat("Semantic Error: Template '", template_name);
                 msg = std.Concat(msg, "' expects ");
-                msg = std.Concat(msg, std.FormatInt(len(*generics_vec)));
+                msg = std.Concat(msg, std.FormatInt(len(generics_vec_struct_template)));
                 msg = std.Concat(msg, " generic arguments but got ");
                 msg = std.Concat(msg, std.FormatInt(len(args)));
                 ctx[err].message = std.Clone(ctx, msg);
@@ -3404,8 +3403,8 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
             mut substitution_map: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
             mut i := 0;
-            while i < len(*generics_vec) {
-                substitution_map.Insert(std.Clone(ctx, (*generics_vec)[i]), args[i]);
+            while i < len(generics_vec_struct_template) {
+                substitution_map.Insert(std.Clone(ctx, generics_vec_struct_template[i]), args[i]);
                 i = i + 1;
             }
 
@@ -3415,14 +3414,13 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
             mut brand: Index[str, ctx] := empty[Index[str, ctx]];
             mut j := 0;
-            while j < len(*generics_vec) {
-                mut g_name := (*generics_vec)[j];
+            while j < len(generics_vec_struct_template) {
+                mut g_name := generics_vec_struct_template[j];
                 if std.str_eq(g_name, "ctx") || std.str_eq(g_name, "connCtx") || std.str_eq(g_name, "arena") || std.str_eq(g_name, "a") {
                     mut arg := args[j];
                     if arg.tag == 8 { // Struct
                         brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                        mut ptr := &ctx[brand] as *str;
-                        *ptr = std.Clone(ctx, arg.Struct.struct_name);
+                        ctx[brand] = std.Clone(ctx, arg.Struct.struct_name);
                     }
                 }
                 j = j + 1;
@@ -3441,10 +3439,10 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
 
 
                 mut concrete_fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
-                       mut fields_vec := &ctx[template.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+                       mut fields_vec_struct_template: std.Vector[ast.FieldDef[ctx], ctx] := ctx[template.fields];
                        mut f_idx := 0;
-                       while f_idx < len(*fields_vec) {
-                           mut field := (*fields_vec)[f_idx];
+                       while f_idx < len(fields_vec_struct_template) {
+                           mut field := fields_vec_struct_template[f_idx];
 
                            mut log_start := std.Format('monomorphize_impl field: %s - start', field.name);
                            typechecker_log_trace('⚙', log_start, ctx);
@@ -3472,8 +3470,8 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                 // Ephemeral view checking for unbranded monomorphization
                 if brand == empty[Index[str, ctx]] {
                     mut f := 0;
-                    while f < len(*fields_vec) {
-                        mut field := (*fields_vec)[f];
+                    while f < len(fields_vec_struct_template) {
+                        mut field := fields_vec_struct_template[f];
                         mut lookup := concrete_fields.Get(field.name);
                         if lookup.Ok {
                             mut field_type := lookup.Val;
