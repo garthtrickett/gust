@@ -48,7 +48,7 @@ bootstrap: gust
 	touch build/gust_compiler.c
 	touch gust
 
-test: gust guard_step45_safe_subscript_write_enforcement guard_step51_basic_unsafe_enforcement guard_step51_extern_func_parser_metadata guard_step51_extern_func_call_enforcement guard_step51_layout_metadata_defaults guard_step51_layout_ffi_policy_helpers guard_step51_layout_ffi_signature_helpers guard_step51_sandbox_policy_defaults guard_step51_address_origin_metadata guard_step51_expression_provenance_carrier guard_step51_variable_provenance_bindings guard_step51_return_provenance_capture guard_step51_report_only_lanes_not_in_test guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
+test: gust guard_step45_safe_subscript_write_enforcement guard_step51_basic_unsafe_enforcement guard_step51_extern_func_parser_metadata guard_step51_extern_func_call_enforcement guard_step51_layout_metadata_defaults guard_step51_layout_ffi_policy_helpers guard_step51_layout_ffi_signature_helpers guard_step51_sandbox_policy_defaults guard_step51_address_origin_metadata guard_step51_expression_provenance_carrier guard_step51_variable_provenance_bindings guard_step51_return_provenance_capture guard_step51_function_call_provenance guard_step51_report_only_lanes_not_in_test guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
 	@mkdir -p build
 	@echo "⚙️  Compiling native Gust test runner..."
 	@./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
@@ -200,7 +200,8 @@ report_step51_phase_f_non_laundering_status:
 	@echo "   Inert expression carrier: make guard_step51_expression_provenance_carrier"
 	@echo "   Inert variable binding/assignment metadata: make guard_step51_variable_provenance_bindings"
 	@echo "   Inert return provenance capture: make guard_step51_return_provenance_capture"
-	@echo "   Propagation must still preserve raw-derived and sandbox-derived origins through calls, aggregate fields, and container storage."
+	@echo "   Inert function-call return provenance: make guard_step51_function_call_provenance"
+	@echo "   Propagation must still preserve raw-derived and sandbox-derived origins through aggregate fields and container storage."
 	@echo "   Existing narrow escape-analysis coverage remains guarded by make guard_step51_raw_pointer_local_escape_enforcement."
 	@echo "   Still deferred: compiler-backed broad non-laundering enforcement and safe-branding rejection guards."
 	@echo "✅ Step 5.1F non-laundering/provenance status report complete. This target is report-only and does not run guards."
@@ -214,7 +215,7 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   - #[repr(C)] / #[packed] layout attributes"
 	@echo "   - sandboxed FFI sub-arenas"
 	@echo "   - address-origin metadata and address-escape enforcement"
-	@echo "   - full raw-derived provenance/non-laundering through assignments, calls, returns, and containers"
+	@echo "   - full raw-derived provenance/non-laundering through aggregate fields, containers, and rejection guards"
 	@echo "   Inert compiler carrier: FunctionSignature has direct FFI metadata fields."
 	@echo "   Inert AST carrier: FunctionDecl carries matching direct FFI metadata defaults."
 	@echo "   Inert extern syntax: parser accepts extern func with C ABI defaults and unsafe-call metadata."
@@ -232,7 +233,8 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   Inert expression provenance carrier: make guard_step51_expression_provenance_carrier"
 	@echo "   Inert variable binding/assignment/readback provenance: make guard_step51_variable_provenance_bindings"
 	@echo "   Inert return provenance capture: make guard_step51_return_provenance_capture"
-	@echo "   Next implementation checkpoint: thread expression provenance through calls/aggregate fields/containers, then narrow non-laundering fixtures."
+	@echo "   Inert function-call return provenance: make guard_step51_function_call_provenance"
+	@echo "   Next implementation checkpoint: thread expression provenance through aggregate fields/containers, then narrow non-laundering fixtures."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
 
@@ -254,6 +256,7 @@ report_step51_status_matrix:
 	@echo "   ✅ expression provenance carrier helpers: make guard_step51_expression_provenance_carrier"
 	@echo "   ✅ variable binding/assignment/readback provenance metadata: make guard_step51_variable_provenance_bindings"
 	@echo "   ✅ return expression provenance capture: make guard_step51_return_provenance_capture"
+	@echo "   ✅ function-call return provenance metadata: make guard_step51_function_call_provenance"
 	@echo "   Aggregate: make guard_step51_basic_unsafe_enforcement"
 	@echo "   Report-only / deferred lanes:"
 	@echo "   🧭 FFI layout annotations and sandboxed FFI: make report_step51_phase_d_ffi_status"
@@ -986,6 +989,28 @@ guard_step51_return_provenance_capture: gust
 		exit $$status; \
 	fi
 	@echo "✅ Step 5.1 inert return expression provenance capture guard passed."
+
+guard_step51_function_call_provenance: gust
+	@echo "🔒 Checking Step 5.1 inert function-call return provenance metadata..."
+	@mkdir -p build
+	@./gust compiler/typechecker_function_call_provenance_test_entry.gst > build/step51_function_call_provenance.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "❌ Step 5.1 function-call provenance guard failed: compiler rejected the fixture."; \
+		cat build/step51_function_call_provenance.log; \
+		exit $$status; \
+	fi
+	@grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/step51_function_call_provenance.log > build/typechecker_function_call_provenance_test_entry.c
+	@cat src/runtime.c build/typechecker_function_call_provenance_test_entry.c > build/typechecker_function_call_provenance_test_entry_final.c
+	@${CC} ${CFLAGS} ${INCLUDES} build/typechecker_function_call_provenance_test_entry_final.c -o build/typechecker_function_call_provenance_test_entry_bin
+	@./build/typechecker_function_call_provenance_test_entry_bin >> build/step51_function_call_provenance.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "❌ Step 5.1 function-call provenance guard failed at runtime."; \
+		cat build/step51_function_call_provenance.log; \
+		exit $$status; \
+	fi
+	@echo "✅ Step 5.1 inert function-call return provenance metadata guard passed."
 
 guard_step51_basic_unsafe_enforcement: guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement
 	@echo "✅ Step 5.1 basic unsafe enforcement aggregate passed."
