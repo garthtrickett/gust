@@ -12,9 +12,10 @@ func parser_thread(arg: *ThreadArg[ctx]) {
         mut file_ctx := move (*arg).file_ctx;
         
         mut node: Index[ASTNode, file_ctx] := os.ArenaAlloc(file_ctx);
-        file_ctx[node].op = 43;
-        file_ctx[node].left_val = 200;
-        file_ctx[node].right_val = 50;
+        mut node_ref_parallel := file_ctx.get_ref(node);
+        node_ref_parallel.op = 43;
+        node_ref_parallel.left_val = 200;
+        node_ref_parallel.right_val = 50;
 
         (*arg).out_chan.Send(move file_ctx);
     } 

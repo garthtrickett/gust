@@ -27,9 +27,10 @@ func main() {
     defer next_ctx.Free();
 
     mut node: Index[MyNode, current_ctx] := os.ArenaAlloc(current_ctx);
-    current_ctx[node].id = 42;
-    current_ctx[node].name = "root_node";
-    current_ctx[node].next = null;
+    mut node_ref_formatting := current_ctx.get_ref(node);
+    node_ref_formatting.id = 42;
+    node_ref_formatting.name = "root_node";
+    node_ref_formatting.next = null;
 
     mut cloned: Index[MyNode, next_ctx] := std.Clone(next_ctx, node);
     os.LogInt(next_ctx[cloned].id);
