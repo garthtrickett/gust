@@ -2,9 +2,9 @@
 '''Step 5.1 focused address-escape inventory helper.
 
 This helper is intentionally textual and report-only. It separates likely
-address-escape expressions from reference type syntax, generated strings, and
-comments before any compiler-backed address-escape rule is designed. It is not an enforcement
-mechanism.
+safe-code address-escape expressions from already-unsafe address expressions,
+reference type syntax, generated strings, and comments before any compiler-backed
+address-escape rule is designed. It is not an enforcement mechanism.
 '''
 
 from __future__ import annotations
@@ -98,6 +98,31 @@ def line_terms(line: str) -> str:
     return ', '.join(found)
 
 
+def line_is_unsafe_context(code: str, stack: list[bool]) -> bool:
+    if any(stack):
+        return True
+    if re.search(r'\bunsafe\s*\{', code) is not None:
+        return True
+    if re.search(r'\bunsafe\s+func\b[^{]*\{', code) is not None:
+        return True
+    return False
+
+
+def update_unsafe_stack(code: str, stack: list[bool]) -> None:
+    for idx, ch in enumerate(code):
+        if ch == '{':
+            prefix = code[:idx]
+            is_unsafe = (
+                any(stack)
+                or re.search(r'\bunsafe\s*$', prefix) is not None
+                or re.search(r'\bunsafe\s+func\b[^{]*$', prefix) is not None
+            )
+            stack.append(is_unsafe)
+        elif ch == '}':
+            if stack:
+                stack.pop()
+
+
 def iter_source_files() -> list[Path]:
     files: list[Path] = []
     for root in SCAN_ROOTS:
@@ -126,22 +151,25 @@ def print_bucket(title: str, entries: list[tuple[Path, int, str, str]]) -> None:
 
 
 def print_summary(
-    direct_source: list[tuple[Path, int, str, str]],
+    safe_code_candidates: list[tuple[Path, int, str, str]],
+    unsafe_context: list[tuple[Path, int, str, str]],
     reference_type_syntax: list[tuple[Path, int, str, str]],
     generated_or_string: list[tuple[Path, int, str, str]],
     comment_only: list[tuple[Path, int, str, str]],
 ) -> None:
     print('Summary:')
-    print(f'Direct source address-escape candidates: {len(direct_source)}')
+    print(f'Direct safe-code address-escape candidates: {len(safe_code_candidates)}')
+    print(f'Already-unsafe address expressions: {len(unsafe_context)}')
     print(f'Reference type syntax entries: {len(reference_type_syntax)}')
     print(f'Generated string/template references: {len(generated_or_string)}')
     print(f'Comment-only references: {len(comment_only)}')
-    print('Report-only: address-escape enforcement remains deferred until direct candidates are inspected semantically.')
+    print('Report-only: address-escape enforcement remains deferred until safe-code candidates are inspected semantically.')
     print()
 
 
 def main() -> None:
-    direct_source: list[tuple[Path, int, str, str]] = []
+    safe_code_candidates: list[tuple[Path, int, str, str]] = []
+    unsafe_context: list[tuple[Path, int, str, str]] = []
     reference_type_syntax: list[tuple[Path, int, str, str]] = []
     generated_or_string: list[tuple[Path, int, str, str]] = []
     comment_only: list[tuple[Path, int, str, str]] = []
@@ -152,13 +180,15 @@ def main() -> None:
         except UnicodeDecodeError:
             lines = path.read_text(errors='replace').splitlines()
 
+        unsafe_stack: list[bool] = []
         for line_no, raw in enumerate(lines, start=1):
+            stripped = strip_comments_and_strings(raw)
             raw_terms = line_terms(raw)
             raw_reference_terms = line_reference_type_terms(raw)
             if raw_terms == '' and raw_reference_terms == '':
+                update_unsafe_stack(stripped, unsafe_stack)
                 continue
 
-            stripped = strip_comments_and_strings(raw)
             stripped_terms = line_terms(stripped)
             stripped_reference_terms = line_reference_type_terms(stripped)
 
@@ -169,18 +199,24 @@ def main() -> None:
                     add_entry(comment_only, path, line_no, raw, raw_terms)
                 else:
                     add_entry(generated_or_string, path, line_no, raw, raw_terms)
+                update_unsafe_stack(stripped, unsafe_stack)
                 continue
 
-            add_entry(direct_source, path, line_no, raw, stripped_terms)
+            if line_is_unsafe_context(stripped, unsafe_stack):
+                add_entry(unsafe_context, path, line_no, raw, stripped_terms)
+            else:
+                add_entry(safe_code_candidates, path, line_no, raw, stripped_terms)
+            update_unsafe_stack(stripped, unsafe_stack)
 
     print('Focused Step 5.1 address-escape inventory')
     print('==========================================')
     print()
-    print_bucket('Direct source address-escape candidates:', direct_source)
+    print_bucket('Direct safe-code address-escape candidates:', safe_code_candidates)
+    print_bucket('Already-unsafe address expressions:', unsafe_context)
     print_bucket('Reference type syntax entries:', reference_type_syntax)
     print_bucket('Generated string/template address references:', generated_or_string)
     print_bucket('Comment-only address references:', comment_only)
-    print_summary(direct_source, reference_type_syntax, generated_or_string, comment_only)
+    print_summary(safe_code_candidates, unsafe_context, reference_type_syntax, generated_or_string, comment_only)
     print('Report-only: do not wire this helper into make test as an enforcement gate.')
 
 
