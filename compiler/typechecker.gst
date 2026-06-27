@@ -4370,8 +4370,7 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
             mut brand_name := "";
             if t.Index.brand != empty[Index[str, ctx]] {
                 typechecker_log_trace('🔍', 'env_resolve_type Index: before reading brand', ctx);
-                mut brand_str_ptr := &ctx[t.Index.brand] as *str; 
-                brand_name = *brand_str_ptr;
+                brand_name = ctx[t.Index.brand];
                 typechecker_log_trace('🔍', 'env_resolve_type Index: successfully read brand', ctx);
             }
             mut temp_struct := make_type_struct(t.Index.struct_name, brand_name, ctx);
@@ -4393,8 +4392,7 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                 
                 mut brand_name := 'None';
                 if t.Struct.brand != empty[Index[str, ctx]] {
-                    mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
-                    brand_name = *brand_str_ptr;
+                    brand_name = ctx[t.Struct.brand];
                 }
                 mut log_msg := std.Format('env_resolve_type Struct: name=%s, brand=%s', namespaced_name, brand_name);
                 typechecker_log_trace('📥', log_msg, ctx);
@@ -4617,11 +4615,11 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                             mut log_msg := std.Format('env_resolve_type Generic: name=%s', name);
                             typechecker_log_trace('📥', log_msg, ctx);
                             
-                            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+                            mut args_vec_env_resolve_generic: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
                             mut new_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
                             mut i := 0;
-                            while i < len(*args_vec) {
-                                mut arg := (*args_vec)[i];
+                            while i < len(args_vec_env_resolve_generic) {
+                                mut arg := args_vec_env_resolve_generic[i];
                                 new_args.Push(env_resolve_type(env, arg, ctx));
                                 i = i + 1;
                             }
@@ -4668,8 +4666,8 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
 
             mut is_generic := 0;
             if stmt.StructDecl.generics != empty[Index[std.Vector[str, ctx], ctx]] {
-                mut generics_vec := &ctx[stmt.StructDecl.generics] as *std.Vector[str, ctx];
-                if len(*generics_vec) > 0 {
+                mut generics_vec_struct_decl: std.Vector[str, ctx] := ctx[stmt.StructDecl.generics];
+                if len(generics_vec_struct_decl) > 0 {
                     is_generic = 1;
                 }
             }
@@ -4684,10 +4682,10 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 layout.brand = empty[Index[str, ctx]];
                 layout.fields = std.HashMapNew(ctx);
 
-                mut fields_vec := &ctx[stmt.StructDecl.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+                mut fields_vec_struct_decl: std.Vector[ast.FieldDef[ctx], ctx] := ctx[stmt.StructDecl.fields];
                 mut i := 0;
-                while i < len(*fields_vec) {
-                    mut f := (*fields_vec)[i];
+                while i < len(fields_vec_struct_decl) {
+                    mut f := fields_vec_struct_decl[i];
                     mut resolved_t := env_resolve_type(env, f.field_type, ctx);
 
                     if (resolved_t.tag == 5 || resolved_t.tag == 6 || resolved_t.tag == 11)
@@ -4712,8 +4710,8 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
 
             mut is_generic := 0;
             if stmt.EnumDecl.generics != empty[Index[std.Vector[str, ctx], ctx]] {
-                mut generics_vec := &ctx[stmt.EnumDecl.generics] as *std.Vector[str, ctx];
-                if len(*generics_vec) > 0 {
+                mut generics_vec_enum_decl: std.Vector[str, ctx] := ctx[stmt.EnumDecl.generics];
+                if len(generics_vec_enum_decl) > 0 {
                     is_generic = 1;
                 }
             }
@@ -4733,10 +4731,10 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 enum_layout.fields.Insert(std.Clone(ctx, "tag"), t_int);
 
                 mut variants_list: std.Vector[str, ctx] := std.VectorNew(ctx);
-                mut variants_vec := &ctx[stmt.EnumDecl.variants] as *std.Vector[ast.VariantDef[ctx], ctx];
+                mut variants_vec_enum_decl: std.Vector[ast.VariantDef[ctx], ctx] := ctx[stmt.EnumDecl.variants];
                 mut i := 0;
-                while i < len(*variants_vec) {
-                    mut v := (*variants_vec)[i];
+                while i < len(variants_vec_enum_decl) {
+                    mut v := variants_vec_enum_decl[i];
                     variants_list.Push(std.Clone(ctx, v.name));
                     mut variant_struct_name := std.Concat(namespaced_name, "_");
                     variant_struct_name = std.Concat(variant_struct_name, v.name);
@@ -4745,10 +4743,10 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                     variant_layout.brand = empty[Index[str, ctx]];
                     variant_layout.fields = std.HashMapNew(ctx);
 
-                    mut fields_vec := &ctx[v.fields] as *std.Vector[ast.FieldDef[ctx], ctx];
+                    mut fields_vec_enum_variant: std.Vector[ast.FieldDef[ctx], ctx] := ctx[v.fields];
                     mut j := 0;
-                    while j < len(*fields_vec) {
-                        mut f := (*fields_vec)[j];
+                    while j < len(fields_vec_enum_variant) {
+                        mut f := fields_vec_enum_variant[j];
                         mut resolved_t := env_resolve_type(env, f.field_type, ctx);
 
                         if resolved_t.tag == 8 { // Struct
@@ -4799,10 +4797,10 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             sig.param_names = std.VectorNew(ctx);
             sig.params = std.VectorNew(ctx);
 
-            mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
+            mut params_vec_function_decl: std.Vector[ast.Parameter[ctx], ctx] := ctx[stmt.FunctionDecl.params];
             mut i := 0;
-            while i < len(*params_vec) {
-                mut p := (*params_vec)[i];
+            while i < len(params_vec_function_decl) {
+                mut p := params_vec_function_decl[i];
                 sig.param_names.Push(std.Clone(ctx, p.name));
 
                 mut resolved_param_type := env_resolve_type(env, p.param_type, ctx);
