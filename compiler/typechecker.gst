@@ -214,6 +214,7 @@ type TypeEnvironment[ctx] struct {
     errors: std.Vector[errors.CompilerError[ctx], ctx],
     expected_return_type: Index[ast.Type[ctx], ctx],
     current_function_return_origins: Index[OriginSet[ctx], ctx],
+    current_function_return_provenance: ExpressionProvenance[ctx],
     current_function_inout_params: Index[std.Vector[str, ctx], ctx],
     current_function_local_vars: Index[OriginSet[ctx], ctx],
     checked_results: std.HashMap[str, int, ctx],
@@ -329,6 +330,12 @@ func expression_provenance_requires_unsafe_boundary(prov: ExpressionProvenance[c
 
 func expression_provenance_is_raw_or_sandbox_derived(prov: ExpressionProvenance[ctx]) int {
     return address_origin_is_raw_or_sandbox_derived(prov.address_origin);
+}
+
+func expression_provenance_void_unknown(ctx: &Arena) ExpressionProvenance[ctx] {
+    mut t_void_ret_prov: ast.Type[ctx];
+    t_void_ret_prov.tag = 3; // Void
+    return expression_provenance_unknown(t_void_ret_prov, ctx);
 }
 
 func expression_provenance_for_self_binding(name: str, t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
@@ -4582,6 +4589,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.errors = std.VectorNew(ctx);
         env_ref_new.expected_return_type = empty[Index[ast.Type[ctx], ctx]];
         env_ref_new.current_function_return_origins = empty[Index[OriginSet[ctx], ctx]];
+        env_ref_new.current_function_return_provenance = expression_provenance_void_unknown(ctx);
         env_ref_new.current_function_inout_params = empty[Index[std.Vector[str, ctx], ctx]];
         env_ref_new.current_function_local_vars = empty[Index[OriginSet[ctx], ctx]];
         env_ref_new.checked_results = std.HashMapNew(ctx);
@@ -6516,6 +6524,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             // Save old function contexts
             mut old_expected := (*env).expected_return_type;
             mut old_return_origins := (*env).current_function_return_origins;
+            mut old_return_provenance := (*env).current_function_return_provenance;
             mut old_inout_params := (*env).current_function_inout_params;
             mut old_local_vars := (*env).current_function_local_vars;
             mut old_in_unsafe_func_body := (*env).in_unsafe_block;
@@ -6527,6 +6536,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             ctx.Set(resolved_ret_idx, env_resolve_type(env, ctx[return_type_idx], ctx));
             (*env).expected_return_type = resolved_ret_idx;
             (*env).current_function_return_origins = set_init(ctx);
+            (*env).current_function_return_provenance = expression_provenance_unknown(ctx[resolved_ret_idx], ctx);
             
             mut inout_params_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
             ctx.Set(inout_params_idx, inout_params);
@@ -6606,6 +6616,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).variable_origins = parent_origins;
             (*env).expected_return_type = old_expected;
             (*env).current_function_return_origins = old_return_origins;
+            (*env).current_function_return_provenance = old_return_provenance;
             (*env).current_function_inout_params = old_inout_params;
             (*env).current_function_local_vars = old_local_vars;
             (*env).in_unsafe_block = old_in_unsafe_func_body;
@@ -7472,10 +7483,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             actual_return.tag = 3; // Void
 
             if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                actual_return = check_expression(expr_idx, env, scope, ctx);
-                actual_return = env_resolve_type(env, actual_return, ctx);
+                mut return_prov_stmt := check_expression_with_provenance(expr_idx, env, scope, ctx);
+                actual_return = env_resolve_type(env, return_prov_stmt.resolved_type, ctx);
 
-                mut expr_origins := get_expression_origins(expr_idx, env, ctx);
+                mut expr_origins := typechecker_clone_origin_set(return_prov_stmt.legacy_origins, ctx);
+                return_prov_stmt.resolved_type = actual_return;
+                return_prov_stmt.legacy_origins = expr_origins;
 
                 if set_contains(expr_origins, "scratch", ctx) == 1 {
                     // Safe Scratchpad-allocated view check (Step 3 verification)
@@ -7507,6 +7520,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 if (*env).current_function_return_origins != empty[Index[OriginSet[ctx], ctx]] {
                     mut return_origins := (*env).current_function_return_origins;
                     set_union(return_origins, expr_origins, ctx);
+                    (*env).current_function_return_provenance = expression_provenance_join((*env).current_function_return_provenance, return_prov_stmt, ctx);
                 }
             }
 

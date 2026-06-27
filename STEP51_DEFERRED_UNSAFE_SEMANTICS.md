@@ -108,7 +108,9 @@ The first implementation slice adds an inert `ExpressionProvenance[ctx]` carrier
 
 The second inert implementation slice records expression provenance for local variable declarations and assignment targets in `TypeEnvironment.variable_provenance`, while continuing to mirror the established `variable_origins` behavior. Identifier expressions now read back `variable_provenance` through `check_expression_with_provenance`, so address-origin metadata can survive local aliasing and assignment chains without introducing diagnostics. This slice is guarded by `make guard_step51_variable_provenance_bindings` and remains non-enforcing: it records and reads address-origin/legacy-origin metadata but does not yet emit non-laundering diagnostics.
 
-The first enforcement slice should be narrow and fixture-backed: reject returning a raw-derived or sandbox-derived value as `Index[T, ctx]` or `&T[ctx]` from a safe wrapper. Call, return, aggregate-field, and container enforcement can then be added incrementally after the variable provenance map and identifier readback path are stable and threaded through those paths.
+The third inert implementation slice records the provenance of return expressions in `TypeEnvironment.current_function_return_provenance` while continuing to update the legacy `current_function_return_origins` set. This slice is guarded by `make guard_step51_return_provenance_capture` and remains non-enforcing: it captures return-expression address-origin/legacy-origin metadata but does not yet reject safe-branded returns.
+
+The first enforcement slice should be narrow and fixture-backed: reject returning a raw-derived or sandbox-derived value as `Index[T, ctx]` or `&T[ctx]` from a safe wrapper. Call, aggregate-field, and container enforcement can then be added incrementally after the variable provenance map, identifier readback path, and return-provenance capture are stable.
 
 ### Layout-aware FFI validation helper checkpoint
 
