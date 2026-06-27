@@ -203,10 +203,10 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
             }
         }
         if t.tag == 10 { // Generic
-            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            mut args_vec: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
             mut i := 0;
-            while i < len(*args_vec) {
-                mut arg_t := (*args_vec)[i];
+            while i < len(args_vec) {
+                mut arg_t := args_vec[i];
                 env_check_brand_nesting(env, arg_t, parent_brand, span, ctx);
                 i = i + 1;
             }
@@ -368,10 +368,10 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
                         set_add(s, arena_root, ctx);
                     }
 
-                    mut args_vec_ref := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                    if len(*args_vec_ref) == 1 {
+                    mut args_vec_ref: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                    if len(args_vec_ref) == 1 {
                         mut arg0_idx_ref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_ref] = (*args_vec_ref)[0];
+                        ctx[arg0_idx_ref] = args_vec_ref[0];
                         mut arg_origins_ref := get_expression_origins(arg0_idx_ref, env, ctx);
                         set_union(s, arg_origins_ref, ctx);
                     }
@@ -383,16 +383,16 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
             if std.str_eq(resolved_func, "std_VectorGetRef") == 1 || std.str_eq(resolved_func, "std.VectorGetRef") == 1 {
                 mut s_alias_getref := set_init(ctx);
-                mut args_vec_alias_getref := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec_alias_getref) >= 1 {
+                mut args_vec_alias_getref: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_alias_getref) >= 1 {
                     mut vec_arg_idx_alias_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[vec_arg_idx_alias_getref] = (*args_vec_alias_getref)[0];
+                    ctx[vec_arg_idx_alias_getref] = args_vec_alias_getref[0];
                     mut vec_arg_origins_alias_getref := get_expression_origins(vec_arg_idx_alias_getref, env, ctx);
                     set_union(s_alias_getref, vec_arg_origins_alias_getref, ctx);
                 }
-                if len(*args_vec_alias_getref) >= 2 {
+                if len(args_vec_alias_getref) >= 2 {
                     mut idx_arg_idx_alias_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[idx_arg_idx_alias_getref] = (*args_vec_alias_getref)[1];
+                    ctx[idx_arg_idx_alias_getref] = args_vec_alias_getref[1];
                     mut idx_arg_origins_alias_getref := get_expression_origins(idx_arg_idx_alias_getref, env, ctx);
                     set_union(s_alias_getref, idx_arg_origins_alias_getref, ctx);
                 }
@@ -414,11 +414,11 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
                     mut sig := sig_lookup.Val;
                     if env_type_is_ephemeral_view(sig.return_type, ctx) == 1 {
                         mut s := set_init(ctx);
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         mut i := 0;
-                        while i < len(*args_vec) {
+                        while i < len(args_vec) {
                             mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg_idx] = (*args_vec)[i];
+                            ctx[arg_idx] = args_vec[i];
                             mut arg_origins := get_expression_origins(arg_idx, env, ctx);
                             set_union(s, arg_origins, ctx);
                             i = i + 1;
