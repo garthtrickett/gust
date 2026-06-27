@@ -101,6 +101,15 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_raw_pointer_safe_c
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_address_escapes_focused:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step51_address_escapes_focused ---"
+        (cd "$PROJECT_ROOT" && make report_step51_address_escapes_focused)
+        echo "--- END OF REPORT make report_step51_address_escapes_focused ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_ffi_calls:' "$PROJECT_ROOT/Makefile"; then
     {
         echo "--- START OF REPORT make report_step51_ffi_calls ---"
@@ -142,6 +151,15 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_phase_d_ffi_status
         echo "--- START OF REPORT make report_step51_phase_d_ffi_status ---"
         (cd "$PROJECT_ROOT" && make report_step51_phase_d_ffi_status)
         echo "--- END OF REPORT make report_step51_phase_d_ffi_status ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_phase_e_address_escape_status:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step51_phase_e_address_escape_status ---"
+        (cd "$PROJECT_ROOT" && make report_step51_phase_e_address_escape_status)
+        echo "--- END OF REPORT make report_step51_phase_e_address_escape_status ---"
         echo
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
