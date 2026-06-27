@@ -3776,13 +3776,14 @@ func codegen_generate_block_statement(block_idx: Index[ast.BlockStatement[ctx], 
         if block_idx == empty[Index[ast.BlockStatement[ctx], ctx]] {
             return "";
         }
-        mut body_statements := &ctx[ctx[block_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut block_val_codegen_block := ctx[block_idx];
+        mut body_statements_codegen_block: std.Vector[ast.Statement[ctx], ctx] := ctx[block_val_codegen_block.statements];
         mut res := "";
         mut defer_stack: std.Vector[str, ctx] := std.VectorNew(ctx);
         mut j := 0;
-        while j < len(*body_statements) {
+        while j < len(body_statements_codegen_block) {
             mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[child_stmt_idx] = (*body_statements)[j];
+            ctx[child_stmt_idx] = body_statements_codegen_block[j];
             
             mut stmt_tag := ctx[child_stmt_idx].tag;
             if stmt_tag == 11 { // Defer
@@ -3955,16 +3956,16 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             res = std.Concat(res, c_func_name);
             res = std.Concat(res, "(");
 
-            mut params_vec := &ctx[ctx[stmt_idx].FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
+            mut params_vec_function_emit: std.Vector[ast.Parameter[ctx], ctx] := ctx[ctx[stmt_idx].FunctionDecl.params];
             
             (*env).current_params.Clear();
             mut params_str := "";
             mut i := 0;
-            while i < len(*params_vec) { 
+            while i < len(params_vec_function_emit) { 
                 if i > 0 {
                     params_str = std.Concat(params_str, ", ");
                 }
-                mut p := (*params_vec)[i];
+                mut p := params_vec_function_emit[i];
                 (*env).current_params.Push(p.name);
                 mut p_type := p.param_type;
                 if sig_lookup.Ok { 
@@ -4070,12 +4071,12 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
 
                 mut val_expr_str := codegen_generate_expression(value, env, ctx);
 
-                mut else_statements := &ctx[ctx[else_body].statements] as *std.Vector[ast.Statement[ctx], ctx];
+                mut else_statements_guard_emit: std.Vector[ast.Statement[ctx], ctx] := ctx[ctx[else_body].statements];
                 mut else_c := "";
                 mut j := 0;
-                while j < len(*else_statements) { 
+                while j < len(else_statements_guard_emit) { 
                     mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[child_stmt_idx] = (*else_statements)[j];
+                    ctx[child_stmt_idx] = else_statements_guard_emit[j];
                     mut child_c := codegen_generate_statement(child_stmt_idx, env, ctx);
                     
                     mut indented_c := std.Concat("    ", child_c);
@@ -4196,10 +4197,10 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             res = std.Concat(res, "tag) {
 ");
 
-            mut cases_vec := &ctx[ctx[stmt_idx].Match.cases] as *std.Vector[ast.MatchCase[ctx], ctx];
+            mut cases_vec_match_emit: std.Vector[ast.MatchCase[ctx], ctx] := ctx[ctx[stmt_idx].Match.cases];
             mut i := 0;
-            while i < len(*cases_vec) {
-                mut case_val := (*cases_vec)[i];
+            while i < len(cases_vec_match_emit) {
+                mut case_val := cases_vec_match_emit[i];
                 mut tag_name := std.Concat(erased_enum_name, "_Tag__");
                 tag_name = std.Concat(tag_name, case_val.variant_name);
 
@@ -4232,10 +4233,10 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 }
 
                 if layout_lookup.Ok {
-                    mut fields_vec := &ctx[case_val.fields] as *std.Vector[str, ctx];
+                    mut fields_vec_match_emit: std.Vector[str, ctx] := ctx[case_val.fields];
                     mut f_idx := 0;
-                    while f_idx < len(*fields_vec) {
-                        mut field_name := (*fields_vec)[f_idx];
+                    while f_idx < len(fields_vec_match_emit) {
+                        mut field_name := fields_vec_match_emit[f_idx];
                         mut f_type_lookup := layout_lookup.Val.fields.Get(field_name);
                         if f_type_lookup.Ok {
                             mut ref_t: ast.Type[ctx];
