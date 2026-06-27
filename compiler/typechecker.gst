@@ -371,7 +371,7 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
                     mut args_vec_ref: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                     if len(args_vec_ref) == 1 {
                         mut arg0_idx_ref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_ref] = args_vec_ref[0];
+                        ctx.Set(arg0_idx_ref, args_vec_ref[0]);
                         mut arg_origins_ref := get_expression_origins(arg0_idx_ref, env, ctx);
                         set_union(s, arg_origins_ref, ctx);
                     }
@@ -386,13 +386,13 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
                 mut args_vec_alias_getref: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                 if len(args_vec_alias_getref) >= 1 {
                     mut vec_arg_idx_alias_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[vec_arg_idx_alias_getref] = args_vec_alias_getref[0];
+                    ctx.Set(vec_arg_idx_alias_getref, args_vec_alias_getref[0]);
                     mut vec_arg_origins_alias_getref := get_expression_origins(vec_arg_idx_alias_getref, env, ctx);
                     set_union(s_alias_getref, vec_arg_origins_alias_getref, ctx);
                 }
                 if len(args_vec_alias_getref) >= 2 {
                     mut idx_arg_idx_alias_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[idx_arg_idx_alias_getref] = args_vec_alias_getref[1];
+                    ctx.Set(idx_arg_idx_alias_getref, args_vec_alias_getref[1]);
                     mut idx_arg_origins_alias_getref := get_expression_origins(idx_arg_idx_alias_getref, env, ctx);
                     set_union(s_alias_getref, idx_arg_origins_alias_getref, ctx);
                 }
@@ -418,7 +418,7 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
                         mut i := 0;
                         while i < len(args_vec) {
                             mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg_idx] = args_vec[i];
+                            ctx.Set(arg_idx, args_vec[i]);
                             mut arg_origins := get_expression_origins(arg_idx, env, ctx);
                             set_union(s, arg_origins, ctx);
                             i = i + 1;
@@ -1048,7 +1048,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
 
                     mut arg0_idx_ref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg0_idx_ref] = args_vec_ref[0];
+                    ctx.Set(arg0_idx_ref, args_vec_ref[0]);
                     mut idx_type_ref := check_expression(arg0_idx_ref, env, scope, ctx);
                     idx_type_ref = env_resolve_type(env, idx_type_ref, ctx);
 
@@ -1096,7 +1096,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
 
                     mut idx_arg_arena_write: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[idx_arg_arena_write] = args_vec_arena_write[0];
+                    ctx.Set(idx_arg_arena_write, args_vec_arena_write[0]);
                     mut idx_type_arena_write := check_expression(idx_arg_arena_write, env, scope, ctx);
                     idx_type_arena_write = env_resolve_type(env, idx_type_arena_write, ctx);
 
@@ -1132,7 +1132,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
 
                     mut value_arg_arena_write: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[value_arg_arena_write] = args_vec_arena_write[1];
+                    ctx.Set(value_arg_arena_write, args_vec_arena_write[1]);
                     mut value_type_arena_write := check_expression(value_arg_arena_write, env, scope, ctx);
                     value_type_arena_write = env_resolve_type(env, value_type_arena_write, ctx);
 
@@ -1219,7 +1219,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut args_vec_channel_send: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_channel_send) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = args_vec_channel_send[0];
+                            ctx.Set(arg0_idx, args_vec_channel_send[0]);
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "_phantom", env, ctx);
@@ -1244,7 +1244,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut args_vec_vector_push: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_vector_push) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = args_vec_vector_push[0];
+                            ctx.Set(arg0_idx, args_vec_vector_push[0]);
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
@@ -1267,7 +1267,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
 
                         mut idx_arg_idx_vector_set: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[idx_arg_idx_vector_set] = args_vec_vector_set[0];
+                        ctx.Set(idx_arg_idx_vector_set, args_vec_vector_set[0]);
                         mut idx_arg_type_vector_set := check_expression(idx_arg_idx_vector_set, env, scope, ctx);
                         idx_arg_type_vector_set = env_resolve_type(env, idx_arg_type_vector_set, ctx);
 
@@ -1278,7 +1278,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
 
                         mut value_arg_idx_vector_set: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[value_arg_idx_vector_set] = args_vec_vector_set[1];
+                        ctx.Set(value_arg_idx_vector_set, args_vec_vector_set[1]);
                         mut value_arg_type_vector_set := check_expression(value_arg_idx_vector_set, env, scope, ctx);
                         value_arg_type_vector_set = env_resolve_type(env, value_arg_type_vector_set, ctx);
 
@@ -1316,7 +1316,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
 
                         mut arg0_idx_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getref] = args_vec_getref[0];
+                        ctx.Set(arg0_idx_getref, args_vec_getref[0]);
                         mut arg_type_getref := check_expression(arg0_idx_getref, env, scope, ctx);
                         arg_type_getref = env_resolve_type(env, arg_type_getref, ctx);
 
@@ -1342,7 +1342,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
 
                         mut arg0_idx_getopt: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getopt] = args_vec_getopt[0];
+                        ctx.Set(arg0_idx_getopt, args_vec_getopt[0]);
                         mut arg_type_getopt := check_expression(arg0_idx_getopt, env, scope, ctx);
                         arg_type_getopt = env_resolve_type(env, arg_type_getopt, ctx);
 
@@ -1372,11 +1372,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut args_vec_map_insert: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_map_insert) == 2 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = args_vec_map_insert[0];
+                            ctx.Set(arg0_idx, args_vec_map_insert[0]);
                             mut k_arg := check_expression(arg0_idx, env, scope, ctx);
 
                             mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg1_idx] = args_vec_map_insert[1];
+                            ctx.Set(arg1_idx, args_vec_map_insert[1]);
                             mut v_arg := check_expression(arg1_idx, env, scope, ctx);
 
                             mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
@@ -1402,7 +1402,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut args_vec_map_get: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_map_get) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = args_vec_map_get[0];
+                            ctx.Set(arg0_idx, args_vec_map_get[0]);
                             mut k_arg := check_expression(arg0_idx, env, scope, ctx);
 
                             mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
@@ -1447,7 +1447,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
 
                         mut arg0_idx_getref_map: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getref_map] = args_vec_getref_map[0];
+                        ctx.Set(arg0_idx_getref_map, args_vec_getref_map[0]);
                         mut k_arg_getref_map := check_expression(arg0_idx_getref_map, env, scope, ctx);
                         k_arg_getref_map = env_resolve_type(env, k_arg_getref_map, ctx);
 
@@ -1477,7 +1477,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
 
                         mut arg0_idx_getopt_map: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getopt_map] = args_vec_getopt_map[0];
+                        ctx.Set(arg0_idx_getopt_map, args_vec_getopt_map[0]);
                         mut k_arg_getopt_map := check_expression(arg0_idx_getopt_map, env, scope, ctx);
                         k_arg_getopt_map = env_resolve_type(env, k_arg_getopt_map, ctx);
 
@@ -1507,7 +1507,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut args_vec_map_remove: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_map_remove) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = args_vec_map_remove[0];
+                            ctx.Set(arg0_idx, args_vec_map_remove[0]);
                             mut k_arg := check_expression(arg0_idx, env, scope, ctx);
 
                             mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
@@ -1533,7 +1533,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             report_error(2, msg, expr.Call.span, env, ctx);
                         } else {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = args_vec_map_keys[0];
+                            ctx.Set(arg0_idx, args_vec_map_keys[0]);
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                             
                             mut is_arena_val := 0;
@@ -1577,7 +1577,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut args_vec_pool_alloc: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_pool_alloc) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = args_vec_pool_alloc[0];
+                            ctx.Set(arg0_idx, args_vec_pool_alloc[0]);
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
@@ -1606,7 +1606,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut args_vec_pool_free: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_pool_free) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = args_vec_pool_free[0];
+                            ctx.Set(arg0_idx, args_vec_pool_free[0]);
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
@@ -1671,7 +1671,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut args_vec_graph_addnode: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_graph_addnode) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = args_vec_graph_addnode[0];
+                            ctx.Set(arg0_idx, args_vec_graph_addnode[0]);
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                             
                             // Get value type
@@ -1711,11 +1711,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut args_vec_graph_addedge: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_graph_addedge) == 2 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = args_vec_graph_addedge[0];
+                            ctx.Set(arg0_idx, args_vec_graph_addedge[0]);
                             mut from_type := check_expression(arg0_idx, env, scope, ctx);
                             
                             mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg1_idx] = args_vec_graph_addedge[1];
+                            ctx.Set(arg1_idx, args_vec_graph_addedge[1]);
                             mut to_type := check_expression(arg1_idx, env, scope, ctx);
 
                             mut graph_brand := left_type.Struct.brand;
@@ -1769,7 +1769,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut args_vec_graph_getnode: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_graph_getnode) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx); 
-                            ctx[arg0_idx] = args_vec_graph_getnode[0];
+                            ctx.Set(arg0_idx, args_vec_graph_getnode[0]);
                             mut index_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut graph_brand := left_type.Struct.brand;
@@ -1830,7 +1830,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     report_error(2, msg, expr.Call.span, env, ctx);
                 } else {
                     mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg0_idx] = args_vec_len_call[0];
+                    ctx.Set(arg0_idx, args_vec_len_call[0]);
                     check_expression(arg0_idx, env, scope, ctx);
                 }
                 mut t_int: ast.Type[ctx];
@@ -1847,7 +1847,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 mut vec_arg_idx_vector_getref_alias: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[vec_arg_idx_vector_getref_alias] = args_vec_vector_getref_alias[0];
+                ctx.Set(vec_arg_idx_vector_getref_alias, args_vec_vector_getref_alias[0]);
                 mut vec_arg_type_vector_getref_alias := check_expression(vec_arg_idx_vector_getref_alias, env, scope, ctx);
                 vec_arg_type_vector_getref_alias = env_resolve_type(env, vec_arg_type_vector_getref_alias, ctx);
 
@@ -1875,7 +1875,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 mut idx_arg_idx_vector_getref_alias: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[idx_arg_idx_vector_getref_alias] = args_vec_vector_getref_alias[1];
+                ctx.Set(idx_arg_idx_vector_getref_alias, args_vec_vector_getref_alias[1]);
                 mut idx_arg_type_vector_getref_alias := check_expression(idx_arg_idx_vector_getref_alias, env, scope, ctx);
                 idx_arg_type_vector_getref_alias = env_resolve_type(env, idx_arg_type_vector_getref_alias, ctx);
 
@@ -1900,7 +1900,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     report_error(2, msg, expr.Call.span, env, ctx);
                 }
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = args_vec_arena_alloc_call[0];
+                ctx.Set(arg0_idx, args_vec_arena_alloc_call[0]);
                 mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                 mut brand_name := get_root_variable(arg0_idx, ctx);
                 return make_type_index("Any", brand_name, ctx);
@@ -1916,11 +1916,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     return dummy;
                 }
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = args_vec_generational_swap[0];
+                ctx.Set(arg0_idx, args_vec_generational_swap[0]);
                 mut current_type := check_expression(arg0_idx, env, scope, ctx);
                 
                 mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg1_idx] = args_vec_generational_swap[1];
+                ctx.Set(arg1_idx, args_vec_generational_swap[1]);
                 mut next_type := check_expression(arg1_idx, env, scope, ctx);
 
                 if current_type.tag != 4 || next_type.tag != 4 {
@@ -2009,7 +2009,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut task_arg_expr := args_vec_spawn[1];
 
                 mut task_func_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[task_func_idx] = task_func_expr;
+                ctx.Set(task_func_idx, task_func_expr);
                 mut task_func_span := get_expression_span(task_func_idx, ctx);
 
                 mut task_func_name := "";
@@ -2031,7 +2031,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                     mut first_param_type := sig.params[0];
                     mut task_arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[task_arg_idx] = task_arg_expr;
+                    ctx.Set(task_arg_idx, task_arg_expr);
                     mut arg_type := check_expression(task_arg_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
 
@@ -2085,7 +2085,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if len(args_vec_close_dir) == 1 {
                     mut arg_expr := args_vec_close_dir[0];
                     mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg_idx] = arg_expr;
+                    ctx.Set(arg_idx, arg_expr);
                     mut arg_name := get_root_variable(arg_idx, ctx);
                     if std.str_eq(arg_name, "") == 0 {
                         (*env).open_directories.Remove(arg_name);
@@ -2097,18 +2097,18 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut args_vec_clone_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                     if len(args_vec_clone_call) == 2 {
                         mut dest_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[dest_expr_idx] = args_vec_clone_call[0];
+                        ctx.Set(dest_expr_idx, args_vec_clone_call[0]);
                         check_expression(dest_expr_idx, env, scope, ctx);
 
                         mut val_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[val_expr_idx] = args_vec_clone_call[1];
+                        ctx.Set(val_expr_idx, args_vec_clone_call[1]);
                         mut val_type := check_expression(val_expr_idx, env, scope, ctx);
 
                         mut brand_name := get_root_variable(dest_expr_idx, ctx);
                         mut new_brand := empty[Index[str, ctx]];
                         if std.str_eq(brand_name, "") == 0 {
                             new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                            ctx[new_brand] = std.Clone(ctx, brand_name);
+                            ctx.Set(new_brand, std.Clone(ctx, brand_name));
                         }
 
                         mut substituted := typechecker_substitute_brand(val_type, new_brand, ctx);
@@ -2125,7 +2125,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     return dummy;
                 }
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = args_vec_format_call[0];
+                ctx.Set(arg0_idx, args_vec_format_call[0]);
                 mut arg0_type := check_expression(arg0_idx, env, scope, ctx);
                 mut resolved_arg0 := env_resolve_type(env, arg0_type, ctx);
 
@@ -2144,7 +2144,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 mut format_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[format_expr_idx] = args_vec_format_call[format_arg_idx];
+                ctx.Set(format_expr_idx, args_vec_format_call[format_arg_idx]);
                 mut format_expr_type := check_expression(format_expr_idx, env, scope, ctx);
                 if format_expr_type.tag != 5 { // Str
                     mut msg := "Semantic Error: Format argument to std.Format must be a string literal";
@@ -2205,7 +2205,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut expected_t := specifier_types[j];
 
                     mut param_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[param_idx] = args_vec_format_call[arg_idx];
+                    ctx.Set(param_idx, args_vec_format_call[arg_idx]);
                     mut arg_type := check_expression(param_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
 
@@ -2242,7 +2242,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut args_vec_container_new: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                 if len(args_vec_container_new) == 1 {
                     mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg0_idx] = args_vec_container_new[0];
+                    ctx.Set(arg0_idx, args_vec_container_new[0]);
                     check_expression(arg0_idx, env, scope, ctx);
                     mut brand_name := get_root_variable(arg0_idx, ctx);
                     
@@ -2269,7 +2269,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     report_error(2, msg, expr.Call.span, env, ctx);
                 } else {
                     mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg0_idx] = args_vec_log_int[0];
+                    ctx.Set(arg0_idx, args_vec_log_int[0]);
                     mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
                     if resolved_arg.tag != 0 && resolved_arg.tag != 1 && resolved_arg.tag != 2 && resolved_arg.tag != 7 {
@@ -2288,7 +2288,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     report_error(2, msg, expr.Call.span, env, ctx);
                 } else {
                     mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg0_idx] = args_vec_log_str[0];
+                    ctx.Set(arg0_idx, args_vec_log_str[0]);
                     mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
                     mut t_str: ast.Type[ctx]; t_str.tag = 5; // Str
@@ -2356,7 +2356,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut i := 0;
                 while i < len(args_vec_valid_call) {
                     mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg_idx] = args_vec_valid_call[i];
+                    ctx.Set(arg_idx, args_vec_valid_call[i]);
                     mut arg_type := check_expression(arg_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
                     evaluated_args.Push(resolved_arg);
@@ -2383,23 +2383,23 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
                     if param_type.tag == 4 || is_arena_ptr == 1 {
                         mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg_idx] = args_vec_valid_call[j];
+                        ctx.Set(arg_idx, args_vec_valid_call[j]);
                         mut actual_name := get_root_variable(arg_idx, ctx);
                         if std.str_eq(actual_name, "") == 0 {
                             new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                            ctx[new_brand] = std.Clone(ctx, actual_name);
+                            ctx.Set(new_brand, std.Clone(ctx, actual_name));
                         }
                         j = len(sig.params);
                     } else {
                         mut p_brand := get_type_brand(param_type, env, ctx);
                     if std.str_eq(p_brand, "") == 0 {
                         mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg_idx] = args_vec_valid_call[j];
+                        ctx.Set(arg_idx, args_vec_valid_call[j]);
                         mut arg_type := check_expression(arg_idx, env, scope, ctx);
                         mut a_brand := get_type_brand(arg_type, env, ctx);
                         if std.str_eq(a_brand, "") == 0 {
                                 new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                                ctx[new_brand] = std.Clone(ctx, strip_brand_prefix(a_brand, ctx));
+                                ctx.Set(new_brand, std.Clone(ctx, strip_brand_prefix(a_brand, ctx)));
                                 j = len(sig.params);
                             } else {
                                 j = j + 1;
@@ -2424,7 +2424,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             ast.serialize_type(expected_type, ctx),
                             ast.serialize_type(resolved_arg, ctx));
                         mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg_idx] = args_vec_valid_call[k];
+                        ctx.Set(arg_idx, args_vec_valid_call[k]);
                         report_error(2, msg, get_expression_span(arg_idx, ctx), env, ctx);
                     }
                     k = k + 1;
