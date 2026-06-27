@@ -191,6 +191,15 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_linear_resource_in
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_linear_resource_focused:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step52_linear_resource_focused ---"
+        (cd "$PROJECT_ROOT" && make report_step52_linear_resource_focused)
+        echo "--- END OF REPORT make report_step52_linear_resource_focused ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_phase_a_status:' "$PROJECT_ROOT/Makefile"; then
     {
         echo "--- START OF REPORT make report_step52_phase_a_status ---"
