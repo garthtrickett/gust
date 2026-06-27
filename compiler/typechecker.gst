@@ -1058,7 +1058,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return dummy;
                     }
 
-                    mut arena_brand_name := get_root_variable(left_expr_idx, ctx);
+                    mut arena_brand_name := expression_to_string(left_expr_idx, ctx);
                     if std.str_eq(arena_brand_name, "") == 1 {
                         mut msg := "Semantic Error: [BrandMismatch] Arena.get_ref requires a named arena variable as its receiver";
                         report_error(2, msg, expr.Call.span, env, ctx);
@@ -1106,7 +1106,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return dummy;
                     }
 
-                    mut arena_brand_arena_write := get_root_variable(left_expr_idx, ctx);
+                    mut arena_brand_arena_write := expression_to_string(left_expr_idx, ctx);
                     if std.str_eq(arena_brand_arena_write, "") == 1 {
                         mut msg_receiver_arena_write := "Semantic Error: [BrandMismatch] Arena.Set/Write requires a named arena variable as its receiver";
                         report_error(2, msg_receiver_arena_write, expr.Call.span, env, ctx);
