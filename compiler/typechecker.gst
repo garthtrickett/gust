@@ -1087,6 +1087,70 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     return make_type_reference(elem_type_ref, index_brand_name, ctx);
                 }
 
+                if (std.str_eq(right_name, "Set") == 1 || std.str_eq(right_name, "Write") == 1) && typechecker_is_arena_value_or_ref(left_type, ctx) == 1 {
+                    mut args_vec_arena_write: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                    if len(args_vec_arena_write) != 2 {
+                        mut msg_arena_write_arity := "Semantic Error: Arena.Set/Write expects exactly 2 arguments: Index[T, ctx] and T";
+                        report_error(2, msg_arena_write_arity, expr.Call.span, env, ctx);
+                        return dummy;
+                    }
+
+                    mut idx_arg_arena_write: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[idx_arg_arena_write] = args_vec_arena_write[0];
+                    mut idx_type_arena_write := check_expression(idx_arg_arena_write, env, scope, ctx);
+                    idx_type_arena_write = env_resolve_type(env, idx_type_arena_write, ctx);
+
+                    if idx_type_arena_write.tag != 7 { // Index
+                        mut msg_idx_arena_write := std.Concat("Semantic Error: Arena.Set/Write expected Index[T, ctx] as first argument but got ", ast.serialize_type(idx_type_arena_write, ctx));
+                        report_error(2, msg_idx_arena_write, get_expression_span(idx_arg_arena_write, ctx), env, ctx);
+                        return dummy;
+                    }
+
+                    mut arena_brand_arena_write := get_root_variable(left_expr_idx, ctx);
+                    if std.str_eq(arena_brand_arena_write, "") == 1 {
+                        mut msg_receiver_arena_write := "Semantic Error: [BrandMismatch] Arena.Set/Write requires a named arena variable as its receiver";
+                        report_error(2, msg_receiver_arena_write, expr.Call.span, env, ctx);
+                        return dummy;
+                    }
+
+                    mut index_brand_arena_write := get_type_brand(idx_type_arena_write, env, ctx);
+                    if std.str_eq(index_brand_arena_write, "") == 1 {
+                        mut msg_brand_arena_write := "Semantic Error: [BrandMismatch] Arena.Set/Write requires a branded Index[T, ctx] argument";
+                        report_error(2, msg_brand_arena_write, get_expression_span(idx_arg_arena_write, ctx), env, ctx);
+                        return dummy;
+                    }
+
+                    mut clean_index_brand_arena_write := strip_brand_prefix(index_brand_arena_write, ctx);
+                    mut clean_arena_brand_arena_write := strip_brand_prefix(arena_brand_arena_write, ctx);
+                    if std.str_eq(clean_index_brand_arena_write, clean_arena_brand_arena_write) == 0 {
+                        mut msg_mismatch_arena_write := std.Concat("Semantic Error: [BrandMismatch] Arena.Set/Write index brand '", index_brand_arena_write);
+                        msg_mismatch_arena_write = std.Concat(msg_mismatch_arena_write, "' does not match arena receiver '");
+                        msg_mismatch_arena_write = std.Concat(msg_mismatch_arena_write, arena_brand_arena_write);
+                        msg_mismatch_arena_write = std.Concat(msg_mismatch_arena_write, "'");
+                        report_error(2, msg_mismatch_arena_write, get_expression_span(idx_arg_arena_write, ctx), env, ctx);
+                        return dummy;
+                    }
+
+                    mut value_arg_arena_write: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx[value_arg_arena_write] = args_vec_arena_write[1];
+                    mut value_type_arena_write := check_expression(value_arg_arena_write, env, scope, ctx);
+                    value_type_arena_write = env_resolve_type(env, value_type_arena_write, ctx);
+
+                    mut elem_type_arena_write := typechecker_get_index_element_type(idx_type_arena_write, env, ctx);
+                    elem_type_arena_write = env_resolve_type(env, elem_type_arena_write, ctx);
+                    if types_match(elem_type_arena_write, value_type_arena_write, ctx) == 0 {
+                        mut msg_value_arena_write := std.Concat("Semantic Error: Arena.Set/Write value type mismatch. Expected ", ast.serialize_type(elem_type_arena_write, ctx));
+                        msg_value_arena_write = std.Concat(msg_value_arena_write, " but got ");
+                        msg_value_arena_write = std.Concat(msg_value_arena_write, ast.serialize_type(value_type_arena_write, ctx));
+                        report_error(2, msg_value_arena_write, get_expression_span(value_arg_arena_write, ctx), env, ctx);
+                        return dummy;
+                    }
+
+                    mut t_void_arena_write: ast.Type[ctx];
+                    t_void_arena_write.tag = 3; // Void
+                    return t_void_arena_write;
+                }
+
                 if left_type.tag == 4 { // Arena
                     if std.str_eq(right_name, "Free") {
                         mut t_void: ast.Type[ctx];

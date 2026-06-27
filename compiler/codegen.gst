@@ -2785,6 +2785,43 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         return std.Clone(ctx, arena_get_ref_res);
                     }
 
+                    if std.str_eq(right_name, "Set") || std.str_eq(right_name, "Write") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Arena explicit write FFI override for %s", left_str), ctx);
+                        mut args_vec_arena_set: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
+                        mut idx_arg_idx_arena_set: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[idx_arg_idx_arena_set] = args_vec_arena_set[0];
+                        mut idx_str_arena_set := codegen_generate_expression(idx_arg_idx_arena_set, env, ctx);
+
+                        mut value_arg_idx_arena_set: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[value_arg_idx_arena_set] = args_vec_arena_set[1];
+                        mut value_str_arena_set := codegen_generate_expression(value_arg_idx_arena_set, env, ctx);
+
+                        mut idx_type_arena_set := codegen_get_expression_type(idx_arg_idx_arena_set, env, ctx);
+                        idx_type_arena_set = typechecker.env_resolve_type(env, idx_type_arena_set, ctx);
+                        mut elem_type_arena_set := typechecker.typechecker_get_index_element_type(idx_type_arena_set, env, ctx);
+                        elem_type_arena_set = typechecker.env_resolve_type(env, elem_type_arena_set, ctx);
+                        mut arena_set_c_type := codegen_get_c_type(elem_type_arena_set, env, ctx);
+
+                        mut arena_set_arrow_or_dot := ".";
+                        if is_ptr == 1 {
+                            arena_set_arrow_or_dot = "->";
+                        }
+
+                        mut arena_set_res := std.Concat("({ *(('", "");
+                        arena_set_res = std.Concat("({ *(('", arena_set_c_type);
+                        arena_set_res = std.Concat(arena_set_res, "*)0); })");
+                        arena_set_res = std.Concat("({ *(('", arena_set_c_type);
+                        arena_set_res = std.Concat(arena_set_res, "*)((char*)");
+                        arena_set_res = std.Concat(arena_set_res, left_str);
+                        arena_set_res = std.Concat(arena_set_res, arena_set_arrow_or_dot);
+                        arena_set_res = std.Concat(arena_set_res, "BaseAddress + ");
+                        arena_set_res = std.Concat(arena_set_res, idx_str_arena_set);
+                        arena_set_res = std.Concat(arena_set_res, ")) = ");
+                        arena_set_res = std.Concat(arena_set_res, value_str_arena_set);
+                        arena_set_res = std.Concat(arena_set_res, "; })");
+                        return std.Clone(ctx, arena_set_res);
+                    }
+
                     if std.str_eq(right_name, "Free") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Arena Free FFI override for %s", left_str), ctx);
                         mut res := std.Concat("os_Arena_Free(", ref_prefix);
