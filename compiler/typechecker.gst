@@ -4673,15 +4673,19 @@ func env_struct_missing_c_ffi_layout(env: *TypeEnvironment[ctx], name: str, ctx:
 }
 
 func env_type_requires_explicit_c_ffi_layout(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) int {
-    if t.tag == 8 { // Struct
-        return 1;
+    unsafe {
+        if t.tag == 8 { // Struct
+            return 1;
+        }
     }
     return 0;
 }
 
 func env_type_satisfies_c_ffi_layout(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) int {
-    if t.tag == 8 { // Struct
-        return env_struct_satisfies_c_ffi_layout(env, t.Struct.struct_name, ctx);
+    unsafe {
+        if t.tag == 8 { // Struct
+            return env_struct_satisfies_c_ffi_layout(env, t.Struct.struct_name, ctx);
+        }
     }
     return 1;
 }

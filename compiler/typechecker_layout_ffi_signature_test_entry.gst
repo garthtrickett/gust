@@ -19,19 +19,25 @@ func main() {
     int_t_lffi_sig.tag = 0; // Int
 
     mut plain_t_lffi_sig: ast.Type[ctx];
-    plain_t_lffi_sig.tag = 8; // Struct
-    plain_t_lffi_sig.Struct.struct_name = "main__Plain";
-    plain_t_lffi_sig.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        plain_t_lffi_sig.tag = 8; // Struct
+        plain_t_lffi_sig.Struct.struct_name = "main__Plain";
+        plain_t_lffi_sig.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut c_t_lffi_sig: ast.Type[ctx];
-    c_t_lffi_sig.tag = 8; // Struct
-    c_t_lffi_sig.Struct.struct_name = "main__CLike";
-    c_t_lffi_sig.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        c_t_lffi_sig.tag = 8; // Struct
+        c_t_lffi_sig.Struct.struct_name = "main__CLike";
+        c_t_lffi_sig.Struct.brand = empty[Index[str, ctx]];
+    }
 
     mut packed_t_lffi_sig: ast.Type[ctx];
-    packed_t_lffi_sig.tag = 8; // Struct
-    packed_t_lffi_sig.Struct.struct_name = "main__Packed";
-    packed_t_lffi_sig.Struct.brand = empty[Index[str, ctx]];
+    unsafe {
+        packed_t_lffi_sig.tag = 8; // Struct
+        packed_t_lffi_sig.Struct.struct_name = "main__Packed";
+        packed_t_lffi_sig.Struct.brand = empty[Index[str, ctx]];
+    }
 
     if typechecker.env_type_requires_explicit_c_ffi_layout(&env_lffi_sig, int_t_lffi_sig, ctx) != 0 {
         os.LogStr("Error: primitive int must not require explicit C FFI layout");
