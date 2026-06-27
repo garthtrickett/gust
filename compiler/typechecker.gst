@@ -1258,6 +1258,44 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                         return t_void;
                     }
+                    if std.str_eq(right_name, "Set") {
+                        mut args_vec_vector_set: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_vector_set) != 2 {
+                            mut msg_vector_set_arity := "Semantic Error: Vector.Set expects exactly 2 arguments: int/Index and element value";
+                            report_error(2, msg_vector_set_arity, expr.Call.span, env, ctx);
+                            return dummy;
+                        }
+
+                        mut idx_arg_idx_vector_set: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[idx_arg_idx_vector_set] = args_vec_vector_set[0];
+                        mut idx_arg_type_vector_set := check_expression(idx_arg_idx_vector_set, env, scope, ctx);
+                        idx_arg_type_vector_set = env_resolve_type(env, idx_arg_type_vector_set, ctx);
+
+                        if idx_arg_type_vector_set.tag != 0 && idx_arg_type_vector_set.tag != 7 { // Int or Index
+                            mut msg_vector_set_idx := std.Concat("Semantic Error: Vector.Set expected int or Index as first argument but got ", ast.serialize_type(idx_arg_type_vector_set, ctx));
+                            report_error(2, msg_vector_set_idx, get_expression_span(idx_arg_idx_vector_set, ctx), env, ctx);
+                            return dummy;
+                        }
+
+                        mut value_arg_idx_vector_set: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[value_arg_idx_vector_set] = args_vec_vector_set[1];
+                        mut value_arg_type_vector_set := check_expression(value_arg_idx_vector_set, env, scope, ctx);
+                        value_arg_type_vector_set = env_resolve_type(env, value_arg_type_vector_set, ctx);
+
+                        mut elem_type_vector_set := typechecker_get_template_elem_type(s_name, "data", env, ctx);
+                        elem_type_vector_set = env_resolve_type(env, elem_type_vector_set, ctx);
+                        if types_match(elem_type_vector_set, value_arg_type_vector_set, ctx) == 0 {
+                            mut msg_vector_set_value := std.Concat("Semantic Error: Vector.Set value type mismatch. Expected ", ast.serialize_type(elem_type_vector_set, ctx));
+                            msg_vector_set_value = std.Concat(msg_vector_set_value, " but got ");
+                            msg_vector_set_value = std.Concat(msg_vector_set_value, ast.serialize_type(value_arg_type_vector_set, ctx));
+                            report_error(2, msg_vector_set_value, get_expression_span(value_arg_idx_vector_set, ctx), env, ctx);
+                            return dummy;
+                        }
+
+                        mut t_void_vector_set: ast.Type[ctx];
+                        t_void_vector_set.tag = 3; // Void
+                        return t_void_vector_set;
+                    }
                     if std.str_eq(right_name, "Pop") {
                         return typechecker_get_template_elem_type(s_name, "data", env, ctx);
                     }

@@ -2227,6 +2227,35 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         res = std.Concat(res, ")");
                         return std.Clone(ctx, res);
                     }
+                    if std.str_eq(right_name, "Set") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector Set explicit write override for %s", left_str), ctx);
+                        mut args_vec_vector_set: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
+
+                        mut idx_arg_idx_vector_set: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[idx_arg_idx_vector_set] = args_vec_vector_set[0];
+                        mut idx_str_vector_set := codegen_generate_expression(idx_arg_idx_vector_set, env, ctx);
+
+                        mut value_arg_idx_vector_set: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx[value_arg_idx_vector_set] = args_vec_vector_set[1];
+                        mut value_str_vector_set := codegen_generate_expression(value_arg_idx_vector_set, env, ctx);
+
+                        mut vector_set_arrow_or_dot := ".";
+                        if is_ptr == 1 {
+                            vector_set_arrow_or_dot = "->";
+                        }
+
+                        mut vector_set_res := std.Concat("({ int _gust_vector_set_idx = ", idx_str_vector_set);
+                        vector_set_res = std.Concat(vector_set_res, "; if (_gust_vector_set_idx < 0 || _gust_vector_set_idx >= ");
+                        vector_set_res = std.Concat(vector_set_res, left_str);
+                        vector_set_res = std.Concat(vector_set_res, vector_set_arrow_or_dot);
+                        vector_set_res = std.Concat(vector_set_res, "len) { printf(\"Vector bounds check failed at line %d\\n\", __LINE__); exit(1); } ");
+                        vector_set_res = std.Concat(vector_set_res, left_str);
+                        vector_set_res = std.Concat(vector_set_res, vector_set_arrow_or_dot);
+                        vector_set_res = std.Concat(vector_set_res, "data[_gust_vector_set_idx] = ");
+                        vector_set_res = std.Concat(vector_set_res, value_str_vector_set);
+                        vector_set_res = std.Concat(vector_set_res, "; })");
+                        return std.Clone(ctx, vector_set_res);
+                    }
                     if std.str_eq(right_name, "Pop") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector Pop FFI override for %s", left_str), ctx);
                         mut res := std.Concat("os_VectorPop(", ref_prefix);
