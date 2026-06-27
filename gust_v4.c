@@ -53342,7 +53342,7 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     if (((*(env)).in_unsafe_block == 0)) {
     int is_direct_subscript_lhs_step45c = typechecker__is_direct_subscript_write_lhs(left_idx, ctx);
     if ((is_direct_subscript_lhs_step45c == 1)) {
-    Slice_unsigned_char msg_direct_subscript_step45c = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [DirectSubscriptWrite] Direct subscript writes require unsafe or explicit write APIs", 100 });
+    Slice_unsigned_char msg_direct_subscript_step45c = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [UnsafeSubscriptWrite] direct subscript writes require unsafe or explicit write APIs", 100 });
     typechecker__report_error(2, msg_direct_subscript_step45c, stmt.Assignment.span, env, ctx);
     }
     }

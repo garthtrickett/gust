@@ -9,6 +9,8 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
+.PHONY: guard_step45_safe_subscript_write_enforcement
+
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
 RUNTIME_SRCS  = src/runtime.c $(wildcard src/runtime/*.c) $(wildcard src/runtime/*.h)
@@ -46,7 +48,7 @@ bootstrap: gust
 	touch build/gust_compiler.c
 	touch gust
 
-test: gust guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
+test: gust guard_step45_safe_subscript_write_enforcement guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
 	@mkdir -p build
 	@echo "⚙️  Compiling native Gust test runner..."
 	@./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
@@ -99,6 +101,7 @@ report_step45_final_validation:
 	@echo "   make guard_step44_no_high_level_raw_collection_casts"
 	@echo "   make report_step45_subscript_lvalue_writes"
 	@echo "   make report_step45_test_subscript_lvalue_writes"
+	@echo "   make guard_step45_safe_subscript_write_enforcement"
 	@echo "   make"
 	@echo "   make test"
 	@echo "   make bootstrap"
@@ -130,6 +133,44 @@ report_step45_test_subscript_lvalue_writes:
 	@echo "   Test direct subscript writes and field writes rooted at subscript expressions:"
 	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/*.gst || true
 	@echo "✅ Test-side report complete. This target is inventory-only and does not fail."
+
+guard_step45_safe_subscript_write_enforcement: gust
+	@echo "🔒 Checking Step 4.5C safe subscript write enforcement..."
+	@mkdir -p build
+	@for f in \
+		tests/test_safe_arena_subscript_write_rejected.gst \
+		tests/test_safe_arena_subscript_field_write_rejected.gst \
+		tests/test_safe_vector_subscript_write_rejected.gst \
+		tests/test_safe_nested_selector_subscript_field_write_rejected.gst; do \
+		echo "Checking $$f rejects safe direct subscript writes..."; \
+		./gust $$f > build/step45c_guard.log 2>&1; \
+		status=$$?; \
+		if [ $$status -eq 0 ]; then \
+			echo "❌ Step 4.5C guard failed: $$f compiled but should reject safe direct subscript writes."; \
+			cat build/step45c_guard.log; \
+			exit 1; \
+		fi; \
+		if ! rg -q "direct subscript writes require unsafe or explicit write APIs" build/step45c_guard.log; then \
+			echo "❌ Step 4.5C guard failed: $$f rejected without the stable unsafe-subscript diagnostic."; \
+			cat build/step45c_guard.log; \
+			exit 1; \
+		fi; \
+	done
+	@for f in \
+		tests/e2e_unsafe_arena_subscript_write.gst \
+		tests/e2e_unsafe_arena_subscript_field_write.gst \
+		tests/e2e_unsafe_vector_subscript_write.gst \
+		tests/e2e_unsafe_nested_selector_subscript_field_write.gst; do \
+		echo "Checking $$f still accepts unsafe direct subscript writes..."; \
+		./gust $$f > build/step45c_guard.log 2>&1; \
+		status=$$?; \
+		if [ $$status -ne 0 ]; then \
+			echo "❌ Step 4.5C guard failed: $$f should compile inside unsafe."; \
+			cat build/step45c_guard.log; \
+			exit 1; \
+		fi; \
+	done
+	@echo "✅ Step 4.5C safe subscript write enforcement guard passed."
 
 guard_step44_low_risk_entry_raw_casts:
 	@echo "🔒 Checking Step 4.4 migrated low-risk entry files for high-level raw collection/string casts..."
