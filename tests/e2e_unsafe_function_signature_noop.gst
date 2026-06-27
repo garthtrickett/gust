@@ -3,8 +3,10 @@ unsafe func unsafe_add_one(x: int) int {
 }
 
 func main() {
-    mut got := unsafe_add_one(41);
-    if got != 42 {
-        os.Exit(1);
+    unsafe {
+        mut got := unsafe_add_one(41);
+        if got != 42 {
+            os.Exit(1);
+        }
     }
 }
