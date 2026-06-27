@@ -19,7 +19,7 @@ func main() {
     os.SetThreadScratch(&arena);
 
     mut flag_idx: Index[int, arena] := os.ArenaAlloc(arena);
-    arena[flag_idx] = 0;
+    arena.Set(flag_idx, 0);
 
     mut arg1: TaskArg[arena];
     arg1.val = 10;
