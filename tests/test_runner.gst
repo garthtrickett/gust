@@ -1724,6 +1724,34 @@ func main() {
     t_safe_nested_selector_subscript_write_rej.expected = "DirectSubscriptWrite";
     tests.Push(t_safe_nested_selector_subscript_write_rej);
 
+    mut t_unsafe_arena_subscript_write_ok: Test[ctx];
+    t_unsafe_arena_subscript_write_ok.path = "tests/e2e_unsafe_arena_subscript_write.gst";
+    t_unsafe_arena_subscript_write_ok.is_negative = 0;
+    t_unsafe_arena_subscript_write_ok.is_substring = 0;
+    t_unsafe_arena_subscript_write_ok.expected = "";
+    tests.Push(t_unsafe_arena_subscript_write_ok);
+
+    mut t_unsafe_arena_subscript_field_write_ok: Test[ctx];
+    t_unsafe_arena_subscript_field_write_ok.path = "tests/e2e_unsafe_arena_subscript_field_write.gst";
+    t_unsafe_arena_subscript_field_write_ok.is_negative = 0;
+    t_unsafe_arena_subscript_field_write_ok.is_substring = 0;
+    t_unsafe_arena_subscript_field_write_ok.expected = "";
+    tests.Push(t_unsafe_arena_subscript_field_write_ok);
+
+    mut t_unsafe_vector_subscript_write_ok: Test[ctx];
+    t_unsafe_vector_subscript_write_ok.path = "tests/e2e_unsafe_vector_subscript_write.gst";
+    t_unsafe_vector_subscript_write_ok.is_negative = 0;
+    t_unsafe_vector_subscript_write_ok.is_substring = 0;
+    t_unsafe_vector_subscript_write_ok.expected = "";
+    tests.Push(t_unsafe_vector_subscript_write_ok);
+
+    mut t_unsafe_nested_selector_subscript_write_ok: Test[ctx];
+    t_unsafe_nested_selector_subscript_write_ok.path = "tests/e2e_unsafe_nested_selector_subscript_field_write.gst";
+    t_unsafe_nested_selector_subscript_write_ok.is_negative = 0;
+    t_unsafe_nested_selector_subscript_write_ok.is_substring = 0;
+    t_unsafe_nested_selector_subscript_write_ok.expected = "";
+    tests.Push(t_unsafe_nested_selector_subscript_write_ok);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
