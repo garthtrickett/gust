@@ -109,7 +109,7 @@ func main() {
         mut j := 0;
         while j < len(statements_vec_prog3_check) {
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = statements_vec_prog3_check[j];
+            ctx.Set(stmt_idx, statements_vec_prog3_check[j]);
             typechecker.check_statement(stmt_idx, &env, scope3, ctx);
             j = j + 1;
         }
@@ -141,7 +141,7 @@ func main() {
         mut j := 0;
         while j < len(statements_vec_prog4_error) {
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = statements_vec_prog4_error[j];
+            ctx.Set(stmt_idx, statements_vec_prog4_error[j]);
             typechecker.check_statement(stmt_idx, &env, scope4_error, ctx);
             j = j + 1;
         }
@@ -397,7 +397,7 @@ func main() {
         mut j := 0;
         while j < len(statements_vec_func_params) {
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = statements_vec_func_params[j];
+            ctx.Set(stmt_idx, statements_vec_func_params[j]);
             typechecker.check_statement(stmt_idx, &env, scope_func, ctx);
             j = j + 1;
         }
@@ -481,7 +481,9 @@ func main() {
     unsafe {
         t_ptr_test.tag = 9; // RawPointer
         t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+        mut t_ptr_inner_type_types_test: ast.Type[ctx];
+        t_ptr_inner_type_types_test.tag = 0; // Int
+        ctx.Set(t_ptr_test.RawPointer.inner, t_ptr_inner_type_types_test);
     }
 
     mut linear_layout: typechecker.StructLayout[ctx];
@@ -496,7 +498,7 @@ func main() {
         t_branded_linear.tag = 8; // Struct
         t_branded_linear.Struct.struct_name = "LinearStruct_ctx";
         t_branded_linear.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-        ctx[t_branded_linear.Struct.brand] = "ctx";
+        ctx.Set(t_branded_linear.Struct.brand, "ctx");
     }
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_branded_linear, "ctx", ctx)); // Expected: 1
 
@@ -505,7 +507,7 @@ func main() {
         t_mismatched_branded.tag = 8; // Struct
         t_mismatched_branded.Struct.struct_name = "LinearStruct_ctx1";
         t_mismatched_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-        ctx[t_mismatched_branded.Struct.brand] = "ctx1";
+        ctx.Set(t_mismatched_branded.Struct.brand, "ctx1");
     }
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_mismatched_branded, "ctx", ctx)); // Expected: 0
 
@@ -531,7 +533,7 @@ func main() {
     mut mismatched_layout: typechecker.StructLayout[ctx];
     unsafe { 
         mismatched_layout.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-        ctx[mismatched_layout.brand] = "ctx1";
+        ctx.Set(mismatched_layout.brand, "ctx1");
     }
     mismatched_layout.fields = std.HashMapNew(ctx);
     mismatched_layout.fields.Insert("value", t_ptr_test);
@@ -566,7 +568,7 @@ func main() {
         t_any_branded.tag = 8; // Struct
         t_any_branded.Struct.struct_name = "lexer__Lexer_Any";
         t_any_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-        ctx[t_any_branded.Struct.brand] = "Any";
+        ctx.Set(t_any_branded.Struct.brand, "Any");
 
         // A: Direct check of env_is_element_allowed_in_brand
         mut allowed_res := typechecker.env_is_element_allowed_in_brand(&env, t_any_branded, "ctx", ctx);
@@ -580,7 +582,7 @@ func main() {
         env.errors = std.VectorNew(ctx);
 
         mut parent_brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx);
-        ctx[parent_brand_idx] = "ctx";
+        ctx.Set(parent_brand_idx, "ctx");
 
         typechecker.env_check_brand_nesting(&env, t_any_branded, parent_brand_idx, any_test_span, ctx);
 
