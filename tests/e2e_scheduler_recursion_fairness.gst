@@ -41,7 +41,7 @@ func main() {
     os.SetThreadScratch(&arena);
 
     mut flag_idx: Index[int, arena] := os.ArenaAlloc(arena);
-    arena[flag_idx] = 0;
+    arena.Set(flag_idx, 0);
 
     mut arg: RecurseArg[arena];
     arg.flag = flag_idx;

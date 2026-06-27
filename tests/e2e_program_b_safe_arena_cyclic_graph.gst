@@ -11,13 +11,17 @@ func main() {
     mut nodeB: Index[GraphNode, ctx] := os.ArenaAlloc(ctx);
     mut nodeC: Index[GraphNode, ctx] := os.ArenaAlloc(ctx);
 
-    ctx[nodeA].Value = 10;
-    ctx[nodeB].Value = 20;
-    ctx[nodeC].Value = 30;
+    mut nodeA_ref_program_b := ctx.get_ref(nodeA);
+    mut nodeB_ref_program_b := ctx.get_ref(nodeB);
+    mut nodeC_ref_program_b := ctx.get_ref(nodeC);
 
-    ctx[nodeA].Next = nodeB;
-    ctx[nodeB].Next = nodeC;
-    ctx[nodeC].Next = nodeA;
+    nodeA_ref_program_b.Value = 10;
+    nodeB_ref_program_b.Value = 20;
+    nodeC_ref_program_b.Value = 30;
+
+    nodeA_ref_program_b.Next = nodeB;
+    nodeB_ref_program_b.Next = nodeC;
+    nodeC_ref_program_b.Next = nodeA;
 
     mut curr := nodeA;
     mut count := 0;

@@ -18,13 +18,16 @@ func main() {
     defer c.Free();
 
     mut n1: Index[ListNode, c] := os.ArenaAlloc(c);
-    c[n1].val = 10;
-
     mut n2: Index[ListNode, c] := os.ArenaAlloc(c);
-    c[n2].val = 20;
 
-    c[n1].next = n2;
-    c[n2].next = null;
+    mut n1_ref_list := c.get_ref(n1);
+    mut n2_ref_list := c.get_ref(n2);
+
+    n1_ref_list.val = 10;
+    n2_ref_list.val = 20;
+
+    n1_ref_list.next = n2;
+    n2_ref_list.next = null;
 
     mut total := process_list(c, n1);
     os.LogInt(total);

@@ -20,7 +20,7 @@ func main() {
     os.LogInt(map[100]);
     os.LogInt(map[200]);
 
-    // Mutable Assignment (L-value Subscription checks)
-    map[100] = 999;
+    // Explicit write API replacement for legacy subscript assignment.
+    map.Set(100, 999);
     os.LogInt(map[100]);
 }
