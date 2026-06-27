@@ -8,7 +8,8 @@ func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
     mut n: Index[Node, ctx] := os.ArenaAlloc(ctx);
-    ctx[n].name = "test";
+    mut n_ref_brand_erasure := ctx.get_ref(n);
+    n_ref_brand_erasure.name = "test";
     mut res := process(ctx[n].name);
     os.LogInt(res);
 }

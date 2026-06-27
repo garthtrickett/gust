@@ -1,6 +1,7 @@
 type Node[ctx] struct { val: int }
 func update(ctx: &Arena, n: Index[Node, ctx]) {
-    ctx[n].val = 100;
+    mut n_ref_brand_substitution := ctx.get_ref(n);
+    n_ref_brand_substitution.val = 100;
 }
 func main() {
     mut c := os.Arena.New();

@@ -6,5 +6,6 @@ func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
     mut n: Index[CustomNode, ctx] := os.ArenaAlloc(ctx);
-    ctx[n].name = "Hello";
+    mut n_ref_branded_slice := ctx.get_ref(n);
+    n_ref_branded_slice.name = "Hello";
 }

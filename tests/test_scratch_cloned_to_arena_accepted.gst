@@ -10,5 +10,6 @@ func main() {
     mut n: Index[Node, ctx] := os.ArenaAlloc(ctx);
     mut p: Index[Dummy, ctx] := os.ArenaAlloc(ctx);
     mut cloned := std.Clone(ctx, p);
-    ctx[n].data = cloned;
+    mut n_ref_scratch_clone := ctx.get_ref(n);
+    n_ref_scratch_clone.data = cloned;
 }

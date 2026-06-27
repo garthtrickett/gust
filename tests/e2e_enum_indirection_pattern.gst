@@ -29,9 +29,10 @@ func main() {
     defer ctx.Free();
 
     mut p: Index[LargePayload, ctx] := os.ArenaAlloc(ctx);
-    ctx[p].x = 10;
-    ctx[p].y = 20;
-    ctx[p].z = 30;
+    mut p_ref_enum_indirection := ctx.get_ref(p);
+    p_ref_enum_indirection.x = 10;
+    p_ref_enum_indirection.y = 20;
+    p_ref_enum_indirection.z = 30;
 
     mut e: MyEnum[ctx];
     unsafe {

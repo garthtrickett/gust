@@ -23,7 +23,8 @@ func main() {
 
     // 3. Reference to heap-allocated data
     mut n_idx: Index[MyNode, ctx] := os.ArenaAlloc(ctx);
-    ctx[n_idx].val = 200;
+    mut n_idx_ref_safe_refs := ctx.get_ref(n_idx);
+    n_idx_ref_safe_refs.val = 200;
     mut rn_heap: &MyNode[ctx] := &ctx[n_idx];
     os.LogInt(rn_heap.val);
 }

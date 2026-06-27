@@ -9,7 +9,8 @@ func main() {
 
     // Allocate a node to occupy offset 0 of the Arena
     mut first: Index[Node, ctx] := os.ArenaAlloc(ctx);
-    ctx[first].val = 999;
+    mut first_ref_sentinel := ctx.get_ref(first);
+    first_ref_sentinel.val = 999;
 
     // Create an uninitialized Node structure.
     // Its 'next' field should be initialized to the safe sentinel null (0xFFFFFFFF),
