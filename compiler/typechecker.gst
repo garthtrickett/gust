@@ -711,7 +711,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             msg = std.Concat(msg, "' with index '");
                             msg = std.Concat(msg, expression_to_string(expr.IndexAccess.index, ctx));
                             msg = std.Concat(msg, "' branded for '");
-                            msg = std.Concat(msg, brand_name);
+                            msg = std.Concat(msg, brand_name_index_access);
                             msg = std.Concat(msg, "'");
                             report_error(2, msg, get_expression_span(expr.IndexAccess.index, ctx), env, ctx);
                         }
