@@ -13,6 +13,12 @@ type AddressOriginMetadata struct {
     is_unknown: int
 }
 
+type ExpressionProvenance[ctx] struct {
+    resolved_type: ast.Type[ctx],
+    address_origin: AddressOriginMetadata,
+    legacy_origins: Index[OriginSet[ctx], ctx]
+}
+
 func init_address_origin_unknown(origin: *AddressOriginMetadata) {
     unsafe {
         (*origin).is_safe_arena = 0;
@@ -71,6 +77,28 @@ func address_origin_allows_safe_branding(origin: AddressOriginMetadata) int {
         return 1;
     }
     return 0;
+}
+
+func address_origin_join(left: AddressOriginMetadata, right: AddressOriginMetadata) AddressOriginMetadata {
+    mut joined: AddressOriginMetadata;
+    if left.is_raw_derived == 1 || right.is_raw_derived == 1 {
+        init_address_origin_raw_derived(&joined);
+        return joined;
+    }
+    if left.is_sandbox_derived == 1 || right.is_sandbox_derived == 1 {
+        init_address_origin_sandbox_derived(&joined);
+        return joined;
+    }
+    if left.is_unknown == 1 || right.is_unknown == 1 {
+        init_address_origin_unknown(&joined);
+        return joined;
+    }
+    if left.is_safe_arena == 1 && right.is_safe_arena == 1 {
+        init_address_origin_safe_arena(&joined);
+        return joined;
+    }
+    init_address_origin_unknown(&joined);
+    return joined;
 }
 
 type StructLayout[ctx] struct {
@@ -230,6 +258,76 @@ func set_contains(set: Index[OriginSet[ctx], ctx], element: str, ctx: &Arena) in
         }
         return 0;
     }
+}
+
+func expression_provenance_unknown(t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    mut prov: ExpressionProvenance[ctx];
+    mut origin: AddressOriginMetadata;
+    init_address_origin_unknown(&origin);
+    prov.resolved_type = t;
+    prov.address_origin = origin;
+    prov.legacy_origins = set_init(ctx);
+    return prov;
+}
+
+func expression_provenance_safe_arena(t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    mut prov: ExpressionProvenance[ctx];
+    mut origin: AddressOriginMetadata;
+    init_address_origin_safe_arena(&origin);
+    prov.resolved_type = t;
+    prov.address_origin = origin;
+    prov.legacy_origins = set_init(ctx);
+    return prov;
+}
+
+func expression_provenance_raw_derived(t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    mut prov: ExpressionProvenance[ctx];
+    mut origin: AddressOriginMetadata;
+    init_address_origin_raw_derived(&origin);
+    prov.resolved_type = t;
+    prov.address_origin = origin;
+    prov.legacy_origins = set_init(ctx);
+    return prov;
+}
+
+func expression_provenance_sandbox_derived(t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    mut prov: ExpressionProvenance[ctx];
+    mut origin: AddressOriginMetadata;
+    init_address_origin_sandbox_derived(&origin);
+    prov.resolved_type = t;
+    prov.address_origin = origin;
+    prov.legacy_origins = set_init(ctx);
+    return prov;
+}
+
+func expression_provenance_with_legacy_origins(prov: ExpressionProvenance[ctx], origins: Index[OriginSet[ctx], ctx]) ExpressionProvenance[ctx] {
+    mut out := prov;
+    out.legacy_origins = origins;
+    return out;
+}
+
+func expression_provenance_join(left: ExpressionProvenance[ctx], right: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    mut joined := expression_provenance_unknown(left.resolved_type, ctx);
+    joined.address_origin = address_origin_join(left.address_origin, right.address_origin);
+    if left.legacy_origins != empty[Index[OriginSet[ctx], ctx]] {
+        set_union(joined.legacy_origins, left.legacy_origins, ctx);
+    }
+    if right.legacy_origins != empty[Index[OriginSet[ctx], ctx]] {
+        set_union(joined.legacy_origins, right.legacy_origins, ctx);
+    }
+    return joined;
+}
+
+func expression_provenance_allows_safe_branding(prov: ExpressionProvenance[ctx]) int {
+    return address_origin_allows_safe_branding(prov.address_origin);
+}
+
+func expression_provenance_requires_unsafe_boundary(prov: ExpressionProvenance[ctx]) int {
+    return address_origin_requires_unsafe_boundary(prov.address_origin);
+}
+
+func expression_provenance_is_raw_or_sandbox_derived(prov: ExpressionProvenance[ctx]) int {
+    return address_origin_is_raw_or_sandbox_derived(prov.address_origin);
 }
 
 func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
@@ -2623,6 +2721,14 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
         (*entry_ref).types.Push(type_entry);
     }
     return t;
+}
+
+func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    mut t := check_expression(expr_idx, env, scope, ctx);
+    mut prov := expression_provenance_unknown(t, ctx);
+    mut legacy_origins := get_expression_origins(expr_idx, env, ctx);
+    prov.legacy_origins = legacy_origins;
+    return prov;
 }
 
 func scope_new(parent: Index[Scope[ctx], ctx], ctx: &Arena) Index[Scope[ctx], ctx] {
