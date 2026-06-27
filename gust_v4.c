@@ -25666,2391 +25666,2391 @@
 // 🔍 Lookup span 317641..317649 prefix='typechecker__'
 //    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 317691..317694 prefix='typechecker__'
+// 🔍 Lookup span 317738..317741 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 317695..317710 prefix='typechecker__'
+// 🔍 Lookup span 317742..317757 prefix='typechecker__'
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 317695..317699 prefix='typechecker__'
+// 🔍 Lookup span 317742..317746 prefix='typechecker__'
 //    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 317811..317826 prefix='typechecker__'
+// 🔍 Lookup span 317818..317843 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 317895..317897 prefix='typechecker__'
+// 🔍 Lookup span 317912..317914 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 317895..317897 prefix='typechecker__'
+// 🔍 Lookup span 317912..317914 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 317935..317945 prefix='typechecker__'
+// 🔍 Lookup span 317952..317962 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 317935..317938 prefix='typechecker__'
+// 🔍 Lookup span 317952..317955 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 317939..317944 prefix='typechecker__'
+// 🔍 Lookup span 317956..317961 prefix='typechecker__'
 //    -> Found: Index("ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 317949..317964 prefix='typechecker__'
+// 🔍 Lookup span 317965..317990 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 317966..317967 prefix='typechecker__'
+// 🔍 Lookup span 317991..317992 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 318051..318052 prefix='typechecker__'
+// 🔍 Lookup span 318076..318077 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 318108..318124 prefix='typechecker__'
+// 🔍 Lookup span 318133..318149 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 318108..318112 prefix='typechecker__'
+// 🔍 Lookup span 318133..318137 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 318154..318176 prefix='typechecker__'
+// 🔍 Lookup span 318179..318201 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 318154..318158 prefix='typechecker__'
+// 🔍 Lookup span 318179..318183 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 318242..318246 prefix='typechecker__'
+// 🔍 Lookup span 318267..318271 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 318292..318296 prefix='typechecker__'
+// 🔍 Lookup span 318317..318321 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 318292..318299 prefix='typechecker__'
+// 🔍 Lookup span 318317..318324 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_If", Some("ctx"))
-// 🔍 Lookup span 318292..318296 prefix='typechecker__'
+// 🔍 Lookup span 318317..318321 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 318339..318343 prefix='typechecker__'
+// 🔍 Lookup span 318364..318368 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 318339..318346 prefix='typechecker__'
+// 🔍 Lookup span 318364..318371 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_If", Some("ctx"))
-// 🔍 Lookup span 318339..318343 prefix='typechecker__'
+// 🔍 Lookup span 318364..318368 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 318387..318391 prefix='typechecker__'
+// 🔍 Lookup span 318412..318416 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 318387..318394 prefix='typechecker__'
+// 🔍 Lookup span 318412..318419 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_If", Some("ctx"))
-// 🔍 Lookup span 318387..318391 prefix='typechecker__'
+// 🔍 Lookup span 318412..318416 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 318498..318507 prefix='typechecker__'
+// 🔍 Lookup span 318523..318532 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 318520..318529 prefix='typechecker__'
+// 🔍 Lookup span 318545..318554 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 318835..318839 prefix='typechecker__'
+// 🔍 Lookup span 318860..318864 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 318921..318925 prefix='typechecker__'
+// 🔍 Lookup span 318946..318950 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 319003..319007 prefix='typechecker__'
+// 🔍 Lookup span 319028..319032 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 319098..319102 prefix='typechecker__'
+// 🔍 Lookup span 319123..319127 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 319098..319102 prefix='typechecker__'
+// 🔍 Lookup span 319123..319127 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 319264..319267 prefix='typechecker__'
+// 🔍 Lookup span 319289..319292 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 319268..319276 prefix='typechecker__'
+// 🔍 Lookup span 319293..319301 prefix='typechecker__'
 //    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 319318..319321 prefix='typechecker__'
+// 🔍 Lookup span 319394..319397 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 319322..319337 prefix='typechecker__'
+// 🔍 Lookup span 319398..319413 prefix='typechecker__'
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 319322..319326 prefix='typechecker__'
+// 🔍 Lookup span 319398..319402 prefix='typechecker__'
 //    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 319438..319453 prefix='typechecker__'
+// 🔍 Lookup span 319474..319503 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 319522..319524 prefix='typechecker__'
+// 🔍 Lookup span 319572..319574 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 319522..319524 prefix='typechecker__'
+// 🔍 Lookup span 319572..319574 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 319562..319572 prefix='typechecker__'
+// 🔍 Lookup span 319612..319622 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 319562..319565 prefix='typechecker__'
+// 🔍 Lookup span 319612..319615 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 319566..319571 prefix='typechecker__'
+// 🔍 Lookup span 319616..319621 prefix='typechecker__'
 //    -> Found: Index("ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 319576..319591 prefix='typechecker__'
+// 🔍 Lookup span 319625..319654 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 319593..319594 prefix='typechecker__'
+// 🔍 Lookup span 319655..319656 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 319678..319679 prefix='typechecker__'
+// 🔍 Lookup span 319740..319741 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 319762..319766 prefix='typechecker__'
-//    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
 // 🔍 Lookup span 319824..319828 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 320006..320028 prefix='typechecker__'
+// 🔍 Lookup span 319886..319890 prefix='typechecker__'
+//    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
+// 🔍 Lookup span 320068..320090 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 320006..320010 prefix='typechecker__'
+// 🔍 Lookup span 320068..320072 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 320061..320077 prefix='typechecker__'
+// 🔍 Lookup span 320123..320139 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 320061..320065 prefix='typechecker__'
+// 🔍 Lookup span 320123..320127 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 320108..320129 prefix='typechecker__'
+// 🔍 Lookup span 320170..320191 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 320108..320112 prefix='typechecker__'
+// 🔍 Lookup span 320170..320174 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 320173..320176 prefix='typechecker__'
+// 🔍 Lookup span 320235..320238 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 320177..320184 prefix='typechecker__'
+// 🔍 Lookup span 320239..320246 prefix='typechecker__'
 //    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 320226..320229 prefix='typechecker__'
+// 🔍 Lookup span 320339..320342 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 320230..320244 prefix='typechecker__'
+// 🔍 Lookup span 320343..320357 prefix='typechecker__'
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 320230..320233 prefix='typechecker__'
+// 🔍 Lookup span 320343..320346 prefix='typechecker__'
 //    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 320345..320360 prefix='typechecker__'
+// 🔍 Lookup span 320418..320447 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 320429..320431 prefix='typechecker__'
+// 🔍 Lookup span 320516..320518 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 320429..320431 prefix='typechecker__'
+// 🔍 Lookup span 320516..320518 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 320469..320479 prefix='typechecker__'
+// 🔍 Lookup span 320556..320566 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 320469..320472 prefix='typechecker__'
+// 🔍 Lookup span 320556..320559 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 320473..320478 prefix='typechecker__'
+// 🔍 Lookup span 320560..320565 prefix='typechecker__'
 //    -> Found: Index("ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 320483..320498 prefix='typechecker__'
+// 🔍 Lookup span 320569..320598 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 320500..320501 prefix='typechecker__'
+// 🔍 Lookup span 320599..320600 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 320585..320586 prefix='typechecker__'
+// 🔍 Lookup span 320684..320685 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 320659..320663 prefix='typechecker__'
+// 🔍 Lookup span 320758..320762 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 320725..320729 prefix='typechecker__'
+// 🔍 Lookup span 320824..320828 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 320939..320958 prefix='typechecker__'
+// 🔍 Lookup span 321038..321057 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 320939..320968 prefix='typechecker__'
+// 🔍 Lookup span 321038..321067 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 321028..321039 prefix='typechecker__'
+// 🔍 Lookup span 321127..321138 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 321074..321085 prefix='typechecker__'
+// 🔍 Lookup span 321173..321184 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 321086..321087 prefix='typechecker__'
+// 🔍 Lookup span 321185..321186 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 321131..321150 prefix='typechecker__'
+// 🔍 Lookup span 321230..321249 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 321184..321197 prefix='typechecker__'
+// 🔍 Lookup span 321283..321296 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 321246..321259 prefix='typechecker__'
+// 🔍 Lookup span 321345..321358 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 321312..321331 prefix='typechecker__'
+// 🔍 Lookup span 321411..321430 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 321514..321529 prefix='typechecker__'
+// 🔍 Lookup span 321613..321628 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 321584..321599 prefix='typechecker__'
+// 🔍 Lookup span 321683..321698 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 321690..321701 prefix='typechecker__'
+// 🔍 Lookup span 321789..321800 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 321743..321753 prefix='typechecker__'
+// 🔍 Lookup span 321842..321852 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 321812..321822 prefix='typechecker__'
+// 🔍 Lookup span 321911..321921 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 321914..321928 prefix='typechecker__'
+// 🔍 Lookup span 322013..322027 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 321936..321939 prefix='typechecker__'
+// 🔍 Lookup span 322035..322038 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 321936..321939 prefix='typechecker__'
+// 🔍 Lookup span 322035..322038 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 321951..321954 prefix='typechecker__'
+// 🔍 Lookup span 322050..322053 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 322011..322012 prefix='typechecker__'
+// 🔍 Lookup span 322110..322111 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 322141..322160 prefix='typechecker__'
+// 🔍 Lookup span 322240..322259 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 322141..322170 prefix='typechecker__'
+// 🔍 Lookup span 322240..322269 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 322230..322238 prefix='typechecker__'
+// 🔍 Lookup span 322329..322337 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 322273..322281 prefix='typechecker__'
+// 🔍 Lookup span 322372..322380 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 322282..322283 prefix='typechecker__'
+// 🔍 Lookup span 322381..322382 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 322372..322391 prefix='typechecker__'
+// 🔍 Lookup span 322471..322490 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 322425..322438 prefix='typechecker__'
+// 🔍 Lookup span 322524..322537 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 322468..322482 prefix='typechecker__'
+// 🔍 Lookup span 322567..322581 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 322597..322616 prefix='typechecker__'
+// 🔍 Lookup span 322696..322715 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 322654..322664 prefix='typechecker__'
+// 🔍 Lookup span 322753..322763 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 322714..322724 prefix='typechecker__'
+// 🔍 Lookup span 322813..322823 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 322901..322912 prefix='typechecker__'
+// 🔍 Lookup span 323000..323011 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 322954..322964 prefix='typechecker__'
+// 🔍 Lookup span 323053..323063 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 323023..323033 prefix='typechecker__'
+// 🔍 Lookup span 323122..323132 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 323103..323117 prefix='typechecker__'
+// 🔍 Lookup span 323202..323216 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 323125..323128 prefix='typechecker__'
+// 🔍 Lookup span 323224..323227 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 323125..323128 prefix='typechecker__'
+// 🔍 Lookup span 323224..323227 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 323140..323143 prefix='typechecker__'
+// 🔍 Lookup span 323239..323242 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 323226..323227 prefix='typechecker__'
+// 🔍 Lookup span 323325..323326 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 323387..323404 prefix='typechecker__'
+// 🔍 Lookup span 323486..323503 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 323387..323414 prefix='typechecker__'
+// 🔍 Lookup span 323486..323513 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 323474..323491 prefix='typechecker__'
+// 🔍 Lookup span 323573..323590 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 323515..323527 prefix='typechecker__'
+// 🔍 Lookup span 323614..323626 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 323535..323538 prefix='typechecker__'
+// 🔍 Lookup span 323634..323637 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 323535..323538 prefix='typechecker__'
+// 🔍 Lookup span 323634..323637 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 323550..323567 prefix='typechecker__'
+// 🔍 Lookup span 323649..323666 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 323568..323569 prefix='typechecker__'
+// 🔍 Lookup span 323667..323668 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 323550..323570 prefix='typechecker__'
+// 🔍 Lookup span 323649..323669 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 323597..323598 prefix='typechecker__'
+// 🔍 Lookup span 323696..323697 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 323707..323724 prefix='typechecker__'
+// 🔍 Lookup span 323806..323823 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 323707..323734 prefix='typechecker__'
+// 🔍 Lookup span 323806..323833 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 323794..323808 prefix='typechecker__'
+// 🔍 Lookup span 323893..323907 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 323832..323844 prefix='typechecker__'
+// 🔍 Lookup span 323931..323943 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 323852..323855 prefix='typechecker__'
+// 🔍 Lookup span 323951..323954 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 323852..323855 prefix='typechecker__'
+// 🔍 Lookup span 323951..323954 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 323867..323881 prefix='typechecker__'
+// 🔍 Lookup span 323966..323980 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 323882..323883 prefix='typechecker__'
+// 🔍 Lookup span 323981..323982 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 323867..323884 prefix='typechecker__'
+// 🔍 Lookup span 323966..323983 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 323911..323912 prefix='typechecker__'
+// 🔍 Lookup span 324010..324011 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 323958..323980 prefix='typechecker__'
+// 🔍 Lookup span 324057..324079 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 323958..323962 prefix='typechecker__'
+// 🔍 Lookup span 324057..324061 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 324016..324032 prefix='typechecker__'
+// 🔍 Lookup span 324115..324131 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 324016..324020 prefix='typechecker__'
+// 🔍 Lookup span 324115..324119 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 324205..324224 prefix='typechecker__'
+// 🔍 Lookup span 324304..324323 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 324205..324234 prefix='typechecker__'
+// 🔍 Lookup span 324304..324333 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 324294..324305 prefix='typechecker__'
+// 🔍 Lookup span 324393..324404 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 324340..324351 prefix='typechecker__'
+// 🔍 Lookup span 324439..324450 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 324352..324353 prefix='typechecker__'
+// 🔍 Lookup span 324451..324452 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 324397..324416 prefix='typechecker__'
+// 🔍 Lookup span 324496..324515 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 324450..324463 prefix='typechecker__'
+// 🔍 Lookup span 324549..324562 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 324506..324519 prefix='typechecker__'
+// 🔍 Lookup span 324605..324618 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 324567..324578 prefix='typechecker__'
+// 🔍 Lookup span 324666..324677 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 324616..324626 prefix='typechecker__'
+// 🔍 Lookup span 324715..324725 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 324741..324751 prefix='typechecker__'
+// 🔍 Lookup span 324840..324850 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 324853..324867 prefix='typechecker__'
+// 🔍 Lookup span 324952..324966 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 324875..324878 prefix='typechecker__'
+// 🔍 Lookup span 324974..324977 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 324875..324878 prefix='typechecker__'
+// 🔍 Lookup span 324974..324977 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 324890..324893 prefix='typechecker__'
+// 🔍 Lookup span 324989..324992 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 324969..324983 prefix='typechecker__'
+// 🔍 Lookup span 325068..325082 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 324991..324994 prefix='typechecker__'
+// 🔍 Lookup span 325090..325093 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 324991..324994 prefix='typechecker__'
+// 🔍 Lookup span 325090..325093 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 325006..325009 prefix='typechecker__'
+// 🔍 Lookup span 325105..325108 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 325088..325089 prefix='typechecker__'
+// 🔍 Lookup span 325187..325188 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 325206..325223 prefix='typechecker__'
+// 🔍 Lookup span 325305..325322 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 325206..325233 prefix='typechecker__'
+// 🔍 Lookup span 325305..325332 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 325293..325310 prefix='typechecker__'
+// 🔍 Lookup span 325392..325409 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 325334..325346 prefix='typechecker__'
+// 🔍 Lookup span 325433..325445 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 325354..325357 prefix='typechecker__'
+// 🔍 Lookup span 325453..325456 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 325354..325357 prefix='typechecker__'
+// 🔍 Lookup span 325453..325456 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 325369..325386 prefix='typechecker__'
+// 🔍 Lookup span 325468..325485 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 325387..325388 prefix='typechecker__'
+// 🔍 Lookup span 325486..325487 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 325369..325389 prefix='typechecker__'
+// 🔍 Lookup span 325468..325488 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 325416..325417 prefix='typechecker__'
+// 🔍 Lookup span 325515..325516 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 325463..325485 prefix='typechecker__'
+// 🔍 Lookup span 325562..325584 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 325463..325467 prefix='typechecker__'
+// 🔍 Lookup span 325562..325566 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 325521..325537 prefix='typechecker__'
+// 🔍 Lookup span 325620..325636 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 325521..325525 prefix='typechecker__'
+// 🔍 Lookup span 325620..325624 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 325621..325642 prefix='typechecker__'
+// 🔍 Lookup span 325720..325741 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 325621..325625 prefix='typechecker__'
+// 🔍 Lookup span 325720..325724 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 325705..325709 prefix='typechecker__'
+// 🔍 Lookup span 325804..325808 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 325758..325762 prefix='typechecker__'
+// 🔍 Lookup span 325857..325861 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 325758..325768 prefix='typechecker__'
+// 🔍 Lookup span 325857..325867 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Match", Some("ctx"))
-// 🔍 Lookup span 325758..325762 prefix='typechecker__'
+// 🔍 Lookup span 325857..325861 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 325811..325814 prefix='typechecker__'
+// 🔍 Lookup span 325957..325960 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 325815..325831 prefix='typechecker__'
+// 🔍 Lookup span 325961..325977 prefix='typechecker__'
 //    -> Found: Index("std_Vector_ast__MatchCase_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__MatchCase_ctx", Some("ctx"))
-// 🔍 Lookup span 325815..325819 prefix='typechecker__'
+// 🔍 Lookup span 325961..325965 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 325815..325825 prefix='typechecker__'
+// 🔍 Lookup span 325961..325971 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Match", Some("ctx"))
-// 🔍 Lookup span 325815..325819 prefix='typechecker__'
+// 🔍 Lookup span 325961..325965 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 326011..326027 prefix='typechecker__'
+// 🔍 Lookup span 326117..326133 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326069..326085 prefix='typechecker__'
+// 🔍 Lookup span 326175..326191 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326088..326091 prefix='typechecker__'
+// 🔍 Lookup span 326194..326197 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 326092..326125 prefix='typechecker__'
+// 🔍 Lookup span 326198..326231 prefix='typechecker__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326092..326108 prefix='typechecker__'
+// 🔍 Lookup span 326198..326214 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326092..326119 prefix='typechecker__'
+// 🔍 Lookup span 326198..326225 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_RawPointer", Some("ctx"))
-// 🔍 Lookup span 326092..326108 prefix='typechecker__'
+// 🔍 Lookup span 326198..326214 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326150..326166 prefix='typechecker__'
+// 🔍 Lookup span 326256..326272 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326208..326224 prefix='typechecker__'
+// 🔍 Lookup span 326314..326330 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326227..326230 prefix='typechecker__'
+// 🔍 Lookup span 326333..326336 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 326231..326263 prefix='typechecker__'
+// 🔍 Lookup span 326337..326369 prefix='typechecker__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326231..326247 prefix='typechecker__'
+// 🔍 Lookup span 326337..326353 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326231..326257 prefix='typechecker__'
+// 🔍 Lookup span 326337..326363 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Reference", Some("ctx"))
-// 🔍 Lookup span 326231..326247 prefix='typechecker__'
+// 🔍 Lookup span 326337..326353 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326295..326311 prefix='typechecker__'
+// 🔍 Lookup span 326401..326417 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326366..326382 prefix='typechecker__'
+// 🔍 Lookup span 326472..326488 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326366..326389 prefix='typechecker__'
+// 🔍 Lookup span 326472..326495 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 326366..326382 prefix='typechecker__'
+// 🔍 Lookup span 326472..326488 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 326471..326474 prefix='typechecker__'
+// 🔍 Lookup span 326577..326580 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 326471..326474 prefix='typechecker__'
+// 🔍 Lookup span 326577..326580 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 326528..326547 prefix='typechecker__'
+// 🔍 Lookup span 326634..326653 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_std_Vector_str_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 326528..326532 prefix='typechecker__'
+// 🔍 Lookup span 326634..326638 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 326623..326633 prefix='typechecker__'
+// 🔍 Lookup span 326729..326749 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__MatchCase_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 326672..326682 prefix='typechecker__'
+// 🔍 Lookup span 326787..326807 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__MatchCase_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 326684..326685 prefix='typechecker__'
+// 🔍 Lookup span 326808..326809 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__MatchCase_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__MatchCase_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__MatchCase_ctx_ctx, Erased name: std_Vector_ast__MatchCase, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 326728..326734 prefix='typechecker__'
+// 🔍 Lookup span 326852..326858 prefix='typechecker__'
 //    -> Found: Struct("ast__MatchCase_ctx", Some("ctx"))
-// 🔍 Lookup span 326770..326786 prefix='typechecker__'
+// 🔍 Lookup span 326894..326910 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 326794..326797 prefix='typechecker__'
+// 🔍 Lookup span 326918..326921 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 326794..326797 prefix='typechecker__'
+// 🔍 Lookup span 326918..326921 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 326809..326821 prefix='typechecker__'
+// 🔍 Lookup span 326933..326945 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 326915..326926 prefix='typechecker__'
+// 🔍 Lookup span 327039..327050 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_std_Vector_str_ctx", None)
-// 🔍 Lookup span 326981..326992 prefix='typechecker__'
+// 🔍 Lookup span 327105..327116 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_std_Vector_str_ctx", None)
-// 🔍 Lookup span 327131..327148 prefix='typechecker__'
+// 🔍 Lookup span 327255..327272 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", None)
-// 🔍 Lookup span 327183..327186 prefix='typechecker__'
+// 🔍 Lookup span 327307..327310 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 327183..327186 prefix='typechecker__'
+// 🔍 Lookup span 327307..327310 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 327194..327211 prefix='typechecker__'
+// 🔍 Lookup span 327318..327335 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", None)
-// 🔍 Lookup span 327212..327217 prefix='typechecker__'
+// 🔍 Lookup span 327336..327341 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", None), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", None)
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 327273..327289 prefix='typechecker__'
+// 🔍 Lookup span 327397..327413 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 327327..327332 prefix='typechecker__'
+// 🔍 Lookup span 327451..327456 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 327339..327356 prefix='typechecker__'
+// 🔍 Lookup span 327463..327480 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", None)
-// 🔍 Lookup span 327418..327423 prefix='typechecker__'
+// 🔍 Lookup span 327542..327547 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 327554..327557 prefix='typechecker__'
+// 🔍 Lookup span 327678..327681 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 327554..327557 prefix='typechecker__'
+// 🔍 Lookup span 327678..327681 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 327637..327640 prefix='typechecker__'
+// 🔍 Lookup span 327761..327764 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 327643..327646 prefix='typechecker__'
+// 🔍 Lookup span 327767..327770 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 327643..327646 prefix='typechecker__'
+// 🔍 Lookup span 327767..327770 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 327726..327729 prefix='typechecker__'
+// 🔍 Lookup span 327850..327853 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 327732..327735 prefix='typechecker__'
+// 🔍 Lookup span 327856..327859 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 327732..327735 prefix='typechecker__'
+// 🔍 Lookup span 327856..327859 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 327803..327809 prefix='typechecker__'
+// 🔍 Lookup span 327927..327933 prefix='typechecker__'
 //    -> Found: Struct("ast__MatchCase_ctx", Some("ctx"))
-// 🔍 Lookup span 327915..327918 prefix='typechecker__'
+// 🔍 Lookup span 328071..328074 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 327919..327932 prefix='typechecker__'
+// 🔍 Lookup span 328075..328088 prefix='typechecker__'
 //    -> Found: Index("std_Vector_str_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 327919..327925 prefix='typechecker__'
+// 🔍 Lookup span 328075..328081 prefix='typechecker__'
 //    -> Found: Struct("ast__MatchCase_ctx", Some("ctx"))
-// 🔍 Lookup span 328070..328073 prefix='typechecker__'
+// 🔍 Lookup span 328201..328204 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 328070..328073 prefix='typechecker__'
+// 🔍 Lookup span 328201..328204 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 328118..328137 prefix='typechecker__'
+// 🔍 Lookup span 328249..328268 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 328140..328143 prefix='typechecker__'
+// 🔍 Lookup span 328271..328274 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 328140..328143 prefix='typechecker__'
+// 🔍 Lookup span 328271..328274 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 328229..328250 prefix='typechecker__'
+// 🔍 Lookup span 328360..328381 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__StructLayout_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 328229..328233 prefix='typechecker__'
+// 🔍 Lookup span 328360..328364 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 328301..328314 prefix='typechecker__'
+// 🔍 Lookup span 328432..328445 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 328358..328371 prefix='typechecker__'
+// 🔍 Lookup span 328489..328502 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 328451..328462 prefix='typechecker__'
+// 🔍 Lookup span 328582..328603 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 328513..328524 prefix='typechecker__'
+// 🔍 Lookup span 328653..328674 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 328526..328527 prefix='typechecker__'
+// 🔍 Lookup span 328675..328676 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 328579..328592 prefix='typechecker__'
+// 🔍 Lookup span 328728..328741 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", None)
-// 🔍 Lookup span 328579..328585 prefix='typechecker__'
+// 🔍 Lookup span 328728..328734 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 328641..328654 prefix='typechecker__'
+// 🔍 Lookup span 328790..328803 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 328706..328719 prefix='typechecker__'
+// 🔍 Lookup span 328855..328868 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 328819..328835 prefix='typechecker__'
+// 🔍 Lookup span 328968..328984 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 328819..328842 prefix='typechecker__'
+// 🔍 Lookup span 328968..328991 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 328819..328835 prefix='typechecker__'
+// 🔍 Lookup span 328968..328984 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329129..329141 prefix='typechecker__'
+// 🔍 Lookup span 329278..329290 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 329129..329137 prefix='typechecker__'
+// 🔍 Lookup span 329278..329286 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329193..329217 prefix='typechecker__'
+// 🔍 Lookup span 329342..329366 prefix='typechecker__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329193..329201 prefix='typechecker__'
+// 🔍 Lookup span 329342..329350 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329193..329211 prefix='typechecker__'
+// 🔍 Lookup span 329342..329360 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Reference", Some("ctx"))
-// 🔍 Lookup span 329193..329201 prefix='typechecker__'
+// 🔍 Lookup span 329342..329350 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329220..329222 prefix='typechecker__'
+// 🔍 Lookup span 329369..329371 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 329220..329222 prefix='typechecker__'
+// 🔍 Lookup span 329369..329371 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 329272..329301 prefix='typechecker__'
+// 🔍 Lookup span 329421..329450 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329272..329275 prefix='typechecker__'
+// 🔍 Lookup span 329421..329424 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 329276..329300 prefix='typechecker__'
+// 🔍 Lookup span 329425..329449 prefix='typechecker__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329276..329284 prefix='typechecker__'
+// 🔍 Lookup span 329425..329433 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329276..329294 prefix='typechecker__'
+// 🔍 Lookup span 329425..329443 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Reference", Some("ctx"))
-// 🔍 Lookup span 329276..329284 prefix='typechecker__'
+// 🔍 Lookup span 329425..329433 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329349..329373 prefix='typechecker__'
+// 🔍 Lookup span 329498..329522 prefix='typechecker__'
 //    -> Found: Index("str", Some("ctx"))
-// 🔍 Lookup span 329349..329357 prefix='typechecker__'
+// 🔍 Lookup span 329498..329506 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329349..329367 prefix='typechecker__'
+// 🔍 Lookup span 329498..329516 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Reference", Some("ctx"))
-// 🔍 Lookup span 329349..329357 prefix='typechecker__'
+// 🔍 Lookup span 329498..329506 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329376..329392 prefix='typechecker__'
+// 🔍 Lookup span 329525..329541 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329376..329399 prefix='typechecker__'
+// 🔍 Lookup span 329525..329548 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 329376..329392 prefix='typechecker__'
+// 🔍 Lookup span 329525..329541 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 329559..329579 prefix='typechecker__'
+// 🔍 Lookup span 329708..329728 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 329559..329563 prefix='typechecker__'
+// 🔍 Lookup span 329708..329712 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 329587..329590 prefix='typechecker__'
+// 🔍 Lookup span 329736..329739 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 329587..329590 prefix='typechecker__'
+// 🔍 Lookup span 329736..329739 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 329602..329612 prefix='typechecker__'
+// 🔍 Lookup span 329751..329761 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 329755..329777 prefix='typechecker__'
+// 🔍 Lookup span 329904..329926 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 329755..329759 prefix='typechecker__'
+// 🔍 Lookup span 329904..329908 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 329785..329788 prefix='typechecker__'
+// 🔍 Lookup span 329934..329937 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 329785..329788 prefix='typechecker__'
+// 🔍 Lookup span 329934..329937 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 329800..329810 prefix='typechecker__'
+// 🔍 Lookup span 329949..329959 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 329907..329910 prefix='typechecker__'
+// 🔍 Lookup span 330056..330059 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 329907..329910 prefix='typechecker__'
+// 🔍 Lookup span 330056..330059 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 329990..329993 prefix='typechecker__'
+// 🔍 Lookup span 330139..330142 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 329996..329999 prefix='typechecker__'
+// 🔍 Lookup span 330145..330148 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 329996..329999 prefix='typechecker__'
+// 🔍 Lookup span 330145..330148 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 330077..330080 prefix='typechecker__'
+// 🔍 Lookup span 330226..330229 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 330083..330086 prefix='typechecker__'
+// 🔍 Lookup span 330232..330235 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 330083..330086 prefix='typechecker__'
+// 🔍 Lookup span 330232..330235 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 330167..330173 prefix='typechecker__'
+// 🔍 Lookup span 330316..330322 prefix='typechecker__'
 //    -> Found: Struct("ast__MatchCase_ctx", Some("ctx"))
-// 🔍 Lookup span 330249..330250 prefix='typechecker__'
+// 🔍 Lookup span 330398..330399 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 330387..330393 prefix='typechecker__'
+// 🔍 Lookup span 330536..330542 prefix='typechecker__'
 //    -> Found: Struct("ast__MatchCase_ctx", Some("ctx"))
-// 🔍 Lookup span 330516..330519 prefix='typechecker__'
+// 🔍 Lookup span 330665..330668 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 330520..330528 prefix='typechecker__'
+// 🔍 Lookup span 330669..330677 prefix='typechecker__'
 //    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 330578..330581 prefix='typechecker__'
+// 🔍 Lookup span 330774..330777 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 330582..330597 prefix='typechecker__'
+// 🔍 Lookup span 330778..330793 prefix='typechecker__'
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 330582..330586 prefix='typechecker__'
+// 🔍 Lookup span 330778..330782 prefix='typechecker__'
 //    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 330714..330729 prefix='typechecker__'
+// 🔍 Lookup span 330870..330895 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 330806..330808 prefix='typechecker__'
+// 🔍 Lookup span 330972..330974 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 330806..330808 prefix='typechecker__'
+// 🔍 Lookup span 330972..330974 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 330854..330864 prefix='typechecker__'
+// 🔍 Lookup span 331020..331030 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 330854..330857 prefix='typechecker__'
+// 🔍 Lookup span 331020..331023 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 330858..330863 prefix='typechecker__'
+// 🔍 Lookup span 331024..331029 prefix='typechecker__'
 //    -> Found: Index("ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 330868..330883 prefix='typechecker__'
+// 🔍 Lookup span 331033..331058 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 330885..330886 prefix='typechecker__'
+// 🔍 Lookup span 331059..331060 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 330992..330993 prefix='typechecker__'
+// 🔍 Lookup span 331166..331167 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 331207..331218 prefix='typechecker__'
+// 🔍 Lookup span 331381..331402 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 331265..331276 prefix='typechecker__'
+// 🔍 Lookup span 331448..331469 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 331278..331287 prefix='typechecker__'
+// 🔍 Lookup span 331470..331479 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 331315..331335 prefix='typechecker__'
+// 🔍 Lookup span 331507..331527 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 331315..331319 prefix='typechecker__'
+// 🔍 Lookup span 331507..331511 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 331380..331389 prefix='typechecker__'
+// 🔍 Lookup span 331572..331581 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 331450..331451 prefix='typechecker__'
+// 🔍 Lookup span 331642..331643 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 331539..331550 prefix='typechecker__'
+// 🔍 Lookup span 331731..331742 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_std_Vector_str_ctx", None)
-// 🔍 Lookup span 331601..331612 prefix='typechecker__'
+// 🔍 Lookup span 331793..331804 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_std_Vector_str_ctx", None)
-// 🔍 Lookup span 331684..331701 prefix='typechecker__'
+// 🔍 Lookup span 331876..331893 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", None)
-// 🔍 Lookup span 331745..331762 prefix='typechecker__'
+// 🔍 Lookup span 331937..331954 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", None)
-// 🔍 Lookup span 331763..331764 prefix='typechecker__'
+// 🔍 Lookup span 331955..331956 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", None), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", None)
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 331859..331875 prefix='typechecker__'
+// 🔍 Lookup span 332051..332067 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 331918..331932 prefix='typechecker__'
+// 🔍 Lookup span 332110..332124 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_int", None)
-// 🔍 Lookup span 331966..331977 prefix='typechecker__'
+// 🔍 Lookup span 332158..332169 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 332094..332097 prefix='typechecker__'
+// 🔍 Lookup span 332286..332289 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 332094..332097 prefix='typechecker__'
+// 🔍 Lookup span 332286..332289 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 332180..332183 prefix='typechecker__'
+// 🔍 Lookup span 332372..332375 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 332186..332189 prefix='typechecker__'
+// 🔍 Lookup span 332378..332381 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 332186..332189 prefix='typechecker__'
+// 🔍 Lookup span 332378..332381 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 332273..332276 prefix='typechecker__'
+// 🔍 Lookup span 332465..332468 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 332279..332282 prefix='typechecker__'
+// 🔍 Lookup span 332471..332474 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 332279..332282 prefix='typechecker__'
+// 🔍 Lookup span 332471..332474 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 332334..332337 prefix='typechecker__'
+// 🔍 Lookup span 332526..332529 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 332340..332343 prefix='typechecker__'
+// 🔍 Lookup span 332532..332535 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 332340..332343 prefix='typechecker__'
+// 🔍 Lookup span 332532..332535 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 332411..332415 prefix='typechecker__'
+// 🔍 Lookup span 332603..332607 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 332411..332421 prefix='typechecker__'
+// 🔍 Lookup span 332603..332613 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Match", Some("ctx"))
-// 🔍 Lookup span 332411..332415 prefix='typechecker__'
+// 🔍 Lookup span 332603..332607 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 332489..332490 prefix='typechecker__'
+// 🔍 Lookup span 332681..332682 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 332602..332606 prefix='typechecker__'
+// 🔍 Lookup span 332794..332798 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 332662..332666 prefix='typechecker__'
+// 🔍 Lookup span 332854..332858 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 332662..332678 prefix='typechecker__'
+// 🔍 Lookup span 332854..332870 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_UnsafeBlock", Some("ctx"))
-// 🔍 Lookup span 332662..332666 prefix='typechecker__'
+// 🔍 Lookup span 332854..332858 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 332716..332720 prefix='typechecker__'
+// 🔍 Lookup span 332908..332912 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 332752..332773 prefix='typechecker__'
+// 🔍 Lookup span 332944..332965 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 332752..332756 prefix='typechecker__'
+// 🔍 Lookup span 332944..332948 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 332880..332883 prefix='typechecker__'
+// 🔍 Lookup span 333072..333075 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 332884..332892 prefix='typechecker__'
+// 🔍 Lookup span 333076..333084 prefix='typechecker__'
 //    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 332934..332937 prefix='typechecker__'
+// 🔍 Lookup span 333175..333178 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 332938..332953 prefix='typechecker__'
+// 🔍 Lookup span 333179..333194 prefix='typechecker__'
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 332938..332942 prefix='typechecker__'
+// 🔍 Lookup span 333179..333183 prefix='typechecker__'
 //    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 333054..333069 prefix='typechecker__'
+// 🔍 Lookup span 333255..333282 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 333138..333140 prefix='typechecker__'
+// 🔍 Lookup span 333351..333353 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 333138..333140 prefix='typechecker__'
+// 🔍 Lookup span 333351..333353 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 333178..333188 prefix='typechecker__'
+// 🔍 Lookup span 333391..333401 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 333178..333181 prefix='typechecker__'
+// 🔍 Lookup span 333391..333394 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 333182..333187 prefix='typechecker__'
+// 🔍 Lookup span 333395..333400 prefix='typechecker__'
 //    -> Found: Index("ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 333192..333207 prefix='typechecker__'
+// 🔍 Lookup span 333404..333431 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 333209..333210 prefix='typechecker__'
+// 🔍 Lookup span 333432..333433 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 333294..333295 prefix='typechecker__'
+// 🔍 Lookup span 333517..333518 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 333351..333372 prefix='typechecker__'
+// 🔍 Lookup span 333574..333595 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 333351..333355 prefix='typechecker__'
+// 🔍 Lookup span 333574..333578 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 333434..333438 prefix='typechecker__'
+// 🔍 Lookup span 333657..333661 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 333488..333492 prefix='typechecker__'
+// 🔍 Lookup span 333711..333715 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 333488..333498 prefix='typechecker__'
+// 🔍 Lookup span 333711..333721 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Defer", Some("ctx"))
-// 🔍 Lookup span 333488..333492 prefix='typechecker__'
+// 🔍 Lookup span 333711..333715 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 333609..333613 prefix='typechecker__'
+// 🔍 Lookup span 333832..333836 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 333664..333668 prefix='typechecker__'
+// 🔍 Lookup span 333887..333891 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 333664..333675 prefix='typechecker__'
+// 🔍 Lookup span 333887..333898 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
-// 🔍 Lookup span 333664..333668 prefix='typechecker__'
+// 🔍 Lookup span 333887..333891 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 333768..333772 prefix='typechecker__'
+// 🔍 Lookup span 333991..333995 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 333886..333889 prefix='typechecker__'
+// 🔍 Lookup span 334143..334146 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 333891..333926 prefix='typechecker__'
+// 🔍 Lookup span 334148..334183 prefix='typechecker__'
 //    -> Found: Index("std_Vector_str_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 333891..333895 prefix='typechecker__'
+// 🔍 Lookup span 334148..334152 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 334012..334025 prefix='typechecker__'
+// 🔍 Lookup span 334244..334269 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 334065..334078 prefix='typechecker__'
+// 🔍 Lookup span 334308..334333 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 334080..334081 prefix='typechecker__'
+// 🔍 Lookup span 334334..334335 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 334108..334124 prefix='typechecker__'
+// 🔍 Lookup span 334362..334378 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 334108..334112 prefix='typechecker__'
+// 🔍 Lookup span 334362..334366 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 334108..334137 prefix='typechecker__'
+// 🔍 Lookup span 334362..334391 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_int", None)
-// 🔍 Lookup span 334178..334181 prefix='typechecker__'
+// 🔍 Lookup span 334432..334435 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 334178..334181 prefix='typechecker__'
+// 🔍 Lookup span 334432..334435 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 334270..334273 prefix='typechecker__'
+// 🔍 Lookup span 334524..334527 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 334276..334279 prefix='typechecker__'
+// 🔍 Lookup span 334530..334533 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 334276..334279 prefix='typechecker__'
+// 🔍 Lookup span 334530..334533 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 334392..334396 prefix='typechecker__'
+// 🔍 Lookup span 334646..334650 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 334392..334403 prefix='typechecker__'
+// 🔍 Lookup span 334646..334657 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
-// 🔍 Lookup span 334392..334396 prefix='typechecker__'
+// 🔍 Lookup span 334646..334650 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 334463..334464 prefix='typechecker__'
+// 🔍 Lookup span 334717..334718 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 334565..334582 prefix='typechecker__'
+// 🔍 Lookup span 334819..334836 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 334565..334578 prefix='typechecker__'
+// 🔍 Lookup span 334819..334832 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 334681..334694 prefix='typechecker__'
+// 🔍 Lookup span 334935..334948 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 334758..334771 prefix='typechecker__'
+// 🔍 Lookup span 335012..335025 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 335192..335195 prefix='typechecker__'
+// 🔍 Lookup span 335446..335449 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 335198..335201 prefix='typechecker__'
+// 🔍 Lookup span 335452..335455 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 335198..335201 prefix='typechecker__'
+// 🔍 Lookup span 335452..335455 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 335214..335217 prefix='typechecker__'
+// 🔍 Lookup span 335468..335471 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 335214..335217 prefix='typechecker__'
+// 🔍 Lookup span 335468..335471 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 335459..335463 prefix='typechecker__'
+// 🔍 Lookup span 335713..335717 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 335575..335579 prefix='typechecker__'
+// 🔍 Lookup span 335829..335833 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 335652..335671 prefix='typechecker__'
+// 🔍 Lookup span 335906..335925 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 335652..335655 prefix='typechecker__'
+// 🔍 Lookup span 335906..335909 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 335656..335666 prefix='typechecker__'
+// 🔍 Lookup span 335910..335920 prefix='typechecker__'
 //    -> Found: Index("typechecker__OriginSet_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("typechecker__OriginSet_ctx", Some("ctx"))
-// 🔍 Lookup span 335652..335667 prefix='typechecker__'
+// 🔍 Lookup span 335906..335921 prefix='typechecker__'
 //    -> Found: Struct("typechecker__OriginSet_ctx", Some("ctx"))
-// 🔍 Lookup span 335652..335681 prefix='typechecker__'
+// 🔍 Lookup span 335906..335935 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 335757..335767 prefix='typechecker__'
+// 🔍 Lookup span 336011..336021 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 335813..335823 prefix='typechecker__'
+// 🔍 Lookup span 336067..336077 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 335824..335825 prefix='typechecker__'
+// 🔍 Lookup span 336078..336079 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 336061..336064 prefix='typechecker__'
+// 🔍 Lookup span 336315..336318 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 336067..336070 prefix='typechecker__'
+// 🔍 Lookup span 336321..336324 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 336067..336070 prefix='typechecker__'
+// 🔍 Lookup span 336321..336324 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 336083..336086 prefix='typechecker__'
+// 🔍 Lookup span 336337..336340 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 336083..336086 prefix='typechecker__'
+// 🔍 Lookup span 336337..336340 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 336156..336159 prefix='typechecker__'
+// 🔍 Lookup span 336410..336413 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 336162..336165 prefix='typechecker__'
+// 🔍 Lookup span 336416..336419 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 336162..336165 prefix='typechecker__'
+// 🔍 Lookup span 336416..336419 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 336266..336269 prefix='typechecker__'
+// 🔍 Lookup span 336520..336523 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 336272..336275 prefix='typechecker__'
+// 🔍 Lookup span 336526..336529 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 336272..336275 prefix='typechecker__'
+// 🔍 Lookup span 336526..336529 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 336329..336332 prefix='typechecker__'
+// 🔍 Lookup span 336583..336586 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 336335..336338 prefix='typechecker__'
+// 🔍 Lookup span 336589..336592 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 336335..336338 prefix='typechecker__'
+// 🔍 Lookup span 336589..336592 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 336515..336516 prefix='typechecker__'
+// 🔍 Lookup span 336769..336770 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 336613..336617 prefix='typechecker__'
+// 🔍 Lookup span 336867..336871 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 336733..336737 prefix='typechecker__'
+// 🔍 Lookup span 336987..336991 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 336887..336891 prefix='typechecker__'
+// 🔍 Lookup span 337141..337145 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 336986..336989 prefix='typechecker__'
+// 🔍 Lookup span 337240..337243 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 336991..337017 prefix='typechecker__'
+// 🔍 Lookup span 337245..337271 prefix='typechecker__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 336991..336995 prefix='typechecker__'
+// 🔍 Lookup span 337245..337249 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 337207..337210 prefix='typechecker__'
+// 🔍 Lookup span 337461..337464 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 337213..337216 prefix='typechecker__'
+// 🔍 Lookup span 337467..337470 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 337213..337216 prefix='typechecker__'
+// 🔍 Lookup span 337467..337470 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 337229..337232 prefix='typechecker__'
+// 🔍 Lookup span 337483..337486 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 337229..337232 prefix='typechecker__'
+// 🔍 Lookup span 337483..337486 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 337287..337290 prefix='typechecker__'
+// 🔍 Lookup span 337541..337544 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 337293..337296 prefix='typechecker__'
+// 🔍 Lookup span 337547..337550 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 337293..337296 prefix='typechecker__'
+// 🔍 Lookup span 337547..337550 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 337343..337346 prefix='typechecker__'
+// 🔍 Lookup span 337597..337600 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 337349..337352 prefix='typechecker__'
+// 🔍 Lookup span 337603..337606 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 337349..337352 prefix='typechecker__'
+// 🔍 Lookup span 337603..337606 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 337365..337368 prefix='typechecker__'
+// 🔍 Lookup span 337619..337622 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 337365..337368 prefix='typechecker__'
+// 🔍 Lookup span 337619..337622 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 337573..337581 prefix='typechecker__'
+// 🔍 Lookup span 337827..337835 prefix='typechecker__'
 //    -> Found: Struct("token__Span", None)
-// 🔍 Lookup span 337673..337681 prefix='typechecker__'
+// 🔍 Lookup span 337927..337935 prefix='typechecker__'
 //    -> Found: Struct("token__Span", None)
-// 🔍 Lookup span 337684..337688 prefix='typechecker__'
+// 🔍 Lookup span 337938..337942 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 337684..337695 prefix='typechecker__'
+// 🔍 Lookup span 337938..337949 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
-// 🔍 Lookup span 337684..337688 prefix='typechecker__'
+// 🔍 Lookup span 337938..337942 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 337952..337956 prefix='typechecker__'
+// 🔍 Lookup span 338206..338210 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 337952..337963 prefix='typechecker__'
+// 🔍 Lookup span 338206..338217 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
-// 🔍 Lookup span 337952..337956 prefix='typechecker__'
+// 🔍 Lookup span 338206..338210 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338042..338046 prefix='typechecker__'
+// 🔍 Lookup span 338296..338300 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338101..338105 prefix='typechecker__'
+// 🔍 Lookup span 338355..338359 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338101..338116 prefix='typechecker__'
+// 🔍 Lookup span 338355..338370 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Expression", Some("ctx"))
-// 🔍 Lookup span 338101..338105 prefix='typechecker__'
+// 🔍 Lookup span 338355..338359 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338227..338231 prefix='typechecker__'
+// 🔍 Lookup span 338481..338485 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338276..338280 prefix='typechecker__'
+// 🔍 Lookup span 338530..338534 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338276..338286 prefix='typechecker__'
+// 🔍 Lookup span 338530..338540 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Guard", Some("ctx"))
-// 🔍 Lookup span 338276..338280 prefix='typechecker__'
+// 🔍 Lookup span 338530..338534 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338319..338323 prefix='typechecker__'
+// 🔍 Lookup span 338573..338577 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338319..338329 prefix='typechecker__'
+// 🔍 Lookup span 338573..338583 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Guard", Some("ctx"))
-// 🔍 Lookup span 338319..338323 prefix='typechecker__'
+// 🔍 Lookup span 338573..338577 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338363..338367 prefix='typechecker__'
+// 🔍 Lookup span 338617..338621 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338363..338373 prefix='typechecker__'
+// 🔍 Lookup span 338617..338627 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Guard", Some("ctx"))
-// 🔍 Lookup span 338363..338367 prefix='typechecker__'
+// 🔍 Lookup span 338617..338621 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338410..338414 prefix='typechecker__'
+// 🔍 Lookup span 338664..338668 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338410..338420 prefix='typechecker__'
+// 🔍 Lookup span 338664..338674 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Guard", Some("ctx"))
-// 🔍 Lookup span 338410..338414 prefix='typechecker__'
+// 🔍 Lookup span 338664..338668 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338456..338460 prefix='typechecker__'
+// 🔍 Lookup span 338710..338714 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338456..338466 prefix='typechecker__'
+// 🔍 Lookup span 338710..338720 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Guard", Some("ctx"))
-// 🔍 Lookup span 338456..338460 prefix='typechecker__'
+// 🔍 Lookup span 338710..338714 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 338677..338693 prefix='typechecker__'
+// 🔍 Lookup span 338931..338947 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 338677..338689 prefix='typechecker__'
+// 🔍 Lookup span 338931..338943 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 338751..338768 prefix='typechecker__'
+// 🔍 Lookup span 339005..339022 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 338825..338842 prefix='typechecker__'
+// 🔍 Lookup span 339079..339096 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 338825..338849 prefix='typechecker__'
+// 🔍 Lookup span 339079..339103 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 338825..338842 prefix='typechecker__'
+// 🔍 Lookup span 339079..339096 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 338901..338922 prefix='typechecker__'
+// 🔍 Lookup span 339155..339176 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__StructLayout_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 338901..338905 prefix='typechecker__'
+// 🔍 Lookup span 339155..339159 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 338960..338973 prefix='typechecker__'
+// 🔍 Lookup span 339214..339227 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 339014..339027 prefix='typechecker__'
+// 🔍 Lookup span 339268..339281 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 339076..339089 prefix='typechecker__'
+// 🔍 Lookup span 339330..339343 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", None)
-// 🔍 Lookup span 339076..339082 prefix='typechecker__'
+// 🔍 Lookup span 339330..339336 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 339145..339158 prefix='typechecker__'
+// 🔍 Lookup span 339399..339412 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", None)
-// 🔍 Lookup span 339145..339151 prefix='typechecker__'
+// 🔍 Lookup span 339399..339405 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 339194..339209 prefix='typechecker__'
+// 🔍 Lookup span 339448..339463 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 339216..339232 prefix='typechecker__'
+// 🔍 Lookup span 339470..339486 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 339277..339292 prefix='typechecker__'
+// 🔍 Lookup span 339531..339546 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 339325..339332 prefix='typechecker__'
+// 🔍 Lookup span 339579..339586 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", None)
-// 🔍 Lookup span 339345..339352 prefix='typechecker__'
+// 🔍 Lookup span 339599..339606 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", None)
-// 🔍 Lookup span 339407..339419 prefix='typechecker__'
+// 🔍 Lookup span 339661..339673 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 339422..339438 prefix='typechecker__'
+// 🔍 Lookup span 339676..339692 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 339472..339477 prefix='typechecker__'
+// 🔍 Lookup span 339726..339731 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 339736..339739 prefix='typechecker__'
+// 🔍 Lookup span 339990..339993 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 339742..339745 prefix='typechecker__'
+// 🔍 Lookup span 339996..339999 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 339742..339745 prefix='typechecker__'
+// 🔍 Lookup span 339996..339999 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 339758..339761 prefix='typechecker__'
+// 🔍 Lookup span 340012..340015 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 339758..339761 prefix='typechecker__'
+// 🔍 Lookup span 340012..340015 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 340020..340024 prefix='typechecker__'
+// 🔍 Lookup span 340274..340278 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 340107..340111 prefix='typechecker__'
+// 🔍 Lookup span 340361..340365 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 340198..340202 prefix='typechecker__'
+// 🔍 Lookup span 340452..340456 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 340326..340329 prefix='typechecker__'
+// 🔍 Lookup span 340580..340583 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 340330..340339 prefix='typechecker__'
+// 🔍 Lookup span 340584..340593 prefix='typechecker__'
 //    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 340378..340381 prefix='typechecker__'
+// 🔍 Lookup span 340680..340683 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 340382..340403 prefix='typechecker__'
+// 🔍 Lookup span 340684..340705 prefix='typechecker__'
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 340382..340392 prefix='typechecker__'
+// 🔍 Lookup span 340684..340694 prefix='typechecker__'
 //    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 340496..340512 prefix='typechecker__'
+// 🔍 Lookup span 340758..340785 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 340578..340580 prefix='typechecker__'
+// 🔍 Lookup span 340851..340853 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 340578..340580 prefix='typechecker__'
+// 🔍 Lookup span 340851..340853 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 340614..340624 prefix='typechecker__'
+// 🔍 Lookup span 340887..340897 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 340614..340617 prefix='typechecker__'
+// 🔍 Lookup span 340887..340890 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 340618..340623 prefix='typechecker__'
+// 🔍 Lookup span 340891..340896 prefix='typechecker__'
 //    -> Found: Index("ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 340628..340644 prefix='typechecker__'
+// 🔍 Lookup span 340900..340927 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 340646..340647 prefix='typechecker__'
+// 🔍 Lookup span 340928..340929 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 340729..340730 prefix='typechecker__'
+// 🔍 Lookup span 341011..341012 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 341021..341024 prefix='typechecker__'
+// 🔍 Lookup span 341303..341306 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 341025..341034 prefix='typechecker__'
+// 🔍 Lookup span 341307..341316 prefix='typechecker__'
 //    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 341021..341035 prefix='typechecker__'
+// 🔍 Lookup span 341303..341317 prefix='typechecker__'
 //    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 341081..341103 prefix='typechecker__'
+// 🔍 Lookup span 341363..341385 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 341081..341085 prefix='typechecker__'
+// 🔍 Lookup span 341363..341367 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 341135..341151 prefix='typechecker__'
+// 🔍 Lookup span 341417..341433 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 341135..341139 prefix='typechecker__'
+// 🔍 Lookup span 341417..341421 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 341181..341203 prefix='typechecker__'
+// 🔍 Lookup span 341463..341485 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 341181..341185 prefix='typechecker__'
+// 🔍 Lookup span 341463..341467 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 341257..341260 prefix='typechecker__'
+// 🔍 Lookup span 341539..341542 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 341257..341260 prefix='typechecker__'
+// 🔍 Lookup span 341539..341542 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 341272..341276 prefix='typechecker__'
+// 🔍 Lookup span 341554..341558 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 341312..341332 prefix='typechecker__'
+// 🔍 Lookup span 341594..341614 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 341312..341316 prefix='typechecker__'
+// 🔍 Lookup span 341594..341598 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 341340..341343 prefix='typechecker__'
+// 🔍 Lookup span 341622..341625 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 341340..341343 prefix='typechecker__'
+// 🔍 Lookup span 341622..341625 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 341355..341359 prefix='typechecker__'
-//    -> Found: Str
-// 🔍 Lookup span 341393..341405 prefix='typechecker__'
-//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 341468..341480 prefix='typechecker__'
-//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 341468..341487 prefix='typechecker__'
-//    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 341468..341480 prefix='typechecker__'
-//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 341524..341541 prefix='typechecker__'
-//    -> Found: Str
-// 🔍 Lookup span 341551..341554 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 341551..341554 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 341562..341565 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 341562..341565 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 341637..341659 prefix='typechecker__'
-//    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
 // 🔍 Lookup span 341637..341641 prefix='typechecker__'
-//    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 341667..341670 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 341667..341670 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 341682..341686 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 341775..341792 prefix='typechecker__'
+// 🔍 Lookup span 341675..341687 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 341849..341866 prefix='typechecker__'
+// 🔍 Lookup span 341750..341762 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 341849..341873 prefix='typechecker__'
+// 🔍 Lookup span 341750..341769 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 341849..341866 prefix='typechecker__'
+// 🔍 Lookup span 341750..341762 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 341910..341921 prefix='typechecker__'
+// 🔍 Lookup span 341806..341823 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 341932..341935 prefix='typechecker__'
+// 🔍 Lookup span 341833..341836 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 341932..341935 prefix='typechecker__'
+// 🔍 Lookup span 341833..341836 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 341943..341946 prefix='typechecker__'
+// 🔍 Lookup span 341844..341847 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 341943..341946 prefix='typechecker__'
+// 🔍 Lookup span 341844..341847 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 342015..342026 prefix='typechecker__'
+// 🔍 Lookup span 341919..341941 prefix='typechecker__'
+//    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
+// 🔍 Lookup span 341919..341923 prefix='typechecker__'
+//    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
+// 🔍 Lookup span 341949..341952 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 341949..341952 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 341964..341968 prefix='typechecker__'
+//    -> Found: Str
+// 🔍 Lookup span 342057..342074 prefix='typechecker__'
+//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 342131..342148 prefix='typechecker__'
+//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 342131..342155 prefix='typechecker__'
+//    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
+// 🔍 Lookup span 342131..342148 prefix='typechecker__'
+//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 342192..342203 prefix='typechecker__'
+//    -> Found: Str
+// 🔍 Lookup span 342214..342217 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 342214..342217 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 342225..342228 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 342225..342228 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 342297..342308 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 342320..342325 prefix='typechecker__'
+// 🔍 Lookup span 342602..342607 prefix='typechecker__'
 //    -> Found: Index("typechecker__OriginSet_ctx", Some("ctx"))
-// 🔍 Lookup span 342404..342407 prefix='typechecker__'
+// 🔍 Lookup span 342686..342689 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 342408..342413 prefix='typechecker__'
+// 🔍 Lookup span 342690..342695 prefix='typechecker__'
 //    -> Found: Index("typechecker__OriginSet_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("typechecker__OriginSet_ctx", Some("ctx"))
-// 🔍 Lookup span 342404..342414 prefix='typechecker__'
+// 🔍 Lookup span 342686..342696 prefix='typechecker__'
 //    -> Found: Struct("typechecker__OriginSet_ctx", Some("ctx"))
-// 🔍 Lookup span 342404..342418 prefix='typechecker__'
+// 🔍 Lookup span 342686..342700 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 342404..342414 prefix='typechecker__'
+// 🔍 Lookup span 342686..342696 prefix='typechecker__'
 //    -> Found: Struct("typechecker__OriginSet_ctx", Some("ctx"))
-// 🔍 Lookup span 342461..342464 prefix='typechecker__'
+// 🔍 Lookup span 342743..342746 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 342461..342464 prefix='typechecker__'
+// 🔍 Lookup span 342743..342746 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 342476..342480 prefix='typechecker__'
+// 🔍 Lookup span 342758..342762 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 342516..342538 prefix='typechecker__'
+// 🔍 Lookup span 342798..342820 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 342516..342520 prefix='typechecker__'
+// 🔍 Lookup span 342798..342802 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 342546..342549 prefix='typechecker__'
+// 🔍 Lookup span 342828..342831 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 342546..342549 prefix='typechecker__'
+// 🔍 Lookup span 342828..342831 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 342561..342565 prefix='typechecker__'
+// 🔍 Lookup span 342843..342847 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 342590..342606 prefix='typechecker__'
+// 🔍 Lookup span 342872..342888 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 342590..342594 prefix='typechecker__'
+// 🔍 Lookup span 342872..342876 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 342638..342642 prefix='typechecker__'
+// 🔍 Lookup span 342920..342924 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 342747..342751 prefix='typechecker__'
+// 🔍 Lookup span 343029..343033 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 342818..342821 prefix='typechecker__'
+// 🔍 Lookup span 343100..343103 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 342818..342821 prefix='typechecker__'
+// 🔍 Lookup span 343100..343103 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 342833..342837 prefix='typechecker__'
+// 🔍 Lookup span 343115..343119 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 342908..342911 prefix='typechecker__'
+// 🔍 Lookup span 343190..343193 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 342908..342911 prefix='typechecker__'
+// 🔍 Lookup span 343190..343193 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 342922..342926 prefix='typechecker__'
+// 🔍 Lookup span 343204..343208 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 343116..343119 prefix='typechecker__'
+// 🔍 Lookup span 343398..343401 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 343116..343119 prefix='typechecker__'
+// 🔍 Lookup span 343398..343401 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 343210..343213 prefix='typechecker__'
+// 🔍 Lookup span 343492..343495 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 343216..343219 prefix='typechecker__'
+// 🔍 Lookup span 343498..343501 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 343216..343219 prefix='typechecker__'
+// 🔍 Lookup span 343498..343501 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 343325..343328 prefix='typechecker__'
+// 🔍 Lookup span 343607..343610 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 343331..343334 prefix='typechecker__'
+// 🔍 Lookup span 343613..343616 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 343331..343334 prefix='typechecker__'
+// 🔍 Lookup span 343613..343616 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 343347..343350 prefix='typechecker__'
+// 🔍 Lookup span 343629..343632 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 343347..343350 prefix='typechecker__'
+// 🔍 Lookup span 343629..343632 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 343428..343432 prefix='typechecker__'
+// 🔍 Lookup span 343710..343714 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 343428..343438 prefix='typechecker__'
+// 🔍 Lookup span 343710..343720 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx_Guard", Some("ctx"))
-// 🔍 Lookup span 343428..343432 prefix='typechecker__'
+// 🔍 Lookup span 343710..343714 prefix='typechecker__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 343516..343520 prefix='typechecker__'
+// 🔍 Lookup span 343798..343802 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 343633..343637 prefix='typechecker__'
+// 🔍 Lookup span 343915..343919 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 343633..343660 prefix='typechecker__'
+// 🔍 Lookup span 343915..343942 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_typechecker__PrefixMapEntry_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 343694..343721 prefix='typechecker__'
+// 🔍 Lookup span 343976..344003 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_typechecker__PrefixMapEntry_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 343722..343727 prefix='typechecker__'
+// 🔍 Lookup span 344004..344009 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_typechecker__PrefixMapEntry_ctx_ctx", Some("ctx")), index type is Int
-// 🔍 Lookup span 343694..343698 prefix='typechecker__'
+// 🔍 Lookup span 343976..343980 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
 // 🕵️ Checking if type is Vector: Struct("std_Vector_typechecker__PrefixMapEntry_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_typechecker__PrefixMapEntry_ctx_ctx, Erased name: std_Vector_typechecker__PrefixMapEntry, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 343749..343752 prefix='typechecker__'
+// 🔍 Lookup span 344031..344034 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 343749..343752 prefix='typechecker__'
+// 🔍 Lookup span 344031..344034 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 343760..343765 prefix='typechecker__'
+// 🔍 Lookup span 344042..344047 prefix='typechecker__'
 //    -> Found: Struct("typechecker__PrefixMapEntry_ctx", Some("ctx"))
-// 🔍 Lookup span 343804..343813 prefix='typechecker__'
+// 🔍 Lookup span 344086..344095 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 343843..343848 prefix='typechecker__'
+// 🔍 Lookup span 344125..344130 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 343856..343860 prefix='typechecker__'
+// 🔍 Lookup span 344138..344142 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 343856..343883 prefix='typechecker__'
+// 🔍 Lookup span 344138..344165 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_typechecker__PrefixMapEntry_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 343920..343925 prefix='typechecker__'
+// 🔍 Lookup span 344202..344207 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 344165..344181 prefix='typechecker__'
+// 🔍 Lookup span 344447..344463 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 344165..344174 prefix='typechecker__'
+// 🔍 Lookup span 344447..344456 prefix='typechecker__'
 //    -> Found: Struct("typechecker__PrefixMapEntry_ctx", Some("ctx"))
-// 🔍 Lookup span 344184..344187 prefix='typechecker__'
+// 🔍 Lookup span 344466..344469 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 344184..344187 prefix='typechecker__'
+// 🔍 Lookup span 344466..344469 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 344199..344205 prefix='typechecker__'
+// 🔍 Lookup span 344481..344487 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 344224..344239 prefix='typechecker__'
+// 🔍 Lookup span 344506..344521 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_typechecker__ResolvedTypeEntry_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 344224..344233 prefix='typechecker__'
+// 🔍 Lookup span 344506..344515 prefix='typechecker__'
 //    -> Found: Struct("typechecker__PrefixMapEntry_ctx", Some("ctx"))
-// 🔍 Lookup span 344242..344245 prefix='typechecker__'
+// 🔍 Lookup span 344524..344527 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 344242..344245 prefix='typechecker__'
+// 🔍 Lookup span 344524..344527 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 344279..344306 prefix='typechecker__'
+// 🔍 Lookup span 344561..344588 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_typechecker__PrefixMapEntry_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 344279..344283 prefix='typechecker__'
+// 🔍 Lookup span 344561..344565 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 344340..344349 prefix='typechecker__'
+// 🔍 Lookup span 344622..344631 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 344357..344361 prefix='typechecker__'
+// 🔍 Lookup span 344639..344643 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 344357..344384 prefix='typechecker__'
+// 🔍 Lookup span 344639..344666 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_typechecker__PrefixMapEntry_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 344437..344464 prefix='typechecker__'
+// 🔍 Lookup span 344719..344746 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_typechecker__PrefixMapEntry_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 344465..344474 prefix='typechecker__'
+// 🔍 Lookup span 344747..344756 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_typechecker__PrefixMapEntry_ctx_ctx", Some("ctx")), index type is Int
-// 🔍 Lookup span 344437..344441 prefix='typechecker__'
+// 🔍 Lookup span 344719..344723 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
 // 🕵️ Checking if type is Vector: Struct("std_Vector_typechecker__PrefixMapEntry_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_typechecker__PrefixMapEntry_ctx_ctx, Erased name: std_Vector_typechecker__PrefixMapEntry, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 344541..344564 prefix='typechecker__'
+// 🔍 Lookup span 344823..344846 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 344541..344551 prefix='typechecker__'
+// 🔍 Lookup span 344823..344833 prefix='typechecker__'
 //    -> Found: Struct("typechecker__ResolvedTypeEntry_ctx", Some("ctx"))
-// 🔍 Lookup span 344567..344571 prefix='typechecker__'
+// 🔍 Lookup span 344849..344853 prefix='typechecker__'
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 344567..344577 prefix='typechecker__'
+// 🔍 Lookup span 344849..344859 prefix='typechecker__'
 //    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 344567..344571 prefix='typechecker__'
+// 🔍 Lookup span 344849..344853 prefix='typechecker__'
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 344598..344619 prefix='typechecker__'
+// 🔍 Lookup span 344880..344901 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 344598..344608 prefix='typechecker__'
+// 🔍 Lookup span 344880..344890 prefix='typechecker__'
 //    -> Found: Struct("typechecker__ResolvedTypeEntry_ctx", Some("ctx"))
-// 🔍 Lookup span 344622..344626 prefix='typechecker__'
+// 🔍 Lookup span 344904..344908 prefix='typechecker__'
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 344622..344630 prefix='typechecker__'
+// 🔍 Lookup span 344904..344912 prefix='typechecker__'
 //    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 344622..344626 prefix='typechecker__'
+// 🔍 Lookup span 344904..344908 prefix='typechecker__'
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 344651..344670 prefix='typechecker__'
+// 🔍 Lookup span 344933..344952 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 344651..344661 prefix='typechecker__'
+// 🔍 Lookup span 344933..344943 prefix='typechecker__'
 //    -> Found: Struct("typechecker__ResolvedTypeEntry_ctx", Some("ctx"))
-// 🔍 Lookup span 344700..344717 prefix='typechecker__'
+// 🔍 Lookup span 344982..344999 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_typechecker__ResolvedTypeEntry_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 344700..344710 prefix='typechecker__'
+// 🔍 Lookup span 344982..344992 prefix='typechecker__'
 //    -> Found: Struct("typechecker__PrefixMapEntry_ctx", Some("ctx"))
-// 🔍 Lookup span 344874..344876 prefix='typechecker__'
+// 🔍 Lookup span 345156..345158 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 344899..344901 prefix='typechecker__'
+// 🔍 Lookup span 345181..345183 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 344961..344968 prefix='typechecker__'
+// 🔍 Lookup span 345243..345250 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 345042..345045 prefix='typechecker__'
+// 🔍 Lookup span 345324..345327 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 345042..345045 prefix='typechecker__'
+// 🔍 Lookup span 345324..345327 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 345084..345087 prefix='typechecker__'
+// 🔍 Lookup span 345366..345369 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 345084..345087 prefix='typechecker__'
+// 🔍 Lookup span 345366..345369 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 345226..345227 prefix='typechecker__'
+// 🔍 Lookup span 345508..345509 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 345465..345469 prefix='typechecker__'
+// 🔍 Lookup span 345747..345751 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 345650..345654 prefix='typechecker__'
+// 🔍 Lookup span 345932..345936 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 345656..345657 prefix='typechecker__'
+// 🔍 Lookup span 345938..345939 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 345661..345665 prefix='typechecker__'
+// 🔍 Lookup span 345943..345947 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 345667..345674 prefix='typechecker__'
+// 🔍 Lookup span 345949..345956 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 345727..345734 prefix='typechecker__'
+// 🔍 Lookup span 346009..346016 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 345774..345775 prefix='typechecker__'
+// 🔍 Lookup span 346056..346057 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 345858..345862 prefix='typechecker__'
+// 🔍 Lookup span 346140..346144 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 345864..345865 prefix='typechecker__'
+// 🔍 Lookup span 346146..346147 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 345885..345893 prefix='typechecker__'
+// 🔍 Lookup span 346167..346175 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 345885..345889 prefix='typechecker__'
+// 🔍 Lookup span 346167..346171 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 345891..345892 prefix='typechecker__'
+// 🔍 Lookup span 346173..346174 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 345897..345901 prefix='typechecker__'
+// 🔍 Lookup span 346179..346183 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 345903..345910 prefix='typechecker__'
+// 🔍 Lookup span 346185..346192 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 345930..345944 prefix='typechecker__'
+// 🔍 Lookup span 346212..346226 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 345930..345934 prefix='typechecker__'
+// 🔍 Lookup span 346212..346216 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 345936..345943 prefix='typechecker__'
+// 🔍 Lookup span 346218..346225 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 345979..345980 prefix='typechecker__'
+// 🔍 Lookup span 346261..346262 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 346150..346154 prefix='typechecker__'
+// 🔍 Lookup span 346432..346436 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 346150..346165 prefix='typechecker__'
+// 🔍 Lookup span 346432..346447 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 346398..346402 prefix='typechecker__'
+// 🔍 Lookup span 346680..346684 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 346398..346413 prefix='typechecker__'
+// 🔍 Lookup span 346680..346695 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 346652..346656 prefix='typechecker__'
+// 🔍 Lookup span 346934..346938 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__StructLayout_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 346652..346667 prefix='typechecker__'
+// 🔍 Lookup span 346934..346949 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 346907..346911 prefix='typechecker__'
+// 🔍 Lookup span 347189..347193 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_std_Vector_str_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 346907..346922 prefix='typechecker__'
+// 🔍 Lookup span 347189..347204 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 347164..347168 prefix='typechecker__'
+// 🔍 Lookup span 347446..347450 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__FunctionSignature_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 347164..347179 prefix='typechecker__'
+// 🔍 Lookup span 347446..347461 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 347429..347433 prefix='typechecker__'
+// 🔍 Lookup span 347711..347715 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__StructTemplate_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 347429..347444 prefix='typechecker__'
+// 🔍 Lookup span 347711..347726 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 347690..347694 prefix='typechecker__'
+// 🔍 Lookup span 347972..347976 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__EnumTemplate_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 347690..347705 prefix='typechecker__'
+// 🔍 Lookup span 347972..347987 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 347972..347976 prefix='typechecker__'
+// 🔍 Lookup span 348254..348258 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 347972..347976 prefix='typechecker__'
+// 🔍 Lookup span 348254..348258 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 348042..348046 prefix='typechecker__'
+// 🔍 Lookup span 348324..348328 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 348073..348077 prefix='typechecker__'
+// 🔍 Lookup span 348355..348359 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 348078..348079 prefix='typechecker__'
+// 🔍 Lookup span 348360..348361 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 348109..348129 prefix='typechecker__'
+// 🔍 Lookup span 348391..348411 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 348109..348113 prefix='typechecker__'
+// 🔍 Lookup span 348391..348395 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 348155..348161 prefix='typechecker__'
+// 🔍 Lookup span 348437..348443 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 348197..348200 prefix='typechecker__'
+// 🔍 Lookup span 348479..348482 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348197..348200 prefix='typechecker__'
+// 🔍 Lookup span 348479..348482 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348216..348222 prefix='typechecker__'
+// 🔍 Lookup span 348498..348504 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 348250..348256 prefix='typechecker__'
+// 🔍 Lookup span 348532..348538 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 348259..348262 prefix='typechecker__'
+// 🔍 Lookup span 348541..348544 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348259..348262 prefix='typechecker__'
+// 🔍 Lookup span 348541..348544 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348301..348307 prefix='typechecker__'
+// 🔍 Lookup span 348583..348589 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 348310..348313 prefix='typechecker__'
+// 🔍 Lookup span 348592..348595 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348310..348313 prefix='typechecker__'
+// 🔍 Lookup span 348592..348595 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348351..348357 prefix='typechecker__'
+// 🔍 Lookup span 348633..348639 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 348360..348363 prefix='typechecker__'
+// 🔍 Lookup span 348642..348645 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348360..348363 prefix='typechecker__'
+// 🔍 Lookup span 348642..348645 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348403..348409 prefix='typechecker__'
+// 🔍 Lookup span 348685..348691 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 348412..348415 prefix='typechecker__'
+// 🔍 Lookup span 348694..348697 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348412..348415 prefix='typechecker__'
+// 🔍 Lookup span 348694..348697 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348456..348462 prefix='typechecker__'
+// 🔍 Lookup span 348738..348744 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 348465..348468 prefix='typechecker__'
+// 🔍 Lookup span 348747..348750 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348465..348468 prefix='typechecker__'
+// 🔍 Lookup span 348747..348750 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348517..348518 prefix='typechecker__'
+// 🔍 Lookup span 348799..348800 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 348555..348558 prefix='typechecker__'
+// 🔍 Lookup span 348837..348840 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348555..348558 prefix='typechecker__'
+// 🔍 Lookup span 348837..348840 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348570..348576 prefix='typechecker__'
+// 🔍 Lookup span 348852..348858 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 348760..348764 prefix='typechecker__'
+// 🔍 Lookup span 349042..349046 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 348760..348764 prefix='typechecker__'
+// 🔍 Lookup span 349042..349046 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 348829..348833 prefix='typechecker__'
+// 🔍 Lookup span 349111..349115 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 348860..348864 prefix='typechecker__'
+// 🔍 Lookup span 349142..349146 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 348865..348866 prefix='typechecker__'
+// 🔍 Lookup span 349147..349148 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 348896..348915 prefix='typechecker__'
+// 🔍 Lookup span 349178..349197 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_std_Vector_str_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 348896..348900 prefix='typechecker__'
+// 🔍 Lookup span 349178..349182 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 348941..348947 prefix='typechecker__'
+// 🔍 Lookup span 349223..349229 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_std_Vector_str_ctx", None)
-// 🔍 Lookup span 348969..348975 prefix='typechecker__'
+// 🔍 Lookup span 349251..349257 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 348978..348981 prefix='typechecker__'
+// 🔍 Lookup span 349260..349263 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 348978..348981 prefix='typechecker__'
+// 🔍 Lookup span 349260..349263 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349020..349026 prefix='typechecker__'
+// 🔍 Lookup span 349302..349308 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 349029..349032 prefix='typechecker__'
+// 🔍 Lookup span 349311..349314 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349029..349032 prefix='typechecker__'
+// 🔍 Lookup span 349311..349314 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349070..349076 prefix='typechecker__'
+// 🔍 Lookup span 349352..349358 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 349079..349082 prefix='typechecker__'
+// 🔍 Lookup span 349361..349364 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349079..349082 prefix='typechecker__'
+// 🔍 Lookup span 349361..349364 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349160..349166 prefix='typechecker__'
+// 🔍 Lookup span 349442..349448 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_std_Vector_str_ctx", None)
-// 🔍 Lookup span 349226..349229 prefix='typechecker__'
+// 🔍 Lookup span 349508..349511 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349226..349229 prefix='typechecker__'
+// 🔍 Lookup span 349508..349511 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349312..349325 prefix='typechecker__'
+// 🔍 Lookup span 349594..349607 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", None)
-// 🔍 Lookup span 349349..349357 prefix='typechecker__'
+// 🔍 Lookup span 349631..349639 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 349363..349366 prefix='typechecker__'
+// 🔍 Lookup span 349645..349648 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349363..349366 prefix='typechecker__'
+// 🔍 Lookup span 349645..349648 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349378..349391 prefix='typechecker__'
+// 🔍 Lookup span 349660..349673 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", None)
-// 🔍 Lookup span 349392..349397 prefix='typechecker__'
+// 🔍 Lookup span 349674..349679 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", None), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", None)
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 349378..349398 prefix='typechecker__'
+// 🔍 Lookup span 349660..349680 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 349422..349427 prefix='typechecker__'
+// 🔍 Lookup span 349704..349709 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 349578..349586 prefix='typechecker__'
+// 🔍 Lookup span 349860..349868 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 349625..349633 prefix='typechecker__'
+// 🔍 Lookup span 349907..349915 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 349634..349635 prefix='typechecker__'
+// 🔍 Lookup span 349916..349917 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 349658..349664 prefix='typechecker__'
+// 🔍 Lookup span 349940..349946 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 349667..349670 prefix='typechecker__'
+// 🔍 Lookup span 349949..349952 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349667..349670 prefix='typechecker__'
+// 🔍 Lookup span 349949..349952 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349715..349721 prefix='typechecker__'
+// 🔍 Lookup span 349997..350003 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 349724..349727 prefix='typechecker__'
+// 🔍 Lookup span 350006..350009 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349724..349727 prefix='typechecker__'
+// 🔍 Lookup span 350006..350009 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349773..349779 prefix='typechecker__'
+// 🔍 Lookup span 350055..350061 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 349782..349785 prefix='typechecker__'
+// 🔍 Lookup span 350064..350067 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349782..349785 prefix='typechecker__'
+// 🔍 Lookup span 350064..350067 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349828..349829 prefix='typechecker__'
+// 🔍 Lookup span 350110..350111 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 349883..349884 prefix='typechecker__'
+// 🔍 Lookup span 350165..350166 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 349921..349924 prefix='typechecker__'
+// 🔍 Lookup span 350203..350206 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349921..349924 prefix='typechecker__'
+// 🔍 Lookup span 350203..350206 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 349936..349942 prefix='typechecker__'
+// 🔍 Lookup span 350218..350224 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 350138..350142 prefix='typechecker__'
+// 🔍 Lookup span 350420..350424 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 350138..350142 prefix='typechecker__'
+// 🔍 Lookup span 350420..350424 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 350209..350213 prefix='typechecker__'
+// 🔍 Lookup span 350491..350495 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 350240..350244 prefix='typechecker__'
+// 🔍 Lookup span 350522..350526 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 350245..350246 prefix='typechecker__'
+// 🔍 Lookup span 350527..350528 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 350276..350297 prefix='typechecker__'
+// 🔍 Lookup span 350558..350579 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__StructLayout_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 350276..350280 prefix='typechecker__'
+// 🔍 Lookup span 350558..350562 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 350323..350329 prefix='typechecker__'
+// 🔍 Lookup span 350605..350611 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 350365..350371 prefix='typechecker__'
+// 🔍 Lookup span 350647..350653 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 350433..350439 prefix='typechecker__'
+// 🔍 Lookup span 350715..350721 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 350516..350519 prefix='typechecker__'
+// 🔍 Lookup span 350798..350801 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 350520..350532 prefix='typechecker__'
+// 🔍 Lookup span 350802..350814 prefix='typechecker__'
 //    -> Found: Index("str", None)
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("str", None)
-// 🔍 Lookup span 350520..350526 prefix='typechecker__'
+// 🔍 Lookup span 350802..350808 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 350563..350572 prefix='typechecker__'
+// 🔍 Lookup span 350845..350854 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 350575..350578 prefix='typechecker__'
+// 🔍 Lookup span 350857..350860 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350575..350578 prefix='typechecker__'
+// 🔍 Lookup span 350857..350860 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350629..350638 prefix='typechecker__'
+// 🔍 Lookup span 350911..350920 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 350641..350644 prefix='typechecker__'
+// 🔍 Lookup span 350923..350926 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350641..350644 prefix='typechecker__'
+// 🔍 Lookup span 350923..350926 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350703..350709 prefix='typechecker__'
+// 🔍 Lookup span 350985..350991 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 350712..350715 prefix='typechecker__'
+// 🔍 Lookup span 350994..350997 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350712..350715 prefix='typechecker__'
+// 🔍 Lookup span 350994..350997 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350754..350760 prefix='typechecker__'
+// 🔍 Lookup span 351036..351042 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 350763..350766 prefix='typechecker__'
+// 🔍 Lookup span 351045..351048 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350763..350766 prefix='typechecker__'
+// 🔍 Lookup span 351045..351048 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350804..350810 prefix='typechecker__'
+// 🔍 Lookup span 351086..351092 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 350813..350816 prefix='typechecker__'
+// 🔍 Lookup span 351095..351098 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350813..350816 prefix='typechecker__'
+// 🔍 Lookup span 351095..351098 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350860..350866 prefix='typechecker__'
+// 🔍 Lookup span 351142..351148 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 350869..350872 prefix='typechecker__'
+// 🔍 Lookup span 351151..351154 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350869..350872 prefix='typechecker__'
+// 🔍 Lookup span 351151..351154 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 350977..350983 prefix='typechecker__'
+// 🔍 Lookup span 351259..351265 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 350977..350983 prefix='typechecker__'
+// 🔍 Lookup span 351259..351265 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 351056..351062 prefix='typechecker__'
+// 🔍 Lookup span 351338..351344 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 351099..351105 prefix='typechecker__'
+// 🔍 Lookup span 351381..351387 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 351106..351107 prefix='typechecker__'
+// 🔍 Lookup span 351388..351389 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 351146..351159 prefix='typechecker__'
+// 🔍 Lookup span 351428..351441 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", None)
-// 🔍 Lookup span 351146..351152 prefix='typechecker__'
+// 🔍 Lookup span 351428..351434 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 351195..351203 prefix='typechecker__'
+// 🔍 Lookup span 351477..351485 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 351247..351250 prefix='typechecker__'
+// 🔍 Lookup span 351529..351532 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 351247..351250 prefix='typechecker__'
+// 🔍 Lookup span 351529..351532 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 351266..351274 prefix='typechecker__'
+// 🔍 Lookup span 351548..351556 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 351310..351316 prefix='typechecker__'
+// 🔍 Lookup span 351592..351598 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 351319..351322 prefix='typechecker__'
+// 🔍 Lookup span 351601..351604 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 351319..351322 prefix='typechecker__'
+// 🔍 Lookup span 351601..351604 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 351371..351377 prefix='typechecker__'
+// 🔍 Lookup span 351653..351659 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 351380..351383 prefix='typechecker__'
+// 🔍 Lookup span 351662..351665 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 351380..351383 prefix='typechecker__'
+// 🔍 Lookup span 351662..351665 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 351431..351437 prefix='typechecker__'
+// 🔍 Lookup span 351713..351719 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 351440..351443 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 351440..351443 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 351491..351497 prefix='typechecker__'
-//    -> Found: Str
-// 🔍 Lookup span 351500..351503 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 351500..351503 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 351552..351558 prefix='typechecker__'
-//    -> Found: Str
-// 🔍 Lookup span 351561..351564 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 351561..351564 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 351629..351630 prefix='typechecker__'
-//    -> Found: Int
-// 🔍 Lookup span 351684..351685 prefix='typechecker__'
-//    -> Found: Int
 // 🔍 Lookup span 351722..351725 prefix='typechecker__'
 //    -> Found: Void
 // 🔍 Lookup span 351722..351725 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 351737..351743 prefix='typechecker__'
+// 🔍 Lookup span 351773..351779 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 351935..351939 prefix='typechecker__'
+// 🔍 Lookup span 351782..351785 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 351782..351785 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 351834..351840 prefix='typechecker__'
+//    -> Found: Str
+// 🔍 Lookup span 351843..351846 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 351843..351846 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 351911..351912 prefix='typechecker__'
+//    -> Found: Int
+// 🔍 Lookup span 351966..351967 prefix='typechecker__'
+//    -> Found: Int
+// 🔍 Lookup span 352004..352007 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 352004..352007 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 352019..352025 prefix='typechecker__'
+//    -> Found: Str
+// 🔍 Lookup span 352217..352221 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 351935..351939 prefix='typechecker__'
+// 🔍 Lookup span 352217..352221 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 352008..352012 prefix='typechecker__'
+// 🔍 Lookup span 352290..352294 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 352039..352043 prefix='typechecker__'
+// 🔍 Lookup span 352321..352325 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 352044..352045 prefix='typechecker__'
+// 🔍 Lookup span 352326..352327 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 352075..352098 prefix='typechecker__'
+// 🔍 Lookup span 352357..352380 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__FunctionSignature_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 352075..352079 prefix='typechecker__'
+// 🔍 Lookup span 352357..352361 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 352124..352130 prefix='typechecker__'
+// 🔍 Lookup span 352406..352412 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__FunctionSignature_ctx", None)
-// 🔍 Lookup span 352163..352169 prefix='typechecker__'
+// 🔍 Lookup span 352445..352451 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__FunctionSignature_ctx", None)
-// 🔍 Lookup span 352191..352197 prefix='typechecker__'
+// 🔍 Lookup span 352473..352479 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 352200..352203 prefix='typechecker__'
+// 🔍 Lookup span 352482..352485 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352200..352203 prefix='typechecker__'
+// 🔍 Lookup span 352482..352485 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352242..352248 prefix='typechecker__'
+// 🔍 Lookup span 352524..352530 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 352251..352254 prefix='typechecker__'
+// 🔍 Lookup span 352533..352536 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352251..352254 prefix='typechecker__'
+// 🔍 Lookup span 352533..352536 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352292..352298 prefix='typechecker__'
+// 🔍 Lookup span 352574..352580 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 352301..352304 prefix='typechecker__'
+// 🔍 Lookup span 352583..352586 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352301..352304 prefix='typechecker__'
+// 🔍 Lookup span 352583..352586 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352439..352442 prefix='typechecker__'
+// 🔍 Lookup span 352721..352724 prefix='typechecker__'
 //    -> Found: Struct("typechecker__FunctionSignature_ctx", None)
-// 🔍 Lookup span 352439..352454 prefix='typechecker__'
+// 🔍 Lookup span 352721..352736 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", None)
-// 🔍 Lookup span 352513..352523 prefix='typechecker__'
+// 🔍 Lookup span 352795..352805 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 352526..352529 prefix='typechecker__'
+// 🔍 Lookup span 352808..352811 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352526..352529 prefix='typechecker__'
+// 🔍 Lookup span 352808..352811 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352612..352627 prefix='typechecker__'
+// 🔍 Lookup span 352894..352909 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", None)
-// 🔍 Lookup span 352628..352629 prefix='typechecker__'
+// 🔍 Lookup span 352910..352911 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", None), index type is Int
-// 🔍 Lookup span 352612..352615 prefix='typechecker__'
+// 🔍 Lookup span 352894..352897 prefix='typechecker__'
 //    -> Found: Struct("typechecker__FunctionSignature_ctx", None)
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", None)
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 352666..352676 prefix='typechecker__'
+// 🔍 Lookup span 352948..352958 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Type_ctx_ctx", None)
-// 🔍 Lookup span 352677..352678 prefix='typechecker__'
+// 🔍 Lookup span 352959..352960 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Type_ctx_ctx", None), index type is Int
-// 🔍 Lookup span 352666..352669 prefix='typechecker__'
+// 🔍 Lookup span 352948..352951 prefix='typechecker__'
 //    -> Found: Struct("typechecker__FunctionSignature_ctx", None)
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Type_ctx_ctx", None)
 //   -> Struct name: std_Vector_ast__Type_ctx_ctx, Erased name: std_Vector_ast__Type, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 352719..352722 prefix='typechecker__'
+// 🔍 Lookup span 353001..353004 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352719..352722 prefix='typechecker__'
+// 🔍 Lookup span 353001..353004 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352772..352782 prefix='typechecker__'
+// 🔍 Lookup span 353054..353064 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 352785..352788 prefix='typechecker__'
+// 🔍 Lookup span 353067..353070 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352785..352788 prefix='typechecker__'
+// 🔍 Lookup span 353067..353070 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352837..352847 prefix='typechecker__'
+// 🔍 Lookup span 353119..353129 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 352850..352853 prefix='typechecker__'
+// 🔍 Lookup span 353132..353135 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352850..352853 prefix='typechecker__'
+// 🔍 Lookup span 353132..353135 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352900..352910 prefix='typechecker__'
+// 🔍 Lookup span 353182..353192 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 352913..352916 prefix='typechecker__'
+// 🔍 Lookup span 353195..353198 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352913..352916 prefix='typechecker__'
+// 🔍 Lookup span 353195..353198 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 352969..352970 prefix='typechecker__'
+// 🔍 Lookup span 353251..353252 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 353031..353037 prefix='typechecker__'
+// 🔍 Lookup span 353313..353319 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 353040..353043 prefix='typechecker__'
+// 🔍 Lookup span 353322..353325 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353040..353043 prefix='typechecker__'
+// 🔍 Lookup span 353322..353325 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353088..353094 prefix='typechecker__'
+// 🔍 Lookup span 353370..353376 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 353097..353100 prefix='typechecker__'
+// 🔍 Lookup span 353379..353382 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353097..353100 prefix='typechecker__'
+// 🔍 Lookup span 353379..353382 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353157..353160 prefix='typechecker__'
+// 🔍 Lookup span 353439..353442 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353157..353160 prefix='typechecker__'
+// 🔍 Lookup span 353439..353442 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353176..353179 prefix='typechecker__'
+// 🔍 Lookup span 353458..353461 prefix='typechecker__'
 //    -> Found: Struct("typechecker__FunctionSignature_ctx", None)
-// 🔍 Lookup span 353215..353221 prefix='typechecker__'
+// 🔍 Lookup span 353497..353503 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 353224..353227 prefix='typechecker__'
+// 🔍 Lookup span 353506..353509 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353224..353227 prefix='typechecker__'
+// 🔍 Lookup span 353506..353509 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353269..353275 prefix='typechecker__'
-//    -> Found: Str
-// 🔍 Lookup span 353278..353281 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 353278..353281 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 353330..353331 prefix='typechecker__'
-//    -> Found: Int
-// 🔍 Lookup span 353368..353371 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 353368..353371 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 353383..353389 prefix='typechecker__'
-//    -> Found: Str
 // 🔍 Lookup span 353551..353557 prefix='typechecker__'
 //    -> Found: Str
 // 🔍 Lookup span 353560..353563 prefix='typechecker__'
 //    -> Found: Void
 // 🔍 Lookup span 353560..353563 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353628..353634 prefix='typechecker__'
+// 🔍 Lookup span 353612..353613 prefix='typechecker__'
+//    -> Found: Int
+// 🔍 Lookup span 353650..353653 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 353650..353653 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 353665..353671 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 353637..353640 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 353637..353640 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 353700..353706 prefix='typechecker__'
+// 🔍 Lookup span 353833..353839 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 353709..353712 prefix='typechecker__'
+// 🔍 Lookup span 353842..353845 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353709..353712 prefix='typechecker__'
+// 🔍 Lookup span 353842..353845 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 353783..353786 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 353783..353786 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 353798..353804 prefix='typechecker__'
+// 🔍 Lookup span 353910..353916 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 353987..353999 prefix='typechecker__'
-//    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 353987..353990 prefix='typechecker__'
-//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 353919..353922 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 353919..353922 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 353982..353988 prefix='typechecker__'
+//    -> Found: Str
 // 🔍 Lookup span 353991..353994 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 353991..353994 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 354065..354068 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 354065..354068 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 354080..354086 prefix='typechecker__'
+//    -> Found: Str
+// 🔍 Lookup span 354269..354281 prefix='typechecker__'
+//    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
+// 🔍 Lookup span 354269..354272 prefix='typechecker__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 354273..354276 prefix='typechecker__'
 //    -> Found: Index("typechecker__OriginSet_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("typechecker__OriginSet_ctx", Some("ctx"))
-// 🔍 Lookup span 353987..353995 prefix='typechecker__'
+// 🔍 Lookup span 354269..354277 prefix='typechecker__'
 //    -> Found: Struct("typechecker__OriginSet_ctx", Some("ctx"))
-// 🔍 Lookup span 353987..354009 prefix='typechecker__'
+// 🔍 Lookup span 354269..354291 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 354053..354057 prefix='typechecker__'
+// 🔍 Lookup span 354335..354339 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 354091..354095 prefix='typechecker__'
+// 🔍 Lookup span 354373..354377 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 354096..354097 prefix='typechecker__'
+// 🔍 Lookup span 354378..354379 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 354118..354119 prefix='typechecker__'
+// 🔍 Lookup span 354400..354401 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 354388..354391 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 354388..354391 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 354425..354428 prefix='typechecker__'
-//    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 354425..354438 prefix='typechecker__'
-//    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 354474..354478 prefix='typechecker__'
-//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 354501..354505 prefix='typechecker__'
-//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 354506..354507 prefix='typechecker__'
-//    -> Found: Int
-// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
-// 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
-//   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
-//   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 354532..354535 prefix='typechecker__'
-//    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 354557..354563 prefix='typechecker__'
-//    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 354628..354634 prefix='typechecker__'
-//    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
-// 🔍 Lookup span 354658..354662 prefix='typechecker__'
-//    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
 // 🔍 Lookup span 354670..354673 prefix='typechecker__'
 //    -> Found: Void
 // 🔍 Lookup span 354670..354673 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 354685..354688 prefix='typechecker__'
-//    -> Found: Str
-// 🔍 Lookup span 354722..354723 prefix='typechecker__'
-//    -> Found: Int
-// 🔍 Lookup span 354909..354912 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 354909..354912 prefix='typechecker__'
-//    -> Found: Void
-// 🔍 Lookup span 354946..354949 prefix='typechecker__'
-//    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 354946..354959 prefix='typechecker__'
+// 🔍 Lookup span 354707..354710 prefix='typechecker__'
+//    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 354707..354720 prefix='typechecker__'
 //    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
-// 🔍 Lookup span 354995..354999 prefix='typechecker__'
+// 🔍 Lookup span 354756..354760 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 355022..355026 prefix='typechecker__'
+// 🔍 Lookup span 354783..354787 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 355027..355028 prefix='typechecker__'
+// 🔍 Lookup span 354788..354789 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 355053..355056 prefix='typechecker__'
-//    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 355078..355084 prefix='typechecker__'
-//    -> Found: Struct("LookupResult_int", None)
-// 🔍 Lookup span 355102..355106 prefix='typechecker__'
-//    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 355114..355117 prefix='typechecker__'
+// 🔍 Lookup span 354814..354817 prefix='typechecker__'
+//    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 354839..354845 prefix='typechecker__'
+//    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
+// 🔍 Lookup span 354910..354916 prefix='typechecker__'
+//    -> Found: Struct("LookupResult_Index_typechecker__OriginSet_ctx", None)
+// 🔍 Lookup span 354940..354944 prefix='typechecker__'
+//    -> Found: Struct("std_HashMap_str_Index_typechecker__OriginSet_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 354952..354955 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 355114..355117 prefix='typechecker__'
+// 🔍 Lookup span 354952..354955 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 355129..355132 prefix='typechecker__'
+// 🔍 Lookup span 354967..354970 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 355135..355141 prefix='typechecker__'
-//    -> Found: Struct("LookupResult_int", None)
-// 🔍 Lookup span 355166..355167 prefix='typechecker__'
+// 🔍 Lookup span 355004..355005 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 355376..355377 prefix='typechecker__'
+// 🔍 Lookup span 355191..355194 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 355191..355194 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 355228..355231 prefix='typechecker__'
+//    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
+// 🔍 Lookup span 355228..355241 prefix='typechecker__'
+//    -> Found: Generic("std.Vector", [Str, Struct("ctx", None)])
+// 🔍 Lookup span 355277..355281 prefix='typechecker__'
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 355304..355308 prefix='typechecker__'
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 355309..355310 prefix='typechecker__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 355335..355338 prefix='typechecker__'
+//    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
+// 🔍 Lookup span 355360..355366 prefix='typechecker__'
+//    -> Found: Struct("LookupResult_int", None)
+// 🔍 Lookup span 355384..355388 prefix='typechecker__'
+//    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
+// 🔍 Lookup span 355396..355399 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 355396..355399 prefix='typechecker__'
+//    -> Found: Void
+// 🔍 Lookup span 355411..355414 prefix='typechecker__'
+//    -> Found: Str
+// 🔍 Lookup span 355417..355423 prefix='typechecker__'
+//    -> Found: Struct("LookupResult_int", None)
+// 🔍 Lookup span 355448..355449 prefix='typechecker__'
+//    -> Found: Int
+// 🔍 Lookup span 355658..355659 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355390..355391 prefix='typechecker__'
+// 🔍 Lookup span 355672..355673 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355460..355461 prefix='typechecker__'
+// 🔍 Lookup span 355742..355743 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355512..355515 prefix='typechecker__'
+// 🔍 Lookup span 355794..355797 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 355516..355529 prefix='typechecker__'
+// 🔍 Lookup span 355798..355811 prefix='typechecker__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355516..355517 prefix='typechecker__'
+// 🔍 Lookup span 355798..355799 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355516..355523 prefix='typechecker__'
+// 🔍 Lookup span 355798..355805 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Slice", Some("ctx"))
-// 🔍 Lookup span 355516..355517 prefix='typechecker__'
+// 🔍 Lookup span 355798..355799 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355645..355646 prefix='typechecker__'
+// 🔍 Lookup span 355927..355928 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355702..355705 prefix='typechecker__'
+// 🔍 Lookup span 355984..355987 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 355706..355724 prefix='typechecker__'
+// 🔍 Lookup span 355988..356006 prefix='typechecker__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355706..355707 prefix='typechecker__'
+// 🔍 Lookup span 355988..355989 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355706..355718 prefix='typechecker__'
+// 🔍 Lookup span 355988..356000 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_RawPointer", Some("ctx"))
-// 🔍 Lookup span 355706..355707 prefix='typechecker__'
+// 🔍 Lookup span 355988..355989 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355840..355841 prefix='typechecker__'
+// 🔍 Lookup span 356122..356123 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355887..355888 prefix='typechecker__'
+// 🔍 Lookup span 356169..356170 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355887..355895 prefix='typechecker__'
+// 🔍 Lookup span 356169..356177 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 355887..355888 prefix='typechecker__'
+// 🔍 Lookup span 356169..356170 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 355936..355944 prefix='typechecker__'
+// 🔍 Lookup span 356218..356226 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 355972..355978 prefix='typechecker__'
+// 🔍 Lookup span 356254..356260 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_int", None)
-// 🔍 Lookup span 356037..356045 prefix='typechecker__'
+// 🔍 Lookup span 356319..356327 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 356054..356057 prefix='typechecker__'
+// 🔍 Lookup span 356336..356339 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 356054..356057 prefix='typechecker__'
+// 🔍 Lookup span 356336..356339 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 356069..356073 prefix='typechecker__'
+// 🔍 Lookup span 356351..356355 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 356127..356148 prefix='typechecker__'
+// 🔍 Lookup span 356409..356430 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__StructLayout_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 356127..356131 prefix='typechecker__'
+// 🔍 Lookup span 356409..356413 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 356175..356188 prefix='typechecker__'
+// 🔍 Lookup span 356457..356470 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 356224..356237 prefix='typechecker__'
+// 🔍 Lookup span 356506..356519 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 356307..356313 prefix='typechecker__'
+// 🔍 Lookup span 356589..356595 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 356307..356313 prefix='typechecker__'
+// 🔍 Lookup span 356589..356595 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 356386..356392 prefix='typechecker__'
+// 🔍 Lookup span 356668..356674 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 356429..356435 prefix='typechecker__'
+// 🔍 Lookup span 356711..356717 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 356436..356437 prefix='typechecker__'
+// 🔍 Lookup span 356718..356719 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 356476..356489 prefix='typechecker__'
+// 🔍 Lookup span 356758..356771 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", None)
-// 🔍 Lookup span 356476..356482 prefix='typechecker__'
+// 🔍 Lookup span 356758..356764 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 356525..356533 prefix='typechecker__'
+// 🔍 Lookup span 356807..356815 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 356620..356628 prefix='typechecker__'
+// 🔍 Lookup span 356902..356910 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 356803..356804 prefix='typechecker__'
+// 🔍 Lookup span 357085..357086 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 356889..356890 prefix='typechecker__'
+// 🔍 Lookup span 357171..357172 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 356970..356971 prefix='typechecker__'
+// 🔍 Lookup span 357252..357253 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 356970..356979 prefix='typechecker__'
+// 🔍 Lookup span 357252..357261 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Generic", Some("ctx"))
-// 🔍 Lookup span 356970..356971 prefix='typechecker__'
+// 🔍 Lookup span 357252..357253 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 356986..356987 prefix='typechecker__'
+// 🔍 Lookup span 357268..357269 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 356986..356995 prefix='typechecker__'
+// 🔍 Lookup span 357268..357277 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Generic", Some("ctx"))
-// 🔍 Lookup span 356986..356987 prefix='typechecker__'
+// 🔍 Lookup span 357268..357269 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357064..357079 prefix='typechecker__'
+// 🔍 Lookup span 357346..357361 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 357064..357075 prefix='typechecker__'
+// 🔍 Lookup span 357346..357357 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357097..357127 prefix='typechecker__'
+// 🔍 Lookup span 357379..357409 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 357097..357108 prefix='typechecker__'
+// 🔍 Lookup span 357379..357390 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357097..357115 prefix='typechecker__'
+// 🔍 Lookup span 357379..357397 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 357097..357108 prefix='typechecker__'
+// 🔍 Lookup span 357379..357390 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357157..357181 prefix='typechecker__'
+// 🔍 Lookup span 357439..357463 prefix='typechecker__'
 //    -> Found: Index("str", Some("ctx"))
-// 🔍 Lookup span 357157..357168 prefix='typechecker__'
+// 🔍 Lookup span 357439..357450 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357157..357175 prefix='typechecker__'
+// 🔍 Lookup span 357439..357457 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 357157..357168 prefix='typechecker__'
+// 🔍 Lookup span 357439..357450 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357499..357502 prefix='typechecker__'
+// 🔍 Lookup span 357781..357784 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 357499..357502 prefix='typechecker__'
+// 🔍 Lookup span 357781..357784 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 357780..357781 prefix='typechecker__'
+// 🔍 Lookup span 358062..358063 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357794..357795 prefix='typechecker__'
+// 🔍 Lookup span 358076..358077 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357808..357809 prefix='typechecker__'
+// 🔍 Lookup span 358090..358091 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357822..357823 prefix='typechecker__'
+// 🔍 Lookup span 358104..358105 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357836..357837 prefix='typechecker__'
+// 🔍 Lookup span 358118..358119 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357850..357851 prefix='typechecker__'
+// 🔍 Lookup span 358132..358133 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357864..357865 prefix='typechecker__'
+// 🔍 Lookup span 358146..358147 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357878..357879 prefix='typechecker__'
+// 🔍 Lookup span 358160..358161 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357892..357893 prefix='typechecker__'
+// 🔍 Lookup span 358174..358175 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 357948..357949 prefix='typechecker__'
+// 🔍 Lookup span 358230..358231 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 358005..358006 prefix='typechecker__'
+// 🔍 Lookup span 358287..358288 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 358042..358043 prefix='typechecker__'
+// 🔍 Lookup span 358324..358325 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 358042..358050 prefix='typechecker__'
+// 🔍 Lookup span 358324..358332 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 358042..358043 prefix='typechecker__'
+// 🔍 Lookup span 358324..358325 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 358133..358141 prefix='typechecker__'
+// 🔍 Lookup span 358415..358423 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 358169..358183 prefix='typechecker__'
+// 🔍 Lookup span 358451..358465 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_int", None)
-// 🔍 Lookup span 358242..358250 prefix='typechecker__'
+// 🔍 Lookup span 358524..358532 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 358259..358262 prefix='typechecker__'
+// 🔍 Lookup span 358541..358544 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 358259..358262 prefix='typechecker__'
+// 🔍 Lookup span 358541..358544 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 358274..358278 prefix='typechecker__'
+// 🔍 Lookup span 358556..358560 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 358556..358567 prefix='typechecker__'
+// 🔍 Lookup span 358838..358849 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 358643..358654 prefix='typechecker__'
+// 🔍 Lookup span 358925..358936 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 358727..358738 prefix='typechecker__'
+// 🔍 Lookup span 359009..359020 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 358815..358826 prefix='typechecker__'
+// 🔍 Lookup span 359097..359108 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 358896..358907 prefix='typechecker__'
+// 🔍 Lookup span 359178..359189 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 358981..358992 prefix='typechecker__'
+// 🔍 Lookup span 359263..359274 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359063..359074 prefix='typechecker__'
+// 🔍 Lookup span 359345..359356 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359149..359160 prefix='typechecker__'
+// 🔍 Lookup span 359431..359442 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359233..359244 prefix='typechecker__'
+// 🔍 Lookup span 359515..359526 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359321..359332 prefix='typechecker__'
+// 🔍 Lookup span 359603..359614 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359400..359411 prefix='typechecker__'
+// 🔍 Lookup span 359682..359693 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359483..359494 prefix='typechecker__'
+// 🔍 Lookup span 359765..359776 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359565..359576 prefix='typechecker__'
+// 🔍 Lookup span 359847..359858 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359651..359662 prefix='typechecker__'
+// 🔍 Lookup span 359933..359944 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359745..359756 prefix='typechecker__'
+// 🔍 Lookup span 360027..360038 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359843..359854 prefix='typechecker__'
+// 🔍 Lookup span 360125..360136 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 359914..359922 prefix='typechecker__'
+// 🔍 Lookup span 360196..360204 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 360006..360027 prefix='typechecker__'
+// 🔍 Lookup span 360288..360309 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__StructLayout_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 360006..360010 prefix='typechecker__'
+// 🔍 Lookup span 360288..360292 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 360054..360060 prefix='typechecker__'
+// 🔍 Lookup span 360336..360342 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 360096..360102 prefix='typechecker__'
+// 🔍 Lookup span 360378..360384 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 360172..360178 prefix='typechecker__'
+// 🔍 Lookup span 360454..360460 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 360172..360178 prefix='typechecker__'
+// 🔍 Lookup span 360454..360460 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 360251..360257 prefix='typechecker__'
+// 🔍 Lookup span 360533..360539 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 360294..360300 prefix='typechecker__'
+// 🔍 Lookup span 360576..360582 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 360301..360302 prefix='typechecker__'
+// 🔍 Lookup span 360583..360584 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 360341..360354 prefix='typechecker__'
+// 🔍 Lookup span 360623..360636 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_ast__Type_ctx_ctx", None)
-// 🔍 Lookup span 360341..360347 prefix='typechecker__'
+// 🔍 Lookup span 360623..360629 prefix='typechecker__'
 //    -> Found: Struct("typechecker__StructLayout_ctx", None)
-// 🔍 Lookup span 360390..360398 prefix='typechecker__'
+// 🔍 Lookup span 360672..360680 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 360446..360454 prefix='typechecker__'
+// 🔍 Lookup span 360728..360736 prefix='typechecker__'
 //    -> Found: Struct("LookupResult_ast__Type_ctx", None)
-// 🔍 Lookup span 360653..360661 prefix='typechecker__'
+// 🔍 Lookup span 360935..360943 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 360783..360784 prefix='typechecker__'
+// 🔍 Lookup span 361065..361066 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 360829..360837 prefix='typechecker__'
+// 🔍 Lookup span 361111..361119 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 360906..360914 prefix='typechecker__'
+// 🔍 Lookup span 361188..361196 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_int_ctx", Some("ctx"))
-// 🔍 Lookup span 361153..361156 prefix='typechecker__'
+// 🔍 Lookup span 361435..361438 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 361153..361156 prefix='typechecker__'
+// 🔍 Lookup span 361435..361438 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 361411..361415 prefix='typechecker__'
+// 🔍 Lookup span 361693..361697 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 361411..361415 prefix='typechecker__'
+// 🔍 Lookup span 361693..361697 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 361482..361486 prefix='typechecker__'
+// 🔍 Lookup span 361764..361768 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 361513..361517 prefix='typechecker__'
+// 🔍 Lookup span 361795..361799 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 361518..361519 prefix='typechecker__'
+// 🔍 Lookup span 361800..361801 prefix='typechecker__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 361588..361600 prefix='typechecker__'
+// 🔍 Lookup span 361870..361882 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 361588..361596 prefix='typechecker__'
+// 🔍 Lookup span 361870..361878 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 361628..361655 prefix='typechecker__'
+// 🔍 Lookup span 361910..361937 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 361628..361636 prefix='typechecker__'
+// 🔍 Lookup span 361910..361918 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 361628..361643 prefix='typechecker__'
+// 🔍 Lookup span 361910..361925 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 361628..361636 prefix='typechecker__'
+// 🔍 Lookup span 361910..361918 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 361658..361661 prefix='typechecker__'
+// 🔍 Lookup span 361940..361943 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 361658..361661 prefix='typechecker__'
+// 🔍 Lookup span 361940..361943 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 361673..361676 prefix='typechecker__'
+// 🔍 Lookup span 361955..361958 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 361691..361712 prefix='typechecker__'
+// 🔍 Lookup span 361973..361994 prefix='typechecker__'
 //    -> Found: Index("str", Some("ctx"))
-// 🔍 Lookup span 361691..361699 prefix='typechecker__'
+// 🔍 Lookup span 361973..361981 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 361691..361706 prefix='typechecker__'
+// 🔍 Lookup span 361973..361988 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 361691..361699 prefix='typechecker__'
+// 🔍 Lookup span 361973..361981 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 361896..361899 prefix='typechecker__'
+// 🔍 Lookup span 362178..362181 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 361896..361899 prefix='typechecker__'
+// 🔍 Lookup span 362178..362181 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 362007..362022 prefix='typechecker__'
+// 🔍 Lookup span 362289..362304 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 362007..362010 prefix='typechecker__'
+// 🔍 Lookup span 362289..362292 prefix='typechecker__'
 //    -> Found: Struct("typechecker__FunctionSignature_ctx", Some("ctx"))
-// 🔍 Lookup span 362025..362028 prefix='typechecker__'
+// 🔍 Lookup span 362307..362310 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 362025..362028 prefix='typechecker__'
+// 🔍 Lookup span 362307..362310 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 362061..362076 prefix='typechecker__'
+// 🔍 Lookup span 362343..362358 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 362061..362064 prefix='typechecker__'
+// 🔍 Lookup span 362343..362346 prefix='typechecker__'
 //    -> Found: Struct("typechecker__FunctionSignature_ctx", Some("ctx"))
-// 🔍 Lookup span 362123..362133 prefix='typechecker__'
+// 🔍 Lookup span 362405..362415 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Type_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 362123..362126 prefix='typechecker__'
+// 🔍 Lookup span 362405..362408 prefix='typechecker__'
 //    -> Found: Struct("typechecker__FunctionSignature_ctx", Some("ctx"))
-// 🔍 Lookup span 362136..362139 prefix='typechecker__'
+// 🔍 Lookup span 362418..362421 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 362136..362139 prefix='typechecker__'
+// 🔍 Lookup span 362418..362421 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 362214..362223 prefix='typechecker__'
+// 🔍 Lookup span 362496..362505 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 362214..362219 prefix='typechecker__'
+// 🔍 Lookup span 362496..362501 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 362259..362281 prefix='typechecker__'
+// 🔍 Lookup span 362541..362563 prefix='typechecker__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 362259..362264 prefix='typechecker__'
+// 🔍 Lookup span 362541..362546 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 362259..362275 prefix='typechecker__'
+// 🔍 Lookup span 362541..362557 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_RawPointer", Some("ctx"))
-// 🔍 Lookup span 362259..362264 prefix='typechecker__'
+// 🔍 Lookup span 362541..362546 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 362284..362286 prefix='typechecker__'
+// 🔍 Lookup span 362566..362568 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 362284..362286 prefix='typechecker__'
+// 🔍 Lookup span 362566..362568 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 362320..362347 prefix='typechecker__'
+// 🔍 Lookup span 362602..362629 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 362320..362323 prefix='typechecker__'
+// 🔍 Lookup span 362602..362605 prefix='typechecker__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 362324..362346 prefix='typechecker__'
+// 🔍 Lookup span 362606..362628 prefix='typechecker__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 362324..362329 prefix='typechecker__'
+// 🔍 Lookup span 362606..362611 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 362324..362340 prefix='typechecker__'
+// 🔍 Lookup span 362606..362622 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx_RawPointer", Some("ctx"))
-// 🔍 Lookup span 362324..362329 prefix='typechecker__'
+// 🔍 Lookup span 362606..362611 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 362376..362386 prefix='typechecker__'
+// 🔍 Lookup span 362658..362668 prefix='typechecker__'
 //    -> Found: Struct("std_Vector_ast__Type_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 362376..362379 prefix='typechecker__'
+// 🔍 Lookup span 362658..362661 prefix='typechecker__'
 //    -> Found: Struct("typechecker__FunctionSignature_ctx", Some("ctx"))
-// 🔍 Lookup span 362475..362484 prefix='typechecker__'
+// 🔍 Lookup span 362757..362766 prefix='typechecker__'
 //    -> Found: Int
-// 🔍 Lookup span 362475..362480 prefix='typechecker__'
+// 🔍 Lookup span 362757..362762 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 362513..362528 prefix='typechecker__'
+// 🔍 Lookup span 362795..362810 prefix='typechecker__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 362513..362516 prefix='typechecker__'
+// 🔍 Lookup span 362795..362798 prefix='typechecker__'
 //    -> Found: Struct("typechecker__FunctionSignature_ctx", Some("ctx"))
-// 🔍 Lookup span 362554..362572 prefix='typechecker__'
+// 🔍 Lookup span 362836..362854 prefix='typechecker__'
 //    -> Found: Index("typechecker__OriginSet_ctx", Some("ctx"))
-// 🔍 Lookup span 362554..362557 prefix='typechecker__'
+// 🔍 Lookup span 362836..362839 prefix='typechecker__'
 //    -> Found: Struct("typechecker__FunctionSignature_ctx", Some("ctx"))
-// 🔍 Lookup span 362624..362647 prefix='typechecker__'
+// 🔍 Lookup span 362906..362929 prefix='typechecker__'
 //    -> Found: Struct("std_HashMap_str_typechecker__FunctionSignature_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 362624..362628 prefix='typechecker__'
+// 🔍 Lookup span 362906..362910 prefix='typechecker__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 362655..362658 prefix='typechecker__'
+// 🔍 Lookup span 362937..362940 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 362655..362658 prefix='typechecker__'
+// 🔍 Lookup span 362937..362940 prefix='typechecker__'
 //    -> Found: Void
-// 🔍 Lookup span 362670..362679 prefix='typechecker__'
+// 🔍 Lookup span 362952..362961 prefix='typechecker__'
 //    -> Found: Str
-// 🔍 Lookup span 362714..362715 prefix='typechecker__'
+// 🔍 Lookup span 362996..362997 prefix='typechecker__'
 //    -> Found: Int
 // 🔍 Lookup span 165..168 prefix='resolver__'
 //    -> Found: Void
@@ -54518,12 +54518,12 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     std_HashMap_str_Index_typechecker__OriginSet parent_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
     if ((body_idx != 0xFFFFFFFF)) {
     ast__BlockStatement body = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + body_idx)));
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
+    std_Vector_ast__Statement statements_vec_while_body = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)));
     int j = 0;
-    while ((j < (*(statements_vec)).len)) {
+    while ((j < statements_vec_while_body.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= statements_vec_while_body.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_while_body.data[j]); }));
     typechecker__check_statement(s_idx, env, scope, ctx);
     j = (j + 1);
     }
@@ -54547,12 +54547,12 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     typechecker__typechecker_extract_ok_checked_variables(cond_idx, &((*(env)).checked_results), ctx);
     if ((cons_idx != 0xFFFFFFFF)) {
     ast__BlockStatement cons = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + cons_idx)));
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + cons.statements)))));
+    std_Vector_ast__Statement statements_vec_if_consequence = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + cons.statements)));
     int j = 0;
-    while ((j < (*(statements_vec)).len)) {
+    while ((j < statements_vec_if_consequence.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= statements_vec_if_consequence.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_if_consequence.data[j]); }));
     typechecker__check_statement(s_idx, env, scope, ctx);
     j = (j + 1);
     }
@@ -54564,12 +54564,12 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     (*(env)).moved_vars = pre_moved;
     (*(env)).checked_results = pre_checked;
     ast__BlockStatement alt = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + alt_idx)));
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + alt.statements)))));
+    std_Vector_ast__Statement statements_vec_if_alternative = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + alt.statements)));
     int j = 0;
-    while ((j < (*(statements_vec)).len)) {
+    while ((j < statements_vec_if_alternative.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= statements_vec_if_alternative.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_if_alternative.data[j]); }));
     typechecker__check_statement(s_idx, env, scope, ctx);
     j = (j + 1);
     }
@@ -54679,7 +54679,7 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     }
     if ((stmt.tag == 8)) {
     int expr_idx = stmt.Match.expression;
-    std_Vector_ast__MatchCase* cases_vec = ((std_Vector_ast__MatchCase*)&((*((std_Vector_ast__MatchCase*)((char*)ctx->BaseAddress + stmt.Match.cases)))));
+    std_Vector_ast__MatchCase cases_vec_match_stmt = (*((std_Vector_ast__MatchCase*)((char*)ctx->BaseAddress + stmt.Match.cases)));
     ast__Type expr_type = typechecker__check_expression(expr_idx, env, scope, ctx);
     ast__Type real_struct_type = expr_type;
     if ((real_struct_type.tag == 9)) {
@@ -54694,9 +54694,9 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     std_HashMap_str_int matched_variants = ((struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     LookupResult_std_Vector_str lookup_enum = ({ LookupResult_std_Vector_str res = {0}; res.Ok = os_HashMapContains(&(*(env)).enum_registry, enum_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).enum_registry, enum_name, 1); } res; });
     int i = 0;
-    while ((i < (*(cases_vec)).len)) {
+    while ((i < cases_vec_match_stmt.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    ast__MatchCase m_case = (*({ if (i < 0 || i >= (*(cases_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(cases_vec)).data[i]); }));
+    ast__MatchCase m_case = (*({ if (i < 0 || i >= cases_vec_match_stmt.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(cases_vec_match_stmt.data[i]); }));
     Slice_unsigned_char variant_name = m_case.variant_name;
     *os_HashMapRef(&matched_variants, std_Clone_str(ctx, variant_name), 1) = 1;
     if (lookup_enum.Ok) {
@@ -54718,7 +54718,7 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     typechecker__report_error(2, msg, m_case.span, env, ctx);
     }
     }
-    std_Vector_str* fields_vec = ((std_Vector_str*)&((*((std_Vector_str*)((char*)ctx->BaseAddress + m_case.fields)))));
+    std_Vector_str fields_vec_match_case = (*((std_Vector_str*)((char*)ctx->BaseAddress + m_case.fields)));
     int child_scope = typechecker__scope_new(scope, ctx);
     Slice_unsigned_char variant_struct_name = (({ Slice_unsigned_char _s1 = enum_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     variant_struct_name = (({ Slice_unsigned_char _s1 = variant_struct_name; Slice_unsigned_char _s2 = variant_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -54726,9 +54726,9 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     if (layout_lookup.Ok) {
     typechecker__StructLayout layout = layout_lookup.Val;
     int f = 0;
-    while ((f < (*(fields_vec)).len)) {
+    while ((f < fields_vec_match_case.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    Slice_unsigned_char field_name = (*({ if (f < 0 || f >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[f]); }));
+    Slice_unsigned_char field_name = (*({ if (f < 0 || f >= fields_vec_match_case.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(fields_vec_match_case.data[f]); }));
     LookupResult_ast__Type f_type_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&layout.fields, field_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&layout.fields, field_name, 1); } res; });
     if (f_type_lookup.Ok) {
     ast__Type f_type = f_type_lookup.Val;
@@ -54754,20 +54754,20 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     int body_idx = m_case.body;
     if ((body_idx != 0xFFFFFFFF)) {
     ast__BlockStatement body = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + body_idx)));
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
+    std_Vector_ast__Statement statements_vec_match_body = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)));
     int j = 0;
-    while ((j < (*(statements_vec)).len)) {
+    while ((j < statements_vec_match_body.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= statements_vec_match_body.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_match_body.data[j]); }));
     typechecker__check_statement(s_idx, env, child_scope, ctx);
     j = (j + 1);
     }
     }
     int f_cleanup = 0;
-    while ((f_cleanup < (*(fields_vec)).len)) {
+    while ((f_cleanup < fields_vec_match_case.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    Slice_unsigned_char field_name = (*({ if (f_cleanup < 0 || f_cleanup >= (*(fields_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fields_vec)).data[f_cleanup]); }));
+    Slice_unsigned_char field_name = (*({ if (f_cleanup < 0 || f_cleanup >= fields_vec_match_case.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(fields_vec_match_case.data[f_cleanup]); }));
     os_HashMapRemove(&(*(env)).variable_types, field_name, 1);
     f_cleanup = (f_cleanup + 1);
     }
@@ -54803,12 +54803,12 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     (*(env)).in_unsafe_block = 1;
     if ((body_idx != 0xFFFFFFFF)) {
     ast__BlockStatement body = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + body_idx)));
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)))));
+    std_Vector_ast__Statement statements_vec_unsafe_block = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + body.statements)));
     int j = 0;
-    while ((j < (*(statements_vec)).len)) {
+    while ((j < statements_vec_unsafe_block.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[j]); }));
+    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (j < 0 || j >= statements_vec_unsafe_block.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_unsafe_block.data[j]); }));
     typechecker__check_statement(s_idx, env, scope, ctx);
     j = (j + 1);
     }
@@ -54824,11 +54824,11 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     if ((stmt.tag == 12)) {
     int expr_idx = stmt.Return.expr;
     if (((*(env)).current_function_inout_params != 0xFFFFFFFF)) {
-    std_Vector_str* inout_params = ((std_Vector_str*)&((*((std_Vector_str*)((char*)ctx->BaseAddress + (*(env)).current_function_inout_params)))));
+    std_Vector_str inout_params_return_check = (*((std_Vector_str*)((char*)ctx->BaseAddress + (*(env)).current_function_inout_params)));
     int k = 0;
-    while ((k < (*(inout_params)).len)) {
+    while ((k < inout_params_return_check.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    Slice_unsigned_char inout_p = (*({ if (k < 0 || k >= (*(inout_params)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(inout_params)).data[k]); }));
+    Slice_unsigned_char inout_p = (*({ if (k < 0 || k >= inout_params_return_check.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(inout_params_return_check.data[k]); }));
     if (({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&(*(env)).moved_vars, inout_p, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).moved_vars, inout_p, 1); } res; }).Ok) {
     Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Inout reference parameter '", 43 }); Slice_unsigned_char _s2 = inout_p; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' was moved but never re-initialized before return", 50 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -54936,12 +54936,12 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     std_HashMap_str_Index_typechecker__OriginSet parent_origins = typechecker__typechecker_clone_origins((*(env)).variable_origins, ctx);
     int child_scope = typechecker__scope_new(scope, ctx);
     ast__BlockStatement else_block = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + else_body)));
-    std_Vector_ast__Statement* else_statements = ((std_Vector_ast__Statement*)&((*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + else_block.statements)))));
+    std_Vector_ast__Statement else_statements_guard_block = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + else_block.statements)));
     int i = 0;
-    while ((i < (*(else_statements)).len)) {
+    while ((i < else_statements_guard_block.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     int s_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (i < 0 || i >= (*(else_statements)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(else_statements)).data[i]); }));
+    (*((ast__Statement*)((char*)ctx->BaseAddress + s_idx))) = (*({ if (i < 0 || i >= else_statements_guard_block.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(else_statements_guard_block.data[i]); }));
     typechecker__check_statement(s_idx, env, child_scope, ctx);
     i = (i + 1);
     }

@@ -150,11 +150,11 @@ func codegen_expr_calls_func(expr_idx: Index[ast.Expression[ctx], ctx], func_nam
                 return 1;
             }
 
-            mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+            mut args_vec_expr_calls_func: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
             mut i := 0;
-            while i < len(*args_vec) {
+            while i < len(args_vec_expr_calls_func) {
                 mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg_idx] = (*args_vec)[i];
+                ctx[arg_idx] = args_vec_expr_calls_func[i];
                 if codegen_expr_calls_func(arg_idx, func_name, ctx) == 1 {
                     return 1;
                 }
@@ -174,11 +174,12 @@ func codegen_block_calls_func(block_idx: Index[ast.BlockStatement[ctx], ctx], fu
         if block_idx == empty[Index[ast.BlockStatement[ctx], ctx]] {
             return 0;
         }
-        mut body_statements := &ctx[ctx[block_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut block_val_calls_func := ctx[block_idx];
+        mut body_statements_block_calls_func: std.Vector[ast.Statement[ctx], ctx] := ctx[block_val_calls_func.statements];
         mut j := 0;
-        while j < len(*body_statements) {
+        while j < len(body_statements_block_calls_func) {
             mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[child_stmt_idx] = (*body_statements)[j];
+            ctx[child_stmt_idx] = body_statements_block_calls_func[j];
             if codegen_stmt_calls_func(child_stmt_idx, func_name, ctx) == 1 {
                 return 1;
             }
@@ -228,10 +229,10 @@ func codegen_stmt_calls_func(stmt_idx: Index[ast.Statement[ctx], ctx], func_name
         }
         if tag == 8 { // Match
             if codegen_expr_calls_func(stmt.Match.expression, func_name, ctx) == 1 { return 1; }
-            mut cases_vec := &ctx[stmt.Match.cases] as *std.Vector[ast.MatchCase[ctx], ctx];
+            mut cases_vec_stmt_calls_func: std.Vector[ast.MatchCase[ctx], ctx] := ctx[stmt.Match.cases];
             mut i := 0;
-            while i < len(*cases_vec) {
-                mut case_val := (*cases_vec)[i];
+            while i < len(cases_vec_stmt_calls_func) {
+                mut case_val := cases_vec_stmt_calls_func[i];
                 if codegen_block_calls_func(case_val.body, func_name, ctx) == 1 {
                     return 1;
                 }
@@ -528,9 +529,9 @@ func codegen_hashmap_is_str_key(t: ast.Type[ctx], env: &typechecker.TypeEnvironm
             }
         }
         if t.tag == 10 { // Generic
-            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-            if len(*args_vec) > 0 {
-                mut first_arg := (*args_vec)[0];
+            mut args_vec_type_contains_str_raw: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
+            if len(args_vec_type_contains_str_raw) > 0 {
+                mut first_arg := args_vec_type_contains_str_raw[0];
                 if first_arg.tag == 5 { // Str
                     return 1;
                 }
@@ -590,8 +591,7 @@ func codegen_erase_struct_name(name: str, brand: Index[str, ctx], env: &typechec
         }
 
         if brand != empty[Index[str, ctx]] {
-            mut brand_str_ptr := &ctx[brand] as *str;
-            mut b := *brand_str_ptr;
+            mut b := ctx[brand];
             mut clean_b := codegen_strip_brand_prefix(b, ctx);
             mut stripped_brand := 0;
 
@@ -806,12 +806,12 @@ func codegen_erase_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
         }
         if t.tag == 10 {
             mut name := t.Generic.name;
-            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            mut args_vec_erase_type_generic: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
             mut erased_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
 
             mut i := 0;
-            while i < len(*args_vec) {
-                mut arg := (*args_vec)[i];
+            while i < len(args_vec_erase_type_generic) {
+                mut arg := args_vec_erase_type_generic[i];
                 if codegen_is_brand_type(arg, env, ctx) == 0 {
                     mut erased_arg := codegen_erase_type(arg, env, ctx);
                     erased_args.Push(erased_arg);
@@ -819,8 +819,7 @@ func codegen_erase_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
                 i = i + 1;
             }
             erased_t.Generic.args = os.ArenaAlloc(ctx);
-            mut dest_args := &ctx[erased_t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-            *dest_args = erased_args;
+            ctx[erased_t.Generic.args] = erased_args;
             return erased_t;
         }
         return t;
@@ -1113,10 +1112,10 @@ func codegen_get_by_value_dependencies_recursive(t: ast.Type[ctx], deps: *std.Ha
                 codegen_get_by_value_dependencies_recursive(inner, deps, env, ctx);
             } else {
                 if t.tag == 10 { // Generic
-                    mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+                    mut args_vec_by_value_deps: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
                     mut i := 0;
-                    while i < len(*args_vec) {
-                        codegen_get_by_value_dependencies_recursive((*args_vec)[i], deps, env, ctx);
+                    while i < len(args_vec_by_value_deps) {
+                        codegen_get_by_value_dependencies_recursive(args_vec_by_value_deps[i], deps, env, ctx);
                         i = i + 1;
                     }
                 }
@@ -1403,14 +1402,14 @@ func codegen_get_c_type_ident(t: ast.Type[ctx], env: &typechecker.TypeEnvironmen
 
 func codegen_get_monomorphized_name(template_name: str, args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
-        mut args_vec := &ctx[args_idx] as *std.Vector[ast.Type[ctx], ctx];
+        mut args_vec_monomorphized_name: std.Vector[ast.Type[ctx], ctx] := ctx[args_idx];
         mut arg_names := "";
         mut i := 0;
-        while i < len(*args_vec) {
+        while i < len(args_vec_monomorphized_name) {
             if i > 0 {
                 arg_names = std.Concat(arg_names, "_");
             }
-            mut erased_arg := codegen_erase_type((*args_vec)[i], env, ctx);
+            mut erased_arg := codegen_erase_type(args_vec_monomorphized_name[i], env, ctx);
             mut arg_name := typechecker.get_type_ident(erased_arg, ctx);
             arg_names = std.Concat(arg_names, arg_name);
             i = i + 1;
