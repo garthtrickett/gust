@@ -80,6 +80,10 @@ The first parity implementation should mirror the existing directory lane withou
 6. Add narrow compiler-backed guards only after parity is proven.
 7. Remove `open_directories` in a later cleanup-only patch once generalized coverage is equivalent.
 
+## Step 5.1 dependency
+
+Step 5.2 report-only scaffolding may stay in place, but compiler-backed Step 5.2 enforcement should remain paused until the Step 5.1 deferred unsafe lanes have semantic designs. Generalized resource ownership depends on knowing whether a handle or reference came from safe arena construction, raw pointer manipulation, address escape, or external FFI.
+
 ## Guardrails
 
 `make guard_step52_no_post_closure_report_churn` should remain green throughout this design work. If new Step 5.2 reports are needed, update the closure whitelist intentionally and document why the new report is a compiler-design prerequisite rather than status churn.
