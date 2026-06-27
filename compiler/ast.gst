@@ -71,6 +71,9 @@ type Statement[ctx] enum {
         name: str,
         generics: Index[std.Vector[str, ctx], ctx],
         fields: Index[std.Vector[FieldDef[ctx], ctx], ctx],
+        is_repr_c: int,
+        is_packed: int,
+        layout_abi: str,
         span: token.Span
     },
     EnumDecl {

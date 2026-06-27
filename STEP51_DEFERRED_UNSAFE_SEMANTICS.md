@@ -53,8 +53,7 @@ This metadata may be introduced inertly before enforcement. It must not change o
 - `requires_layout_metadata`
 - `requires_sandbox_arena`
 
-`init_function_signature_ffi_defaults` initializes these fields for compiler-created signatures. `FunctionDecl` also carries the same inert metadata through the parsed AST, and the parser initializes ordinary function declarations as non-extern with C ABI defaults and all FFI/layout/sandbox requirements disabled. The parser accepts explicit `extern func` metadata and also accepts bodyless extern signatures terminated with `;`, synthesizing an empty AST body so typechecking can register the signature without inventing codegen behavior. The typechecker copies those AST fields into `FunctionSignature[ctx]`, and direct extern/native calls now reject outside explicit unsafe contexts. Codegen, layout metadata, sandbox arenas, and broader provenance remain deferred.
-
+`init_function_signature_ffi_defaults` initializes these fields for compiler-created signatures. `FunctionDecl` also carries the same inert metadata through the parsed AST, and the parser initializes ordinary function declarations as non-extern with C ABI defaults and all FFI/layout/sandbox requirements disabled. The parser accepts explicit `extern func` metadata and also accepts bodyless extern signatures terminated with `;`, synthesizing an empty AST body so typechecking can register the signature without inventing codegen behavior. The typechecker copies those AST fields into `FunctionSignature[ctx]`, and direct extern/native calls now reject outside explicit unsafe contexts. `StructDecl` and `StructLayout` carry inert layout metadata fields for future `#[repr(C)]` and `#[packed]` support, but explicit layout-attribute syntax, codegen layout changes, sandbox arenas, and broader provenance remain deferred.
 ### Classification rule
 
 Only parsed Gust source declarations/calls that carry direct external/native metadata should become FFI enforcement candidates. These are not direct user-facing FFI candidates:
@@ -78,11 +77,12 @@ Direct external/native calls reject outside an explicit unsafe context with the 
 5. Add bodyless extern declaration handling for `extern func ...;` signatures while synthesizing an empty AST body.
 6. Enforce direct extern/native calls require explicit unsafe contexts.
 7. Classify existing runtime/native boundaries separately from user-facing Gust source calls.
-8. Add inert AST/type metadata for layout attributes without changing codegen.
-9. Define sandbox sub-arena ownership and destruction semantics for external calls.
-10. Define address-origin metadata that separates safe branded references from raw-derived addresses.
-11. Extend provenance tracking so raw-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
-12. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
+8. Add inert AST/type metadata carriers for layout attributes without changing codegen.
+9. Add explicit `#[repr(C)]` / `#[packed]` parser syntax and populate the inert layout metadata.
+10. Define sandbox sub-arena ownership and destruction semantics for external calls.
+11. Define address-origin metadata that separates safe branded references from raw-derived addresses.
+12. Extend provenance tracking so raw-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
+13. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
 
 ## Step 5.2 sequencing rule
 

@@ -925,6 +925,10 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
             stmt_struct_parse.StructDecl.fields = struct_fields_idx_parse;
             ctx.Set(struct_fields_idx_parse, fields_vec);
 
+            stmt_struct_parse.StructDecl.is_repr_c = 0;
+            stmt_struct_parse.StructDecl.is_packed = 0;
+            stmt_struct_parse.StructDecl.layout_abi = "";
+
             stmt_struct_parse.StructDecl.span = merge_spans(start_span, end_span);
             ctx.Set(stmt_idx, stmt_struct_parse);
             return stmt_idx;

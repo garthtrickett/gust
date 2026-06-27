@@ -8,7 +8,18 @@ type OriginSet[ctx] struct {
 
 type StructLayout[ctx] struct {
     brand: Index[str, ctx],
-    fields: std.HashMap[str, ast.Type[ctx], ctx]
+    fields: std.HashMap[str, ast.Type[ctx], ctx],
+    is_repr_c: int,
+    is_packed: int,
+    layout_abi: str
+}
+
+func init_struct_layout_ffi_defaults(layout: *StructLayout[ctx]) {
+    unsafe {
+        (*layout).is_repr_c = 0;
+        (*layout).is_packed = 0;
+        (*layout).layout_abi = "";
+    }
 }
 
 type FunctionSignature[ctx] struct {
@@ -3588,6 +3599,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             }
             if has_existing == 0 {
                 mut placeholder: StructLayout[ctx];
+                init_struct_layout_ffi_defaults(&placeholder);
                 placeholder.brand = brand;
                 placeholder.fields = std.HashMapNew(ctx); 
                 (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
@@ -4843,8 +4855,12 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 (*env).struct_templates.Insert(std.Clone(ctx, namespaced_name), template);
             } else {
                 mut layout: StructLayout[ctx];
+                init_struct_layout_ffi_defaults(&layout);
                 layout.brand = empty[Index[str, ctx]];
                 layout.fields = std.HashMapNew(ctx);
+                layout.is_repr_c = stmt.StructDecl.is_repr_c;
+                layout.is_packed = stmt.StructDecl.is_packed;
+                layout.layout_abi = stmt.StructDecl.layout_abi;
 
                 mut fields_vec_struct_decl: std.Vector[ast.FieldDef[ctx], ctx] := ctx[stmt.StructDecl.fields];
                 mut i := 0;
