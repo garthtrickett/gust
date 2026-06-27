@@ -5523,8 +5523,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
     unsafe {
         if t.tag == 7 { // Index
             if t.Index.brand != empty[Index[str, ctx]] {
-                mut original_brand_ptr := &ctx[t.Index.brand] as *str;
-                mut original_brand := *original_brand_ptr;
+                mut original_brand: str := ctx[t.Index.brand];
                 mut has_orig_brand := 0;
                 mut orig_brand_lookup := layout.fields.Get(original_brand);
                 if orig_brand_lookup.Ok {
@@ -5535,8 +5534,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
                     res = std.Concat(res, original_brand);
                     
                     mut new_brand: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-                    mut ptr := &ctx[new_brand] as *str;
-                    *ptr = std.Clone(ctx, res);
+                    ctx[new_brand] = std.Clone(ctx, res);
                     
                     mut res_t: ast.Type[ctx];
                     res_t.tag = 7;
@@ -5554,8 +5552,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
         }
         if t.tag == 8 { // Struct
             if t.Struct.brand != empty[Index[str, ctx]] {
-                mut original_brand_ptr := &ctx[t.Struct.brand] as *str; 
-                mut original_brand := *original_brand_ptr;
+                mut original_brand: str := ctx[t.Struct.brand];
                 mut has_orig_brand := 0;
                 mut orig_brand_lookup := layout.fields.Get(original_brand);
                 if orig_brand_lookup.Ok {
@@ -5566,8 +5563,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
                     res = std.Concat(res, original_brand);
                     
                     mut new_brand: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-                    mut ptr := &ctx[new_brand] as *str;
-                    *ptr = std.Clone(ctx, res);
+                    ctx[new_brand] = std.Clone(ctx, res);
                     
                     mut res_t: ast.Type[ctx];
                     res_t.tag = 8;
@@ -5603,8 +5599,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
         }
         if t.tag == 11 { // Reference
             if t.Reference.brand != empty[Index[str, ctx]] {
-                mut original_brand_ptr := &ctx[t.Reference.brand] as *str;
-                mut original_brand := *original_brand_ptr;
+                mut original_brand: str := ctx[t.Reference.brand];
                 mut has_orig_brand := 0;
                 mut orig_brand_lookup := layout.fields.Get(original_brand);
                 if orig_brand_lookup.Ok {
@@ -5615,8 +5610,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
                     res = std.Concat(res, original_brand);
                     
                     mut new_brand: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-                    mut ptr := &ctx[new_brand] as *str;
-                    *ptr = std.Clone(ctx, res);
+                    ctx[new_brand] = std.Clone(ctx, res);
                     
                     mut res_t: ast.Type[ctx];
                     res_t.tag = 11;
