@@ -9,7 +9,7 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
-.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_ffi_calls report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status report_step51_raw_pointer_safety_inventory report_step51_final_validation
+.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_ffi_calls report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement report_step51_raw_pointer_safety_inventory report_step51_final_validation
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -48,7 +48,7 @@ bootstrap: gust
 	touch build/gust_compiler.c
 	touch gust
 
-test: gust guard_step45_safe_subscript_write_enforcement guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
+test: gust guard_step45_safe_subscript_write_enforcement guard_step51_raw_deref_unsafe_enforcement guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
 	@mkdir -p build
 	@echo "⚙️  Compiling native Gust test runner..."
 	@./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
@@ -163,6 +163,7 @@ report_step51_final_validation:
 	@echo "   make report_step51_raw_pointer_classified"
 	@echo "   make report_step51_raw_pointer_safe_code_candidates"
 	@echo "   make report_step51_phase_b_wrapping_status"
+	@echo "   make guard_step51_raw_deref_unsafe_enforcement"
 	@echo "   gt-one-gst tests/e2e_unsafe_function_signature_noop.gst"
 	@echo "   make report_step45_final_validation"
 	@echo "   make report_phase4_formatter_tools"
@@ -171,7 +172,7 @@ report_step51_final_validation:
 	@echo "   make test"
 	@echo "   make bootstrap"
 	@echo "   git diff --check"
-	@echo "✅ Step 5.1 validation checklist complete. This target is report-only and does not enforce raw pointer safety yet."
+	@echo "✅ Step 5.1 validation checklist complete. Raw deref enforcement is guarded; raw casts and FFI remain deferred."
 
 report_step44_accessor_contract:
 	@echo "🧪 Step 4.4 accessor contract focused checks:"
@@ -289,6 +290,32 @@ guard_step45_safe_subscript_write_enforcement: gust
 		fi; \
 	done
 	@echo "✅ Step 4.5C safe subscript write enforcement guard passed."
+
+guard_step51_raw_deref_unsafe_enforcement: gust
+	@echo "🔒 Checking Step 5.1 raw pointer dereference unsafe enforcement..."
+	@mkdir -p build
+	@echo "Checking raw pointer dereference outside unsafe rejects..."
+	@./gust tests/test_raw_pointer_deref_outside_unsafe_rejected.gst > build/step51_raw_deref_guard.log 2>&1; \
+	status=$$?; \
+	if [ $$status -eq 0 ]; then \
+		echo "❌ Step 5.1 raw deref guard failed: outside-unsafe raw deref compiled but should reject."; \
+		cat build/step51_raw_deref_guard.log; \
+		exit 1; \
+	fi; \
+	if ! rg -q "Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks" build/step51_raw_deref_guard.log; then \
+		echo "❌ Step 5.1 raw deref guard failed: rejection did not use the stable unsafe diagnostic."; \
+		cat build/step51_raw_deref_guard.log; \
+		exit 1; \
+	fi
+	@echo "Checking raw pointer dereference inside unsafe accepts..."
+	@./gust tests/e2e_raw_pointer_deref_inside_unsafe.gst > build/step51_raw_deref_guard.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "❌ Step 5.1 raw deref guard failed: inside-unsafe raw deref should compile."; \
+		cat build/step51_raw_deref_guard.log; \
+		exit 1; \
+	fi
+	@echo "✅ Step 5.1 raw pointer dereference unsafe enforcement guard passed."
 
 guard_step44_low_risk_entry_raw_casts:
 	@echo "🔒 Checking Step 4.4 migrated low-risk entry files for high-level raw collection/string casts..."
