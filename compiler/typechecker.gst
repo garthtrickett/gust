@@ -6474,11 +6474,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             if body_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
                 mut body := ctx[body_idx];
-                mut statements_vec := &ctx[body.statements] as *std.Vector[ast.Statement[ctx], ctx];
+                mut statements_vec_while_body: std.Vector[ast.Statement[ctx], ctx] := ctx[body.statements];
                 mut j := 0;
-                while j < len(*statements_vec) {
+                while j < len(statements_vec_while_body) {
                     mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = (*statements_vec)[j];
+                    ctx[s_idx] = statements_vec_while_body[j];
                     check_statement(s_idx, env, scope, ctx);
                     j = j + 1;
                 }
@@ -6510,11 +6510,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             // Evaluate consequence
             if cons_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
                 mut cons := ctx[cons_idx];
-                mut statements_vec := &ctx[cons.statements] as *std.Vector[ast.Statement[ctx], ctx];
+                mut statements_vec_if_consequence: std.Vector[ast.Statement[ctx], ctx] := ctx[cons.statements];
                 mut j := 0;
-                while j < len(*statements_vec) {
+                while j < len(statements_vec_if_consequence) {
                     mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = (*statements_vec)[j];
+                    ctx[s_idx] = statements_vec_if_consequence[j];
                     check_statement(s_idx, env, scope, ctx);
                     j = j + 1;
                 }
@@ -6530,11 +6530,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 (*env).checked_results = pre_checked;
 
                 mut alt := ctx[alt_idx];
-                mut statements_vec := &ctx[alt.statements] as *std.Vector[ast.Statement[ctx], ctx];
+                mut statements_vec_if_alternative: std.Vector[ast.Statement[ctx], ctx] := ctx[alt.statements];
                 mut j := 0;
-                while j < len(*statements_vec) {
+                while j < len(statements_vec_if_alternative) {
                     mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = (*statements_vec)[j];
+                    ctx[s_idx] = statements_vec_if_alternative[j];
                     check_statement(s_idx, env, scope, ctx);
                     j = j + 1;
                 }
@@ -6657,7 +6657,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
         if stmt.tag == 8 { // Match
             mut expr_idx := stmt.Match.expression;
-            mut cases_vec := &ctx[stmt.Match.cases] as *std.Vector[ast.MatchCase[ctx], ctx];
+            mut cases_vec_match_stmt: std.Vector[ast.MatchCase[ctx], ctx] := ctx[stmt.Match.cases];
 
             mut expr_type := check_expression(expr_idx, env, scope, ctx);
             mut real_struct_type := expr_type;
@@ -6672,8 +6672,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut lookup_enum := (*env).enum_registry.Get(enum_name);
 
                 mut i := 0;
-                while i < len(*cases_vec) {
-                    mut m_case := (*cases_vec)[i];
+                while i < len(cases_vec_match_stmt) {
+                    mut m_case := cases_vec_match_stmt[i];
                     mut variant_name := m_case.variant_name;
 
                     matched_variants.Insert(std.Clone(ctx, variant_name), 1);
@@ -6698,7 +6698,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         }
                     }
 
-                    mut fields_vec := &ctx[m_case.fields] as *std.Vector[str, ctx];
+                    mut fields_vec_match_case: std.Vector[str, ctx] := ctx[m_case.fields];
                     mut child_scope := scope_new(scope, ctx);
 
                     mut variant_struct_name := std.Concat(enum_name, "_");
@@ -6708,8 +6708,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     if layout_lookup.Ok {
                         mut layout := layout_lookup.Val;
                         mut f := 0;
-                        while f < len(*fields_vec) {
-                            mut field_name := (*fields_vec)[f];
+                        while f < len(fields_vec_match_case) {
+                            mut field_name := fields_vec_match_case[f];
                             mut f_type_lookup := layout.fields.Get(field_name);
                             if f_type_lookup.Ok {
                                 mut f_type := f_type_lookup.Val;
@@ -6741,11 +6741,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     mut body_idx := m_case.body;
                     if body_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
                         mut body := ctx[body_idx];
-                        mut statements_vec := &ctx[body.statements] as *std.Vector[ast.Statement[ctx], ctx];
+                        mut statements_vec_match_body: std.Vector[ast.Statement[ctx], ctx] := ctx[body.statements];
                         mut j := 0;
-                        while j < len(*statements_vec) {
+                        while j < len(statements_vec_match_body) {
                             mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[s_idx] = (*statements_vec)[j];
+                            ctx[s_idx] = statements_vec_match_body[j];
                             check_statement(s_idx, env, child_scope, ctx);
                             j = j + 1;
                         }
@@ -6753,8 +6753,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                     // Clean up variable types after leaving child scope
                     mut f_cleanup := 0;
-                    while f_cleanup < len(*fields_vec) {
-                        mut field_name := (*fields_vec)[f_cleanup];
+                    while f_cleanup < len(fields_vec_match_case) {
+                        mut field_name := fields_vec_match_case[f_cleanup];
                         (*env).variable_types.Remove(field_name);
                         f_cleanup = f_cleanup + 1;
                     }
@@ -6795,11 +6795,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             if body_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
                 mut body := ctx[body_idx];
-                mut statements_vec := &ctx[body.statements] as *std.Vector[ast.Statement[ctx], ctx];
+                mut statements_vec_unsafe_block: std.Vector[ast.Statement[ctx], ctx] := ctx[body.statements];
                 mut j := 0;
-                while j < len(*statements_vec) {
+                while j < len(statements_vec_unsafe_block) {
                     mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = (*statements_vec)[j];
+                    ctx[s_idx] = statements_vec_unsafe_block[j];
                     check_statement(s_idx, env, scope, ctx);
                     j = j + 1;
                 }
@@ -6822,10 +6822,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             // Check inout parameters are not moved before returning
             if (*env).current_function_inout_params != empty[Index[std.Vector[str, ctx], ctx]] {
-                mut inout_params := &ctx[(*env).current_function_inout_params] as *std.Vector[str, ctx];
+                mut inout_params_return_check: std.Vector[str, ctx] := ctx[(*env).current_function_inout_params];
                 mut k := 0;
-                while k < len(*inout_params) {
-                    mut inout_p := (*inout_params)[k];
+                while k < len(inout_params_return_check) {
+                    mut inout_p := inout_params_return_check[k];
                     if (*env).moved_vars.Get(inout_p).Ok {
                         mut msg := std.Concat("Semantic Error: Inout reference parameter '", inout_p);
                         msg = std.Concat(msg, "' was moved but never re-initialized before return");
@@ -6953,11 +6953,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut child_scope := scope_new(scope, ctx);
             
             mut else_block := ctx[else_body];
-            mut else_statements := &ctx[else_block.statements] as *std.Vector[ast.Statement[ctx], ctx];
+            mut else_statements_guard_block: std.Vector[ast.Statement[ctx], ctx] := ctx[else_block.statements];
             mut i := 0;
-            while i < len(*else_statements) { 
+            while i < len(else_statements_guard_block) { 
                 mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[s_idx] = (*else_statements)[i];
+                ctx[s_idx] = else_statements_guard_block[i];
                 check_statement(s_idx, env, child_scope, ctx);
                 i = i + 1;
             }
