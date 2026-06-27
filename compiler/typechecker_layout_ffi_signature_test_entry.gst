@@ -13,10 +13,14 @@ func main() {
     typechecker.env_register_struct_layout_metadata(&env_lffi_sig, "main__Packed", 0, 1, "", ctx);
 
     mut void_t_lffi_sig: ast.Type[ctx];
-    void_t_lffi_sig.tag = 3; // Void
+    unsafe {
+        void_t_lffi_sig.tag = 3; // Void
+    }
 
     mut int_t_lffi_sig: ast.Type[ctx];
-    int_t_lffi_sig.tag = 0; // Int
+    unsafe {
+        int_t_lffi_sig.tag = 0; // Int
+    }
 
     mut plain_t_lffi_sig: ast.Type[ctx];
     unsafe {
