@@ -429,6 +429,22 @@ func env_type_is_safe_branded_return_target(t: ast.Type[ctx], ctx: &Arena) int {
     }
 }
 
+func env_report_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], span: token.Span, context_nonlaunder: str, ctx: &Arena) {
+    if env_type_is_safe_branded_return_target(target_t, ctx) == 0 {
+        return;
+    }
+    if expression_provenance_is_raw_or_sandbox_derived(prov) == 0 {
+        return;
+    }
+
+    mut msg_nonlaunder_target := "Semantic Error: Non-laundering violation. ";
+    msg_nonlaunder_target = std.Concat(msg_nonlaunder_target, context_nonlaunder);
+    msg_nonlaunder_target = std.Concat(msg_nonlaunder_target, " as safe branded type ");
+    msg_nonlaunder_target = std.Concat(msg_nonlaunder_target, ast.serialize_type(target_t, ctx));
+    msg_nonlaunder_target = std.Concat(msg_nonlaunder_target, " is prohibited");
+    report_error(2, msg_nonlaunder_target, span, env, ctx);
+}
+
 func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], parent_brand: Index[str, ctx], span: token.Span, ctx: &Arena) {
     unsafe { 
         if t.tag == 9 { // RawPointer
@@ -6724,6 +6740,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut val_type: ast.Type[ctx];
             val_type.tag = 3; // Void
+            mut val_prov_decl_for_nlaunder := expression_provenance_void_unknown(ctx);
 
             mut resolved_explicit: ast.Type[ctx];
             resolved_explicit.tag = 3; // Void
@@ -6747,6 +6764,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 val_prov_decl.resolved_type = val_type;
                 val_prov_decl.legacy_origins = origs;
+                val_prov_decl_for_nlaunder = val_prov_decl;
                 env_record_variable_provenance(env, name, val_prov_decl, ctx);
             } else {
                 if var_type_idx != empty[Index[ast.Type[ctx], ctx]] { 
@@ -6763,6 +6781,15 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     msg = std.Concat(msg, "' must have an explicit type annotation");
                     report_error(2, msg, stmt.VarDecl.span, env, ctx);
                 }
+            }
+
+            if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                mut decl_target_type_nlaunder := val_type;
+                if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
+                    decl_target_type_nlaunder = resolved_explicit;
+                }
+                mut decl_span_nlaunder := get_expression_span(val_idx, ctx);
+                env_report_non_laundering_safe_brand_target(env, decl_target_type_nlaunder, val_prov_decl_for_nlaunder, decl_span_nlaunder, "Binding raw-derived or sandbox-derived value", ctx);
             }
 
             if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
@@ -6959,6 +6986,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
                 report_error(2, msg, get_expression_span(val_idx, ctx), env, ctx);
             }
+
+            mut assignment_span_nlaunder := get_expression_span(val_idx, ctx);
+            env_report_non_laundering_safe_brand_target(env, left_type, val_prov_assignment, assignment_span_nlaunder, "Assigning raw-derived or sandbox-derived value", ctx);
 
             if left.tag == 11 { // Selector
                 mut field_key_assignment_prov := expression_to_string(left_idx, ctx);
@@ -7651,17 +7681,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
 
                 if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                    if env_type_is_safe_branded_return_target(expected_t, ctx) == 1 {
-                        if expression_provenance_is_raw_or_sandbox_derived(return_prov_for_enforcement) == 1 {
-                            mut msg_return_nlaunder := "Semantic Error: Non-laundering violation. Returning raw-derived or sandbox-derived value as safe branded return type ";
-                            msg_return_nlaunder = std.Concat(msg_return_nlaunder, ast.serialize_type(expected_t, ctx));
-                            msg_return_nlaunder = std.Concat(msg_return_nlaunder, " is prohibited");
-
-                            mut return_nlaunder_span: token.Span;
-                            return_nlaunder_span = get_expression_span(expr_idx, ctx);
-                            report_error(2, msg_return_nlaunder, return_nlaunder_span, env, ctx);
-                        }
-                    }
+                    mut return_nlaunder_span: token.Span;
+                    return_nlaunder_span = get_expression_span(expr_idx, ctx);
+                    env_report_non_laundering_safe_brand_target(env, expected_t, return_prov_for_enforcement, return_nlaunder_span, "Returning raw-derived or sandbox-derived value", ctx);
                 }
             } else {
                 mut msg := "Semantic Error: Return statement used outside function body";
