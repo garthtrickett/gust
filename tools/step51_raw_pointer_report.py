@@ -2,9 +2,9 @@
 """Step 5.1 raw pointer safety inventory helper.
 
 This is intentionally textual and report-only. It narrows the broad Makefile
-regexes by tracking explicit unsafe blocks well enough to separate likely
-safe-code migration candidates from sites already wrapped in `unsafe { ... }`.
-It is not an enforcement mechanism.
+regexes by tracking explicit unsafe blocks and `unsafe func` bodies well enough
+to separate likely safe-code migration candidates from sites already in unsafe
+contexts. It is not an enforcement mechanism.
 """
 
 from __future__ import annotations
@@ -97,7 +97,10 @@ def update_unsafe_stack(code: str, stack: list[bool]) -> None:
     for idx, ch in enumerate(code):
         if ch == "{":
             prefix = code[:idx]
-            is_unsafe = re.search(r"\bunsafe\s*$", prefix) is not None
+            is_unsafe = (
+                re.search(r"\bunsafe\s*$", prefix) is not None
+                or re.search(r"\bunsafe\s+func\b[^{]*$", prefix) is not None
+            )
             stack.append(is_unsafe)
         elif ch == "}":
             if stack:
