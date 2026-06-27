@@ -4356,8 +4356,8 @@ func codegen_sort_variants(variants: std.Vector[str, ctx], ctx: &Arena) std.Vect
             mut cmp := typechecker.typechecker_str_compare(sorted[x], sorted[y]);
             if cmp > 0 {
                 mut temp := sorted[x];
-                sorted[x] = sorted[y];
-                sorted[y] = temp;
+                sorted.Set(x, sorted[y]);
+                sorted.Set(y, temp);
             }
             y = y + 1;
         }

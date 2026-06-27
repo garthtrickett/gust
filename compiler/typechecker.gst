@@ -7228,8 +7228,8 @@ func typechecker_sort_vector_str(vec: *std.Vector[str, ctx], ctx: &Arena) {
             }
             if min_idx != i {
                 mut temp := (*vec)[i];
-                (*vec)[i] = (*vec)[min_idx];
-                (*vec)[min_idx] = temp;
+                (*vec).Set(i, (*vec)[min_idx]);
+                (*vec).Set(min_idx, temp);
             }
             i = i + 1;
         }
