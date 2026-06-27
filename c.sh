@@ -227,6 +227,15 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_phase_c_resource_r
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_phase_d_transfer_status:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step52_phase_d_transfer_status ---"
+        (cd "$PROJECT_ROOT" && make report_step52_phase_d_transfer_status)
+        echo "--- END OF REPORT make report_step52_phase_d_transfer_status ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_status_matrix:' "$PROJECT_ROOT/Makefile"; then
     {
         echo "--- START OF REPORT make report_step52_status_matrix ---"
