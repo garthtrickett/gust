@@ -263,6 +263,24 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_status_matrix:' "$
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^guard_step52_report_only_lanes_not_in_test:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make guard_step52_report_only_lanes_not_in_test ---"
+        (cd "$PROJECT_ROOT" && make guard_step52_report_only_lanes_not_in_test)
+        echo "--- END OF REPORT make guard_step52_report_only_lanes_not_in_test ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^guard_step52_no_post_closure_report_churn:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make guard_step52_no_post_closure_report_churn ---"
+        (cd "$PROJECT_ROOT" && make guard_step52_no_post_closure_report_churn)
+        echo "--- END OF REPORT make guard_step52_no_post_closure_report_churn ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_final_validation:' "$PROJECT_ROOT/Makefile"; then
     {
         echo "--- START OF REPORT make report_step52_final_validation ---"
