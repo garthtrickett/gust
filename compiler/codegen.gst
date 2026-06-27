@@ -3993,9 +3993,9 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             res = std.Concat(res, "}\n\n");
 
 
-  if len(*params_vec) == 1 {
+  if len(params_vec_function_emit) == 1 {
                     codegen_log_trace("👁", std.Format("codegen_generate_statement: generating pthread_wrapper for %s", namespaced_name), ctx);
-                    mut param := (*params_vec)[0];
+                    mut param := params_vec_function_emit[0];
                     mut wrapper_p_type := param.param_type;
                     if sig_lookup.Ok {
                         wrapper_p_type = sig_lookup.Val.params[0];
