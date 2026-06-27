@@ -49,7 +49,7 @@ func main() {
     mut j := 0;
     while j < len(statements_vec) {
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[stmt_idx] = statements_vec[j];
+        ctx.Set(stmt_idx, statements_vec[j]);
         typechecker.check_statement(stmt_idx, &env, scope, ctx);
         j = j + 1;
     }

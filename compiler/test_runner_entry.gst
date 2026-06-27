@@ -207,7 +207,7 @@ func main() {
         mut k_check := 0;
         while k_check < len(statements_vec_check) {
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = statements_vec_check[k_check];
+            ctx.Set(stmt_idx, statements_vec_check[k_check]);
             typechecker.check_statement(stmt_idx, &env, scope, ctx);
             k_check = k_check + 1;
         }

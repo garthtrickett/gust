@@ -5,7 +5,8 @@ func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
     mut n1: Index[MyNode, ctx] := os.ArenaAlloc(ctx);
-    ctx[n1].val = 42;
+    mut n1_ref_canary_corruption := ctx.get_ref(n1);
+    n1_ref_canary_corruption.val = 42;
     
     unsafe {
         mut val_ptr := &ctx[n1].val;
