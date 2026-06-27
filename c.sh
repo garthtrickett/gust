@@ -80,4 +80,16 @@ if [ ${#search_dirs[@]} -gt 0 ] && [ ${#FILE_EXTENSIONS[@]} -gt 0 ]; then
     done < <(find "${search_dirs[@]}" -type f \( "${name_args[@]}" \) "${exclude_args[@]}" 2>/dev/null | sort)
 fi
 
+# Append the current Step 5.1 raw pointer classification report when available.
+# This keeps a.txt self-contained for follow-up migration patches without making
+# the report a failing gate.
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_raw_pointer_classified:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step51_raw_pointer_classified ---"
+        (cd "$PROJECT_ROOT" && make report_step51_raw_pointer_classified)
+        echo "--- END OF REPORT make report_step51_raw_pointer_classified ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 echo "✅ Aggregated target project files into $PROJECT_ROOT/$OUTPUT_FILE"
