@@ -3,8 +3,9 @@
 
 This helper is intentionally textual and report-only. It separates likely
 safe-code address-escape expressions from already-unsafe address expressions,
-reference type syntax, generated strings, and comments before any compiler-backed
-address-escape rule is designed. It is not an enforcement mechanism.
+reference type/cast syntax, intentional raw-cast gating fixtures, generated
+strings, and comments before any compiler-backed address-escape rule is designed.
+It is not an enforcement mechanism.
 '''
 
 from __future__ import annotations
@@ -15,8 +16,12 @@ import re
 
 SCAN_ROOTS = [Path('compiler'), Path('tests')]
 SCAN_SUFFIXES = {'.gst'}
+INTENTIONAL_RAW_CAST_GATING_FIXTURES = {
+    Path('tests/test_deref_outside_unsafe_rejected.gst'),
+    Path('tests/test_raw_pointer_cast_outside_unsafe_rejected.gst'),
+}
 REFERENCE_TYPE_HINT = re.compile(
-    r'(^|[(:,]\s*)&[A-Za-z_][A-Za-z0-9_.]*(\[[^]]+\])?'
+    r'(^|[(:,]\s*|\)\s*|\bas\s+)&[A-Za-z_][A-Za-z0-9_.]*(\[[^]]+\])?'
 )
 
 
@@ -27,7 +32,7 @@ def mask_reference_type_syntax(line: str) -> str:
 def line_reference_type_terms(line: str) -> str:
     if REFERENCE_TYPE_HINT.search(line) is None:
         return ''
-    return 'reference type syntax'
+    return 'reference type/cast syntax'
 
 
 def strip_comments_and_strings(line: str) -> str:
@@ -154,15 +159,19 @@ def print_summary(
     safe_code_candidates: list[tuple[Path, int, str, str]],
     unsafe_context: list[tuple[Path, int, str, str]],
     reference_type_syntax: list[tuple[Path, int, str, str]],
+    intentional_raw_cast_fixtures: list[tuple[Path, int, str, str]],
     generated_or_string: list[tuple[Path, int, str, str]],
     comment_only: list[tuple[Path, int, str, str]],
 ) -> None:
     print('Summary:')
     print(f'Direct safe-code address-escape candidates: {len(safe_code_candidates)}')
     print(f'Already-unsafe address expressions: {len(unsafe_context)}')
-    print(f'Reference type syntax entries: {len(reference_type_syntax)}')
+    print(f'Reference type/cast syntax entries: {len(reference_type_syntax)}')
+    print(f'Intentional raw-cast gating fixtures: {len(intentional_raw_cast_fixtures)}')
     print(f'Generated string/template references: {len(generated_or_string)}')
     print(f'Comment-only references: {len(comment_only)}')
+    if len(safe_code_candidates) == 0:
+        print('No unclassified safe-code address-escape candidates were found; keep address-escape enforcement deferred until a real semantic rule is designed.')
     print('Report-only: address-escape enforcement remains deferred until safe-code candidates are inspected semantically.')
     print()
 
@@ -171,6 +180,7 @@ def main() -> None:
     safe_code_candidates: list[tuple[Path, int, str, str]] = []
     unsafe_context: list[tuple[Path, int, str, str]] = []
     reference_type_syntax: list[tuple[Path, int, str, str]] = []
+    intentional_raw_cast_fixtures: list[tuple[Path, int, str, str]] = []
     generated_or_string: list[tuple[Path, int, str, str]] = []
     comment_only: list[tuple[Path, int, str, str]] = []
 
@@ -202,7 +212,9 @@ def main() -> None:
                 update_unsafe_stack(stripped, unsafe_stack)
                 continue
 
-            if line_is_unsafe_context(stripped, unsafe_stack):
+            if path in INTENTIONAL_RAW_CAST_GATING_FIXTURES:
+                add_entry(intentional_raw_cast_fixtures, path, line_no, raw, stripped_terms)
+            elif line_is_unsafe_context(stripped, unsafe_stack):
                 add_entry(unsafe_context, path, line_no, raw, stripped_terms)
             else:
                 add_entry(safe_code_candidates, path, line_no, raw, stripped_terms)
@@ -213,10 +225,11 @@ def main() -> None:
     print()
     print_bucket('Direct safe-code address-escape candidates:', safe_code_candidates)
     print_bucket('Already-unsafe address expressions:', unsafe_context)
-    print_bucket('Reference type syntax entries:', reference_type_syntax)
+    print_bucket('Reference type/cast syntax entries:', reference_type_syntax)
+    print_bucket('Intentional raw-cast gating fixtures:', intentional_raw_cast_fixtures)
     print_bucket('Generated string/template address references:', generated_or_string)
     print_bucket('Comment-only address references:', comment_only)
-    print_summary(safe_code_candidates, unsafe_context, reference_type_syntax, generated_or_string, comment_only)
+    print_summary(safe_code_candidates, unsafe_context, reference_type_syntax, intentional_raw_cast_fixtures, generated_or_string, comment_only)
     print('Report-only: do not wire this helper into make test as an enforcement gate.')
 
 
