@@ -1070,6 +1070,11 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
 func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] { 
     unsafe {
         mut start_span := (*p).cur_token.span;
+        mut is_unsafe_decl := 0;
+        if cur_token_is(p, 38) { // Unsafe = 38
+            is_unsafe_decl = 1;
+            next_token(p); // consume 'unsafe'
+        }
         next_token(p); // consume 'func'
         if cur_token_is(p, 2) == false { // Ident = 2
             mut err: errors.CompilerError[Any];
@@ -1185,6 +1190,7 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
         stmt_function_parse.tag = 3; // FunctionDecl = 3
 
         stmt_function_parse.FunctionDecl.name = name;
+        stmt_function_parse.FunctionDecl.is_unsafe = is_unsafe_decl;
 
         stmt_function_parse.FunctionDecl.params = function_params_idx_parse;
         ctx.Set(function_params_idx_parse, params_vec);
@@ -1404,6 +1410,9 @@ func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx
         }
 
         if cur_token_is(p, 38) { // Unsafe = 38
+            if peek_token_is(p, 30) { // Func = 30
+                return parse_function_decl(p, ctx);
+            }
             return parse_unsafe_block(p, ctx);
         }
 

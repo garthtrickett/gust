@@ -123,6 +123,7 @@ report_step51_raw_pointer_safety_inventory:
 report_step51_final_validation:
 	@echo "🧾 Step 5.1 Phase A/B validation checklist:"
 	@echo "   make report_step51_raw_pointer_safety_inventory"
+	@echo "   gt-one-gst tests/e2e_unsafe_function_signature_noop.gst"
 	@echo "   make report_step45_final_validation"
 	@echo "   make report_phase4_formatter_tools"
 	@echo "   make fmt_check_phase4_infra"

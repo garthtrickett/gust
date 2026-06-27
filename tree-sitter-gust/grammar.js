@@ -77,7 +77,9 @@ module.exports = grammar({
     ),
 
     // func updateNode(ctx: &Arena, node: Index[CustomNode, ctx]) { ... }
+    // unsafe func raw_update(ptr: *int) { ... }
     function_declaration: $ => seq(
+      optional('unsafe'),
       'func',
       $.identifier,
       $.parameter_list,

@@ -1752,6 +1752,13 @@ func main() {
     t_unsafe_nested_selector_subscript_write_ok.expected = "";
     tests.Push(t_unsafe_nested_selector_subscript_write_ok);
 
+    mut t_unsafe_function_signature_noop: Test[ctx];
+    t_unsafe_function_signature_noop.path = "tests/e2e_unsafe_function_signature_noop.gst";
+    t_unsafe_function_signature_noop.is_negative = 0;
+    t_unsafe_function_signature_noop.is_substring = 0;
+    t_unsafe_function_signature_noop.expected = "";
+    tests.Push(t_unsafe_function_signature_noop);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

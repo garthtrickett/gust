@@ -81,6 +81,7 @@ type Statement[ctx] enum {
     },
     FunctionDecl {
         name: str,
+        is_unsafe: int,
         params: Index[std.Vector[Parameter[ctx], ctx], ctx],
         return_type: Index[Type[ctx], ctx],
         body: Index[BlockStatement[ctx], ctx],

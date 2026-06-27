@@ -132,6 +132,7 @@ git diff --check
 * **Inventory Targets:** Use `make report_step51_raw_pointer_safety_inventory` for the combined report. Individual report-only targets are `make report_step51_raw_pointer_deref`, `make report_step51_raw_pointer_casts`, `make report_step51_ffi_calls`, and `make report_step51_unsafe_func_signatures`.
 * **No Regex Enforcement:** These Step 5.1 inventory targets are broad textual scans and must not be wired into `make test` as failing guards. Later enforcement must be AST/typechecker-based so pointer syntax inside type expressions, generated C strings, comments, and intentional unsafe fixtures does not create false positives.
 * **Unsafe Function Semantics:** Prefer Rust-like semantics for `unsafe func`: the function body may perform unsafe operations, and call sites must be inside an explicit unsafe context unless the unsafe operation is internally wrapped behind a safe API. Add parser/typechecker no-op support before requiring this rule.
+* **Phase 5.1A No-Op Support:** During Phase 5.1A, `unsafe func` syntax is parsed and stored as function metadata, but call-site enforcement remains deferred. Use `gt-one-gst tests/e2e_unsafe_function_signature_noop.gst` to validate the additive parser/typechecker path before any raw pointer gating is enabled.
 * **Deferred Non-Laundering:** Treat the unsafe non-laundering boundary as a second enforcement milestone after basic raw pointer/cast/FFI gating. It likely requires provenance/origin tracking beyond simple syntax detection.
 
 ## TOOL USE CONSTRAINTS & DISCIPLINE
