@@ -1042,15 +1042,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 if std.str_eq(right_name, "get_ref") == 1 && typechecker_is_arena_value_or_ref(left_type, ctx) == 1 {
-                    mut args_vec_ref := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                    if len(*args_vec_ref) != 1 {
+                    mut args_vec_ref: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                    if len(args_vec_ref) != 1 {
                         mut msg := "Semantic Error: Arena.get_ref expects exactly 1 Index[T, ctx] argument";
                         report_error(2, msg, expr.Call.span, env, ctx);
                         return dummy;
                     }
 
                     mut arg0_idx_ref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg0_idx_ref] = (*args_vec_ref)[0];
+                    ctx[arg0_idx_ref] = args_vec_ref[0];
                     mut idx_type_ref := check_expression(arg0_idx_ref, env, scope, ctx);
                     idx_type_ref = env_resolve_type(env, idx_type_ref, ctx);
 
@@ -1154,10 +1154,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if is_channel == 1 {
                     if std.str_eq(right_name, "Send") {
                         // Typecheck argument
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec) == 1 {
+                        mut args_vec_channel_send: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_channel_send) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_channel_send[0];
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "_phantom", env, ctx);
@@ -1179,10 +1179,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if is_vec == 1 {
                     if std.str_eq(right_name, "Push") {
                         // Typecheck argument
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec) == 1 {
+                        mut args_vec_vector_push: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_vector_push) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_vector_push[0];
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
@@ -1208,15 +1208,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return make_type_pointer(elem_t, ctx);
                     }
                     if std.str_eq(right_name, "GetRef") {
-                        mut args_vec_getref := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec_getref) != 1 {
+                        mut args_vec_getref: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_getref) != 1 {
                             mut msg_getref_arity := "Semantic Error: Vector.GetRef expects exactly 1 int or Index argument";
                             report_error(2, msg_getref_arity, expr.Call.span, env, ctx);
                             return dummy;
                         }
 
                         mut arg0_idx_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getref] = (*args_vec_getref)[0];
+                        ctx[arg0_idx_getref] = args_vec_getref[0];
                         mut arg_type_getref := check_expression(arg0_idx_getref, env, scope, ctx);
                         arg_type_getref = env_resolve_type(env, arg_type_getref, ctx);
 
@@ -1234,15 +1234,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return make_type_reference(elem_t_getref, brand_name_getref, ctx);
                     }
                     if std.str_eq(right_name, "get_opt") {
-                        mut args_vec_getopt := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec_getopt) != 1 {
+                        mut args_vec_getopt: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_getopt) != 1 {
                             mut msg_getopt_arity := "Semantic Error: Vector.get_opt expects exactly 1 int or Index argument";
                             report_error(2, msg_getopt_arity, expr.Call.span, env, ctx);
                             return dummy;
                         }
 
                         mut arg0_idx_getopt: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getopt] = (*args_vec_getopt)[0];
+                        ctx[arg0_idx_getopt] = args_vec_getopt[0];
                         mut arg_type_getopt := check_expression(arg0_idx_getopt, env, scope, ctx);
                         arg_type_getopt = env_resolve_type(env, arg_type_getopt, ctx);
 
@@ -1269,14 +1269,14 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                  if is_map == 1 {
                     if std.str_eq(right_name, "Insert") {
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec) == 2 {
+                        mut args_vec_map_insert: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_map_insert) == 2 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_map_insert[0];
                             mut k_arg := check_expression(arg0_idx, env, scope, ctx);
 
                             mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg1_idx] = (*args_vec)[1];
+                            ctx[arg1_idx] = args_vec_map_insert[1];
                             mut v_arg := check_expression(arg1_idx, env, scope, ctx);
 
                             mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
@@ -1299,10 +1299,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return t_void;
                     }
                     if std.str_eq(right_name, "Get") {
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec) == 1 {
+                        mut args_vec_map_get: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_map_get) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_map_get[0];
                             mut k_arg := check_expression(arg0_idx, env, scope, ctx);
 
                             mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
@@ -1339,15 +1339,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return make_type_struct(lookup_struct_name, "", ctx);
                     }
                     if std.str_eq(right_name, "GetRef") {
-                        mut args_vec_getref_map := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec_getref_map) != 1 {
+                        mut args_vec_getref_map: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_getref_map) != 1 {
                             mut msg_getref_map_arity := "Semantic Error: HashMap.GetRef expects exactly 1 key argument";
                             report_error(2, msg_getref_map_arity, expr.Call.span, env, ctx);
                             return dummy;
                         }
 
                         mut arg0_idx_getref_map: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getref_map] = (*args_vec_getref_map)[0];
+                        ctx[arg0_idx_getref_map] = args_vec_getref_map[0];
                         mut k_arg_getref_map := check_expression(arg0_idx_getref_map, env, scope, ctx);
                         k_arg_getref_map = env_resolve_type(env, k_arg_getref_map, ctx);
 
@@ -1369,15 +1369,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return make_type_reference(v_type_getref_map, brand_name_getref_map, ctx);
                     }
                     if std.str_eq(right_name, "get_opt") {
-                        mut args_vec_getopt_map := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec_getopt_map) != 1 {
+                        mut args_vec_getopt_map: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_getopt_map) != 1 {
                             mut msg_getopt_map_arity := "Semantic Error: HashMap.get_opt expects exactly 1 key argument";
                             report_error(2, msg_getopt_map_arity, expr.Call.span, env, ctx);
                             return dummy;
                         }
 
                         mut arg0_idx_getopt_map: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getopt_map] = (*args_vec_getopt_map)[0];
+                        ctx[arg0_idx_getopt_map] = args_vec_getopt_map[0];
                         mut k_arg_getopt_map := check_expression(arg0_idx_getopt_map, env, scope, ctx);
                         k_arg_getopt_map = env_resolve_type(env, k_arg_getopt_map, ctx);
 
@@ -1404,10 +1404,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return env_resolve_type(env, opt_generic_getopt_map, ctx);
                     }
                     if std.str_eq(right_name, "Remove") {
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                        if len(*args_vec) == 1 {
+                        mut args_vec_map_remove: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_map_remove) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_map_remove[0];
                             mut k_arg := check_expression(arg0_idx, env, scope, ctx);
 
                             mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
@@ -1426,14 +1426,14 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return t_void;
                     }
                     if std.str_eq(right_name, "Keys") {
-                        mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_map_keys: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         mut brand_name := "ctx";
-                        if len(*args_vec) != 1 {
+                        if len(args_vec_map_keys) != 1 {
                             mut msg := "Semantic Error: HashMap.Keys expects exactly 1 argument (the allocator/brand)";
                             report_error(2, msg, expr.Call.span, env, ctx);
                         } else {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx[arg0_idx] = (*args_vec)[0];
+                            ctx[arg0_idx] = args_vec_map_keys[0];
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                             
                             mut is_arena_val := 0;
