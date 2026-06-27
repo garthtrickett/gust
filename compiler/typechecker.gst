@@ -3137,7 +3137,7 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
                     mut part := parts[i];
                     mut part_lookup := map.Get(part);
                     if part_lookup.Ok {
-                        parts[i] = get_type_ident(part_lookup.Val, ctx);
+                        parts.Set(i, get_type_ident(part_lookup.Val, ctx));
                         changed = 1;
                     }
                     i = i + 1;
@@ -3159,7 +3159,7 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
                             mut b_type := brand_lookup.Val;
                             if b_type.tag == 8 { // Struct
                                 new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                                ctx[new_brand] = std.Clone(ctx, b_type.Struct.struct_name);
+                                ctx.Set(new_brand, std.Clone(ctx, b_type.Struct.struct_name));
                             }
                         }
                     }
@@ -3191,7 +3191,7 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
                     mut part := parts[i];
                     mut part_lookup := map.Get(part);
                     if part_lookup.Ok {
-                        parts[i] = get_type_ident(part_lookup.Val, ctx);
+                        parts.Set(i, get_type_ident(part_lookup.Val, ctx));
                         changed = 1;
                     }
                     i = i + 1;
@@ -3223,7 +3223,7 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
                         typechecker_log_trace('🔍', 'substitute_generics Index: before ArenaAlloc for new_brand', ctx);
                         new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
                         typechecker_log_trace('🔍', 'substitute_generics Index: after ArenaAlloc for new_brand', ctx);
-                        ctx[new_brand] = std.Clone(ctx, b_type.Struct.struct_name);
+                        ctx.Set(new_brand, std.Clone(ctx, b_type.Struct.struct_name));
                         typechecker_log_trace('🔍', 'substitute_generics Index: successfully cloned new_brand', ctx);
                     }
                 }
@@ -3250,14 +3250,14 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
                     mut b_type := brand_lookup.Val;
                     if b_type.tag == 8 { // Struct
                         new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                        ctx[new_brand] = std.Clone(ctx, b_type.Struct.struct_name);
+                        ctx.Set(new_brand, std.Clone(ctx, b_type.Struct.struct_name));
                     }
                 }
             }
             
             res_type.tag = 11; // Reference
             res_type.Reference.inner = os.ArenaAlloc(ctx);
-            ctx[res_type.Reference.inner] = sub_inner;
+            ctx.Set(res_type.Reference.inner, sub_inner);
             res_type.Reference.brand = new_brand;
         } else if t.tag == 9 { // RawPointer
             mut inner := ctx[t.RawPointer.inner];
@@ -3283,7 +3283,7 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
             mut s: ast.Type[ctx];
             s.tag = 6; // Slice
             s.Slice.inner = os.ArenaAlloc(ctx);
-            ctx[s.Slice.inner] = sub_inner;
+            ctx.Set(s.Slice.inner, sub_inner);
             res_type = s;
         } else if t.tag == 10 { // Generic
             mut args_vec: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
@@ -3331,7 +3331,7 @@ func monomorphize(env: *TypeEnvironment[ctx], template_name: str, args: std.Vect
 func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std.Vector[ast.Type[ctx], ctx], ctx: &Arena) errors.Result[ast.Type[ctx], ctx] {
     unsafe {
         mut args_idx_start: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[args_idx_start] = args;
+        ctx.Set(args_idx_start, args);
         mut start_args_name := get_monomorphized_name(template_name, args_idx_start, ctx);
         mut start_msg := std.Format("monomorphize_impl: start for %s", start_args_name);
         typechecker_log_trace("🔄", start_msg, ctx);
@@ -3344,9 +3344,10 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
         mut lookup_active := (*env).active_monomorphizations.Get(template_name);
         if lookup_active.Ok {
             mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[err].kind.tag = 2; // TypeError
+            mut err_ref_cycle_mono := ctx.get_ref(err);
+            err_ref_cycle_mono.kind.tag = 2; // TypeError
             mut msg := std.Concat("Semantic Error: Recursive monomorphization cycle detected: ", template_name);
-            ctx[err].message = std.Clone(ctx, msg);
+            err_ref_cycle_mono.message = std.Clone(ctx, msg);
             res.tag = 1; // Err
             res.Err.error = err;
             return res;
@@ -3360,13 +3361,14 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                 mut generics_vec_enum_template: std.Vector[str, ctx] := ctx[template.generics];
                 if len(generics_vec_enum_template) != len(args) {
                     mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[err].kind.tag = 2; // TypeError
+                    mut err_ref_enum_arg_count_mono := ctx.get_ref(err);
+                    err_ref_enum_arg_count_mono.kind.tag = 2; // TypeError
                     mut msg := std.Concat("Semantic Error: Template '", template_name);
                     msg = std.Concat(msg, "' expects ");
                     msg = std.Concat(msg, std.FormatInt(len(generics_vec_enum_template)));
                     msg = std.Concat(msg, " generic arguments but got ");
                     msg = std.Concat(msg, std.FormatInt(len(args)));
-                    ctx[err].message = std.Clone(ctx, msg);
+                    err_ref_enum_arg_count_mono.message = std.Clone(ctx, msg);
                     res.tag = 1; // Err
                     res.Err.error = err;
                     (*env).active_monomorphizations.Remove(template_name);
@@ -3381,7 +3383,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             }
 
             mut args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[args_idx] = args;
+            ctx.Set(args_idx, args);
             mut concrete_name := get_monomorphized_name(template_name, args_idx, ctx);
 
             mut brand: Index[str, ctx] := empty[Index[str, ctx]];
@@ -3392,7 +3394,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                     mut arg := args[j];
                     if arg.tag == 8 { // Struct
                         brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                        ctx[brand] = std.Clone(ctx, arg.Struct.struct_name);
+                        ctx.Set(brand, std.Clone(ctx, arg.Struct.struct_name));
                     }
                 }
                 j = j + 1;
@@ -3443,13 +3445,14 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                                     }
                                     if has_tag == 0 {
                                         mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-                                        ctx[err].kind.tag = 2; // TypeError
+                                        mut err_ref_enum_large_payload_mono := ctx.get_ref(err);
+                                        err_ref_enum_large_payload_mono.kind.tag = 2; // TypeError
                                         mut msg := std.Concat("Semantic Error: Variant '", variant.name);
                                         msg = std.Concat(msg, "' contains a large enum variant payload struct '");
                                         msg = std.Concat(msg, resolved_field_type.Struct.struct_name);
                                         msg = std.Concat(msg, "' (3 fields). Use Index, or pointer indirection to avoid memory bloat.");
-                                        ctx[err].message = std.Clone(ctx, msg);
-                                        ctx[err].file_path = std.Clone(ctx, (*env).current_file);
+                                        err_ref_enum_large_payload_mono.message = std.Clone(ctx, msg);
+                                        err_ref_enum_large_payload_mono.file_path = std.Clone(ctx, (*env).current_file);
                                         res.tag = 1; // Err
                                         res.Err.error = err;
                                         (*env).active_monomorphizations.Remove(template_name);
@@ -3494,7 +3497,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                 res.tag = 1; // Err
                 mut err_idx := len((*env).errors) - 1;
                 mut err_idx_arena: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[err_idx_arena] = (*env).errors[err_idx];
+                ctx.Set(err_idx_arena, (*env).errors[err_idx]);
                 res.Err.error = err_idx_arena;
             }
             return res;
@@ -3507,13 +3510,14 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             mut generics_vec_struct_template: std.Vector[str, ctx] := ctx[template.generics];
             if len(generics_vec_struct_template) != len(args) {
                 mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[err].kind.tag = 2; // TypeError
+                mut err_ref_struct_arg_count_mono := ctx.get_ref(err);
+                err_ref_struct_arg_count_mono.kind.tag = 2; // TypeError
                 mut msg := std.Concat("Semantic Error: Template '", template_name);
                 msg = std.Concat(msg, "' expects ");
                 msg = std.Concat(msg, std.FormatInt(len(generics_vec_struct_template)));
                 msg = std.Concat(msg, " generic arguments but got ");
                 msg = std.Concat(msg, std.FormatInt(len(args)));
-                ctx[err].message = std.Clone(ctx, msg);
+                err_ref_struct_arg_count_mono.message = std.Clone(ctx, msg);
                 res.tag = 1; // Err
                 res.Err.error = err;
                 (*env).active_monomorphizations.Remove(template_name);
@@ -3528,7 +3532,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             }
 
             mut args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[args_idx] = args;
+            ctx.Set(args_idx, args);
             mut concrete_name := get_monomorphized_name(template_name, args_idx, ctx);
 
             mut brand: Index[str, ctx] := empty[Index[str, ctx]];
@@ -3539,7 +3543,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                     mut arg := args[j];
                     if arg.tag == 8 { // Struct
                         brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                        ctx[brand] = std.Clone(ctx, arg.Struct.struct_name);
+                        ctx.Set(brand, std.Clone(ctx, arg.Struct.struct_name));
                     }
                 }
                 j = j + 1;
@@ -3606,14 +3610,15 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                             }
                             if is_ephemeral_field == 1 {
                                 mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-                                ctx[err].kind.tag = 2; // TypeError
+                                mut err_ref_struct_unbranded_field_mono := ctx.get_ref(err);
+                                err_ref_struct_unbranded_field_mono.kind.tag = 2; // TypeError
                                 mut msg := std.Concat("Semantic Error: Unbranded monomorphized struct '", concrete_name);
                                 msg = std.Concat(msg, "' cannot contain ephemeral slice or view field '");
                                 msg = std.Concat(msg, field.name);
                                 msg = std.Concat(msg, "'");
-                                ctx[err].message = std.Clone(ctx, msg);
-                                ctx[err].span = field.span;
-                                ctx[err].file_path = std.Clone(ctx, (*env).current_file);
+                                err_ref_struct_unbranded_field_mono.message = std.Clone(ctx, msg);
+                                err_ref_struct_unbranded_field_mono.span = field.span;
+                                err_ref_struct_unbranded_field_mono.file_path = std.Clone(ctx, (*env).current_file);
                                 res.tag = 1; // Err
                                 res.Err.error = err;
                                 (*env).active_monomorphizations.Remove(template_name);
@@ -3634,16 +3639,17 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                 res.tag = 1; // Err
                 mut err_idx := len((*env).errors) - 1;
                 mut err_idx_arena: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[err_idx_arena] = (*env).errors[err_idx];
+                ctx.Set(err_idx_arena, (*env).errors[err_idx]);
                 res.Err.error = err_idx_arena;
             }
             return res;
         }
 
         mut err: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[err].kind.tag = 2; // TypeError
-        ctx[err].message = std.Clone(ctx, std.Concat("Semantic Error: Generic template not found: ", template_name));
-        ctx[err].file_path = std.Clone(ctx, (*env).current_file);
+        mut err_ref_template_missing_mono := ctx.get_ref(err);
+        err_ref_template_missing_mono.kind.tag = 2; // TypeError
+        err_ref_template_missing_mono.message = std.Clone(ctx, std.Concat("Semantic Error: Generic template not found: ", template_name));
+        err_ref_template_missing_mono.file_path = std.Clone(ctx, (*env).current_file);
         res.tag = 1; // Err
         res.Err.error = err;
         (*env).active_monomorphizations.Remove(template_name);
