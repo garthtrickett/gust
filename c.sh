@@ -173,6 +173,15 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_phase_f_non_launde
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_deferred_unsafe_semantics_status:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step51_deferred_unsafe_semantics_status ---"
+        (cd "$PROJECT_ROOT" && make report_step51_deferred_unsafe_semantics_status)
+        echo "--- END OF REPORT make report_step51_deferred_unsafe_semantics_status ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_status_matrix:' "$PROJECT_ROOT/Makefile"; then
     {
         echo "--- START OF REPORT make report_step51_status_matrix ---"

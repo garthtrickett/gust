@@ -9,7 +9,7 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
-.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_address_escapes_focused report_step51_ffi_calls report_step51_ffi_focused report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement guard_step51_basic_unsafe_enforcement guard_step51_report_only_lanes_not_in_test report_step51_phase_c_basic_unsafe_status report_step51_phase_d_ffi_status report_step51_phase_e_address_escape_status report_step51_phase_f_non_laundering_status report_step51_status_matrix report_step51_raw_pointer_safety_inventory report_step51_final_validation report_step52_linear_resource_inventory report_step52_linear_resource_focused report_step52_phase_a_status report_step52_phase_b_destructor_status report_step52_phase_c_resource_registry_status report_step52_phase_d_transfer_status report_step52_phase_e_enforcement_preconditions_status report_step52_phase_f_closure_status report_step52_status_matrix guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn report_step52_final_validation
+.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_address_escapes_focused report_step51_ffi_calls report_step51_ffi_focused report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement guard_step51_basic_unsafe_enforcement guard_step51_report_only_lanes_not_in_test report_step51_phase_c_basic_unsafe_status report_step51_phase_d_ffi_status report_step51_phase_e_address_escape_status report_step51_phase_f_non_laundering_status report_step51_deferred_unsafe_semantics_status report_step51_status_matrix report_step51_raw_pointer_safety_inventory report_step51_final_validation report_step52_linear_resource_inventory report_step52_linear_resource_focused report_step52_phase_a_status report_step52_phase_b_destructor_status report_step52_phase_c_resource_registry_status report_step52_phase_d_transfer_status report_step52_phase_e_enforcement_preconditions_status report_step52_phase_f_closure_status report_step52_status_matrix guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn report_step52_final_validation
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -201,6 +201,19 @@ report_step51_phase_f_non_laundering_status:
 	@echo "   Still deferred: broader non-laundering/provenance tracking."
 	@echo "✅ Step 5.1F non-laundering/provenance status report complete. This target is report-only and does not run guards."
 
+report_step51_deferred_unsafe_semantics_status:
+	@echo "🧭 Reporting Step 5.1 deferred unsafe semantics checkpoint..."
+	@echo "   Design anchor: STEP51_DEFERRED_UNSAFE_SEMANTICS.md"
+	@echo "   Closed compiler-backed subset: make guard_step51_basic_unsafe_enforcement"
+	@echo "   Deferred compiler-design lanes:"
+	@echo "   - direct FFI/native-call syntax and unsafe gating"
+	@echo "   - #[repr(C)] / #[packed] layout attributes"
+	@echo "   - sandboxed FFI sub-arenas"
+	@echo "   - address-origin metadata and address-escape enforcement"
+	@echo "   - full raw-derived provenance/non-laundering through assignments, calls, returns, and containers"
+	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
+	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
+
 report_step51_status_matrix:
 	@echo "🧭 Step 5.1 safety status matrix:"
 	@echo "   Compiler-backed guards wired through make test:"
@@ -214,6 +227,7 @@ report_step51_status_matrix:
 	@echo "   🧭 FFI gating, layout annotations, and sandboxed FFI: make report_step51_phase_d_ffi_status"
 	@echo "   🧭 address escapes: make report_step51_phase_e_address_escape_status"
 	@echo "   🧭 broader non-laundering/provenance: make report_step51_phase_f_non_laundering_status"
+	@echo "   🧭 deferred semantics checkpoint: make report_step51_deferred_unsafe_semantics_status"
 	@echo "   Policy guard: make guard_step51_report_only_lanes_not_in_test"
 	@echo "   Step 5.1 basic unsafe enforcement is closed; do not mark full Step 5.1 complete until FFI/layout/sandboxing, address escapes, and full provenance are compiler-backed."
 	@echo "   Do not convert report-only lanes into make test guards until compiler-backed semantic rules exist."
@@ -244,6 +258,7 @@ report_step51_raw_pointer_safety_inventory:
 	@echo "   make report_step51_phase_d_ffi_status"
 	@echo "   make report_step51_phase_e_address_escape_status"
 	@echo "   make report_step51_phase_f_non_laundering_status"
+	@echo "   make report_step51_deferred_unsafe_semantics_status"
 	@echo "   make report_step51_status_matrix"
 	@$(MAKE) report_step51_raw_pointer_deref
 	@$(MAKE) report_step51_raw_pointer_casts
@@ -258,6 +273,7 @@ report_step51_raw_pointer_safety_inventory:
 	@$(MAKE) report_step51_phase_d_ffi_status
 	@$(MAKE) report_step51_phase_e_address_escape_status
 	@$(MAKE) report_step51_phase_f_non_laundering_status
+	@$(MAKE) report_step51_deferred_unsafe_semantics_status
 	@$(MAKE) report_step51_status_matrix
 	@echo "✅ Step 5.1 raw pointer safety inventory complete. This target is report-only and does not fail."
 
@@ -271,6 +287,7 @@ report_step51_final_validation:
 	@echo "   make report_step51_phase_d_ffi_status"
 	@echo "   make report_step51_phase_e_address_escape_status"
 	@echo "   make report_step51_phase_f_non_laundering_status"
+	@echo "   make report_step51_deferred_unsafe_semantics_status"
 	@echo "   make report_step51_status_matrix"
 	@echo "   make guard_step51_report_only_lanes_not_in_test"
 	@echo "   make report_step51_ffi_focused"
