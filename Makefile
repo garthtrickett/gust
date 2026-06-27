@@ -9,7 +9,7 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
-.PHONY: guard_step45_safe_subscript_write_enforcement
+.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -89,7 +89,7 @@ report_step45_accessor_contract:
 	@echo "✅ Step 4.5A accessor contract list complete. Run these before make test/bootstrap for Step 4.5A patches."
 
 report_step45_final_validation:
-	@echo "🧾 Step 4.5A final validation checklist:"
+	@echo "🧾 Step 4.5 final validation checklist:"
 	@echo "   make report_step45_accessor_contract"
 	@echo "   gt-one-gst tests/e2e_arena_explicit_set.gst"
 	@echo "   gt-one-gst tests/e2e_vector_explicit_set.gst"
@@ -101,12 +101,13 @@ report_step45_final_validation:
 	@echo "   make guard_step44_no_high_level_raw_collection_casts"
 	@echo "   make report_step45_subscript_lvalue_writes"
 	@echo "   make report_step45_test_subscript_lvalue_writes"
+	@echo "   make report_step45_subscript_lvalue_classified"
 	@echo "   make guard_step45_safe_subscript_write_enforcement"
 	@echo "   make"
 	@echo "   make test"
 	@echo "   make bootstrap"
 	@echo "   git diff --check"
-	@echo "✅ Step 4.5A final validation checklist complete. This target is report-only and does not fail."
+	@echo "✅ Step 4.5 final validation checklist complete. This target is report-only and does not fail."
 
 report_compiler_get_opt_migration:
 	@echo "📊 Reporting compiler .get_opt migration sites..."
@@ -133,6 +134,18 @@ report_step45_test_subscript_lvalue_writes:
 	@echo "   Test direct subscript writes and field writes rooted at subscript expressions:"
 	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/*.gst || true
 	@echo "✅ Test-side report complete. This target is inventory-only and does not fail."
+
+report_step45_subscript_lvalue_classified:
+	@echo "📊 Reporting Step 4.5 classified direct subscript LHS inventory..."
+	@echo "   Generated C string false positives:"
+	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/codegen.gst | rg 'data\[_gust_vector_set_idx\] = |_buf\[_s1\.len \+ _s2\.len\] = 0' || true
+	@echo "   Intentional safe-code rejection fixtures:"
+	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/test_safe_*subscript*_rejected.gst || true
+	@echo "   Intentional unsafe-positive fixtures:"
+	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/e2e_unsafe_*subscript*write*.gst || true
+	@echo "   Unexpected safe-code direct subscript writes:"
+	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/*.gst tests/*.gst | rg -v 'compiler/codegen\.gst:.*(data\[_gust_vector_set_idx\] = |_buf\[_s1\.len \+ _s2\.len\] = 0)' | rg -v 'tests/test_safe_.*subscript.*_rejected\.gst:' | rg -v 'tests/e2e_unsafe_.*subscript.*write.*\.gst:' || true
+	@echo "✅ Classified Step 4.5 subscript LHS report complete. This target is inventory-only and does not fail."
 
 guard_step45_safe_subscript_write_enforcement: gust
 	@echo "🔒 Checking Step 4.5C safe subscript write enforcement..."
