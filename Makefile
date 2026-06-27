@@ -97,7 +97,7 @@ report_step51_raw_pointer_casts:
 	@echo "✅ Step 5.1 raw pointer cast/address report complete. This target is inventory-only and does not fail."
 
 report_step51_address_escapes_focused:
-	@echo "📊 Reporting Step 5.1 focused address-escape candidates..."
+	@echo "📊 Reporting Step 5.1 focused reference-aware address-escape candidates..."
 	@python3 tools/step51_address_escape_report.py || true
 	@echo "✅ Step 5.1 focused address-escape report complete. This target is inventory-only and does not fail."
 
@@ -182,6 +182,7 @@ report_step51_phase_e_address_escape_status:
 	@echo "   make report_step51_raw_pointer_casts"
 	@echo "   make report_step51_address_escapes_focused"
 	@echo "   Inspect direct source address-escape candidates before adding any guard."
+	@echo "   The focused report is reference-aware so branded reference type syntax is not treated as an address escape."
 	@echo "   Do not wire broad textual address scans into make test; address-escape enforcement must be compiler-backed and semantic."
 	@echo "   Still deferred: address escapes and broader non-laundering/provenance tracking."
 	@echo "✅ Step 5.1E address-escape status report complete. This target is report-only and does not run guards."

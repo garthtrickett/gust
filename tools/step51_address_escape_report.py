@@ -2,18 +2,32 @@
 '''Step 5.1 focused address-escape inventory helper.
 
 This helper is intentionally textual and report-only. It separates likely
-address-escape expressions from generated strings and comments before any
-compiler-backed address-escape rule is designed. It is not an enforcement
+address-escape expressions from reference type syntax, generated strings, and
+comments before any compiler-backed address-escape rule is designed. It is not an enforcement
 mechanism.
 '''
 
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 
 SCAN_ROOTS = [Path('compiler'), Path('tests')]
 SCAN_SUFFIXES = {'.gst'}
+REFERENCE_TYPE_HINT = re.compile(
+    r'(^|[(:,]\s*)&[A-Za-z_][A-Za-z0-9_.]*(\[[^]]+\])?'
+)
+
+
+def mask_reference_type_syntax(line: str) -> str:
+    return REFERENCE_TYPE_HINT.sub(' ', line)
+
+
+def line_reference_type_terms(line: str) -> str:
+    if REFERENCE_TYPE_HINT.search(line) is None:
+        return ''
+    return 'reference type syntax'
 
 
 def strip_comments_and_strings(line: str) -> str:
@@ -73,12 +87,13 @@ def has_indexed_address(line: str) -> bool:
 
 
 def line_terms(line: str) -> str:
+    masked = mask_reference_type_syntax(line)
     found: list[str] = []
-    if '&ctx[' in line:
+    if '&ctx[' in masked:
         found.append('arena slot address')
-    if has_indexed_address(line):
+    if has_indexed_address(masked):
         found.append('indexed address')
-    if ' as *' in line and '&' in line:
+    if ' as *' in masked and '&' in masked:
         found.append('address-to-raw cast')
     return ', '.join(found)
 
@@ -112,11 +127,13 @@ def print_bucket(title: str, entries: list[tuple[Path, int, str, str]]) -> None:
 
 def print_summary(
     direct_source: list[tuple[Path, int, str, str]],
+    reference_type_syntax: list[tuple[Path, int, str, str]],
     generated_or_string: list[tuple[Path, int, str, str]],
     comment_only: list[tuple[Path, int, str, str]],
 ) -> None:
     print('Summary:')
     print(f'Direct source address-escape candidates: {len(direct_source)}')
+    print(f'Reference type syntax entries: {len(reference_type_syntax)}')
     print(f'Generated string/template references: {len(generated_or_string)}')
     print(f'Comment-only references: {len(comment_only)}')
     print('Report-only: address-escape enforcement remains deferred until direct candidates are inspected semantically.')
@@ -125,6 +142,7 @@ def print_summary(
 
 def main() -> None:
     direct_source: list[tuple[Path, int, str, str]] = []
+    reference_type_syntax: list[tuple[Path, int, str, str]] = []
     generated_or_string: list[tuple[Path, int, str, str]] = []
     comment_only: list[tuple[Path, int, str, str]] = []
 
@@ -136,14 +154,18 @@ def main() -> None:
 
         for line_no, raw in enumerate(lines, start=1):
             raw_terms = line_terms(raw)
-            if raw_terms == '':
+            raw_reference_terms = line_reference_type_terms(raw)
+            if raw_terms == '' and raw_reference_terms == '':
                 continue
 
             stripped = strip_comments_and_strings(raw)
             stripped_terms = line_terms(stripped)
+            stripped_reference_terms = line_reference_type_terms(stripped)
 
             if stripped_terms == '':
-                if '//' in raw:
+                if stripped_reference_terms != '':
+                    add_entry(reference_type_syntax, path, line_no, raw, stripped_reference_terms)
+                elif '//' in raw:
                     add_entry(comment_only, path, line_no, raw, raw_terms)
                 else:
                     add_entry(generated_or_string, path, line_no, raw, raw_terms)
@@ -155,9 +177,10 @@ def main() -> None:
     print('==========================================')
     print()
     print_bucket('Direct source address-escape candidates:', direct_source)
+    print_bucket('Reference type syntax entries:', reference_type_syntax)
     print_bucket('Generated string/template address references:', generated_or_string)
     print_bucket('Comment-only address references:', comment_only)
-    print_summary(direct_source, generated_or_string, comment_only)
+    print_summary(direct_source, reference_type_syntax, generated_or_string, comment_only)
     print('Report-only: do not wire this helper into make test as an enforcement gate.')
 
 
