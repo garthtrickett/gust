@@ -32,6 +32,7 @@ INTENTIONAL_RAW_GATING_FIXTURES = {
     Path("tests/test_raw_pointer_deref_outside_unsafe_rejected.gst"),
     Path("tests/test_raw_pointer_cast_outside_unsafe_rejected.gst"),
     Path("tests/test_raw_pointer_arithmetic_outside_unsafe_rejected.gst"),
+    Path("tests/test_raw_pointer_return_derived_local_rejected.gst"),
 }
 
 
