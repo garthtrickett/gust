@@ -53,7 +53,24 @@ This metadata may be introduced inertly before enforcement. It must not change o
 - `requires_layout_metadata`
 - `requires_sandbox_arena`
 
-`init_function_signature_ffi_defaults` initializes these fields for compiler-created signatures. `FunctionDecl` also carries the same inert metadata through the parsed AST, and the parser initializes ordinary function declarations as non-extern with C ABI defaults and all FFI/layout/sandbox requirements disabled. The parser accepts explicit `extern func` metadata and also accepts bodyless extern signatures terminated with `;`, synthesizing an empty AST body so typechecking can register the signature without inventing codegen behavior. The typechecker copies those AST fields into `FunctionSignature[ctx]`, and direct extern/native calls now reject outside explicit unsafe contexts. `StructDecl` carries inert layout metadata fields for `#[repr(C)]` and `#[packed]` attributes, but `StructLayout` intentionally remains payload-small because it is returned through `struct_registry.get_opt(...)` and `Some { val }` in existing codegen paths. The parser accepts `#[repr(C)]`, `#[packed]`, and their combination before `type ... struct` declarations. `TypeEnvironment` stores layout metadata in payload-safe primitive/string maps keyed by namespaced struct name, separate from `StructLayout`, and exposes query helpers for repr-C, packed, ABI, and combined requires-layout checks. Codegen layout changes, sandbox arenas, and broader provenance remain deferred.### Classification rule
+`init_function_signature_ffi_defaults` initializes these fields for compiler-created signatures. `FunctionDecl` also carries the same inert metadata through the parsed AST, and the parser initializes ordinary function declarations as non-extern with C ABI defaults and all FFI/layout/sandbox requirements disabled. The parser accepts explicit `extern func` metadata and also accepts bodyless extern signatures terminated with `;`, synthesizing an empty AST body so typechecking can register the signature without inventing codegen behavior. The typechecker copies those AST fields into `FunctionSignature[ctx]`, and direct extern/native calls now reject outside explicit unsafe contexts. `StructDecl` carries inert layout metadata fields for `#[repr(C)]` and `#[packed]` attributes, but `StructLayout` intentionally remains payload-small because it is returned through `struct_registry.get_opt(...)` and `Some { val }` in existing codegen paths. The parser accepts `#[repr(C)]`, `#[packed]`, and their combination before `type ... struct` declarations. `TypeEnvironment` stores layout metadata in payload-safe primitive/string maps keyed by namespaced struct name, separate from `StructLayout`, and exposes query helpers for repr-C, packed, ABI, and combined requires-layout checks. Codegen layout changes, sandbox arena implementation, and broader provenance remain deferred.
+
+### Sandboxed FFI sub-arena design checkpoint
+
+A future direct external/native call may opt into `requires_sandbox_arena = 1`. That flag means the call should execute through a transient arena boundary rather than directly borrowing the caller's safe arena state.
+
+The sandbox semantics are:
+
+- The compiler creates or selects a temporary sandbox arena for the duration of one external/native call.
+- The sandbox arena owns any scratch allocations used to marshal external inputs, receive external outputs, or isolate native-side corruption.
+- The sandbox arena is destroyed or invalidated after the call boundary returns.
+- Values whose origin traces to the sandbox arena must not be rebranded as safe caller-arena `Index[T, ctx]` or `&T[ctx]` values unless a later compiler-backed copy/validation rule explicitly permits it.
+- Raw-derived pointers or addresses observed inside the sandbox must not be laundered into safe branded references through assignments, returns, calls, or containers.
+- Safe wrapper functions may hide an external call only if their implementation contains the explicit unsafe boundary and copies validated data into caller-owned safe storage before returning.
+
+This checkpoint defines ownership and destruction semantics only. It does not add wrapper codegen, runtime arena APIs, layout-aware marshalling, or provenance enforcement.
+
+### Classification rule
 
 Only parsed Gust source declarations/calls that carry direct external/native metadata should become FFI enforcement candidates. These are not direct user-facing FFI candidates:
 
@@ -79,10 +96,11 @@ Direct external/native calls reject outside an explicit unsafe context with the 
 8. Add inert AST-side metadata carriers for layout attributes without changing `StructLayout` payload shape or codegen.
 9. Add explicit `#[repr(C)]` / `#[packed]` parser syntax and populate `StructDecl` layout metadata.
 10. Add a payload-safe layout metadata store separate from `StructLayout`, with query helpers guarded by a focused registry fixture.
-11. Define sandbox sub-arena ownership and destruction semantics for external calls.
-12. Define address-origin metadata that separates safe branded references from raw-derived addresses.
-13. Extend provenance tracking so raw-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
-14. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
+11. Define sandbox sub-arena ownership and destruction semantics for external calls without adding wrapper codegen or runtime behavior.
+12. Add inert sandbox policy carriers only after the ownership/destruction semantics are stable.
+13. Define address-origin metadata that separates safe branded references from raw-derived addresses.
+14. Extend provenance tracking so raw-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
+15. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
 
 ## Step 5.2 sequencing rule
 
