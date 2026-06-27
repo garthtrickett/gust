@@ -1696,6 +1696,34 @@ func main() {
     t_hashmap_get_ref_missing_runtime.expected = "HashMap GetRef missing key";
     tests.Push(t_hashmap_get_ref_missing_runtime);
 
+    mut t_safe_arena_subscript_write_rej: Test[ctx];
+    t_safe_arena_subscript_write_rej.path = "tests/test_safe_arena_subscript_write_rejected.gst";
+    t_safe_arena_subscript_write_rej.is_negative = 1;
+    t_safe_arena_subscript_write_rej.is_substring = 1;
+    t_safe_arena_subscript_write_rej.expected = "DirectSubscriptWrite";
+    tests.Push(t_safe_arena_subscript_write_rej);
+
+    mut t_safe_arena_subscript_field_write_rej: Test[ctx];
+    t_safe_arena_subscript_field_write_rej.path = "tests/test_safe_arena_subscript_field_write_rejected.gst";
+    t_safe_arena_subscript_field_write_rej.is_negative = 1;
+    t_safe_arena_subscript_field_write_rej.is_substring = 1;
+    t_safe_arena_subscript_field_write_rej.expected = "DirectSubscriptWrite";
+    tests.Push(t_safe_arena_subscript_field_write_rej);
+
+    mut t_safe_vector_subscript_write_rej: Test[ctx];
+    t_safe_vector_subscript_write_rej.path = "tests/test_safe_vector_subscript_write_rejected.gst";
+    t_safe_vector_subscript_write_rej.is_negative = 1;
+    t_safe_vector_subscript_write_rej.is_substring = 1;
+    t_safe_vector_subscript_write_rej.expected = "DirectSubscriptWrite";
+    tests.Push(t_safe_vector_subscript_write_rej);
+
+    mut t_safe_nested_selector_subscript_write_rej: Test[ctx];
+    t_safe_nested_selector_subscript_write_rej.path = "tests/test_safe_nested_selector_subscript_field_write_rejected.gst";
+    t_safe_nested_selector_subscript_write_rej.is_negative = 1;
+    t_safe_nested_selector_subscript_write_rej.is_substring = 1;
+    t_safe_nested_selector_subscript_write_rej.expected = "DirectSubscriptWrite";
+    tests.Push(t_safe_nested_selector_subscript_write_rej);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
