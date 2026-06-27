@@ -1209,9 +1209,11 @@ func parse_defer_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
         mut end_span := get_expression_span(expr, ctx);
 
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[stmt_idx].tag = 11; // Defer = 11
-        ctx[stmt_idx].Defer.expr = expr;
-        ctx[stmt_idx].Defer.span = merge_spans(start_span, end_span);
+        mut stmt_defer_parse: ast.Statement[ctx];
+        stmt_defer_parse.tag = 11; // Defer = 11
+        stmt_defer_parse.Defer.expr = expr;
+        stmt_defer_parse.Defer.span = merge_spans(start_span, end_span);
+        ctx.Set(stmt_idx, stmt_defer_parse);
         return stmt_idx;
     }
 }
@@ -1222,9 +1224,11 @@ func parse_return_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ct
         next_token(p); // consume 'return'
         if cur_token_is(p, 10) || cur_token_is(p, 14) { // Semicolon = 10, RBrace = 14
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx].tag = 12; // Return = 12
-            ctx[stmt_idx].Return.expr = empty[Index[ast.Expression[ctx], ctx]];
-            ctx[stmt_idx].Return.span = start_span;
+            mut stmt_return_empty_parse: ast.Statement[ctx];
+            stmt_return_empty_parse.tag = 12; // Return = 12
+            stmt_return_empty_parse.Return.expr = empty[Index[ast.Expression[ctx], ctx]];
+            stmt_return_empty_parse.Return.span = start_span;
+            ctx.Set(stmt_idx, stmt_return_empty_parse);
             return stmt_idx;
         }
 
@@ -1235,9 +1239,11 @@ func parse_return_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ct
         mut end_span := get_expression_span(expr, ctx);
 
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[stmt_idx].tag = 12; // Return = 12
-        ctx[stmt_idx].Return.expr = expr;
-        ctx[stmt_idx].Return.span = merge_spans(start_span, end_span);
+        mut stmt_return_value_parse: ast.Statement[ctx];
+        stmt_return_value_parse.tag = 12; // Return = 12
+        stmt_return_value_parse.Return.expr = expr;
+        stmt_return_value_parse.Return.span = merge_spans(start_span, end_span);
+        ctx.Set(stmt_idx, stmt_return_value_parse);
         return stmt_idx;
     }
 }
@@ -1253,9 +1259,11 @@ func parse_unsafe_block(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], 
         mut end_span := ctx[body].span;
 
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[stmt_idx].tag = 10; // UnsafeBlock = 10
-        ctx[stmt_idx].UnsafeBlock.body = body;
-        ctx[stmt_idx].UnsafeBlock.span = merge_spans(start_span, end_span);
+        mut stmt_unsafe_parse: ast.Statement[ctx];
+        stmt_unsafe_parse.tag = 10; // UnsafeBlock = 10
+        stmt_unsafe_parse.UnsafeBlock.body = body;
+        stmt_unsafe_parse.UnsafeBlock.span = merge_spans(start_span, end_span);
+        ctx.Set(stmt_idx, stmt_unsafe_parse);
         return stmt_idx;
     }
 }
@@ -1345,7 +1353,7 @@ func parse_match_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
             mut mcase: ast.MatchCase[ctx];
             mcase.variant_name = variant_name;
             mcase.fields = os.ArenaAlloc(ctx);
-            ctx[mcase.fields] = fields_vec;
+            ctx.Set(mcase.fields, fields_vec);
             mcase.body = body;
             mcase.span = merge_spans(case_start, case_end);
 
@@ -1363,11 +1371,14 @@ func parse_match_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
         next_token(p); // consume '}'
 
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[stmt_idx].tag = 8; // Match = 8
-        ctx[stmt_idx].Match.expression = expression;
-        ctx[stmt_idx].Match.cases = os.ArenaAlloc(ctx);
-        ctx[ctx[stmt_idx].Match.cases] = cases_vec;
-        ctx[stmt_idx].Match.span = merge_spans(start_span, end_span);
+        mut match_cases_idx_parse: Index[std.Vector[ast.MatchCase[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        mut stmt_match_parse: ast.Statement[ctx];
+        stmt_match_parse.tag = 8; // Match = 8
+        stmt_match_parse.Match.expression = expression;
+        stmt_match_parse.Match.cases = match_cases_idx_parse;
+        stmt_match_parse.Match.span = merge_spans(start_span, end_span);
+        ctx.Set(match_cases_idx_parse, cases_vec);
+        ctx.Set(stmt_idx, stmt_match_parse);
 
         return stmt_idx;
     }
@@ -1439,17 +1450,21 @@ func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx
                 return empty[Index[ast.Statement[ctx], ctx]];
             }
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx].tag = 5; // Assignment = 5
-            ctx[stmt_idx].Assignment.left = left_expr;
-            ctx[stmt_idx].Assignment.value = right_expr;
-            ctx[stmt_idx].Assignment.span = merge_spans(start_span, (*p).cur_token.span);
+            mut stmt_assignment_parse: ast.Statement[ctx];
+            stmt_assignment_parse.tag = 5; // Assignment = 5
+            stmt_assignment_parse.Assignment.left = left_expr;
+            stmt_assignment_parse.Assignment.value = right_expr;
+            stmt_assignment_parse.Assignment.span = merge_spans(start_span, (*p).cur_token.span);
+            ctx.Set(stmt_idx, stmt_assignment_parse);
             return stmt_idx;
         }
         
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[stmt_idx].tag = 13; // Expression = 13
-        ctx[stmt_idx].Expression.expr = left_expr;
-        ctx[stmt_idx].Expression.span = merge_spans(start_span, (*p).cur_token.span);
+        mut stmt_expression_parse: ast.Statement[ctx];
+        stmt_expression_parse.tag = 13; // Expression = 13
+        stmt_expression_parse.Expression.expr = left_expr;
+        stmt_expression_parse.Expression.span = merge_spans(start_span, (*p).cur_token.span);
+        ctx.Set(stmt_idx, stmt_expression_parse);
         return stmt_idx;
     }
 }
@@ -1492,12 +1507,14 @@ func parse_var_decl(p: *Parser[ctx], is_mut: int, ctx: &Arena) Index[ast.Stateme
     
     mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        ctx[stmt_idx].tag = 4; // VarDecl = 4
-        ctx[stmt_idx].VarDecl.name = name;
-        ctx[stmt_idx].VarDecl.is_mut = is_mut;
-        ctx[stmt_idx].VarDecl.value = value;
-        ctx[stmt_idx].VarDecl.var_type = var_type;
-        ctx[stmt_idx].VarDecl.span = merge_spans(start_span, (*p).cur_token.span);
+        mut stmt_var_decl_parse: ast.Statement[ctx];
+        stmt_var_decl_parse.tag = 4; // VarDecl = 4
+        stmt_var_decl_parse.VarDecl.name = name;
+        stmt_var_decl_parse.VarDecl.is_mut = is_mut;
+        stmt_var_decl_parse.VarDecl.value = value;
+        stmt_var_decl_parse.VarDecl.var_type = var_type;
+        stmt_var_decl_parse.VarDecl.span = merge_spans(start_span, (*p).cur_token.span);
+        ctx.Set(stmt_idx, stmt_var_decl_parse);
     }
     return stmt_idx;
 }
@@ -1507,7 +1524,7 @@ func parse_block_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.BlockStatemen
     unsafe {
         mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
         mut dest_ptr := &statements_vec;
-        ctx[block_idx].span = (*p).cur_token.span;
+        mut block_start_span_parse := (*p).cur_token.span;
 
         next_token(p);
 
@@ -1531,10 +1548,12 @@ func parse_block_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.BlockStatemen
             }
         }
         
-        ctx[block_idx].statements = os.ArenaAlloc(ctx);
-        ctx[ctx[block_idx].statements] = statements_vec;
-        
-        ctx[block_idx].span = merge_spans(ctx[block_idx].span, (*p).cur_token.span);
+        mut block_statements_idx_parse: Index[std.Vector[ast.Statement[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        mut block_parse: ast.BlockStatement[ctx];
+        block_parse.statements = block_statements_idx_parse;
+        block_parse.span = merge_spans(block_start_span_parse, (*p).cur_token.span);
+        ctx.Set(block_statements_idx_parse, statements_vec);
+        ctx.Set(block_idx, block_parse);
         if cur_token_is(p, 14) { // RBrace = 14
             next_token(p); // consume '}'
         }
@@ -1566,10 +1585,12 @@ func parse_while_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
     
     mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx); 
     unsafe {
-        ctx[stmt_idx].tag = 6; // While = 6
-        ctx[stmt_idx].While.condition = condition;
-        ctx[stmt_idx].While.body = body;
-        ctx[stmt_idx].While.span = merge_spans(start_span, ctx[body].span);
+        mut stmt_while_parse: ast.Statement[ctx];
+        stmt_while_parse.tag = 6; // While = 6
+        stmt_while_parse.While.condition = condition;
+        stmt_while_parse.While.body = body;
+        stmt_while_parse.While.span = merge_spans(start_span, ctx[body].span);
+        ctx.Set(stmt_idx, stmt_while_parse);
     }
     return stmt_idx;
 }
@@ -1608,9 +1629,12 @@ func parse_if_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], 
                 mut alt_statements: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
                 alt_statements.Push(ctx[if_stmt]);
                 mut alt_idx: Index[ast.BlockStatement[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[alt_idx].span = if_span;
-                ctx[alt_idx].statements = os.ArenaAlloc(ctx);
-                ctx[ctx[alt_idx].statements] = alt_statements;
+                mut alt_statements_idx_parse: Index[std.Vector[ast.Statement[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+                mut alt_block_parse: ast.BlockStatement[ctx];
+                alt_block_parse.span = if_span;
+                alt_block_parse.statements = alt_statements_idx_parse;
+                ctx.Set(alt_statements_idx_parse, alt_statements);
+                ctx.Set(alt_idx, alt_block_parse);
                 alternative = alt_idx;
                 end_span = if_span;
             } else {
@@ -1624,11 +1648,13 @@ func parse_if_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], 
     
     mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx); 
     unsafe {
-        ctx[stmt_idx].tag = 7; // If = 7
-        ctx[stmt_idx].If.condition = condition;
-        ctx[stmt_idx].If.consequence = consequence;
-        ctx[stmt_idx].If.alternative = alternative;
-        ctx[stmt_idx].If.span = merge_spans(start_span, (*p).cur_token.span);
+        mut stmt_if_parse: ast.Statement[ctx];
+        stmt_if_parse.tag = 7; // If = 7
+        stmt_if_parse.If.condition = condition;
+        stmt_if_parse.If.consequence = consequence;
+        stmt_if_parse.If.alternative = alternative;
+        stmt_if_parse.If.span = merge_spans(start_span, (*p).cur_token.span);
+        ctx.Set(stmt_idx, stmt_if_parse);
     }
     return stmt_idx;
 }
@@ -1692,12 +1718,14 @@ func parse_guard_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx
     
     mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        ctx[stmt_idx].tag = 9; // Guard = 9
-        ctx[stmt_idx].Guard.name = name;
-        ctx[stmt_idx].Guard.is_mut = is_mut;
-        ctx[stmt_idx].Guard.value = value;
-        ctx[stmt_idx].Guard.else_body = else_body;
-        ctx[stmt_idx].Guard.span = merge_spans(start_span, ctx[else_body].span);
+        mut stmt_guard_parse: ast.Statement[ctx];
+        stmt_guard_parse.tag = 9; // Guard = 9
+        stmt_guard_parse.Guard.name = name;
+        stmt_guard_parse.Guard.is_mut = is_mut;
+        stmt_guard_parse.Guard.value = value;
+        stmt_guard_parse.Guard.else_body = else_body;
+        stmt_guard_parse.Guard.span = merge_spans(start_span, ctx[else_body].span);
+        ctx.Set(stmt_idx, stmt_guard_parse);
     }
     return stmt_idx;
 }
@@ -1731,7 +1759,7 @@ func parse_program(p: *Parser[ctx], ctx: &Arena) ast.Program[ctx] {
         }
         
         prog.statements = os.ArenaAlloc(ctx);
-        ctx[prog.statements] = statements_vec;
+        ctx.Set(prog.statements, statements_vec);
         
         prog.span = merge_spans(start_span, (*p).cur_token.span);
     }
