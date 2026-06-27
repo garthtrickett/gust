@@ -2386,8 +2386,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         is_str_key_str = "1";
                     }
 
-                    if std.str_eq(right_name, "Insert") {
-                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Insert FFI override for %s", left_str), ctx);
+                    if std.str_eq(right_name, "Insert") || std.str_eq(right_name, "Set") {
+                        codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Insert/Set FFI override for %s", left_str), ctx);
                         mut args_vec_map_insert: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx[arg0_idx] = args_vec_map_insert[0];

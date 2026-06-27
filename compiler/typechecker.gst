@@ -1368,7 +1368,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
 
                  if is_map == 1 {
-                    if std.str_eq(right_name, "Insert") {
+                    if std.str_eq(right_name, "Insert") || std.str_eq(right_name, "Set") {
                         mut args_vec_map_insert: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                         if len(args_vec_map_insert) == 2 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
@@ -1383,13 +1383,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             mut v_type := typechecker_get_template_elem_type(s_name, "values", env, ctx);
 
                             if types_match(k_type, k_arg, ctx) == 0 {
-                                mut msg := std.Concat("Semantic Error: Key type mismatch for HashMap.Insert. Expected ", ast.serialize_type(k_type, ctx));
+                                mut msg := std.Concat("Semantic Error: Key type mismatch for HashMap.Insert/Set. Expected ", ast.serialize_type(k_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(k_arg, ctx));
                                 report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
                             }
                             if types_match(v_type, v_arg, ctx) == 0 {
-                                mut msg := std.Concat("Semantic Error: Value type mismatch for HashMap.Insert. Expected ", ast.serialize_type(v_type, ctx));
+                                mut msg := std.Concat("Semantic Error: Value type mismatch for HashMap.Insert/Set. Expected ", ast.serialize_type(v_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(v_arg, ctx));
                                 report_error(2, msg, get_expression_span(arg1_idx, ctx), env, ctx);
