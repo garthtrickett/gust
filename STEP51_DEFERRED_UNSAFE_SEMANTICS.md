@@ -25,9 +25,40 @@ The following lanes remain intentionally deferred:
 4. **Address-escape enforcement:** the compiler must distinguish safe reference construction from raw pointer materialization and generated/runtime plumbing.
 5. **Full unsafe non-laundering:** raw-derived provenance must be tracked through assignments, returns, calls, and container storage, not just direct local raw-derived pointer returns.
 
+## Direct FFI/native-call syntax surface
+
+The first deferred lane to design is direct user-facing FFI. Enforcement must key off parsed function metadata, not textual mentions of `extern`, `ffi`, `c_call`, generated C snippets, runtime headers, or codegen trace strings.
+
+### Semantic declaration shape
+
+A direct external/native function surface should eventually produce function-signature metadata with at least:
+
+- `is_extern`: marks the signature as implemented outside Gust.
+- `extern_symbol_name`: stores the symbol name used at the C/native boundary.
+- `extern_abi`: defaults to the C ABI until a richer ABI model exists.
+- `requires_unsafe_call`: defaults to `1` for direct external/native calls.
+- `requires_layout_metadata`: records whether argument or return types need explicit layout attributes.
+- `requires_sandbox_arena`: records whether the call must execute through a transient sandbox arena wrapper.
+
+This metadata may be introduced inertly before enforcement. It must not change ordinary Gust function calls, method calls, generated runtime helper calls, or codegen string generation.
+
+### Classification rule
+
+Only parsed Gust source declarations/calls that carry direct external/native metadata should become FFI enforcement candidates. These are not direct user-facing FFI candidates:
+
+- C `extern` declarations in runtime `.c` / `.h` files
+- codegen trace strings containing labels such as `FFI override`
+- generated C snippets emitted by compiler codegen
+- comments or documentation
+- safe Gust wrapper functions that internally contain their own explicit `unsafe` implementation
+
+### Enforcement rule
+
+Once the metadata exists, the compiler-backed guard should reject direct external/native calls outside an explicit unsafe context with a stable diagnostic. Safe wrappers may expose a safe API only if their implementation body contains the required unsafe boundary and does not launder raw-derived values into safe branded references or arena indices.
+
 ## Design order
 
-1. Define the direct FFI/native-call syntax surface and classify existing runtime/native boundaries separately from user-facing Gust source calls.
+1. Add inert direct FFI/native-call signature metadata and classify existing runtime/native boundaries separately from user-facing Gust source calls.
 2. Add inert AST/type metadata for layout attributes without changing codegen.
 3. Define sandbox sub-arena ownership and destruction semantics for external calls.
 4. Define address-origin metadata that separates safe branded references from raw-derived addresses.

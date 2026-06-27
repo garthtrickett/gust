@@ -206,11 +206,12 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   Design anchor: STEP51_DEFERRED_UNSAFE_SEMANTICS.md"
 	@echo "   Closed compiler-backed subset: make guard_step51_basic_unsafe_enforcement"
 	@echo "   Deferred compiler-design lanes:"
-	@echo "   - direct FFI/native-call syntax and unsafe gating"
+	@echo "   - direct FFI/native-call syntax metadata and unsafe gating"
 	@echo "   - #[repr(C)] / #[packed] layout attributes"
 	@echo "   - sandboxed FFI sub-arenas"
 	@echo "   - address-origin metadata and address-escape enforcement"
 	@echo "   - full raw-derived provenance/non-laundering through assignments, calls, returns, and containers"
+	@echo "   Next semantic checkpoint: inert direct FFI signature metadata, not regex enforcement."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
 
