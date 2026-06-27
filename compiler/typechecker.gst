@@ -36,6 +36,36 @@ func init_function_signature_ffi_defaults(sig: *FunctionSignature[ctx]) {
     }
 }
 
+func function_signature_requires_sandbox_arena(sig: FunctionSignature[ctx]) int {
+    if sig.requires_sandbox_arena == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func function_signature_requires_ffi_policy(sig: FunctionSignature[ctx]) int {
+    if sig.is_extern == 1 {
+        return 1;
+    }
+    if sig.requires_unsafe_call == 1 {
+        return 1;
+    }
+    if sig.requires_layout_metadata == 1 {
+        return 1;
+    }
+    if sig.requires_sandbox_arena == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func function_signature_requires_sandbox_policy(sig: FunctionSignature[ctx]) int {
+    if sig.requires_sandbox_arena == 1 {
+        return 1;
+    }
+    return 0;
+}
+
 type Scope[ctx] struct {
     parent: Index[Scope[ctx], ctx],
     bindings: std.HashMap[str, ast.Type[ctx], ctx]

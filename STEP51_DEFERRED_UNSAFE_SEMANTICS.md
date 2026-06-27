@@ -68,7 +68,7 @@ The sandbox semantics are:
 - Raw-derived pointers or addresses observed inside the sandbox must not be laundered into safe branded references through assignments, returns, calls, or containers.
 - Safe wrapper functions may hide an external call only if their implementation contains the explicit unsafe boundary and copies validated data into caller-owned safe storage before returning.
 
-This checkpoint defines ownership and destruction semantics only. It does not add wrapper codegen, runtime arena APIs, layout-aware marshalling, or provenance enforcement.
+This checkpoint defines ownership and destruction semantics only. `FunctionSignature[ctx]` now has inert helper predicates for sandbox policy and aggregate FFI policy classification, but these helpers only read existing metadata fields. They do not add wrapper codegen, runtime arena APIs, layout-aware marshalling, or provenance enforcement.
 
 ### Classification rule
 
@@ -97,7 +97,7 @@ Direct external/native calls reject outside an explicit unsafe context with the 
 9. Add explicit `#[repr(C)]` / `#[packed]` parser syntax and populate `StructDecl` layout metadata.
 10. Add a payload-safe layout metadata store separate from `StructLayout`, with query helpers guarded by a focused registry fixture.
 11. Define sandbox sub-arena ownership and destruction semantics for external calls without adding wrapper codegen or runtime behavior.
-12. Add inert sandbox policy carriers only after the ownership/destruction semantics are stable.
+12. Add inert sandbox policy helper carriers over `FunctionSignature[ctx]` without changing parser syntax, runtime behavior, or codegen.
 13. Define address-origin metadata that separates safe branded references from raw-derived addresses.
 14. Extend provenance tracking so raw-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
 15. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
