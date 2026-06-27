@@ -101,4 +101,13 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_raw_pointer_safe_c
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_phase_b_wrapping_status:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step51_phase_b_wrapping_status ---"
+        (cd "$PROJECT_ROOT" && make report_step51_phase_b_wrapping_status)
+        echo "--- END OF REPORT make report_step51_phase_b_wrapping_status ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 echo "✅ Aggregated target project files into $PROJECT_ROOT/$OUTPUT_FILE"
