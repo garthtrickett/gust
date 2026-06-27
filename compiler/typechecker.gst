@@ -210,6 +210,7 @@ type TypeEnvironment[ctx] struct {
     imports: std.HashMap[str, str, ctx],
     variable_origins: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx],
     variable_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
+    field_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     moved_vars: std.HashMap[str, int, ctx],
     open_directories: std.HashMap[str, int, ctx],
     errors: std.Vector[errors.CompilerError[ctx], ctx],
@@ -356,6 +357,12 @@ func env_record_variable_provenance(env: *TypeEnvironment[ctx], name: str, prov:
 func env_record_variable_self_provenance(env: *TypeEnvironment[ctx], name: str, t: ast.Type[ctx], ctx: &Arena) {
     mut prov := expression_provenance_for_self_binding(name, t, ctx);
     env_record_variable_provenance(env, name, prov, ctx);
+}
+
+func env_record_field_provenance(env: *TypeEnvironment[ctx], field_key: str, prov: ExpressionProvenance[ctx], ctx: &Arena) {
+    unsafe {
+        (*env).field_provenance.Insert(std.Clone(ctx, field_key), prov);
+    }
 }
 
 func env_record_function_return_provenance(env: *TypeEnvironment[ctx], name: str, prov: ExpressionProvenance[ctx], ctx: &Arena) {
@@ -2785,6 +2792,20 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                 }
             }
 
+            if expr.tag == 11 { // Selector
+                mut selector_key_fieldprov := expression_to_string(expr_idx, ctx);
+                mut field_lookup_fieldprov := (*env).field_provenance.Get(selector_key_fieldprov);
+                if field_lookup_fieldprov.Ok {
+                    mut found_field_prov := field_lookup_fieldprov.Val;
+                    found_field_prov.resolved_type = t;
+
+                    mut merged_field_origins := typechecker_clone_origin_set(found_field_prov.legacy_origins, ctx);
+                    set_union(merged_field_origins, legacy_origins, ctx);
+                    found_field_prov.legacy_origins = merged_field_origins;
+                    return found_field_prov;
+                }
+            }
+
             if expr.tag == 12 { // Call
                 mut call_name_prov := expression_to_string(expr.Call.function, ctx);
                 mut resolved_call_name_prov := env_resolve_namespaced_ident(env, call_name_prov, ctx);
@@ -4609,6 +4630,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.imports.Insert(std.Clone(ctx, "os"), std.Clone(ctx, "os_"));
         env_ref_new.variable_origins = std.HashMapNew(ctx);
         env_ref_new.variable_provenance = std.HashMapNew(ctx);
+        env_ref_new.field_provenance = std.HashMapNew(ctx);
         env_ref_new.moved_vars = std.HashMapNew(ctx);
         env_ref_new.open_directories = std.HashMapNew(ctx);
         env_ref_new.errors = std.VectorNew(ctx);
@@ -6898,6 +6920,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 msg = std.Concat(msg, " to ");
                 msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
                 report_error(2, msg, get_expression_span(val_idx, ctx), env, ctx);
+            }
+
+            if left.tag == 11 { // Selector
+                mut field_key_assignment_prov := expression_to_string(left_idx, ctx);
+                mut field_assign_prov := val_prov_assignment;
+                field_assign_prov.resolved_type = left_type;
+                env_record_field_provenance(env, field_key_assignment_prov, field_assign_prov, ctx);
             }
 
             // Gated Hazard Prevention & Index Mutation Invalidation Checks (Step 2 & 3)
