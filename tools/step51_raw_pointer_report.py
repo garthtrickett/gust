@@ -29,6 +29,7 @@ REFERENCE_SYNTAX_HINT = re.compile(
 
 INTENTIONAL_RAW_GATING_FIXTURES = {
     Path("tests/test_deref_outside_unsafe_rejected.gst"),
+    Path("tests/test_raw_pointer_deref_outside_unsafe_rejected.gst"),
 }
 
 

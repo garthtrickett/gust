@@ -133,9 +133,10 @@ report_step51_raw_pointer_safe_code_candidates:
 
 report_step51_phase_b_wrapping_status:
 	@echo "🧭 Reporting Step 5.1B proactive wrapping status..."
-	@echo "   Review the focused safe-code candidate bucket before enabling any raw pointer enforcement."
+	@echo "   Review the focused safe-code candidate bucket before enabling any new raw pointer enforcement."
 	@$(MAKE) report_step51_raw_pointer_safe_code_candidates
-	@echo "   If the focused report shows no likely safe-code raw operation candidates, Phase 5.1B wrapping is ready for enforcement-design review."
+	@echo "   Intentional raw-gating negative fixtures are expected to remain visible in their dedicated bucket."
+	@echo "   If the focused report shows no likely safe-code raw operation candidates, Phase 5.1B wrapping is ready for the next enforcement-design slice."
 	@echo "   This target is still report-only; it does not prove safety and must not replace AST/typechecker enforcement."
 	@echo "✅ Step 5.1B wrapping status report complete. This target is report-only and does not fail."
 
