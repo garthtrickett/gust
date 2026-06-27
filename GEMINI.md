@@ -126,6 +126,14 @@ git diff --check
 * **Targets:** Use `make report_phase4_formatter_tools` to report formatter binary availability in the current shell. Use `make fmt_check_phase4_infra` to verify scaffold files exist. These targets must not format files and must not be wired into `make test` during Phase 4A.
 * **Deferred Phase 4B Work:** Complete `topiary/languages.ncl`, write the Gust Topiary query file, enable `treefmt.toml` formatter blocks, add formatter golden/sample checks, and only then perform a controlled repo-wide formatting rollout.
 
+### H. Step 5.1 Raw Pointer Safety Inventory Discipline
+* **Scope:** Step 5.1 introduces gated raw pointers, unsafe blocks/functions, and sandboxed FFI. The first checkpoint is inventory-only: identify raw pointer dereferences, raw pointer casts/address escapes, direct FFI candidates, and unsafe function signature syntax needs before enforcing anything.
+* **Bootstrap Sequencing:** Do not enable strict raw pointer, raw cast, or FFI gating until the compiler source and standard-library collection internals have been proactively wrapped in explicit `unsafe { ... }` blocks. Phase A parser/typechecker work must remain additive and no-op so bootstrap can converge while migration proceeds.
+* **Inventory Targets:** Use `make report_step51_raw_pointer_safety_inventory` for the combined report. Individual report-only targets are `make report_step51_raw_pointer_deref`, `make report_step51_raw_pointer_casts`, `make report_step51_ffi_calls`, and `make report_step51_unsafe_func_signatures`.
+* **No Regex Enforcement:** These Step 5.1 inventory targets are broad textual scans and must not be wired into `make test` as failing guards. Later enforcement must be AST/typechecker-based so pointer syntax inside type expressions, generated C strings, comments, and intentional unsafe fixtures does not create false positives.
+* **Unsafe Function Semantics:** Prefer Rust-like semantics for `unsafe func`: the function body may perform unsafe operations, and call sites must be inside an explicit unsafe context unless the unsafe operation is internally wrapped behind a safe API. Add parser/typechecker no-op support before requiring this rule.
+* **Deferred Non-Laundering:** Treat the unsafe non-laundering boundary as a second enforcement milestone after basic raw pointer/cast/FFI gating. It likely requires provenance/origin tracking beyond simple syntax detection.
+
 ## TOOL USE CONSTRAINTS & DISCIPLINE
 - **Prohibition of Execution Tools**: You are strictly prohibited from calling any command execution, bash shell, terminal, or system-running tools (such as `vm_shell:execute_bash` or any equivalent system command triggers).
 - **Allowed Tool Scope**: You must only use information-retrieval and text-generation tools (such as `google:search` and `browsing:browse` to gather context, and text responses to supply code patches). 

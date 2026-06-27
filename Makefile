@@ -9,7 +9,7 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
-.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra
+.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_ffi_calls report_step51_unsafe_func_signatures report_step51_raw_pointer_safety_inventory report_step51_final_validation
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -83,6 +83,54 @@ fmt_check_phase4_infra:
 	@test -f topiary/languages.ncl || (echo "❌ Missing topiary/languages.ncl"; exit 1)
 	@test -f topiary/queries/gust.scm || (echo "❌ Missing topiary/queries/gust.scm"; exit 1)
 	@echo "✅ Phase 4A formatter scaffold files are present. No formatting was run."
+
+report_step51_raw_pointer_deref:
+	@echo "📊 Reporting Step 5.1 raw pointer dereference candidates..."
+	@echo "   Broad regex inventory only; enforcement must be AST/typechecker-based later."
+	@rg -n '(^|[^[:alnum:]_])\*[[:space:]]*(\(|[A-Za-z_][A-Za-z0-9_]*)' compiler/*.gst tests/*.gst || true
+	@echo "✅ Step 5.1 raw pointer dereference report complete. This target is inventory-only and does not fail."
+
+report_step51_raw_pointer_casts:
+	@echo "📊 Reporting Step 5.1 raw pointer cast/address-escape candidates..."
+	@echo "   Includes raw pointer casts and direct address-taking patterns that may need unsafe wrapping."
+	@rg -n ' as \*|&ctx\[|&[A-Za-z_][A-Za-z0-9_]*\[' compiler/*.gst tests/*.gst || true
+	@echo "✅ Step 5.1 raw pointer cast/address report complete. This target is inventory-only and does not fail."
+
+report_step51_ffi_calls:
+	@echo "📊 Reporting Step 5.1 direct FFI / external-call candidates..."
+	@echo "   Broad textual search across compiler, tests, and runtime sources."
+	@rg -n 'extern|ffi|Foreign|C\.|ccall|c_call|dlsym|dlopen|syscall' compiler/*.gst tests/*.gst src || true
+	@echo "✅ Step 5.1 FFI candidate report complete. This target is inventory-only and does not fail."
+
+report_step51_unsafe_func_signatures:
+	@echo "📊 Reporting Step 5.1 unsafe function signature candidates..."
+	@echo "   Phase 5.1A should add no-op parser/typechecker support before enforcement."
+	@rg -n 'unsafe[[:space:]]+func|func[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\([^)]*\)[^{;]*unsafe' compiler/*.gst tests/*.gst || true
+	@echo "✅ Step 5.1 unsafe function signature report complete. This target is inventory-only and does not fail."
+
+report_step51_raw_pointer_safety_inventory:
+	@echo "🧾 Step 5.1 raw pointer safety inventory checklist:"
+	@echo "   make report_step51_raw_pointer_deref"
+	@echo "   make report_step51_raw_pointer_casts"
+	@echo "   make report_step51_ffi_calls"
+	@echo "   make report_step51_unsafe_func_signatures"
+	@$(MAKE) report_step51_raw_pointer_deref
+	@$(MAKE) report_step51_raw_pointer_casts
+	@$(MAKE) report_step51_ffi_calls
+	@$(MAKE) report_step51_unsafe_func_signatures
+	@echo "✅ Step 5.1 raw pointer safety inventory complete. This target is report-only and does not fail."
+
+report_step51_final_validation:
+	@echo "🧾 Step 5.1 Phase A/B validation checklist:"
+	@echo "   make report_step51_raw_pointer_safety_inventory"
+	@echo "   make report_step45_final_validation"
+	@echo "   make report_phase4_formatter_tools"
+	@echo "   make fmt_check_phase4_infra"
+	@echo "   make"
+	@echo "   make test"
+	@echo "   make bootstrap"
+	@echo "   git diff --check"
+	@echo "✅ Step 5.1 validation checklist complete. This target is report-only and does not enforce raw pointer safety yet."
 
 report_step44_accessor_contract:
 	@echo "🧪 Step 4.4 accessor contract focused checks:"
