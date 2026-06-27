@@ -2181,9 +2181,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                     if std.str_eq(right_name, "Send") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Channel Send FFI override for %s", left_str), ctx);
-                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_channel_send: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx] = (*args_vec)[0];
+                        ctx[arg0_idx] = args_vec_channel_send[0];
                         mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
 
                         mut res := std.Concat("(({ __typeof__(", arg_str);
@@ -2215,9 +2215,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                     if std.str_eq(right_name, "Push") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector Push FFI override for %s", left_str), ctx);
-                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_vector_push: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx] = (*args_vec)[0];
+                        ctx[arg0_idx] = args_vec_vector_push[0];
                         mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
                         
                         mut res := std.Concat("os_VectorPush(", ref_prefix);
@@ -2250,9 +2250,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                     if std.str_eq(right_name, "get_opt") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector get_opt Option override for %s", left_str), ctx);
-                        mut args_vec_getopt := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_vector_getopt: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx_getopt: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getopt] = (*args_vec_getopt)[0];
+                        ctx[arg0_idx_getopt] = args_vec_vector_getopt[0];
                         mut idx_str_getopt := codegen_generate_expression(arg0_idx_getopt, env, ctx);
 
                         mut expr_type_getopt := codegen_get_expression_type(expr_idx, env, ctx);
@@ -2282,9 +2282,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                     if std.str_eq(right_name, "GetRef") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling Vector GetRef FFI override for %s", left_str), ctx);
-                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_vector_getref: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx] = (*args_vec)[0];
+                        ctx[arg0_idx] = args_vec_vector_getref[0];
                         mut idx_str := codegen_generate_expression(arg0_idx, env, ctx);
 
                         mut expr_type := codegen_get_expression_type(expr_idx, env, ctx);
@@ -2359,13 +2359,13 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
                     if std.str_eq(right_name, "Insert") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Insert FFI override for %s", left_str), ctx);
-                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_map_insert: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx] = (*args_vec)[0];
+                        ctx[arg0_idx] = args_vec_map_insert[0];
                         mut k_str := codegen_generate_expression(arg0_idx, env, ctx);
                         
                         mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg1_idx] = (*args_vec)[1];
+                        ctx[arg1_idx] = args_vec_map_insert[1];
                         mut v_str := codegen_generate_expression(arg1_idx, env, ctx);
                         
                         mut res := std.Concat("*os_HashMapRef(", ref_prefix);
@@ -2380,9 +2380,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                     if (std.str_eq(right_name, "Get")) { 
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Get FFI override for %s", left_str), ctx);
-                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_map_get: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx] = (*args_vec)[0];
+                        ctx[arg0_idx] = args_vec_map_get[0];
                         mut k_str := codegen_generate_expression(arg0_idx, env, ctx);
                         
                         mut val_type_ident := "int";
@@ -2429,9 +2429,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                     if std.str_eq(right_name, "GetRef") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap GetRef FFI override for %s", left_str), ctx);
-                        mut args_vec_getref_map := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_map_getref: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx_getref_map: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getref_map] = (*args_vec_getref_map)[0];
+                        ctx[arg0_idx_getref_map] = args_vec_map_getref[0];
                         mut k_str_getref_map := codegen_generate_expression(arg0_idx_getref_map, env, ctx);
 
                         mut expr_type_getref_map := codegen_get_expression_type(expr_idx, env, ctx);
@@ -2464,9 +2464,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                     if std.str_eq(right_name, "get_opt") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap get_opt Option override for %s", left_str), ctx);
-                        mut args_vec_getopt_map := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_map_getopt: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx_getopt_map: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx_getopt_map] = (*args_vec_getopt_map)[0];
+                        ctx[arg0_idx_getopt_map] = args_vec_map_getopt[0];
                         mut k_str_getopt_map := codegen_generate_expression(arg0_idx_getopt_map, env, ctx);
 
                         mut expr_type_getopt_map := codegen_get_expression_type(expr_idx, env, ctx);
@@ -2497,9 +2497,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                     if std.str_eq(right_name, "Remove") {
                         codegen_log_trace("👁️", std.Format("codegen_generate_expression: transpiling HashMap Remove FFI override for %s", left_str), ctx);
-                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_map_remove: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx] = (*args_vec)[0];
+                        ctx[arg0_idx] = args_vec_map_remove[0];
                         mut k_str := codegen_generate_expression(arg0_idx, env, ctx);
                         
                         mut res := std.Concat("os_HashMapRemove(", ref_prefix);
@@ -2521,9 +2521,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
 
                     if (std.str_eq(right_name, "Keys")) {
-                        mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                        mut args_vec_map_keys: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg0_idx] = (*args_vec)[0];
+                        ctx[arg0_idx] = args_vec_map_keys[0];
                         mut ctx_str := codegen_generate_expression(arg0_idx, env, ctx);
 
                         mut expr_type := codegen_get_expression_type(expr_idx, env, ctx);
