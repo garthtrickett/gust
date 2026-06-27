@@ -216,8 +216,8 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   Inert extern syntax: parser accepts extern func with C ABI defaults and unsafe-call metadata."
 	@echo "   Bodyless extern declarations: parser accepts extern func signatures terminated with ';' and synthesizes an empty AST body."
 	@echo "   Compiler-backed FFI call-site gating: make guard_step51_extern_func_call_enforcement"
-	@echo "   Inert layout metadata: StructDecl and StructLayout carry repr-C/packed-shaped defaults."
-	@echo "   Next semantic checkpoint: explicit repr/packed parser syntax and sandboxed FFI sub-arenas, not regex enforcement."
+	@echo "   Inert layout metadata: StructDecl carries repr-C/packed-shaped defaults; StructLayout stays payload-small for struct_registry lookups."
+	@echo "   Next semantic checkpoint: explicit repr/packed parser syntax using a payload-safe metadata store, plus sandboxed FFI sub-arenas."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
 
