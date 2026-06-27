@@ -120,6 +120,12 @@ git diff --check
 * **Test-Side Inventory:** Use `make report_step45_test_subscript_lvalue_writes` to confirm test files remain clean of direct subscript LHS writes after Step 4.5B test migration. This target is report-only and must not be wired as a failing guard until enforcement policy is finalized.
 * **Step 4.5C Enforcement Guard:** Once safe-code subscript LHS enforcement lands, use `make guard_step45_safe_subscript_write_enforcement` to prove the compiler rejects safe direct subscript writes with the stable diagnostic `direct subscript writes require unsafe or explicit write APIs`, while still accepting the same assignment forms inside explicit `unsafe` blocks. Use `make report_step45_subscript_lvalue_classified` for human-readable inventory triage across generated C string false positives, intentional safe-code rejection fixtures, intentional unsafe-positive fixtures, and unexpected safe-code direct writes. Regex inventory targets remain informational because generated C string literals and intentional enforcement fixtures can appear in simple text scans.
 
+### G. Phase 4A Autoformatter Infrastructure
+* **Scope:** Phase 4A is tooling scaffolding only. Add treefmt, Topiary, rustfmt, and clang-format availability checks plus checked-in placeholder config files, but do not run repo-wide formatting yet.
+* **No Formatting Churn:** Do not run repo-wide formatting until Phase 4B after Phase 5/6. Formatting rollout should happen as a dedicated formatting-only commit so compiler safety work remains easy to bisect and patch.
+* **Targets:** Use `make report_phase4_formatter_tools` to report formatter binary availability in the current shell. Use `make fmt_check_phase4_infra` to verify scaffold files exist. These targets must not format files and must not be wired into `make test` during Phase 4A.
+* **Deferred Phase 4B Work:** Complete `topiary/languages.ncl`, write the Gust Topiary query file, enable `treefmt.toml` formatter blocks, add formatter golden/sample checks, and only then perform a controlled repo-wide formatting rollout.
+
 ## TOOL USE CONSTRAINTS & DISCIPLINE
 - **Prohibition of Execution Tools**: You are strictly prohibited from calling any command execution, bash shell, terminal, or system-running tools (such as `vm_shell:execute_bash` or any equivalent system command triggers).
 - **Allowed Tool Scope**: You must only use information-retrieval and text-generation tools (such as `google:search` and `browsing:browse` to gather context, and text responses to supply code patches). 

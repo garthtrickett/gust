@@ -34,6 +34,11 @@
             ripgrep
             gdb
 
+            # Formatting Toolchain (Phase 4A infrastructure only)
+            treefmt
+            topiary
+            clang-tools
+
             # Tree-sitter & Node Toolchain
             tree-sitter
             nodejs
@@ -149,6 +154,7 @@
             echo "  gt-one <name>   - Run a specific Rust test with debug logging directed to to.log"
             echo "  gt-one-gst <f>  - Run a self-hosted .gst test (compiles, builds, runs) to to.log"
             echo "  gcf             - Run 'cargo clippy --fix --allow-dirty'"
+            echo "  make report_phase4_formatter_tools - Report Phase 4A formatter tool availability"
           '';
         };
       });

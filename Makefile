@@ -9,7 +9,7 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
-.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement
+.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -67,6 +67,22 @@ test_tree_sitter:
 		(cd tree-sitter-gust && tree-sitter parse ../$$f --quiet) || exit 1; \
 	done
 	@echo "✅ Tree-sitter parsing validation passed!"
+
+report_phase4_formatter_tools:
+	@echo "🧰 Reporting Phase 4A formatter tooling scaffold..."
+	@echo "   Do not run repo-wide formatting until Phase 4B after Phase 5/6."
+	@if command -v treefmt >/dev/null 2>&1; then echo "   treefmt: $$(command -v treefmt)"; else echo "   treefmt: missing from current shell"; fi
+	@if command -v topiary >/dev/null 2>&1; then echo "   topiary: $$(command -v topiary)"; else echo "   topiary: missing from current shell"; fi
+	@if command -v clang-format >/dev/null 2>&1; then echo "   clang-format: $$(command -v clang-format)"; else echo "   clang-format: missing from current shell"; fi
+	@if command -v rustfmt >/dev/null 2>&1; then echo "   rustfmt: $$(command -v rustfmt)"; else echo "   rustfmt: missing from current shell"; fi
+	@echo "✅ Phase 4A formatter tool report complete. This target is report-only and does not format files."
+
+fmt_check_phase4_infra:
+	@echo "🔎 Checking Phase 4A formatter scaffold files..."
+	@test -f treefmt.toml || (echo "❌ Missing treefmt.toml"; exit 1)
+	@test -f topiary/languages.ncl || (echo "❌ Missing topiary/languages.ncl"; exit 1)
+	@test -f topiary/queries/gust.scm || (echo "❌ Missing topiary/queries/gust.scm"; exit 1)
+	@echo "✅ Phase 4A formatter scaffold files are present. No formatting was run."
 
 report_step44_accessor_contract:
 	@echo "🧪 Step 4.4 accessor contract focused checks:"

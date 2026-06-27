@@ -1,0 +1,24 @@
+# Phase 4A formatter infrastructure scaffold.
+#
+# Do not run repo-wide formatting until Phase 4B after Phase 5/6.
+# This file is intentionally checked in now so treefmt/topiary/rustfmt/clang-format
+# integration can be developed without creating formatting churn during safety work.
+#
+# Phase 4B should enable formatter blocks in a dedicated formatting commit.
+
+# Future Rust formatting block:
+# [formatter.rust]
+# command = "rustfmt"
+# includes = ["*.rs"]
+
+# Future C runtime formatting block:
+# [formatter.clang-format]
+# command = "clang-format"
+# options = ["-i"]
+# includes = ["*.c", "*.h"]
+
+# Future Gust formatting block:
+# [formatter.gust]
+# command = "topiary"
+# options = ["format", "--language", "gust"]
+# includes = ["*.gst"]
