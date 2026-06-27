@@ -912,17 +912,21 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
             next_token(p); // consume '}'
 
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx].tag = 1; // StructDecl = 1
+            mut struct_generics_idx_parse: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+            mut struct_fields_idx_parse: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+            mut stmt_struct_parse: ast.Statement[ctx];
+            stmt_struct_parse.tag = 1; // StructDecl = 1
 
-            ctx[stmt_idx].StructDecl.name = name;
+            stmt_struct_parse.StructDecl.name = name;
 
-            ctx[stmt_idx].StructDecl.generics = os.ArenaAlloc(ctx);
-            ctx[ctx[stmt_idx].StructDecl.generics] = generics_vec;
+            stmt_struct_parse.StructDecl.generics = struct_generics_idx_parse;
+            ctx.Set(struct_generics_idx_parse, generics_vec);
 
-            ctx[stmt_idx].StructDecl.fields = os.ArenaAlloc(ctx);
-            ctx[ctx[stmt_idx].StructDecl.fields] = fields_vec;
+            stmt_struct_parse.StructDecl.fields = struct_fields_idx_parse;
+            ctx.Set(struct_fields_idx_parse, fields_vec);
 
-            ctx[stmt_idx].StructDecl.span = merge_spans(start_span, end_span);
+            stmt_struct_parse.StructDecl.span = merge_spans(start_span, end_span);
+            ctx.Set(stmt_idx, stmt_struct_parse);
             return stmt_idx;
         } else if cur_token_is(p, 41) { // Enum = 41
             next_token(p); // consume 'enum'
@@ -1007,7 +1011,7 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
                     mut variant: ast.VariantDef[ctx];
                     variant.name = variant_name;
                     variant.fields = os.ArenaAlloc(ctx);
-                    ctx[variant.fields] = fields_vec;
+                    ctx.Set(variant.fields, fields_vec);
                     variant.span = merge_spans(variant_start, variant_end);
                     variants_vec.Push(variant);
 
@@ -1036,17 +1040,21 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
             next_token(p); // consume '}'
 
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx].tag = 2; // EnumDecl = 2
+            mut enum_generics_idx_parse: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+            mut enum_variants_idx_parse: Index[std.Vector[ast.VariantDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+            mut stmt_enum_parse: ast.Statement[ctx];
+            stmt_enum_parse.tag = 2; // EnumDecl = 2
 
-            ctx[stmt_idx].EnumDecl.name = name;
+            stmt_enum_parse.EnumDecl.name = name;
 
-            ctx[stmt_idx].EnumDecl.generics = os.ArenaAlloc(ctx);
-            ctx[ctx[stmt_idx].EnumDecl.generics] = generics_vec;
+            stmt_enum_parse.EnumDecl.generics = enum_generics_idx_parse;
+            ctx.Set(enum_generics_idx_parse, generics_vec);
 
-            ctx[stmt_idx].EnumDecl.variants = os.ArenaAlloc(ctx);
-            ctx[ctx[stmt_idx].EnumDecl.variants] = variants_vec;
+            stmt_enum_parse.EnumDecl.variants = enum_variants_idx_parse;
+            ctx.Set(enum_variants_idx_parse, variants_vec);
 
-            ctx[stmt_idx].EnumDecl.span = merge_spans(start_span, end_span);
+            stmt_enum_parse.EnumDecl.span = merge_spans(start_span, end_span);
+            ctx.Set(stmt_idx, stmt_enum_parse);
             return stmt_idx;
         } else {
             mut err: errors.CompilerError[Any];
@@ -1141,7 +1149,9 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
         next_token(p); // consume ')'
 
         mut r_type: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[r_type].tag = 3; // Default Type::Void = 3
+        mut default_void_type_parse: ast.Type[ctx];
+        default_void_type_parse.tag = 3; // Default Type::Void = 3
+        ctx.Set(r_type, default_void_type_parse);
         
         // Parse optional return type
         if cur_token_is(p, 2) || cur_token_is(p, 45) || cur_token_is(p, 15) || cur_token_is(p, 21) || cur_token_is(p, 17) {
@@ -1170,17 +1180,20 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
         mut end_span := ctx[body].span;
 
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[stmt_idx].tag = 3; // FunctionDecl = 3
+        mut function_params_idx_parse: Index[std.Vector[ast.Parameter[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        mut stmt_function_parse: ast.Statement[ctx];
+        stmt_function_parse.tag = 3; // FunctionDecl = 3
 
-        ctx[stmt_idx].FunctionDecl.name = name;
+        stmt_function_parse.FunctionDecl.name = name;
 
-        ctx[stmt_idx].FunctionDecl.params = os.ArenaAlloc(ctx);
-        ctx[ctx[stmt_idx].FunctionDecl.params] = params_vec;
+        stmt_function_parse.FunctionDecl.params = function_params_idx_parse;
+        ctx.Set(function_params_idx_parse, params_vec);
 
-        ctx[stmt_idx].FunctionDecl.return_type = r_type;
-        ctx[stmt_idx].FunctionDecl.body = body;
-        ctx[stmt_idx].FunctionDecl.span = merge_spans(start_span, end_span);
+        stmt_function_parse.FunctionDecl.return_type = r_type;
+        stmt_function_parse.FunctionDecl.body = body;
+        stmt_function_parse.FunctionDecl.span = merge_spans(start_span, end_span);
 
+        ctx.Set(stmt_idx, stmt_function_parse);
         return stmt_idx;
     }
 }
@@ -1766,10 +1779,12 @@ func parse_import_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ct
         }
         
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[stmt_idx].tag = 0; // Import = 0
-        ctx[stmt_idx].Import.path = path;
-        ctx[stmt_idx].Import.alias = alias;
-        ctx[stmt_idx].Import.span = merge_spans(start_span, (*p).cur_token.span);
+        mut stmt_import_parse: ast.Statement[ctx];
+        stmt_import_parse.tag = 0; // Import = 0
+        stmt_import_parse.Import.path = path;
+        stmt_import_parse.Import.alias = alias;
+        stmt_import_parse.Import.span = merge_spans(start_span, (*p).cur_token.span);
+        ctx.Set(stmt_idx, stmt_import_parse);
         return stmt_idx;
     }
 }
