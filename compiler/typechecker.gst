@@ -5810,14 +5810,14 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
             if std.str_eq(expected.Generic.name, actual.Generic.name) == 0 {
                 return 0;
             }
-            mut e_args := &ctx[expected.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-            mut a_args := &ctx[actual.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-            if len(*e_args) != len(*a_args) {
+            mut e_args_types_match: std.Vector[ast.Type[ctx], ctx] := ctx[expected.Generic.args];
+            mut a_args_types_match: std.Vector[ast.Type[ctx], ctx] := ctx[actual.Generic.args];
+            if len(e_args_types_match) != len(a_args_types_match) {
                 return 0;
             }
             mut idx := 0;
-            while idx < len(*e_args) {
-                if types_match((*e_args)[idx], (*a_args)[idx], ctx) == 0 {
+            while idx < len(e_args_types_match) {
+                if types_match(e_args_types_match[idx], a_args_types_match[idx], ctx) == 0 {
                     return 0;
                 }
                 idx = idx + 1;
@@ -5871,7 +5871,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         }
 
         if stmt.tag == 3 { // FunctionDecl
-            mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
+            mut params_vec_function_decl_impl: std.Vector[ast.Parameter[ctx], ctx] := ctx[stmt.FunctionDecl.params];
             mut return_type_idx := stmt.FunctionDecl.return_type;
             mut body_idx := stmt.FunctionDecl.body;
 
@@ -5892,8 +5892,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             // Register parameters
             mut inout_params: std.Vector[str, ctx] := std.VectorNew(ctx);
             mut i := 0;
-            while i < len(*params_vec) {
-                mut param := (*params_vec)[i];
+            while i < len(params_vec_function_decl_impl) {
+                mut param := params_vec_function_decl_impl[i];
                 mut resolved_param_type := env_resolve_type(env, param.param_type, ctx);
 
                 // Standardize direct Arena types to shared reference pointers (&Arena)
@@ -5936,29 +5936,28 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).current_function_return_origins = set_init(ctx);
             
             mut inout_params_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
-            mut dest_ptr := &ctx[inout_params_idx] as *std.Vector[str, ctx];
-            *dest_ptr = inout_params;
+            ctx[inout_params_idx] = inout_params;
             (*env).current_function_inout_params = inout_params_idx;
             (*env).current_function_local_vars = set_init(ctx);
 
             // Evaluate body statements
             if body_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
                 mut body := ctx[body_idx];
-                mut statements_vec := &ctx[body.statements] as *std.Vector[ast.Statement[ctx], ctx];
+                mut statements_vec_function_body_check: std.Vector[ast.Statement[ctx], ctx] := ctx[body.statements];
                 mut j := 0;
-                while j < len(*statements_vec) {
+                while j < len(statements_vec_function_body_check) {
                     mut s_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[s_idx] = (*statements_vec)[j];
+                    ctx[s_idx] = statements_vec_function_body_check[j];
                     check_statement(s_idx, env, child_scope, ctx);
                     j = j + 1;
                 }
             }
 
             // Check inout params are not moved
-            mut current_inouts := &ctx[(*env).current_function_inout_params] as *std.Vector[str, ctx];
+            mut current_inouts_function_exit: std.Vector[str, ctx] := ctx[(*env).current_function_inout_params];
             mut k := 0;
-            while k < len(*current_inouts) {
-                mut inout_p := (*current_inouts)[k];
+            while k < len(current_inouts_function_exit) {
+                mut inout_p := current_inouts_function_exit[k];
                 if (*env).moved_vars.Get(inout_p).Ok {
                     mut msg := std.Concat("Semantic Error: Inout reference parameter '", inout_p);
                     msg = std.Concat(msg, "' was moved but never re-initialized before function exit");
