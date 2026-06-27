@@ -1898,15 +1898,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             
             // Spawn / Concurrency Checks
             if std.str_eq(resolved_func, "std_Spawn") || std.str_eq(resolved_func, "std.Spawn") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) != 2 {
+                mut args_vec_spawn: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_spawn) != 2 {
                     mut msg := "Semantic Error: std.Spawn expects exactly 2 arguments (func, arg)";
                     report_error(2, msg, expr.Call.span, env, ctx);
                     return dummy;
                 }
 
-                mut task_func_expr := (*args_vec)[0];
-                mut task_arg_expr := (*args_vec)[1];
+                mut task_func_expr := args_vec_spawn[0];
+                mut task_arg_expr := args_vec_spawn[1];
 
                 mut task_func_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx[task_func_idx] = task_func_expr;
@@ -1981,9 +1981,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if std.str_eq(resolved_func, "os_CloseDir") || std.str_eq(resolved_func, "os.CloseDir") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) == 1 {
-                    mut arg_expr := (*args_vec)[0];
+                mut args_vec_close_dir: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_close_dir) == 1 {
+                    mut arg_expr := args_vec_close_dir[0];
                     mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx[arg_idx] = arg_expr;
                     mut arg_name := get_root_variable(arg_idx, ctx);
@@ -1994,22 +1994,21 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if std.str_eq(resolved_func, "std_Clone") || std.str_eq(resolved_func, "std.Clone") {
-                    mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                    if len(*args_vec) == 2 {
+                    mut args_vec_clone_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                    if len(args_vec_clone_call) == 2 {
                         mut dest_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[dest_expr_idx] = (*args_vec)[0];
+                        ctx[dest_expr_idx] = args_vec_clone_call[0];
                         check_expression(dest_expr_idx, env, scope, ctx);
 
                         mut val_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[val_expr_idx] = (*args_vec)[1];
+                        ctx[val_expr_idx] = args_vec_clone_call[1];
                         mut val_type := check_expression(val_expr_idx, env, scope, ctx);
 
                         mut brand_name := get_root_variable(dest_expr_idx, ctx);
                         mut new_brand := empty[Index[str, ctx]];
                         if std.str_eq(brand_name, "") == 0 {
                             new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                            mut ptr := &ctx[new_brand] as *str;
-                            *ptr = std.Clone(ctx, brand_name);
+                            ctx[new_brand] = std.Clone(ctx, brand_name);
                         }
 
                         mut substituted := typechecker_substitute_brand(val_type, new_brand, ctx);
@@ -2018,15 +2017,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
             if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std.Format") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) < 1 {
+                mut args_vec_format_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_format_call) < 1 {
                     mut msg := "Semantic Error: std.Format expects at least 1 argument";
                     report_error(2, msg, expr.Call.span, env, ctx);
                     mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
                     return dummy;
                 }
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_format_call[0];
                 mut arg0_type := check_expression(arg0_idx, env, scope, ctx);
                 mut resolved_arg0 := env_resolve_type(env, arg0_type, ctx);
 
@@ -2037,7 +2036,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     has_ctx_param = 1;
                 }
 
-                if len(*args_vec) <= format_arg_idx {
+                if len(args_vec_format_call) <= format_arg_idx {
                     mut msg := "Semantic Error: std.Format expects a format string literal";
                     report_error(2, msg, expr.Call.span, env, ctx);
                     mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
@@ -2045,7 +2044,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 mut format_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[format_expr_idx] = (*args_vec)[format_arg_idx];
+                ctx[format_expr_idx] = args_vec_format_call[format_arg_idx];
                 mut format_expr_type := check_expression(format_expr_idx, env, scope, ctx);
                 if format_expr_type.tag != 5 { // Str
                     mut msg := "Semantic Error: Format argument to std.Format must be a string literal";
@@ -2092,7 +2091,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 mut expected_count := len(specifier_types);
-                mut trailing_args_count := len(*args_vec) - 1 - format_arg_idx;
+                mut trailing_args_count := len(args_vec_format_call) - 1 - format_arg_idx;
                 if trailing_args_count != expected_count {
                     mut msg := std.Format("Semantic Error: std.Format template expected %d arguments, but got %d", expected_count, trailing_args_count);
                     report_error(2, msg, expr.Call.span, env, ctx);
@@ -2106,7 +2105,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut expected_t := specifier_types[j];
 
                     mut param_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[param_idx] = (*args_vec)[arg_idx];
+                    ctx[param_idx] = args_vec_format_call[arg_idx];
                     mut arg_type := check_expression(param_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
 
@@ -2140,10 +2139,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                std.str_eq(resolved_func, "std_HashMapNew") || std.str_eq(resolved_func, "std.HashMapNew") ||
                std.str_eq(resolved_func, "std_PoolNew") || std.str_eq(resolved_func, "std.PoolNew") ||
                std.str_eq(resolved_func, "std_GraphNew") || std.str_eq(resolved_func, "std.GraphNew") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) == 1 {
+                mut args_vec_container_new: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_container_new) == 1 {
                     mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg0_idx] = (*args_vec)[0];
+                    ctx[arg0_idx] = args_vec_container_new[0];
                     check_expression(arg0_idx, env, scope, ctx);
                     mut brand_name := get_root_variable(arg0_idx, ctx);
                     
@@ -2164,13 +2163,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if std.str_eq(resolved_func, "os.LogInt") || std.str_eq(resolved_func, "os_LogInt") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) != 1 {
+                mut args_vec_log_int: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_log_int) != 1 {
                     mut msg := "Semantic Error: os.LogInt expects exactly 1 argument";
                     report_error(2, msg, expr.Call.span, env, ctx);
                 } else {
                     mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg0_idx] = (*args_vec)[0];
+                    ctx[arg0_idx] = args_vec_log_int[0];
                     mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
                     if resolved_arg.tag != 0 && resolved_arg.tag != 1 && resolved_arg.tag != 2 && resolved_arg.tag != 7 {
@@ -2183,13 +2182,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if std.str_eq(resolved_func, "os.LogStr") || std.str_eq(resolved_func, "os_LogStr") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                if len(*args_vec) != 1 {
+                mut args_vec_log_str: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_log_str) != 1 {
                     mut msg := "Semantic Error: os.LogStr expects exactly 1 argument";
                     report_error(2, msg, expr.Call.span, env, ctx);
                 } else {
                     mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg0_idx] = (*args_vec)[0];
+                    ctx[arg0_idx] = args_vec_log_str[0];
                     mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
                     mut t_str: ast.Type[ctx]; t_str.tag = 5; // Str
@@ -2206,8 +2205,8 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             mut sig: FunctionSignature[ctx];
             
             if std.str_eq(resolved_func, "std_Concat") || std.str_eq(resolved_func, "std.Concat") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                mut arg_len := len(*args_vec);
+                mut args_vec_concat_sig: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                mut arg_len := len(args_vec_concat_sig);
                 sig.param_names = std.VectorNew(ctx);
                 sig.params = std.VectorNew(ctx);
                 sig.return_origins = set_init(ctx);
@@ -2223,8 +2222,8 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
                 has_custom_sig = 1;
             } else if std.str_eq(resolved_func, "std_FormatInt") || std.str_eq(resolved_func, "std.FormatInt") {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
-                mut arg_len := len(*args_vec);
+                mut args_vec_format_int_sig: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                mut arg_len := len(args_vec_format_int_sig);
                 sig.param_names = std.VectorNew(ctx); 
                 sig.params = std.VectorNew(ctx);
                 sig.return_origins = set_init(ctx);
@@ -2251,21 +2250,21 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if is_valid_func == 1 {
-                mut args_vec := &ctx[expr.Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_valid_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                 mut evaluated_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
                 
                 mut i := 0;
-                while i < len(*args_vec) {
+                while i < len(args_vec_valid_call) {
                     mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg_idx] = (*args_vec)[i];
+                    ctx[arg_idx] = args_vec_valid_call[i];
                     mut arg_type := check_expression(arg_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
                     evaluated_args.Push(resolved_arg);
                     i = i + 1;
                 }
 
-                if len(sig.params) != len(*args_vec) {
-                    mut msg := std.Format("Semantic Error: Function '%s' expects %d arguments but got %d", resolved_func, len(sig.params), len(*args_vec));
+                if len(sig.params) != len(args_vec_valid_call) {
+                    mut msg := std.Format("Semantic Error: Function '%s' expects %d arguments but got %d", resolved_func, len(sig.params), len(args_vec_valid_call));
                     report_error(2, msg, expr.Call.span, env, ctx);
                     mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
                     return dummy;
@@ -2284,25 +2283,23 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
                     if param_type.tag == 4 || is_arena_ptr == 1 {
                         mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg_idx] = (*args_vec)[j];
+                        ctx[arg_idx] = args_vec_valid_call[j];
                         mut actual_name := get_root_variable(arg_idx, ctx);
                         if std.str_eq(actual_name, "") == 0 {
                             new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                            mut ptr := &ctx[new_brand] as *str;
-                            *ptr = std.Clone(ctx, actual_name);
+                            ctx[new_brand] = std.Clone(ctx, actual_name);
                         }
                         j = len(sig.params);
                     } else {
                         mut p_brand := get_type_brand(param_type, env, ctx);
                     if std.str_eq(p_brand, "") == 0 {
                         mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg_idx] = (*args_vec)[j];
+                        ctx[arg_idx] = args_vec_valid_call[j];
                         mut arg_type := check_expression(arg_idx, env, scope, ctx);
                         mut a_brand := get_type_brand(arg_type, env, ctx);
                         if std.str_eq(a_brand, "") == 0 {
                                 new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                                mut ptr := &ctx[new_brand] as *str;
-                                *ptr = std.Clone(ctx, strip_brand_prefix(a_brand, ctx));
+                                ctx[new_brand] = std.Clone(ctx, strip_brand_prefix(a_brand, ctx));
                                 j = len(sig.params);
                             } else {
                                 j = j + 1;
@@ -2327,7 +2324,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             ast.serialize_type(expected_type, ctx),
                             ast.serialize_type(resolved_arg, ctx));
                         mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx[arg_idx] = (*args_vec)[k];
+                        ctx[arg_idx] = args_vec_valid_call[k];
                         report_error(2, msg, get_expression_span(arg_idx, ctx), env, ctx);
                     }
                     k = k + 1;
