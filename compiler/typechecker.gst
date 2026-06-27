@@ -774,6 +774,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         if expr.tag == 9 { // AsCast
             mut left_type := check_expression(expr.AsCast.left, env, scope, ctx);
             mut resolved_target := env_resolve_type(env, ctx[expr.AsCast.target_type], ctx);
+            if resolved_target.tag == 9 && (*env).in_unsafe_block == 0 { // RawPointer
+                mut msg := "Semantic Error: Raw pointer casts are strictly prohibited outside 'unsafe' blocks";
+                report_error(2, msg, expr.AsCast.span, env, ctx);
+            }
             if resolved_target.tag == 8 { // Struct
                 mut struct_name := resolved_target.Struct.struct_name;
                 mut lookup := (*env).struct_registry.Get(struct_name);
