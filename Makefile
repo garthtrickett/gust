@@ -218,7 +218,7 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   Compiler-backed FFI call-site gating: make guard_step51_extern_func_call_enforcement"
 	@echo "   Layout attribute parser metadata: parser accepts #[repr(C)] and #[packed] into StructDecl only."
 	@echo "   Payload-safe layout metadata store: TypeEnvironment keeps repr-C/packed/ABI maps separate from StructLayout."
-	@echo "   Layout metadata query helpers: env_struct_is_repr_c / env_struct_is_packed / env_struct_requires_layout_metadata."
+	@echo "   Layout metadata query helpers: env_struct_is_repr_c / env_struct_is_packed / env_struct_layout_abi_is_c / env_struct_requires_layout_metadata."
 	@echo "   Next semantic checkpoint: sandboxed FFI sub-arenas and layout-aware FFI validation."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."

@@ -12,8 +12,8 @@ func main() {
         os.LogStr("Error: plain struct must not require layout metadata");
         os.Exit(1);
     }
-    if std.str_eq(typechecker.env_struct_layout_abi(&env, "main__Plain", ctx), "") == 0 {
-        os.LogStr("Error: plain struct layout ABI must default empty");
+    if typechecker.env_struct_layout_abi_is_c(&env, "main__Plain", ctx) != 0 {
+        os.LogStr("Error: plain struct layout ABI must not report C");
         os.Exit(1);
     }
 
@@ -30,8 +30,8 @@ func main() {
         os.LogStr("Error: repr-C metadata must require layout metadata");
         os.Exit(1);
     }
-    if std.str_eq(typechecker.env_struct_layout_abi(&env, "main__CLike", ctx), "C") == 0 {
-        os.LogStr("Error: repr-C layout ABI lookup failed");
+    if typechecker.env_struct_layout_abi_is_c(&env, "main__CLike", ctx) != 1 {
+        os.LogStr("Error: repr-C layout ABI C predicate failed");
         os.Exit(1);
     }
 

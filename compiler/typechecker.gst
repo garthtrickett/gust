@@ -4526,13 +4526,15 @@ func env_struct_is_packed(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) in
     }
 }
 
-func env_struct_layout_abi(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
+func env_struct_layout_abi_is_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
     unsafe {
         mut lookup := (*env).struct_layout_abi.Get(name);
         if lookup.Ok {
-            return lookup.Val;
+            if std.str_eq(lookup.Val, "C") {
+                return 1;
+            }
         }
-        return "";
+        return 0;
     }
 }
 
