@@ -103,6 +103,7 @@ def scan_file(path: Path) -> tuple[list[str], list[str], list[str]]:
         code = strip_comments_and_strings(raw_line)
         labels = line_has_raw_op(code)
         if labels == "":
+            update_unsafe_stack(code, stack)
             continue
 
         unsafe_depth = sum(1 for item in stack if item)
