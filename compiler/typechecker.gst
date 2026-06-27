@@ -5036,6 +5036,39 @@ func get_root_variable(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) s
     }
 }
 
+func is_direct_subscript_write_lhs(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) int {
+    unsafe {
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return 0;
+        }
+
+        mut expr := ctx[expr_idx];
+        if expr.tag == 8 { // IndexAccess
+            return 1;
+        }
+        if expr.tag == 11 { // Selector
+            return is_direct_subscript_write_lhs(expr.Selector.left, ctx);
+        }
+        if expr.tag == 9 { // AsCast
+            return is_direct_subscript_write_lhs(expr.AsCast.left, ctx);
+        }
+        if expr.tag == 4 { // Move
+            return is_direct_subscript_write_lhs(expr.Move.expr, ctx);
+        }
+        if expr.tag == 5 { // Take
+            return is_direct_subscript_write_lhs(expr.Take.expr, ctx);
+        }
+        if expr.tag == 6 { // AddressOf
+            return is_direct_subscript_write_lhs(expr.AddressOf.expr, ctx);
+        }
+        if expr.tag == 7 { // Dereference
+            return is_direct_subscript_write_lhs(expr.Dereference.expr, ctx);
+        }
+
+        return 0;
+    }
+}
+
 func is_pointer_write(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) int {
     unsafe {
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
@@ -6282,6 +6315,15 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut left := ctx[left_idx];
             
+            // Step 4.5C: direct subscript writes require explicit unsafe or explicit write APIs.
+            if (*env).in_unsafe_block == 0 {
+                mut is_direct_subscript_lhs_step45c := is_direct_subscript_write_lhs(left_idx, ctx);
+                if is_direct_subscript_lhs_step45c == 1 {
+                    mut msg_direct_subscript_step45c := "Semantic Error: [DirectSubscriptWrite] Direct subscript writes require unsafe or explicit write APIs";
+                    report_error(2, msg_direct_subscript_step45c, stmt.Assignment.span, env, ctx);
+                }
+            }
+
             // --- Safe Assignment Enum Mutation Control ---
             if left.tag == 11 { // Selector
                 mut base_expr_idx := left.Selector.left;
