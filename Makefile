@@ -173,8 +173,8 @@ report_step51_phase_d_ffi_status:
 	@echo "   The focused report is token-aware to avoid substring noise such as suffix or generic_call."
 	@echo "   If the focused report shows zero Direct Gust source candidates, do not add an FFI guard yet."
 	@echo "   Do not wire broad textual FFI scans into make test; FFI enforcement must be compiler-backed and syntax-aware."
-	@echo "   Still deferred: FFI gating, address escapes, and broader non-laundering/provenance tracking."
-	@echo "✅ Step 5.1D FFI gating status report complete. This target is report-only and does not run guards."
+	@echo "   Still deferred: direct FFI gating, #[repr(C)] / #[packed] layout annotations, sandboxed FFI sub-arenas, address escapes, and broader non-laundering/provenance tracking."
+	@echo "✅ Step 5.1D FFI/layout/sandboxing status report complete. This target is report-only and does not run guards."
 
 report_step51_phase_e_address_escape_status:
 	@echo "🧭 Reporting Step 5.1E address-escape status..."
@@ -211,10 +211,11 @@ report_step51_status_matrix:
 	@echo "   ✅ local raw-derived pointer return escape: make guard_step51_raw_pointer_local_escape_enforcement"
 	@echo "   Aggregate: make guard_step51_basic_unsafe_enforcement"
 	@echo "   Report-only / deferred lanes:"
-	@echo "   🧭 FFI gating: make report_step51_phase_d_ffi_status"
+	@echo "   🧭 FFI gating, layout annotations, and sandboxed FFI: make report_step51_phase_d_ffi_status"
 	@echo "   🧭 address escapes: make report_step51_phase_e_address_escape_status"
 	@echo "   🧭 broader non-laundering/provenance: make report_step51_phase_f_non_laundering_status"
 	@echo "   Policy guard: make guard_step51_report_only_lanes_not_in_test"
+	@echo "   Step 5.1 basic unsafe enforcement is closed; do not mark full Step 5.1 complete until FFI/layout/sandboxing, address escapes, and full provenance are compiler-backed."
 	@echo "   Do not convert report-only lanes into make test guards until compiler-backed semantic rules exist."
 	@echo "✅ Step 5.1 safety status matrix complete. This target is report-only and does not run guards."
 
@@ -289,7 +290,7 @@ report_step51_final_validation:
 	@echo "   make test"
 	@echo "   make bootstrap"
 	@echo "   git diff --check"
-	@echo "✅ Step 5.1 validation checklist complete. Basic unsafe enforcement is compiler-backed and aggregated; FFI, address escapes, and broader non-laundering remain report-only/deferred lanes."
+	@echo "✅ Step 5.1 validation checklist complete. Basic unsafe enforcement is compiler-backed and aggregated; FFI/layout/sandboxing, address escapes, and broader non-laundering remain report-only/deferred lanes."
 
 report_step52_linear_resource_inventory:
 	@echo "📊 Reporting Step 5.2 generalized linear resource precursor inventory..."
