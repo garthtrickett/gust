@@ -25,14 +25,60 @@ A compiler-backed Resource design needs all of the following before enforcement:
 6. **Defer semantics:** `defer` must have explicit AST/typechecker representation before it can satisfy cleanup obligations.
 7. **Directory parity:** `open_linear_resources` must cover the existing directory-handle safety behavior before `open_directories` can be removed.
 
+## Proposed inert metadata shape
+
+The first compiler patch should add metadata carriers without changing diagnostics or enforcing new rules. The shape should be explicit enough that later patches can populate and validate it incrementally.
+
+### Type metadata
+
+Linear resource opt-in should live on type metadata, not on textual names:
+
+- `is_linear_resource`: `0` by default for every existing type.
+- `resource_payload_kind`: empty/default until a type is explicitly modeled as a resource wrapper.
+- `resource_destructor_name`: empty/default until a destructor is registered semantically.
+- `resource_allows_defer`: `0` by default until `defer` is represented in the AST/typechecker.
+
+Existing `linear` / `is_linear` metadata can inform this design, but it must not automatically imply generalized `Resource[ctx, T]` ownership.
+
+### Resource value state
+
+A generalized resource value should carry compiler-owned state rather than string-matched cleanup facts:
+
+- `owned`: the current scope owns the resource and must release or transfer it.
+- `borrowed`: the current expression observes the resource without taking ownership.
+- `moved`: ownership has been transferred and later use must be rejected.
+- `closed`: the registered destructor has already consumed the resource.
+- `destructor_scheduled`: a validated `defer` or equivalent cleanup path owns the eventual destructor call.
+
+### Open-resource registry entry
+
+Each future `open_linear_resources` entry should be keyed by semantic resource identity and store at least:
+
+- owning variable or temporary identity
+- branding context
+- payload type
+- destructor identity
+- transfer state
+- source span for diagnostics
+- compatibility marker for legacy directory parity checks
+
+### Directory parity mapping
+
+The first parity implementation should mirror the existing directory lane without weakening it:
+
+- `os.OpenDir` creates both an `open_directories` entry and a future generalized resource entry.
+- `os.CloseDir` clears both lanes for the same semantic handle.
+- leak diagnostics remain governed by the legacy lane until generalized diagnostics match exactly enough for a later cleanup-only removal.
+
 ## Migration order
 
 1. Add inert AST/type metadata for resource ownership without changing enforcement.
-2. Add an internal `open_linear_resources` registry alongside `open_directories`.
-3. Teach directory operations to populate both the legacy and generalized registries.
-4. Validate generalized registry diagnostics in parallel with the existing directory diagnostics.
-5. Add narrow compiler-backed guards only after parity is proven.
-6. Remove `open_directories` in a later cleanup-only patch once generalized coverage is equivalent.
+2. Add inert resource value state and registry entry structures with default bypass behavior.
+3. Add an internal `open_linear_resources` registry alongside `open_directories`.
+4. Teach directory operations to populate both the legacy and generalized registries.
+5. Validate generalized registry diagnostics in parallel with the existing directory diagnostics.
+6. Add narrow compiler-backed guards only after parity is proven.
+7. Remove `open_directories` in a later cleanup-only patch once generalized coverage is equivalent.
 
 ## Guardrails
 
