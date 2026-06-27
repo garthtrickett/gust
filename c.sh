@@ -236,6 +236,15 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_phase_d_transfer_s
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_phase_e_enforcement_preconditions_status:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step52_phase_e_enforcement_preconditions_status ---"
+        (cd "$PROJECT_ROOT" && make report_step52_phase_e_enforcement_preconditions_status)
+        echo "--- END OF REPORT make report_step52_phase_e_enforcement_preconditions_status ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_status_matrix:' "$PROJECT_ROOT/Makefile"; then
     {
         echo "--- START OF REPORT make report_step52_status_matrix ---"
