@@ -9,7 +9,7 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
-.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_ffi_calls report_step51_unsafe_func_signatures report_step51_raw_pointer_safety_inventory report_step51_final_validation
+.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_ffi_calls report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safety_inventory report_step51_final_validation
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -108,21 +108,42 @@ report_step51_unsafe_func_signatures:
 	@rg -n 'unsafe[[:space:]]+func|func[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\([^)]*\)[^{;]*unsafe' compiler/*.gst tests/*.gst || true
 	@echo "✅ Step 5.1 unsafe function signature report complete. This target is inventory-only and does not fail."
 
+report_step51_raw_pointer_classified:
+	@echo "📊 Reporting Step 5.1 classified raw pointer inventory..."
+	@echo "   Raw pointer dereference expression candidates:"
+	@rg -n '(^|[^[:alnum:]_])\*[[:space:]]*(\(|[A-Za-z_][A-Za-z0-9_]*)' compiler/*.gst tests/*.gst | rg -v ':[[:space:]]*\*| as \*|func[^(]*\([^)]*\*' || true
+	@echo "   Raw pointer type syntax / declarations:"
+	@rg -n ':[[:space:]]*\*|func[^(]*\([^)]*\*|std\.Vector\[[^]]*\*|Index\[[^]]*\*' compiler/*.gst tests/*.gst || true
+	@echo "   Raw pointer casts:"
+	@rg -n ' as \*' compiler/*.gst tests/*.gst || true
+	@echo "   Address escape candidates:"
+	@rg -n '&ctx\[|&[A-Za-z_][A-Za-z0-9_]*\[' compiler/*.gst tests/*.gst || true
+	@echo "   Generated C string / codegen template candidates:"
+	@rg -n '"[^"]*(\*|&|->|\[[^]]+\][^"]*=)' compiler/codegen.gst || true
+	@echo "   Test and intentional fixture candidates:"
+	@rg -n '(unsafe|raw|pointer|ffi|violation|rejected)' tests/*.gst | rg '\*| as \*|&' || true
+	@echo "   Unclassified migration candidates:"
+	@rg -n '(^|[^[:alnum:]_])\*[[:space:]]*(\(|[A-Za-z_][A-Za-z0-9_]*)| as \*|&ctx\[|&[A-Za-z_][A-Za-z0-9_]*\[' compiler/*.gst tests/*.gst | rg -v 'compiler/codegen\.gst:.*"' | rg -v 'tests/.*(unsafe|raw|pointer|ffi|violation|rejected).*\.gst:' || true
+	@echo "✅ Classified Step 5.1 raw pointer report complete. This target is inventory-only and does not fail."
+
 report_step51_raw_pointer_safety_inventory:
 	@echo "🧾 Step 5.1 raw pointer safety inventory checklist:"
 	@echo "   make report_step51_raw_pointer_deref"
 	@echo "   make report_step51_raw_pointer_casts"
 	@echo "   make report_step51_ffi_calls"
 	@echo "   make report_step51_unsafe_func_signatures"
+	@echo "   make report_step51_raw_pointer_classified"
 	@$(MAKE) report_step51_raw_pointer_deref
 	@$(MAKE) report_step51_raw_pointer_casts
 	@$(MAKE) report_step51_ffi_calls
 	@$(MAKE) report_step51_unsafe_func_signatures
+	@$(MAKE) report_step51_raw_pointer_classified
 	@echo "✅ Step 5.1 raw pointer safety inventory complete. This target is report-only and does not fail."
 
 report_step51_final_validation:
 	@echo "🧾 Step 5.1 Phase A/B validation checklist:"
 	@echo "   make report_step51_raw_pointer_safety_inventory"
+	@echo "   make report_step51_raw_pointer_classified"
 	@echo "   gt-one-gst tests/e2e_unsafe_function_signature_noop.gst"
 	@echo "   make report_step45_final_validation"
 	@echo "   make report_phase4_formatter_tools"
