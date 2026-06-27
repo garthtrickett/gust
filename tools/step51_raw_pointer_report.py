@@ -20,8 +20,16 @@ RAW_PATTERNS = [
 ]
 
 TYPE_SYNTAX_HINT = re.compile(
-    r":\s*\*|func[^(]*\([^)]*\*|std\.Vector\[[^]]*\*|Index\[[^]]*\*|empty\[\*"
+    r":\s*\*|func[^(]*\([^)]*\*|func[^{]*\)\s*\*|[A-Za-z_][A-Za-z0-9_]*\[[^]]*\*|empty\[\*"
 )
+
+REFERENCE_SYNTAX_HINT = re.compile(
+    r"\bas\s+&[A-Za-z_][A-Za-z0-9_]*(\[|$)|func[^{]*\)\s*&[A-Za-z_][A-Za-z0-9_]*(\[|$)|:\s*&[A-Za-z_][A-Za-z0-9_]*(\[|$)"
+)
+
+INTENTIONAL_RAW_GATING_FIXTURES = {
+    Path("tests/test_deref_outside_unsafe_rejected.gst"),
+}
 
 
 def strip_comments_and_strings(line: str) -> str:
@@ -93,10 +101,12 @@ def update_unsafe_stack(code: str, stack: list[bool]) -> None:
                 stack.pop()
 
 
-def scan_file(path: Path) -> tuple[list[str], list[str], list[str]]:
+def scan_file(path: Path) -> tuple[list[str], list[str], list[str], list[str], list[str]]:
     safe_candidates: list[str] = []
     wrapped_candidates: list[str] = []
     type_syntax: list[str] = []
+    reference_syntax: list[str] = []
+    intentional_raw_fixtures: list[str] = []
 
     stack: list[bool] = []
     for line_no, raw_line in enumerate(path.read_text(errors="replace").splitlines(), 1):
@@ -109,7 +119,11 @@ def scan_file(path: Path) -> tuple[list[str], list[str], list[str]]:
         unsafe_depth = sum(1 for item in stack if item)
         entry = f"{path}:{line_no}: [{labels}] {raw_line.strip()}"
 
-        if TYPE_SYNTAX_HINT.search(code) and "raw cast" not in labels and "address escape" not in labels:
+        if path in INTENTIONAL_RAW_GATING_FIXTURES:
+            intentional_raw_fixtures.append(entry)
+        elif REFERENCE_SYNTAX_HINT.search(code) and "raw cast" not in labels:
+            reference_syntax.append(entry)
+        elif TYPE_SYNTAX_HINT.search(code) and "raw cast" not in labels and "address escape" not in labels:
             type_syntax.append(entry)
         elif line_is_inside_unsafe(code, unsafe_depth):
             wrapped_candidates.append(entry)
@@ -118,7 +132,7 @@ def scan_file(path: Path) -> tuple[list[str], list[str], list[str]]:
 
         update_unsafe_stack(code, stack)
 
-    return safe_candidates, wrapped_candidates, type_syntax
+    return safe_candidates, wrapped_candidates, type_syntax, reference_syntax, intentional_raw_fixtures
 
 
 def main() -> int:
@@ -127,12 +141,16 @@ def main() -> int:
     all_safe: list[str] = []
     all_wrapped: list[str] = []
     all_type_syntax: list[str] = []
+    all_reference_syntax: list[str] = []
+    all_intentional_raw_fixtures: list[str] = []
 
     for path in paths:
-        safe_candidates, wrapped_candidates, type_syntax = scan_file(path)
+        safe_candidates, wrapped_candidates, type_syntax, reference_syntax, intentional_raw_fixtures = scan_file(path)
         all_safe.extend(safe_candidates)
         all_wrapped.extend(wrapped_candidates)
         all_type_syntax.extend(type_syntax)
+        all_reference_syntax.extend(reference_syntax)
+        all_intentional_raw_fixtures.extend(intentional_raw_fixtures)
 
     print("📊 Step 5.1 focused raw pointer safety report")
     print("   Likely safe-code raw operation candidates:")
@@ -152,6 +170,20 @@ def main() -> int:
     print("   Raw pointer type syntax / declaration-only candidates:")
     if all_type_syntax:
         for entry in all_type_syntax:
+            print(entry)
+    else:
+        print("   (none)")
+
+    print("   Branded reference type/cast candidates, not raw pointer ops:")
+    if all_reference_syntax:
+        for entry in all_reference_syntax:
+            print(entry)
+    else:
+        print("   (none)")
+
+    print("   Intentional raw-gating negative fixtures:")
+    if all_intentional_raw_fixtures:
+        for entry in all_intentional_raw_fixtures:
             print(entry)
     else:
         print("   (none)")
