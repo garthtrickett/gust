@@ -38,11 +38,9 @@ func main() {
         os.Exit(1);
     }
 
-    unsafe {
-        mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        if len(*statements_vec) > 0 {
-            typechecker.env_pre_register_statement(&env, (*statements_vec)[0], ctx);
-        }
+    mut statements_vec_templates: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
+    if len(statements_vec_templates) > 0 {
+        typechecker.env_pre_register_statement(&env, statements_vec_templates[0], ctx);
     }
 
     // Verify "Custom" was registered as a template and NOT a concrete struct
@@ -128,16 +126,15 @@ func main() {
         t_namespaced_vector.tag = 10; // Generic
         t_namespaced_vector.Generic.name = std.Clone(ctx, "std.Vector");
         t_namespaced_vector.Generic.args = os.ArenaAlloc(ctx);
-        mut args_ptr := &ctx[t_namespaced_vector.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-        *args_ptr = args;
+        ctx[t_namespaced_vector.Generic.args] = args;
     }
 
     mut res_namespaced := typechecker.env_resolve_type(&env, t_namespaced_vector, ctx);
     if res_namespaced.tag == 10 {
         unsafe {
             os.LogStr(res_namespaced.Generic.name); // Should print: std_Vector
-            mut res_args := &ctx[res_namespaced.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-            os.LogStr((*res_args)[0].Struct.struct_name); // Should print: lib_module__MyStruct
+            mut res_args_vec: std.Vector[ast.Type[ctx], ctx] := ctx[res_namespaced.Generic.args];
+            os.LogStr(res_args_vec[0].Struct.struct_name); // Should print: lib_module__MyStruct
         }
     }
 
@@ -147,10 +144,7 @@ func main() {
     mono_args.Push(typechecker.make_type_struct("ctx", "", ctx));
     
     mut mono_args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-    unsafe {
-        mut mono_args_ptr := &ctx[mono_args_idx] as *std.Vector[ast.Type[ctx], ctx];
-        *mono_args_ptr = mono_args;
-    }
+    ctx[mono_args_idx] = mono_args;
 
     mut mono_name := typechecker.get_monomorphized_name("std.Vector", mono_args_idx, ctx);
     os.LogStr(mono_name); // Should print: std_Vector_lib_module__ctx_MyNode
@@ -227,8 +221,8 @@ func main() {
     unsafe {
         os.LogStr(parsed_t1.Index.struct_name); // Expected: MyNode_ctx
         if parsed_t1.Index.brand != empty[Index[str, ctx]] { 
-            mut b_ptr := &ctx[parsed_t1.Index.brand] as *str;
-            os.LogStr(*b_ptr); // Expected: ctx
+            mut parsed_t1_brand_val: str := ctx[parsed_t1.Index.brand];
+            os.LogStr(parsed_t1_brand_val); // Expected: ctx
         }
     }
 
@@ -269,10 +263,7 @@ func main() {
 
     // Sub-Step 3.1 Verification: Test codegen_erase_struct_name with namespaced brands
     mut test_brand: Index[str, ctx] := os.ArenaAlloc(ctx);
-    unsafe {
-        mut brand_ptr := &ctx[test_brand] as *str;
-        *brand_ptr = "typechecker__ctx";
-    }
+    ctx[test_brand] = "typechecker__ctx";
     mut erased_res := codegen.codegen_erase_struct_name("std_HashMap_str_int_typechecker__ctx", test_brand, &env, ctx);
     os.LogStr(erased_res); // Expected: std_HashMap_str_int
 
@@ -371,9 +362,10 @@ func main() {
         entry_p.val_type = t_pool;
 
         // Setup resolved type mapping for argument 'item'
-        mut args_vec := &ctx[ctx[expr_pool_test].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+        mut expr_pool_value: ast.Expression[ctx] := ctx[expr_pool_test];
+        mut args_vec_pool_test: std.Vector[ast.Expression[ctx], ctx] := ctx[expr_pool_value.Call.arguments];
         mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[arg0_idx] = (*args_vec)[0];
+        ctx[arg0_idx] = args_vec_pool_test[0];
         mut arg0_span := parser.get_expression_span(arg0_idx, ctx);
 
         mut entry_i: typechecker.ResolvedTypeEntry[ctx];

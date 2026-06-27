@@ -7,7 +7,7 @@ PREFIX = /usr/local
 SHELL = bash
 .SHELLFLAGS = -o pipefail -c
 
-.PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_compiler_get_opt_migration report_high_level_raw_collection_casts guard_step44_low_risk_entry_raw_casts guard_parser_high_level_raw_casts
+.PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_compiler_get_opt_migration report_high_level_raw_collection_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_parser_high_level_raw_casts
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -46,7 +46,7 @@ bootstrap: gust
 	touch build/gust_compiler.c
 	touch gust
 
-test: gust guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts
+test: gust guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts
 	@mkdir -p build
 	@echo "⚙️  Compiling native Gust test runner..."
 	@./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
@@ -84,21 +84,31 @@ report_compiler_get_opt_migration:
 report_high_level_raw_collection_casts:
 	@echo "📊 Reporting Step 4.4 high-level raw collection/string cast migration sites..."
 	@echo "   Direct arena-to-vector casts:"
-	@rg -n '&ctx\[[^]]+\][[:space:]]+as[[:space:]]+\*std\.Vector' compiler/*.gst || true
+	@rg -n '&ctx\[' compiler/*.gst | rg ' as \*std\.Vector' || true
 	@echo "   Direct arena-to-hashmap casts:"
-	@rg -n '&ctx\[[^]]+\][[:space:]]+as[[:space:]]+\*std\.HashMap' compiler/*.gst || true
+	@rg -n '&ctx\[' compiler/*.gst | rg ' as \*std\.HashMap' || true
 	@echo "   Direct arena-to-string-view casts:"
-	@rg -n '&ctx\[[^]]+\][[:space:]]+as[[:space:]]+\*str' compiler/*.gst || true
+	@rg -n '&ctx\[' compiler/*.gst | rg ' as \*str' || true
 	@echo "✅ Report complete. This target is inventory-only and does not fail."
 
 guard_step44_low_risk_entry_raw_casts:
 	@echo "🔒 Checking Step 4.4 migrated low-risk entry files for high-level raw collection/string casts..."
 	@STEP44_LOW_RISK_FILES="compiler/type_dump_entry.gst compiler/test_runner_entry.gst compiler/parser_reference_access_test_entry.gst"; \
-	if rg -n '&ctx\[[^]]+\][[:space:]]+as[[:space:]]+\*(std\.Vector|std\.HashMap|str)' $$STEP44_LOW_RISK_FILES; then \
+	if rg -n '&ctx\[' $$STEP44_LOW_RISK_FILES | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
 		echo "❌ Step 4.4 low-risk entry guard failed: migrated entry files must not reintroduce direct arena collection/string casts."; \
 		exit 1; \
 	else \
 		echo "✅ Step 4.4 low-risk entry guard passed."; \
+	fi
+
+guard_step44_typechecker_aux_raw_casts:
+	@echo "🔒 Checking Step 4.4 migrated typechecker auxiliary test entries for high-level raw collection/string casts..."
+	@STEP44_TYPECHECKER_AUX_FILES="compiler/typechecker_templates_test_entry.gst compiler/typechecker_origins_test_entry.gst"; \
+	if rg -n '&ctx\[' $$STEP44_TYPECHECKER_AUX_FILES | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
+		echo "❌ Step 4.4 typechecker auxiliary guard failed: migrated test entries must not reintroduce direct arena collection/string casts."; \
+		exit 1; \
+	else \
+		echo "✅ Step 4.4 typechecker auxiliary guard passed."; \
 	fi
 
 guard_parser_high_level_raw_casts:

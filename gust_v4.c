@@ -43521,204 +43521,204 @@
 //    -> Found: Str
 // 🔍 Lookup span 6140..6143 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 6217..6220 prefix=''
+// 🔍 Lookup span 6232..6235 prefix=''
 //    -> Found: Arena
-// 🔍 Lookup span 6221..6236 prefix=''
+// 🔍 Lookup span 6236..6251 prefix=''
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Arena, index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6221..6225 prefix=''
+// 🔍 Lookup span 6236..6240 prefix=''
 //    -> Found: Struct("ast__Program_ctx", Some("ctx"))
-// 🔍 Lookup span 6329..6344 prefix=''
+// 🔍 Lookup span 6296..6310 prefix=''
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 6364..6375 prefix=''
+// 🔍 Lookup span 6326..6337 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6364..6375 prefix=''
+// 🔍 Lookup span 6326..6337 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6410..6425 prefix=''
+// 🔍 Lookup span 6371..6385 prefix=''
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 6427..6428 prefix=''
+// 🔍 Lookup span 6386..6387 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 6453..6454 prefix=''
+// 🔍 Lookup span 6408..6409 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 6497..6498 prefix=''
+// 🔍 Lookup span 6438..6439 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 6526..6551 prefix=''
+// 🔍 Lookup span 6467..6492 prefix=''
 //    -> Found: Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 6613..6638 prefix=''
+// 🔍 Lookup span 6554..6579 prefix=''
 //    -> Found: Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 6667..6692 prefix=''
+// 🔍 Lookup span 6608..6633 prefix=''
 //    -> Found: Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 6693..6700 prefix=''
+// 🔍 Lookup span 6634..6641 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_FileParserError_ctx_ctx, Erased name: std_Vector_FileParserError, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 6726..6729 prefix=''
+// 🔍 Lookup span 6667..6670 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6726..6729 prefix=''
+// 🔍 Lookup span 6667..6670 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6737..6774 prefix=''
+// 🔍 Lookup span 6678..6715 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 6793..6798 prefix=''
+// 🔍 Lookup span 6734..6739 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 6827..6832 prefix=''
+// 🔍 Lookup span 6768..6773 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 6827..6836 prefix=''
+// 🔍 Lookup span 6768..6777 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 6827..6832 prefix=''
+// 🔍 Lookup span 6768..6773 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 6827..6841 prefix=''
+// 🔍 Lookup span 6768..6782 prefix=''
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 6827..6836 prefix=''
+// 🔍 Lookup span 6768..6777 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 6827..6847 prefix=''
+// 🔍 Lookup span 6768..6788 prefix=''
 //    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 6827..6841 prefix=''
+// 🔍 Lookup span 6768..6782 prefix=''
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 6871..6876 prefix=''
+// 🔍 Lookup span 6812..6817 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 6871..6880 prefix=''
+// 🔍 Lookup span 6812..6821 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 6871..6876 prefix=''
+// 🔍 Lookup span 6812..6817 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 6871..6885 prefix=''
+// 🔍 Lookup span 6812..6826 prefix=''
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 6871..6880 prefix=''
+// 🔍 Lookup span 6812..6821 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 6871..6891 prefix=''
+// 🔍 Lookup span 6812..6832 prefix=''
 //    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 6871..6885 prefix=''
+// 🔍 Lookup span 6812..6826 prefix=''
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 6917..6922 prefix=''
+// 🔍 Lookup span 6858..6863 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 6917..6926 prefix=''
+// 🔍 Lookup span 6858..6867 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 6917..6922 prefix=''
+// 🔍 Lookup span 6858..6863 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 6949..6951 prefix=''
+// 🔍 Lookup span 6890..6892 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6949..6951 prefix=''
+// 🔍 Lookup span 6890..6892 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6977..6984 prefix=''
+// 🔍 Lookup span 6918..6925 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 7018..7020 prefix=''
+// 🔍 Lookup span 6959..6961 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7018..7020 prefix=''
+// 🔍 Lookup span 6959..6961 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7095..7106 prefix=''
+// 🔍 Lookup span 7036..7047 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7095..7106 prefix=''
+// 🔍 Lookup span 7036..7047 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7186..7191 prefix=''
+// 🔍 Lookup span 7127..7132 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 7215..7223 prefix=''
+// 🔍 Lookup span 7156..7164 prefix=''
 //    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 7224..7225 prefix=''
+// 🔍 Lookup span 7165..7166 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Program_ctx_ctx, Erased name: std_Vector_ast__Program, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 7250..7265 prefix=''
+// 🔍 Lookup span 7191..7206 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 7266..7267 prefix=''
+// 🔍 Lookup span 7207..7208 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 7279..7297 prefix=''
+// 🔍 Lookup span 7220..7238 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 7279..7282 prefix=''
+// 🔍 Lookup span 7220..7223 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 7316..7332 prefix=''
+// 🔍 Lookup span 7257..7273 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 7316..7319 prefix=''
+// 🔍 Lookup span 7257..7260 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 7335..7340 prefix=''
+// 🔍 Lookup span 7276..7281 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 7341..7342 prefix=''
+// 🔍 Lookup span 7282..7283 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 7398..7401 prefix=''
+// 🔍 Lookup span 7360..7363 prefix=''
 //    -> Found: Arena
-// 🔍 Lookup span 7402..7417 prefix=''
+// 🔍 Lookup span 7364..7379 prefix=''
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Arena, index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 7402..7406 prefix=''
+// 🔍 Lookup span 7364..7368 prefix=''
 //    -> Found: Struct("ast__Program_ctx", Some("ctx"))
-// 🔍 Lookup span 7510..7525 prefix=''
+// 🔍 Lookup span 7436..7456 prefix=''
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 7593..7595 prefix=''
+// 🔍 Lookup span 7520..7522 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7593..7595 prefix=''
+// 🔍 Lookup span 7520..7522 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7629..7642 prefix=''
+// 🔍 Lookup span 7552..7565 prefix=''
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 7629..7632 prefix=''
+// 🔍 Lookup span 7552..7555 prefix=''
 //    -> Found: Arena
-// 🔍 Lookup span 7633..7641 prefix=''
+// 🔍 Lookup span 7556..7564 prefix=''
 //    -> Found: Index("ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Arena, index type is Index("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 7646..7661 prefix=''
+// 🔍 Lookup span 7568..7588 prefix=''
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 7663..7664 prefix=''
+// 🔍 Lookup span 7589..7596 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 7683..7694 prefix=''
+// 🔍 Lookup span 7611..7622 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7683..7694 prefix=''
+// 🔍 Lookup span 7611..7622 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7756..7757 prefix=''
+// 🔍 Lookup span 7680..7687 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 7800..7801 prefix=''
+// 🔍 Lookup span 7722..7723 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 7829..7832 prefix=''
+// 🔍 Lookup span 7751..7754 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 7829..7839 prefix=''
+// 🔍 Lookup span 7751..7761 prefix=''
 //    -> Found: Struct("std_Vector_errors__CompilerError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 7889..7892 prefix=''
+// 🔍 Lookup span 7811..7814 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 7889..7899 prefix=''
+// 🔍 Lookup span 7811..7821 prefix=''
 //    -> Found: Struct("std_Vector_errors__CompilerError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 7926..7936 prefix=''
+// 🔍 Lookup span 7848..7858 prefix=''
 //    -> Found: Struct("std_Vector_errors__CompilerError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 7937..7938 prefix=''
+// 🔍 Lookup span 7859..7860 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_errors__CompilerError_ctx_ctx", Some("ctx")), index type is Int
-// 🔍 Lookup span 7926..7929 prefix=''
+// 🔍 Lookup span 7848..7851 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
 // 🕵️ Checking if type is Vector: Struct("std_Vector_errors__CompilerError_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_errors__CompilerError_ctx_ctx, Erased name: std_Vector_errors__CompilerError, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 7999..8000 prefix=''
+// 🔍 Lookup span 7921..7922 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 8028..8030 prefix=''
+// 🔍 Lookup span 7950..7952 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8028..8030 prefix=''
+// 🔍 Lookup span 7950..7952 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8118..8136 prefix=''
+// 🔍 Lookup span 8040..8058 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 8118..8121 prefix=''
+// 🔍 Lookup span 8040..8043 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 8186..8193 prefix=''
+// 🔍 Lookup span 8108..8115 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8186..8193 prefix=''
+// 🔍 Lookup span 8108..8115 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8254..8256 prefix=''
+// 🔍 Lookup span 8176..8178 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8254..8256 prefix=''
+// 🔍 Lookup span 8176..8178 prefix=''
 //    -> Found: Void
 // Transpiled C Code
 #include <stdio.h>
@@ -61039,14 +61039,12 @@ void gust_user_main(void* _gust_arg) {
     os_VectorPush(&module_prefixes, prefix);
     env.current_prefix = prefix;
     env.current_file = path;
-    {
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*((std_Vector_ast__Statement*)((char*)ctx.BaseAddress + prog.statements)))));
+    std_Vector_ast__Statement statements_vec = (*((std_Vector_ast__Statement*)((char*)ctx.BaseAddress + prog.statements)));
     int k = 0;
-    while ((k < (*(statements_vec)).len)) {
+    while ((k < statements_vec.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    typechecker__env_pre_register_statement(&(env), (*({ if (k < 0 || k >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[k]); })), &ctx);
+    typechecker__env_pre_register_statement(&(env), (*({ if (k < 0 || k >= statements_vec.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec.data[k]); })), &ctx);
     k = (k + 1);
-    }
     }
     i = (i + 1);
     }
@@ -61078,16 +61076,14 @@ void gust_user_main(void* _gust_arg) {
     Slice_unsigned_char prefix = (*({ if (j < 0 || j >= module_prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(module_prefixes.data[j]); }));
     env.current_prefix = prefix;
     env.current_file = (*({ if (j < 0 || j >= order.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(order.data[j]); }));
-    {
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*((std_Vector_ast__Statement*)((char*)ctx.BaseAddress + prog.statements)))));
-    int k = 0;
-    while ((k < (*(statements_vec)).len)) {
+    std_Vector_ast__Statement statements_vec_check = (*((std_Vector_ast__Statement*)((char*)ctx.BaseAddress + prog.statements)));
+    int k_check = 0;
+    while ((k_check < statements_vec_check.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     int stmt_idx = os_ArenaAlloc(&ctx, sizeof(ast__Statement));
-    (*((ast__Statement*)((char*)ctx.BaseAddress + stmt_idx))) = (*({ if (k < 0 || k >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[k]); }));
+    (*((ast__Statement*)((char*)ctx.BaseAddress + stmt_idx))) = (*({ if (k_check < 0 || k_check >= statements_vec_check.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_check.data[k_check]); }));
     typechecker__check_statement(stmt_idx, &(env), scope, &ctx);
-    k = (k + 1);
-    }
+    k_check = (k_check + 1);
     }
     j = (j + 1);
     }

@@ -138,8 +138,7 @@ func main() {
     unsafe {
         t_index.tag = 7; // Index
         t_index.Index.struct_name = std.Clone(ctx, "Node");
-        mut brand_ptr := &ctx[brand_idx] as *str;
-        *brand_ptr = "ctx_brand";
+        ctx[brand_idx] = "ctx_brand";
         t_index.Index.brand = brand_idx;
     }
     typechecker.scope_insert(scope, "var_b", t_index, ctx);
@@ -246,9 +245,9 @@ func main() {
     parser.init_parser(&p_guard_tc_test, &l_guard_tc_test, ctx);
     mut prog_guard_tc_test := parser.parse_program(&p_guard_tc_test, ctx);
     unsafe {
-        mut statements_vec := &ctx[prog_guard_tc_test.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut statements_vec_guard_tc_a: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_guard_tc_test.statements];
         mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx); 
-        ctx[guard_stmt_idx] = (*statements_vec)[0];
+        ctx[guard_stmt_idx] = statements_vec_guard_tc_a[0];
 
         mut env_tc_test := typechecker.env_new(ctx);
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
@@ -302,9 +301,9 @@ func main() {
     parser.init_parser(&p_guard_tc_test2, &l_guard_tc_test2, ctx);
     mut prog_guard_tc_test2 := parser.parse_program(&p_guard_tc_test2, ctx);
     unsafe {
-        mut statements_vec := &ctx[prog_guard_tc_test2.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut statements_vec_guard_tc_b: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_guard_tc_test2.statements];
         mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[guard_stmt_idx] = (*statements_vec)[0];
+        ctx[guard_stmt_idx] = statements_vec_guard_tc_b[0];
 
         mut env_tc_test := typechecker.env_new(ctx);
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
@@ -355,9 +354,9 @@ func main() {
     parser.init_parser(&p_guard_tc_test3, &l_guard_tc_test3, ctx);
     mut prog_guard_tc_test3 := parser.parse_program(&p_guard_tc_test3, ctx);
     unsafe {
-        mut statements_vec := &ctx[prog_guard_tc_test3.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut statements_vec_guard_tc_c: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_guard_tc_test3.statements];
         mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[guard_stmt_idx] = (*statements_vec)[0];
+        ctx[guard_stmt_idx] = statements_vec_guard_tc_c[0];
 
         mut env_tc_test := typechecker.env_new(ctx);
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
@@ -399,9 +398,9 @@ func main() {
     parser.init_parser(&p_guard_tc_test4, &l_guard_tc_test4, ctx);
     mut prog_guard_tc_test4 := parser.parse_program(&p_guard_tc_test4, ctx);
     unsafe {
-        mut statements_vec := &ctx[prog_guard_tc_test4.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut statements_vec_guard_tc_d: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_guard_tc_test4.statements];
         mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[guard_stmt_idx] = (*statements_vec)[0];
+        ctx[guard_stmt_idx] = statements_vec_guard_tc_d[0];
 
         mut env_tc_test := typechecker.env_new(ctx);
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
@@ -688,8 +687,7 @@ mut l_move3: lexer.Lexer[ctx];
         mut brand_str_idx: Index[str, ctx] := empty[Index[str, ctx]];
         unsafe {
             brand_str_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
-            mut brand_ptr := &ctx[brand_str_idx] as *str;
-            *brand_ptr = "my_custom_brand";
+            ctx[brand_str_idx] = "my_custom_brand";
     }
     layout_brand_test.brand = brand_str_idx;
     layout_brand_test.fields = std.HashMapNew(ctx);
