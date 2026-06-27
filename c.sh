@@ -101,6 +101,15 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_raw_pointer_safe_c
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_ffi_calls:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step51_ffi_calls ---"
+        (cd "$PROJECT_ROOT" && make report_step51_ffi_calls)
+        echo "--- END OF REPORT make report_step51_ffi_calls ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_phase_b_wrapping_status:' "$PROJECT_ROOT/Makefile"; then
     {
         echo "--- START OF REPORT make report_step51_phase_b_wrapping_status ---"
@@ -115,6 +124,15 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_phase_c_basic_unsa
         echo "--- START OF REPORT make report_step51_phase_c_basic_unsafe_status ---"
         (cd "$PROJECT_ROOT" && make report_step51_phase_c_basic_unsafe_status)
         echo "--- END OF REPORT make report_step51_phase_c_basic_unsafe_status ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_phase_d_ffi_status:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step51_phase_d_ffi_status ---"
+        (cd "$PROJECT_ROOT" && make report_step51_phase_d_ffi_status)
+        echo "--- END OF REPORT make report_step51_phase_d_ffi_status ---"
         echo
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
