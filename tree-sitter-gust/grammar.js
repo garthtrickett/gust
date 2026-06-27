@@ -78,7 +78,9 @@ module.exports = grammar({
 
     // func updateNode(ctx: &Arena, node: Index[CustomNode, ctx]) { ... }
     // unsafe func raw_update(ptr: *int) { ... }
+    // extern func c_add(x: int) int { return x; }
     function_declaration: $ => seq(
+      optional('extern'),
       optional('unsafe'),
       'func',
       $.identifier,

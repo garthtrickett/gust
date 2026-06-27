@@ -1071,9 +1071,22 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
     unsafe {
         mut start_span := (*p).cur_token.span;
         mut is_unsafe_decl := 0;
+        mut is_extern_decl := 0;
+        if cur_token_is(p, 48) { // Extern = 48
+            is_extern_decl = 1;
+            next_token(p); // consume 'extern'
+        }
         if cur_token_is(p, 38) { // Unsafe = 38
             is_unsafe_decl = 1;
             next_token(p); // consume 'unsafe'
+        }
+        if cur_token_is(p, 30) == false { // Func = 30
+            mut err_expected_func: errors.CompilerError[Any];
+            err_expected_func.kind.tag = 1; // ParserError
+            err_expected_func.message = "Expected 'func' after extern/unsafe function prefix";
+            err_expected_func.span = (*p).cur_token.span;
+            (*p).errors.Push(err_expected_func);
+            return empty[Index[ast.Statement[ctx], ctx]];
         }
         next_token(p); // consume 'func'
         if cur_token_is(p, 2) == false { // Ident = 2
@@ -1085,6 +1098,12 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
             return empty[Index[ast.Statement[ctx], ctx]];
         }
         mut name := std.Clone(*ctx, (*p).cur_token.literal);
+        mut extern_symbol_name_decl := "";
+        mut requires_unsafe_call_decl := 0;
+        if is_extern_decl == 1 {
+            extern_symbol_name_decl = name;
+            requires_unsafe_call_decl = 1;
+        }
         next_token(p);
 
         if cur_token_is(p, 11) == false { // LParen = 11
@@ -1191,10 +1210,10 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
 
         stmt_function_parse.FunctionDecl.name = name;
         stmt_function_parse.FunctionDecl.is_unsafe = is_unsafe_decl;
-        stmt_function_parse.FunctionDecl.is_extern = 0;
-        stmt_function_parse.FunctionDecl.extern_symbol_name = "";
+        stmt_function_parse.FunctionDecl.is_extern = is_extern_decl;
+        stmt_function_parse.FunctionDecl.extern_symbol_name = extern_symbol_name_decl;
         stmt_function_parse.FunctionDecl.extern_abi = "C";
-        stmt_function_parse.FunctionDecl.requires_unsafe_call = 0;
+        stmt_function_parse.FunctionDecl.requires_unsafe_call = requires_unsafe_call_decl;
         stmt_function_parse.FunctionDecl.requires_layout_metadata = 0;
         stmt_function_parse.FunctionDecl.requires_sandbox_arena = 0;
 
@@ -1420,6 +1439,10 @@ func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx
                 return parse_function_decl(p, ctx);
             }
             return parse_unsafe_block(p, ctx);
+        }
+
+        if cur_token_is(p, 48) { // Extern = 48
+            return parse_function_decl(p, ctx);
         }
 
         if cur_token_is(p, 43) { // Return = 43

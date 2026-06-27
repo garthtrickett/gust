@@ -9,7 +9,7 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
-.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_address_escapes_focused report_step51_ffi_calls report_step51_ffi_focused report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement guard_step51_basic_unsafe_enforcement guard_step51_report_only_lanes_not_in_test report_step51_phase_c_basic_unsafe_status report_step51_phase_d_ffi_status report_step51_phase_e_address_escape_status report_step51_phase_f_non_laundering_status report_step51_deferred_unsafe_semantics_status report_step51_status_matrix report_step51_raw_pointer_safety_inventory report_step51_final_validation report_step52_linear_resource_inventory report_step52_linear_resource_focused report_step52_phase_a_status report_step52_phase_b_destructor_status report_step52_phase_c_resource_registry_status report_step52_phase_d_transfer_status report_step52_phase_e_enforcement_preconditions_status report_step52_phase_f_closure_status report_step52_status_matrix guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn report_step52_final_validation
+.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_address_escapes_focused report_step51_ffi_calls report_step51_ffi_focused report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement guard_step51_extern_func_parser_metadata guard_step51_basic_unsafe_enforcement guard_step51_report_only_lanes_not_in_test report_step51_phase_c_basic_unsafe_status report_step51_phase_d_ffi_status report_step51_phase_e_address_escape_status report_step51_phase_f_non_laundering_status report_step51_deferred_unsafe_semantics_status report_step51_status_matrix report_step51_raw_pointer_safety_inventory report_step51_final_validation report_step52_linear_resource_inventory report_step52_linear_resource_focused report_step52_phase_a_status report_step52_phase_b_destructor_status report_step52_phase_c_resource_registry_status report_step52_phase_d_transfer_status report_step52_phase_e_enforcement_preconditions_status report_step52_phase_f_closure_status report_step52_status_matrix guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn report_step52_final_validation
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -48,7 +48,7 @@ bootstrap: gust
 	touch build/gust_compiler.c
 	touch gust
 
-test: gust guard_step45_safe_subscript_write_enforcement guard_step51_basic_unsafe_enforcement guard_step51_report_only_lanes_not_in_test guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
+test: gust guard_step45_safe_subscript_write_enforcement guard_step51_basic_unsafe_enforcement guard_step51_extern_func_parser_metadata guard_step51_report_only_lanes_not_in_test guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
 	@mkdir -p build
 	@echo "⚙️  Compiling native Gust test runner..."
 	@./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
@@ -213,8 +213,8 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   - full raw-derived provenance/non-laundering through assignments, calls, returns, and containers"
 	@echo "   Inert compiler carrier: FunctionSignature has direct FFI metadata fields."
 	@echo "   Inert AST carrier: FunctionDecl carries matching direct FFI metadata defaults."
-	@echo "   Inert defaults: compiler-created and parsed signatures initialize as non-extern C ABI with layout/sandbox requirements disabled."
-	@echo "   Next semantic checkpoint: explicit extern parser syntax population, not regex enforcement."
+	@echo "   Inert extern syntax: parser accepts extern func with C ABI defaults and unsafe-call metadata."
+	@echo "   Next semantic checkpoint: bodyless extern declarations and/or call-site gating, not regex enforcement."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
 
@@ -226,6 +226,7 @@ report_step51_status_matrix:
 	@echo "   ✅ pointer arithmetic outside unsafe: make guard_step51_pointer_arithmetic_unsafe_enforcement"
 	@echo "   ✅ unsafe function calls outside unsafe: make guard_step51_unsafe_func_call_enforcement"
 	@echo "   ✅ local raw-derived pointer return escape: make guard_step51_raw_pointer_local_escape_enforcement"
+	@echo "   ✅ extern function parser metadata: make guard_step51_extern_func_parser_metadata"
 	@echo "   Aggregate: make guard_step51_basic_unsafe_enforcement"
 	@echo "   Report-only / deferred lanes:"
 	@echo "   🧭 FFI gating, layout annotations, and sandboxed FFI: make report_step51_phase_d_ffi_status"
@@ -297,6 +298,7 @@ report_step51_final_validation:
 	@echo "   make report_step51_ffi_focused"
 	@echo "   make report_step51_address_escapes_focused"
 	@echo "   make guard_step51_basic_unsafe_enforcement"
+	@echo "   make guard_step51_extern_func_parser_metadata"
 	@echo "   make guard_step51_raw_deref_unsafe_enforcement"
 	@echo "   make guard_step51_raw_cast_unsafe_enforcement"
 	@echo "   make guard_step51_pointer_arithmetic_unsafe_enforcement"
@@ -710,6 +712,28 @@ guard_step51_raw_pointer_local_escape_enforcement: gust
 		exit 1; \
 	fi
 	@echo "✅ Step 5.1 raw pointer local escape analysis guard passed."
+
+guard_step51_extern_func_parser_metadata: gust
+	@echo "🔒 Checking Step 5.1 extern function parser metadata..."
+	@mkdir -p build
+	@./gust compiler/parser_ffi_metadata_test_entry.gst > build/step51_extern_func_parser_metadata.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "❌ Step 5.1 extern parser metadata guard failed: compiler rejected the parser metadata fixture."; \
+		cat build/step51_extern_func_parser_metadata.log; \
+		exit $$status; \
+	fi
+	@grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/step51_extern_func_parser_metadata.log > build/parser_ffi_metadata_test_entry.c
+	@cat src/runtime.c build/parser_ffi_metadata_test_entry.c > build/parser_ffi_metadata_test_entry_final.c
+	@${CC} ${CFLAGS} ${INCLUDES} build/parser_ffi_metadata_test_entry_final.c -o build/parser_ffi_metadata_test_entry_bin
+	@./build/parser_ffi_metadata_test_entry_bin >> build/step51_extern_func_parser_metadata.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "❌ Step 5.1 extern parser metadata guard failed at runtime."; \
+		cat build/step51_extern_func_parser_metadata.log; \
+		exit $$status; \
+	fi
+	@echo "✅ Step 5.1 extern function parser metadata guard passed."
 
 guard_step51_basic_unsafe_enforcement: guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement
 	@echo "✅ Step 5.1 basic unsafe enforcement aggregate passed."

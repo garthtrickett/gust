@@ -182,6 +182,7 @@ func lookup_ident(literal: str) token.TokenType {
         if std.str_eq(literal, "bool") { t.tag = 45; return t; }
         if std.str_eq(literal, "true") { t.tag = 46; return t; }
         if std.str_eq(literal, "false") { t.tag = 47; return t; }
+        if std.str_eq(literal, "extern") { t.tag = 48; return t; }
     }
     return t;
 }

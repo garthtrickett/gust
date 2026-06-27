@@ -16,6 +16,7 @@
   "move"
   "take"
   "unsafe"
+  "extern"
   "empty"
 ] @keyword
 
