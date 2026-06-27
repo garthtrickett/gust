@@ -5,5 +5,6 @@ func main() {
     mut ctx2 := os.Arena.New();
     defer ctx2.Free();
     mut node: Index[CustomNode, ctx1] := os.ArenaAlloc(ctx1);
-    ctx2[node].SessionID = 42;
+    mut bad_ref_lifetime := ctx2.get_ref(node);
+    bad_ref_lifetime.SessionID = 42;
 }

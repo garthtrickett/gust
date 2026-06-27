@@ -7,5 +7,6 @@ func main() {
     mut vec: Vector[Index[Node, ctx1], ctx1] := os.VectorNew(ctx1);
     mut n: Index[Node, ctx1] := os.ArenaAlloc(ctx1);
     vec.Push(n);
-    ctx2[vec[0]].val = 100;
+    mut bad_ref_vector_brand := ctx2.get_ref(vec[0]);
+    bad_ref_vector_brand.val = 100;
 }

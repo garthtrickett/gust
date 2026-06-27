@@ -10,7 +10,8 @@ func main() {
     defer ctx_right.Free();
 
     mut left_idx: Index[BrandNode, ctx_left] := os.ArenaAlloc(ctx_left);
-    ctx_left[left_idx].val = 7;
+    mut left_ref_brand_setup := ctx_left.get_ref(left_idx);
+    left_ref_brand_setup.val = 7;
 
     // Reject: left_idx is branded with ctx_left, but receiver is ctx_right.
     mut wrong_ref := ctx_right.get_ref(left_idx);

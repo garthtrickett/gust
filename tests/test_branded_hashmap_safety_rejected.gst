@@ -7,5 +7,6 @@ func main() {
     mut map: HashMap[int, Index[Node, ctx1], ctx1] := os.HashMapNew(ctx1);
     mut n: Index[Node, ctx1] := os.ArenaAlloc(ctx1);
     map.Insert(1, n);
-    ctx2[map[1]].val = 100;
+    mut bad_ref_hashmap_brand := ctx2.get_ref(map[1]);
+    bad_ref_hashmap_brand.val = 100;
 }
