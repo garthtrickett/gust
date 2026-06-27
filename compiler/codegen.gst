@@ -4730,13 +4730,13 @@ typedef void Any;
         while fwd_p_idx < len(programs) {
             mut prog := programs[fwd_p_idx];
             (*env).current_prefix = prefixes[fwd_p_idx];
-            mut fwd_statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+            mut fwd_statements_vec_program_pass: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
             mut fwd_s_idx := 0;
-            while fwd_s_idx < len(*fwd_statements_vec) {
-                mut stmt := (*fwd_statements_vec)[fwd_s_idx];
+            while fwd_s_idx < len(fwd_statements_vec_program_pass) {
+                mut stmt := fwd_statements_vec_program_pass[fwd_s_idx];
                 if stmt.tag == 3 { // FunctionDecl
-                    mut params_vec := &ctx[stmt.FunctionDecl.params] as *std.Vector[ast.Parameter[ctx], ctx];
-                    if len(*params_vec) == 1 {
+                    mut params_vec_pthread_fwd: std.Vector[ast.Parameter[ctx], ctx] := ctx[stmt.FunctionDecl.params];
+                    if len(params_vec_pthread_fwd) == 1 {
                         mut f_name := stmt.FunctionDecl.name;
                         mut namespaced_name := typechecker.env_resolve_namespaced_ident(env, f_name, ctx);
                         mut c_func_name := "";
@@ -4836,11 +4836,11 @@ typedef void Any;
         while p_idx2 < len(programs) {
             mut prog := programs[p_idx2];
             (*env).current_prefix = prefixes[p_idx2];
-            mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
+            mut statements_vec_program_emit: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
             mut s_idx := 0;
-            while s_idx < len(*statements_vec) {
+            while s_idx < len(statements_vec_program_emit) {
                 mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[stmt_idx] = (*statements_vec)[s_idx];
+                ctx[stmt_idx] = statements_vec_program_emit[s_idx];
                 mut stmt_c := codegen_generate_statement(stmt_idx, env, ctx);
                 c_code = std.Concat(c_code, stmt_c);
                 s_idx = s_idx + 1;
