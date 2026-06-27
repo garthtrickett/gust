@@ -334,7 +334,9 @@ func expression_provenance_is_raw_or_sandbox_derived(prov: ExpressionProvenance[
 
 func expression_provenance_void_unknown(ctx: &Arena) ExpressionProvenance[ctx] {
     mut t_void_ret_prov: ast.Type[ctx];
-    t_void_ret_prov.tag = 3; // Void
+    unsafe {
+        t_void_ret_prov.tag = 3; // Void
+    }
     return expression_provenance_unknown(t_void_ret_prov, ctx);
 }
 
