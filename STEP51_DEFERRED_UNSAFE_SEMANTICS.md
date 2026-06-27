@@ -85,7 +85,7 @@ The helper predicates classify whether an origin allows safe branding, whether i
 
 The compiler now has inert layout-aware FFI helper predicates that connect direct FFI metadata to the payload-safe struct layout registry without rejecting programs yet. `function_signature_requires_layout_policy` reports whether a signature explicitly requires layout metadata. `env_struct_has_explicit_ffi_layout` reports whether a namespaced struct has any explicit layout metadata. `env_struct_satisfies_c_ffi_layout` reports whether a struct has `repr(C)` metadata with C ABI, and `env_struct_missing_c_ffi_layout` is the negative predicate for future diagnostics.
 
-These helpers are guardable building blocks for later call-site validation. They do not yet inspect function argument or return types, reject extern declarations, emit C prototypes, alter struct layout codegen, or infer layout policy from broad text scans.
+These helpers are guardable building blocks for later call-site validation. Type-level helpers now classify whether a resolved `ast.Type[ctx]` requires explicit C FFI layout, satisfies C FFI layout, or is missing C FFI layout. Signature-level helpers can scan resolved parameters and return types for missing C FFI layout when `requires_layout_metadata = 1`. They still do not reject extern declarations, emit C prototypes, alter struct layout codegen, or infer layout policy from broad text scans.
 
 ### Classification rule
 
@@ -117,8 +117,9 @@ Direct external/native calls reject outside an explicit unsafe context with the 
 12. Add inert sandbox policy helper carriers over `FunctionSignature[ctx]` without changing parser syntax, runtime behavior, or codegen.
 13. Define inert address-origin metadata that separates safe-arena, raw-derived, sandbox-derived, and unknown origins.
 14. Add inert layout-aware FFI helper predicates that connect signature layout requirements to payload-safe struct layout metadata.
-15. Extend provenance tracking so raw-derived and sandbox-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
-16. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
+15. Add inert type/signature-level C FFI layout helpers over resolved params and return types without rejecting declarations.
+16. Extend provenance tracking so raw-derived and sandbox-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
+17. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
 
 ## Step 5.2 sequencing rule
 

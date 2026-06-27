@@ -4672,6 +4672,50 @@ func env_struct_missing_c_ffi_layout(env: *TypeEnvironment[ctx], name: str, ctx:
     return 1;
 }
 
+func env_type_requires_explicit_c_ffi_layout(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) int {
+    if t.tag == 8 { // Struct
+        return 1;
+    }
+    return 0;
+}
+
+func env_type_satisfies_c_ffi_layout(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) int {
+    if t.tag == 8 { // Struct
+        return env_struct_satisfies_c_ffi_layout(env, t.Struct.struct_name, ctx);
+    }
+    return 1;
+}
+
+func env_type_missing_c_ffi_layout(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) int {
+    if env_type_requires_explicit_c_ffi_layout(env, t, ctx) == 1 {
+        if env_type_satisfies_c_ffi_layout(env, t, ctx) == 0 {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+func function_signature_missing_c_ffi_layout(env: *TypeEnvironment[ctx], sig: FunctionSignature[ctx], ctx: &Arena) int {
+    if function_signature_requires_layout_policy(sig) == 0 {
+        return 0;
+    }
+
+    mut i := 0;
+    while i < len(sig.params) {
+        mut param_type := sig.params[i];
+        if env_type_missing_c_ffi_layout(env, param_type, ctx) == 1 {
+            return 1;
+        }
+        i = i + 1;
+    }
+
+    if env_type_missing_c_ffi_layout(env, sig.return_type, ctx) == 1 {
+        return 1;
+    }
+
+    return 0;
+}
+
 func env_register_function(env: *TypeEnvironment[ctx], name: str, sig: FunctionSignature[ctx], ctx: &Arena) {
     unsafe {
         (*env).function_registry.Insert(std.Clone(ctx, name), sig);
