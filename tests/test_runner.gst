@@ -1164,19 +1164,19 @@ func main() {
     mut t132: Test[ctx];
     t132.path = "tests/test_brand_lifetime_mismatch_rejected.gst";
     t132.is_negative = 1;
-    t132.expected = "Value-Branded";
+    t132.expected = "BrandMismatch";
     tests.Push(t132);
 
     mut t133: Test[ctx];
     t133.path = "tests/test_branded_vector_safety_rejected.gst";
     t133.is_negative = 1;
-    t133.expected = "Value-Branded";
+    t133.expected = "BrandMismatch";
     tests.Push(t133);
 
     mut t134: Test[ctx];
     t134.path = "tests/test_branded_hashmap_safety_rejected.gst";
     t134.is_negative = 1;
-    t134.expected = "Value-Branded";
+    t134.expected = "BrandMismatch";
     tests.Push(t134);
 
     mut t135: Test[ctx];
