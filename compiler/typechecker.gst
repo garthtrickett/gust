@@ -4490,9 +4490,10 @@ func typechecker_get_file_stem(path: str, ctx: &Arena) str {
 func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     mut res_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        ctx[res_idx] = t;
+        ctx.Set(res_idx, t);
+        mut res_ref_env_resolve_type := ctx.get_ref(res_idx);
         if t.tag == 7 { // Index
-            ctx[res_idx].Index.struct_name = env_resolve_namespaced_ident(env, t.Index.struct_name, ctx);
+            res_ref_env_resolve_type.Index.struct_name = env_resolve_namespaced_ident(env, t.Index.struct_name, ctx);
             
             mut brand_name := "";
             if t.Index.brand != empty[Index[str, ctx]] {
@@ -4510,12 +4511,12 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
             (*env).active_monomorphizations = temp_active;
 
             if resolved_inner.tag == 8 { // Struct
-                ctx[res_idx].Index.struct_name = std.Clone(ctx, resolved_inner.Struct.struct_name); 
+                res_ref_env_resolve_type.Index.struct_name = std.Clone(ctx, resolved_inner.Struct.struct_name); 
             }
         } else {
             if t.tag == 8 { // Struct
                 mut namespaced_name := env_resolve_namespaced_ident(env, t.Struct.struct_name, ctx);
-                ctx[res_idx].Struct.struct_name = namespaced_name;
+                res_ref_env_resolve_type.Struct.struct_name = namespaced_name;
                 
                 mut brand_name := 'None';
                 if t.Struct.brand != empty[Index[str, ctx]] {
@@ -4707,22 +4708,22 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                 mut temp_active := (*env).active_monomorphizations;
                 (*env).active_monomorphizations = std.HashMapNew(ctx);
 
-                ctx[inner_idx] = env_resolve_type(env, ctx[t.RawPointer.inner], ctx);
+                ctx.Set(inner_idx, env_resolve_type(env, ctx[t.RawPointer.inner], ctx));
 
                 (*env).active_monomorphizations = temp_active;
 
-                ctx[res_idx].RawPointer.inner = inner_idx;
+                res_ref_env_resolve_type.RawPointer.inner = inner_idx;
             } else if t.tag == 11 { // Reference
                 mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
 
                 mut temp_active := (*env).active_monomorphizations;
                 (*env).active_monomorphizations = std.HashMapNew(ctx);
 
-                ctx[inner_idx] = env_resolve_type(env, ctx[t.Reference.inner], ctx);
+                ctx.Set(inner_idx, env_resolve_type(env, ctx[t.Reference.inner], ctx));
 
                 (*env).active_monomorphizations = temp_active;
 
-                ctx[res_idx].Reference.inner = inner_idx;
+                res_ref_env_resolve_type.Reference.inner = inner_idx;
             } else {
                 if t.tag == 6 { // Slice
                     mut inner_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
@@ -4730,11 +4731,11 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                     mut temp_active := (*env).active_monomorphizations;
                     (*env).active_monomorphizations = std.HashMapNew(ctx);
 
-                    ctx[inner_idx] = env_resolve_type(env, ctx[t.Slice.inner], ctx);
+                    ctx.Set(inner_idx, env_resolve_type(env, ctx[t.Slice.inner], ctx));
 
                     (*env).active_monomorphizations = temp_active;
 
-                    ctx[res_idx].Slice.inner = inner_idx;
+                    res_ref_env_resolve_type.Slice.inner = inner_idx;
                 } else {
                         if t.tag == 10 { // Generic
                             mut name := env_resolve_namespaced_ident(env, t.Generic.name, ctx);
@@ -5138,7 +5139,7 @@ func is_diverging_block(block_idx: Index[ast.BlockStatement[ctx], ctx], env: *Ty
         mut i := 0;
         while i < len(statements_vec_diverging_block) {
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = statements_vec_diverging_block[i];
+            ctx.Set(stmt_idx, statements_vec_diverging_block[i]);
             if is_diverging_statement(stmt_idx, env, ctx) == 1 {
                 return 1;
             }
@@ -5193,7 +5194,7 @@ func expression_to_string(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena
                     args_str = std.Concat(args_str, ", ");
                 }
                 mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg_idx] = args_vec_expression_to_string[i];
+                ctx.Set(arg_idx, args_vec_expression_to_string[i]);
                 args_str = std.Concat(args_str, expression_to_string(arg_idx, ctx));
                 i = i + 1;
             }
@@ -5480,7 +5481,7 @@ func typechecker_substitute_brand(t: ast.Type[ctx], new_brand: Index[str, ctx], 
             mut res_t: ast.Type[ctx];
             res_t.tag = 9;
             res_t.RawPointer.inner = os.ArenaAlloc(ctx);
-            ctx[res_t.RawPointer.inner] = sub_inner;
+            ctx.Set(res_t.RawPointer.inner, sub_inner);
             return res_t;
         }
         if t.tag == 6 { // Slice
@@ -5489,7 +5490,7 @@ func typechecker_substitute_brand(t: ast.Type[ctx], new_brand: Index[str, ctx], 
             mut res_t: ast.Type[ctx];
             res_t.tag = 6;
             res_t.Slice.inner = os.ArenaAlloc(ctx);
-            ctx[res_t.Slice.inner] = sub_inner;
+            ctx.Set(res_t.Slice.inner, sub_inner);
             return res_t;
         }
         if t.tag == 11 { // Reference
@@ -5498,7 +5499,7 @@ func typechecker_substitute_brand(t: ast.Type[ctx], new_brand: Index[str, ctx], 
             mut res_t: ast.Type[ctx];
             res_t.tag = 11;
             res_t.Reference.inner = os.ArenaAlloc(ctx);
-            ctx[res_t.Reference.inner] = sub_inner;
+            ctx.Set(res_t.Reference.inner, sub_inner);
             res_t.Reference.brand = new_brand;
             return res_t;
         }
@@ -5545,7 +5546,7 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
                     }
                     
                     mut new_brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-                    ctx[new_brand_idx] = std.Clone(ctx, new_brand);
+                    ctx.Set(new_brand_idx, std.Clone(ctx, new_brand));
                     
                     res_type.tag = 7; // Index
                     res_type.Index.struct_name = std.Clone(ctx, struct_name);
@@ -5580,7 +5581,7 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
                     }
                     
                     mut new_brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-                    ctx[new_brand_idx] = std.Clone(ctx, new_brand);
+                    ctx.Set(new_brand_idx, std.Clone(ctx, new_brand));
                     
                     res_type.tag = 8; // Struct
                     res_type.Struct.struct_name = std.Clone(ctx, struct_name);
@@ -5594,7 +5595,7 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
             mut sub_inner := typechecker_substitute_brand_names(inner, old_brand, new_brand, ctx);
             res_type.tag = 9;
             res_type.RawPointer.inner = os.ArenaAlloc(ctx);
-            ctx[res_type.RawPointer.inner] = sub_inner;
+            ctx.Set(res_type.RawPointer.inner, sub_inner);
             return res_type;
         }
         if t.tag == 6 { // Slice
@@ -5602,7 +5603,7 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
             mut sub_inner := typechecker_substitute_brand_names(inner, old_brand, new_brand, ctx);
             res_type.tag = 6;
             res_type.Slice.inner = os.ArenaAlloc(ctx);
-            ctx[res_type.Slice.inner] = sub_inner;
+            ctx.Set(res_type.Slice.inner, sub_inner);
             return res_type;
         }
         if t.tag == 11 { // Reference
@@ -5612,14 +5613,14 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
                 mut old_b_clean := strip_brand_prefix(old_b, ctx);
                 if std.str_eq(std.Clone(ctx, old_b_clean), std.Clone(ctx, old_brand)) == 1 {
                     new_brand_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
-                    ctx[new_brand_idx] = std.Clone(ctx, new_brand);
+                    ctx.Set(new_brand_idx, std.Clone(ctx, new_brand));
                 }
             }
             mut inner := ctx[t.Reference.inner];
             mut sub_inner := typechecker_substitute_brand_names(inner, old_brand, new_brand, ctx);
             res_type.tag = 11;
             res_type.Reference.inner = os.ArenaAlloc(ctx);
-            ctx[res_type.Reference.inner] = sub_inner;
+            ctx.Set(res_type.Reference.inner, sub_inner);
             res_type.Reference.brand = new_brand_idx;
             return res_type;
         }
@@ -5634,7 +5635,7 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
             res_type.tag = 10;
             res_type.Generic.name = std.Clone(ctx, t.Generic.name);
             res_type.Generic.args = os.ArenaAlloc(ctx);
-            ctx[res_type.Generic.args] = new_args;
+            ctx.Set(res_type.Generic.args, new_args);
             return res_type;
         }
         return t;
@@ -5661,7 +5662,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
                     res = std.Concat(res, original_brand);
                     
                     mut new_brand: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-                    ctx[new_brand] = std.Clone(ctx, res);
+                    ctx.Set(new_brand, std.Clone(ctx, res));
                     
                     mut res_t: ast.Type[ctx];
                     res_t.tag = 7;
@@ -5690,7 +5691,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
                     res = std.Concat(res, original_brand);
                     
                     mut new_brand: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-                    ctx[new_brand] = std.Clone(ctx, res);
+                    ctx.Set(new_brand, std.Clone(ctx, res));
                     
                     mut res_t: ast.Type[ctx];
                     res_t.tag = 8;
@@ -5712,7 +5713,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
             mut res_t: ast.Type[ctx];
             res_t.tag = 9;
             res_t.RawPointer.inner = os.ArenaAlloc(ctx);
-            ctx[res_t.RawPointer.inner] = sub_inner;
+            ctx.Set(res_t.RawPointer.inner, sub_inner);
             return res_t;
         }
         if t.tag == 6 { // Slice
@@ -5721,7 +5722,7 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
             mut res_t: ast.Type[ctx];
             res_t.tag = 6;
             res_t.Slice.inner = os.ArenaAlloc(ctx);
-            ctx[res_t.Slice.inner] = sub_inner;
+            ctx.Set(res_t.Slice.inner, sub_inner);
             return res_t;
         }
         if t.tag == 11 { // Reference
@@ -5737,19 +5738,19 @@ func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[st
                     res = std.Concat(res, original_brand);
                     
                     mut new_brand: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-                    ctx[new_brand] = std.Clone(ctx, res);
+                    ctx.Set(new_brand, std.Clone(ctx, res));
                     
                     mut res_t: ast.Type[ctx];
                     res_t.tag = 11;
                     res_t.Reference.inner = os.ArenaAlloc(ctx);
-                    ctx[res_t.Reference.inner] = typechecker_substitute_field_brand(ctx[t.Reference.inner], struct_brand, parent_path, layout, ctx);
+                    ctx.Set(res_t.Reference.inner, typechecker_substitute_field_brand(ctx[t.Reference.inner], struct_brand, parent_path, layout, ctx));
                     res_t.Reference.brand = new_brand;
                     return res_t;
                 } else {
                     mut res_t: ast.Type[ctx];
                     res_t.tag = 11;
                     res_t.Reference.inner = os.ArenaAlloc(ctx);
-                    ctx[res_t.Reference.inner] = typechecker_substitute_field_brand(ctx[t.Reference.inner], struct_brand, parent_path, layout, ctx);
+                    ctx.Set(res_t.Reference.inner, typechecker_substitute_field_brand(ctx[t.Reference.inner], struct_brand, parent_path, layout, ctx));
                     res_t.Reference.brand = struct_brand;
                     return res_t;
                 }
