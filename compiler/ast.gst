@@ -492,7 +492,7 @@ func serialize_expression(expr_idx: Index[Expression[ctx], ctx], indent: int, ct
             mut i := 0;
             while i < len(args_vec) {
                 mut arg_idx: Index[Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx.Set(arg_idx, args_vec[i]);
+                ctx[arg_idx] = args_vec[i];
                 mut arg_str := serialize_expression(arg_idx, indent + 1, ctx);
                 res = std.Concat(res, arg_str);
                 i = i + 1;
@@ -523,7 +523,7 @@ func serialize_block_statement(block_idx: Index[BlockStatement[ctx], ctx], inden
         mut i := 0;
         while i < len(statements_vec) {
             mut stmt_idx: Index[Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx.Set(stmt_idx, statements_vec[i]);
+            ctx[stmt_idx] = statements_vec[i];
             mut stmt_str := serialize_statement(stmt_idx, indent + 1, ctx);
             res = std.Concat(res, stmt_str);
             i = i + 1;
@@ -760,7 +760,7 @@ func serialize_program(prog: *Program[ctx], indent: int, ctx: &Arena) str {
         mut i := 0;
         while i < len(statements_vec) {
             mut stmt_idx: Index[Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx.Set(stmt_idx, statements_vec[i]);
+            ctx[stmt_idx] = statements_vec[i];
             mut stmt_str := serialize_statement(stmt_idx, indent + 1, ctx);
             res = std.Concat(res, stmt_str);
             i = i + 1;
