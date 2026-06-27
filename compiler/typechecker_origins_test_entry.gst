@@ -138,7 +138,8 @@ func main() {
     unsafe {
         t_index.tag = 7; // Index
         t_index.Index.struct_name = std.Clone(ctx, "Node");
-        ctx[brand_idx] = "ctx_brand";
+        brand_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
+        ctx.Set(brand_idx, "ctx_brand");
         t_index.Index.brand = brand_idx;
     }
     typechecker.scope_insert(scope, "var_b", t_index, ctx);
@@ -247,7 +248,7 @@ func main() {
     unsafe {
         mut statements_vec_guard_tc_a: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_guard_tc_test.statements];
         mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx); 
-        ctx[guard_stmt_idx] = statements_vec_guard_tc_a[0];
+        ctx.Set(guard_stmt_idx, statements_vec_guard_tc_a[0]);
 
         mut env_tc_test := typechecker.env_new(ctx);
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
@@ -255,7 +256,7 @@ func main() {
         // Mock expected return type to allow top-level return statement inside else block
         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
         env_tc_test.expected_return_type = os.ArenaAlloc(ctx);
-        ctx[env_tc_test.expected_return_type] = t_void;
+        ctx.Set(env_tc_test.expected_return_type, t_void);
 
         mut result := typechecker.check_statement(guard_stmt_idx, &env_tc_test, scope_tc_test, ctx);
         
@@ -303,7 +304,7 @@ func main() {
     unsafe {
         mut statements_vec_guard_tc_b: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_guard_tc_test2.statements];
         mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[guard_stmt_idx] = statements_vec_guard_tc_b[0];
+        ctx.Set(guard_stmt_idx, statements_vec_guard_tc_b[0]);
 
         mut env_tc_test := typechecker.env_new(ctx);
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
@@ -311,7 +312,7 @@ func main() {
         // Mock expected return type to allow top-level return statement inside else block
         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
         env_tc_test.expected_return_type = os.ArenaAlloc(ctx);
-        ctx[env_tc_test.expected_return_type] = t_void;
+        ctx.Set(env_tc_test.expected_return_type, t_void);
 
         // Register custom fallible wrapper
         mut fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
@@ -356,7 +357,7 @@ func main() {
     unsafe {
         mut statements_vec_guard_tc_c: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_guard_tc_test3.statements];
         mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[guard_stmt_idx] = statements_vec_guard_tc_c[0];
+        ctx.Set(guard_stmt_idx, statements_vec_guard_tc_c[0]);
 
         mut env_tc_test := typechecker.env_new(ctx);
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
@@ -400,7 +401,7 @@ func main() {
     unsafe {
         mut statements_vec_guard_tc_d: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_guard_tc_test4.statements];
         mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[guard_stmt_idx] = statements_vec_guard_tc_d[0];
+        ctx.Set(guard_stmt_idx, statements_vec_guard_tc_d[0]);
 
         mut env_tc_test := typechecker.env_new(ctx);
         mut scope_tc_test := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
@@ -564,7 +565,9 @@ func main() {
     unsafe {
         t_ptr_test.tag = 9; // RawPointer
         t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+        mut t_ptr_inner_linear_origins: ast.Type[ctx];
+        t_ptr_inner_linear_origins.tag = 0; // Int
+        ctx.Set(t_ptr_test.RawPointer.inner, t_ptr_inner_linear_origins);
     }
     os.LogInt(typechecker.env_type_is_linear(t_ptr_test, &env, ctx)); // Expected: 1
 
@@ -625,7 +628,9 @@ func main() {
     unsafe {
         t_slice_test.tag = 6; // Slice
         t_slice_test.Slice.inner = os.ArenaAlloc(ctx);
-        ctx[t_slice_test.Slice.inner].tag = 1; // Byte
+        mut t_slice_inner_move_origins: ast.Type[ctx];
+        t_slice_inner_move_origins.tag = 1; // Byte
+        ctx.Set(t_slice_test.Slice.inner, t_slice_inner_move_origins);
     }
 
     typechecker.scope_insert(scope_move_test, "my_linear_var", t_slice_test, ctx);
@@ -687,7 +692,7 @@ mut l_move3: lexer.Lexer[ctx];
         mut brand_str_idx: Index[str, ctx] := empty[Index[str, ctx]];
         unsafe {
             brand_str_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
-            ctx[brand_str_idx] = "my_custom_brand";
+            ctx.Set(brand_str_idx, "my_custom_brand");
     }
     layout_brand_test.brand = brand_str_idx;
     layout_brand_test.fields = std.HashMapNew(ctx);
@@ -727,7 +732,7 @@ mut l_move3: lexer.Lexer[ctx];
     unsafe {
         t_nested_ptr.tag = 9; // RawPointer
         t_nested_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_nested_ptr.RawPointer.inner] = t_empty_brand_struct;
+        ctx.Set(t_nested_ptr.RawPointer.inner, t_empty_brand_struct);
     }
 
     mut resolved_nested := typechecker.get_type_brand(t_nested_ptr, &env_brand_test, ctx);
