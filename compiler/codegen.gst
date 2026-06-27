@@ -2836,10 +2836,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                             arena_set_arrow_or_dot = "->";
                         }
 
-                        mut arena_set_res := std.Concat("({ *(('", "");
-                        arena_set_res = std.Concat("({ *(('", arena_set_c_type);
-                        arena_set_res = std.Concat(arena_set_res, "*)0); })");
-                        arena_set_res = std.Concat("({ *(('", arena_set_c_type);
+                        mut arena_set_res := std.Concat("({ *((", arena_set_c_type);
                         arena_set_res = std.Concat(arena_set_res, "*)((char*)");
                         arena_set_res = std.Concat(arena_set_res, left_str);
                         arena_set_res = std.Concat(arena_set_res, arena_set_arrow_or_dot);
