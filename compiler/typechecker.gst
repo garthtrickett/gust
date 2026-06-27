@@ -5007,11 +5007,11 @@ func is_diverging_block(block_idx: Index[ast.BlockStatement[ctx], ctx], env: *Ty
             return 0;
         }
         mut block := ctx[block_idx];
-        mut statements_vec := &ctx[block.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut statements_vec_diverging_block: std.Vector[ast.Statement[ctx], ctx] := ctx[block.statements];
         mut i := 0;
-        while i < len(*statements_vec) {
+        while i < len(statements_vec_diverging_block) {
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = (*statements_vec)[i];
+            ctx[stmt_idx] = statements_vec_diverging_block[i];
             if is_diverging_statement(stmt_idx, env, ctx) == 1 {
                 return 1;
             }
@@ -5058,15 +5058,15 @@ func expression_to_string(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena
         }
         if (*expr_ptr).tag == 12 { // Call
             mut func_str := expression_to_string((*expr_ptr).Call.function, ctx);
-            mut args_vec := &ctx[(*expr_ptr).Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+            mut args_vec_expression_to_string: std.Vector[ast.Expression[ctx], ctx] := ctx[(*expr_ptr).Call.arguments];
             mut args_str := "";
             mut i := 0;
-            while i < len(*args_vec) {
+            while i < len(args_vec_expression_to_string) {
                 if i > 0 {
                     args_str = std.Concat(args_str, ", ");
                 }
                 mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg_idx] = (*args_vec)[i];
+                ctx[arg_idx] = args_vec_expression_to_string[i];
                 args_str = std.Concat(args_str, expression_to_string(arg_idx, ctx));
                 i = i + 1;
             }
@@ -5135,23 +5135,23 @@ func get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) s
     unsafe {
         if t.tag == 7 { // Index
             if t.Index.brand != empty[Index[str, ctx]] {
-                mut brand_str_ptr := &ctx[t.Index.brand] as *str;
-                return *brand_str_ptr;
+                mut brand_name_index: str := ctx[t.Index.brand];
+                return brand_name_index;
             }
             return typechecker_extract_brand_from_suffix(t.Index.struct_name, ctx);
         }
         if t.tag == 8 { // Struct
             if t.Struct.brand != empty[Index[str, ctx]] {
-                mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
-                return *brand_str_ptr;
+                mut brand_name_struct: str := ctx[t.Struct.brand];
+                return brand_name_struct;
             }
             if env != empty[*TypeEnvironment[ctx]] {
                 mut lookup := (*env).struct_registry.Get(t.Struct.struct_name);
                 if lookup.Ok {
                     mut layout := lookup.Val;
                     if layout.brand != empty[Index[str, ctx]] {
-                        mut brand_str_ptr := &ctx[layout.brand] as *str;
-                        return *brand_str_ptr;
+                        mut brand_name_layout: str := ctx[layout.brand];
+                        return brand_name_layout;
                     }
                 }
             }
@@ -5165,8 +5165,8 @@ func get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) s
         }
         if t.tag == 11 { // Reference
             if t.Reference.brand != empty[Index[str, ctx]] {
-                mut brand_str_ptr := &ctx[t.Reference.brand] as *str;
-                return *brand_str_ptr;
+                mut brand_name_reference: str := ctx[t.Reference.brand];
+                return brand_name_reference;
             } 
             return get_type_brand(ctx[t.Reference.inner], env, ctx);
         }
@@ -5290,10 +5290,8 @@ func typechecker_substitute_brand(t: ast.Type[ctx], new_brand: Index[str, ctx], 
         if t.tag == 7 { // Index
             mut struct_name := t.Index.struct_name;
             if t.Index.brand != empty[Index[str, ctx]] && new_brand != empty[Index[str, ctx]] {
-                mut old_b_ptr := &ctx[t.Index.brand] as *str;
-                mut old_b := *old_b_ptr;
-                mut new_b_ptr := &ctx[new_brand] as *str;
-                mut new_b := *new_b_ptr;
+                mut old_b: str := ctx[t.Index.brand];
+                mut new_b: str := ctx[new_brand];
                 
                 mut old_b_clean := strip_brand_prefix(old_b, ctx);
                 mut new_b_clean := strip_brand_prefix(new_b, ctx);
@@ -5322,10 +5320,8 @@ func typechecker_substitute_brand(t: ast.Type[ctx], new_brand: Index[str, ctx], 
         if t.tag == 8 { // Struct
             mut struct_name := t.Struct.struct_name;
             if t.Struct.brand != empty[Index[str, ctx]] && new_brand != empty[Index[str, ctx]] {
-                mut old_b_ptr := &ctx[t.Struct.brand] as *str;
-                mut old_b := *old_b_ptr;
-                mut new_b_ptr := &ctx[new_brand] as *str;
-                mut new_b := *new_b_ptr;
+                mut old_b: str := ctx[t.Struct.brand];
+                mut new_b: str := ctx[new_brand];
                 
                 mut old_b_clean := strip_brand_prefix(old_b, ctx);
                 mut new_b_clean := strip_brand_prefix(new_b, ctx);
@@ -5380,11 +5376,11 @@ func typechecker_substitute_brand(t: ast.Type[ctx], new_brand: Index[str, ctx], 
             return res_t;
         }
         if t.tag == 10 { // Generic
-            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            mut args_vec_substitute_brand: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
             mut new_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
             mut i := 0;
-            while i < len(*args_vec) { 
-                new_args.Push(typechecker_substitute_brand((*args_vec)[i], new_brand, ctx));
+            while i < len(args_vec_substitute_brand) { 
+                new_args.Push(typechecker_substitute_brand(args_vec_substitute_brand[i], new_brand, ctx));
                 i = i + 1;
             }
             return make_type_generic(t.Generic.name, new_args, ctx);
@@ -5399,8 +5395,7 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
         if t.tag == 7 { // Index
             mut struct_name := t.Index.struct_name;
             if t.Index.brand != empty[Index[str, ctx]] {
-                mut old_b_ptr := &ctx[t.Index.brand] as *str;
-                mut old_b := *old_b_ptr;
+                mut old_b: str := ctx[t.Index.brand];
                 
                 mut old_b_clean := strip_brand_prefix(old_b, ctx);
                 
@@ -5423,8 +5418,7 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
                     }
                     
                     mut new_brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-                    mut ptr := &ctx[new_brand_idx] as *str;
-                    *ptr = std.Clone(ctx, new_brand);
+                    ctx[new_brand_idx] = std.Clone(ctx, new_brand);
                     
                     res_type.tag = 7; // Index
                     res_type.Index.struct_name = std.Clone(ctx, struct_name);
@@ -5436,8 +5430,7 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
         if t.tag == 8 { // Struct
             mut struct_name := t.Struct.struct_name;
             if t.Struct.brand != empty[Index[str, ctx]] {
-                mut old_b_ptr := &ctx[t.Struct.brand] as *str;
-                mut old_b := *old_b_ptr;
+                mut old_b: str := ctx[t.Struct.brand];
                 
                 mut old_b_clean := strip_brand_prefix(old_b, ctx);
                 
@@ -5460,8 +5453,7 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
                     }
                     
                     mut new_brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-                    mut ptr := &ctx[new_brand_idx] as *str;
-                    *ptr = std.Clone(ctx, new_brand);
+                    ctx[new_brand_idx] = std.Clone(ctx, new_brand);
                     
                     res_type.tag = 8; // Struct
                     res_type.Struct.struct_name = std.Clone(ctx, struct_name);
@@ -5489,13 +5481,11 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
         if t.tag == 11 { // Reference
             mut new_brand_idx := t.Reference.brand;
             if t.Reference.brand != empty[Index[str, ctx]] {
-                mut old_b_ptr := &ctx[t.Reference.brand] as *str;
-                mut old_b := *old_b_ptr;
+                mut old_b: str := ctx[t.Reference.brand];
                 mut old_b_clean := strip_brand_prefix(old_b, ctx);
                 if std.str_eq(std.Clone(ctx, old_b_clean), std.Clone(ctx, old_brand)) == 1 {
                     new_brand_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
-                    mut ptr := &ctx[new_brand_idx] as *str;
-                    *ptr = std.Clone(ctx, new_brand);
+                    ctx[new_brand_idx] = std.Clone(ctx, new_brand);
                 }
             }
             mut inner := ctx[t.Reference.inner];
@@ -5507,18 +5497,17 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
             return res_type;
         }
         if t.tag == 10 { // Generic
-            mut args_vec := &ctx[t.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
+            mut args_vec_substitute_brand_names: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
             mut new_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
             mut i := 0;
-            while i < len(*args_vec) {
-                new_args.Push(typechecker_substitute_brand_names((*args_vec)[i], old_brand, new_brand, ctx));
+            while i < len(args_vec_substitute_brand_names) {
+                new_args.Push(typechecker_substitute_brand_names(args_vec_substitute_brand_names[i], old_brand, new_brand, ctx));
                 i = i + 1;
             }
             res_type.tag = 10;
             res_type.Generic.name = std.Clone(ctx, t.Generic.name);
             res_type.Generic.args = os.ArenaAlloc(ctx);
-            mut dest_args := &ctx[res_type.Generic.args] as *std.Vector[ast.Type[ctx], ctx];
-            *dest_args = new_args;
+            ctx[res_type.Generic.args] = new_args;
             return res_type;
         }
         return t;

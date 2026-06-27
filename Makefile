@@ -7,7 +7,7 @@ PREFIX = /usr/local
 SHELL = bash
 .SHELLFLAGS = -o pipefail -c
 
-.PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_compiler_get_opt_migration report_high_level_raw_collection_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_parser_high_level_raw_casts
+.PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_compiler_get_opt_migration report_high_level_raw_collection_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_parser_high_level_raw_casts
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -46,7 +46,7 @@ bootstrap: gust
 	touch build/gust_compiler.c
 	touch gust
 
-test: gust guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts
+test: gust guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts
 	@mkdir -p build
 	@echo "⚙️  Compiling native Gust test runner..."
 	@./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
@@ -190,6 +190,15 @@ guard_step44_typechecker_env_registration_raw_casts:
 		exit 1; \
 	else \
 		echo "✅ Step 4.4 typechecker env-registration guard passed."; \
+	fi
+
+guard_step44_typechecker_brand_helpers_raw_casts:
+	@echo "🔒 Checking Step 4.4 migrated typechecker block/string/brand helper slice for high-level raw collection/string casts..."
+	@if sed -n '5000,5530p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
+		echo "❌ Step 4.4 typechecker brand-helper guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
+		exit 1; \
+	else \
+		echo "✅ Step 4.4 typechecker brand-helper guard passed."; \
 	fi
 
 guard_parser_high_level_raw_casts:
