@@ -39,8 +39,8 @@ func main() {
 
     mut prog := parser.parse_program(&p, ctx);
     unsafe {
-        mut statements_vec := &ctx[prog.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        typechecker.env_pre_register_statement(&env, (*statements_vec)[0], ctx);
+        mut statements_vec_result: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
+        typechecker.env_pre_register_statement(&env, statements_vec_result[0], ctx);
     }
 
     // Monomorphize Result[str, ctx]
@@ -98,18 +98,18 @@ func main() {
     mut scope3 := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
 
     unsafe {
-        mut statements_vec := &ctx[prog3.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut statements_vec_prog3_check: std.Vector[ast.Statement[ctx], ctx] := ctx[prog3.statements];
         
         mut i := 0;
-        while i < len(*statements_vec) {
-            typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+        while i < len(statements_vec_prog3_check) {
+            typechecker.env_pre_register_statement(&env, statements_vec_prog3_check[i], ctx);
             i = i + 1;
         }
 
         mut j := 0;
-        while j < len(*statements_vec) {
+        while j < len(statements_vec_prog3_check) {
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = (*statements_vec)[j];
+            ctx[stmt_idx] = statements_vec_prog3_check[j];
             typechecker.check_statement(stmt_idx, &env, scope3, ctx);
             j = j + 1;
         }
@@ -130,18 +130,18 @@ func main() {
 
     mut scope4_error := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     unsafe {
-        mut statements_vec := &ctx[prog4_error.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut statements_vec_prog4_error: std.Vector[ast.Statement[ctx], ctx] := ctx[prog4_error.statements];
         
         mut i := 0;
-        while i < len(*statements_vec) {
-            typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+        while i < len(statements_vec_prog4_error) {
+            typechecker.env_pre_register_statement(&env, statements_vec_prog4_error[i], ctx);
             i = i + 1;
         }
 
         mut j := 0;
-        while j < len(*statements_vec) {
+        while j < len(statements_vec_prog4_error) {
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = (*statements_vec)[j];
+            ctx[stmt_idx] = statements_vec_prog4_error[j];
             typechecker.check_statement(stmt_idx, &env, scope4_error, ctx);
             j = j + 1;
         }
@@ -157,11 +157,12 @@ func main() {
 
     // Verify that the variable declaration is registered in resolved_types (Phase 1 Fix)
     unsafe {
-        mut statements_vec := &ctx[prog3.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut main_decl := (*statements_vec)[1];
-        mut body_idx := main_decl.FunctionDecl.body;
-        mut body_stmts := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut var_decl := (*body_stmts)[0];
+        mut statements_vec_resolved_decl: std.Vector[ast.Statement[ctx], ctx] := ctx[prog3.statements];
+        mut main_decl_resolved_decl := statements_vec_resolved_decl[1];
+        mut body_idx_resolved_decl := main_decl_resolved_decl.FunctionDecl.body;
+        mut body_val_resolved_decl: ast.BlockStatement[ctx] := ctx[body_idx_resolved_decl];
+        mut body_stmts_resolved_decl: std.Vector[ast.Statement[ctx], ctx] := ctx[body_val_resolved_decl.statements];
+        mut var_decl := body_stmts_resolved_decl[0];
         
         mut span := var_decl.VarDecl.span;
         
@@ -206,11 +207,12 @@ func main() {
 
     // Verify that the assignment LHS is registered in resolved_types (Step 2 Fix)
     unsafe { 
-        mut statements_vec := &ctx[prog3.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut main_decl := (*statements_vec)[1];
-        mut body_idx := main_decl.FunctionDecl.body;
-        mut body_stmts := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut assign_stmt := (*body_stmts)[1];
+        mut statements_vec_resolved_lhs: std.Vector[ast.Statement[ctx], ctx] := ctx[prog3.statements];
+        mut main_decl_resolved_lhs := statements_vec_resolved_lhs[1];
+        mut body_idx_resolved_lhs := main_decl_resolved_lhs.FunctionDecl.body;
+        mut body_val_resolved_lhs: ast.BlockStatement[ctx] := ctx[body_idx_resolved_lhs];
+        mut body_stmts_resolved_lhs: std.Vector[ast.Statement[ctx], ctx] := ctx[body_val_resolved_lhs.statements];
+        mut assign_stmt := body_stmts_resolved_lhs[1];
         
         mut left_expr := assign_stmt.Assignment.left;
         mut span := parser.get_expression_span(left_expr, ctx);
@@ -302,8 +304,8 @@ func main() {
 
     mut prog6 := parser.parse_program(&p6, ctx);
     unsafe {
-        mut statements_vec := &ctx[prog6.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        typechecker.env_pre_register_statement(&env, (*statements_vec)[0], ctx);
+        mut statements_vec_loop1: std.Vector[ast.Statement[ctx], ctx] := ctx[prog6.statements];
+        typechecker.env_pre_register_statement(&env, statements_vec_loop1[0], ctx);
     }
 
     mut loop_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
@@ -324,8 +326,8 @@ func main() {
 
     mut prog7 := parser.parse_program(&p7, ctx);
     unsafe {
-        mut statements_vec := &ctx[prog7.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        typechecker.env_pre_register_statement(&env, (*statements_vec)[0], ctx);
+        mut statements_vec_loop2: std.Vector[ast.Statement[ctx], ctx] := ctx[prog7.statements];
+        typechecker.env_pre_register_statement(&env, statements_vec_loop2[0], ctx);
     }
 
     mut loop2_res := typechecker.monomorphize(&env, "Loop2", loop_args, ctx);
@@ -384,18 +386,18 @@ func main() {
 
     mut scope_func := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     unsafe {
-        mut statements_vec := &ctx[prog_func.statements] as *std.Vector[ast.Statement[ctx], ctx];
+        mut statements_vec_func_params: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_func.statements];
 
         mut i := 0;
-        while i < len(*statements_vec) {
-            typechecker.env_pre_register_statement(&env, (*statements_vec)[i], ctx);
+        while i < len(statements_vec_func_params) {
+            typechecker.env_pre_register_statement(&env, statements_vec_func_params[i], ctx);
             i = i + 1;
         }
 
         mut j := 0;
-        while j < len(*statements_vec) {
+        while j < len(statements_vec_func_params) {
             mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[stmt_idx] = (*statements_vec)[j];
+            ctx[stmt_idx] = statements_vec_func_params[j];
             typechecker.check_statement(stmt_idx, &env, scope_func, ctx);
             j = j + 1;
         }
@@ -494,8 +496,7 @@ func main() {
         t_branded_linear.tag = 8; // Struct
         t_branded_linear.Struct.struct_name = "LinearStruct_ctx";
         t_branded_linear.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-        mut brand_ptr := &ctx[t_branded_linear.Struct.brand] as *str;
-        *brand_ptr = "ctx";
+        ctx[t_branded_linear.Struct.brand] = "ctx";
     }
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_branded_linear, "ctx", ctx)); // Expected: 1
 
@@ -504,8 +505,7 @@ func main() {
         t_mismatched_branded.tag = 8; // Struct
         t_mismatched_branded.Struct.struct_name = "LinearStruct_ctx1";
         t_mismatched_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-        mut brand_ptr := &ctx[t_mismatched_branded.Struct.brand] as *str;
-        *brand_ptr = "ctx1";
+        ctx[t_mismatched_branded.Struct.brand] = "ctx1";
     }
     os.LogInt(typechecker.env_is_element_allowed_in_brand(&env, t_mismatched_branded, "ctx", ctx)); // Expected: 0
 
@@ -531,8 +531,7 @@ func main() {
     mut mismatched_layout: typechecker.StructLayout[ctx];
     unsafe { 
         mismatched_layout.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-        mut brand_ptr := &ctx[mismatched_layout.brand] as *str;
-        *brand_ptr = "ctx1";
+        ctx[mismatched_layout.brand] = "ctx1";
     }
     mismatched_layout.fields = std.HashMapNew(ctx);
     mismatched_layout.fields.Insert("value", t_ptr_test);
@@ -555,19 +554,19 @@ func main() {
     // Step 3 Verification: Test "Any" wildcard brand nesting bypass
     // We will verify that a type branded with "Any" is permitted inside a parent brand of "ctx"
     unsafe {
-        mut statements_vec := &ctx[prog3.statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut main_decl := (*statements_vec)[1];
-        mut body_idx := main_decl.FunctionDecl.body;
-        mut body_stmts := &ctx[ctx[body_idx].statements] as *std.Vector[ast.Statement[ctx], ctx];
-        mut var_decl := (*body_stmts)[0];
+        mut statements_vec_any_brand: std.Vector[ast.Statement[ctx], ctx] := ctx[prog3.statements];
+        mut main_decl_any_brand := statements_vec_any_brand[1];
+        mut body_idx_any_brand := main_decl_any_brand.FunctionDecl.body;
+        mut body_val_any_brand: ast.BlockStatement[ctx] := ctx[body_idx_any_brand];
+        mut body_stmts_any_brand: std.Vector[ast.Statement[ctx], ctx] := ctx[body_val_any_brand.statements];
+        mut var_decl := body_stmts_any_brand[0];
         mut any_test_span := var_decl.VarDecl.span;
 
         mut t_any_branded: ast.Type[ctx];
         t_any_branded.tag = 8; // Struct
         t_any_branded.Struct.struct_name = "lexer__Lexer_Any";
         t_any_branded.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-        mut brand_ptr := &ctx[t_any_branded.Struct.brand] as *str;
-        *brand_ptr = "Any";
+        ctx[t_any_branded.Struct.brand] = "Any";
 
         // A: Direct check of env_is_element_allowed_in_brand
         mut allowed_res := typechecker.env_is_element_allowed_in_brand(&env, t_any_branded, "ctx", ctx);
