@@ -245,6 +245,15 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_phase_e_enforcemen
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_phase_f_closure_status:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step52_phase_f_closure_status ---"
+        (cd "$PROJECT_ROOT" && make report_step52_phase_f_closure_status)
+        echo "--- END OF REPORT make report_step52_phase_f_closure_status ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_status_matrix:' "$PROJECT_ROOT/Makefile"; then
     {
         echo "--- START OF REPORT make report_step52_status_matrix ---"

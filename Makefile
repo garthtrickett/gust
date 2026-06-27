@@ -9,7 +9,7 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
-.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_address_escapes_focused report_step51_ffi_calls report_step51_ffi_focused report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement guard_step51_basic_unsafe_enforcement guard_step51_report_only_lanes_not_in_test report_step51_phase_c_basic_unsafe_status report_step51_phase_d_ffi_status report_step51_phase_e_address_escape_status report_step51_phase_f_non_laundering_status report_step51_status_matrix report_step51_raw_pointer_safety_inventory report_step51_final_validation report_step52_linear_resource_inventory report_step52_linear_resource_focused report_step52_phase_a_status report_step52_phase_b_destructor_status report_step52_phase_c_resource_registry_status report_step52_phase_d_transfer_status report_step52_phase_e_enforcement_preconditions_status report_step52_status_matrix guard_step52_report_only_lanes_not_in_test report_step52_final_validation
+.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_address_escapes_focused report_step51_ffi_calls report_step51_ffi_focused report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement guard_step51_basic_unsafe_enforcement guard_step51_report_only_lanes_not_in_test report_step51_phase_c_basic_unsafe_status report_step51_phase_d_ffi_status report_step51_phase_e_address_escape_status report_step51_phase_f_non_laundering_status report_step51_status_matrix report_step51_raw_pointer_safety_inventory report_step51_final_validation report_step52_linear_resource_inventory report_step52_linear_resource_focused report_step52_phase_a_status report_step52_phase_b_destructor_status report_step52_phase_c_resource_registry_status report_step52_phase_d_transfer_status report_step52_phase_e_enforcement_preconditions_status report_step52_phase_f_closure_status report_step52_status_matrix guard_step52_report_only_lanes_not_in_test report_step52_final_validation
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -346,7 +346,7 @@ report_step52_phase_d_transfer_status:
 	@echo "✅ Step 5.2D ownership-transfer status report complete. This target is report-only and does not run guards."
 
 report_step52_phase_e_enforcement_preconditions_status:
-	@echo "🧭 Reporting Step 5.2E enforcement preconditions..."
+	@echo "🧭 Reporting Step 5.2E enforcement preconditions."
 	@echo "   Generalized linear-resource guards must remain deferred until all semantic prerequisites exist:"
 	@echo "   - explicit metadata opt-in for linear resource types"
 	@echo "   - Resource[ctx, T] representation with ownership state"
@@ -356,6 +356,19 @@ report_step52_phase_e_enforcement_preconditions_status:
 	@echo "   - directory-handle parity with the legacy open_directories lane"
 	@echo "   Do not convert Step 5.2 textual inventories into make test guards before these preconditions are compiler-backed."
 	@echo "✅ Step 5.2E enforcement preconditions report complete. This target is report-only and does not run guards."
+
+report_step52_phase_f_closure_status:
+	@echo "🧭 Reporting Step 5.2F report-only closure status..."
+	@echo "   Step 5.2 report-only scaffold now covers:"
+	@echo "   - broad and focused resource inventory"
+	@echo "   - metadata opt-in handoff"
+	@echo "   - destructor/defer handoff"
+	@echo "   - Resource/open-linear registry handoff"
+	@echo "   - ownership-transfer handoff"
+	@echo "   - semantic enforcement preconditions"
+	@echo "   Stop adding textual report churn unless a new compiler-backed design requirement appears."
+	@echo "   Next implementation work must be AST/typechecker design for Resource[ctx, T], open_linear_resources, destructor identity, transfer state, and legacy open_directories parity."
+	@echo "✅ Step 5.2F report-only closure status complete. This target is report-only and does not run guards."
 
 report_step52_status_matrix:
 	@echo "🧭 Step 5.2 linear resource status matrix:"
@@ -369,6 +382,7 @@ report_step52_status_matrix:
 	@echo "   🧭 Resource/open-linear registry status: make report_step52_phase_c_resource_registry_status"
 	@echo "   🧭 ownership-transfer status: make report_step52_phase_d_transfer_status"
 	@echo "   🧭 enforcement preconditions: make report_step52_phase_e_enforcement_preconditions_status"
+	@echo "   🧭 report-only closure: make report_step52_phase_f_closure_status"
 	@echo "   Policy guard wired through make test:"
 	@echo "   ✅ report-only Step 5.2 targets stay out of test deps: make guard_step52_report_only_lanes_not_in_test"
 	@echo "   Deferred generalized compiler-backed work:"
@@ -378,6 +392,7 @@ report_step52_status_matrix:
 	@echo "   ⏳ destructor registration and defer validation"
 	@echo "   ⏳ ownership transfer state and use-after-move validation"
 	@echo "   ⏳ compiler-backed enforcement preconditions before any Step 5.2 guard"
+	@echo "   ⏳ AST/typechecker design before further Step 5.2 report churn"
 	@echo "   Existing linear metadata/test coverage is inventory context, not generalized resource enforcement."
 	@echo "   Do not purge open_directories or add generalized leak enforcement until the deferred pieces exist."
 	@echo "✅ Step 5.2 linear resource status matrix complete. This target is report-only and does not run guards."
@@ -401,6 +416,7 @@ report_step52_final_validation:
 	@echo "   make report_step52_phase_c_resource_registry_status"
 	@echo "   make report_step52_phase_d_transfer_status"
 	@echo "   make report_step52_phase_e_enforcement_preconditions_status"
+	@echo "   make report_step52_phase_f_closure_status"
 	@echo "   make report_step52_status_matrix"
 	@echo "   make guard_step52_report_only_lanes_not_in_test"
 	@echo "   make report_step51_status_matrix"
