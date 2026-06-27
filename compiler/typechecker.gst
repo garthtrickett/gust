@@ -499,14 +499,14 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             mut brand_name := "";
             if t.tag == 7 { // Index
                 if t.Index.brand != empty[Index[str, ctx]] {
-                    mut brand_str_ptr := &ctx[t.Index.brand] as *str;
-                    brand_name = *brand_str_ptr;
+                    mut brand_str_identifier_index: str := ctx[t.Index.brand];
+                    brand_name = brand_str_identifier_index;
                 }
             } else {
                 if t.tag == 8 { // Struct
                     if t.Struct.brand != empty[Index[str, ctx]] {
-                        mut brand_str_ptr := &ctx[t.Struct.brand] as *str;
-                        brand_name = *brand_str_ptr;
+                        mut brand_str_identifier_struct: str := ctx[t.Struct.brand];
+                        brand_name = brand_str_identifier_struct;
                     }
                 }
             }
@@ -644,8 +644,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
             if std.str_eq(brand_str, "") == 0 {
                 ctx[t_idx].Reference.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                mut ptr := &ctx[ctx[t_idx].Reference.brand] as *str;
-                *ptr = std.Clone(ctx, brand_str);
+                ctx[ctx[t_idx].Reference.brand] = std.Clone(ctx, brand_str);
             } else {
                 ctx[t_idx].Reference.brand = empty[Index[str, ctx]];
             }
@@ -701,9 +700,8 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 if brand_idx != empty[Index[str, ctx]] {
-                    mut brand_str_ptr := &ctx[brand_idx] as *str;
-                    mut brand_name := *brand_str_ptr;
-                    mut clean_brand := strip_brand_prefix(brand_name, ctx);
+                    mut brand_name_index_access: str := ctx[brand_idx];
+                    mut clean_brand := strip_brand_prefix(brand_name_index_access, ctx);
                     mut alloc_name := expression_to_string(expr.IndexAccess.allocator, ctx);
                     mut clean_alloc := strip_brand_prefix(alloc_name, ctx);
                     if std.str_eq(clean_brand, "Any") == 0 && std.str_eq(clean_brand, clean_alloc) == 0 {
@@ -2507,8 +2505,7 @@ func make_type_reference(inner: ast.Type[ctx], brand_name: str, ctx: &Arena) ast
             t.Reference.brand = empty[Index[str, ctx]];
         } else {
             t.Reference.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-            mut ptr := &ctx[t.Reference.brand] as *str;
-            *ptr = std.Clone(ctx, brand_name);
+            ctx[t.Reference.brand] = std.Clone(ctx, brand_name);
         }
     }
     return t;
@@ -3904,8 +3901,7 @@ func env_register_std_structs(env: *TypeEnvironment[ctx], ctx: &Arena) {
         // 2. SessionNode [connCtx]
         mut session_layout: StructLayout[ctx];
         mut brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-        mut brand_ptr := &ctx[brand_idx] as *str;
-        *brand_ptr = "connCtx";
+        ctx[brand_idx] = std.Clone(ctx, "connCtx");
         session_layout.brand = brand_idx;
         session_layout.fields = std.HashMapNew(ctx);
         session_layout.fields.Insert("SessionID", t_int);
@@ -7234,8 +7230,8 @@ func typechecker_serialize_structures(env: *TypeEnvironment[ctx], ctx: &Arena) s
                 mut layout := lookup.Val;
                 mut brand_str := "";
                 if layout.brand != empty[Index[str, ctx]] {
-                    mut brand_str_ptr := &ctx[layout.brand] as *str;
-                    brand_str = std.Concat(" [", *brand_str_ptr);
+                    mut layout_brand_type_dump: str := ctx[layout.brand];
+                    brand_str = std.Concat(" [", layout_brand_type_dump);
                     brand_str = std.Concat(brand_str, "]");
                 }
                 result = std.Concat(result, "  ");

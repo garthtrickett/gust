@@ -42739,397 +42739,397 @@
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 228109..228112 prefix='codegen__'
+// 🔍 Lookup span 228158..228161 prefix='codegen__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 228113..228128 prefix='codegen__'
+// 🔍 Lookup span 228162..228177 prefix='codegen__'
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 228113..228117 prefix='codegen__'
+// 🔍 Lookup span 228162..228166 prefix='codegen__'
 //    -> Found: Struct("ast__Program_ctx", Some("ctx"))
-// 🔍 Lookup span 228237..228256 prefix='codegen__'
+// 🔍 Lookup span 228246..228277 prefix='codegen__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 228289..228308 prefix='codegen__'
+// 🔍 Lookup span 228309..228340 prefix='codegen__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 228310..228319 prefix='codegen__'
+// 🔍 Lookup span 228341..228350 prefix='codegen__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 228341..228345 prefix='codegen__'
+// 🔍 Lookup span 228372..228376 prefix='codegen__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 228412..228415 prefix='codegen__'
+// 🔍 Lookup span 228491..228494 prefix='codegen__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 228416..228440 prefix='codegen__'
+// 🔍 Lookup span 228495..228519 prefix='codegen__'
 //    -> Found: Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
-// 🔍 Lookup span 228416..228420 prefix='codegen__'
+// 🔍 Lookup span 228495..228499 prefix='codegen__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 228416..228433 prefix='codegen__'
+// 🔍 Lookup span 228495..228512 prefix='codegen__'
 //    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
-// 🔍 Lookup span 228416..228420 prefix='codegen__'
+// 🔍 Lookup span 228495..228499 prefix='codegen__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 228510..228521 prefix='codegen__'
+// 🔍 Lookup span 228549..228571 prefix='codegen__'
 //    -> Found: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 228568..228572 prefix='codegen__'
+// 🔍 Lookup span 228618..228622 prefix='codegen__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 228568..228585 prefix='codegen__'
+// 🔍 Lookup span 228618..228635 prefix='codegen__'
 //    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
-// 🔍 Lookup span 228568..228572 prefix='codegen__'
+// 🔍 Lookup span 228618..228622 prefix='codegen__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 228639..228650 prefix='codegen__'
+// 🔍 Lookup span 228689..228700 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 228639..228650 prefix='codegen__'
+// 🔍 Lookup span 228689..228700 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 228834..228849 prefix='codegen__'
+// 🔍 Lookup span 228884..228899 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 228890..228893 prefix='codegen__'
+// 🔍 Lookup span 228940..228943 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 228890..228893 prefix='codegen__'
+// 🔍 Lookup span 228940..228943 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229014..229025 prefix='codegen__'
+// 🔍 Lookup span 229064..229075 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 229028..229031 prefix='codegen__'
+// 🔍 Lookup span 229078..229081 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229028..229031 prefix='codegen__'
+// 🔍 Lookup span 229078..229081 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229127..229138 prefix='codegen__'
+// 🔍 Lookup span 229177..229188 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 229141..229144 prefix='codegen__'
+// 🔍 Lookup span 229191..229194 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229141..229144 prefix='codegen__'
+// 🔍 Lookup span 229191..229194 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229165..229168 prefix='codegen__'
+// 🔍 Lookup span 229215..229218 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229165..229168 prefix='codegen__'
+// 🔍 Lookup span 229215..229218 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229280..229288 prefix='codegen__'
+// 🔍 Lookup span 229330..229338 prefix='codegen__'
 //    -> Found: Int
-// 🔍 Lookup span 229367..229370 prefix='codegen__'
+// 🔍 Lookup span 229417..229420 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229367..229370 prefix='codegen__'
+// 🔍 Lookup span 229417..229420 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229426..229430 prefix='codegen__'
+// 🔍 Lookup span 229476..229480 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 229433..229436 prefix='codegen__'
+// 🔍 Lookup span 229483..229486 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229433..229436 prefix='codegen__'
+// 🔍 Lookup span 229483..229486 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229509..229515 prefix='codegen__'
+// 🔍 Lookup span 229559..229565 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 229518..229521 prefix='codegen__'
+// 🔍 Lookup span 229568..229571 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229518..229521 prefix='codegen__'
+// 🔍 Lookup span 229568..229571 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229600..229609 prefix='codegen__'
+// 🔍 Lookup span 229650..229659 prefix='codegen__'
 //    -> Found: Int
-// 🔍 Lookup span 229653..229662 prefix='codegen__'
+// 🔍 Lookup span 229703..229712 prefix='codegen__'
 //    -> Found: Int
-// 🔍 Lookup span 229699..229719 prefix='codegen__'
+// 🔍 Lookup span 229749..229769 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 229699..229703 prefix='codegen__'
+// 🔍 Lookup span 229749..229753 prefix='codegen__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 229734..229740 prefix='codegen__'
+// 🔍 Lookup span 229784..229790 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 229743..229746 prefix='codegen__'
+// 🔍 Lookup span 229793..229796 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229743..229746 prefix='codegen__'
+// 🔍 Lookup span 229793..229796 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229850..229856 prefix='codegen__'
+// 🔍 Lookup span 229900..229906 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 229859..229862 prefix='codegen__'
+// 🔍 Lookup span 229909..229912 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229859..229862 prefix='codegen__'
+// 🔍 Lookup span 229909..229912 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 229970..229988 prefix='codegen__'
+// 🔍 Lookup span 230020..230038 prefix='codegen__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 230015..230033 prefix='codegen__'
+// 🔍 Lookup span 230065..230083 prefix='codegen__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 230034..230035 prefix='codegen__'
+// 🔍 Lookup span 230084..230085 prefix='codegen__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 230091..230103 prefix='codegen__'
+// 🔍 Lookup span 230141..230153 prefix='codegen__'
 //    -> Found: Int
-// 🔍 Lookup span 230091..230099 prefix='codegen__'
+// 🔍 Lookup span 230141..230149 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 230131..230158 prefix='codegen__'
+// 🔍 Lookup span 230181..230208 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 230131..230139 prefix='codegen__'
+// 🔍 Lookup span 230181..230189 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 230131..230146 prefix='codegen__'
+// 🔍 Lookup span 230181..230196 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 230131..230139 prefix='codegen__'
+// 🔍 Lookup span 230181..230189 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 230178..230199 prefix='codegen__'
+// 🔍 Lookup span 230228..230249 prefix='codegen__'
 //    -> Found: Index("str", Some("ctx"))
-// 🔍 Lookup span 230178..230186 prefix='codegen__'
+// 🔍 Lookup span 230228..230236 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 230178..230193 prefix='codegen__'
+// 🔍 Lookup span 230228..230243 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 230178..230186 prefix='codegen__'
+// 🔍 Lookup span 230228..230236 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 230374..230377 prefix='codegen__'
+// 🔍 Lookup span 230424..230427 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230374..230377 prefix='codegen__'
+// 🔍 Lookup span 230424..230427 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230415..230419 prefix='codegen__'
+// 🔍 Lookup span 230465..230469 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 230422..230425 prefix='codegen__'
+// 🔍 Lookup span 230472..230475 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230422..230425 prefix='codegen__'
+// 🔍 Lookup span 230472..230475 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230469..230473 prefix='codegen__'
+// 🔍 Lookup span 230519..230523 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 230476..230479 prefix='codegen__'
+// 🔍 Lookup span 230526..230529 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230476..230479 prefix='codegen__'
+// 🔍 Lookup span 230526..230529 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230515..230519 prefix='codegen__'
+// 🔍 Lookup span 230565..230569 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 230522..230525 prefix='codegen__'
+// 🔍 Lookup span 230572..230575 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230522..230525 prefix='codegen__'
+// 🔍 Lookup span 230572..230575 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230569..230575 prefix='codegen__'
+// 🔍 Lookup span 230619..230625 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 230578..230581 prefix='codegen__'
+// 🔍 Lookup span 230628..230631 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230578..230581 prefix='codegen__'
+// 🔍 Lookup span 230628..230631 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230630..230631 prefix='codegen__'
+// 🔍 Lookup span 230680..230681 prefix='codegen__'
 //    -> Found: Int
-// 🔍 Lookup span 230659..230665 prefix='codegen__'
+// 🔍 Lookup span 230709..230715 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 230668..230671 prefix='codegen__'
+// 🔍 Lookup span 230718..230721 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230668..230671 prefix='codegen__'
+// 🔍 Lookup span 230718..230721 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230770..230776 prefix='codegen__'
+// 🔍 Lookup span 230820..230826 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 230779..230782 prefix='codegen__'
+// 🔍 Lookup span 230829..230832 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230779..230782 prefix='codegen__'
+// 🔍 Lookup span 230829..230832 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 230885..230903 prefix='codegen__'
+// 🔍 Lookup span 230935..230953 prefix='codegen__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 230930..230948 prefix='codegen__'
+// 🔍 Lookup span 230980..230998 prefix='codegen__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 230949..230950 prefix='codegen__'
+// 🔍 Lookup span 230999..231000 prefix='codegen__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 231006..231018 prefix='codegen__'
+// 🔍 Lookup span 231056..231068 prefix='codegen__'
 //    -> Found: Int
-// 🔍 Lookup span 231006..231014 prefix='codegen__'
+// 🔍 Lookup span 231056..231064 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 231046..231073 prefix='codegen__'
+// 🔍 Lookup span 231096..231123 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 231046..231054 prefix='codegen__'
+// 🔍 Lookup span 231096..231104 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 231046..231061 prefix='codegen__'
+// 🔍 Lookup span 231096..231111 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 231046..231054 prefix='codegen__'
+// 🔍 Lookup span 231096..231104 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 231093..231114 prefix='codegen__'
+// 🔍 Lookup span 231143..231164 prefix='codegen__'
 //    -> Found: Index("str", Some("ctx"))
-// 🔍 Lookup span 231093..231101 prefix='codegen__'
+// 🔍 Lookup span 231143..231151 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 231093..231108 prefix='codegen__'
+// 🔍 Lookup span 231143..231158 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx_Struct", Some("ctx"))
-// 🔍 Lookup span 231093..231101 prefix='codegen__'
+// 🔍 Lookup span 231143..231151 prefix='codegen__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 231295..231322 prefix='codegen__'
+// 🔍 Lookup span 231345..231372 prefix='codegen__'
 //    -> Found: Struct("LookupResult_str", None)
-// 🔍 Lookup span 231295..231313 prefix='codegen__'
+// 🔍 Lookup span 231345..231363 prefix='codegen__'
 //    -> Found: Struct("std_HashMap_str_str_ctx", Some("ctx"))
-// 🔍 Lookup span 231350..231352 prefix='codegen__'
+// 🔍 Lookup span 231400..231402 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231350..231352 prefix='codegen__'
+// 🔍 Lookup span 231400..231402 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231360..231363 prefix='codegen__'
+// 🔍 Lookup span 231410..231413 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231360..231363 prefix='codegen__'
+// 🔍 Lookup span 231410..231413 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231469..231471 prefix='codegen__'
+// 🔍 Lookup span 231519..231521 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231469..231471 prefix='codegen__'
+// 🔍 Lookup span 231519..231521 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231508..231511 prefix='codegen__'
+// 🔍 Lookup span 231558..231561 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231508..231511 prefix='codegen__'
+// 🔍 Lookup span 231558..231561 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231523..231525 prefix='codegen__'
+// 🔍 Lookup span 231573..231575 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 231584..231605 prefix='codegen__'
+// 🔍 Lookup span 231634..231655 prefix='codegen__'
 //    -> Found: Struct("std_HashMap_str_typechecker__StructLayout_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 231584..231588 prefix='codegen__'
+// 🔍 Lookup span 231634..231638 prefix='codegen__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 231584..231623 prefix='codegen__'
+// 🔍 Lookup span 231634..231673 prefix='codegen__'
 //    -> Found: Struct("std_Option_typechecker__StructLayout_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 231647..231660 prefix='codegen__'
+// 🔍 Lookup span 231697..231710 prefix='codegen__'
 //    -> Found: Struct("std_Option_typechecker__StructLayout_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 231811..231817 prefix='codegen__'
+// 🔍 Lookup span 231861..231867 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 231820..231823 prefix='codegen__'
+// 🔍 Lookup span 231870..231873 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231820..231823 prefix='codegen__'
+// 🔍 Lookup span 231870..231873 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231870..231876 prefix='codegen__'
+// 🔍 Lookup span 231920..231926 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 231879..231882 prefix='codegen__'
+// 🔍 Lookup span 231929..231932 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 231879..231882 prefix='codegen__'
+// 🔍 Lookup span 231929..231932 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232023..232024 prefix='codegen__'
+// 🔍 Lookup span 232073..232074 prefix='codegen__'
 //    -> Found: Int
-// 🔍 Lookup span 232119..232133 prefix='codegen__'
+// 🔍 Lookup span 232169..232183 prefix='codegen__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 232153..232159 prefix='codegen__'
+// 🔍 Lookup span 232203..232209 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 232162..232165 prefix='codegen__'
+// 🔍 Lookup span 232212..232215 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232162..232165 prefix='codegen__'
+// 🔍 Lookup span 232212..232215 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232255..232261 prefix='codegen__'
+// 🔍 Lookup span 232305..232311 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 232264..232267 prefix='codegen__'
+// 🔍 Lookup span 232314..232317 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232264..232267 prefix='codegen__'
+// 🔍 Lookup span 232314..232317 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232348..232354 prefix='codegen__'
+// 🔍 Lookup span 232398..232404 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 232357..232360 prefix='codegen__'
+// 🔍 Lookup span 232407..232410 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232357..232360 prefix='codegen__'
+// 🔍 Lookup span 232407..232410 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232496..232510 prefix='codegen__'
+// 🔍 Lookup span 232546..232560 prefix='codegen__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 232542..232556 prefix='codegen__'
+// 🔍 Lookup span 232592..232606 prefix='codegen__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 232557..232562 prefix='codegen__'
+// 🔍 Lookup span 232607..232612 prefix='codegen__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 232656..232662 prefix='codegen__'
+// 🔍 Lookup span 232706..232712 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 232665..232668 prefix='codegen__'
+// 🔍 Lookup span 232715..232718 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232665..232668 prefix='codegen__'
+// 🔍 Lookup span 232715..232718 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232707..232712 prefix='codegen__'
+// 🔍 Lookup span 232757..232762 prefix='codegen__'
 //    -> Found: Int
-// 🔍 Lookup span 232752..232758 prefix='codegen__'
+// 🔍 Lookup span 232802..232808 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 232761..232764 prefix='codegen__'
+// 🔍 Lookup span 232811..232814 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232761..232764 prefix='codegen__'
+// 🔍 Lookup span 232811..232814 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232865..232871 prefix='codegen__'
+// 🔍 Lookup span 232915..232921 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 232874..232877 prefix='codegen__'
+// 🔍 Lookup span 232924..232927 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232874..232877 prefix='codegen__'
+// 🔍 Lookup span 232924..232927 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 232973..232981 prefix='codegen__'
+// 🔍 Lookup span 233023..233031 prefix='codegen__'
 //    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 233009..233017 prefix='codegen__'
+// 🔍 Lookup span 233059..233067 prefix='codegen__'
 //    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 233018..233024 prefix='codegen__'
+// 🔍 Lookup span 233068..233074 prefix='codegen__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Program_ctx_ctx, Erased name: std_Vector_ast__Program, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 233040..233060 prefix='codegen__'
+// 🔍 Lookup span 233090..233110 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 233040..233044 prefix='codegen__'
+// 🔍 Lookup span 233090..233094 prefix='codegen__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 233063..233071 prefix='codegen__'
+// 🔍 Lookup span 233113..233121 prefix='codegen__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 233072..233078 prefix='codegen__'
+// 🔍 Lookup span 233122..233128 prefix='codegen__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 233116..233119 prefix='codegen__'
+// 🔍 Lookup span 233215..233218 prefix='codegen__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 233120..233135 prefix='codegen__'
+// 🔍 Lookup span 233219..233234 prefix='codegen__'
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 233120..233124 prefix='codegen__'
+// 🔍 Lookup span 233219..233223 prefix='codegen__'
 //    -> Found: Struct("ast__Program_ctx", Some("ctx"))
-// 🔍 Lookup span 233236..233251 prefix='codegen__'
+// 🔍 Lookup span 233295..233322 prefix='codegen__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 233319..233321 prefix='codegen__'
+// 🔍 Lookup span 233390..233392 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 233319..233321 prefix='codegen__'
+// 🔍 Lookup span 233390..233392 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 233355..233368 prefix='codegen__'
+// 🔍 Lookup span 233426..233439 prefix='codegen__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 233355..233358 prefix='codegen__'
+// 🔍 Lookup span 233426..233429 prefix='codegen__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 233359..233367 prefix='codegen__'
+// 🔍 Lookup span 233430..233438 prefix='codegen__'
 //    -> Found: Index("ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 233372..233387 prefix='codegen__'
+// 🔍 Lookup span 233442..233469 prefix='codegen__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 233389..233394 prefix='codegen__'
+// 🔍 Lookup span 233470..233475 prefix='codegen__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 233491..233497 prefix='codegen__'
+// 🔍 Lookup span 233572..233578 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 233500..233503 prefix='codegen__'
+// 🔍 Lookup span 233581..233584 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 233500..233503 prefix='codegen__'
+// 🔍 Lookup span 233581..233584 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 233544..233549 prefix='codegen__'
+// 🔍 Lookup span 233625..233630 prefix='codegen__'
 //    -> Found: Int
-// 🔍 Lookup span 233589..233595 prefix='codegen__'
+// 🔍 Lookup span 233670..233676 prefix='codegen__'
 //    -> Found: Int
-// 🔍 Lookup span 233629..233649 prefix='codegen__'
+// 🔍 Lookup span 233710..233730 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 233629..233633 prefix='codegen__'
+// 🔍 Lookup span 233710..233714 prefix='codegen__'
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 233730..233736 prefix='codegen__'
+// 🔍 Lookup span 233811..233817 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 233739..233742 prefix='codegen__'
+// 🔍 Lookup span 233820..233823 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 233739..233742 prefix='codegen__'
+// 🔍 Lookup span 233820..233823 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 233827..233833 prefix='codegen__'
+// 🔍 Lookup span 233908..233914 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 233836..233839 prefix='codegen__'
+// 🔍 Lookup span 233917..233920 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 233836..233839 prefix='codegen__'
+// 🔍 Lookup span 233917..233920 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 233963..233969 prefix='codegen__'
+// 🔍 Lookup span 234044..234050 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 233972..233975 prefix='codegen__'
+// 🔍 Lookup span 234053..234056 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 233972..233975 prefix='codegen__'
+// 🔍 Lookup span 234053..234056 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 234024..234030 prefix='codegen__'
+// 🔍 Lookup span 234105..234111 prefix='codegen__'
 //    -> Found: Str
-// 🔍 Lookup span 234033..234036 prefix='codegen__'
+// 🔍 Lookup span 234114..234117 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 234033..234036 prefix='codegen__'
+// 🔍 Lookup span 234114..234117 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 234096..234099 prefix='codegen__'
+// 🔍 Lookup span 234177..234180 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 234096..234099 prefix='codegen__'
+// 🔍 Lookup span 234177..234180 prefix='codegen__'
 //    -> Found: Void
-// 🔍 Lookup span 234111..234117 prefix='codegen__'
+// 🔍 Lookup span 234192..234198 prefix='codegen__'
 //    -> Found: Str
 // 🔍 Lookup span 449..452 prefix=''
 //    -> Found: Void
@@ -60706,14 +60706,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     ast__Program prog = (*({ if (fwd_p_idx < 0 || fwd_p_idx >= programs.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(programs.data[fwd_p_idx]); }));
     (*(env)).current_prefix = (*({ if (fwd_p_idx < 0 || fwd_p_idx >= prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(prefixes.data[fwd_p_idx]); }));
-    std_Vector_ast__Statement* fwd_statements_vec = ((std_Vector_ast__Statement*)&((*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + prog.statements)))));
+    std_Vector_ast__Statement fwd_statements_vec_program_pass = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + prog.statements)));
     int fwd_s_idx = 0;
-    while ((fwd_s_idx < (*(fwd_statements_vec)).len)) {
+    while ((fwd_s_idx < fwd_statements_vec_program_pass.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    ast__Statement stmt = (*({ if (fwd_s_idx < 0 || fwd_s_idx >= (*(fwd_statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(fwd_statements_vec)).data[fwd_s_idx]); }));
+    ast__Statement stmt = (*({ if (fwd_s_idx < 0 || fwd_s_idx >= fwd_statements_vec_program_pass.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(fwd_statements_vec_program_pass.data[fwd_s_idx]); }));
     if ((stmt.tag == 3)) {
-    std_Vector_ast__Parameter* params_vec = ((std_Vector_ast__Parameter*)&((*((std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + stmt.FunctionDecl.params)))));
-    if (((*(params_vec)).len == 1)) {
+    std_Vector_ast__Parameter params_vec_pthread_fwd = (*((std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + stmt.FunctionDecl.params)));
+    if ((params_vec_pthread_fwd.len == 1)) {
     Slice_unsigned_char f_name = stmt.FunctionDecl.name;
     Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, f_name, ctx);
     Slice_unsigned_char c_func_name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
@@ -60814,12 +60814,12 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     ast__Program prog = (*({ if (p_idx2 < 0 || p_idx2 >= programs.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(programs.data[p_idx2]); }));
     (*(env)).current_prefix = (*({ if (p_idx2 < 0 || p_idx2 >= prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(prefixes.data[p_idx2]); }));
-    std_Vector_ast__Statement* statements_vec = ((std_Vector_ast__Statement*)&((*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + prog.statements)))));
+    std_Vector_ast__Statement statements_vec_program_emit = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + prog.statements)));
     int s_idx = 0;
-    while ((s_idx < (*(statements_vec)).len)) {
+    while ((s_idx < statements_vec_program_emit.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
-    (*((ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))) = (*({ if (s_idx < 0 || s_idx >= (*(statements_vec)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(statements_vec)).data[s_idx]); }));
+    (*((ast__Statement*)((char*)ctx->BaseAddress + stmt_idx))) = (*({ if (s_idx < 0 || s_idx >= statements_vec_program_emit.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_program_emit.data[s_idx]); }));
     Slice_unsigned_char stmt_c = codegen__codegen_generate_statement(stmt_idx, env, ctx);
     c_code = (({ Slice_unsigned_char _s1 = c_code; Slice_unsigned_char _s2 = stmt_c; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     s_idx = (s_idx + 1);
