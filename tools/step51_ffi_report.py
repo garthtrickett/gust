@@ -4,7 +4,8 @@
 This helper is intentionally textual and report-only. It narrows the broad
 Makefile FFI regex by separating direct source tokens from generated strings,
 comments, and native runtime boundary files before any compiler-backed FFI
-gating is designed.
+gating is designed. Its summary makes the no-direct-Gust-candidate state
+explicit so the FFI lane does not invent an enforcement surface prematurely.
 '''
 
 from __future__ import annotations
@@ -102,6 +103,22 @@ def print_bucket(title: str, entries: list[tuple[Path, int, str, str]]) -> None:
     print()
 
 
+def print_summary(
+    direct_gust: list[tuple[Path, int, str, str]],
+    native_runtime: list[tuple[Path, int, str, str]],
+    generated_or_string: list[tuple[Path, int, str, str]],
+    comment_only: list[tuple[Path, int, str, str]],
+) -> None:
+    print('Summary:')
+    print(f'Direct Gust source candidates: {len(direct_gust)}')
+    print(f'Native runtime boundary candidates: {len(native_runtime)}')
+    print(f'Generated string/template references: {len(generated_or_string)}')
+    print(f'Comment-only references: {len(comment_only)}')
+    if len(direct_gust) == 0:
+        print('No direct Gust source FFI/native-call candidates were found; keep compiler-backed FFI enforcement deferred until a real syntax surface exists.')
+    print()
+
+
 def main() -> None:
     direct_gust: list[tuple[Path, int, str, str]] = []
     native_runtime: list[tuple[Path, int, str, str]] = []
@@ -143,6 +160,7 @@ def main() -> None:
     print_bucket('Native runtime boundary candidates:', native_runtime)
     print_bucket('Generated string/template FFI references:', generated_or_string)
     print_bucket('Comment-only FFI references:', comment_only)
+    print_summary(direct_gust, native_runtime, generated_or_string, comment_only)
     print('Report-only: do not wire this helper into make test as an enforcement gate.')
 
 

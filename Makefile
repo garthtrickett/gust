@@ -166,6 +166,7 @@ report_step51_phase_d_ffi_status:
 	@echo "   make report_step51_ffi_focused"
 	@echo "   Next enforcement-design slice should inspect direct external-call syntax and runtime/native boundaries before adding any guard."
 	@echo "   The focused report is token-aware to avoid substring noise such as suffix or generic_call."
+	@echo "   If the focused report shows zero Direct Gust source candidates, do not add an FFI guard yet."
 	@echo "   Do not wire broad textual FFI scans into make test; FFI enforcement must be compiler-backed and syntax-aware."
 	@echo "   Still deferred: FFI gating, address escapes, and broader non-laundering/provenance tracking."
 	@echo "✅ Step 5.1D FFI gating status report complete. This target is report-only and does not run guards."
