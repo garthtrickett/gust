@@ -202,6 +202,7 @@ type TypeEnvironment[ctx] struct {
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
+    function_return_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
     resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
@@ -355,6 +356,12 @@ func env_record_variable_provenance(env: *TypeEnvironment[ctx], name: str, prov:
 func env_record_variable_self_provenance(env: *TypeEnvironment[ctx], name: str, t: ast.Type[ctx], ctx: &Arena) {
     mut prov := expression_provenance_for_self_binding(name, t, ctx);
     env_record_variable_provenance(env, name, prov, ctx);
+}
+
+func env_record_function_return_provenance(env: *TypeEnvironment[ctx], name: str, prov: ExpressionProvenance[ctx], ctx: &Arena) {
+    unsafe {
+        (*env).function_return_provenance.Insert(std.Clone(ctx, name), prov);
+    }
 }
 
 func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
@@ -2777,6 +2784,21 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     }
                 }
             }
+
+            if expr.tag == 12 { // Call
+                mut call_name_prov := expression_to_string(expr.Call.function, ctx);
+                mut resolved_call_name_prov := env_resolve_namespaced_ident(env, call_name_prov, ctx);
+                mut return_prov_lookup := (*env).function_return_provenance.Get(resolved_call_name_prov);
+                if return_prov_lookup.Ok {
+                    mut found_call_prov := return_prov_lookup.Val;
+                    found_call_prov.resolved_type = t;
+
+                    mut merged_call_origins := typechecker_clone_origin_set(found_call_prov.legacy_origins, ctx);
+                    set_union(merged_call_origins, legacy_origins, ctx);
+                    found_call_prov.legacy_origins = merged_call_origins;
+                    return found_call_prov;
+                }
+            }
         }
     }
 
@@ -4577,6 +4599,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.struct_layout_abi = std.HashMapNew(ctx);
         env_ref_new.enum_templates = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
+        env_ref_new.function_return_provenance = std.HashMapNew(ctx);
         env_ref_new.variable_types = std.HashMapNew(ctx);
         env_ref_new.resolved_types_nested = std.VectorNew(ctx);
         env_ref_new.enum_registry = std.HashMapNew(ctx);
@@ -4885,6 +4908,11 @@ func function_signature_missing_c_ffi_layout(env: *TypeEnvironment[ctx], sig: Fu
 func env_register_function(env: *TypeEnvironment[ctx], name: str, sig: FunctionSignature[ctx], ctx: &Arena) {
     unsafe {
         (*env).function_registry.Insert(std.Clone(ctx, name), sig);
+
+        mut return_prov_lookup := (*env).function_return_provenance.Get(name);
+        if return_prov_lookup.Ok == false {
+            (*env).function_return_provenance.Insert(std.Clone(ctx, name), expression_provenance_unknown(sig.return_type, ctx));
+        }
     }
     mut msg := std.Format("env_register_function: registered function '%s' with %d parameters", name, sig.params.len);
     typechecker_log_trace("🗄️", msg, ctx);
@@ -6473,6 +6501,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut params_vec_function_decl_impl: std.Vector[ast.Parameter[ctx], ctx] := ctx[stmt.FunctionDecl.params];
             mut return_type_idx := stmt.FunctionDecl.return_type;
             mut body_idx := stmt.FunctionDecl.body;
+            mut function_name_return_prov := env_resolve_namespaced_ident(env, stmt.FunctionDecl.name, ctx);
 
             // Save parent states
             mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
@@ -6610,6 +6639,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
                 m = m + 1;
             }
+
+            env_record_function_return_provenance(env, function_name_return_prov, (*env).current_function_return_provenance, ctx);
 
             // Restore parent states
             (*env).moved_vars = parent_moved;

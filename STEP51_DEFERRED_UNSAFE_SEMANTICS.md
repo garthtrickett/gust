@@ -110,7 +110,9 @@ The second inert implementation slice records expression provenance for local va
 
 The third inert implementation slice records the provenance of return expressions in `TypeEnvironment.current_function_return_provenance` while continuing to update the legacy `current_function_return_origins` set. This slice is guarded by `make guard_step51_return_provenance_capture` and remains non-enforcing: it captures return-expression address-origin/legacy-origin metadata but does not yet reject safe-branded returns.
 
-The first enforcement slice should be narrow and fixture-backed: reject returning a raw-derived or sandbox-derived value as `Index[T, ctx]` or `&T[ctx]` from a safe wrapper. Call, aggregate-field, and container enforcement can then be added incrementally after the variable provenance map, identifier readback path, and return-provenance capture are stable.
+The fourth inert implementation slice records function return provenance in `TypeEnvironment.function_return_provenance` and lets call expressions read that metadata through `check_expression_with_provenance`. This slice is guarded by `make guard_step51_function_call_provenance` and remains non-enforcing: it preserves return-origin metadata across safe Gust call boundaries but does not yet reject laundering.
+
+The first enforcement slice should be narrow and fixture-backed: reject returning a raw-derived or sandbox-derived value as `Index[T, ctx]` or `&T[ctx]` from a safe wrapper. Aggregate-field and container enforcement can then be added incrementally after the variable provenance map, identifier readback path, return-provenance capture, and function-call readback path are stable.
 
 ### Layout-aware FFI validation helper checkpoint
 
