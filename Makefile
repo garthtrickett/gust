@@ -9,7 +9,7 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
-.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_address_escapes_focused report_step51_ffi_calls report_step51_ffi_focused report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement guard_step51_basic_unsafe_enforcement guard_step51_report_only_lanes_not_in_test report_step51_phase_c_basic_unsafe_status report_step51_phase_d_ffi_status report_step51_phase_e_address_escape_status report_step51_phase_f_non_laundering_status report_step51_status_matrix report_step51_raw_pointer_safety_inventory report_step51_final_validation report_step52_linear_resource_inventory report_step52_linear_resource_focused report_step52_phase_a_status report_step52_phase_b_destructor_status report_step52_status_matrix guard_step52_report_only_lanes_not_in_test report_step52_final_validation
+.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_address_escapes_focused report_step51_ffi_calls report_step51_ffi_focused report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement guard_step51_basic_unsafe_enforcement guard_step51_report_only_lanes_not_in_test report_step51_phase_c_basic_unsafe_status report_step51_phase_d_ffi_status report_step51_phase_e_address_escape_status report_step51_phase_f_non_laundering_status report_step51_status_matrix report_step51_raw_pointer_safety_inventory report_step51_final_validation report_step52_linear_resource_inventory report_step52_linear_resource_focused report_step52_phase_a_status report_step52_phase_b_destructor_status report_step52_phase_c_resource_registry_status report_step52_status_matrix guard_step52_report_only_lanes_not_in_test report_step52_final_validation
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -325,6 +325,16 @@ report_step52_phase_b_destructor_status:
 	@echo "   Existing open_directories cleanup remains the legacy specialized lane, not generalized destructor registration."
 	@echo "✅ Step 5.2B destructor/defer status report complete. This target is report-only and does not run guards."
 
+report_step52_phase_c_resource_registry_status:
+	@echo "🧭 Reporting Step 5.2C Resource/open-linear registry status..."
+	@echo "   Current precursor inventory target:"
+	@echo "   make report_step52_linear_resource_focused"
+	@echo "   Inspect the focused report's Future Resource/open-linear registry bucket before designing Resource[ctx, T]."
+	@echo "   Do not replace open_directories until open_linear_resources can track Resource[ctx, T] ownership by context, destructor, and transfer state."
+	@echo "   Resource[ctx, T] must be compiler-backed metadata, not a textual alias for existing linear structs or directory handles."
+	@echo "   Existing open_directories remains the legacy specialized lane until the generalized registry has equivalent directory-handle coverage."
+	@echo "✅ Step 5.2C Resource/open-linear registry status report complete. This target is report-only and does not run guards."
+
 report_step52_status_matrix:
 	@echo "🧭 Step 5.2 linear resource status matrix:"
 	@echo "   Legacy specialized lane still active:"
@@ -334,6 +344,7 @@ report_step52_status_matrix:
 	@echo "   🧭 focused inventory: make report_step52_linear_resource_focused"
 	@echo "   🧭 metadata opt-in status: make report_step52_phase_a_status"
 	@echo "   🧭 destructor/defer status: make report_step52_phase_b_destructor_status"
+	@echo "   🧭 Resource/open-linear registry status: make report_step52_phase_c_resource_registry_status"
 	@echo "   Policy guard wired through make test:"
 	@echo "   ✅ report-only Step 5.2 targets stay out of test deps: make guard_step52_report_only_lanes_not_in_test"
 	@echo "   Deferred generalized compiler-backed work:"
@@ -361,6 +372,7 @@ report_step52_final_validation:
 	@echo "   make report_step52_linear_resource_focused"
 	@echo "   make report_step52_phase_a_status"
 	@echo "   make report_step52_phase_b_destructor_status"
+	@echo "   make report_step52_phase_c_resource_registry_status"
 	@echo "   make report_step52_status_matrix"
 	@echo "   make guard_step52_report_only_lanes_not_in_test"
 	@echo "   make report_step51_status_matrix"
