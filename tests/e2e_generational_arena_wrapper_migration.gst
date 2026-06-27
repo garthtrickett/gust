@@ -14,24 +14,20 @@ func main() {
     defer arena.next_ctx.Free();
 
     arena.survivor = os.ArenaAlloc(arena.current_ctx);
-    mut survivor_ref_wrapper_initial := arena.current_ctx.get_ref(arena.survivor);
-    survivor_ref_wrapper_initial.val = 0;
-    survivor_ref_wrapper_initial.next = null;
+    arena.current_ctx[arena.survivor].val = 0;
+    arena.current_ctx[arena.survivor].next = null;
 
     mut i := 0;
     while i < 1000 {
         mut temp: Index[Node, arena.current_ctx] := os.ArenaAlloc(arena.current_ctx);
-        mut temp_ref_wrapper_loop := arena.current_ctx.get_ref(temp);
-        temp_ref_wrapper_loop.val = i;
+        arena.current_ctx[temp].val = i;
 
         mut new_child: Index[Node, arena.current_ctx] := os.ArenaAlloc(arena.current_ctx);
-        mut new_child_ref_wrapper_loop := arena.current_ctx.get_ref(new_child);
-        new_child_ref_wrapper_loop.val = i * 2;
-        new_child_ref_wrapper_loop.next = null;
+        arena.current_ctx[new_child].val = i * 2;
+        arena.current_ctx[new_child].next = null;
 
-        mut survivor_ref_wrapper_loop := arena.current_ctx.get_ref(arena.survivor);
-        survivor_ref_wrapper_loop.next = new_child;
-        survivor_ref_wrapper_loop.val = survivor_ref_wrapper_loop.val + temp_ref_wrapper_loop.val;
+        arena.current_ctx[arena.survivor].next = new_child;
+        arena.current_ctx[arena.survivor].val = arena.current_ctx[arena.survivor].val + arena.current_ctx[temp].val;
 
         arena.Step();
 
