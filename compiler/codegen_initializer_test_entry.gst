@@ -30,7 +30,7 @@ func main() {
     unsafe {
         mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_guard_test.statements];
         mut guard_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[guard_stmt_idx] = statements_vec[0];
+        ctx.Set(guard_stmt_idx, statements_vec[0]);
         
         // Step 2: Pre-populate variable_types and resolved_types to test type resolution
         mut value_expr := ctx[guard_stmt_idx].Guard.value;
@@ -98,7 +98,9 @@ func main() {
         t_param_int.tag = 0;
         t_param_arena_ptr.tag = 9; // RawPointer
         t_param_arena_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_param_arena_ptr.RawPointer.inner].tag = 4; // Arena
+        mut t_param_arena_ptr_inner_codegen_init: ast.Type[ctx];
+        t_param_arena_ptr_inner_codegen_init.tag = 4; // Arena
+        ctx.Set(t_param_arena_ptr.RawPointer.inner, t_param_arena_ptr_inner_codegen_init);
 
         t_param_arena.tag = 4; // Arena
     }
@@ -133,7 +135,7 @@ func main() {
     typechecker.env_pre_register_statement(&env, statements_vec_func_test[0], ctx);
     
     mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx[stmt_idx] = statements_vec_func_test[0];
+    ctx.Set(stmt_idx, statements_vec_func_test[0]);
     
     // Execute statement generation
     mut _discard := codegen.codegen_generate_statement(stmt_idx, &env, ctx);
@@ -249,14 +251,14 @@ func main() {
         t_node_idx.Index.brand = empty[Index[str, ctx]];
         unsafe {
             t_node_idx.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-            ctx[t_node_idx.Index.brand] = "current_ctx";
+            ctx.Set(t_node_idx.Index.brand, "current_ctx");
         }
         // Insert into resolved types for the expression 'node'
         mut node_expr_idx := ctx[expr_clone].Call.arguments; // Vector[Expression]
         unsafe {
             mut args_vec: std.Vector[ast.Expression[ctx], ctx] := ctx[node_expr_idx];
             mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[arg1_idx] = args_vec[1];
+            ctx.Set(arg1_idx, args_vec[1]);
             mut span1 := parser.get_expression_span(arg1_idx, ctx);
             
             mut entry_node: typechecker.ResolvedTypeEntry[ctx];
@@ -304,7 +306,7 @@ func main() {
         unsafe {
             mut args_vec: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_clone_str].Call.arguments];
             mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[arg1_idx] = args_vec[1];
+            ctx.Set(arg1_idx, args_vec[1]);
             span_str_var = parser.get_expression_span(arg1_idx, ctx);
             
             mut entry_str: typechecker.ResolvedTypeEntry[ctx];
@@ -419,7 +421,7 @@ func main() {
         t_listnode_idx.Index.brand = empty[Index[str, ctx]];
         unsafe {
             t_listnode_idx.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-            ctx[t_listnode_idx.Index.brand] = "ctx";
+            ctx.Set(t_listnode_idx.Index.brand, "ctx");
         }
         
         mut cast_alloc_span := parser.get_expression_span(expr_cast_alloc_test, ctx);
@@ -500,7 +502,9 @@ func main() {
     unsafe {
         t_ptr.tag = 9; // RawPointer
         t_ptr.RawPointer.inner = inner_idx;
-        ctx[t_ptr.RawPointer.inner].tag = 0; // Int
+        mut t_ptr_inner_codegen_init: ast.Type[ctx];
+        t_ptr_inner_codegen_init.tag = 0; // Int
+        ctx.Set(t_ptr.RawPointer.inner, t_ptr_inner_codegen_init);
     }
     mut init_ptr := codegen.codegen_gen_type_aware_initializer(t_ptr, &env, ctx);
     os.LogStr(init_ptr); // Expected: NULL
@@ -694,7 +698,7 @@ func main() {
         t_branded_vect.Struct.struct_name = "std_Vector_str_ctx";
         brand_v_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
         t_branded_vect.Struct.brand = brand_v_idx;
-        ctx[t_branded_vect.Struct.brand] = "ctx";
+        ctx.Set(t_branded_vect.Struct.brand, "ctx");
     }
 
     mut t_lookup: ast.Type[ctx];
@@ -704,7 +708,7 @@ func main() {
         t_lookup.Struct.struct_name = "LookupResult_os_Dir_ctx";
         brand_l_idx = os.ArenaAlloc(ctx) as Index[str, ctx];
         t_lookup.Struct.brand = brand_l_idx;
-        ctx[t_lookup.Struct.brand] = "ctx";
+        ctx.Set(t_lookup.Struct.brand, "ctx");
     }
 
     mut erased_lookup := codegen.codegen_erase_type(t_lookup, &env, ctx);
@@ -735,7 +739,7 @@ func main() {
     
     mut args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        ctx[args_idx] = args;
+        ctx.Set(args_idx, args);
         t_gen_vector.Generic.args = args_idx;
     }
     
@@ -750,7 +754,7 @@ func main() {
     mut brand1: Index[str, ctx] := empty[Index[str, ctx]];
     unsafe {
         brand1 = os.ArenaAlloc(ctx) as Index[str, ctx];
-        ctx[brand1] = "ctx1";
+        ctx.Set(brand1, "ctx1");
     }
     layout1.brand = brand1;
     layout1.fields = std.HashMapNew(ctx);
@@ -765,7 +769,7 @@ func main() {
     mut brand2: Index[str, ctx] := empty[Index[str, ctx]];
     unsafe {
         brand2 = os.ArenaAlloc(ctx) as Index[str, ctx];
-        ctx[brand2] = "ctx2";
+        ctx.Set(brand2, "ctx2");
     }
     layout2.brand = brand2;
     layout2.fields = std.HashMapNew(ctx);
@@ -799,7 +803,7 @@ func main() {
         t_branded_prog.tag = 8;
         t_branded_prog.Struct.struct_name = "ast__Program_ctx";
         t_branded_prog.Struct.brand = brand_prog_idx;
-        ctx[t_branded_prog.Struct.brand] = "ctx";
+        ctx.Set(t_branded_prog.Struct.brand, "ctx");
     }
 
     // Register ast__Program in the struct registry of env
@@ -879,7 +883,7 @@ func main() {
     unsafe {
         t_vec_ptr.tag = 9; // RawPointer
         t_vec_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_vec_ptr.RawPointer.inner] = t_vec_test;
+        ctx.Set(t_vec_ptr.RawPointer.inner, t_vec_test);
     }
     os.LogInt(codegen.codegen_is_vector_type(t_vec_ptr, &env, ctx)); // Expected: 1
 
@@ -894,7 +898,7 @@ func main() {
     unsafe {
         t_pool_ptr.tag = 9; // RawPointer
         t_pool_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_pool_ptr.RawPointer.inner] = t_pool_test;
+        ctx.Set(t_pool_ptr.RawPointer.inner, t_pool_test);
     }
     os.LogInt(codegen.codegen_is_pool_type(t_pool_ptr, &env, ctx)); // Expected: 1
 
@@ -915,7 +919,9 @@ func main() {
     unsafe {
         keys_ptr_type.tag = 9; // RawPointer
         keys_ptr_type.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[keys_ptr_type.RawPointer.inner].tag = 5; // Str
+        mut keys_ptr_inner_codegen_init: ast.Type[ctx];
+        keys_ptr_inner_codegen_init.tag = 5; // Str
+        ctx.Set(keys_ptr_type.RawPointer.inner, keys_ptr_inner_codegen_init);
     }
     
     map_str_layout.fields.Insert("keys", keys_ptr_type);
@@ -928,7 +934,7 @@ func main() {
     unsafe {
         t_map_ptr.tag = 9; // RawPointer
         t_map_ptr.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_map_ptr.RawPointer.inner] = t_map_str_test;
+        ctx.Set(t_map_ptr.RawPointer.inner, t_map_str_test);
     }
     os.LogInt(codegen.codegen_is_hashmap_type(t_map_ptr, &env, ctx)); // Expected: 1
 
@@ -948,7 +954,9 @@ func main() {
     unsafe {
         keys_int_ptr_type.tag = 9; // RawPointer
         keys_int_ptr_type.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[keys_int_ptr_type.RawPointer.inner].tag = 0; // Int
+        mut keys_int_ptr_inner_codegen_init: ast.Type[ctx];
+        keys_int_ptr_inner_codegen_init.tag = 0; // Int
+        ctx.Set(keys_int_ptr_type.RawPointer.inner, keys_int_ptr_inner_codegen_init);
     }
     
     map_int_layout.fields.Insert("keys", keys_int_ptr_type);
@@ -1012,15 +1020,17 @@ func main() {
         e_slice_access.IndexAccess.index = os.ArenaAlloc(ctx);
         
         // Set allocator as identifier "my_slice"
-        ctx[e_slice_access.IndexAccess.allocator].tag = 0; // Identifier
-        ctx[e_slice_access.IndexAccess.allocator].Identifier.span.start.offset = 100;
-        ctx[e_slice_access.IndexAccess.allocator].Identifier.span.end.offset = 108;
+        mut e_slice_allocator_ref_codegen_init := ctx.get_ref(e_slice_access.IndexAccess.allocator);
+        e_slice_allocator_ref_codegen_init.tag = 0; // Identifier
+        e_slice_allocator_ref_codegen_init.Identifier.span.start.offset = 100;
+        e_slice_allocator_ref_codegen_init.Identifier.span.end.offset = 108;
 
         // Set index as integer 2
-        ctx[e_slice_access.IndexAccess.index].tag = 1; // Integer
-        ctx[e_slice_access.IndexAccess.index].Integer.val = 2;
-        ctx[e_slice_access.IndexAccess.index].Integer.span.start.offset = 109;
-        ctx[e_slice_access.IndexAccess.index].Integer.span.end.offset = 110;
+        mut e_slice_index_ref_codegen_init := ctx.get_ref(e_slice_access.IndexAccess.index);
+        e_slice_index_ref_codegen_init.tag = 1; // Integer
+        e_slice_index_ref_codegen_init.Integer.val = 2;
+        e_slice_index_ref_codegen_init.Integer.span.start.offset = 109;
+        e_slice_index_ref_codegen_init.Integer.span.end.offset = 110;
 
         e_slice_access.IndexAccess.span.start.offset = 100;
         e_slice_access.IndexAccess.span.end.offset = 111;
@@ -1031,7 +1041,9 @@ func main() {
     unsafe {
         t_slice.tag = 6; // Slice
         t_slice.Slice.inner = os.ArenaAlloc(ctx);
-        ctx[t_slice.Slice.inner].tag = 0; // Int
+        mut t_slice_inner_codegen_init: ast.Type[ctx];
+        t_slice_inner_codegen_init.tag = 0; // Int
+        ctx.Set(t_slice.Slice.inner, t_slice_inner_codegen_init);
     }
 
     mut t_int_test: ast.Type[ctx];
@@ -1057,7 +1069,7 @@ func main() {
     env.resolved_types_nested.Push(pfx_entry2);
 
     mut expr_slice_access_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx[expr_slice_access_idx] = e_slice_access;
+    ctx.Set(expr_slice_access_idx, e_slice_access);
     mut slice_gen_str := codegen.codegen_generate_expression(expr_slice_access_idx, &env, ctx);
     os.LogStr(slice_gen_str); // Expected: (*({ if (2 < 0 || 2 >= my_slice.len) { printf("Slice bounds check failed at line %d\n", __LINE__); exit(1); } &(my_slice.data[2]); }))
 
@@ -1068,15 +1080,17 @@ func main() {
         e_ptr_access.IndexAccess.allocator = os.ArenaAlloc(ctx);
         e_ptr_access.IndexAccess.index = os.ArenaAlloc(ctx);
 
-        ctx[e_ptr_access.IndexAccess.allocator].tag = 0; // Identifier
-        ctx[e_ptr_access.IndexAccess.allocator].Identifier.name = "my_ptr";
-        ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.start.offset = 200;
-        ctx[e_ptr_access.IndexAccess.allocator].Identifier.span.end.offset = 206;
+        mut e_ptr_allocator_ref_codegen_init := ctx.get_ref(e_ptr_access.IndexAccess.allocator);
+        e_ptr_allocator_ref_codegen_init.tag = 0; // Identifier
+        e_ptr_allocator_ref_codegen_init.Identifier.name = "my_ptr";
+        e_ptr_allocator_ref_codegen_init.Identifier.span.start.offset = 200;
+        e_ptr_allocator_ref_codegen_init.Identifier.span.end.offset = 206;
 
-        ctx[e_ptr_access.IndexAccess.index].tag = 1; // Integer
-        ctx[e_ptr_access.IndexAccess.index].Integer.val = 3;
-        ctx[e_ptr_access.IndexAccess.index].Integer.span.start.offset = 207;
-        ctx[e_ptr_access.IndexAccess.index].Integer.span.end.offset = 208;
+        mut e_ptr_index_ref_codegen_init := ctx.get_ref(e_ptr_access.IndexAccess.index);
+        e_ptr_index_ref_codegen_init.tag = 1; // Integer
+        e_ptr_index_ref_codegen_init.Integer.val = 3;
+        e_ptr_index_ref_codegen_init.Integer.span.start.offset = 207;
+        e_ptr_index_ref_codegen_init.Integer.span.end.offset = 208;
 
         e_ptr_access.IndexAccess.span.start.offset = 200;
         e_ptr_access.IndexAccess.span.end.offset = 209;
@@ -1086,7 +1100,9 @@ func main() {
     unsafe {
         t_ptr_test.tag = 9; // RawPointer
         t_ptr_test.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t_ptr_test.RawPointer.inner].tag = 0; // Int
+        mut t_ptr_test_inner_codegen_init: ast.Type[ctx];
+        t_ptr_test_inner_codegen_init.tag = 0; // Int
+        ctx.Set(t_ptr_test.RawPointer.inner, t_ptr_test_inner_codegen_init);
     }
 
     mut entry_ptr: typechecker.ResolvedTypeEntry[ctx];
@@ -1107,7 +1123,7 @@ func main() {
     env.resolved_types_nested.Push(pfx_entry3);
 
     mut expr_ptr_access_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx[expr_ptr_access_idx] = e_ptr_access;
+    ctx.Set(expr_ptr_access_idx, e_ptr_access);
     mut ptr_gen_str := codegen.codegen_generate_expression(expr_ptr_access_idx, &env, ctx);
     os.LogStr(ptr_gen_str); // Expected: (my_ptr[3])
 
@@ -1120,16 +1136,18 @@ func main() {
         e_vec_access.IndexAccess.index = os.ArenaAlloc(ctx);
         
         // Set allocator as identifier "my_vec"
-        ctx[e_vec_access.IndexAccess.allocator].tag = 0; // Identifier
-        ctx[e_vec_access.IndexAccess.allocator].Identifier.name = "my_vec";
-        ctx[e_vec_access.IndexAccess.allocator].Identifier.span.start.offset = 300;
-        ctx[e_vec_access.IndexAccess.allocator].Identifier.span.end.offset = 306;
+        mut e_vec_allocator_ref_codegen_init := ctx.get_ref(e_vec_access.IndexAccess.allocator);
+        e_vec_allocator_ref_codegen_init.tag = 0; // Identifier
+        e_vec_allocator_ref_codegen_init.Identifier.name = "my_vec";
+        e_vec_allocator_ref_codegen_init.Identifier.span.start.offset = 300;
+        e_vec_allocator_ref_codegen_init.Identifier.span.end.offset = 306;
 
         // Set index as integer 4
-        ctx[e_vec_access.IndexAccess.index].tag = 1; // Integer
-        ctx[e_vec_access.IndexAccess.index].Integer.val = 4;
-        ctx[e_vec_access.IndexAccess.index].Integer.span.start.offset = 307;
-        ctx[e_vec_access.IndexAccess.index].Integer.span.end.offset = 308;
+        mut e_vec_index_ref_codegen_init := ctx.get_ref(e_vec_access.IndexAccess.index);
+        e_vec_index_ref_codegen_init.tag = 1; // Integer
+        e_vec_index_ref_codegen_init.Integer.val = 4;
+        e_vec_index_ref_codegen_init.Integer.span.start.offset = 307;
+        e_vec_index_ref_codegen_init.Integer.span.end.offset = 308;
 
         e_vec_access.IndexAccess.span.start.offset = 300;
         e_vec_access.IndexAccess.span.end.offset = 309;
@@ -1154,7 +1172,7 @@ func main() {
     env.resolved_types_nested.Push(pfx_entry_vec);
 
     mut expr_vec_access_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx[expr_vec_access_idx] = e_vec_access;
+    ctx.Set(expr_vec_access_idx, e_vec_access);
     mut vec_gen_str := codegen.codegen_generate_expression(expr_vec_access_idx, &env, ctx);
     os.LogStr(vec_gen_str); // Expected: (*({ if (4 < 0 || 4 >= my_vec.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(my_slice.data[2]); }))
 
@@ -1165,15 +1183,17 @@ func main() {
         e_map_access.IndexAccess.allocator = os.ArenaAlloc(ctx); 
         e_map_access.IndexAccess.index = os.ArenaAlloc(ctx); 
         
-        ctx[e_map_access.IndexAccess.allocator].tag = 0; // Identifier 
-        ctx[e_map_access.IndexAccess.allocator].Identifier.name = "my_map"; 
-        ctx[e_map_access.IndexAccess.allocator].Identifier.span.start.offset = 400; 
-        ctx[e_map_access.IndexAccess.allocator].Identifier.span.end.offset = 406; 
+        mut e_map_allocator_ref_codegen_init := ctx.get_ref(e_map_access.IndexAccess.allocator);
+        e_map_allocator_ref_codegen_init.tag = 0; // Identifier 
+        e_map_allocator_ref_codegen_init.Identifier.name = "my_map"; 
+        e_map_allocator_ref_codegen_init.Identifier.span.start.offset = 400; 
+        e_map_allocator_ref_codegen_init.Identifier.span.end.offset = 406; 
         
-        ctx[e_map_access.IndexAccess.index].tag = 0; // Identifier 
-        ctx[e_map_access.IndexAccess.index].Identifier.name = "my_key"; 
-        ctx[e_map_access.IndexAccess.index].Identifier.span.start.offset = 407; 
-        ctx[e_map_access.IndexAccess.index].Identifier.span.end.offset = 413; 
+        mut e_map_index_ref_codegen_init := ctx.get_ref(e_map_access.IndexAccess.index);
+        e_map_index_ref_codegen_init.tag = 0; // Identifier 
+        e_map_index_ref_codegen_init.Identifier.name = "my_key"; 
+        e_map_index_ref_codegen_init.Identifier.span.start.offset = 407; 
+        e_map_index_ref_codegen_init.Identifier.span.end.offset = 413; 
         
         e_map_access.IndexAccess.span.start.offset = 400; 
         e_map_access.IndexAccess.span.end.offset = 414; 
@@ -1198,7 +1218,7 @@ func main() {
     env.resolved_types_nested.Push(pfx_entry_map);
 
     mut expr_map_access_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx[expr_map_access_idx] = e_map_access;
+    ctx.Set(expr_map_access_idx, e_map_access);
     mut map_gen_str := codegen.codegen_generate_expression(expr_map_access_idx, &env, ctx);
     os.LogStr(map_gen_str); // Expected: (*os_HashMapRef(&my_map, my_key, 1))
 
@@ -1211,7 +1231,7 @@ func main() {
     unsafe {
         mut unsafe_test_statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_step1_3_test.statements];
         mut unsafe_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[unsafe_stmt_idx] = unsafe_test_statements_vec[0];
+        ctx.Set(unsafe_stmt_idx, unsafe_test_statements_vec[0]);
 
         // Register the variable 'x' as type Int (0) to allow type resolution inside codegen
         mut unsafe_test_body_idx := ctx[unsafe_stmt_idx].UnsafeBlock.body;
@@ -1256,7 +1276,7 @@ func main() {
     unsafe {
         mut while_test_statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_while_test.statements];
         mut while_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[while_stmt_idx] = while_test_statements_vec[0];
+        ctx.Set(while_stmt_idx, while_test_statements_vec[0]);
 
         mut t_int: ast.Type[ctx];
         t_int.tag = 0; // Int
@@ -1281,7 +1301,7 @@ func main() {
         mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_rec_gen.statements];
         typechecker.env_pre_register_statement(&env, statements_vec[0], ctx);
         mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[stmt_idx] = statements_vec[0];
+        ctx.Set(stmt_idx, statements_vec[0]);
         mut rec_c := codegen.codegen_generate_statement(stmt_idx, &env, ctx);
         os.LogStr(rec_c); // Expected prologue: if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { ... }
     }
@@ -1295,7 +1315,7 @@ func main() {
     unsafe {
         mut if_test_statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_if_test.statements];
         mut if_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[if_stmt_idx] = if_test_statements_vec[0];
+        ctx.Set(if_stmt_idx, if_test_statements_vec[0]);
 
         mut t_bool: ast.Type[ctx];
         t_bool.tag = 2; // Bool
@@ -1322,7 +1342,7 @@ func main() {
     unsafe { 
         mut ifelse_test_statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_ifelse_test.statements];
         mut ifelse_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[ifelse_stmt_idx] = ifelse_test_statements_vec[0];
+        ctx.Set(ifelse_stmt_idx, ifelse_test_statements_vec[0]);
 
         mut t_int: ast.Type[ctx];
         t_int.tag = 0; // Int
@@ -1348,7 +1368,7 @@ func main() {
     unsafe {
         mut defer_test_statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_defer_test.statements];
         mut while_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[while_stmt_idx] = defer_test_statements_vec[0];
+        ctx.Set(while_stmt_idx, defer_test_statements_vec[0]);
 
         mut t_int: ast.Type[ctx];
         t_int.tag = 0; // Int
@@ -1385,7 +1405,7 @@ func main() {
     unsafe {
         mut defer_single_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_defer_single.statements];
         mut defer_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[defer_stmt_idx] = defer_single_vec[0];
+        ctx.Set(defer_stmt_idx, defer_single_vec[0]);
 
         mut defer_single_c := codegen.codegen_generate_statement(defer_stmt_idx, &env, ctx);
         os.LogStr(defer_single_c); // Expected: ""
@@ -1410,7 +1430,7 @@ func main() {
     unsafe {
         mut match_test_statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_match_test.statements];
         mut match_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[match_stmt_idx] = match_test_statements_vec[0];
+        ctx.Set(match_stmt_idx, match_test_statements_vec[0]);
 
         mut expr_idx := ctx[match_stmt_idx].Match.expression;
         mut expr_span := parser.get_expression_span(expr_idx, ctx);
@@ -1479,7 +1499,7 @@ func main() {
     unsafe {
         mut match_test_statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog_match_test_4_2.statements];
         mut match_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[match_stmt_idx] = match_test_statements_vec[0];
+        ctx.Set(match_stmt_idx, match_test_statements_vec[0]);
 
         mut expr_idx := ctx[match_stmt_idx].Match.expression;
         mut expr_span := parser.get_expression_span(expr_idx, ctx);
