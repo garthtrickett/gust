@@ -11,7 +11,9 @@ func main() {
 
     match opt_wrong_field {
         Some { wrong } => {
-            os.LogInt(*wrong);
+            unsafe {
+                os.LogInt(*wrong);
+            }
         }
         None => {
             os.LogStr("none");

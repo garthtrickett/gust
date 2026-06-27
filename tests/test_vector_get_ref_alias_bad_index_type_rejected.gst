@@ -7,5 +7,7 @@ func main() {
     vec_alias_bad_index.Push(1);
 
     mut bad_ref := std.VectorGetRef(vec_alias_bad_index, "not an index");
-    os.LogInt(*bad_ref);
+    unsafe {
+        os.LogInt(*bad_ref);
+    }
 }

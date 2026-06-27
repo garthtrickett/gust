@@ -11,7 +11,9 @@ func main() {
 
     match opt_invalid_variant {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         Missing => {
             os.LogStr("missing");

@@ -7,5 +7,7 @@ func main() {
     map_missing_ref.Insert(1, 100);
 
     mut missing_ref := map_missing_ref.GetRef(2);
-    os.LogInt(*missing_ref);
+    unsafe {
+        os.LogInt(*missing_ref);
+    }
 }

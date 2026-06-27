@@ -9,7 +9,9 @@ func main() {
     mut bad_lookup := map.get_opt("bad");
     match bad_lookup {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");

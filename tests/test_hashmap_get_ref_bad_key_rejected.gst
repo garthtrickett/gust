@@ -7,5 +7,7 @@ func main() {
     map_bad_key_ref.Insert(1, 10);
 
     mut bad_key_ref := map_bad_key_ref.GetRef("not an int key");
-    os.LogInt(*bad_key_ref);
+    unsafe {
+        os.LogInt(*bad_key_ref);
+    }
 }

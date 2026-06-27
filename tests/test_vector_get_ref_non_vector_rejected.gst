@@ -3,5 +3,7 @@ func main() {
 
     // Reject: GetRef is only defined for std.Vector receivers.
     mut bad_ref := not_vec.GetRef(0);
-    os.LogInt(*bad_ref);
+    unsafe {
+        os.LogInt(*bad_ref);
+    }
 }
