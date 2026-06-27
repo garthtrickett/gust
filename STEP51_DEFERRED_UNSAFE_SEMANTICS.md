@@ -104,9 +104,11 @@ Propagation points for the first compiler-backed implementation should be:
 6. **Returns:** returning raw-derived, sandbox-derived, or unknown unsafe-origin values as `Index[T, ctx]` or `&T[ctx]` must eventually reject with a non-laundering diagnostic. Returning raw pointers remains governed by unsafe context and existing escape-analysis rules until the broader guard lands.
 7. **Brand construction:** safe branded `Index[T, ctx]` and `&T[ctx]` values can only be constructed from formal compiler-verified arena operations or later explicit validation/copy APIs. Unsafe blocks do not grant permission to rebrand raw-derived addresses as safe arena values.
 
-The first implementation slice now adds an inert `ExpressionProvenance[ctx]` carrier and helper functions only: expression-origin result plumbing, address-origin join predicates, default-safe/default-unknown/default-raw/default-sandbox constructors, and a compatibility bridge over the existing legacy `OriginSet[ctx]` root tracker. This slice is guarded by `make guard_step51_expression_provenance_carrier` and intentionally does not reject new programs.
+The first implementation slice adds an inert `ExpressionProvenance[ctx]` carrier and helper functions only: expression-origin result plumbing, address-origin join predicates, default-safe/default-unknown/default-raw/default-sandbox constructors, and a compatibility bridge over the existing legacy `OriginSet[ctx]` root tracker. This slice is guarded by `make guard_step51_expression_provenance_carrier` and intentionally does not reject new programs.
 
-The first enforcement slice should be narrow and fixture-backed: reject returning a raw-derived or sandbox-derived value as `Index[T, ctx]` or `&T[ctx]` from a safe wrapper. Assignment, call, and container enforcement can then be added incrementally after the carrier is stable and threaded through those paths.
+The second inert implementation slice records expression provenance for local variable declarations and assignment targets in `TypeEnvironment.variable_provenance`, while continuing to mirror the established `variable_origins` behavior. This slice is guarded by `make guard_step51_variable_provenance_bindings` and remains non-enforcing: it records address-origin/legacy-origin metadata but does not yet emit non-laundering diagnostics.
+
+The first enforcement slice should be narrow and fixture-backed: reject returning a raw-derived or sandbox-derived value as `Index[T, ctx]` or `&T[ctx]` from a safe wrapper. Call, return, aggregate-field, and container enforcement can then be added incrementally after the variable provenance map is stable and threaded through those paths.
 
 ### Layout-aware FFI validation helper checkpoint
 

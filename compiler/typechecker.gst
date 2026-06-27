@@ -208,6 +208,7 @@ type TypeEnvironment[ctx] struct {
     current_prefix: str,
     imports: std.HashMap[str, str, ctx],
     variable_origins: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx],
+    variable_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     moved_vars: std.HashMap[str, int, ctx],
     open_directories: std.HashMap[str, int, ctx],
     errors: std.Vector[errors.CompilerError[ctx], ctx],
@@ -328,6 +329,23 @@ func expression_provenance_requires_unsafe_boundary(prov: ExpressionProvenance[c
 
 func expression_provenance_is_raw_or_sandbox_derived(prov: ExpressionProvenance[ctx]) int {
     return address_origin_is_raw_or_sandbox_derived(prov.address_origin);
+}
+
+func expression_provenance_for_self_binding(name: str, t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    mut prov := expression_provenance_unknown(t, ctx);
+    set_add(prov.legacy_origins, name, ctx);
+    return prov;
+}
+
+func env_record_variable_provenance(env: *TypeEnvironment[ctx], name: str, prov: ExpressionProvenance[ctx], ctx: &Arena) {
+    unsafe {
+        (*env).variable_provenance.Insert(std.Clone(ctx, name), prov);
+    }
+}
+
+func env_record_variable_self_provenance(env: *TypeEnvironment[ctx], name: str, t: ast.Type[ctx], ctx: &Arena) {
+    mut prov := expression_provenance_for_self_binding(name, t, ctx);
+    env_record_variable_provenance(env, name, prov, ctx);
 }
 
 func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
@@ -4531,6 +4549,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.imports.Insert(std.Clone(ctx, "std"), std.Clone(ctx, "std_"));
         env_ref_new.imports.Insert(std.Clone(ctx, "os"), std.Clone(ctx, "os_"));
         env_ref_new.variable_origins = std.HashMapNew(ctx);
+        env_ref_new.variable_provenance = std.HashMapNew(ctx);
         env_ref_new.moved_vars = std.HashMapNew(ctx);
         env_ref_new.open_directories = std.HashMapNew(ctx);
         env_ref_new.errors = std.VectorNew(ctx);
@@ -6582,25 +6601,32 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                val_type = check_expression(val_idx, env, scope, ctx);
-                val_type = env_resolve_type(env, val_type, ctx);
+                mut val_prov_decl := check_expression_with_provenance(val_idx, env, scope, ctx);
+                val_type = env_resolve_type(env, val_prov_decl.resolved_type, ctx);
 
                 mut origs := set_init(ctx);
                 mut is_ephemeral := env_type_is_ephemeral_view(val_type, ctx);
                 if is_ephemeral == 1 {
-                    mut temp_origs := get_expression_origins(val_idx, env, ctx);
-                    origs = typechecker_clone_origin_set(temp_origs, ctx);
+                    origs = typechecker_clone_origin_set(val_prov_decl.legacy_origins, ctx);
                 }
                 if ctx[origs].map.len == 0 {
                     set_add(origs, std.Clone(ctx, name), ctx);
                 }
                 (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
+
+                val_prov_decl.resolved_type = val_type;
+                val_prov_decl.legacy_origins = origs;
+                env_record_variable_provenance(env, name, val_prov_decl, ctx);
             } else {
                 if var_type_idx != empty[Index[ast.Type[ctx], ctx]] { 
                     mut origs := set_init(ctx);
                     val_type = resolved_explicit;
                     set_add(origs, std.Clone(ctx, name), ctx);
                     (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
+
+                    mut decl_prov := expression_provenance_unknown(val_type, ctx);
+                    decl_prov.legacy_origins = origs;
+                    env_record_variable_provenance(env, name, decl_prov, ctx);
                 } else {
                     mut msg := std.Concat("Semantic Error: Uninitialized variable '", name);
                     msg = std.Concat(msg, "' must have an explicit type annotation");
@@ -6791,8 +6817,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 left_type = check_expression(left_idx, env, scope, ctx);
             }
 
-            mut val_type := check_expression(val_idx, env, scope, ctx);
-            val_type = env_resolve_type(env, val_type, ctx);
+            mut val_prov_assignment := check_expression_with_provenance(val_idx, env, scope, ctx);
+            mut val_type := env_resolve_type(env, val_prov_assignment.resolved_type, ctx);
+            val_prov_assignment.resolved_type = val_type;
 
             if types_match(left_type, val_type, ctx) == 0 {
                 mut msg := "Semantic Error: [TypeMismatch] Mismatched types in assignment. Cannot assign ";
@@ -6911,14 +6938,17 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         // Track assignments to variables to update their active memory origins
                         mut origs := set_init(ctx);
                         if env_type_is_ephemeral_view(left_type, ctx) == 1 {
-                            mut temp_origs := get_expression_origins(val_idx, env, ctx);
-                            origs = typechecker_clone_origin_set(temp_origs, ctx);
+                            origs = typechecker_clone_origin_set(val_prov_assignment.legacy_origins, ctx);
                         }
                         if left.tag == 0 { // Identifier
                             if ctx[origs].map.len == 0 {
                                 set_add(origs, root_name, ctx);
                             }
                             (*env).variable_origins.Insert(std.Clone(ctx, root_name), origs);
+
+                            mut assign_prov := val_prov_assignment;
+                            assign_prov.legacy_origins = origs;
+                            env_record_variable_provenance(env, root_name, assign_prov, ctx);
                         } else { 
                             if ctx[origs].map.len > 0 {
                                 mut existing_lookup := (*env).variable_origins.Get(root_name);
@@ -6926,8 +6956,16 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                     mut cloned_existing := typechecker_clone_origin_set(existing_lookup.Val, ctx);
                                     set_union(cloned_existing, origs, ctx);
                                     (*env).variable_origins.Insert(std.Clone(ctx, root_name), cloned_existing);
+
+                                    mut merged_assign_prov := val_prov_assignment;
+                                    merged_assign_prov.legacy_origins = cloned_existing;
+                                    env_record_variable_provenance(env, root_name, merged_assign_prov, ctx);
                                 } else {
                                     (*env).variable_origins.Insert(std.Clone(ctx, root_name), origs);
+
+                                    mut assign_prov_new := val_prov_assignment;
+                                    assign_prov_new.legacy_origins = origs;
+                                    env_record_variable_provenance(env, root_name, assign_prov_new, ctx);
                                 }
                             }
                         }
@@ -6967,14 +7005,17 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         // Track assignments to variables to update their active memory origins
                         mut origs := set_init(ctx);
                         if env_type_is_ephemeral_view(left_type, ctx) == 1 {
-                            mut temp_origs := get_expression_origins(val_idx, env, ctx);
-                            origs = typechecker_clone_origin_set(temp_origs, ctx);
+                            origs = typechecker_clone_origin_set(val_prov_assignment.legacy_origins, ctx);
                         }
                         if left.tag == 0 { // Identifier
                             if ctx[origs].map.len == 0 {
                                 set_add(origs, root_name, ctx);
                             }
                             (*env).variable_origins.Insert(std.Clone(ctx, root_name), origs);
+
+                            mut assign_prov := val_prov_assignment;
+                            assign_prov.legacy_origins = origs;
+                            env_record_variable_provenance(env, root_name, assign_prov, ctx);
                         } else { 
                             if ctx[origs].map.len > 0 {
                                 mut existing_lookup := (*env).variable_origins.Get(root_name);
@@ -6982,8 +7023,16 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                     mut cloned_existing := typechecker_clone_origin_set(existing_lookup.Val, ctx);
                                     set_union(cloned_existing, origs, ctx);
                                     (*env).variable_origins.Insert(std.Clone(ctx, root_name), cloned_existing);
+
+                                    mut merged_assign_prov := val_prov_assignment;
+                                    merged_assign_prov.legacy_origins = cloned_existing;
+                                    env_record_variable_provenance(env, root_name, merged_assign_prov, ctx);
                                 } else {
                                     (*env).variable_origins.Insert(std.Clone(ctx, root_name), origs);
+
+                                    mut assign_prov_new := val_prov_assignment;
+                                    assign_prov_new.legacy_origins = origs;
+                                    env_record_variable_provenance(env, root_name, assign_prov_new, ctx);
                                 }
                             }
                         }
