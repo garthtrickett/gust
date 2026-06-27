@@ -310,7 +310,8 @@ report_step52_phase_a_status:
 	@echo "   make report_step52_linear_resource_inventory"
 	@echo "   make report_step52_linear_resource_focused"
 	@echo "   Step 5.2A must stay metadata-opt-in so ordinary compiler structs, primitives, and unannotated collections bypass linear-resource analysis."
-	@echo "   Do not replace open_directories or add generalized leak enforcement until linear metadata, destructor registration, and Resource[ctx, T] representation are designed."
+	@echo "   Do not replace open_directories or add generalized leak enforcement until future Resource[ctx, T] syntax, destructor registration, and open_linear_resources representation are designed."
+	@echo "   Existing linear metadata/tests are not the same as the future generalized Resource[ctx, T] surface."
 	@echo "   Existing directory tracking remains the legacy specialized resource lane until generalized linear-resource infrastructure exists."
 	@echo "✅ Step 5.2A metadata opt-in status report complete. This target is report-only and does not run guards."
 
@@ -329,6 +330,7 @@ report_step52_status_matrix:
 	@echo "   ⏳ Resource[ctx, T] representation"
 	@echo "   ⏳ open_linear_resources registry"
 	@echo "   ⏳ destructor registration and defer validation"
+	@echo "   Existing linear metadata/test coverage is inventory context, not generalized resource enforcement."
 	@echo "   Do not purge open_directories or add generalized leak enforcement until the deferred pieces exist."
 	@echo "✅ Step 5.2 linear resource status matrix complete. This target is report-only and does not run guards."
 

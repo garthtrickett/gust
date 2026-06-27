@@ -2,9 +2,9 @@
 '''Step 5.2 focused linear-resource inventory helper.
 
 This helper is intentionally textual and report-only. It separates the current
-specialized directory-handle tracking lane from future generalized linear
-resource syntax before any Resource[ctx, T], destructor metadata, or leak
-enforcement is designed.
+specialized directory-handle tracking lane and existing linear-type metadata
+from future generalized resource syntax before any Resource[ctx, T], destructor
+metadata, or leak enforcement is designed.
 '''
 
 from __future__ import annotations
@@ -30,10 +30,12 @@ NATIVE_DIRECTORY_TERMS = (
     'readdir',
     'closedir',
 )
-GENERALIZED_LINEAR_TERMS = (
+EXISTING_LINEAR_METADATA_TERMS = (
     '#[linear]',
     'is_linear',
     'linear',
+)
+FUTURE_RESOURCE_TERMS = (
     'Resource[',
     'open_linear_resources',
 )
@@ -120,25 +122,28 @@ def print_bucket(title: str, entries: list[tuple[Path, int, str, str]]) -> None:
 def print_summary(
     specialized_directory_tracking: list[tuple[Path, int, str, str]],
     native_directory_boundaries: list[tuple[Path, int, str, str]],
-    generalized_linear_syntax: list[tuple[Path, int, str, str]],
+    existing_linear_metadata: list[tuple[Path, int, str, str]],
+    future_resource_syntax: list[tuple[Path, int, str, str]],
     destructor_or_defer_syntax: list[tuple[Path, int, str, str]],
     generated_or_comment_only: list[tuple[Path, int, str, str]],
 ) -> None:
     print('Summary:')
     print(f'Specialized directory tracking entries: {len(specialized_directory_tracking)}')
     print(f'Native directory runtime boundary entries: {len(native_directory_boundaries)}')
-    print(f'Generalized linear-resource syntax entries: {len(generalized_linear_syntax)}')
+    print(f'Existing linear metadata/test entries: {len(existing_linear_metadata)}')
+    print(f'Future Resource/open-linear registry entries: {len(future_resource_syntax)}')
     print(f'Destructor/defer syntax entries: {len(destructor_or_defer_syntax)}')
     print(f'Generated string/comment-only references: {len(generated_or_comment_only)}')
-    if len(generalized_linear_syntax) == 0:
-        print('No generalized Resource[ctx, T] or #[linear] syntax is present yet; keep Step 5.2 enforcement deferred.')
+    if len(future_resource_syntax) == 0:
+        print('No Resource[ctx, T] or open_linear_resources syntax is present yet; keep generalized Step 5.2 enforcement deferred.')
     print()
 
 
 def main() -> None:
     specialized_directory_tracking: list[tuple[Path, int, str, str]] = []
     native_directory_boundaries: list[tuple[Path, int, str, str]] = []
-    generalized_linear_syntax: list[tuple[Path, int, str, str]] = []
+    existing_linear_metadata: list[tuple[Path, int, str, str]] = []
+    future_resource_syntax: list[tuple[Path, int, str, str]] = []
     destructor_or_defer_syntax: list[tuple[Path, int, str, str]] = []
     generated_or_comment_only: list[tuple[Path, int, str, str]] = []
 
@@ -151,24 +156,28 @@ def main() -> None:
         for line_no, raw in enumerate(lines, start=1):
             raw_specialized = matching_terms(raw, SPECIALIZED_DIRECTORY_TERMS)
             raw_native = matching_terms(raw, NATIVE_DIRECTORY_TERMS)
-            raw_generalized = matching_terms(raw, GENERALIZED_LINEAR_TERMS)
+            raw_existing_linear = matching_terms(raw, EXISTING_LINEAR_METADATA_TERMS)
+            raw_future_resource = matching_terms(raw, FUTURE_RESOURCE_TERMS)
             raw_destructor = matching_terms(raw, DESTRUCTOR_TERMS)
-            if raw_specialized == '' and raw_native == '' and raw_generalized == '' and raw_destructor == '':
+            if raw_specialized == '' and raw_native == '' and raw_existing_linear == '' and raw_future_resource == '' and raw_destructor == '':
                 continue
 
             stripped = strip_comments_and_strings(raw)
             specialized_terms = matching_terms(stripped, SPECIALIZED_DIRECTORY_TERMS)
             native_terms = matching_terms(stripped, NATIVE_DIRECTORY_TERMS)
-            generalized_terms = matching_terms(stripped, GENERALIZED_LINEAR_TERMS)
+            existing_linear_terms = matching_terms(stripped, EXISTING_LINEAR_METADATA_TERMS)
+            future_resource_terms = matching_terms(stripped, FUTURE_RESOURCE_TERMS)
             destructor_terms = matching_terms(stripped, DESTRUCTOR_TERMS)
 
-            if specialized_terms == '' and native_terms == '' and generalized_terms == '' and destructor_terms == '':
-                raw_terms = ', '.join(term for term in [raw_specialized, raw_native, raw_generalized, raw_destructor] if term != '')
+            if specialized_terms == '' and native_terms == '' and existing_linear_terms == '' and future_resource_terms == '' and destructor_terms == '':
+                raw_terms = ', '.join(term for term in [raw_specialized, raw_native, raw_existing_linear, raw_future_resource, raw_destructor] if term != '')
                 add_entry(generated_or_comment_only, path, line_no, raw, raw_terms)
                 continue
 
-            if generalized_terms != '':
-                add_entry(generalized_linear_syntax, path, line_no, raw, generalized_terms)
+            if existing_linear_terms != '':
+                add_entry(existing_linear_metadata, path, line_no, raw, existing_linear_terms)
+            if future_resource_terms != '':
+                add_entry(future_resource_syntax, path, line_no, raw, future_resource_terms)
             if destructor_terms != '':
                 add_entry(destructor_or_defer_syntax, path, line_no, raw, destructor_terms)
             if native_terms != '':
@@ -181,13 +190,15 @@ def main() -> None:
     print()
     print_bucket('Specialized directory tracking entries:', specialized_directory_tracking)
     print_bucket('Native directory runtime boundary entries:', native_directory_boundaries)
-    print_bucket('Generalized linear-resource syntax entries:', generalized_linear_syntax)
+    print_bucket('Existing linear metadata/test entries:', existing_linear_metadata)
+    print_bucket('Future Resource/open-linear registry entries:', future_resource_syntax)
     print_bucket('Destructor/defer syntax entries:', destructor_or_defer_syntax)
     print_bucket('Generated string/comment-only references:', generated_or_comment_only)
     print_summary(
         specialized_directory_tracking,
         native_directory_boundaries,
-        generalized_linear_syntax,
+        existing_linear_metadata,
+        future_resource_syntax,
         destructor_or_defer_syntax,
         generated_or_comment_only,
     )
