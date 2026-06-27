@@ -19,14 +19,18 @@ func main() {
     vec.Push(20);
     vec.Push(30);
     mut vec_ref := vec.GetRef(0);
-    os.LogInt(*vec_ref);
-    *vec_ref = *vec_ref + 5;
+    unsafe {
+        os.LogInt(*vec_ref);
+        *vec_ref = *vec_ref + 5;
+    }
 
     // Vector.get_opt baseline: additive Option lookup remains supported.
     mut vec_hit := vec.get_opt(0);
     match vec_hit {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");
@@ -36,7 +40,9 @@ func main() {
     mut vec_miss := vec.get_opt(99);
     match vec_miss {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");
@@ -66,7 +72,9 @@ func main() {
     mut opt_hit := map.get_opt(8);
     match opt_hit {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");
@@ -76,7 +84,9 @@ func main() {
     mut opt_miss := map.get_opt(123);
     match opt_miss {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");

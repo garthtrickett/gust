@@ -8,14 +8,14 @@ func check_nested_some(ctx: &Arena) {
 
     match nested_some {
         Some { val } => {
-            match *val {
-                Some => {
-                    unsafe {
+            unsafe {
+                match *val {
+                    Some => {
                         os.LogInt((*val).Some.val);
                     }
-                }
-                None => {
-                    os.LogStr("inner none");
+                    None => {
+                        os.LogStr("inner none");
+                    }
                 }
             }
         }
@@ -33,14 +33,14 @@ func check_nested_none(ctx: &Arena) {
 
     match nested_none {
         Some { val } => {
-            match *val {
-                Some => {
-                    unsafe {
+            unsafe {
+                match *val {
+                    Some => {
                         os.LogInt((*val).Some.val);
                     }
-                }
-                None => {
-                    os.LogStr("inner none");
+                    None => {
+                        os.LogStr("inner none");
+                    }
                 }
             }
         }

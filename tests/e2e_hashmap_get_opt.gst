@@ -9,7 +9,9 @@ func main() {
     mut hit := map.get_opt(7);
     match hit {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");
@@ -19,7 +21,9 @@ func main() {
     mut miss := map.get_opt(42);
     match miss {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");

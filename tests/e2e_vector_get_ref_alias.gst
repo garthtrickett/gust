@@ -8,8 +8,10 @@ func main() {
     vec_alias.Push(22);
 
     mut alias_ref := std.VectorGetRef(vec_alias, 1);
-    os.LogInt(*alias_ref);
+    unsafe {
+        os.LogInt(*alias_ref);
 
-    *alias_ref = 44;
+        *alias_ref = 44;
+    }
     os.LogInt(vec_alias[1]);
 }

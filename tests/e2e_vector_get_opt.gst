@@ -11,7 +11,9 @@ func main() {
     mut hit := vec.get_opt(1);
     match hit {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");
@@ -21,7 +23,9 @@ func main() {
     mut miss := vec.get_opt(99);
     match miss {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");

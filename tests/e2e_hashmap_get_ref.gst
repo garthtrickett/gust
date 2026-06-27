@@ -8,9 +8,11 @@ func main() {
     map_ref_test.Insert("beta", 20);
 
     mut alpha_ref := map_ref_test.GetRef("alpha");
-    os.LogInt(*alpha_ref);
+    unsafe {
+        os.LogInt(*alpha_ref);
 
-    *alpha_ref = *alpha_ref + 5;
+        *alpha_ref = *alpha_ref + 5;
+    }
 
     mut legacy_after_ref := map_ref_test.Get("alpha");
     if legacy_after_ref.Ok {
@@ -22,7 +24,9 @@ func main() {
     mut beta_opt_after_ref := map_ref_test.get_opt("beta");
     match beta_opt_after_ref {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");

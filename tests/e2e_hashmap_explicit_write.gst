@@ -25,7 +25,9 @@ func main() {
     mut opt_hit := map.get_opt(2);
     match opt_hit {
         Some { val } => {
-            os.LogInt(*val);
+            unsafe {
+                os.LogInt(*val);
+            }
         }
         None => {
             os.LogStr("None");

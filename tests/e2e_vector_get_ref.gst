@@ -9,9 +9,11 @@ func main() {
     vec_ref.Push(30);
 
     mut elem_ref := vec_ref.GetRef(1);
-    os.LogInt(*elem_ref);
+    unsafe {
+        os.LogInt(*elem_ref);
 
-    *elem_ref = 42;
+        *elem_ref = 42;
+    }
     os.LogInt(vec_ref[1]);
 
     // Runtime negative half: this should trip the generated bounds check.
