@@ -108,6 +108,14 @@ git diff --check
 ```
 
 * **Known Red Tests:** If the full suite has pre-existing failures, they must be explicitly documented before the checkpoint. A Step 4.4 patch may only proceed when it introduces no new full-suite failures and `make bootstrap` still converges.
+
+### F. Step 4.5A Read-Only Subscript & Explicit Write Boundary
+* **Rule:** Subscript indexing syntax such as `ctx[index]`, `vec[i]`, and `map_like[key]` is a safe read expression. It should be treated as copy-by-default in high-level compiler and user code, not as an implicit mutable borrow.
+* **Transitional Write Boundary:** Direct subscript writes such as `ctx[index] = value` are still allowed during Step 4.5A because the compiler and tests have not yet been migrated to explicit write APIs. These writes are transitional inventory targets, not the long-term safe-code style.
+* **Future Safe-Code Mutation Form:** Safe code should move toward explicit write-back APIs such as `ctx.Set(index, value)` / `ctx.Write(index, value)` and container-level write APIs such as `vec.Set(i, value)` where replacement is required. Direct mutation through a borrowed reference should use explicit reference-access methods such as `ctx.get_ref(index)` or `vec.GetRef(i)`.
+* **Deferred Enforcement:** Do not add the typechecker ban for subscript expressions on the assignment LHS in Step 4.5A. Enforcement belongs to the later Step 4.5C/unsafe-boundary work, after explicit write APIs exist and compiler sources have been migrated. When enforcement lands, it must reject direct subscript LHS assignment only in safe code and continue to permit low-level direct subscript writes inside explicit unsafe blocks where required.
+* **Inventory Before Enforcement:** Use `make report_step45_subscript_lvalue_writes` to inventory remaining direct subscript writes. This target is report-only during Step 4.5A and must not be wired as a failing guard until the write API and compiler migration steps are complete.
+
 ## TOOL USE CONSTRAINTS & DISCIPLINE
 - **Prohibition of Execution Tools**: You are strictly prohibited from calling any command execution, bash shell, terminal, or system-running tools (such as `vm_shell:execute_bash` or any equivalent system command triggers).
 - **Allowed Tool Scope**: You must only use information-retrieval and text-generation tools (such as `google:search` and `browsing:browse` to gather context, and text responses to supply code patches). 
