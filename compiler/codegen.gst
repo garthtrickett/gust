@@ -3444,9 +3444,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "std.Spawn") || std.str_eq(func_str, "std_Spawn") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling std.Spawn FFI override", ctx);
-                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_std_spawn: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut task_func_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[task_func_expr_idx] = (*args_vec)[0];
+                ctx[task_func_expr_idx] = args_vec_std_spawn[0];
                 mut raw_func_name := codegen_generate_expression(task_func_expr_idx, env, ctx);
                 mut resolved_raw_func_name := typechecker.env_resolve_namespaced_ident(env, raw_func_name, ctx);
                 
@@ -3464,7 +3464,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 }
                 
                 mut task_arg_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[task_arg_expr_idx] = (*args_vec)[1];
+                ctx[task_arg_expr_idx] = args_vec_std_spawn[1];
                 mut arg_str := codegen_generate_expression(task_arg_expr_idx, env, ctx);
                 
                 mut is_ptr := 0;
@@ -3498,9 +3498,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "os.Exit") || std.str_eq(func_str, "os_Exit") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.Exit FFI override", ctx);
-                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_os_exit: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg_idx] = (*args_vec)[0];
+                ctx[arg_idx] = args_vec_os_exit[0];
                 mut arg_str := codegen_generate_expression(arg_idx, env, ctx);
                 mut res := std.Concat("exit(", arg_str);
                 res = std.Concat(res, ")");
@@ -3509,13 +3509,13 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "os.ReadFile") || std.str_eq(func_str, "os_ReadFile") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.ReadFile FFI override", ctx);
-                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_os_read_file: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_os_read_file[0];
                 mut arg_arena := codegen_generate_expression(arg0_idx, env, ctx);
 
                 mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg1_idx] = (*args_vec)[1];
+                ctx[arg1_idx] = args_vec_os_read_file[1];
                 mut arg_path := codegen_generate_expression(arg1_idx, env, ctx);
 
                 mut is_ptr := 0;
@@ -3539,13 +3539,13 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "os.WriteFile") || std.str_eq(func_str, "os_WriteFile") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.WriteFile FFI override", ctx);
-                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_os_write_file: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_os_write_file[0];
                 mut arg_path := codegen_generate_expression(arg0_idx, env, ctx);
 
                 mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg1_idx] = (*args_vec)[1];
+                ctx[arg1_idx] = args_vec_os_write_file[1];
                 mut arg_contents := codegen_generate_expression(arg1_idx, env, ctx);
 
                 mut res := std.Concat("os_WriteFile(", arg_path);
@@ -3557,13 +3557,13 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "os.OpenDir") || std.str_eq(func_str, "os_OpenDir") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.OpenDir FFI override", ctx);
-                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_os_open_dir: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_os_open_dir[0];
                 mut arg_arena := codegen_generate_expression(arg0_idx, env, ctx);
 
                 mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg1_idx] = (*args_vec)[1];
+                ctx[arg1_idx] = args_vec_os_open_dir[1];
                 mut arg_path := codegen_generate_expression(arg1_idx, env, ctx);
 
                 mut is_ptr := 0;
@@ -3587,13 +3587,13 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "os.ReadDir") || std.str_eq(func_str, "os_ReadDir") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.ReadDir FFI override", ctx);
-                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_os_read_dir: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_os_read_dir[0];
                 mut arg_arena := codegen_generate_expression(arg0_idx, env, ctx);
 
                 mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg1_idx] = (*args_vec)[1];
+                ctx[arg1_idx] = args_vec_os_read_dir[1];
                 mut arg_dir := codegen_generate_expression(arg1_idx, env, ctx);
 
                 mut is_ptr := 0;
@@ -3617,9 +3617,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "os.CloseDir") || std.str_eq(func_str, "os_CloseDir") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.CloseDir FFI override", ctx);
-                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_os_close_dir: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_os_close_dir[0];
                 mut arg_dir := codegen_generate_expression(arg0_idx, env, ctx);
 
                 mut res := std.Concat("os_CloseDir(", arg_dir);
@@ -3629,9 +3629,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "os.ArenaAlloc") || std.str_eq(func_str, "os_ArenaAlloc") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.ArenaAlloc FFI override", ctx);
-                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_os_arena_alloc: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_os_arena_alloc[0];
                 mut arg_arena := codegen_generate_expression(arg0_idx, env, ctx);
 
                 mut is_ptr := 0;
@@ -3660,9 +3660,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "os.ArenaValidate") || std.str_eq(func_str, "os_ArenaValidate") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.ArenaValidate FFI override", ctx);
-                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_os_arena_validate: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_os_arena_validate[0];
                 mut arg_arena := codegen_generate_expression(arg0_idx, env, ctx);
 
                 mut is_ptr := 0;
@@ -3684,17 +3684,17 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "os.path_join") || std.str_eq(func_str, "os_path_join") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling os.path_join FFI override", ctx);
-                mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                mut args_vec_os_path_join: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg0_idx] = (*args_vec)[0];
+                ctx[arg0_idx] = args_vec_os_path_join[0];
                 mut arg0 := codegen_generate_expression(arg0_idx, env, ctx);
 
                 mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg1_idx] = (*args_vec)[1];
+                ctx[arg1_idx] = args_vec_os_path_join[1];
                 mut arg1 := codegen_generate_expression(arg1_idx, env, ctx);
 
                 mut arg2_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[arg2_idx] = (*args_vec)[2];
+                ctx[arg2_idx] = args_vec_os_path_join[2];
                 mut arg2 := codegen_generate_expression(arg2_idx, env, ctx);
 
                 mut is_ptr := 0;
@@ -3732,15 +3732,15 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 i = i + 1;
             }
 
-                 mut args_vec := &ctx[ctx[expr_idx].Call.arguments] as *std.Vector[ast.Expression[ctx], ctx];
+                 mut args_vec_generic_call_tail: std.Vector[ast.Expression[ctx], ctx] := ctx[ctx[expr_idx].Call.arguments];
                 mut args_str := "";
                 mut j := 0;
-                while j < len(*args_vec) {
+                while j < len(args_vec_generic_call_tail) {
                     if j > 0 {
                         args_str = std.Concat(args_str, ", ");
                     }
                     mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx[arg_idx] = (*args_vec)[j];
+                    ctx[arg_idx] = args_vec_generic_call_tail[j];
                     mut arg_str := codegen_generate_expression(arg_idx, env, ctx);
 
                     mut is_arena := 0;
