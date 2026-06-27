@@ -1012,6 +1012,28 @@ guard_step51_function_call_provenance: gust
 	fi
 	@echo "✅ Step 5.1 inert function-call return provenance metadata guard passed."
 
+guard_step51_aggregate_field_provenance: gust
+	@echo "🔒 Checking Step 5.1 inert aggregate-field provenance metadata..."
+	@mkdir -p build
+	@./gust compiler/typechecker_aggregate_field_provenance_test_entry.gst > build/step51_aggregate_field_provenance.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "❌ Step 5.1 aggregate-field provenance guard failed: compiler rejected the fixture."; \
+		cat build/step51_aggregate_field_provenance.log; \
+		exit $$status; \
+	fi
+	@grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/step51_aggregate_field_provenance.log > build/typechecker_aggregate_field_provenance_test_entry.c
+	@cat src/runtime.c build/typechecker_aggregate_field_provenance_test_entry.c > build/typechecker_aggregate_field_provenance_test_entry_final.c
+	@${CC} ${CFLAGS} ${INCLUDES} build/typechecker_aggregate_field_provenance_test_entry_final.c -o build/typechecker_aggregate_field_provenance_test_entry_bin
+	@./build/typechecker_aggregate_field_provenance_test_entry_bin >> build/step51_aggregate_field_provenance.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "❌ Step 5.1 aggregate-field provenance guard failed at runtime."; \
+		cat build/step51_aggregate_field_provenance.log; \
+		exit $$status; \
+	fi
+	@echo "✅ Step 5.1 inert aggregate-field provenance metadata guard passed."
+
 guard_step51_basic_unsafe_enforcement: guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement
 	@echo "✅ Step 5.1 basic unsafe enforcement aggregate passed."
 
