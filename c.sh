@@ -92,4 +92,13 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_raw_pointer_classi
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step51_raw_pointer_safe_code_candidates:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step51_raw_pointer_safe_code_candidates ---"
+        (cd "$PROJECT_ROOT" && make report_step51_raw_pointer_safe_code_candidates)
+        echo "--- END OF REPORT make report_step51_raw_pointer_safe_code_candidates ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 echo "✅ Aggregated target project files into $PROJECT_ROOT/$OUTPUT_FILE"
