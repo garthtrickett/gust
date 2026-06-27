@@ -15,7 +15,8 @@ type FunctionSignature[ctx] struct {
     param_names: std.Vector[str, ctx],
     params: std.Vector[ast.Type[ctx], ctx],
     return_type: ast.Type[ctx],
-    return_origins: Index[OriginSet[ctx], ctx]
+    return_origins: Index[OriginSet[ctx], ctx],
+    is_unsafe: int
 }
 
 type Scope[ctx] struct {
@@ -2299,6 +2300,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
             mut has_custom_sig := 0;
             mut sig: FunctionSignature[ctx];
+            sig.is_unsafe = 0;
             
             if std.str_eq(resolved_func, "std_Concat") || std.str_eq(resolved_func, "std.Concat") {
                 mut args_vec_concat_sig: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
@@ -2346,6 +2348,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if is_valid_func == 1 {
+                if sig.is_unsafe == 1 && (*env).in_unsafe_block == 0 {
+                    mut msg_unsafe_call := "Semantic Error: Unsafe function calls require an explicit 'unsafe' block";
+                    report_error(2, msg_unsafe_call, expr.Call.span, env, ctx);
+                }
+
                 mut args_vec_valid_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                 mut evaluated_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
                 
@@ -4048,6 +4055,7 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
         sig.params = params;
         sig.return_type = ret_t;
         sig.return_origins = set_init(ctx);
+        sig.is_unsafe = 0;
         
         mut param_names: std.Vector[str, ctx] := std.VectorNew(ctx);
         mut i := 0;
@@ -4142,6 +4150,7 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             sig_arena_new.params = arena_new_params;
             sig_arena_new.return_type = t_arena;
             sig_arena_new.return_origins = set_init(ctx);
+            sig_arena_new.is_unsafe = 0;
             env_register_function(env, "os_Arena_New", sig_arena_new, ctx);
             env_register_function(env, "os.Arena.New", sig_arena_new, ctx);
             env_register_function(env, "os_Arena.New", sig_arena_new, ctx);
@@ -4947,6 +4956,7 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             }
             sig.return_type = env_resolve_type(env, ctx[stmt.FunctionDecl.return_type], ctx);
             sig.return_origins = set_init(ctx);
+            sig.is_unsafe = stmt.FunctionDecl.is_unsafe;
 
             env_register_function(env, namespaced_name, sig, ctx);
         }
@@ -6094,6 +6104,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut old_return_origins := (*env).current_function_return_origins;
             mut old_inout_params := (*env).current_function_inout_params;
             mut old_local_vars := (*env).current_function_local_vars;
+            mut old_in_unsafe_func_body := (*env).in_unsafe_block;
+            if stmt.FunctionDecl.is_unsafe == 1 {
+                (*env).in_unsafe_block = 1;
+            }
 
             mut resolved_ret_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx.Set(resolved_ret_idx, env_resolve_type(env, ctx[return_type_idx], ctx));
@@ -6180,6 +6194,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).current_function_return_origins = old_return_origins;
             (*env).current_function_inout_params = old_inout_params;
             (*env).current_function_local_vars = old_local_vars;
+            (*env).in_unsafe_block = old_in_unsafe_func_body;
 
             return res;
         }
@@ -7699,6 +7714,7 @@ func env_synthesize_is_valid_helpers(env: *TypeEnvironment[ctx], ctx: &Arena) {
                 t_ret.tag = 0; // Int
                 sig.return_type = t_ret;
                 sig.return_origins = set_init(ctx);
+                sig.is_unsafe = 0;
                 
                 (*env).function_registry.Insert(std.Clone(ctx, func_name), sig);
             }

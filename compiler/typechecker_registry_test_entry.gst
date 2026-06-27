@@ -22,6 +22,7 @@ func main() {
     mut sig: typechecker.FunctionSignature[ctx];
     sig.param_names = std.VectorNew(ctx);
     sig.params = std.VectorNew(ctx);
+    sig.is_unsafe = 0;
     unsafe { 
         sig.return_type.tag = 0; // Int
     }

@@ -87,6 +87,7 @@ func main() {
     mut sig_test: typechecker.FunctionSignature[ctx];
     sig_test.param_names = std.VectorNew(ctx);
     sig_test.params = std.VectorNew(ctx);
+    sig_test.is_unsafe = 0;
 
     mut t_param_int: ast.Type[ctx];
     mut t_param_arena_ptr: ast.Type[ctx];
@@ -1389,12 +1390,14 @@ func main() {
         sig_cleanup_first.param_names = std.VectorNew(ctx);
         sig_cleanup_first.params = std.VectorNew(ctx);
         sig_cleanup_first.return_type.tag = 3; // Void
+        sig_cleanup_first.is_unsafe = 0;
         env.function_registry.Insert("cleanup_first", sig_cleanup_first);
 
         mut sig_cleanup_second: typechecker.FunctionSignature[ctx];
         sig_cleanup_second.param_names = std.VectorNew(ctx); 
         sig_cleanup_second.params = std.VectorNew(ctx);
         sig_cleanup_second.return_type.tag = 3; // Void
+        sig_cleanup_second.is_unsafe = 0;
         env.function_registry.Insert("cleanup_second", sig_cleanup_second);
 
         mut defer_c := codegen.codegen_generate_statement(while_stmt_idx, &env, ctx);
