@@ -218,6 +218,7 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   Compiler-backed FFI call-site gating: make guard_step51_extern_func_call_enforcement"
 	@echo "   Layout attribute parser metadata: parser accepts #[repr(C)] and #[packed] into StructDecl only."
 	@echo "   Payload-safe layout metadata store: TypeEnvironment keeps repr-C/packed/ABI maps separate from StructLayout."
+	@echo "   Layout metadata query helpers: env_struct_is_repr_c / env_struct_is_packed / env_struct_requires_layout_metadata."
 	@echo "   Next semantic checkpoint: sandboxed FFI sub-arenas and layout-aware FFI validation."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
@@ -232,7 +233,7 @@ report_step51_status_matrix:
 	@echo "   ✅ local raw-derived pointer return escape: make guard_step51_raw_pointer_local_escape_enforcement"
 	@echo "   ✅ extern function parser metadata: make guard_step51_extern_func_parser_metadata"
 	@echo "   ✅ extern function calls outside unsafe: make guard_step51_extern_func_call_enforcement"
-	@echo "   ✅ layout metadata defaults and attributes: make guard_step51_layout_metadata_defaults"
+	@echo "   ✅ layout metadata defaults, attributes, and registry helpers: make guard_step51_layout_metadata_defaults"
 	@echo "   Aggregate: make guard_step51_basic_unsafe_enforcement"
 	@echo "   Report-only / deferred lanes:"
 	@echo "   🧭 FFI layout annotations and sandboxed FFI: make report_step51_phase_d_ffi_status"
@@ -770,7 +771,7 @@ guard_step51_extern_func_call_enforcement: gust
 	@echo "✅ Step 5.1 extern function call enforcement guard passed."
 
 guard_step51_layout_metadata_defaults: gust
-	@echo "🔒 Checking Step 5.1 layout metadata defaults and parser attributes..."
+	@echo "🔒 Checking Step 5.1 layout metadata defaults, parser attributes, and registry helpers..."
 	@mkdir -p build
 	@./gust compiler/parser_layout_metadata_test_entry.gst > build/step51_layout_metadata_defaults.log 2>&1; \
 	status=$$?; \
@@ -789,7 +790,24 @@ guard_step51_layout_metadata_defaults: gust
 		cat build/step51_layout_metadata_defaults.log; \
 		exit $$status; \
 	fi
-	@echo "✅ Step 5.1 layout metadata defaults and parser attributes guard passed."
+	@./gust compiler/typechecker_layout_metadata_test_entry.gst > build/step51_layout_metadata_registry.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+					echo "❌ Step 5.1 layout metadata guard failed: compiler rejected the registry helper fixture."; \
+		cat build/step51_layout_metadata_registry.log; \
+		exit $$status; \
+	fi
+	@grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/step51_layout_metadata_registry.log > build/typechecker_layout_metadata_test_entry.c
+	@cat src/runtime.c build/typechecker_layout_metadata_test_entry.c > build/typechecker_layout_metadata_test_entry_final.c
+	@${CC} ${CFLAGS} ${INCLUDES} build/typechecker_layout_metadata_test_entry_final.c -o build/typechecker_layout_metadata_test_entry_bin
+	@./build/typechecker_layout_metadata_test_entry_bin >> build/step51_layout_metadata_registry.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+					echo "❌ Step 5.1 layout metadata registry guard failed at runtime."; \
+		cat build/step51_layout_metadata_registry.log; \
+		exit $$status; \
+	fi
+	@echo "✅ Step 5.1 layout metadata defaults, parser attributes, and registry helpers guard passed."
 
 guard_step51_basic_unsafe_enforcement: guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement
 	@echo "✅ Step 5.1 basic unsafe enforcement aggregate passed."

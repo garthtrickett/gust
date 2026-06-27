@@ -4506,6 +4506,46 @@ func env_register_struct_layout_metadata(env: *TypeEnvironment[ctx], name: str, 
     typechecker_log_trace("🗄️", msg, ctx);
 }
 
+func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).struct_layout_repr_c.Get(name);
+        if lookup.Ok {
+            return lookup.Val;
+        }
+        return 0;
+    }
+}
+
+func env_struct_is_packed(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).struct_layout_packed.Get(name);
+        if lookup.Ok {
+            return lookup.Val;
+        }
+        return 0;
+    }
+}
+
+func env_struct_layout_abi(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
+    unsafe {
+        mut lookup := (*env).struct_layout_abi.Get(name);
+        if lookup.Ok {
+            return lookup.Val;
+        }
+        return "";
+    }
+}
+
+func env_struct_requires_layout_metadata(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    if env_struct_is_repr_c(env, name, ctx) == 1 {
+        return 1;
+    }
+    if env_struct_is_packed(env, name, ctx) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
 func env_register_function(env: *TypeEnvironment[ctx], name: str, sig: FunctionSignature[ctx], ctx: &Arena) {
     unsafe {
         (*env).function_registry.Insert(std.Clone(ctx, name), sig);
