@@ -1700,28 +1700,28 @@ func main() {
     t_safe_arena_subscript_write_rej.path = "tests/test_safe_arena_subscript_write_rejected.gst";
     t_safe_arena_subscript_write_rej.is_negative = 1;
     t_safe_arena_subscript_write_rej.is_substring = 1;
-    t_safe_arena_subscript_write_rej.expected = "DirectSubscriptWrite";
+    t_safe_arena_subscript_write_rej.expected = "direct subscript writes require unsafe or explicit write APIs";
     tests.Push(t_safe_arena_subscript_write_rej);
 
     mut t_safe_arena_subscript_field_write_rej: Test[ctx];
     t_safe_arena_subscript_field_write_rej.path = "tests/test_safe_arena_subscript_field_write_rejected.gst";
     t_safe_arena_subscript_field_write_rej.is_negative = 1;
     t_safe_arena_subscript_field_write_rej.is_substring = 1;
-    t_safe_arena_subscript_field_write_rej.expected = "DirectSubscriptWrite";
+    t_safe_arena_subscript_field_write_rej.expected = "direct subscript writes require unsafe or explicit write APIs";
     tests.Push(t_safe_arena_subscript_field_write_rej);
 
     mut t_safe_vector_subscript_write_rej: Test[ctx];
     t_safe_vector_subscript_write_rej.path = "tests/test_safe_vector_subscript_write_rejected.gst";
     t_safe_vector_subscript_write_rej.is_negative = 1;
     t_safe_vector_subscript_write_rej.is_substring = 1;
-    t_safe_vector_subscript_write_rej.expected = "DirectSubscriptWrite";
+    t_safe_vector_subscript_write_rej.expected = "direct subscript writes require unsafe or explicit write APIs";
     tests.Push(t_safe_vector_subscript_write_rej);
 
     mut t_safe_nested_selector_subscript_write_rej: Test[ctx];
     t_safe_nested_selector_subscript_write_rej.path = "tests/test_safe_nested_selector_subscript_field_write_rejected.gst";
     t_safe_nested_selector_subscript_write_rej.is_negative = 1;
     t_safe_nested_selector_subscript_write_rej.is_substring = 1;
-    t_safe_nested_selector_subscript_write_rej.expected = "DirectSubscriptWrite";
+    t_safe_nested_selector_subscript_write_rej.expected = "direct subscript writes require unsafe or explicit write APIs";
     tests.Push(t_safe_nested_selector_subscript_write_rej);
 
     mut t_unsafe_arena_subscript_write_ok: Test[ctx];

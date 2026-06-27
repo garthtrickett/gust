@@ -6319,7 +6319,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             if (*env).in_unsafe_block == 0 {
                 mut is_direct_subscript_lhs_step45c := is_direct_subscript_write_lhs(left_idx, ctx);
                 if is_direct_subscript_lhs_step45c == 1 {
-                    mut msg_direct_subscript_step45c := "Semantic Error: [DirectSubscriptWrite] Direct subscript writes require unsafe or explicit write APIs";
+                    mut msg_direct_subscript_step45c := "Semantic Error: [UnsafeSubscriptWrite] direct subscript writes require unsafe or explicit write APIs";
                     report_error(2, msg_direct_subscript_step45c, stmt.Assignment.span, env, ctx);
                 }
             }
