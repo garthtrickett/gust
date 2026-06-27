@@ -47,7 +47,8 @@ type TokenType enum {
     Bool,
     True,
     False,
-    Extern
+    Extern,
+    Hash
 }
 
 type Position struct {

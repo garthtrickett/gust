@@ -39,8 +39,21 @@ module.exports = grammar({
       ';'
     ),
 
+    layout_attribute: $ => seq(
+      '#',
+      '[',
+      choice(
+        seq('repr', '(', 'C', ')'),
+        'packed'
+      ),
+      ']'
+    ),
+
     // type FieldDef[ctx] struct { ... }
+    // #[repr(C)] type CLike struct { ... }
+    // #[packed] type PackedLike struct { ... }
     struct_declaration: $ => seq(
+      repeat($.layout_attribute),
       'type',
       $.type_identifier,
       optional($.type_parameter_list),

@@ -17,6 +17,8 @@
   "take"
   "unsafe"
   "extern"
+  "repr"
+  "packed"
   "empty"
 ] @keyword
 

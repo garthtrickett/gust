@@ -216,8 +216,8 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   Inert extern syntax: parser accepts extern func with C ABI defaults and unsafe-call metadata."
 	@echo "   Bodyless extern declarations: parser accepts extern func signatures terminated with ';' and synthesizes an empty AST body."
 	@echo "   Compiler-backed FFI call-site gating: make guard_step51_extern_func_call_enforcement"
-	@echo "   Inert layout metadata: StructDecl carries repr-C/packed-shaped defaults; StructLayout stays payload-small for struct_registry lookups."
-	@echo "   Next semantic checkpoint: explicit repr/packed parser syntax using a payload-safe metadata store, plus sandboxed FFI sub-arenas."
+	@echo "   Layout attribute parser metadata: parser accepts #[repr(C)] and #[packed] into StructDecl only."
+	@echo "   Next semantic checkpoint: payload-safe layout metadata store plus sandboxed FFI sub-arenas."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
 
@@ -231,7 +231,7 @@ report_step51_status_matrix:
 	@echo "   ✅ local raw-derived pointer return escape: make guard_step51_raw_pointer_local_escape_enforcement"
 	@echo "   ✅ extern function parser metadata: make guard_step51_extern_func_parser_metadata"
 	@echo "   ✅ extern function calls outside unsafe: make guard_step51_extern_func_call_enforcement"
-	@echo "   ✅ layout metadata defaults: make guard_step51_layout_metadata_defaults"
+	@echo "   ✅ layout metadata defaults and attributes: make guard_step51_layout_metadata_defaults"
 	@echo "   Aggregate: make guard_step51_basic_unsafe_enforcement"
 	@echo "   Report-only / deferred lanes:"
 	@echo "   🧭 FFI layout annotations and sandboxed FFI: make report_step51_phase_d_ffi_status"
@@ -769,12 +769,12 @@ guard_step51_extern_func_call_enforcement: gust
 	@echo "✅ Step 5.1 extern function call enforcement guard passed."
 
 guard_step51_layout_metadata_defaults: gust
-	@echo "🔒 Checking Step 5.1 layout metadata defaults..."
+	@echo "🔒 Checking Step 5.1 layout metadata defaults and parser attributes..."
 	@mkdir -p build
 	@./gust compiler/parser_layout_metadata_test_entry.gst > build/step51_layout_metadata_defaults.log 2>&1; \
 	status=$$?; \
 	if [ $$status -ne 0 ]; then \
-		echo "❌ Step 5.1 layout metadata defaults guard failed: compiler rejected the parser metadata fixture."; \
+					echo "❌ Step 5.1 layout metadata guard failed: compiler rejected the parser metadata fixture."; \
 		cat build/step51_layout_metadata_defaults.log; \
 		exit $$status; \
 	fi
@@ -784,11 +784,11 @@ guard_step51_layout_metadata_defaults: gust
 	@./build/parser_layout_metadata_test_entry_bin >> build/step51_layout_metadata_defaults.log 2>&1; \
 	status=$$?; \
 	if [ $$status -ne 0 ]; then \
-		echo "❌ Step 5.1 layout metadata defaults guard failed at runtime."; \
+					echo "❌ Step 5.1 layout metadata guard failed at runtime."; \
 		cat build/step51_layout_metadata_defaults.log; \
 		exit $$status; \
 	fi
-	@echo "✅ Step 5.1 layout metadata defaults guard passed."
+	@echo "✅ Step 5.1 layout metadata defaults and parser attributes guard passed."
 
 guard_step51_basic_unsafe_enforcement: guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement
 	@echo "✅ Step 5.1 basic unsafe enforcement aggregate passed."

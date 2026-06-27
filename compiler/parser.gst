@@ -808,6 +808,93 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
 func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
     unsafe {
         mut start_span := (*p).cur_token.span;
+        mut is_repr_c_decl := 0;
+        mut is_packed_decl := 0;
+        mut layout_abi_decl := "";
+
+        while cur_token_is(p, 49) { // Hash = 49
+            next_token(p); // consume '#'
+            if cur_token_is(p, 15) == false { // LBracket = 15
+                mut err_layout_lbracket: errors.CompilerError[Any];
+                err_layout_lbracket.kind.tag = 1; // ParserError
+                err_layout_lbracket.message = "Expected '[' after '#' in layout attribute";
+                err_layout_lbracket.span = (*p).cur_token.span;
+                (*p).errors.Push(err_layout_lbracket);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p); // consume '['
+            if cur_token_is(p, 2) == false { // Ident = 2
+                mut err_layout_name: errors.CompilerError[Any];
+                err_layout_name.kind.tag = 1; // ParserError
+                err_layout_name.message = "Expected layout attribute name";
+                err_layout_name.span = (*p).cur_token.span;
+                (*p).errors.Push(err_layout_name);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+
+            mut layout_attr_name := std.Clone(*ctx, (*p).cur_token.literal);
+            next_token(p); // consume attribute name
+
+            if std.str_eq(layout_attr_name, "repr") {
+                if cur_token_is(p, 11) == false { // LParen = 11
+                    mut err_layout_repr_lparen: errors.CompilerError[Any];
+                    err_layout_repr_lparen.kind.tag = 1; // ParserError
+                    err_layout_repr_lparen.message = "Expected '(' after repr layout attribute";
+                    err_layout_repr_lparen.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_layout_repr_lparen);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p); // consume '('
+                if cur_token_is(p, 2) == false || std.str_eq((*p).cur_token.literal, "C") == 0 { // Ident = 2
+                    mut err_layout_repr_c: errors.CompilerError[Any];
+                    err_layout_repr_c.kind.tag = 1; // ParserError
+                    err_layout_repr_c.message = "Expected C in repr(C) layout attribute";
+                    err_layout_repr_c.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_layout_repr_c);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                is_repr_c_decl = 1;
+                layout_abi_decl = "C";
+                next_token(p); // consume 'C'
+                if cur_token_is(p, 12) == false { // RParen = 12
+                    mut err_layout_repr_rparen: errors.CompilerError[Any];
+                    err_layout_repr_rparen.kind.tag = 1; // ParserError
+                    err_layout_repr_rparen.message = "Expected ')' after repr(C) layout attribute";
+                    err_layout_repr_rparen.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_layout_repr_rparen);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p); // consume ')'
+            } else if std.str_eq(layout_attr_name, "packed") {
+                is_packed_decl = 1;
+            } else {
+                mut err_layout_unsupported: errors.CompilerError[Any];
+                err_layout_unsupported.kind.tag = 1; // ParserError
+                err_layout_unsupported.message = "Unsupported layout attribute";
+                err_layout_unsupported.span = (*p).cur_token.span;
+                (*p).errors.Push(err_layout_unsupported);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+
+            if cur_token_is(p, 16) == false { // RBracket = 16
+                mut err_layout_rbracket: errors.CompilerError[Any];
+                err_layout_rbracket.kind.tag = 1; // ParserError
+                err_layout_rbracket.message = "Expected closing ']' after layout attribute";
+                err_layout_rbracket.span = (*p).cur_token.span;
+                (*p).errors.Push(err_layout_rbracket);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p); // consume ']'
+        }
+
+        if cur_token_is(p, 39) == false { // Type = 39
+            mut err_layout_expected_type: errors.CompilerError[Any];
+            err_layout_expected_type.kind.tag = 1; // ParserError
+            err_layout_expected_type.message = "Expected 'type' after layout attribute";
+            err_layout_expected_type.span = (*p).cur_token.span;
+            (*p).errors.Push(err_layout_expected_type);
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
         next_token(p); // consume 'type'
         if cur_token_is(p, 2) == false { // Ident = 2
             mut err: errors.CompilerError[Any];
@@ -925,9 +1012,9 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
             stmt_struct_parse.StructDecl.fields = struct_fields_idx_parse;
             ctx.Set(struct_fields_idx_parse, fields_vec);
 
-            stmt_struct_parse.StructDecl.is_repr_c = 0;
-            stmt_struct_parse.StructDecl.is_packed = 0;
-            stmt_struct_parse.StructDecl.layout_abi = "";
+            stmt_struct_parse.StructDecl.is_repr_c = is_repr_c_decl;
+            stmt_struct_parse.StructDecl.is_packed = is_packed_decl;
+            stmt_struct_parse.StructDecl.layout_abi = layout_abi_decl;
 
             stmt_struct_parse.StructDecl.span = merge_spans(start_span, end_span);
             ctx.Set(stmt_idx, stmt_struct_parse);
@@ -1440,6 +1527,10 @@ func parse_statement(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx
         (*p).has_non_import_statement = 1;
 
         if cur_token_is(p, 39) { // Type = 39
+            return parse_struct_decl(p, ctx);
+        }
+
+        if cur_token_is(p, 49) { // Hash = 49
             return parse_struct_decl(p, ctx);
         }
 

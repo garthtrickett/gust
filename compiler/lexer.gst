@@ -343,6 +343,10 @@ func next_token(l: *Lexer[ctx], tok: *token.Token[ctx]) {
             t_type.tag = 16; // RBracket
             literal = "]";
             read_char(l);
+        } else if (*l).ch == 35 { // '#'
+            t_type.tag = 49; // Hash
+            literal = "#";
+            read_char(l);
         } else if (*l).ch == 0 { // '\0'
             t_type.tag = 0; // Eof
             literal = "";
