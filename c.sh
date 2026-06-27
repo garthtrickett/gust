@@ -209,4 +209,13 @@ if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_phase_a_status:' "
     } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
 fi
 
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q '^report_step52_status_matrix:' "$PROJECT_ROOT/Makefile"; then
+    {
+        echo "--- START OF REPORT make report_step52_status_matrix ---"
+        (cd "$PROJECT_ROOT" && make report_step52_status_matrix)
+        echo "--- END OF REPORT make report_step52_status_matrix ---"
+        echo
+    } >>"$PROJECT_ROOT/$OUTPUT_FILE" 2>&1 || true
+fi
+
 echo "✅ Aggregated target project files into $PROJECT_ROOT/$OUTPUT_FILE"
