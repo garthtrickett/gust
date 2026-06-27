@@ -10,20 +10,21 @@ gating is designed.
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 
 SCAN_ROOTS = [Path('compiler'), Path('tests'), Path('src')]
 SCAN_SUFFIXES = {'.gst', '.c', '.h'}
-FFI_TERMS = (
-    'extern',
-    'ffi',
-    'Foreign',
-    'C.',
-    'ccall',
-    'c_call',
-    'dlsym',
-    'dlopen',
-    'syscall',
+FFI_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ('extern', re.compile(r'\bextern\b')),
+    ('ffi', re.compile(r'\bffi\b', re.IGNORECASE)),
+    ('Foreign', re.compile(r'\bForeign\b')),
+    ('C.', re.compile(r'\bC\.')),
+    ('ccall', re.compile(r'\bccall\b')),
+    ('c_call', re.compile(r'\bc_call\b')),
+    ('dlsym', re.compile(r'\bdlsym\b')),
+    ('dlopen', re.compile(r'\bdlopen\b')),
+    ('syscall', re.compile(r'\bsyscall\b')),
 )
 
 
@@ -68,8 +69,8 @@ def strip_comments_and_strings(line: str) -> str:
 
 def line_terms(line: str) -> str:
     found: list[str] = []
-    for term in FFI_TERMS:
-        if term in line:
+    for term, pattern in FFI_PATTERNS:
+        if pattern.search(line) is not None:
             found.append(term)
     return ', '.join(found)
 
