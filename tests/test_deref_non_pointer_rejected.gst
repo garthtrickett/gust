@@ -1,4 +1,6 @@
 func main() {
     mut x := 42;
-    mut y := *x;
+    unsafe {
+        mut y := *x;
+    }
 }

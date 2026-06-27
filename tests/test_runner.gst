@@ -1772,7 +1772,9 @@ func main() {
         mut arg_idx := os.ArenaAlloc(ctx) as Index[TestTaskArg[ctx], ctx];
         ctx.Set(arg_idx, arg);
 
-        std.Spawn(test_worker_task, &ctx[arg_idx]);
+        unsafe {
+            std.Spawn(test_worker_task, &ctx[arg_idx]);
+        }
         i = i + 1;
     }
 

@@ -8,8 +8,10 @@ func main() {
     defer ctx2.Free();
 
     mut n1: Index[MyNode, ctx1] := os.ArenaAlloc(ctx1);
-    mut r_ctx1: &MyNode[ctx1] := &ctx1[n1];
+    unsafe {
+        mut r_ctx1: &MyNode[ctx1] := &ctx1[n1];
 
-    // Reject: Assigning a reference branded with ctx1 to a reference branded with ctx2
-    mut r_ctx2: &MyNode[ctx2] := r_ctx1;
+        // Reject: Assigning a reference branded with ctx1 to a reference branded with ctx2
+        mut r_ctx2: &MyNode[ctx2] := r_ctx1;
+    }
 }
