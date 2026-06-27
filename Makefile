@@ -217,7 +217,8 @@ report_step51_deferred_unsafe_semantics_status:
 	@echo "   Bodyless extern declarations: parser accepts extern func signatures terminated with ';' and synthesizes an empty AST body."
 	@echo "   Compiler-backed FFI call-site gating: make guard_step51_extern_func_call_enforcement"
 	@echo "   Layout attribute parser metadata: parser accepts #[repr(C)] and #[packed] into StructDecl only."
-	@echo "   Next semantic checkpoint: payload-safe layout metadata store plus sandboxed FFI sub-arenas."
+	@echo "   Payload-safe layout metadata store: TypeEnvironment keeps repr-C/packed/ABI maps separate from StructLayout."
+	@echo "   Next semantic checkpoint: sandboxed FFI sub-arenas and layout-aware FFI validation."
 	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
 	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
 

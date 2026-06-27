@@ -64,6 +64,9 @@ type PrefixMapEntry[ctx] struct {
 
 type TypeEnvironment[ctx] struct {
     struct_registry: std.HashMap[str, StructLayout[ctx], ctx],
+    struct_layout_repr_c: std.HashMap[str, int, ctx],
+    struct_layout_packed: std.HashMap[str, int, ctx],
+    struct_layout_abi: std.HashMap[str, str, ctx],
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
@@ -4305,6 +4308,9 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         mut env_ref_new := ctx.get_ref(env_idx);
         env_ref_new.struct_registry = std.HashMapNew(ctx);
         env_ref_new.struct_templates = std.HashMapNew(ctx);
+        env_ref_new.struct_layout_repr_c = std.HashMapNew(ctx);
+        env_ref_new.struct_layout_packed = std.HashMapNew(ctx);
+        env_ref_new.struct_layout_abi = std.HashMapNew(ctx);
         env_ref_new.enum_templates = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
         env_ref_new.variable_types = std.HashMapNew(ctx);
@@ -4487,6 +4493,16 @@ func env_register_struct(env: *TypeEnvironment[ctx], name: str, layout: StructLa
         (*env).struct_registry.Insert(std.Clone(ctx, name), layout);
     }
     mut msg := std.Format("env_register_struct: registered struct '%s' with %d fields", name, layout.fields.len);
+    typechecker_log_trace("🗄️", msg, ctx);
+}
+
+func env_register_struct_layout_metadata(env: *TypeEnvironment[ctx], name: str, is_repr_c: int, is_packed: int, layout_abi: str, ctx: &Arena) {
+    unsafe {
+        (*env).struct_layout_repr_c.Insert(std.Clone(ctx, name), is_repr_c);
+        (*env).struct_layout_packed.Insert(std.Clone(ctx, name), is_packed);
+        (*env).struct_layout_abi.Insert(std.Clone(ctx, name), std.Clone(ctx, layout_abi));
+    }
+    mut msg := std.Format("env_register_struct_layout_metadata: registered layout metadata for '%s'", name);
     typechecker_log_trace("🗄️", msg, ctx);
 }
 
@@ -4835,6 +4851,8 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                     is_generic = 1;
                 }
             }
+
+            env_register_struct_layout_metadata(env, namespaced_name, stmt.StructDecl.is_repr_c, stmt.StructDecl.is_packed, stmt.StructDecl.layout_abi, ctx);
 
             if is_generic == 1 {
                 mut template: StructTemplate[ctx];
