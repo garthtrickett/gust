@@ -2366,7 +2366,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
 
             if is_valid_func == 1 {
-                if sig.is_unsafe == 1 && (*env).in_unsafe_block == 0 {
+                if sig.requires_unsafe_call == 1 && (*env).in_unsafe_block == 0 {
+                    mut msg_extern_call := "Semantic Error: Direct external/native function calls require an explicit 'unsafe' block";
+                    report_error(2, msg_extern_call, expr.Call.span, env, ctx);
+                } else if sig.is_unsafe == 1 && (*env).in_unsafe_block == 0 {
                     mut msg_unsafe_call := "Semantic Error: Unsafe function calls require an explicit 'unsafe' block";
                     report_error(2, msg_unsafe_call, expr.Call.span, env, ctx);
                 }

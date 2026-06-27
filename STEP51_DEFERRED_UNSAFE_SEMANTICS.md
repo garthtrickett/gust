@@ -53,7 +53,7 @@ This metadata may be introduced inertly before enforcement. It must not change o
 - `requires_layout_metadata`
 - `requires_sandbox_arena`
 
-`init_function_signature_ffi_defaults` initializes these fields for compiler-created signatures. `FunctionDecl` also carries the same inert metadata through the parsed AST, and the parser initializes ordinary function declarations as non-extern with C ABI defaults and all FFI/layout/sandbox requirements disabled. The parser accepts explicit `extern func` metadata and also accepts bodyless extern signatures terminated with `;`, synthesizing an empty AST body so typechecking can register the signature without inventing codegen behavior. The typechecker copies those AST fields into `FunctionSignature[ctx]`, but codegen and call-site enforcement remain deferred.
+`init_function_signature_ffi_defaults` initializes these fields for compiler-created signatures. `FunctionDecl` also carries the same inert metadata through the parsed AST, and the parser initializes ordinary function declarations as non-extern with C ABI defaults and all FFI/layout/sandbox requirements disabled. The parser accepts explicit `extern func` metadata and also accepts bodyless extern signatures terminated with `;`, synthesizing an empty AST body so typechecking can register the signature without inventing codegen behavior. The typechecker copies those AST fields into `FunctionSignature[ctx]`, and direct extern/native calls now reject outside explicit unsafe contexts. Codegen, layout metadata, sandbox arenas, and broader provenance remain deferred.
 
 ### Classification rule
 
@@ -67,7 +67,7 @@ Only parsed Gust source declarations/calls that carry direct external/native met
 
 ### Enforcement rule
 
-Once the metadata exists, the compiler-backed guard should reject direct external/native calls outside an explicit unsafe context with a stable diagnostic. Safe wrappers may expose a safe API only if their implementation body contains the required unsafe boundary and does not launder raw-derived values into safe branded references or arena indices.
+Direct external/native calls reject outside an explicit unsafe context with the stable diagnostic `Direct external/native function calls require an explicit 'unsafe' block`. Safe wrappers may expose a safe API only if their implementation body contains the required unsafe boundary and does not launder raw-derived values into safe branded references or arena indices.
 
 ## Design order
 
@@ -76,12 +76,13 @@ Once the metadata exists, the compiler-backed guard should reject direct externa
 3. Add inert `FunctionDecl` AST metadata, parser defaults, and typechecker propagation into `FunctionSignature[ctx]` without extern syntax or enforcement.
 4. Add parser population for explicit `extern func` metadata while keeping codegen and enforcement disabled.
 5. Add bodyless extern declaration handling for `extern func ...;` signatures while synthesizing an empty AST body.
-6. Classify existing runtime/native boundaries separately from user-facing Gust source calls.
-7. Add inert AST/type metadata for layout attributes without changing codegen.
-8. Define sandbox sub-arena ownership and destruction semantics for external calls.
-9. Define address-origin metadata that separates safe branded references from raw-derived addresses.
-10. Extend provenance tracking so raw-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
-11. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
+6. Enforce direct extern/native calls require explicit unsafe contexts.
+7. Classify existing runtime/native boundaries separately from user-facing Gust source calls.
+8. Add inert AST/type metadata for layout attributes without changing codegen.
+9. Define sandbox sub-arena ownership and destruction semantics for external calls.
+10. Define address-origin metadata that separates safe branded references from raw-derived addresses.
+11. Extend provenance tracking so raw-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
+12. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
 
 ## Step 5.2 sequencing rule
 
