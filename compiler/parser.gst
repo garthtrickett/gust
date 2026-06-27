@@ -526,37 +526,47 @@ func parse_prefix_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[
         mut start_span := (*p).cur_token.span;
 
         if tag == 2 { // Ident = 2
-            ctx[e_idx].tag = 0; // Identifier = 0
-            ctx[e_idx].Identifier.name = std.Clone(*ctx, (*p).cur_token.literal);
-            ctx[e_idx].Identifier.span = (*p).cur_token.span;
+            mut e_identifier_parse: ast.Expression[ctx];
+            e_identifier_parse.tag = 0; // Identifier = 0
+            e_identifier_parse.Identifier.name = std.Clone(*ctx, (*p).cur_token.literal);
+            e_identifier_parse.Identifier.span = (*p).cur_token.span;
+            ctx.Set(e_idx, e_identifier_parse);
             next_token(p);
             return e_idx;
         }
         if tag == 3 { // Int = 3
-            ctx[e_idx].tag = 1; // Integer = 1
-            ctx[e_idx].Integer.val = std.parse_int((*p).cur_token.literal);
-            ctx[e_idx].Integer.span = (*p).cur_token.span;
+            mut e_integer_parse: ast.Expression[ctx];
+            e_integer_parse.tag = 1; // Integer = 1
+            e_integer_parse.Integer.val = std.parse_int((*p).cur_token.literal);
+            e_integer_parse.Integer.span = (*p).cur_token.span;
+            ctx.Set(e_idx, e_integer_parse);
             next_token(p);
             return e_idx;
         }
         if tag == 4 { // String = 4
-            ctx[e_idx].tag = 2; // String = 2
-            ctx[e_idx].String.val = std.Clone(*ctx, (*p).cur_token.literal);
-            ctx[e_idx].String.span = (*p).cur_token.span;
+            mut e_string_parse: ast.Expression[ctx];
+            e_string_parse.tag = 2; // String = 2
+            e_string_parse.String.val = std.Clone(*ctx, (*p).cur_token.literal);
+            e_string_parse.String.span = (*p).cur_token.span;
+            ctx.Set(e_idx, e_string_parse);
             next_token(p);
             return e_idx;
         }
         if tag == 46 { // True = 46
-            ctx[e_idx].tag = 3; // Bool = 3
-            ctx[e_idx].Bool.val = 1;
-            ctx[e_idx].Bool.span = (*p).cur_token.span;
+            mut e_true_parse: ast.Expression[ctx];
+            e_true_parse.tag = 3; // Bool = 3
+            e_true_parse.Bool.val = 1;
+            e_true_parse.Bool.span = (*p).cur_token.span;
+            ctx.Set(e_idx, e_true_parse);
             next_token(p);
             return e_idx;
         }
         if tag == 47 { // False = 47
-            ctx[e_idx].tag = 3; // Bool = 3
-            ctx[e_idx].Bool.val = 0;
-            ctx[e_idx].Bool.span = (*p).cur_token.span;
+            mut e_false_parse: ast.Expression[ctx];
+            e_false_parse.tag = 3; // Bool = 3
+            e_false_parse.Bool.val = 0;
+            e_false_parse.Bool.span = (*p).cur_token.span;
+            ctx.Set(e_idx, e_false_parse);
             next_token(p);
             return e_idx;
         }
@@ -572,33 +582,41 @@ func parse_prefix_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[
         if tag == 32 { // Move = 32
             next_token(p); // consume 'move'
             mut inner := parse_expression(p, 8, ctx);
-            ctx[e_idx].tag = 4; // Move = 4
-            ctx[e_idx].Move.expr = inner;
-            ctx[e_idx].Move.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            mut e_move_parse: ast.Expression[ctx];
+            e_move_parse.tag = 4; // Move = 4
+            e_move_parse.Move.expr = inner;
+            e_move_parse.Move.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            ctx.Set(e_idx, e_move_parse);
             return e_idx;
         }
         if tag == 33 { // Take = 33
             next_token(p); // consume 'take'
             mut inner := parse_expression(p, 8, ctx);
-            ctx[e_idx].tag = 5; // Take = 5
-            ctx[e_idx].Take.expr = inner;
-            ctx[e_idx].Take.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            mut e_take_parse: ast.Expression[ctx];
+            e_take_parse.tag = 5; // Take = 5
+            e_take_parse.Take.expr = inner;
+            e_take_parse.Take.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            ctx.Set(e_idx, e_take_parse);
             return e_idx;
         }
         if tag == 17 { // Ampersand = 17
             next_token(p); // consume '&'
             mut inner := parse_expression(p, 8, ctx);
-            ctx[e_idx].tag = 6; // AddressOf = 6
-            ctx[e_idx].AddressOf.expr = inner;
-            ctx[e_idx].AddressOf.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            mut e_address_parse: ast.Expression[ctx];
+            e_address_parse.tag = 6; // AddressOf = 6
+            e_address_parse.AddressOf.expr = inner;
+            e_address_parse.AddressOf.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            ctx.Set(e_idx, e_address_parse);
             return e_idx;
         }
         if tag == 21 { // Asterisk = 21
             next_token(p); // consume '*'
             mut inner := parse_expression(p, 8, ctx);
-            ctx[e_idx].tag = 7; // Dereference = 7
-            ctx[e_idx].Dereference.expr = inner;
-            ctx[e_idx].Dereference.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            mut e_deref_parse: ast.Expression[ctx];
+            e_deref_parse.tag = 7; // Dereference = 7
+            e_deref_parse.Dereference.expr = inner;
+            e_deref_parse.Dereference.span = merge_spans(start_span, get_expression_span(inner, ctx));
+            ctx.Set(e_idx, e_deref_parse);
             return e_idx;
         }
         if tag == 44 { // Empty = 44
@@ -616,9 +634,11 @@ func parse_prefix_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[
                 error_at_current(p, "Syntax Error: Expected ']' after empty type signature");
                 return empty[Index[ast.Expression[ctx], ctx]];
             }
-            ctx[e_idx].tag = 13; // Empty = 13
-            ctx[e_idx].Empty.target_type = target_type;
-            ctx[e_idx].Empty.span = merge_spans(start_span, (*p).cur_token.span);
+            mut e_empty_parse: ast.Expression[ctx];
+            e_empty_parse.tag = 13; // Empty = 13
+            e_empty_parse.Empty.target_type = target_type;
+            e_empty_parse.Empty.span = merge_spans(start_span, (*p).cur_token.span);
+            ctx.Set(e_idx, e_empty_parse);
             return e_idx;
         }
         return empty[Index[ast.Expression[ctx], ctx]];
@@ -681,12 +701,14 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
                 mut end_span := (*p).cur_token.span;
                 next_token(p); // consume member ident
                 
-                mut next_expr: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[next_expr].tag = 11; // Selector = 11
-                ctx[next_expr].Selector.left = left;
-                ctx[next_expr].Selector.right = right;
-                ctx[next_expr].Selector.span = merge_spans(start_span, end_span);
-                left = next_expr;
+                mut next_expr_selector_parse: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                mut e_selector_parse: ast.Expression[ctx];
+                e_selector_parse.tag = 11; // Selector = 11
+                e_selector_parse.Selector.left = left;
+                e_selector_parse.Selector.right = right;
+                e_selector_parse.Selector.span = merge_spans(start_span, end_span);
+                ctx.Set(next_expr_selector_parse, e_selector_parse);
+                left = next_expr_selector_parse;
             } else if cur_tag == 11 { // LParen = 11
                 mut start_span := get_expression_span(left, ctx);
                 next_token(p); // consume '('
@@ -706,13 +728,16 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
                 mut end_span := (*p).cur_token.span;
                 next_token(p); // consume ')'
                 
-                mut next_expr: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[next_expr].tag = 12; // Call = 12
-                ctx[next_expr].Call.function = left;
-                ctx[next_expr].Call.arguments = os.ArenaAlloc(ctx);
-                ctx[ctx[next_expr].Call.arguments] = args_vec;
-                ctx[next_expr].Call.span = merge_spans(start_span, end_span);
-                left = next_expr;
+                mut next_expr_call_parse: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                mut call_args_idx_parse: Index[std.Vector[ast.Expression[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+                mut e_call_parse: ast.Expression[ctx];
+                e_call_parse.tag = 12; // Call = 12
+                e_call_parse.Call.function = left;
+                e_call_parse.Call.arguments = call_args_idx_parse;
+                e_call_parse.Call.span = merge_spans(start_span, end_span);
+                ctx.Set(call_args_idx_parse, args_vec);
+                ctx.Set(next_expr_call_parse, e_call_parse);
+                left = next_expr_call_parse;
             } else if cur_tag == 15 { // LBracket = 15
                 mut start_span := get_expression_span(left, ctx);
                 next_token(p); // consume '['
@@ -723,12 +748,14 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
                 mut end_span := (*p).cur_token.span;
                 next_token(p); // consume ']'
                 
-                mut next_expr: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[next_expr].tag = 8; // IndexAccess = 8
-                ctx[next_expr].IndexAccess.allocator = left;
-                ctx[next_expr].IndexAccess.index = index_expr;
-                ctx[next_expr].IndexAccess.span = merge_spans(start_span, end_span);
-                left = next_expr;
+                mut next_expr_index_parse: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                mut e_index_parse: ast.Expression[ctx];
+                e_index_parse.tag = 8; // IndexAccess = 8
+                e_index_parse.IndexAccess.allocator = left;
+                e_index_parse.IndexAccess.index = index_expr;
+                e_index_parse.IndexAccess.span = merge_spans(start_span, end_span);
+                ctx.Set(next_expr_index_parse, e_index_parse);
+                left = next_expr_index_parse;
             } else if cur_tag == 37 { // As = 37
                 mut start_span := get_expression_span(left, ctx);
                 next_token(p); // consume 'as'
@@ -740,13 +767,15 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
                 mut target_type := parse_type_signature(p, ctx);
                 mut end_span := (*p).cur_token.span;
                 
-                mut next_expr: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[next_expr].tag = 9; // AsCast = 9
-                ctx[next_expr].AsCast.left = left;
-                ctx[next_expr].AsCast.target_type = target_type;
-                ctx[next_expr].AsCast.is_reference = is_reference;
-                ctx[next_expr].AsCast.span = merge_spans(start_span, end_span);
-                left = next_expr;
+                mut next_expr_cast_parse: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                mut e_cast_parse: ast.Expression[ctx];
+                e_cast_parse.tag = 9; // AsCast = 9
+                e_cast_parse.AsCast.left = left;
+                e_cast_parse.AsCast.target_type = target_type;
+                e_cast_parse.AsCast.is_reference = is_reference;
+                e_cast_parse.AsCast.span = merge_spans(start_span, end_span);
+                ctx.Set(next_expr_cast_parse, e_cast_parse);
+                left = next_expr_cast_parse;
             } else if cur_tag == 19 || cur_tag == 20 || cur_tag == 21 || cur_tag == 22 ||
                       cur_tag == 23 || cur_tag == 24 || cur_tag == 25 || cur_tag == 26 ||
                       cur_tag == 48 || cur_tag == 49 || cur_tag == 50 || cur_tag == 51 {
@@ -759,13 +788,15 @@ func parse_expression(p: *Parser[ctx], precedence: int, ctx: &Arena) Index[ast.E
                 mut start_span := get_expression_span(left, ctx);
                 mut end_span := get_expression_span(right, ctx);
                 
-                mut next_expr: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                ctx[next_expr].tag = 10; // Binary = 10
-                ctx[next_expr].Binary.op = std.Clone(*ctx, op_str);
-                ctx[next_expr].Binary.left = left;
-                ctx[next_expr].Binary.right = right;
-                ctx[next_expr].Binary.span = merge_spans(start_span, end_span);
-                left = next_expr;
+                mut next_expr_binary_parse: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                mut e_binary_parse: ast.Expression[ctx];
+                e_binary_parse.tag = 10; // Binary = 10
+                e_binary_parse.Binary.op = std.Clone(*ctx, op_str);
+                e_binary_parse.Binary.left = left;
+                e_binary_parse.Binary.right = right;
+                e_binary_parse.Binary.span = merge_spans(start_span, end_span);
+                ctx.Set(next_expr_binary_parse, e_binary_parse);
+                left = next_expr_binary_parse;
             } else {
                 return left;
             }
