@@ -73,7 +73,8 @@ type TypeEnvironment[ctx] struct {
 func set_init(ctx: &Arena) Index[OriginSet[ctx], ctx] {
     mut s_idx: Index[OriginSet[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        ctx[s_idx].map = std.HashMapNew(ctx);
+        mut s_ref_set_init := ctx.get_ref(s_idx);
+        s_ref_set_init.map = std.HashMapNew(ctx);
         return s_idx;
     }
 }
@@ -633,22 +634,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         }
         if expr.tag == 6 { // AddressOf
             mut inner := check_expression(expr.AddressOf.expr, env, scope, ctx);
-            mut t_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-            ctx[t_idx].tag = 11; // Reference
-            ctx[t_idx].Reference.inner = os.ArenaAlloc(ctx);
-            ctx[ctx[t_idx].Reference.inner] = inner;
             
             mut brand_str := get_type_brand(inner, env, ctx);
             if std.str_eq(brand_str, "") == 1 {
                 brand_str = get_root_variable(expr.AddressOf.expr, ctx);
             }
-            if std.str_eq(brand_str, "") == 0 {
-                ctx[t_idx].Reference.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                ctx[ctx[t_idx].Reference.brand] = std.Clone(ctx, brand_str);
-            } else {
-                ctx[t_idx].Reference.brand = empty[Index[str, ctx]];
-            }
-            return ctx[t_idx];
+            mut ref_type_address_of := make_type_reference(inner, brand_str, ctx);
+            return ref_type_address_of;
         }
         if expr.tag == 7 { // Dereference
             mut inner := check_expression(expr.Dereference.expr, env, scope, ctx);
@@ -2497,8 +2489,9 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
 func scope_new(parent: Index[Scope[ctx], ctx], ctx: &Arena) Index[Scope[ctx], ctx] {
     mut scope_idx: Index[Scope[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        ctx[scope_idx].parent = parent;
-        ctx[scope_idx].bindings = std.HashMapNew(ctx);
+        mut scope_ref_new := ctx.get_ref(scope_idx);
+        scope_ref_new.parent = parent;
+        scope_ref_new.bindings = std.HashMapNew(ctx);
     }
     if parent == empty[Index[Scope[ctx], ctx]] {
         typechecker_log_trace("🗄️", "scope_new: spawned root scope", ctx);
@@ -2542,7 +2535,8 @@ func scope_lookup(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) ast.Typ
     }
     mut dummy: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
-        ctx[dummy].tag = 3; // Void
+        mut dummy_ref_scope_lookup := ctx.get_ref(dummy);
+        dummy_ref_scope_lookup.tag = 3; // Void
         return ctx[dummy];
     }
 }
@@ -2592,7 +2586,7 @@ func make_type_pointer(inner: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
         t.tag = 9; // RawPointer
         t.RawPointer.inner = os.ArenaAlloc(ctx);
-        ctx[t.RawPointer.inner] = inner;
+        ctx.Set(t.RawPointer.inner, inner);
     }
     return t;
 }
@@ -2602,12 +2596,12 @@ func make_type_reference(inner: ast.Type[ctx], brand_name: str, ctx: &Arena) ast
     unsafe {
         t.tag = 11; // Reference
         t.Reference.inner = os.ArenaAlloc(ctx);
-        ctx[t.Reference.inner] = inner;
+        ctx.Set(t.Reference.inner, inner);
         if std.str_eq(brand_name, "") {
             t.Reference.brand = empty[Index[str, ctx]];
         } else {
             t.Reference.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-            ctx[t.Reference.brand] = std.Clone(ctx, brand_name);
+            ctx.Set(t.Reference.brand, std.Clone(ctx, brand_name));
         }
     }
     return t;
@@ -2677,7 +2671,7 @@ func make_type_struct(name: str, brand_name: str, ctx: &Arena) ast.Type[ctx] {
             t.Struct.brand = empty[Index[str, ctx]];
         } else {
             t.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-            ctx[t.Struct.brand] = std.Clone(ctx, brand_name);
+            ctx.Set(t.Struct.brand, std.Clone(ctx, brand_name));
         }
     }
     return t;
@@ -2692,7 +2686,7 @@ func make_type_index(struct_name: str, brand_name: str, ctx: &Arena) ast.Type[ct
             t.Index.brand = empty[Index[str, ctx]];
         } else {
             t.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-            ctx[t.Index.brand] = std.Clone(ctx, brand_name);
+            ctx.Set(t.Index.brand, std.Clone(ctx, brand_name));
         }
     }
     return t;
@@ -2704,7 +2698,7 @@ func make_type_generic(name: str, args: std.Vector[ast.Type[ctx], ctx], ctx: &Ar
         t.tag = 10; // Generic
         t.Generic.name = std.Clone(ctx, name);
         t.Generic.args = os.ArenaAlloc(ctx);
-        ctx[t.Generic.args] = args;
+        ctx.Set(t.Generic.args, args);
     }
     return t;
 }
@@ -3679,8 +3673,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut vec_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut vec_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[vec_gen_idx] = vec_gen;
-        ctx[vec_fields_idx] = vec_fields;
+        ctx.Set(vec_gen_idx, vec_gen);
+        ctx.Set(vec_fields_idx, vec_fields);
 
         mut vec_tmpl: StructTemplate[ctx];
         vec_tmpl.generics = vec_gen_idx;
@@ -3706,8 +3700,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut map_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut map_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[map_gen_idx] = map_gen;
-        ctx[map_fields_idx] = map_fields;
+        ctx.Set(map_gen_idx, map_gen);
+        ctx.Set(map_fields_idx, map_fields);
 
         mut map_tmpl: StructTemplate[ctx];
         map_tmpl.generics = map_gen_idx;
@@ -3729,8 +3723,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut opt_some_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
         mut opt_none_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[opt_some_fields_idx] = opt_some_fields;
-        ctx[opt_none_fields_idx] = opt_none_fields;
+        ctx.Set(opt_some_fields_idx, opt_some_fields);
+        ctx.Set(opt_none_fields_idx, opt_none_fields);
 
         mut opt_some_variant: ast.VariantDef[ctx];
         opt_some_variant.name = std.Clone(ctx, "Some");
@@ -3746,8 +3740,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut opt_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut opt_variants_idx: Index[std.Vector[ast.VariantDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[opt_gen_idx] = opt_gen;
-        ctx[opt_variants_idx] = opt_variants;
+        ctx.Set(opt_gen_idx, opt_gen);
+        ctx.Set(opt_variants_idx, opt_variants);
 
         mut opt_tmpl: EnumTemplate[ctx];
         opt_tmpl.generics = opt_gen_idx;
@@ -3773,8 +3767,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut pool_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut pool_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[pool_gen_idx] = pool_gen;
-        ctx[pool_fields_idx] = pool_fields;
+        ctx.Set(pool_gen_idx, pool_gen);
+        ctx.Set(pool_fields_idx, pool_fields);
 
         mut pool_tmpl: StructTemplate[ctx];
         pool_tmpl.generics = pool_gen_idx;
@@ -3794,8 +3788,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut rcnode_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut rcnode_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[rcnode_gen_idx] = rcnode_gen;
-        ctx[rcnode_fields_idx] = rcnode_fields;
+        ctx.Set(rcnode_gen_idx, rcnode_gen);
+        ctx.Set(rcnode_fields_idx, rcnode_fields);
 
         mut rcnode_tmpl: StructTemplate[ctx];
         rcnode_tmpl.generics = rcnode_gen_idx;
@@ -3820,8 +3814,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut rc_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut rc_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[rc_gen_idx] = rc_gen;
-        ctx[rc_fields_idx] = rc_fields;
+        ctx.Set(rc_gen_idx, rc_gen);
+        ctx.Set(rc_fields_idx, rc_fields);
 
         mut rc_tmpl: StructTemplate[ctx];
         rc_tmpl.generics = rc_gen_idx;
@@ -3846,8 +3840,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut gnode_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut gnode_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[gnode_gen_idx] = gnode_gen;
-        ctx[gnode_fields_idx] = gnode_fields;
+        ctx.Set(gnode_gen_idx, gnode_gen);
+        ctx.Set(gnode_fields_idx, gnode_fields);
 
         mut gnode_tmpl: StructTemplate[ctx];
         gnode_tmpl.generics = gnode_gen_idx;
@@ -3871,8 +3865,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut graph_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut graph_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[graph_gen_idx] = graph_gen;
-        ctx[graph_fields_idx] = graph_fields;
+        ctx.Set(graph_gen_idx, graph_gen);
+        ctx.Set(graph_fields_idx, graph_fields);
 
         mut graph_tmpl: StructTemplate[ctx];
         graph_tmpl.generics = graph_gen_idx;
@@ -3893,8 +3887,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut mutex_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut mutex_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[mutex_gen_idx] = mutex_gen;
-        ctx[mutex_fields_idx] = mutex_fields;
+        ctx.Set(mutex_gen_idx, mutex_gen);
+        ctx.Set(mutex_fields_idx, mutex_fields);
 
         mut mutex_tmpl: StructTemplate[ctx];
         mutex_tmpl.generics = mutex_gen_idx;
@@ -3916,8 +3910,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut chan_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut chan_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[chan_gen_idx] = chan_gen;
-        ctx[chan_fields_idx] = chan_fields;
+        ctx.Set(chan_gen_idx, chan_gen);
+        ctx.Set(chan_fields_idx, chan_fields);
 
         mut chan_tmpl: StructTemplate[ctx];
         chan_tmpl.generics = chan_gen_idx;
@@ -3939,8 +3933,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut gena_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut gena_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[gena_gen_idx] = gena_gen;
-        ctx[gena_fields_idx] = gena_fields;
+        ctx.Set(gena_gen_idx, gena_gen);
+        ctx.Set(gena_fields_idx, gena_fields);
 
         mut gena_tmpl: StructTemplate[ctx];
         gena_tmpl.generics = gena_gen_idx;
@@ -3959,8 +3953,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut dir_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut dir_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[dir_gen_idx] = dir_gen;
-        ctx[dir_fields_idx] = dir_fields;
+        ctx.Set(dir_gen_idx, dir_gen);
+        ctx.Set(dir_fields_idx, dir_fields);
 
         mut dir_tmpl: StructTemplate[ctx];
         dir_tmpl.generics = dir_gen_idx;
@@ -3979,8 +3973,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut dire_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut dire_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[dire_gen_idx] = dire_gen;
-        ctx[dire_fields_idx] = dire_fields;
+        ctx.Set(dire_gen_idx, dire_gen);
+        ctx.Set(dire_fields_idx, dire_fields);
 
         mut dire_tmpl: StructTemplate[ctx];
         dire_tmpl.generics = dire_gen_idx;
@@ -3999,8 +3993,8 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut tlc_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut tlc_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-        ctx[tlc_gen_idx] = tlc_gen;
-        ctx[tlc_fields_idx] = tlc_fields;
+        ctx.Set(tlc_gen_idx, tlc_gen);
+        ctx.Set(tlc_fields_idx, tlc_fields);
 
         mut tlc_tmpl: StructTemplate[ctx];
         tlc_tmpl.generics = tlc_gen_idx;
@@ -4029,7 +4023,7 @@ func env_register_std_structs(env: *TypeEnvironment[ctx], ctx: &Arena) {
         // 2. SessionNode [connCtx]
         mut session_layout: StructLayout[ctx];
         mut brand_idx: Index[str, ctx] := os.ArenaAlloc(ctx) as Index[str, ctx];
-        ctx[brand_idx] = std.Clone(ctx, "connCtx");
+        ctx.Set(brand_idx, std.Clone(ctx, "connCtx"));
         session_layout.brand = brand_idx;
         session_layout.fields = std.HashMapNew(ctx);
         session_layout.fields.Insert("SessionID", t_int);
@@ -4195,7 +4189,9 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             mut t_slice_byte: ast.Type[ctx];
             t_slice_byte.tag = 6; // Slice
             t_slice_byte.Slice.inner = os.ArenaAlloc(ctx);
-            ctx[t_slice_byte.Slice.inner].tag = 1; // Byte
+            mut t_slice_byte_inner_std: ast.Type[ctx];
+            t_slice_byte_inner_std.tag = 1; // Byte
+            ctx.Set(t_slice_byte.Slice.inner, t_slice_byte_inner_std);
             register_fn(env, "os.MockPayload", p_void, t_slice_byte, ctx);
             register_fn(env, "os_MockPayload", p_void, t_slice_byte, ctx);
 
@@ -4264,31 +4260,32 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
 func env_new(ctx: &Arena) TypeEnvironment[ctx] { 
     mut env_idx: Index[TypeEnvironment[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe { 
-        ctx[env_idx].struct_registry = std.HashMapNew(ctx);
-        ctx[env_idx].struct_templates = std.HashMapNew(ctx);
-        ctx[env_idx].enum_templates = std.HashMapNew(ctx);
-        ctx[env_idx].function_registry = std.HashMapNew(ctx);
-        ctx[env_idx].variable_types = std.HashMapNew(ctx);
-        ctx[env_idx].resolved_types_nested = std.VectorNew(ctx);
-        ctx[env_idx].enum_registry = std.HashMapNew(ctx);
-        ctx[env_idx].current_prefix = "";
-        ctx[env_idx].imports = std.HashMapNew(ctx);
-        ctx[env_idx].imports.Insert(std.Clone(ctx, "std"), std.Clone(ctx, "std_"));
-        ctx[env_idx].imports.Insert(std.Clone(ctx, "os"), std.Clone(ctx, "os_"));
-        ctx[env_idx].variable_origins = std.HashMapNew(ctx);
-        ctx[env_idx].moved_vars = std.HashMapNew(ctx);
-        ctx[env_idx].open_directories = std.HashMapNew(ctx);
-        ctx[env_idx].errors = std.VectorNew(ctx);
-        ctx[env_idx].expected_return_type = empty[Index[ast.Type[ctx], ctx]];
-        ctx[env_idx].current_function_return_origins = empty[Index[OriginSet[ctx], ctx]];
-        ctx[env_idx].current_function_inout_params = empty[Index[std.Vector[str, ctx], ctx]];
-        ctx[env_idx].current_function_local_vars = empty[Index[OriginSet[ctx], ctx]];
-        ctx[env_idx].checked_results = std.HashMapNew(ctx);
-        ctx[env_idx].in_unsafe_block = 0;
-        ctx[env_idx].active_monomorphizations = std.HashMapNew(ctx);
-        ctx[env_idx].current_alloc_struct = "";
-        ctx[env_idx].current_params = std.VectorNew(ctx);
-        ctx[env_idx].current_file = "";
+        mut env_ref_new := ctx.get_ref(env_idx);
+        env_ref_new.struct_registry = std.HashMapNew(ctx);
+        env_ref_new.struct_templates = std.HashMapNew(ctx);
+        env_ref_new.enum_templates = std.HashMapNew(ctx);
+        env_ref_new.function_registry = std.HashMapNew(ctx);
+        env_ref_new.variable_types = std.HashMapNew(ctx);
+        env_ref_new.resolved_types_nested = std.VectorNew(ctx);
+        env_ref_new.enum_registry = std.HashMapNew(ctx);
+        env_ref_new.current_prefix = "";
+        env_ref_new.imports = std.HashMapNew(ctx);
+        env_ref_new.imports.Insert(std.Clone(ctx, "std"), std.Clone(ctx, "std_"));
+        env_ref_new.imports.Insert(std.Clone(ctx, "os"), std.Clone(ctx, "os_"));
+        env_ref_new.variable_origins = std.HashMapNew(ctx);
+        env_ref_new.moved_vars = std.HashMapNew(ctx);
+        env_ref_new.open_directories = std.HashMapNew(ctx);
+        env_ref_new.errors = std.VectorNew(ctx);
+        env_ref_new.expected_return_type = empty[Index[ast.Type[ctx], ctx]];
+        env_ref_new.current_function_return_origins = empty[Index[OriginSet[ctx], ctx]];
+        env_ref_new.current_function_inout_params = empty[Index[std.Vector[str, ctx], ctx]];
+        env_ref_new.current_function_local_vars = empty[Index[OriginSet[ctx], ctx]];
+        env_ref_new.checked_results = std.HashMapNew(ctx);
+        env_ref_new.in_unsafe_block = 0;
+        env_ref_new.active_monomorphizations = std.HashMapNew(ctx);
+        env_ref_new.current_alloc_struct = "";
+        env_ref_new.current_params = std.VectorNew(ctx);
+        env_ref_new.current_file = "";
 
         env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
         env_register_std_structs(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
