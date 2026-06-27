@@ -70,6 +70,17 @@ The sandbox semantics are:
 
 This checkpoint defines ownership and destruction semantics only. `FunctionSignature[ctx]` now has inert helper predicates for sandbox policy and aggregate FFI policy classification, but these helpers only read existing metadata fields. They do not add wrapper codegen, runtime arena APIs, layout-aware marshalling, or provenance enforcement.
 
+### Address-origin metadata checkpoint
+
+The compiler now has an inert `AddressOriginMetadata` carrier for classifying where an address-like value came from before any broad non-laundering enforcement is enabled. The initial metadata categories are:
+
+- `safe_arena`: a value whose origin is trusted arena-managed storage and may be eligible for safe branded `Index[T, ctx]` / `&T[ctx]` use.
+- `raw_derived`: a value whose origin traces to raw pointer casts, pointer arithmetic, dereference materialization, or native address materialization.
+- `sandbox_derived`: a value whose origin traces to transient sandbox-FFI storage and must not be rebranded into caller-owned safe storage without an explicit future copy/validation rule.
+- `unknown`: an intentionally conservative default for values whose address origin has not yet been classified.
+
+The helper predicates classify whether an origin allows safe branding, whether it requires an unsafe boundary, and whether it is raw-or-sandbox-derived. These helpers are inert metadata utilities only. They do not yet propagate through assignments, calls, returns, or containers, and they do not replace the existing narrow local raw-derived pointer return guard.
+
 ### Classification rule
 
 Only parsed Gust source declarations/calls that carry direct external/native metadata should become FFI enforcement candidates. These are not direct user-facing FFI candidates:
@@ -98,8 +109,8 @@ Direct external/native calls reject outside an explicit unsafe context with the 
 10. Add a payload-safe layout metadata store separate from `StructLayout`, with query helpers guarded by a focused registry fixture.
 11. Define sandbox sub-arena ownership and destruction semantics for external calls without adding wrapper codegen or runtime behavior.
 12. Add inert sandbox policy helper carriers over `FunctionSignature[ctx]` without changing parser syntax, runtime behavior, or codegen.
-13. Define address-origin metadata that separates safe branded references from raw-derived addresses.
-14. Extend provenance tracking so raw-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
+13. Define inert address-origin metadata that separates safe-arena, raw-derived, sandbox-derived, and unknown origins.
+14. Extend provenance tracking so raw-derived and sandbox-derived values cannot be laundered into safe `Index[T, ctx]` or `&T[ctx]` through assignments, calls, returns, or containers.
 15. Add narrow compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
 
 ## Step 5.2 sequencing rule

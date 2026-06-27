@@ -6,6 +6,73 @@ type OriginSet[ctx] struct {
     map: std.HashMap[str, int, ctx]
 }
 
+type AddressOriginMetadata struct {
+    is_safe_arena: int,
+    is_raw_derived: int,
+    is_sandbox_derived: int,
+    is_unknown: int
+}
+
+func init_address_origin_unknown(origin: *AddressOriginMetadata) {
+    unsafe {
+        (*origin).is_safe_arena = 0;
+        (*origin).is_raw_derived = 0;
+        (*origin).is_sandbox_derived = 0;
+        (*origin).is_unknown = 1;
+    }
+}
+
+func init_address_origin_safe_arena(origin: *AddressOriginMetadata) {
+    unsafe {
+        (*origin).is_safe_arena = 1;
+        (*origin).is_raw_derived = 0;
+        (*origin).is_sandbox_derived = 0;
+        (*origin).is_unknown = 0;
+    }
+}
+
+func init_address_origin_raw_derived(origin: *AddressOriginMetadata) {
+    unsafe {
+        (*origin).is_safe_arena = 0;
+        (*origin).is_raw_derived = 1;
+        (*origin).is_sandbox_derived = 0;
+        (*origin).is_unknown = 0;
+    }
+}
+
+func init_address_origin_sandbox_derived(origin: *AddressOriginMetadata) {
+    unsafe {
+        (*origin).is_safe_arena = 0;
+        (*origin).is_raw_derived = 0;
+        (*origin).is_sandbox_derived = 1;
+        (*origin).is_unknown = 0;
+    }
+}
+
+func address_origin_is_raw_or_sandbox_derived(origin: AddressOriginMetadata) int {
+    if origin.is_raw_derived == 1 {
+        return 1;
+    }
+    if origin.is_sandbox_derived == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_requires_unsafe_boundary(origin: AddressOriginMetadata) int {
+    if address_origin_is_raw_or_sandbox_derived(origin) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_allows_safe_branding(origin: AddressOriginMetadata) int {
+    if origin.is_safe_arena == 1 && origin.is_raw_derived == 0 && origin.is_sandbox_derived == 0 && origin.is_unknown == 0 {
+        return 1;
+    }
+    return 0;
+}
+
 type StructLayout[ctx] struct {
     brand: Index[str, ctx],
     fields: std.HashMap[str, ast.Type[ctx], ctx]
