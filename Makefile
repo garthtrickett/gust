@@ -9,7 +9,7 @@ SHELL = bash
 
 .PHONY: all clean test bootstrap install test_tree_sitter report_step44_accessor_contract report_step45_accessor_contract report_step45_final_validation report_compiler_get_opt_migration report_high_level_raw_collection_casts report_step45_subscript_lvalue_writes report_step45_test_subscript_lvalue_writes guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts guard_parser_high_level_raw_casts
 
-.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_address_escapes_focused report_step51_ffi_calls report_step51_ffi_focused report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement guard_step51_basic_unsafe_enforcement report_step51_phase_c_basic_unsafe_status report_step51_phase_d_ffi_status report_step51_phase_e_address_escape_status report_step51_phase_f_non_laundering_status report_step51_raw_pointer_safety_inventory report_step51_final_validation
+.PHONY: report_step45_subscript_lvalue_classified guard_step45_safe_subscript_write_enforcement report_phase4_formatter_tools fmt_check_phase4_infra report_step51_raw_pointer_deref report_step51_raw_pointer_casts report_step51_address_escapes_focused report_step51_ffi_calls report_step51_ffi_focused report_step51_unsafe_func_signatures report_step51_raw_pointer_classified report_step51_raw_pointer_safe_code_candidates report_step51_phase_b_wrapping_status guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement guard_step51_basic_unsafe_enforcement report_step51_phase_c_basic_unsafe_status report_step51_phase_d_ffi_status report_step51_phase_e_address_escape_status report_step51_phase_f_non_laundering_status report_step51_status_matrix report_step51_raw_pointer_safety_inventory report_step51_final_validation
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -201,6 +201,22 @@ report_step51_phase_f_non_laundering_status:
 	@echo "   Still deferred: broader non-laundering/provenance tracking."
 	@echo "✅ Step 5.1F non-laundering/provenance status report complete. This target is report-only and does not run guards."
 
+report_step51_status_matrix:
+	@echo "🧭 Step 5.1 safety status matrix:"
+	@echo "   Compiler-backed guards wired through make test:"
+	@echo "   ✅ raw pointer dereference outside unsafe: make guard_step51_raw_deref_unsafe_enforcement"
+	@echo "   ✅ raw pointer casts outside unsafe: make guard_step51_raw_cast_unsafe_enforcement"
+	@echo "   ✅ pointer arithmetic outside unsafe: make guard_step51_pointer_arithmetic_unsafe_enforcement"
+	@echo "   ✅ unsafe function calls outside unsafe: make guard_step51_unsafe_func_call_enforcement"
+	@echo "   ✅ local raw-derived pointer return escape: make guard_step51_raw_pointer_local_escape_enforcement"
+	@echo "   Aggregate: make guard_step51_basic_unsafe_enforcement"
+	@echo "   Report-only / deferred lanes:"
+	@echo "   🧭 FFI gating: make report_step51_phase_d_ffi_status"
+	@echo "   🧭 address escapes: make report_step51_phase_e_address_escape_status"
+	@echo "   🧭 broader non-laundering/provenance: make report_step51_phase_f_non_laundering_status"
+	@echo "   Do not convert report-only lanes into make test guards until compiler-backed semantic rules exist."
+	@echo "✅ Step 5.1 safety status matrix complete. This target is report-only and does not run guards."
+
 report_step51_raw_pointer_safety_inventory:
 	@echo "🧾 Step 5.1 raw pointer safety inventory checklist:"
 	@echo "   make report_step51_raw_pointer_deref"
@@ -216,6 +232,7 @@ report_step51_raw_pointer_safety_inventory:
 	@echo "   make report_step51_phase_d_ffi_status"
 	@echo "   make report_step51_phase_e_address_escape_status"
 	@echo "   make report_step51_phase_f_non_laundering_status"
+	@echo "   make report_step51_status_matrix"
 	@$(MAKE) report_step51_raw_pointer_deref
 	@$(MAKE) report_step51_raw_pointer_casts
 	@$(MAKE) report_step51_address_escapes_focused
@@ -229,6 +246,7 @@ report_step51_raw_pointer_safety_inventory:
 	@$(MAKE) report_step51_phase_d_ffi_status
 	@$(MAKE) report_step51_phase_e_address_escape_status
 	@$(MAKE) report_step51_phase_f_non_laundering_status
+	@$(MAKE) report_step51_status_matrix
 	@echo "✅ Step 5.1 raw pointer safety inventory complete. This target is report-only and does not fail."
 
 report_step51_final_validation:
@@ -241,6 +259,7 @@ report_step51_final_validation:
 	@echo "   make report_step51_phase_d_ffi_status"
 	@echo "   make report_step51_phase_e_address_escape_status"
 	@echo "   make report_step51_phase_f_non_laundering_status"
+	@echo "   make report_step51_status_matrix"
 	@echo "   make report_step51_ffi_focused"
 	@echo "   make report_step51_address_escapes_focused"
 	@echo "   make guard_step51_basic_unsafe_enforcement"
@@ -258,7 +277,7 @@ report_step51_final_validation:
 	@echo "   make test"
 	@echo "   make bootstrap"
 	@echo "   git diff --check"
-	@echo "✅ Step 5.1 validation checklist complete. Raw deref/cast/pointer-arithmetic/unsafe-call/raw-local-escape enforcement is guarded; address escapes, FFI, and broader non-laundering remain deferred."
+	@echo "✅ Step 5.1 validation checklist complete. Basic unsafe enforcement is compiler-backed and aggregated; FFI, address escapes, and broader non-laundering remain report-only/deferred lanes."
 
 report_step44_accessor_contract:
 	@echo "🧪 Step 4.4 accessor contract focused checks:"
