@@ -413,6 +413,22 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
     }
 }
 
+func env_type_is_safe_branded_return_target(t: ast.Type[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 7 { // Index
+            if t.Index.brand != empty[Index[str, ctx]] {
+                return 1;
+            }
+        }
+        if t.tag == 11 { // Reference
+            if t.Reference.brand != empty[Index[str, ctx]] {
+                return 1;
+            }
+        }
+        return 0;
+    }
+}
+
 func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], parent_brand: Index[str, ctx], span: token.Span, ctx: &Arena) {
     unsafe { 
         if t.tag == 9 { // RawPointer
@@ -7572,6 +7588,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut actual_return: ast.Type[ctx];
             actual_return.tag = 3; // Void
+            mut return_prov_for_enforcement := expression_provenance_void_unknown(ctx);
 
             if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
                 mut return_prov_stmt := check_expression_with_provenance(expr_idx, env, scope, ctx);
@@ -7580,6 +7597,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut expr_origins := typechecker_clone_origin_set(return_prov_stmt.legacy_origins, ctx);
                 return_prov_stmt.resolved_type = actual_return;
                 return_prov_stmt.legacy_origins = expr_origins;
+                return_prov_for_enforcement = return_prov_stmt;
 
                 if set_contains(expr_origins, "scratch", ctx) == 1 {
                     // Safe Scratchpad-allocated view check (Step 3 verification)
@@ -7630,6 +7648,20 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         val_span = stmt.Return.span;
                     }
                     report_error(2, msg, val_span, env, ctx);
+                }
+
+                if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                    if env_type_is_safe_branded_return_target(expected_t, ctx) == 1 {
+                        if expression_provenance_is_raw_or_sandbox_derived(return_prov_for_enforcement) == 1 {
+                            mut msg_return_nlaunder := "Semantic Error: Non-laundering violation. Returning raw-derived or sandbox-derived value as safe branded return type ";
+                            msg_return_nlaunder = std.Concat(msg_return_nlaunder, ast.serialize_type(expected_t, ctx));
+                            msg_return_nlaunder = std.Concat(msg_return_nlaunder, " is prohibited");
+
+                            mut return_nlaunder_span: token.Span;
+                            return_nlaunder_span = get_expression_span(expr_idx, ctx);
+                            report_error(2, msg_return_nlaunder, return_nlaunder_span, env, ctx);
+                        }
+                    }
                 }
             } else {
                 mut msg := "Semantic Error: Return statement used outside function body";
