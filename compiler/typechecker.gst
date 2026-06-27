@@ -126,6 +126,13 @@ func function_signature_requires_ffi_policy(sig: FunctionSignature[ctx]) int {
     return 0;
 }
 
+func function_signature_requires_layout_policy(sig: FunctionSignature[ctx]) int {
+    if sig.requires_layout_metadata == 1 {
+        return 1;
+    }
+    return 0;
+}
+
 func function_signature_requires_sandbox_policy(sig: FunctionSignature[ctx]) int {
     if sig.requires_sandbox_arena == 1 {
         return 1;
@@ -4643,6 +4650,26 @@ func env_struct_requires_layout_metadata(env: *TypeEnvironment[ctx], name: str, 
         return 1;
     }
     return 0;
+}
+
+func env_struct_has_explicit_ffi_layout(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    return env_struct_requires_layout_metadata(env, name, ctx);
+}
+
+func env_struct_satisfies_c_ffi_layout(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    if env_struct_is_repr_c(env, name, ctx) == 1 {
+        if env_struct_layout_abi_is_c(env, name, ctx) == 1 {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+func env_struct_missing_c_ffi_layout(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    if env_struct_satisfies_c_ffi_layout(env, name, ctx) == 1 {
+        return 0;
+    }
+    return 1;
 }
 
 func env_register_function(env: *TypeEnvironment[ctx], name: str, sig: FunctionSignature[ctx], ctx: &Arena) {
