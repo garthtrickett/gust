@@ -220,7 +220,7 @@ report_step51_status_matrix:
 
 guard_step51_report_only_lanes_not_in_test:
 	@echo "🔒 Guarding Step 5.1 report-only lanes are not direct make test dependencies..."
-	@test_deps="$$(grep -E '^test:' Makefile)"; \
+	@test_deps="$$(awk 'capture == 1 && /^[[:space:]]*@/ { exit } /^test:/ { capture = 1 } capture == 1 { print }' Makefile)"; \
 	if echo "$$test_deps" | grep -q 'report_step51_'; then \
 		echo "❌ Step 5.1 report-only target is wired directly into make test:"; \
 		echo "$$test_deps"; \
