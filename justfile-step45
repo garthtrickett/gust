@@ -1,5 +1,6 @@
 # Step 4.5 textual guard implementations imported by justfile.
 # Makefile keeps compatibility wrappers; safe-subscript enforcement body lives here.
+# Fixture logs produced through guard-compile-* live under build/guards/<label>/.
 
 guard_step45_safe_subscript_write_enforcement:
     echo "🔒 Checking Step 4.5C safe subscript write enforcement..."

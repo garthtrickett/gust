@@ -1,56 +1,60 @@
 # Step 5.1 guard implementations imported by justfile.
 # Makefile keeps compatibility wrappers; focused guard bodies live here.
+# Generic fixture helpers isolate outputs under build/guards/<label>/ so guard recipes can be parallelized safely later.
 
 guard-positive file label:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    mkdir -p build
-    test_path="{{file}}"
-    label="{{label}}"
-    stem="$(basename "$test_path" .gst)"
-    log="build/${label}.log"
-    c_file="build/${stem}.c"
-    final_file="build/${stem}_final.c"
-    bin_file="build/${stem}_bin"
-    echo "Checking $test_path accepts and runs..."
-    ./gust "$test_path" > "$log" 2>&1
-    grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$log" > "$c_file"
-    cat src/runtime.c "$c_file" > "$final_file"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"
-    INCLUDES_VAL="${INCLUDES:--Isrc}"
-    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$final_file" -o "$bin_file" >> "$log" 2>&1
-    "$bin_file" >> "$log" 2>&1
+ #!/usr/bin/env bash
+ set -euo pipefail
+ test_path="{{file}}"
+ label="{{label}}"
+ stem="$(basename "$test_path" .gst)"
+ guard_dir="build/guards/${label}"
+ mkdir -p "$guard_dir"
+ log="$guard_dir/compiler.log"
+ c_file="$guard_dir/${stem}.c"
+ final_file="$guard_dir/${stem}_final.c"
+ bin_file="$guard_dir/${stem}_bin"
+ echo "Checking $test_path accepts and runs..."
+ ./gust "$test_path" > "$log" 2>&1
+ grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$log" > "$c_file"
+ cat src/runtime.c "$c_file" > "$final_file"
+ CC_BIN="${CC:-cc}"
+ CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"
+ INCLUDES_VAL="${INCLUDES:--Isrc}"
+ "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$final_file" -o "$bin_file" >> "$log" 2>&1
+ "$bin_file" >> "$log" 2>&1
 
 guard-compile-pass file label:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    mkdir -p build
-    test_path="{{file}}"
-    label="{{label}}"
-    log="build/${label}.log"
-    echo "Checking $test_path accepts..."
-    ./gust "$test_path" > "$log" 2>&1
+ #!/usr/bin/env bash
+ set -euo pipefail
+ test_path="{{file}}"
+ label="{{label}}"
+ guard_dir="build/guards/${label}"
+ mkdir -p "$guard_dir"
+ log="$guard_dir/compiler.log"
+ echo "Checking $test_path accepts..."
+ ./gust "$test_path" > "$log" 2>&1
 
 guard-compile-fail file diagnostic label:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    mkdir -p build
-    test_path="{{file}}"
-    diagnostic="{{diagnostic}}"
-    label="{{label}}"
-    log="build/${label}.log"
-    echo "Checking $test_path rejects..."
-    if ./gust "$test_path" > "$log" 2>&1; then
-      echo "❌ Expected $test_path to fail compilation, but it succeeded."
-      cat "$log"
-      exit 1
-    fi
-    if ! rg -q "$diagnostic" "$log"; then
-      echo "❌ Rejection for $test_path did not contain expected diagnostic: $diagnostic"
-      cat "$log"
-      exit 1
-    fi
+ #!/usr/bin/env bash
+ set -euo pipefail
+ test_path="{{file}}"
+ diagnostic="{{diagnostic}}"
+ label="{{label}}"
+ guard_dir="build/guards/${label}"
+ mkdir -p "$guard_dir"
+ log="$guard_dir/compiler.log"
+ echo "Checking $test_path rejects..."
+ if ./gust "$test_path" > "$log" 2>&1; then
+ echo "❌ Expected $test_path to fail compilation, but it succeeded."
+ cat "$log"
+ exit 1
+ fi
+ if ! rg -q "$diagnostic" "$log"; then
+ echo "❌ Rejection for $test_path did not contain expected diagnostic: $diagnostic"
+ cat "$log"
+ exit 1
+ fi
 
 guard-negative file diagnostic label:
     just guard-compile-fail "{{file}}" "{{diagnostic}}" "{{label}}"
