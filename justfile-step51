@@ -289,6 +289,7 @@ guard_step51_provenance_origin_spine:
     just guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst step51g_provenance_origin_spine_compat
     just guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst step51g_provenance_expression_join_spine
     just guard-positive compiler/typechecker_provenance_policy_spine_test_entry.gst step51g_provenance_policy_spine
+    just guard-positive compiler/typechecker_provenance_enforced_target_policy_test_entry.gst step51g_provenance_enforced_target_policy
     echo "✅ guard_step51_provenance_origin_spine passed."
 
 guard_step51_basic_unsafe_enforcement:

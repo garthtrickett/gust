@@ -540,10 +540,7 @@ func env_type_is_safe_branded_return_target(t: ast.Type[ctx], ctx: &Arena) int {
 }
 
 func env_report_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], span: token.Span, context_nonlaunder: str, ctx: &Arena) {
-    if env_type_is_safe_branded_return_target(target_t, ctx) == 0 {
-        return;
-    }
-    if expression_provenance_is_raw_or_sandbox_derived(prov) == 0 {
+    if step51g_non_laundering_enforced_safe_brand_target_violation(target_t, prov, ctx) == 0 {
         return;
     }
 
