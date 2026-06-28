@@ -3045,6 +3045,40 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     return arena_alloc_short_prov;
                 }
 
+                mut is_get_ref_call_prov := 0;
+                if std.str_eq(call_name_prov, "get_ref") == 1 {
+                    is_get_ref_call_prov = 1;
+                }
+                if len(call_name_prov) >= 8 {
+                    mut get_ref_suffix_prov := std.str_slice(call_name_prov, len(call_name_prov) - 8, len(call_name_prov));
+                    if std.str_eq(get_ref_suffix_prov, ".get_ref") == 1 {
+                        is_get_ref_call_prov = 1;
+                    }
+                }
+                if std.str_eq(resolved_call_name_prov, "get_ref") == 1 {
+                    is_get_ref_call_prov = 1;
+                }
+                if len(resolved_call_name_prov) >= 8 {
+                    mut get_ref_resolved_suffix_prov := std.str_slice(resolved_call_name_prov, len(resolved_call_name_prov) - 8, len(resolved_call_name_prov));
+                    if std.str_eq(get_ref_resolved_suffix_prov, ".get_ref") == 1 {
+                        is_get_ref_call_prov = 1;
+                    }
+                }
+                if is_get_ref_call_prov == 1 {
+                    mut args_vec_get_ref_prov: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                    if len(args_vec_get_ref_prov) > 0 {
+                        mut get_ref_arg_idx_prov: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx.Set(get_ref_arg_idx_prov, args_vec_get_ref_prov[0]);
+                        mut get_ref_arg_prov := check_expression_with_provenance(get_ref_arg_idx_prov, env, scope, ctx);
+                        if expression_provenance_allows_safe_branding(get_ref_arg_prov) == 1 {
+                            mut get_ref_safe_prov := expression_provenance_safe_arena(t, ctx);
+                            get_ref_safe_prov.legacy_origins = legacy_origins;
+                            set_union(get_ref_safe_prov.legacy_origins, get_ref_arg_prov.legacy_origins, ctx);
+                            return get_ref_safe_prov;
+                        }
+                    }
+                }
+
                 mut return_prov_lookup := (*env).function_return_provenance.Get(resolved_call_name_prov);
                 if return_prov_lookup.Ok {
                     mut found_call_prov := return_prov_lookup.Val;
