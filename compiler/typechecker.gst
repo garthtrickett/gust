@@ -72,6 +72,70 @@ func address_origin_requires_unsafe_boundary(origin: AddressOriginMetadata) int 
     return 0;
 }
 
+func step51g_address_origin_is_safe_arena_only(origin: AddressOriginMetadata) int {
+    if origin.is_safe_arena != 1 {
+        return 0;
+    }
+    if origin.is_raw_derived != 0 {
+        return 0;
+    }
+    if origin.is_sandbox_derived != 0 {
+        return 0;
+    }
+    if origin.is_unknown != 0 {
+        return 0;
+    }
+    return 1;
+}
+
+func step51g_address_origin_blocks_safe_brand(origin: AddressOriginMetadata) int {
+    if origin.is_raw_derived == 1 {
+        return 1;
+    }
+    if origin.is_sandbox_derived == 1 {
+        return 1;
+    }
+    if origin.is_unknown == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func step51g_join_address_origin(left: AddressOriginMetadata, right: AddressOriginMetadata) AddressOriginMetadata {
+    mut joined: AddressOriginMetadata;
+    unsafe {
+        joined.is_safe_arena = 0;
+        joined.is_raw_derived = 0;
+        joined.is_sandbox_derived = 0;
+        joined.is_unknown = 0;
+    }
+
+    if left.is_raw_derived == 1 || right.is_raw_derived == 1 {
+        unsafe { joined.is_raw_derived = 1; }
+    }
+    if left.is_sandbox_derived == 1 || right.is_sandbox_derived == 1 {
+        unsafe { joined.is_sandbox_derived = 1; }
+    }
+    if left.is_unknown == 1 || right.is_unknown == 1 {
+        unsafe { joined.is_unknown = 1; }
+    }
+    if step51g_address_origin_blocks_safe_brand(joined) == 0 {
+        if left.is_safe_arena == 1 && right.is_safe_arena == 1 {
+            unsafe { joined.is_safe_arena = 1; }
+        }
+    }
+
+    return joined;
+}
+
+func step51g_expression_provenance_allows_safe_brand(prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    return step51g_address_origin_is_safe_arena_only(prov.address_origin);
+}
+
+func step51g_expression_provenance_blocks_safe_brand(prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    return step51g_address_origin_blocks_safe_brand(prov.address_origin);
+}
+
 func address_origin_allows_safe_branding(origin: AddressOriginMetadata) int {
     if origin.is_safe_arena == 1 && origin.is_raw_derived == 0 && origin.is_sandbox_derived == 0 && origin.is_unknown == 0 {
         return 1;

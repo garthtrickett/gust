@@ -283,6 +283,11 @@ guard_step51_non_laundering_hashmap_get_value_field_enforcement:
     just guard-positive compiler/typechecker_non_laundering_hashmap_get_value_field_test_entry.gst step51_non_laundering_hashmap_get_value_field_enforcement
     echo "✅ guard_step51_non_laundering_hashmap_get_value_field_enforcement passed."
 
+guard_step51_provenance_origin_spine:
+    echo "🔒 Checking Step 5.1G unified provenance-origin spine helpers..."
+    just guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst step51g_provenance_origin_spine
+    echo "✅ guard_step51_provenance_origin_spine passed."
+
 guard_step51_basic_unsafe_enforcement:
     just guard_step51_raw_deref_unsafe_enforcement
     just guard_step51_raw_cast_unsafe_enforcement
