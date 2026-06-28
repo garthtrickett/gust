@@ -402,7 +402,11 @@ func expression_provenance_join(left: ExpressionProvenance[ctx], right: Expressi
 }
 
 func expression_provenance_allows_safe_branding(prov: ExpressionProvenance[ctx]) int {
-    return address_origin_allows_safe_branding(prov.address_origin);
+    return step51g_address_origin_is_safe_arena_only(prov.address_origin);
+}
+
+func expression_provenance_blocks_safe_branding(prov: ExpressionProvenance[ctx]) int {
+    return step51g_address_origin_blocks_safe_brand(prov.address_origin);
 }
 
 func expression_provenance_requires_unsafe_boundary(prov: ExpressionProvenance[ctx]) int {
