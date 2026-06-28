@@ -1759,6 +1759,90 @@ func main() {
     t_unsafe_function_signature_noop.expected = "";
     tests.Push(t_unsafe_function_signature_noop);
 
+    mut t_step51_raw_pointer_deref_rej: Test[ctx];
+    t_step51_raw_pointer_deref_rej.path = "tests/test_raw_pointer_deref_outside_unsafe_rejected.gst";
+    t_step51_raw_pointer_deref_rej.is_negative = 1;
+    t_step51_raw_pointer_deref_rej.is_substring = 1;
+    t_step51_raw_pointer_deref_rej.expected = "Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks";
+    tests.Push(t_step51_raw_pointer_deref_rej);
+
+    mut t_step51_raw_pointer_deref_ok: Test[ctx];
+    t_step51_raw_pointer_deref_ok.path = "tests/e2e_raw_pointer_deref_inside_unsafe.gst";
+    t_step51_raw_pointer_deref_ok.is_negative = 0;
+    t_step51_raw_pointer_deref_ok.is_substring = 0;
+    t_step51_raw_pointer_deref_ok.expected = "42";
+    tests.Push(t_step51_raw_pointer_deref_ok);
+
+    mut t_step51_raw_pointer_cast_rej: Test[ctx];
+    t_step51_raw_pointer_cast_rej.path = "tests/test_raw_pointer_cast_outside_unsafe_rejected.gst";
+    t_step51_raw_pointer_cast_rej.is_negative = 1;
+    t_step51_raw_pointer_cast_rej.is_substring = 1;
+    t_step51_raw_pointer_cast_rej.expected = "Raw pointer casts are strictly prohibited outside 'unsafe' blocks";
+    tests.Push(t_step51_raw_pointer_cast_rej);
+
+    mut t_step51_raw_pointer_cast_ok: Test[ctx];
+    t_step51_raw_pointer_cast_ok.path = "tests/e2e_raw_pointer_cast_inside_unsafe.gst";
+    t_step51_raw_pointer_cast_ok.is_negative = 0;
+    t_step51_raw_pointer_cast_ok.is_substring = 0;
+    t_step51_raw_pointer_cast_ok.expected = "";
+    tests.Push(t_step51_raw_pointer_cast_ok);
+
+    mut t_step51_pointer_arithmetic_rej: Test[ctx];
+    t_step51_pointer_arithmetic_rej.path = "tests/test_raw_pointer_arithmetic_outside_unsafe_rejected.gst";
+    t_step51_pointer_arithmetic_rej.is_negative = 1;
+    t_step51_pointer_arithmetic_rej.is_substring = 1;
+    t_step51_pointer_arithmetic_rej.expected = "Pointer arithmetic is strictly prohibited outside 'unsafe' blocks";
+    tests.Push(t_step51_pointer_arithmetic_rej);
+
+    mut t_step51_pointer_arithmetic_ok: Test[ctx];
+    t_step51_pointer_arithmetic_ok.path = "tests/e2e_raw_pointer_arithmetic_inside_unsafe.gst";
+    t_step51_pointer_arithmetic_ok.is_negative = 0;
+    t_step51_pointer_arithmetic_ok.is_substring = 0;
+    t_step51_pointer_arithmetic_ok.expected = "42";
+    tests.Push(t_step51_pointer_arithmetic_ok);
+
+    mut t_step51_unsafe_func_call_rej: Test[ctx];
+    t_step51_unsafe_func_call_rej.path = "tests/test_unsafe_func_call_outside_unsafe_rejected.gst";
+    t_step51_unsafe_func_call_rej.is_negative = 1;
+    t_step51_unsafe_func_call_rej.is_substring = 1;
+    t_step51_unsafe_func_call_rej.expected = "Unsafe function calls require an explicit 'unsafe' block";
+    tests.Push(t_step51_unsafe_func_call_rej);
+
+    mut t_step51_unsafe_func_call_ok: Test[ctx];
+    t_step51_unsafe_func_call_ok.path = "tests/e2e_unsafe_func_call_inside_unsafe.gst";
+    t_step51_unsafe_func_call_ok.is_negative = 0;
+    t_step51_unsafe_func_call_ok.is_substring = 0;
+    t_step51_unsafe_func_call_ok.expected = "42";
+    tests.Push(t_step51_unsafe_func_call_ok);
+
+    mut t_step51_unsafe_func_body_raw_ops_ok: Test[ctx];
+    t_step51_unsafe_func_body_raw_ops_ok.path = "tests/e2e_unsafe_func_body_raw_ops.gst";
+    t_step51_unsafe_func_body_raw_ops_ok.is_negative = 0;
+    t_step51_unsafe_func_body_raw_ops_ok.is_substring = 0;
+    t_step51_unsafe_func_body_raw_ops_ok.expected = "42";
+    tests.Push(t_step51_unsafe_func_body_raw_ops_ok);
+
+    mut t_step51_raw_pointer_local_escape_rej: Test[ctx];
+    t_step51_raw_pointer_local_escape_rej.path = "tests/test_raw_pointer_return_derived_local_rejected.gst";
+    t_step51_raw_pointer_local_escape_rej.is_negative = 1;
+    t_step51_raw_pointer_local_escape_rej.is_substring = 1;
+    t_step51_raw_pointer_local_escape_rej.expected = "Returning ephemeral view of type RawPointer";
+    tests.Push(t_step51_raw_pointer_local_escape_rej);
+
+    mut t_step51_extern_func_call_rej: Test[ctx];
+    t_step51_extern_func_call_rej.path = "tests/test_extern_func_call_outside_unsafe_rejected.gst";
+    t_step51_extern_func_call_rej.is_negative = 1;
+    t_step51_extern_func_call_rej.is_substring = 1;
+    t_step51_extern_func_call_rej.expected = "Direct external/native function calls require an explicit 'unsafe' block";
+    tests.Push(t_step51_extern_func_call_rej);
+
+    mut t_step51_extern_func_call_ok: Test[ctx];
+    t_step51_extern_func_call_ok.path = "tests/e2e_extern_func_call_inside_unsafe.gst";
+    t_step51_extern_func_call_ok.is_negative = 0;
+    t_step51_extern_func_call_ok.is_substring = 0;
+    t_step51_extern_func_call_ok.expected = "41";
+    tests.Push(t_step51_extern_func_call_ok);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
