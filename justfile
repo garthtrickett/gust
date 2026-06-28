@@ -62,6 +62,7 @@ report-step52:
 make-test-guards:
     #!/usr/bin/env bash
     set -euo pipefail
+    make gust
     guards=(
       guard_step45_safe_subscript_write_enforcement
       guard_step51_basic_unsafe_enforcement
@@ -129,11 +130,10 @@ make-test-guards:
       guard_step44_no_high_level_raw_collection_casts
     )
     for guard_name in "${guards[@]}"; do
-      make "$guard_name"
+      just "$guard_name"
     done
 
 make-test-suite:
-    make gust
     just make-test-guards
     mkdir -p build
     echo "⚙️  Compiling native Gust test runner..."
