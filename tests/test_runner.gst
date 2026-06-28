@@ -2102,6 +2102,13 @@ func main() {
     t_step52_linear_resource_metadata.expected = "SUCCESS: inert linear resource metadata opt-in verified!";
     tests.Push(t_step52_linear_resource_metadata);
 
+    mut t_step52_linear_destructor_metadata: Test[ctx];
+    t_step52_linear_destructor_metadata.path = "compiler/typechecker_linear_destructor_metadata_test_entry.gst";
+    t_step52_linear_destructor_metadata.is_negative = 0;
+    t_step52_linear_destructor_metadata.is_substring = 1;
+    t_step52_linear_destructor_metadata.expected = "SUCCESS: inert linear destructor metadata verified!";
+    tests.Push(t_step52_linear_destructor_metadata);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

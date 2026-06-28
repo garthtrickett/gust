@@ -200,6 +200,7 @@ type TypeEnvironment[ctx] struct {
     struct_layout_packed: std.HashMap[str, int, ctx],
     struct_layout_abi: std.HashMap[str, str, ctx],
     struct_linear_resource: std.HashMap[str, int, ctx],
+    struct_linear_destructor: std.HashMap[str, str, ctx],
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
@@ -5290,6 +5291,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.struct_layout_packed = std.HashMapNew(ctx);
         env_ref_new.struct_layout_abi = std.HashMapNew(ctx);
         env_ref_new.struct_linear_resource = std.HashMapNew(ctx);
+        env_ref_new.struct_linear_destructor = std.HashMapNew(ctx);
         env_ref_new.enum_templates = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
         env_ref_new.function_return_provenance = std.HashMapNew(ctx);
@@ -5510,6 +5512,42 @@ func env_struct_is_linear_resource(env: *TypeEnvironment[ctx], name: str, ctx: &
 
 func env_struct_has_linear_metadata(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
     return env_struct_is_linear_resource(env, name, ctx);
+}
+
+func env_register_struct_linear_destructor(env: *TypeEnvironment[ctx], name: str, destructor_name: str, ctx: &Arena) {
+    unsafe {
+        (*env).struct_linear_destructor.Insert(std.Clone(ctx, name), std.Clone(ctx, destructor_name));
+    }
+    mut msg := std.Format("env_register_struct_linear_destructor: registered destructor metadata for '%s'", name);
+    typechecker_log_trace("🗄️", msg, ctx);
+}
+
+func env_struct_linear_destructor_name(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
+    unsafe {
+        mut lookup := (*env).struct_linear_destructor.Get(name);
+        if lookup.Ok {
+            return lookup.Val;
+        }
+        return "";
+    }
+}
+
+func env_struct_has_linear_destructor(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    mut destructor_name := env_struct_linear_destructor_name(env, name, ctx);
+    if len(destructor_name) > 0 {
+        return 1;
+    }
+    return 0;
+}
+
+func env_struct_has_resource_tracking_metadata(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    if env_struct_is_linear_resource(env, name, ctx) == 1 {
+        return 1;
+    }
+    if env_struct_has_linear_destructor(env, name, ctx) == 1 {
+        return 1;
+    }
+    return 0;
 }
 
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
