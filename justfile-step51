@@ -289,6 +289,7 @@ guard_step51_provenance_origin_spine:
     just guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst step51g_provenance_origin_spine_compat
     just guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst step51g_provenance_expression_join_spine
     just guard-positive compiler/typechecker_provenance_policy_spine_test_entry.gst step51g_provenance_policy_spine
+    just guard-positive compiler/typechecker_provenance_boundary_spine_test_entry.gst step51g_provenance_boundary_spine
     just guard-positive compiler/typechecker_provenance_enforced_target_policy_test_entry.gst step51g_provenance_enforced_target_policy
     just guard-positive compiler/typechecker_non_laundering_binding_test_entry.gst step51g_policy_binding_regression
     just guard-positive compiler/typechecker_non_laundering_container_test_entry.gst step51g_policy_container_regression
