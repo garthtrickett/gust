@@ -1693,9 +1693,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if len(args_vec_vector_push) == 1 {
                             mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx.Set(arg0_idx, args_vec_vector_push[0]);
-                            mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+                            mut arg_prov_vector_push_nlaunder := check_expression_with_provenance(arg0_idx, env, scope, ctx);
+                            mut arg_type := env_resolve_type(env, arg_prov_vector_push_nlaunder.resolved_type, ctx);
+                            arg_prov_vector_push_nlaunder.resolved_type = arg_type;
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
+                            elem_type = env_resolve_type(env, elem_type, ctx);
+                            env_report_non_laundering_safe_brand_target(env, elem_type, arg_prov_vector_push_nlaunder, get_expression_span(arg0_idx, ctx), "Passing raw-derived or sandbox-derived value to Vector.Push", ctx);
                             if types_match(elem_type, arg_type, ctx) == 0 { 
                                 mut msg := std.Concat("Semantic Error: Argument type mismatch for Vector.Push. Expected ", ast.serialize_type(elem_type, ctx));
                                 msg = std.Concat(msg, " but got ");
@@ -1727,11 +1731,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                         mut value_arg_idx_vector_set: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx.Set(value_arg_idx_vector_set, args_vec_vector_set[1]);
-                        mut value_arg_type_vector_set := check_expression(value_arg_idx_vector_set, env, scope, ctx);
-                        value_arg_type_vector_set = env_resolve_type(env, value_arg_type_vector_set, ctx);
+                        mut value_arg_prov_vector_set_nlaunder := check_expression_with_provenance(value_arg_idx_vector_set, env, scope, ctx);
+                        mut value_arg_type_vector_set := env_resolve_type(env, value_arg_prov_vector_set_nlaunder.resolved_type, ctx);
+                        value_arg_prov_vector_set_nlaunder.resolved_type = value_arg_type_vector_set;
 
                         mut elem_type_vector_set := typechecker_get_template_elem_type(s_name, "data", env, ctx);
                         elem_type_vector_set = env_resolve_type(env, elem_type_vector_set, ctx);
+                        env_report_non_laundering_safe_brand_target(env, elem_type_vector_set, value_arg_prov_vector_set_nlaunder, get_expression_span(value_arg_idx_vector_set, ctx), "Passing raw-derived or sandbox-derived value to Vector.Set", ctx);
                         if types_match(elem_type_vector_set, value_arg_type_vector_set, ctx) == 0 {
                             mut msg_vector_set_value := std.Concat("Semantic Error: Vector.Set value type mismatch. Expected ", ast.serialize_type(elem_type_vector_set, ctx));
                             msg_vector_set_value = std.Concat(msg_vector_set_value, " but got ");
@@ -1825,10 +1831,14 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                             mut arg1_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                             ctx.Set(arg1_idx, args_vec_map_insert[1]);
-                            mut v_arg := check_expression(arg1_idx, env, scope, ctx);
+                            mut v_arg_prov_map_insert_nlaunder := check_expression_with_provenance(arg1_idx, env, scope, ctx);
+                            mut v_arg := env_resolve_type(env, v_arg_prov_map_insert_nlaunder.resolved_type, ctx);
+                            v_arg_prov_map_insert_nlaunder.resolved_type = v_arg;
 
                             mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
                             mut v_type := typechecker_get_template_elem_type(s_name, "values", env, ctx);
+                            v_type = env_resolve_type(env, v_type, ctx);
+                            env_report_non_laundering_safe_brand_target(env, v_type, v_arg_prov_map_insert_nlaunder, get_expression_span(arg1_idx, ctx), "Passing raw-derived or sandbox-derived value to HashMap.Insert/Set", ctx);
 
                             if types_match(k_type, k_arg, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Key type mismatch for HashMap.Insert/Set. Expected ", ast.serialize_type(k_type, ctx));
