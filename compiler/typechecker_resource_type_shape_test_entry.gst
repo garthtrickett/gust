@@ -1,3 +1,4 @@
+import "ast.gst" as ast;
 import "typechecker.gst" as typechecker;
 
 func main() {
@@ -44,7 +45,7 @@ func main() {
         os.Exit(1);
     }
 
-    mut empty_args_resource_shape: std.Vector[typechecker.ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    mut empty_args_resource_shape: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     mut malformed_empty_resource_shape := typechecker.make_type_generic("Resource", empty_args_resource_shape, ctx);
     if typechecker.type_is_resource(malformed_empty_resource_shape, ctx) != 0 {
         os.LogStr("Error: Resource generic with no payload must not be accepted");
@@ -52,7 +53,7 @@ func main() {
     }
 
     mut extra_payload_resource_shape := typechecker.make_type_int();
-    mut two_args_resource_shape: std.Vector[typechecker.ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    mut two_args_resource_shape: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     two_args_resource_shape.Push(payload_resource_shape);
     two_args_resource_shape.Push(extra_payload_resource_shape);
     mut malformed_two_arg_resource_shape := typechecker.make_type_generic("Resource", two_args_resource_shape, ctx);
@@ -61,7 +62,7 @@ func main() {
         os.Exit(1);
     }
 
-    mut vector_args_resource_shape: std.Vector[typechecker.ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    mut vector_args_resource_shape: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     vector_args_resource_shape.Push(payload_resource_shape);
     mut non_resource_generic_shape := typechecker.make_type_generic("Vector", vector_args_resource_shape, ctx);
     if typechecker.type_is_resource(non_resource_generic_shape, ctx) != 0 {
