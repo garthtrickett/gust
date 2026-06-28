@@ -6030,6 +6030,31 @@ func env_register_open_resource_declaration(env: *TypeEnvironment[ctx], variable
     return env_register_open_resource_value(env, variable_name, variable_type_open_resource_declaration, ctx);
 }
 
+func env_resource_assignment_type_matches_declaration(env: *TypeEnvironment[ctx], variable_name: str, assigned_resource_type: ast.Type[ctx], ctx: &Arena) int {
+    mut declared_type_resource_assignment := env_resource_variable_type(env, variable_name, ctx);
+    if type_is_resource(declared_type_resource_assignment, ctx) == 0 {
+        return 0;
+    }
+    if type_is_resource(assigned_resource_type, ctx) == 0 {
+        return 0;
+    }
+    return types_match(declared_type_resource_assignment, assigned_resource_type, ctx);
+}
+
+func env_resource_assignment_is_tracking_eligible(env: *TypeEnvironment[ctx], variable_name: str, assigned_resource_type: ast.Type[ctx], ctx: &Arena) int {
+    if env_resource_assignment_type_matches_declaration(env, variable_name, assigned_resource_type, ctx) == 0 {
+        return 0;
+    }
+    return resource_type_payload_is_resource_tracking_eligible(env, assigned_resource_type, ctx);
+}
+
+func env_register_open_resource_assignment(env: *TypeEnvironment[ctx], variable_name: str, assigned_resource_type: ast.Type[ctx], ctx: &Arena) int {
+    if env_resource_assignment_is_tracking_eligible(env, variable_name, assigned_resource_type, ctx) == 0 {
+        return 0;
+    }
+    return env_register_open_resource_value(env, variable_name, assigned_resource_type, ctx);
+}
+
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
     unsafe {
         mut lookup := (*env).struct_layout_repr_c.Get(name);
