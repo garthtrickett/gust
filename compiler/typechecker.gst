@@ -1596,6 +1596,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         return dummy;
                     }
 
+                    mut arena_write_base_key_prov := expression_to_string(left_expr_idx, ctx);
+                    mut arena_write_index_key_prov := expression_to_string(idx_arg_arena_write, ctx);
+                    mut arena_write_cell_key_prov := std.Concat(arena_write_base_key_prov, "[");
+                    arena_write_cell_key_prov = std.Concat(arena_write_cell_key_prov, arena_write_index_key_prov);
+                    arena_write_cell_key_prov = std.Concat(arena_write_cell_key_prov, "]");
+                    env_record_container_provenance(env, arena_write_cell_key_prov, value_prov_arena_write_nlaunder, ctx);
+
                     mut t_void_arena_write: ast.Type[ctx];
                     t_void_arena_write.tag = 3; // Void
                     return t_void_arena_write;
