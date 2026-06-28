@@ -579,7 +579,7 @@ func env_report_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], tar
 }
 
 func env_report_hashmap_get_val_readback_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], value_idx_hgv_readback_nlaunder: Index[ast.Expression[ctx], ctx], span_hgv_readback_nlaunder: token.Span, context_hgv_readback_nlaunder: str, ctx: &Arena) {
-    if env_type_is_safe_branded_return_target(target_t, ctx) == 0 {
+    if step51g_non_laundering_type_is_safe_brand_target(target_t, ctx) == 0 {
         return;
     }
 

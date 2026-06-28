@@ -298,6 +298,7 @@ guard_step51_provenance_origin_spine:
     just guard-positive compiler/typechecker_non_laundering_call_test_entry.gst step51g_policy_call_regression
     just guard-positive compiler/typechecker_non_laundering_arena_write_test_entry.gst step51g_policy_arena_write_regression
     just guard-positive compiler/typechecker_non_laundering_reference_selector_test_entry.gst step51g_policy_reference_selector_regression
+    just guard_step51g_safe_brand_target_policy_surface
     echo "✅ guard_step51_provenance_origin_spine passed."
 
 guard_step51_basic_unsafe_enforcement:
