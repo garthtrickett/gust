@@ -7496,6 +7496,23 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                 env_record_field_provenance(env, field_alias_std_vec_key_refassign, field_assign_prov, ctx);
                             }
                         }
+
+                        if std.str_eq(field_alias_func_expr_refassign.Selector.right, "HashMapGetRef") == 1 {
+                            mut field_alias_std_map_args_refassign: std.Vector[ast.Expression[ctx], ctx] := ctx[field_alias_left_expr_refassign.Call.arguments];
+                            if len(field_alias_std_map_args_refassign) >= 2 {
+                                mut field_alias_std_map_base_idx_refassign: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                                ctx.Set(field_alias_std_map_base_idx_refassign, field_alias_std_map_args_refassign[0]);
+                                mut field_alias_std_map_key_idx_refassign: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                                ctx.Set(field_alias_std_map_key_idx_refassign, field_alias_std_map_args_refassign[1]);
+                                mut field_alias_std_map_base_refassign := expression_to_string(field_alias_std_map_base_idx_refassign, ctx);
+                                mut field_alias_std_map_key_refassign := expression_to_string(field_alias_std_map_key_idx_refassign, ctx);
+                                mut field_alias_std_map_field_key_refassign := std.Concat(field_alias_std_map_base_refassign, "[");
+                                field_alias_std_map_field_key_refassign = std.Concat(field_alias_std_map_field_key_refassign, field_alias_std_map_key_refassign);
+                                field_alias_std_map_field_key_refassign = std.Concat(field_alias_std_map_field_key_refassign, "].");
+                                field_alias_std_map_field_key_refassign = std.Concat(field_alias_std_map_field_key_refassign, left.Selector.right);
+                                env_record_field_provenance(env, field_alias_std_map_field_key_refassign, field_assign_prov, ctx);
+                            }
+                        }
                     }
                 }
             }
