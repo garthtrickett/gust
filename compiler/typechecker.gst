@@ -2661,14 +2661,17 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                 mut args_vec_valid_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                 mut evaluated_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                mut evaluated_arg_provenances_call_nlaunder: std.Vector[ExpressionProvenance[ctx], ctx] := std.VectorNew(ctx);
                 
                 mut i := 0;
                 while i < len(args_vec_valid_call) {
-                    mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                    ctx.Set(arg_idx, args_vec_valid_call[i]);
-                    mut arg_type := check_expression(arg_idx, env, scope, ctx);
-                    mut resolved_arg := env_resolve_type(env, arg_type, ctx);
-                    evaluated_args.Push(resolved_arg);
+                    mut arg_idx_eval_call_nlaunder: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx.Set(arg_idx_eval_call_nlaunder, args_vec_valid_call[i]);
+                    mut arg_prov_eval_call_nlaunder := check_expression_with_provenance(arg_idx_eval_call_nlaunder, env, scope, ctx);
+                    mut resolved_arg_eval_call_nlaunder := env_resolve_type(env, arg_prov_eval_call_nlaunder.resolved_type, ctx);
+                    arg_prov_eval_call_nlaunder.resolved_type = resolved_arg_eval_call_nlaunder;
+                    evaluated_args.Push(resolved_arg_eval_call_nlaunder);
+                    evaluated_arg_provenances_call_nlaunder.Push(arg_prov_eval_call_nlaunder);
                     i = i + 1;
                 }
 
@@ -2727,14 +2730,18 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         expected_type = typechecker_substitute_brand(expected_type, new_brand, ctx);
                     }
 
+                    mut arg_idx_check_call_nlaunder: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx.Set(arg_idx_check_call_nlaunder, args_vec_valid_call[k]);
+                    mut arg_span_call_nlaunder := get_expression_span(arg_idx_check_call_nlaunder, ctx);
+                    mut arg_prov_check_call_nlaunder := evaluated_arg_provenances_call_nlaunder[k];
+                    env_report_non_laundering_safe_brand_target(env, expected_type, arg_prov_check_call_nlaunder, arg_span_call_nlaunder, "Passing raw-derived or sandbox-derived argument", ctx);
+
                     if types_match(expected_type, resolved_arg, ctx) == 0 {
                         mut msg := std.Format("Semantic Error: Argument type mismatch for function '%s'. Expected %s but got %s",
                             resolved_func,
                             ast.serialize_type(expected_type, ctx),
                             ast.serialize_type(resolved_arg, ctx));
-                        mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx.Set(arg_idx, args_vec_valid_call[k]);
-                        report_error(2, msg, get_expression_span(arg_idx, ctx), env, ctx);
+                        report_error(2, msg, arg_span_call_nlaunder, env, ctx);
                     }
                     k = k + 1;
                 }

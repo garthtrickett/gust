@@ -118,7 +118,9 @@ The sixth inert implementation slice records indexed container-cell assignment p
 
 The first enforcement slice is narrow and fixture-backed: returning a raw-derived or sandbox-derived value as a safe branded `Index[T, ctx]` or `&T[ctx]` now rejects with the stable diagnostic `Non-laundering violation`. This slice is guarded by `make guard_step51_non_laundering_return_enforcement` and intentionally applies only at return boundaries.
 
-The second enforcement slice rejects binding or assigning raw-derived/sandbox-derived provenance into direct safe-branded `Index[T, ctx]` or `&T[ctx]` targets. This slice is guarded by `make guard_step51_non_laundering_binding_enforcement` and covers local variable declarations plus direct assignment targets without attempting API-specific aggregate/container rejection yet. Broader enforcement can then be added incrementally after the variable provenance map, identifier readback path, return-provenance capture, function-call readback path, aggregate-field readback path, and container readback path are stable.
+The second enforcement slice rejects binding or assigning raw-derived/sandbox-derived provenance into direct safe-branded `Index[T, ctx]` or `&T[ctx]` targets. This slice is guarded by `make guard_step51_non_laundering_binding_enforcement` and covers local variable declarations plus direct assignment targets without attempting API-specific aggregate/container rejection yet.
+
+The third enforcement slice rejects passing raw-derived/sandbox-derived provenance into safe-branded `Index[T, ctx]` or `&T[ctx]` function parameters. This slice is guarded by `make guard_step51_non_laundering_call_enforcement` and covers direct safe Gust call-argument boundaries without attempting aggregate/container method-specific rejection yet. Broader enforcement can then be added incrementally after the variable provenance map, identifier readback path, return-provenance capture, function-call readback path, aggregate-field readback path, and container readback path are stable.
 
 ### Layout-aware FFI validation helper checkpoint
 
