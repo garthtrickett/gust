@@ -199,6 +199,7 @@ type TypeEnvironment[ctx] struct {
     struct_layout_repr_c: std.HashMap[str, int, ctx],
     struct_layout_packed: std.HashMap[str, int, ctx],
     struct_layout_abi: std.HashMap[str, str, ctx],
+    struct_linear_resource: std.HashMap[str, int, ctx],
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
@@ -5288,6 +5289,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.struct_layout_repr_c = std.HashMapNew(ctx);
         env_ref_new.struct_layout_packed = std.HashMapNew(ctx);
         env_ref_new.struct_layout_abi = std.HashMapNew(ctx);
+        env_ref_new.struct_linear_resource = std.HashMapNew(ctx);
         env_ref_new.enum_templates = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
         env_ref_new.function_return_provenance = std.HashMapNew(ctx);
@@ -5486,6 +5488,28 @@ func env_register_struct_layout_metadata(env: *TypeEnvironment[ctx], name: str, 
     }
     mut msg := std.Format("env_register_struct_layout_metadata: registered layout metadata for '%s'", name);
     typechecker_log_trace("🗄️", msg, ctx);
+}
+
+func env_register_struct_linear_metadata(env: *TypeEnvironment[ctx], name: str, is_linear_resource: int, ctx: &Arena) {
+    unsafe {
+        (*env).struct_linear_resource.Insert(std.Clone(ctx, name), is_linear_resource);
+    }
+    mut msg := std.Format("env_register_struct_linear_metadata: registered linear metadata for '%s'", name);
+    typechecker_log_trace("🗄️", msg, ctx);
+}
+
+func env_struct_is_linear_resource(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).struct_linear_resource.Get(name);
+        if lookup.Ok {
+            return lookup.Val;
+        }
+        return 0;
+    }
+}
+
+func env_struct_has_linear_metadata(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    return env_struct_is_linear_resource(env, name, ctx);
 }
 
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
@@ -5950,6 +5974,7 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             }
 
             env_register_struct_layout_metadata(env, namespaced_name, stmt.StructDecl.is_repr_c, stmt.StructDecl.is_packed, stmt.StructDecl.layout_abi, ctx);
+            env_register_struct_linear_metadata(env, namespaced_name, stmt.StructDecl.is_linear_resource, ctx);
 
             if is_generic == 1 {
                 mut template: StructTemplate[ctx];

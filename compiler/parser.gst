@@ -811,6 +811,7 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
         mut is_repr_c_decl := 0;
         mut is_packed_decl := 0;
         mut layout_abi_decl := "";
+        mut is_linear_resource_decl := 0;
 
         while cur_token_is(p, 49) { // Hash = 49
             next_token(p); // consume '#'
@@ -867,6 +868,8 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
                 next_token(p); // consume ')'
             } else if std.str_eq(layout_attr_name, "packed") {
                 is_packed_decl = 1;
+            } else if std.str_eq(layout_attr_name, "linear") {
+                is_linear_resource_decl = 1;
             } else {
                 mut err_layout_unsupported: errors.CompilerError[Any];
                 err_layout_unsupported.kind.tag = 1; // ParserError
@@ -1015,6 +1018,7 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
             stmt_struct_parse.StructDecl.is_repr_c = is_repr_c_decl;
             stmt_struct_parse.StructDecl.is_packed = is_packed_decl;
             stmt_struct_parse.StructDecl.layout_abi = layout_abi_decl;
+            stmt_struct_parse.StructDecl.is_linear_resource = is_linear_resource_decl;
 
             stmt_struct_parse.StructDecl.span = merge_spans(start_span, end_span);
             ctx.Set(stmt_idx, stmt_struct_parse);

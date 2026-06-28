@@ -74,6 +74,7 @@ type Statement[ctx] enum {
         is_repr_c: int,
         is_packed: int,
         layout_abi: str,
+        is_linear_resource: int,
         span: token.Span
     },
     EnumDecl {

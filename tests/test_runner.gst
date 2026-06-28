@@ -2095,6 +2095,13 @@ func main() {
     t_step51_non_laundering_hashmap_get_value_field_enforcement.expected = "SUCCESS: HashMap.Get value field non-laundering enforcement verified!";
     tests.Push(t_step51_non_laundering_hashmap_get_value_field_enforcement);
 
+    mut t_step52_linear_resource_metadata: Test[ctx];
+    t_step52_linear_resource_metadata.path = "compiler/typechecker_linear_resource_metadata_test_entry.gst";
+    t_step52_linear_resource_metadata.is_negative = 0;
+    t_step52_linear_resource_metadata.is_substring = 1;
+    t_step52_linear_resource_metadata.expected = "SUCCESS: inert linear resource metadata opt-in verified!";
+    tests.Push(t_step52_linear_resource_metadata);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
