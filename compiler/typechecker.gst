@@ -539,6 +539,32 @@ func env_type_is_safe_branded_return_target(t: ast.Type[ctx], ctx: &Arena) int {
     }
 }
 
+func step51g_non_laundering_type_is_safe_brand_target(t: ast.Type[ctx], ctx: &Arena) int {
+    return env_type_is_safe_branded_return_target(t, ctx);
+}
+
+func step51g_non_laundering_enforced_safe_brand_target_violation(target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    if step51g_non_laundering_type_is_safe_brand_target(target_t, ctx) == 0 {
+        return 0;
+    }
+    if step51g_non_laundering_provenance_requires_unsafe_boundary(prov, ctx) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func step51g_non_laundering_deferred_safe_brand_target_violation(target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    if step51g_non_laundering_type_is_safe_brand_target(target_t, ctx) == 0 {
+        return 0;
+    }
+    if step51g_non_laundering_provenance_blocks_safe_brand(prov, ctx) == 1 {
+        if step51g_non_laundering_provenance_requires_unsafe_boundary(prov, ctx) == 0 {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 func env_report_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], span: token.Span, context_nonlaunder: str, ctx: &Arena) {
     if step51g_non_laundering_enforced_safe_brand_target_violation(target_t, prov, ctx) == 0 {
         return;
