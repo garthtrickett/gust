@@ -5526,7 +5526,7 @@ func env_struct_linear_destructor_name(env: *TypeEnvironment[ctx], name: str, ct
     unsafe {
         mut lookup := (*env).struct_linear_destructor.Get(name);
         if lookup.Ok {
-            return lookup.Val;
+            return std.Clone(ctx, lookup.Val);
         }
         return "";
     }
