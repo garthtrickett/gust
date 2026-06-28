@@ -1867,9 +1867,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             method_container_cell_map_insert_prov = std.Concat(method_container_cell_map_insert_prov, "]");
                             env_record_container_provenance(env, method_container_cell_map_insert_prov, v_arg_prov_map_insert_nlaunder, ctx);
                         }
-                        mut t_void: ast.Type[ctx];
-                        mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
-                        return t_void;
+                        mut t_void_map_insert_set_method: ast.Type[ctx];
+                        t_void_map_insert_set_method.tag = 3; // Void
+                        return t_void_map_insert_set_method;
                     }
                     if std.str_eq(right_name, "Get") {
                         mut args_vec_map_get: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
