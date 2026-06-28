@@ -57,6 +57,25 @@ func main() {
         os.Exit(1);
     }
 
+    mut errors_before_raw_set_method_nlaunder := len(env_raw_method_nlaunder.errors);
+    mut lex_raw_set_method_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_raw_set_method_nlaunder, "values_raw_method.Set(0, raw_idx_method);");
+    mut parser_raw_set_method_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_raw_set_method_nlaunder, &lex_raw_set_method_nlaunder, ctx);
+    mut stmt_raw_set_method_nlaunder := parser.parse_statement(&parser_raw_set_method_nlaunder, ctx);
+
+    typechecker.check_statement(stmt_raw_set_method_nlaunder, &env_raw_method_nlaunder, scope_raw_method_nlaunder, ctx);
+
+    if len(env_raw_method_nlaunder.errors) == errors_before_raw_set_method_nlaunder {
+        os.LogStr("Error: non-laundering container method fixture expected raw-derived Vector.Set rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_raw_method_nlaunder.errors[errors_before_raw_set_method_nlaunder].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: non-laundering container method fixture emitted wrong Vector.Set diagnostic");
+        os.LogStr(env_raw_method_nlaunder.errors[errors_before_raw_set_method_nlaunder].message);
+        os.Exit(1);
+    }
+
     mut t_str_method_nlaunder := typechecker.make_type_str();
     mut t_ref_method_nlaunder := typechecker.make_type_reference(t_str_method_nlaunder, "ctx", ctx);
     mut t_ptr_ref_method_nlaunder := typechecker.make_type_pointer(t_ref_method_nlaunder, ctx);
@@ -72,6 +91,7 @@ func main() {
 
     mut env_sandbox_method_nlaunder := typechecker.env_new(ctx);
     mut scope_sandbox_method_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+    typechecker.env_register_struct(&env_sandbox_method_nlaunder, "Vector_SafeCellContainerMethod", vector_layout_method_nlaunder, ctx);
     typechecker.env_register_struct(&env_sandbox_method_nlaunder, "HashMap_Int_SafeRefContainerMethod", map_layout_method_nlaunder, ctx);
 
     typechecker.scope_insert(scope_sandbox_method_nlaunder, "map_sandbox_method", t_map_method_nlaunder, ctx);
@@ -106,6 +126,25 @@ func main() {
     if std.str_find(env_sandbox_method_nlaunder.errors[0].message, "Non-laundering violation") == 0 - 1 {
         os.LogStr("Error: non-laundering container method fixture emitted wrong HashMap.Insert diagnostic");
         os.LogStr(env_sandbox_method_nlaunder.errors[0].message);
+        os.Exit(1);
+    }
+
+    mut errors_before_sandbox_set_method_nlaunder := len(env_sandbox_method_nlaunder.errors);
+    mut lex_sandbox_set_method_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_sandbox_set_method_nlaunder, "map_sandbox_method.Set(key_sandbox_method, sandbox_ref_method);");
+    mut parser_sandbox_set_method_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_sandbox_set_method_nlaunder, &lex_sandbox_set_method_nlaunder, ctx);
+    mut stmt_sandbox_set_method_nlaunder := parser.parse_statement(&parser_sandbox_set_method_nlaunder, ctx);
+
+    typechecker.check_statement(stmt_sandbox_set_method_nlaunder, &env_sandbox_method_nlaunder, scope_sandbox_method_nlaunder, ctx);
+
+    if len(env_sandbox_method_nlaunder.errors) == errors_before_sandbox_set_method_nlaunder {
+        os.LogStr("Error: non-laundering container method fixture expected sandbox-derived HashMap.Set rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_sandbox_method_nlaunder.errors[errors_before_sandbox_set_method_nlaunder].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: non-laundering container method fixture emitted wrong HashMap.Set diagnostic");
+        os.LogStr(env_sandbox_method_nlaunder.errors[errors_before_sandbox_set_method_nlaunder].message);
         os.Exit(1);
     }
 
@@ -172,5 +211,5 @@ func main() {
         os.Exit(1);
     }
 
-    os.LogStr("SUCCESS: non-laundering safe-branded container method storage enforcement verified!");
+    os.LogStr("SUCCESS: non-laundering safe-branded container method Push/Set/Insert storage enforcement verified!");
 }
