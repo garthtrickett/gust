@@ -53,12 +53,37 @@ func main() {
         os.Exit(1);
     }
 
+    if typechecker.address_origin_is_raw_or_sandbox_derived(safe_origin_51g6) != typechecker.step51g_address_origin_is_raw_or_sandbox_derived(safe_origin_51g6) {
+        os.LogStr("Error: legacy origin raw/sandbox helper diverged from Step 5.1G spine for safe origin");
+        os.Exit(1);
+    }
     if typechecker.address_origin_is_raw_or_sandbox_derived(raw_origin_51g6) != typechecker.step51g_address_origin_is_raw_or_sandbox_derived(raw_origin_51g6) {
-        os.LogStr("Error: legacy origin raw/sandbox helper diverged from Step 5.1G spine");
+        os.LogStr("Error: legacy origin raw/sandbox helper diverged from Step 5.1G spine for raw origin");
+        os.Exit(1);
+    }
+    if typechecker.address_origin_is_raw_or_sandbox_derived(sandbox_origin_51g6) != typechecker.step51g_address_origin_is_raw_or_sandbox_derived(sandbox_origin_51g6) {
+        os.LogStr("Error: legacy origin raw/sandbox helper diverged from Step 5.1G spine for sandbox origin");
+        os.Exit(1);
+    }
+    if typechecker.address_origin_is_raw_or_sandbox_derived(unknown_origin_51g6) != typechecker.step51g_address_origin_is_raw_or_sandbox_derived(unknown_origin_51g6) {
+        os.LogStr("Error: legacy origin raw/sandbox helper diverged from Step 5.1G spine for unknown origin");
+        os.Exit(1);
+    }
+
+    if typechecker.address_origin_requires_unsafe_boundary(safe_origin_51g6) != typechecker.step51g_address_origin_requires_unsafe_boundary(safe_origin_51g6) {
+        os.LogStr("Error: legacy origin unsafe-boundary helper diverged from Step 5.1G spine for safe origin");
+        os.Exit(1);
+    }
+    if typechecker.address_origin_requires_unsafe_boundary(raw_origin_51g6) != typechecker.step51g_address_origin_requires_unsafe_boundary(raw_origin_51g6) {
+        os.LogStr("Error: legacy origin unsafe-boundary helper diverged from Step 5.1G spine for raw origin");
         os.Exit(1);
     }
     if typechecker.address_origin_requires_unsafe_boundary(sandbox_origin_51g6) != typechecker.step51g_address_origin_requires_unsafe_boundary(sandbox_origin_51g6) {
-        os.LogStr("Error: legacy origin unsafe-boundary helper diverged from Step 5.1G spine");
+        os.LogStr("Error: legacy origin unsafe-boundary helper diverged from Step 5.1G spine for sandbox origin");
+        os.Exit(1);
+    }
+    if typechecker.address_origin_requires_unsafe_boundary(unknown_origin_51g6) != typechecker.step51g_address_origin_requires_unsafe_boundary(unknown_origin_51g6) {
+        os.LogStr("Error: legacy origin unsafe-boundary helper diverged from Step 5.1G spine for unknown origin");
         os.Exit(1);
     }
 
