@@ -72,6 +72,20 @@ func address_origin_requires_unsafe_boundary(origin: AddressOriginMetadata) int 
     return 0;
 }
 
+func step51g_address_origin_is_raw_or_sandbox_derived(origin: AddressOriginMetadata) int {
+    if origin.is_raw_derived == 1 {
+        return 1;
+    }
+    if origin.is_sandbox_derived == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func step51g_address_origin_requires_unsafe_boundary(origin: AddressOriginMetadata) int {
+    return step51g_address_origin_is_raw_or_sandbox_derived(origin);
+}
+
 func step51g_address_origin_is_safe_arena_only(origin: AddressOriginMetadata) int {
     if origin.is_safe_arena != 1 {
         return 0;
