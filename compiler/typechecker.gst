@@ -3260,7 +3260,8 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                                         mut hashmap_get_val_field_lookup_prov := (*env).field_provenance.Get(hashmap_get_val_field_canonical_key_prov);
                                         if hashmap_get_val_field_lookup_prov.Ok {
                                             mut hashmap_get_val_field_found_prov := hashmap_get_val_field_lookup_prov.Val;
-                                            hashmap_get_val_field_found_prov.resolved_type = t;
+                                            mut hashmap_get_val_field_resolved_type_prov := env_resolve_type(env, hashmap_get_val_field_found_prov.resolved_type, ctx);
+                                            hashmap_get_val_field_found_prov.resolved_type = hashmap_get_val_field_resolved_type_prov;
 
                                             mut hashmap_get_val_field_origins_prov := typechecker_clone_origin_set(hashmap_get_val_field_found_prov.legacy_origins, ctx);
                                             set_union(hashmap_get_val_field_origins_prov, legacy_origins, ctx);
