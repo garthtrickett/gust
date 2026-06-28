@@ -5997,6 +5997,38 @@ func env_register_open_resource_value(env: *TypeEnvironment[ctx], variable_name:
     return env_register_open_linear_resource(env, variable_name, payload_struct_name_open_resource, ctx);
 }
 
+func env_resource_variable_type(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) ast.Type[ctx] {
+    mut t_resource_variable_void: ast.Type[ctx];
+    unsafe {
+        t_resource_variable_void.tag = 3; // Void
+        mut lookup_resource_variable_type := (*env).variable_types.Get(variable_name);
+        if lookup_resource_variable_type.Ok {
+            return lookup_resource_variable_type.Val;
+        }
+        return t_resource_variable_void;
+    }
+}
+
+func env_resource_variable_type_is_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    mut variable_type_resource_declaration := env_resource_variable_type(env, variable_name, ctx);
+    return type_is_resource(variable_type_resource_declaration, ctx);
+}
+
+func env_resource_variable_payload_struct_name(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) str {
+    mut variable_type_payload_struct_name := env_resource_variable_type(env, variable_name, ctx);
+    return resource_type_payload_struct_name(variable_type_payload_struct_name, ctx);
+}
+
+func env_resource_variable_is_tracking_eligible(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    mut variable_type_tracking_eligible := env_resource_variable_type(env, variable_name, ctx);
+    return resource_type_payload_is_resource_tracking_eligible(env, variable_type_tracking_eligible, ctx);
+}
+
+func env_register_open_resource_declaration(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    mut variable_type_open_resource_declaration := env_resource_variable_type(env, variable_name, ctx);
+    return env_register_open_resource_value(env, variable_name, variable_type_open_resource_declaration, ctx);
+}
+
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
     unsafe {
         mut lookup := (*env).struct_layout_repr_c.Get(name);

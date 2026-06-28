@@ -2165,6 +2165,13 @@ func main() {
     t_step52_resource_generic_resolver.expected = "SUCCESS: inert Resource generic resolver bridge verified!";
     tests.Push(t_step52_resource_generic_resolver);
 
+    mut t_step52_resource_declaration_bridge: Test[ctx];
+    t_step52_resource_declaration_bridge.path = "compiler/typechecker_resource_declaration_bridge_test_entry.gst";
+    t_step52_resource_declaration_bridge.is_negative = 0;
+    t_step52_resource_declaration_bridge.is_substring = 1;
+    t_step52_resource_declaration_bridge.expected = "SUCCESS: inert Resource declaration helper bridge verified!";
+    tests.Push(t_step52_resource_declaration_bridge);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
