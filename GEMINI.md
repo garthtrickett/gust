@@ -1,6 +1,5 @@
 ## 10. Gust Style Guide: Branding & Ephemeral Views Consistency
 
-
 When writing or editing Gust (`.gst`) programs, you must strictly adhere to the following memory-safety and type-safety constraints enforced by the Gust typechecker.
 
 ### A. Ephemeral View Constraints on Structs
