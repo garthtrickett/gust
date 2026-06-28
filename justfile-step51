@@ -1,0 +1,288 @@
+# Step 5.1 guard implementations imported by justfile.
+# Makefile keeps compatibility wrappers; focused guard bodies live here.
+
+guard-positive file label:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p build
+    test_path="{{file}}"
+    label="{{label}}"
+    stem="$(basename "$test_path" .gst)"
+    log="build/${label}.log"
+    c_file="build/${stem}.c"
+    final_file="build/${stem}_final.c"
+    bin_file="build/${stem}_bin"
+    echo "Checking $test_path accepts and runs..."
+    ./gust "$test_path" > "$log" 2>&1
+    grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$log" > "$c_file"
+    cat src/runtime.c "$c_file" > "$final_file"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"
+    INCLUDES_VAL="${INCLUDES:--Isrc}"
+    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$final_file" -o "$bin_file" >> "$log" 2>&1
+    "$bin_file" >> "$log" 2>&1
+
+guard-compile-pass file label:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p build
+    test_path="{{file}}"
+    label="{{label}}"
+    log="build/${label}.log"
+    echo "Checking $test_path accepts..."
+    ./gust "$test_path" > "$log" 2>&1
+
+guard-compile-fail file diagnostic label:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p build
+    test_path="{{file}}"
+    diagnostic="{{diagnostic}}"
+    label="{{label}}"
+    log="build/${label}.log"
+    echo "Checking $test_path rejects..."
+    if ./gust "$test_path" > "$log" 2>&1; then
+      echo "❌ Expected $test_path to fail compilation, but it succeeded."
+      cat "$log"
+      exit 1
+    fi
+    if ! rg -q "$diagnostic" "$log"; then
+      echo "❌ Rejection for $test_path did not contain expected diagnostic: $diagnostic"
+      cat "$log"
+      exit 1
+    fi
+
+guard-negative file diagnostic label:
+    just guard-compile-fail "{{file}}" "{{diagnostic}}" "{{label}}"
+
+guard_step51_report_only_lanes_not_in_test:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Guarding Step 5.1 report-only lanes are not direct just make-test-guards dependencies..."
+    test_deps="$(awk 'capture == 1 && /^make-test-suite:/ { exit } /^make-test-guards:/ { capture = 1 } capture == 1 { print }' justfile)"
+    if echo "$test_deps" | grep -q "report_step51_"; then
+      echo "❌ Step 5.1 report-only target is wired into just make-test-guards:"
+      echo "$test_deps"
+      exit 1
+    fi
+    echo "✅ Step 5.1 report-only lanes are not direct just make-test-guards dependencies."
+
+guard_step51_raw_deref_unsafe_enforcement:
+    echo "🔒 Checking Step 5.1 raw pointer dereference unsafe enforcement..."
+    just guard-compile-fail tests/test_raw_pointer_deref_outside_unsafe_rejected.gst "Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks" step51_raw_deref_guard
+    just guard-compile-pass tests/e2e_raw_pointer_deref_inside_unsafe.gst step51_raw_deref_guard
+    echo "✅ Step 5.1 raw pointer dereference unsafe enforcement guard passed."
+
+guard_step51_raw_cast_unsafe_enforcement:
+    echo "🔒 Checking Step 5.1 raw pointer cast unsafe enforcement..."
+    just guard-compile-fail tests/test_raw_pointer_cast_outside_unsafe_rejected.gst "Raw pointer casts are strictly prohibited outside 'unsafe' blocks" step51_raw_cast_guard
+    just guard-compile-pass tests/e2e_raw_pointer_cast_inside_unsafe.gst step51_raw_cast_guard
+    echo "✅ Step 5.1 raw pointer cast unsafe enforcement guard passed."
+
+guard_step51_pointer_arithmetic_unsafe_enforcement:
+    echo "🔒 Checking Step 5.1 pointer arithmetic unsafe enforcement..."
+    just guard-compile-fail tests/test_raw_pointer_arithmetic_outside_unsafe_rejected.gst "Pointer arithmetic is strictly prohibited outside 'unsafe' blocks" step51_pointer_arithmetic_guard
+    just guard-compile-pass tests/e2e_raw_pointer_arithmetic_inside_unsafe.gst step51_pointer_arithmetic_guard
+    echo "✅ Step 5.1 pointer arithmetic unsafe enforcement guard passed."
+
+guard_step51_unsafe_func_call_enforcement:
+    echo "🔒 Checking Step 5.1 unsafe function call enforcement..."
+    just guard-compile-fail tests/test_unsafe_func_call_outside_unsafe_rejected.gst "Unsafe function calls require an explicit 'unsafe' block" step51_unsafe_func_call_guard
+    just guard-compile-pass tests/e2e_unsafe_func_call_inside_unsafe.gst step51_unsafe_func_call_guard
+    just guard-compile-pass tests/e2e_unsafe_func_body_raw_ops.gst step51_unsafe_func_call_body_guard
+    echo "✅ Step 5.1 unsafe function call enforcement guard passed."
+
+guard_step51_raw_pointer_local_escape_enforcement:
+    echo "🔒 Checking Step 5.1 raw pointer local escape analysis..."
+    just guard-compile-fail tests/test_raw_pointer_return_derived_local_rejected.gst "Returning ephemeral view of type RawPointer" step51_raw_pointer_local_escape_guard
+    echo "✅ Step 5.1 raw pointer local escape guard passed."
+
+guard_step51_extern_func_call_enforcement:
+    echo "🔒 Checking Step 5.1 extern function call enforcement..."
+    just guard-compile-fail tests/test_extern_func_call_outside_unsafe_rejected.gst "Direct external/native function calls require an explicit 'unsafe' block" step51_extern_func_call_guard
+    just guard-compile-pass tests/e2e_extern_func_call_inside_unsafe.gst step51_extern_func_call_guard
+    echo "✅ Step 5.1 extern function call enforcement guard passed."
+
+guard_step51_extern_func_parser_metadata:
+    echo "🔒 Checking Step 5.1 extern function parser metadata..."
+    just guard-positive compiler/parser_ffi_metadata_test_entry.gst step51_extern_func_parser_metadata
+    echo "✅ guard_step51_extern_func_parser_metadata passed."
+
+guard_step51_layout_metadata_defaults:
+    echo "🔒 Checking Step 5.1 layout metadata defaults, parser attributes, and registry helpers..."
+    just guard-positive compiler/parser_layout_metadata_test_entry.gst step51_layout_metadata_defaults_1
+    just guard-positive compiler/typechecker_layout_metadata_test_entry.gst step51_layout_metadata_defaults_2
+    echo "✅ guard_step51_layout_metadata_defaults passed."
+
+guard_step51_layout_ffi_policy_helpers:
+    echo "🔒 Checking Step 5.1 layout-aware FFI helper predicates..."
+    just guard-positive compiler/typechecker_layout_ffi_policy_test_entry.gst step51_layout_ffi_policy_helpers
+    echo "✅ guard_step51_layout_ffi_policy_helpers passed."
+
+guard_step51_layout_ffi_signature_helpers:
+    echo "🔒 Checking Step 5.1 signature-level C FFI layout helpers..."
+    just guard-positive compiler/typechecker_layout_ffi_signature_test_entry.gst step51_layout_ffi_signature_helpers
+    echo "✅ guard_step51_layout_ffi_signature_helpers passed."
+
+guard_step51_sandbox_policy_defaults:
+    echo "🔒 Checking Step 5.1 sandbox FFI policy defaults..."
+    just guard-positive compiler/typechecker_sandbox_policy_test_entry.gst step51_sandbox_policy_defaults
+    echo "✅ guard_step51_sandbox_policy_defaults passed."
+
+guard_step51_address_origin_metadata:
+    echo "🔒 Checking Step 5.1 address-origin metadata helpers..."
+    just guard-positive compiler/typechecker_address_origin_test_entry.gst step51_address_origin_metadata
+    echo "✅ guard_step51_address_origin_metadata passed."
+
+guard_step51_expression_provenance_carrier:
+    echo "🔒 Checking Step 5.1 expression provenance carrier helpers..."
+    just guard-positive compiler/typechecker_expression_provenance_test_entry.gst step51_expression_provenance_carrier
+    echo "✅ guard_step51_expression_provenance_carrier passed."
+
+guard_step51_safe_constructor_provenance:
+    echo "🔒 Checking Step 5.1 safe constructor provenance metadata..."
+    just guard-positive compiler/typechecker_safe_constructor_provenance_test_entry.gst step51_safe_constructor_provenance
+    echo "✅ guard_step51_safe_constructor_provenance passed."
+
+guard_step51_selector_safe_constructor_provenance:
+    echo "🔒 Checking Step 5.1 selector safe constructor provenance metadata..."
+    just guard-positive compiler/typechecker_selector_safe_constructor_provenance_test_entry.gst step51_selector_safe_constructor_provenance
+    echo "✅ guard_step51_selector_safe_constructor_provenance passed."
+
+guard_step51_container_safe_constructor_provenance:
+    echo "🔒 Checking Step 5.1 container safe constructor provenance metadata..."
+    just guard-positive compiler/typechecker_container_safe_constructor_provenance_test_entry.gst step51_container_safe_constructor_provenance
+    echo "✅ guard_step51_container_safe_constructor_provenance passed."
+
+guard_step51_container_method_provenance:
+    echo "🔒 Checking Step 5.1 container method write provenance metadata..."
+    just guard-positive compiler/typechecker_container_method_provenance_test_entry.gst step51_container_method_provenance
+    echo "✅ guard_step51_container_method_provenance passed."
+
+guard_step51_arena_write_provenance:
+    echo "🔒 Checking Step 5.1 Arena.Set/Write provenance metadata..."
+    just guard-positive compiler/typechecker_arena_write_provenance_test_entry.gst step51_arena_write_provenance
+    echo "✅ guard_step51_arena_write_provenance passed."
+
+guard_step51_container_getref_provenance:
+    echo "🔒 Checking Step 5.1 container GetRef provenance metadata..."
+    just guard-positive compiler/typechecker_container_getref_provenance_test_entry.gst step51_container_getref_provenance
+    echo "✅ guard_step51_container_getref_provenance passed."
+
+guard_step51_hashmap_get_value_provenance:
+    echo "🔒 Checking Step 5.1 HashMap.Get value provenance metadata..."
+    just guard-positive compiler/typechecker_hashmap_get_value_provenance_test_entry.gst step51_hashmap_get_value_provenance
+    echo "✅ guard_step51_hashmap_get_value_provenance passed."
+
+guard_step51_hashmap_get_value_field_provenance:
+    echo "🔒 Checking Step 5.1 HashMap.Get value field provenance metadata..."
+    just guard-positive compiler/typechecker_hashmap_get_value_field_provenance_test_entry.gst step51_hashmap_get_value_field_provenance
+    echo "✅ guard_step51_hashmap_get_value_field_provenance passed."
+
+guard_step51_std_vector_getref_provenance:
+    echo "🔒 Checking Step 5.1 std.VectorGetRef provenance metadata..."
+    just guard-positive compiler/typechecker_std_vector_getref_provenance_test_entry.gst step51_std_vector_getref_provenance
+    echo "✅ guard_step51_std_vector_getref_provenance passed."
+
+guard_step51_std_hashmap_getref_provenance:
+    echo "🔒 Checking Step 5.1 std.HashMapGetRef provenance metadata..."
+    just guard-positive compiler/typechecker_std_hashmap_getref_provenance_test_entry.gst step51_std_hashmap_getref_provenance
+    echo "✅ guard_step51_std_hashmap_getref_provenance passed."
+
+guard_step51_std_hashmap_getref_selector_alias_provenance:
+    echo "🔒 Checking Step 5.1 std.HashMapGetRef selector alias provenance metadata..."
+    just guard-positive compiler/typechecker_std_hashmap_getref_selector_alias_provenance_test_entry.gst step51_std_hashmap_getref_selector_alias_provenance
+    echo "✅ guard_step51_std_hashmap_getref_selector_alias_provenance passed."
+
+guard_step51_std_vector_getref_selector_alias_provenance:
+    echo "🔒 Checking Step 5.1 std.VectorGetRef selector alias provenance metadata..."
+    just guard-positive compiler/typechecker_std_vector_getref_selector_alias_provenance_test_entry.gst step51_std_vector_getref_selector_alias_provenance
+    echo "✅ guard_step51_std_vector_getref_selector_alias_provenance passed."
+
+guard_step51_reference_selector_alias_provenance:
+    echo "🔒 Checking Step 5.1 reference selector alias provenance metadata..."
+    just guard-positive compiler/typechecker_reference_selector_alias_provenance_test_entry.gst step51_reference_selector_alias_provenance
+    echo "✅ guard_step51_reference_selector_alias_provenance passed."
+
+guard_step51_variable_provenance_bindings:
+    echo "🔒 Checking Step 5.1 variable provenance binding/assignment/readback metadata..."
+    just guard-positive compiler/typechecker_variable_provenance_test_entry.gst step51_variable_provenance_bindings
+    echo "✅ guard_step51_variable_provenance_bindings passed."
+
+guard_step51_return_provenance_capture:
+    echo "🔒 Checking Step 5.1 inert return expression provenance capture..."
+    just guard-positive compiler/typechecker_return_provenance_test_entry.gst step51_return_provenance_capture
+    echo "✅ guard_step51_return_provenance_capture passed."
+
+guard_step51_function_call_provenance:
+    echo "🔒 Checking Step 5.1 inert function-call return provenance metadata..."
+    just guard-positive compiler/typechecker_function_call_provenance_test_entry.gst step51_function_call_provenance
+    echo "✅ guard_step51_function_call_provenance passed."
+
+guard_step51_aggregate_field_provenance:
+    echo "🔒 Checking Step 5.1 inert aggregate-field provenance metadata..."
+    just guard-positive compiler/typechecker_aggregate_field_provenance_test_entry.gst step51_aggregate_field_provenance
+    echo "✅ guard_step51_aggregate_field_provenance passed."
+
+guard_step51_container_provenance:
+    echo "🔒 Checking Step 5.1 inert container provenance metadata..."
+    just guard-positive compiler/typechecker_container_provenance_test_entry.gst step51_container_provenance
+    echo "✅ guard_step51_container_provenance passed."
+
+guard_step51_non_laundering_return_enforcement:
+    echo "🔒 Checking Step 5.1 non-laundering safe-branded return enforcement..."
+    just guard-positive compiler/typechecker_non_laundering_return_test_entry.gst step51_non_laundering_return_enforcement
+    echo "✅ guard_step51_non_laundering_return_enforcement passed."
+
+guard_step51_non_laundering_binding_enforcement:
+    echo "🔒 Checking Step 5.1 non-laundering safe-branded binding/assignment enforcement..."
+    just guard-positive compiler/typechecker_non_laundering_binding_test_entry.gst step51_non_laundering_binding_enforcement
+    echo "✅ guard_step51_non_laundering_binding_enforcement passed."
+
+guard_step51_non_laundering_call_enforcement:
+    echo "🔒 Checking Step 5.1 non-laundering safe-branded call-argument enforcement..."
+    just guard-positive compiler/typechecker_non_laundering_call_test_entry.gst step51_non_laundering_call_enforcement
+    echo "✅ guard_step51_non_laundering_call_enforcement passed."
+
+guard_step51_non_laundering_field_enforcement:
+    echo "🔒 Checking Step 5.1 non-laundering safe-branded aggregate-field enforcement..."
+    just guard-positive compiler/typechecker_non_laundering_field_test_entry.gst step51_non_laundering_field_enforcement
+    echo "✅ guard_step51_non_laundering_field_enforcement passed."
+
+guard_step51_non_laundering_container_enforcement:
+    echo "🔒 Checking Step 5.1 non-laundering safe-branded container-element enforcement..."
+    just guard-positive compiler/typechecker_non_laundering_container_test_entry.gst step51_non_laundering_container_enforcement
+    echo "✅ guard_step51_non_laundering_container_enforcement passed."
+
+guard_step51_non_laundering_container_method_enforcement:
+    echo "🔒 Checking Step 5.1 non-laundering safe-branded container method storage enforcement..."
+    just guard-positive compiler/typechecker_non_laundering_container_method_test_entry.gst step51_non_laundering_container_method_enforcement
+    echo "✅ guard_step51_non_laundering_container_method_enforcement passed."
+
+guard_step51_non_laundering_arena_write_enforcement:
+    echo "🔒 Checking Step 5.1 non-laundering safe-branded Arena.Set/Write enforcement..."
+    just guard-positive compiler/typechecker_non_laundering_arena_write_test_entry.gst step51_non_laundering_arena_write_enforcement
+    echo "✅ guard_step51_non_laundering_arena_write_enforcement passed."
+
+guard_step51_non_laundering_reference_selector_enforcement:
+    echo "🔒 Checking Step 5.1 non-laundering safe-branded reference-selector enforcement..."
+    just guard-positive compiler/typechecker_non_laundering_reference_selector_test_entry.gst step51_non_laundering_reference_selector_enforcement
+    echo "✅ guard_step51_non_laundering_reference_selector_enforcement passed."
+
+guard_step51_non_laundering_hashmap_get_value_enforcement:
+    echo "🔒 Checking Step 5.1 non-laundering safe-branded HashMap.Get value enforcement..."
+    just guard-positive compiler/typechecker_non_laundering_hashmap_get_value_test_entry.gst step51_non_laundering_hashmap_get_value_enforcement
+    echo "✅ guard_step51_non_laundering_hashmap_get_value_enforcement passed."
+
+guard_step51_non_laundering_hashmap_get_value_field_enforcement:
+    echo "🔒 Checking Step 5.1 non-laundering safe-branded HashMap.Get value field enforcement..."
+    just guard-positive compiler/typechecker_non_laundering_hashmap_get_value_field_test_entry.gst step51_non_laundering_hashmap_get_value_field_enforcement
+    echo "✅ guard_step51_non_laundering_hashmap_get_value_field_enforcement passed."
+
+guard_step51_basic_unsafe_enforcement:
+    just guard_step51_raw_deref_unsafe_enforcement
+    just guard_step51_raw_cast_unsafe_enforcement
+    just guard_step51_pointer_arithmetic_unsafe_enforcement
+    just guard_step51_unsafe_func_call_enforcement
+    just guard_step51_raw_pointer_local_escape_enforcement
+    echo "✅ Step 5.1 basic unsafe enforcement aggregate passed."
