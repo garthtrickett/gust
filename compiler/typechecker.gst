@@ -474,15 +474,35 @@ func env_resolve_selector_storage_target_type(env: *TypeEnvironment[ctx], select
 
         mut selector_struct_name_nlaunder := selector_left_type_nlaunder.Struct.struct_name;
         mut selector_field_name_nlaunder := selector_expr_nlaunder.Selector.right;
-        mut selector_field_type_nlaunder := typechecker_get_template_elem_type(selector_struct_name_nlaunder, selector_field_name_nlaunder, env, ctx);
+        mut selector_field_type_nlaunder := selector_storage_void_nlaunder;
+
+        mut selector_layout_lookup_nlaunder := (*env).struct_registry.Get(selector_struct_name_nlaunder);
+        if selector_layout_lookup_nlaunder.Ok {
+            mut selector_layout_nlaunder := selector_layout_lookup_nlaunder.Val;
+            mut selector_field_lookup_nlaunder := selector_layout_nlaunder.fields.Get(selector_field_name_nlaunder);
+            if selector_field_lookup_nlaunder.Ok {
+                selector_field_type_nlaunder = selector_field_lookup_nlaunder.Val;
+            }
+        }
 
         if selector_field_type_nlaunder.tag == 3 {
             mut selector_resolved_struct_nlaunder := env_resolve_namespaced_ident(env, selector_struct_name_nlaunder, ctx);
-            selector_field_type_nlaunder = typechecker_get_template_elem_type(selector_resolved_struct_nlaunder, selector_field_name_nlaunder, env, ctx);
+            mut selector_resolved_layout_lookup_nlaunder := (*env).struct_registry.Get(selector_resolved_struct_nlaunder);
+            if selector_resolved_layout_lookup_nlaunder.Ok {
+                mut selector_resolved_layout_nlaunder := selector_resolved_layout_lookup_nlaunder.Val;
+                mut selector_resolved_field_lookup_nlaunder := selector_resolved_layout_nlaunder.fields.Get(selector_field_name_nlaunder);
+                if selector_resolved_field_lookup_nlaunder.Ok {
+                    selector_field_type_nlaunder = selector_resolved_field_lookup_nlaunder.Val;
+                }
+            }
         }
 
         if selector_field_type_nlaunder.tag == 3 {
             return selector_storage_void_nlaunder;
+        }
+
+        if selector_field_type_nlaunder.tag == 9 { // RawPointer
+            selector_field_type_nlaunder = ctx[selector_field_type_nlaunder.RawPointer.inner];
         }
 
         if selector_left_type_nlaunder.Struct.brand != empty[Index[str, ctx]] {
