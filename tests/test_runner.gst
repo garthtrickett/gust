@@ -2025,6 +2025,76 @@ func main() {
     t_step51_container_provenance.expected = "SUCCESS: inert container provenance metadata verified!";
     tests.Push(t_step51_container_provenance);
 
+    mut t_step51_non_laundering_return_enforcement: Test[ctx];
+    t_step51_non_laundering_return_enforcement.path = "compiler/typechecker_non_laundering_return_test_entry.gst";
+    t_step51_non_laundering_return_enforcement.is_negative = 0;
+    t_step51_non_laundering_return_enforcement.is_substring = 1;
+    t_step51_non_laundering_return_enforcement.expected = "SUCCESS: non-laundering branded return enforcement verified!";
+    tests.Push(t_step51_non_laundering_return_enforcement);
+
+    mut t_step51_non_laundering_binding_enforcement: Test[ctx];
+    t_step51_non_laundering_binding_enforcement.path = "compiler/typechecker_non_laundering_binding_test_entry.gst";
+    t_step51_non_laundering_binding_enforcement.is_negative = 0;
+    t_step51_non_laundering_binding_enforcement.is_substring = 1;
+    t_step51_non_laundering_binding_enforcement.expected = "SUCCESS: non-laundering safe-branded binding enforcement verified!";
+    tests.Push(t_step51_non_laundering_binding_enforcement);
+
+    mut t_step51_non_laundering_call_enforcement: Test[ctx];
+    t_step51_non_laundering_call_enforcement.path = "compiler/typechecker_non_laundering_call_test_entry.gst";
+    t_step51_non_laundering_call_enforcement.is_negative = 0;
+    t_step51_non_laundering_call_enforcement.is_substring = 1;
+    t_step51_non_laundering_call_enforcement.expected = "SUCCESS: non-laundering safe-branded call argument enforcement verified!";
+    tests.Push(t_step51_non_laundering_call_enforcement);
+
+    mut t_step51_non_laundering_field_enforcement: Test[ctx];
+    t_step51_non_laundering_field_enforcement.path = "compiler/typechecker_non_laundering_field_test_entry.gst";
+    t_step51_non_laundering_field_enforcement.is_negative = 0;
+    t_step51_non_laundering_field_enforcement.is_substring = 1;
+    t_step51_non_laundering_field_enforcement.expected = "SUCCESS: non-laundering safe-branded aggregate field enforcement verified!";
+    tests.Push(t_step51_non_laundering_field_enforcement);
+
+    mut t_step51_non_laundering_container_enforcement: Test[ctx];
+    t_step51_non_laundering_container_enforcement.path = "compiler/typechecker_non_laundering_container_test_entry.gst";
+    t_step51_non_laundering_container_enforcement.is_negative = 0;
+    t_step51_non_laundering_container_enforcement.is_substring = 1;
+    t_step51_non_laundering_container_enforcement.expected = "SUCCESS: non-laundering safe-branded container element enforcement verified!";
+    tests.Push(t_step51_non_laundering_container_enforcement);
+
+    mut t_step51_non_laundering_container_method_enforcement: Test[ctx];
+    t_step51_non_laundering_container_method_enforcement.path = "compiler/typechecker_non_laundering_container_method_test_entry.gst";
+    t_step51_non_laundering_container_method_enforcement.is_negative = 0;
+    t_step51_non_laundering_container_method_enforcement.is_substring = 1;
+    t_step51_non_laundering_container_method_enforcement.expected = "SUCCESS: non-laundering safe-branded container method raw/sandbox/safe Push/Set/Insert storage enforcement verified!";
+    tests.Push(t_step51_non_laundering_container_method_enforcement);
+
+    mut t_step51_non_laundering_arena_write_enforcement: Test[ctx];
+    t_step51_non_laundering_arena_write_enforcement.path = "compiler/typechecker_non_laundering_arena_write_test_entry.gst";
+    t_step51_non_laundering_arena_write_enforcement.is_negative = 0;
+    t_step51_non_laundering_arena_write_enforcement.is_substring = 1;
+    t_step51_non_laundering_arena_write_enforcement.expected = "SUCCESS: non-laundering Arena.Set/Write raw/sandbox enforcement verified!";
+    tests.Push(t_step51_non_laundering_arena_write_enforcement);
+
+    mut t_step51_non_laundering_reference_selector_enforcement: Test[ctx];
+    t_step51_non_laundering_reference_selector_enforcement.path = "compiler/typechecker_non_laundering_reference_selector_test_entry.gst";
+    t_step51_non_laundering_reference_selector_enforcement.is_negative = 0;
+    t_step51_non_laundering_reference_selector_enforcement.is_substring = 1;
+    t_step51_non_laundering_reference_selector_enforcement.expected = "SUCCESS: reference selector raw/sandbox non-laundering enforcement verified!";
+    tests.Push(t_step51_non_laundering_reference_selector_enforcement);
+
+    mut t_step51_non_laundering_hashmap_get_value_enforcement: Test[ctx];
+    t_step51_non_laundering_hashmap_get_value_enforcement.path = "compiler/typechecker_non_laundering_hashmap_get_value_test_entry.gst";
+    t_step51_non_laundering_hashmap_get_value_enforcement.is_negative = 0;
+    t_step51_non_laundering_hashmap_get_value_enforcement.is_substring = 1;
+    t_step51_non_laundering_hashmap_get_value_enforcement.expected = "SUCCESS: HashMap.Get value non-laundering enforcement verified!";
+    tests.Push(t_step51_non_laundering_hashmap_get_value_enforcement);
+
+    mut t_step51_non_laundering_hashmap_get_value_field_enforcement: Test[ctx];
+    t_step51_non_laundering_hashmap_get_value_field_enforcement.path = "compiler/typechecker_non_laundering_hashmap_get_value_field_test_entry.gst";
+    t_step51_non_laundering_hashmap_get_value_field_enforcement.is_negative = 0;
+    t_step51_non_laundering_hashmap_get_value_field_enforcement.is_substring = 1;
+    t_step51_non_laundering_hashmap_get_value_field_enforcement.expected = "SUCCESS: HashMap.Get value field non-laundering enforcement verified!";
+    tests.Push(t_step51_non_laundering_hashmap_get_value_field_enforcement);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

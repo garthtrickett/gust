@@ -65,16 +65,6 @@ make-test-guards:
     set -euo pipefail
     make gust
     guards=(
-      guard_step51_non_laundering_return_enforcement
-      guard_step51_non_laundering_binding_enforcement
-      guard_step51_non_laundering_call_enforcement
-      guard_step51_non_laundering_field_enforcement
-      guard_step51_non_laundering_container_enforcement
-      guard_step51_non_laundering_container_method_enforcement
-      guard_step51_non_laundering_arena_write_enforcement
-      guard_step51_non_laundering_reference_selector_enforcement
-      guard_step51_non_laundering_hashmap_get_value_enforcement
-      guard_step51_non_laundering_hashmap_get_value_field_enforcement
       guard_step51_report_only_lanes_not_in_test
       guard_step52_report_only_lanes_not_in_test
       guard_step52_no_post_closure_report_churn
@@ -91,11 +81,9 @@ make-test-guards:
 make-test-guards-parallel: gust _make-test-guards-parallel-inner
 
 [parallel]
-_make-test-guards-parallel-inner: make-test-guards-step44-text make-test-guards-step51-non-laundering make-test-guards-policy
+_make-test-guards-parallel-inner: make-test-guards-step44-text make-test-guards-policy
 
 # Buckets below intentionally run their dependencies serially; only the bucket layer is parallel.
-
-make-test-guards-step51-non-laundering: guard_step51_non_laundering_return_enforcement guard_step51_non_laundering_binding_enforcement guard_step51_non_laundering_call_enforcement guard_step51_non_laundering_field_enforcement guard_step51_non_laundering_container_enforcement guard_step51_non_laundering_container_method_enforcement guard_step51_non_laundering_arena_write_enforcement guard_step51_non_laundering_reference_selector_enforcement guard_step51_non_laundering_hashmap_get_value_enforcement guard_step51_non_laundering_hashmap_get_value_field_enforcement
 
 make-test-guards-policy: guard_step51_report_only_lanes_not_in_test guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn
 
