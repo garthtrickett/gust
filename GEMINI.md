@@ -199,7 +199,7 @@ git diff --check
 
 ### J. Project Command Runner Split
 * **Layering Rule:** Keep `flake.nix` focused on the reproducible toolchain/dev shell, keep `Makefile` as the canonical build graph for `gust`, `bootstrap`, generated artifacts, and aggregate guard wiring, and use `justfile` for human-friendly aliases, focused workflows, and argument-handling convenience.
-* **No Build Graph Duplication:** `justfile` recipes should call `make` for canonical build/test/bootstrap targets rather than reimplementing Make's dependency graph. Use `just` to reduce `.PHONY` command sprawl and improve discoverability, not to create a second source of truth for generated artifacts.
+* **No Build Graph Duplication:** `justfile` recipes should call `make` for canonical build/test/bootstrap targets rather than reimplementing Make's dependency graph. Use `just` to reduce `.PHONY` command sprawl and improve discoverability, not to create a second source of truth for generated artifacts. Keep Make's explicit `.PHONY` declarations limited to high-level aggregate commands; focused guard/report targets can remain ordinary recipe targets unless they become real file outputs.
 * **Reusable Focused Runner:** Shared self-hosted Gust compile/build/run plumbing belongs in `scripts/run-gust-file.sh`. Shell helpers and `justfile` aliases should call that script instead of copy-pasting the three-phase compile-C-run sequence.
 * **Nix Role:** The dev shell should install command-runner tools such as `just` alongside Rust, C, Python, tree-sitter, and formatting tools. It should not become a large task runner full of duplicated guard scripts.
 
