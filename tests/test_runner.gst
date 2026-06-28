@@ -1843,6 +1843,188 @@ func main() {
     t_step51_extern_func_call_ok.expected = "41";
     tests.Push(t_step51_extern_func_call_ok);
 
+    mut t_step51_extern_func_parser_metadata: Test[ctx];
+    t_step51_extern_func_parser_metadata.path = "compiler/parser_ffi_metadata_test_entry.gst";
+    t_step51_extern_func_parser_metadata.is_negative = 0;
+    t_step51_extern_func_parser_metadata.is_substring = 1;
+    t_step51_extern_func_parser_metadata.expected = "SUCCESS: extern function parser metadata verified!";
+    tests.Push(t_step51_extern_func_parser_metadata);
+
+    mut t_step51_layout_metadata_defaults_1: Test[ctx];
+    t_step51_layout_metadata_defaults_1.path = "compiler/parser_layout_metadata_test_entry.gst";
+    t_step51_layout_metadata_defaults_1.is_negative = 0;
+    t_step51_layout_metadata_defaults_1.is_substring = 1;
+    t_step51_layout_metadata_defaults_1.expected = "SUCCESS: struct layout metadata defaults and attributes verified!";
+    tests.Push(t_step51_layout_metadata_defaults_1);
+
+    mut t_step51_layout_metadata_defaults_2: Test[ctx];
+    t_step51_layout_metadata_defaults_2.path = "compiler/typechecker_layout_metadata_test_entry.gst";
+    t_step51_layout_metadata_defaults_2.is_negative = 0;
+    t_step51_layout_metadata_defaults_2.is_substring = 1;
+    t_step51_layout_metadata_defaults_2.expected = "SUCCESS: payload-safe layout metadata registry helpers verified!";
+    tests.Push(t_step51_layout_metadata_defaults_2);
+
+    mut t_step51_layout_ffi_policy_helpers: Test[ctx];
+    t_step51_layout_ffi_policy_helpers.path = "compiler/typechecker_layout_ffi_policy_test_entry.gst";
+    t_step51_layout_ffi_policy_helpers.is_negative = 0;
+    t_step51_layout_ffi_policy_helpers.is_substring = 1;
+    t_step51_layout_ffi_policy_helpers.expected = "SUCCESS: inert layout-aware FFI validation helpers verified!";
+    tests.Push(t_step51_layout_ffi_policy_helpers);
+
+    mut t_step51_layout_ffi_signature_helpers: Test[ctx];
+    t_step51_layout_ffi_signature_helpers.path = "compiler/typechecker_layout_ffi_signature_test_entry.gst";
+    t_step51_layout_ffi_signature_helpers.is_negative = 0;
+    t_step51_layout_ffi_signature_helpers.is_substring = 1;
+    t_step51_layout_ffi_signature_helpers.expected = "SUCCESS: inert signature-level C FFI layout helpers verified!";
+    tests.Push(t_step51_layout_ffi_signature_helpers);
+
+    mut t_step51_sandbox_policy_defaults: Test[ctx];
+    t_step51_sandbox_policy_defaults.path = "compiler/typechecker_sandbox_policy_test_entry.gst";
+    t_step51_sandbox_policy_defaults.is_negative = 0;
+    t_step51_sandbox_policy_defaults.is_substring = 1;
+    t_step51_sandbox_policy_defaults.expected = "SUCCESS: inert sandbox FFI policy helpers verified!";
+    tests.Push(t_step51_sandbox_policy_defaults);
+
+    mut t_step51_address_origin_metadata: Test[ctx];
+    t_step51_address_origin_metadata.path = "compiler/typechecker_address_origin_test_entry.gst";
+    t_step51_address_origin_metadata.is_negative = 0;
+    t_step51_address_origin_metadata.is_substring = 1;
+    t_step51_address_origin_metadata.expected = "SUCCESS: inert address-origin metadata helpers verified!";
+    tests.Push(t_step51_address_origin_metadata);
+
+    mut t_step51_expression_provenance_carrier: Test[ctx];
+    t_step51_expression_provenance_carrier.path = "compiler/typechecker_expression_provenance_test_entry.gst";
+    t_step51_expression_provenance_carrier.is_negative = 0;
+    t_step51_expression_provenance_carrier.is_substring = 1;
+    t_step51_expression_provenance_carrier.expected = "SUCCESS: inert expression provenance carrier verified!";
+    tests.Push(t_step51_expression_provenance_carrier);
+
+    mut t_step51_safe_constructor_provenance: Test[ctx];
+    t_step51_safe_constructor_provenance.path = "compiler/typechecker_safe_constructor_provenance_test_entry.gst";
+    t_step51_safe_constructor_provenance.is_negative = 0;
+    t_step51_safe_constructor_provenance.is_substring = 1;
+    t_step51_safe_constructor_provenance.expected = "SUCCESS: safe constructor provenance metadata verified!";
+    tests.Push(t_step51_safe_constructor_provenance);
+
+    mut t_step51_selector_safe_constructor_provenance: Test[ctx];
+    t_step51_selector_safe_constructor_provenance.path = "compiler/typechecker_selector_safe_constructor_provenance_test_entry.gst";
+    t_step51_selector_safe_constructor_provenance.is_negative = 0;
+    t_step51_selector_safe_constructor_provenance.is_substring = 1;
+    t_step51_selector_safe_constructor_provenance.expected = "SUCCESS: selector safe constructor provenance metadata verified!";
+    tests.Push(t_step51_selector_safe_constructor_provenance);
+
+    mut t_step51_container_safe_constructor_provenance: Test[ctx];
+    t_step51_container_safe_constructor_provenance.path = "compiler/typechecker_container_safe_constructor_provenance_test_entry.gst";
+    t_step51_container_safe_constructor_provenance.is_negative = 0;
+    t_step51_container_safe_constructor_provenance.is_substring = 1;
+    t_step51_container_safe_constructor_provenance.expected = "SUCCESS: container safe constructor provenance metadata verified!";
+    tests.Push(t_step51_container_safe_constructor_provenance);
+
+    mut t_step51_container_method_provenance: Test[ctx];
+    t_step51_container_method_provenance.path = "compiler/typechecker_container_method_provenance_test_entry.gst";
+    t_step51_container_method_provenance.is_negative = 0;
+    t_step51_container_method_provenance.is_substring = 1;
+    t_step51_container_method_provenance.expected = "SUCCESS: container method write provenance metadata verified!";
+    tests.Push(t_step51_container_method_provenance);
+
+    mut t_step51_arena_write_provenance: Test[ctx];
+    t_step51_arena_write_provenance.path = "compiler/typechecker_arena_write_provenance_test_entry.gst";
+    t_step51_arena_write_provenance.is_negative = 0;
+    t_step51_arena_write_provenance.is_substring = 1;
+    t_step51_arena_write_provenance.expected = "SUCCESS: Arena.Set/Write provenance metadata verified!";
+    tests.Push(t_step51_arena_write_provenance);
+
+    mut t_step51_container_getref_provenance: Test[ctx];
+    t_step51_container_getref_provenance.path = "compiler/typechecker_container_getref_provenance_test_entry.gst";
+    t_step51_container_getref_provenance.is_negative = 0;
+    t_step51_container_getref_provenance.is_substring = 1;
+    t_step51_container_getref_provenance.expected = "SUCCESS: container GetRef provenance metadata verified!";
+    tests.Push(t_step51_container_getref_provenance);
+
+    mut t_step51_hashmap_get_value_provenance: Test[ctx];
+    t_step51_hashmap_get_value_provenance.path = "compiler/typechecker_hashmap_get_value_provenance_test_entry.gst";
+    t_step51_hashmap_get_value_provenance.is_negative = 0;
+    t_step51_hashmap_get_value_provenance.is_substring = 1;
+    t_step51_hashmap_get_value_provenance.expected = "SUCCESS: HashMap.Get value provenance metadata verified!";
+    tests.Push(t_step51_hashmap_get_value_provenance);
+
+    mut t_step51_hashmap_get_value_field_provenance: Test[ctx];
+    t_step51_hashmap_get_value_field_provenance.path = "compiler/typechecker_hashmap_get_value_field_provenance_test_entry.gst";
+    t_step51_hashmap_get_value_field_provenance.is_negative = 0;
+    t_step51_hashmap_get_value_field_provenance.is_substring = 1;
+    t_step51_hashmap_get_value_field_provenance.expected = "SUCCESS: HashMap.Get value field provenance metadata verified!";
+    tests.Push(t_step51_hashmap_get_value_field_provenance);
+
+    mut t_step51_std_vector_getref_provenance: Test[ctx];
+    t_step51_std_vector_getref_provenance.path = "compiler/typechecker_std_vector_getref_provenance_test_entry.gst";
+    t_step51_std_vector_getref_provenance.is_negative = 0;
+    t_step51_std_vector_getref_provenance.is_substring = 1;
+    t_step51_std_vector_getref_provenance.expected = "SUCCESS: std.VectorGetRef provenance metadata verified!";
+    tests.Push(t_step51_std_vector_getref_provenance);
+
+    mut t_step51_std_hashmap_getref_provenance: Test[ctx];
+    t_step51_std_hashmap_getref_provenance.path = "compiler/typechecker_std_hashmap_getref_provenance_test_entry.gst";
+    t_step51_std_hashmap_getref_provenance.is_negative = 0;
+    t_step51_std_hashmap_getref_provenance.is_substring = 1;
+    t_step51_std_hashmap_getref_provenance.expected = "SUCCESS: std.HashMapGetRef provenance metadata verified!";
+    tests.Push(t_step51_std_hashmap_getref_provenance);
+
+    mut t_step51_std_hashmap_getref_selector_alias_provenance: Test[ctx];
+    t_step51_std_hashmap_getref_selector_alias_provenance.path = "compiler/typechecker_std_hashmap_getref_selector_alias_provenance_test_entry.gst";
+    t_step51_std_hashmap_getref_selector_alias_provenance.is_negative = 0;
+    t_step51_std_hashmap_getref_selector_alias_provenance.is_substring = 1;
+    t_step51_std_hashmap_getref_selector_alias_provenance.expected = "SUCCESS: std.HashMapGetRef selector alias provenance metadata verified!";
+    tests.Push(t_step51_std_hashmap_getref_selector_alias_provenance);
+
+    mut t_step51_std_vector_getref_selector_alias_provenance: Test[ctx];
+    t_step51_std_vector_getref_selector_alias_provenance.path = "compiler/typechecker_std_vector_getref_selector_alias_provenance_test_entry.gst";
+    t_step51_std_vector_getref_selector_alias_provenance.is_negative = 0;
+    t_step51_std_vector_getref_selector_alias_provenance.is_substring = 1;
+    t_step51_std_vector_getref_selector_alias_provenance.expected = "SUCCESS: std.VectorGetRef selector alias provenance metadata verified!";
+    tests.Push(t_step51_std_vector_getref_selector_alias_provenance);
+
+    mut t_step51_reference_selector_alias_provenance: Test[ctx];
+    t_step51_reference_selector_alias_provenance.path = "compiler/typechecker_reference_selector_alias_provenance_test_entry.gst";
+    t_step51_reference_selector_alias_provenance.is_negative = 0;
+    t_step51_reference_selector_alias_provenance.is_substring = 1;
+    t_step51_reference_selector_alias_provenance.expected = "SUCCESS: reference selector alias provenance metadata verified!";
+    tests.Push(t_step51_reference_selector_alias_provenance);
+
+    mut t_step51_variable_provenance_bindings: Test[ctx];
+    t_step51_variable_provenance_bindings.path = "compiler/typechecker_variable_provenance_test_entry.gst";
+    t_step51_variable_provenance_bindings.is_negative = 0;
+    t_step51_variable_provenance_bindings.is_substring = 1;
+    t_step51_variable_provenance_bindings.expected = "SUCCESS: inert variable provenance binding/assignment metadata verified!";
+    tests.Push(t_step51_variable_provenance_bindings);
+
+    mut t_step51_return_provenance_capture: Test[ctx];
+    t_step51_return_provenance_capture.path = "compiler/typechecker_return_provenance_test_entry.gst";
+    t_step51_return_provenance_capture.is_negative = 0;
+    t_step51_return_provenance_capture.is_substring = 1;
+    t_step51_return_provenance_capture.expected = "SUCCESS: inert return expression provenance metadata verified!";
+    tests.Push(t_step51_return_provenance_capture);
+
+    mut t_step51_function_call_provenance: Test[ctx];
+    t_step51_function_call_provenance.path = "compiler/typechecker_function_call_provenance_test_entry.gst";
+    t_step51_function_call_provenance.is_negative = 0;
+    t_step51_function_call_provenance.is_substring = 1;
+    t_step51_function_call_provenance.expected = "SUCCESS: inert function-call return provenance metadata verified!";
+    tests.Push(t_step51_function_call_provenance);
+
+    mut t_step51_aggregate_field_provenance: Test[ctx];
+    t_step51_aggregate_field_provenance.path = "compiler/typechecker_aggregate_field_provenance_test_entry.gst";
+    t_step51_aggregate_field_provenance.is_negative = 0;
+    t_step51_aggregate_field_provenance.is_substring = 1;
+    t_step51_aggregate_field_provenance.expected = "SUCCESS: inert aggregate-field provenance metadata verified!";
+    tests.Push(t_step51_aggregate_field_provenance);
+
+    mut t_step51_container_provenance: Test[ctx];
+    t_step51_container_provenance.path = "compiler/typechecker_container_provenance_test_entry.gst";
+    t_step51_container_provenance.is_negative = 0;
+    t_step51_container_provenance.is_substring = 1;
+    t_step51_container_provenance.expected = "SUCCESS: inert container provenance metadata verified!";
+    tests.Push(t_step51_container_provenance);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

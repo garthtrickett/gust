@@ -65,31 +65,6 @@ make-test-guards:
     set -euo pipefail
     make gust
     guards=(
-      guard_step51_extern_func_parser_metadata
-      guard_step51_layout_metadata_defaults
-      guard_step51_layout_ffi_policy_helpers
-      guard_step51_layout_ffi_signature_helpers
-      guard_step51_sandbox_policy_defaults
-      guard_step51_address_origin_metadata
-      guard_step51_expression_provenance_carrier
-      guard_step51_safe_constructor_provenance
-      guard_step51_selector_safe_constructor_provenance
-      guard_step51_container_safe_constructor_provenance
-      guard_step51_container_method_provenance
-      guard_step51_arena_write_provenance
-      guard_step51_container_getref_provenance
-      guard_step51_hashmap_get_value_provenance
-      guard_step51_hashmap_get_value_field_provenance
-      guard_step51_std_vector_getref_provenance
-      guard_step51_std_hashmap_getref_provenance
-      guard_step51_std_hashmap_getref_selector_alias_provenance
-      guard_step51_std_vector_getref_selector_alias_provenance
-      guard_step51_reference_selector_alias_provenance
-      guard_step51_variable_provenance_bindings
-      guard_step51_return_provenance_capture
-      guard_step51_function_call_provenance
-      guard_step51_aggregate_field_provenance
-      guard_step51_container_provenance
       guard_step51_non_laundering_return_enforcement
       guard_step51_non_laundering_binding_enforcement
       guard_step51_non_laundering_call_enforcement
@@ -116,13 +91,9 @@ make-test-guards:
 make-test-guards-parallel: gust _make-test-guards-parallel-inner
 
 [parallel]
-_make-test-guards-parallel-inner: make-test-guards-step44-text make-test-guards-step51-metadata make-test-guards-step51-provenance make-test-guards-step51-non-laundering make-test-guards-policy
+_make-test-guards-parallel-inner: make-test-guards-step44-text make-test-guards-step51-non-laundering make-test-guards-policy
 
 # Buckets below intentionally run their dependencies serially; only the bucket layer is parallel.
-
-make-test-guards-step51-metadata: guard_step51_extern_func_parser_metadata guard_step51_layout_metadata_defaults guard_step51_layout_ffi_policy_helpers guard_step51_layout_ffi_signature_helpers guard_step51_sandbox_policy_defaults guard_step51_address_origin_metadata
-
-make-test-guards-step51-provenance: guard_step51_expression_provenance_carrier guard_step51_safe_constructor_provenance guard_step51_selector_safe_constructor_provenance guard_step51_container_safe_constructor_provenance guard_step51_container_method_provenance guard_step51_arena_write_provenance guard_step51_container_getref_provenance guard_step51_hashmap_get_value_provenance guard_step51_hashmap_get_value_field_provenance guard_step51_std_vector_getref_provenance guard_step51_std_hashmap_getref_provenance guard_step51_std_hashmap_getref_selector_alias_provenance guard_step51_std_vector_getref_selector_alias_provenance guard_step51_reference_selector_alias_provenance guard_step51_variable_provenance_bindings guard_step51_return_provenance_capture guard_step51_function_call_provenance guard_step51_aggregate_field_provenance guard_step51_container_provenance
 
 make-test-guards-step51-non-laundering: guard_step51_non_laundering_return_enforcement guard_step51_non_laundering_binding_enforcement guard_step51_non_laundering_call_enforcement guard_step51_non_laundering_field_enforcement guard_step51_non_laundering_container_enforcement guard_step51_non_laundering_container_method_enforcement guard_step51_non_laundering_arena_write_enforcement guard_step51_non_laundering_reference_selector_enforcement guard_step51_non_laundering_hashmap_get_value_enforcement guard_step51_non_laundering_hashmap_get_value_field_enforcement
 
