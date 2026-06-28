@@ -3145,6 +3145,42 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     }
                 }
 
+                mut hashmap_get_val_field_left_expr_prov := ctx[expr.Selector.left];
+                if hashmap_get_val_field_left_expr_prov.tag == 11 { // Selector
+                    if std.str_eq(hashmap_get_val_field_left_expr_prov.Selector.right, "Val") == 1 {
+                        mut hashmap_get_val_field_call_expr_prov := ctx[hashmap_get_val_field_left_expr_prov.Selector.left];
+                        if hashmap_get_val_field_call_expr_prov.tag == 12 { // Call
+                            mut hashmap_get_val_field_func_expr_prov := ctx[hashmap_get_val_field_call_expr_prov.Call.function];
+                            if hashmap_get_val_field_func_expr_prov.tag == 11 { // Selector
+                                if std.str_eq(hashmap_get_val_field_func_expr_prov.Selector.right, "Get") == 1 {
+                                    mut hashmap_get_val_field_args_prov: std.Vector[ast.Expression[ctx], ctx] := ctx[hashmap_get_val_field_call_expr_prov.Call.arguments];
+                                    if len(hashmap_get_val_field_args_prov) > 0 {
+                                        mut hashmap_get_val_field_key_idx_prov: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                                        ctx.Set(hashmap_get_val_field_key_idx_prov, hashmap_get_val_field_args_prov[0]);
+                                        mut hashmap_get_val_field_receiver_key_prov := expression_to_string(hashmap_get_val_field_func_expr_prov.Selector.left, ctx);
+                                        mut hashmap_get_val_field_key_prov := expression_to_string(hashmap_get_val_field_key_idx_prov, ctx);
+                                        mut hashmap_get_val_field_canonical_key_prov := std.Concat(hashmap_get_val_field_receiver_key_prov, "[");
+                                        hashmap_get_val_field_canonical_key_prov = std.Concat(hashmap_get_val_field_canonical_key_prov, hashmap_get_val_field_key_prov);
+                                        hashmap_get_val_field_canonical_key_prov = std.Concat(hashmap_get_val_field_canonical_key_prov, "].");
+                                        hashmap_get_val_field_canonical_key_prov = std.Concat(hashmap_get_val_field_canonical_key_prov, expr.Selector.right);
+
+                                        mut hashmap_get_val_field_lookup_prov := (*env).field_provenance.Get(hashmap_get_val_field_canonical_key_prov);
+                                        if hashmap_get_val_field_lookup_prov.Ok {
+                                            mut hashmap_get_val_field_found_prov := hashmap_get_val_field_lookup_prov.Val;
+                                            hashmap_get_val_field_found_prov.resolved_type = t;
+
+                                            mut hashmap_get_val_field_origins_prov := typechecker_clone_origin_set(hashmap_get_val_field_found_prov.legacy_origins, ctx);
+                                            set_union(hashmap_get_val_field_origins_prov, legacy_origins, ctx);
+                                            hashmap_get_val_field_found_prov.legacy_origins = hashmap_get_val_field_origins_prov;
+                                            return hashmap_get_val_field_found_prov;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 mut selector_key_fieldprov := expression_to_string(expr_idx, ctx);
                 mut field_lookup_fieldprov := (*env).field_provenance.Get(selector_key_fieldprov);
                 if field_lookup_fieldprov.Ok {
