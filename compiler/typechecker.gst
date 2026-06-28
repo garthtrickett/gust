@@ -6016,7 +6016,8 @@ func env_resource_variable_type_is_resource(env: *TypeEnvironment[ctx], variable
 
 func env_resource_variable_payload_struct_name(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) str {
     mut variable_type_payload_struct_name := env_resource_variable_type(env, variable_name, ctx);
-    return resource_type_payload_struct_name(variable_type_payload_struct_name, ctx);
+    mut resolved_payload_struct_name := resource_type_payload_struct_name(variable_type_payload_struct_name, ctx);
+    return std.Clone(ctx, resolved_payload_struct_name);
 }
 
 func env_resource_variable_is_tracking_eligible(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
