@@ -2179,6 +2179,13 @@ func main() {
     t_step52_resource_assignment_bridge.expected = "SUCCESS: inert Resource assignment helper bridge verified!";
     tests.Push(t_step52_resource_assignment_bridge);
 
+    mut t_step52_resource_lifecycle_ops: Test[ctx];
+    t_step52_resource_lifecycle_ops.path = "compiler/typechecker_resource_lifecycle_ops_test_entry.gst";
+    t_step52_resource_lifecycle_ops.is_negative = 0;
+    t_step52_resource_lifecycle_ops.is_substring = 1;
+    t_step52_resource_lifecycle_ops.expected = "SUCCESS: inert linear resource lifecycle operation helpers verified!";
+    tests.Push(t_step52_resource_lifecycle_ops);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

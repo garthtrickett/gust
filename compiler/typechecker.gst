@@ -5914,6 +5914,34 @@ func env_open_linear_resource_destructor_schedule_diagnostic(env: *TypeEnvironme
     return linear_resource_validation_diagnostic(variable_name, "is not in owned state", ctx);
 }
 
+func env_try_close_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    if env_open_linear_resource_can_be_closed(env, variable_name, ctx) == 0 {
+        return 0;
+    }
+    return env_mark_open_linear_resource_closed(env, variable_name, ctx);
+}
+
+func env_try_move_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    if env_open_linear_resource_can_be_moved(env, variable_name, ctx) == 0 {
+        return 0;
+    }
+    return env_mark_open_linear_resource_moved(env, variable_name, ctx);
+}
+
+func env_try_borrow_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    if env_open_linear_resource_is_owned(env, variable_name, ctx) == 0 {
+        return 0;
+    }
+    return env_mark_open_linear_resource_borrowed(env, variable_name, ctx);
+}
+
+func env_try_schedule_open_linear_resource_destructor(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    if env_open_linear_resource_can_schedule_destructor(env, variable_name, ctx) == 0 {
+        return 0;
+    }
+    return env_mark_open_linear_resource_destructor_scheduled(env, variable_name, ctx);
+}
+
 func make_type_resource(payload_type: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     mut args_resource_type: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     args_resource_type.Push(payload_type);
