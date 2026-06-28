@@ -2130,6 +2130,13 @@ func main() {
     t_step52_resource_type_shape.expected = "SUCCESS: inert Resource type-shape helpers verified!";
     tests.Push(t_step52_resource_type_shape);
 
+    mut t_step52_resource_registry_bridge: Test[ctx];
+    t_step52_resource_registry_bridge.path = "compiler/typechecker_resource_registry_bridge_test_entry.gst";
+    t_step52_resource_registry_bridge.is_negative = 0;
+    t_step52_resource_registry_bridge.is_substring = 1;
+    t_step52_resource_registry_bridge.expected = "SUCCESS: inert Resource registry bridge helpers verified!";
+    tests.Push(t_step52_resource_registry_bridge);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

@@ -5798,6 +5798,38 @@ func resource_type_payload_name(resource_type: ast.Type[ctx], ctx: &Arena) str {
     return std.Clone(ctx, serialized_resource_type_payload);
 }
 
+func resource_type_payload_struct_name(resource_type: ast.Type[ctx], ctx: &Arena) str {
+    if type_is_resource(resource_type, ctx) == 0 {
+        return "";
+    }
+    mut payload_resource_struct_name := resource_type_payload(resource_type, ctx);
+    unsafe {
+        if payload_resource_struct_name.tag != 8 { // Struct
+            return "";
+        }
+        return std.Clone(ctx, payload_resource_struct_name.Struct.struct_name);
+    }
+}
+
+func resource_type_payload_is_resource_tracking_eligible(env: *TypeEnvironment[ctx], resource_type: ast.Type[ctx], ctx: &Arena) int {
+    mut payload_struct_name_resource_eligible := resource_type_payload_struct_name(resource_type, ctx);
+    if len(payload_struct_name_resource_eligible) == 0 {
+        return 0;
+    }
+    return env_struct_has_resource_tracking_metadata(env, payload_struct_name_resource_eligible, ctx);
+}
+
+func env_register_open_resource_value(env: *TypeEnvironment[ctx], variable_name: str, resource_type: ast.Type[ctx], ctx: &Arena) int {
+    if type_is_resource(resource_type, ctx) == 0 {
+        return 0;
+    }
+    mut payload_struct_name_open_resource := resource_type_payload_struct_name(resource_type, ctx);
+    if len(payload_struct_name_open_resource) == 0 {
+        return 0;
+    }
+    return env_register_open_linear_resource(env, variable_name, payload_struct_name_open_resource, ctx);
+}
+
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
     unsafe {
         mut lookup := (*env).struct_layout_repr_c.Get(name);
