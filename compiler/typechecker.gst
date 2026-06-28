@@ -141,6 +141,14 @@ func step51g_expression_provenance_blocks_safe_brand(prov: ExpressionProvenance[
     return step51g_address_origin_blocks_safe_brand(prov.address_origin);
 }
 
+func step51g_expression_provenance_requires_unsafe_boundary(prov: ExpressionProvenance[ctx]) int {
+    return step51g_address_origin_requires_unsafe_boundary(prov.address_origin);
+}
+
+func step51g_expression_provenance_is_raw_or_sandbox_derived(prov: ExpressionProvenance[ctx]) int {
+    return step51g_address_origin_is_raw_or_sandbox_derived(prov.address_origin);
+}
+
 func address_origin_allows_safe_branding(origin: AddressOriginMetadata) int {
     if origin.is_safe_arena == 1 && origin.is_raw_derived == 0 && origin.is_sandbox_derived == 0 && origin.is_unknown == 0 {
         return 1;
