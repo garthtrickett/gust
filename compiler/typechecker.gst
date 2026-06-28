@@ -8454,7 +8454,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             if left.tag == 8 { // IndexAccess
-                if env_type_is_safe_branded_return_target(left_type, ctx) == 0 {
+                if step51g_non_laundering_type_is_safe_brand_target(left_type, ctx) == 0 {
                     mut container_storage_type_nlaunder := env_resolve_index_storage_target_type(env, left_idx, scope, ctx);
                     env_report_non_laundering_safe_brand_target(env, container_storage_type_nlaunder, val_prov_assignment, assignment_span_nlaunder, "Assigning raw-derived or sandbox-derived value to indexed container element", ctx);
                 }
