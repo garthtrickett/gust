@@ -5747,6 +5747,58 @@ func env_mark_open_linear_resource_destructor_scheduled(env: *TypeEnvironment[ct
     }
 }
 
+func env_open_linear_resource_can_be_used(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    if env_open_linear_resource_is_tracked(env, variable_name, ctx) == 0 {
+        return 0;
+    }
+    if env_open_linear_resource_is_moved(env, variable_name, ctx) == 1 {
+        return 0;
+    }
+    if env_open_linear_resource_is_closed(env, variable_name, ctx) == 1 {
+        return 0;
+    }
+    if env_open_linear_resource_is_destructor_scheduled(env, variable_name, ctx) == 1 {
+        return 0;
+    }
+    return 1;
+}
+
+func env_open_linear_resource_can_be_closed(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    return env_open_linear_resource_is_owned(env, variable_name, ctx);
+}
+
+func env_open_linear_resource_can_be_moved(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    return env_open_linear_resource_is_owned(env, variable_name, ctx);
+}
+
+func env_open_linear_resource_requires_cleanup(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    return env_open_linear_resource_is_owned(env, variable_name, ctx);
+}
+
+func env_open_linear_resource_can_schedule_destructor(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    if env_open_linear_resource_is_owned(env, variable_name, ctx) == 0 {
+        return 0;
+    }
+    mut destructor_name_schedule_resource := env_open_linear_resource_destructor_name(env, variable_name, ctx);
+    if len(destructor_name_schedule_resource) == 0 {
+        return 0;
+    }
+    return 1;
+}
+
+func env_open_linear_resource_has_terminal_state(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    if env_open_linear_resource_is_moved(env, variable_name, ctx) == 1 {
+        return 1;
+    }
+    if env_open_linear_resource_is_closed(env, variable_name, ctx) == 1 {
+        return 1;
+    }
+    if env_open_linear_resource_is_destructor_scheduled(env, variable_name, ctx) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
 func make_type_resource(payload_type: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     mut args_resource_type: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     args_resource_type.Push(payload_type);

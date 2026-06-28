@@ -53,6 +53,8 @@ A generalized resource value should carry compiler-owned state rather than strin
 - `closed`: the registered destructor has already consumed the resource.
 - `destructor_scheduled`: a validated `defer` or equivalent cleanup path owns the eventual destructor call.
 
+Current inert validation predicates expose future enforcement questions without emitting diagnostics: usable, closeable, movable, requires-cleanup, destructor-schedulable, and terminal-state checks.
+
 ### Open-resource registry entry
 
 Each future `open_linear_resources` entry should be keyed by semantic resource identity and store at least:

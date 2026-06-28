@@ -2137,6 +2137,13 @@ func main() {
     t_step52_resource_registry_bridge.expected = "SUCCESS: inert Resource registry bridge helpers verified!";
     tests.Push(t_step52_resource_registry_bridge);
 
+    mut t_step52_resource_validation_predicates: Test[ctx];
+    t_step52_resource_validation_predicates.path = "compiler/typechecker_resource_validation_predicates_test_entry.gst";
+    t_step52_resource_validation_predicates.is_negative = 0;
+    t_step52_resource_validation_predicates.is_substring = 1;
+    t_step52_resource_validation_predicates.expected = "SUCCESS: inert linear resource validation predicates verified!";
+    tests.Push(t_step52_resource_validation_predicates);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
