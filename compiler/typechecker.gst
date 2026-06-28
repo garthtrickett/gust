@@ -414,7 +414,7 @@ func step51g_non_laundering_origin_blocks_safe_brand(origin: AddressOriginMetada
 }
 
 func step51g_non_laundering_origin_requires_unsafe_boundary(origin: AddressOriginMetadata) int {
-    return address_origin_requires_unsafe_boundary(origin);
+    return step51g_address_origin_requires_unsafe_boundary(origin);
 }
 
 func step51g_non_laundering_provenance_allows_safe_brand(prov: ExpressionProvenance[ctx], ctx: &Arena) int {
