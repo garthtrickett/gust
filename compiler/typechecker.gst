@@ -5799,6 +5799,121 @@ func env_open_linear_resource_has_terminal_state(env: *TypeEnvironment[ctx], var
     return 0;
 }
 
+func linear_resource_validation_diagnostic(variable_name: str, reason: str, ctx: &Arena) str {
+    mut msg_linear_resource_validation_diag := std.Format("Linear resource '%s' %s", variable_name, reason);
+    return std.Clone(ctx, msg_linear_resource_validation_diag);
+}
+
+func env_open_linear_resource_use_diagnostic(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) str {
+    if env_open_linear_resource_can_be_used(env, variable_name, ctx) == 1 {
+        return "";
+    }
+    if env_open_linear_resource_is_tracked(env, variable_name, ctx) == 0 {
+        return linear_resource_validation_diagnostic(variable_name, "is not tracked", ctx);
+    }
+    if env_open_linear_resource_is_moved(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has already been moved", ctx);
+    }
+    if env_open_linear_resource_is_closed(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has already been closed", ctx);
+    }
+    if env_open_linear_resource_is_destructor_scheduled(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "already has a destructor scheduled", ctx);
+    }
+    return linear_resource_validation_diagnostic(variable_name, "is not usable", ctx);
+}
+
+func env_open_linear_resource_close_diagnostic(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) str {
+    if env_open_linear_resource_can_be_closed(env, variable_name, ctx) == 1 {
+        return "";
+    }
+    if env_open_linear_resource_is_tracked(env, variable_name, ctx) == 0 {
+        return linear_resource_validation_diagnostic(variable_name, "is not tracked", ctx);
+    }
+    if env_open_linear_resource_is_moved(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has already been moved", ctx);
+    }
+    if env_open_linear_resource_is_closed(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has already been closed", ctx);
+    }
+    if env_open_linear_resource_is_destructor_scheduled(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "already has a destructor scheduled", ctx);
+    }
+    if env_open_linear_resource_is_borrowed(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "is borrowed and cannot be closed by an owner-only operation", ctx);
+    }
+    return linear_resource_validation_diagnostic(variable_name, "is not in owned state", ctx);
+}
+
+func env_open_linear_resource_move_diagnostic(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) str {
+    if env_open_linear_resource_can_be_moved(env, variable_name, ctx) == 1 {
+        return "";
+    }
+    if env_open_linear_resource_is_tracked(env, variable_name, ctx) == 0 {
+        return linear_resource_validation_diagnostic(variable_name, "is not tracked", ctx);
+    }
+    if env_open_linear_resource_is_moved(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has already been moved", ctx);
+    }
+    if env_open_linear_resource_is_closed(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has already been closed", ctx);
+    }
+    if env_open_linear_resource_is_destructor_scheduled(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "already has a destructor scheduled", ctx);
+    }
+    if env_open_linear_resource_is_borrowed(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "is borrowed and cannot be moved by an owner-only operation", ctx);
+    }
+    return linear_resource_validation_diagnostic(variable_name, "is not in owned state", ctx);
+}
+
+func env_open_linear_resource_cleanup_diagnostic(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) str {
+    if env_open_linear_resource_requires_cleanup(env, variable_name, ctx) == 1 {
+        return "";
+    }
+    if env_open_linear_resource_is_tracked(env, variable_name, ctx) == 0 {
+        return linear_resource_validation_diagnostic(variable_name, "is not tracked", ctx);
+    }
+    if env_open_linear_resource_is_moved(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has been moved and no longer requires cleanup from this owner", ctx);
+    }
+    if env_open_linear_resource_is_closed(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has already been closed", ctx);
+    }
+    if env_open_linear_resource_is_destructor_scheduled(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "already has a destructor scheduled", ctx);
+    }
+    if env_open_linear_resource_is_borrowed(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "is borrowed and does not require owner cleanup", ctx);
+    }
+    return linear_resource_validation_diagnostic(variable_name, "does not require cleanup", ctx);
+}
+
+func env_open_linear_resource_destructor_schedule_diagnostic(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) str {
+    if env_open_linear_resource_can_schedule_destructor(env, variable_name, ctx) == 1 {
+        return "";
+    }
+    if env_open_linear_resource_is_tracked(env, variable_name, ctx) == 0 {
+        return linear_resource_validation_diagnostic(variable_name, "is not tracked", ctx);
+    }
+    if env_open_linear_resource_is_moved(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has already been moved", ctx);
+    }
+    if env_open_linear_resource_is_closed(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has already been closed", ctx);
+    }
+    if env_open_linear_resource_is_destructor_scheduled(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "already has a destructor scheduled", ctx);
+    }
+    if env_open_linear_resource_is_borrowed(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "is borrowed and cannot schedule a destructor by an owner-only operation", ctx);
+    }
+    if env_open_linear_resource_is_owned(env, variable_name, ctx) == 1 {
+        return linear_resource_validation_diagnostic(variable_name, "has no registered destructor", ctx);
+    }
+    return linear_resource_validation_diagnostic(variable_name, "is not in owned state", ctx);
+}
+
 func make_type_resource(payload_type: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     mut args_resource_type: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     args_resource_type.Push(payload_type);

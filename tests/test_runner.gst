@@ -2144,6 +2144,13 @@ func main() {
     t_step52_resource_validation_predicates.expected = "SUCCESS: inert linear resource validation predicates verified!";
     tests.Push(t_step52_resource_validation_predicates);
 
+    mut t_step52_resource_diagnostics: Test[ctx];
+    t_step52_resource_diagnostics.path = "compiler/typechecker_resource_diagnostics_test_entry.gst";
+    t_step52_resource_diagnostics.is_negative = 0;
+    t_step52_resource_diagnostics.is_substring = 1;
+    t_step52_resource_diagnostics.expected = "SUCCESS: inert linear resource diagnostics verified!";
+    tests.Push(t_step52_resource_diagnostics);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

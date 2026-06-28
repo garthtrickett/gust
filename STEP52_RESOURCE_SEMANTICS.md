@@ -53,7 +53,7 @@ A generalized resource value should carry compiler-owned state rather than strin
 - `closed`: the registered destructor has already consumed the resource.
 - `destructor_scheduled`: a validated `defer` or equivalent cleanup path owns the eventual destructor call.
 
-Current inert validation predicates expose future enforcement questions without emitting diagnostics: usable, closeable, movable, requires-cleanup, destructor-schedulable, and terminal-state checks.
+Current inert validation predicates expose future enforcement questions without emitting diagnostics: usable, closeable, movable, requires-cleanup, destructor-schedulable, and terminal-state checks. Current inert diagnostic helpers map those predicate failures to stable message text but still do not report errors or reject programs.
 
 ### Open-resource registry entry
 
