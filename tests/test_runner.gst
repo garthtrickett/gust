@@ -2109,6 +2109,13 @@ func main() {
     t_step52_linear_destructor_metadata.expected = "SUCCESS: inert linear destructor metadata verified!";
     tests.Push(t_step52_linear_destructor_metadata);
 
+    mut t_step52_linear_resource_registry: Test[ctx];
+    t_step52_linear_resource_registry.path = "compiler/typechecker_linear_resource_registry_test_entry.gst";
+    t_step52_linear_resource_registry.is_negative = 0;
+    t_step52_linear_resource_registry.is_substring = 1;
+    t_step52_linear_resource_registry.expected = "SUCCESS: inert open linear resource registry verified!";
+    tests.Push(t_step52_linear_resource_registry);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

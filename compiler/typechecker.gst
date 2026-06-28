@@ -194,6 +194,15 @@ type PrefixMapEntry[ctx] struct {
     types: std.Vector[ResolvedTypeEntry[ctx], ctx]
 }
 
+type LinearResourceRecord[ctx] struct {
+    variable_name: str,
+    type_name: str,
+    destructor_name: str,
+    is_open: int,
+    is_moved: int,
+    is_closed: int
+}
+
 type TypeEnvironment[ctx] struct {
     struct_registry: std.HashMap[str, StructLayout[ctx], ctx],
     struct_layout_repr_c: std.HashMap[str, int, ctx],
@@ -216,6 +225,7 @@ type TypeEnvironment[ctx] struct {
     container_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     moved_vars: std.HashMap[str, int, ctx],
     open_directories: std.HashMap[str, int, ctx],
+    open_linear_resources: std.HashMap[str, LinearResourceRecord[ctx], ctx],
     errors: std.Vector[errors.CompilerError[ctx], ctx],
     expected_return_type: Index[ast.Type[ctx], ctx],
     current_function_return_origins: Index[OriginSet[ctx], ctx],
@@ -5308,6 +5318,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.container_provenance = std.HashMapNew(ctx);
         env_ref_new.moved_vars = std.HashMapNew(ctx);
         env_ref_new.open_directories = std.HashMapNew(ctx);
+        env_ref_new.open_linear_resources = std.HashMapNew(ctx);
         env_ref_new.errors = std.VectorNew(ctx);
         env_ref_new.expected_return_type = empty[Index[ast.Type[ctx], ctx]];
         env_ref_new.current_function_return_origins = empty[Index[OriginSet[ctx], ctx]];
@@ -5548,6 +5559,110 @@ func env_struct_has_resource_tracking_metadata(env: *TypeEnvironment[ctx], name:
         return 1;
     }
     return 0;
+}
+
+func linear_resource_record_new(variable_name: str, type_name: str, destructor_name: str, ctx: &Arena) LinearResourceRecord[ctx] {
+    mut record: LinearResourceRecord[ctx];
+    record.variable_name = std.Clone(ctx, variable_name);
+    record.type_name = std.Clone(ctx, type_name);
+    record.destructor_name = std.Clone(ctx, destructor_name);
+    record.is_open = 1;
+    record.is_moved = 0;
+    record.is_closed = 0;
+    return record;
+}
+
+func env_register_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, type_name: str, ctx: &Arena) int {
+    if env_struct_has_resource_tracking_metadata(env, type_name, ctx) == 0 {
+        return 0;
+    }
+
+    mut destructor_name := env_struct_linear_destructor_name(env, type_name, ctx);
+    mut record := linear_resource_record_new(variable_name, type_name, destructor_name, ctx);
+    unsafe {
+        (*env).open_linear_resources.Insert(std.Clone(ctx, variable_name), record);
+    }
+    return 1;
+}
+
+func env_open_linear_resource_is_tracked(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            return 1;
+        }
+        return 0;
+    }
+}
+
+func env_open_linear_resource_is_open(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            return lookup.Val.is_open;
+        }
+        return 0;
+    }
+}
+
+func env_open_linear_resource_is_closed(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            return lookup.Val.is_closed;
+        }
+        return 0;
+    }
+}
+
+func env_open_linear_resource_is_moved(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            return lookup.Val.is_moved;
+        }
+        return 0;
+    }
+}
+
+func env_open_linear_resource_destructor_name(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) str {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            return std.Clone(ctx, lookup.Val.destructor_name);
+        }
+        return "";
+    }
+}
+
+func env_mark_open_linear_resource_closed(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            mut record := lookup.Val;
+            record.is_open = 0;
+            record.is_closed = 1;
+            record.is_moved = 0;
+            (*env).open_linear_resources.Insert(std.Clone(ctx, variable_name), record);
+            return 1;
+        }
+        return 0;
+    }
+}
+
+func env_mark_open_linear_resource_moved(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            mut record := lookup.Val;
+            record.is_open = 0;
+            record.is_closed = 0;
+            record.is_moved = 1;
+            (*env).open_linear_resources.Insert(std.Clone(ctx, variable_name), record);
+            return 1;
+        }
+        return 0;
+    }
 }
 
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
