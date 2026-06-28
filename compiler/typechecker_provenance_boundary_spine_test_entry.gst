@@ -92,16 +92,44 @@ func main() {
     mut sandbox_prov_51g6 := typechecker.expression_provenance_sandbox_derived(t_int_51g6, ctx);
     mut unknown_prov_51g6 := typechecker.expression_provenance_unknown(t_int_51g6, ctx);
 
-    if typechecker.expression_provenance_requires_unsafe_boundary(safe_prov_51g6) != 0 {
-        os.LogStr("Error: expression boundary helper required unsafe for safe arena provenance");
+    if typechecker.step51g_expression_provenance_requires_unsafe_boundary(safe_prov_51g6) != 0 {
+        os.LogStr("Error: Step 5.1G expression boundary helper required unsafe for safe arena provenance");
         os.Exit(1);
     }
-    if typechecker.expression_provenance_requires_unsafe_boundary(raw_prov_51g6) != 1 {
-        os.LogStr("Error: expression boundary helper did not require unsafe for raw-derived provenance");
+    if typechecker.step51g_expression_provenance_requires_unsafe_boundary(raw_prov_51g6) != 1 {
+        os.LogStr("Error: Step 5.1G expression boundary helper did not require unsafe for raw-derived provenance");
         os.Exit(1);
     }
-    if typechecker.expression_provenance_is_raw_or_sandbox_derived(sandbox_prov_51g6) != 1 {
-        os.LogStr("Error: expression raw/sandbox helper did not classify sandbox-derived provenance");
+    if typechecker.step51g_expression_provenance_requires_unsafe_boundary(sandbox_prov_51g6) != 1 {
+        os.LogStr("Error: Step 5.1G expression boundary helper did not require unsafe for sandbox-derived provenance");
+        os.Exit(1);
+    }
+    if typechecker.step51g_expression_provenance_requires_unsafe_boundary(unknown_prov_51g6) != 0 {
+        os.LogStr("Error: Step 5.1G expression boundary helper required unsafe for unknown-only provenance before deferred unknown enforcement");
+        os.Exit(1);
+    }
+    if typechecker.step51g_expression_provenance_is_raw_or_sandbox_derived(safe_prov_51g6) != 0 {
+        os.LogStr("Error: Step 5.1G expression raw/sandbox helper classified safe provenance");
+        os.Exit(1);
+    }
+    if typechecker.step51g_expression_provenance_is_raw_or_sandbox_derived(raw_prov_51g6) != 1 {
+        os.LogStr("Error: Step 5.1G expression raw/sandbox helper did not classify raw-derived provenance");
+        os.Exit(1);
+    }
+    if typechecker.step51g_expression_provenance_is_raw_or_sandbox_derived(sandbox_prov_51g6) != 1 {
+        os.LogStr("Error: Step 5.1G expression raw/sandbox helper did not classify sandbox-derived provenance");
+        os.Exit(1);
+    }
+    if typechecker.step51g_expression_provenance_is_raw_or_sandbox_derived(unknown_prov_51g6) != 0 {
+        os.LogStr("Error: Step 5.1G expression raw/sandbox helper classified unknown-only provenance");
+        os.Exit(1);
+    }
+    if typechecker.expression_provenance_requires_unsafe_boundary(raw_prov_51g6) != typechecker.step51g_expression_provenance_requires_unsafe_boundary(raw_prov_51g6) {
+        os.LogStr("Error: legacy expression boundary helper diverged from Step 5.1G expression spine");
+        os.Exit(1);
+    }
+    if typechecker.expression_provenance_is_raw_or_sandbox_derived(sandbox_prov_51g6) != typechecker.step51g_expression_provenance_is_raw_or_sandbox_derived(sandbox_prov_51g6) {
+        os.LogStr("Error: legacy expression raw/sandbox helper diverged from Step 5.1G expression spine");
         os.Exit(1);
     }
     if typechecker.step51g_non_laundering_provenance_requires_unsafe_boundary(raw_prov_51g6, ctx) != 1 {

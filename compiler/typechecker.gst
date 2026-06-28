@@ -443,11 +443,11 @@ func expression_provenance_blocks_safe_branding(prov: ExpressionProvenance[ctx])
 }
 
 func expression_provenance_requires_unsafe_boundary(prov: ExpressionProvenance[ctx]) int {
-    return step51g_address_origin_requires_unsafe_boundary(prov.address_origin);
+    return step51g_expression_provenance_requires_unsafe_boundary(prov);
 }
 
 func expression_provenance_is_raw_or_sandbox_derived(prov: ExpressionProvenance[ctx]) int {
-    return step51g_address_origin_is_raw_or_sandbox_derived(prov.address_origin);
+    return step51g_expression_provenance_is_raw_or_sandbox_derived(prov);
 }
 
 func expression_provenance_void_unknown(ctx: &Arena) ExpressionProvenance[ctx] {
