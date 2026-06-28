@@ -405,6 +405,30 @@ func expression_provenance_join(left: ExpressionProvenance[ctx], right: Expressi
     return step51g_join_expression_provenance(left, right, ctx);
 }
 
+func step51g_non_laundering_origin_allows_safe_brand(origin: AddressOriginMetadata) int {
+    return step51g_address_origin_is_safe_arena_only(origin);
+}
+
+func step51g_non_laundering_origin_blocks_safe_brand(origin: AddressOriginMetadata) int {
+    return step51g_address_origin_blocks_safe_brand(origin);
+}
+
+func step51g_non_laundering_origin_requires_unsafe_boundary(origin: AddressOriginMetadata) int {
+    return address_origin_requires_unsafe_boundary(origin);
+}
+
+func step51g_non_laundering_provenance_allows_safe_brand(prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    return step51g_expression_provenance_allows_safe_brand(prov, ctx);
+}
+
+func step51g_non_laundering_provenance_blocks_safe_brand(prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    return step51g_expression_provenance_blocks_safe_brand(prov, ctx);
+}
+
+func step51g_non_laundering_provenance_requires_unsafe_boundary(prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    return expression_provenance_requires_unsafe_boundary(prov);
+}
+
 func expression_provenance_allows_safe_branding(prov: ExpressionProvenance[ctx]) int {
     return step51g_address_origin_is_safe_arena_only(prov.address_origin);
 }
