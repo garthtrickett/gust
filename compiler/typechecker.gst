@@ -5747,6 +5747,57 @@ func env_mark_open_linear_resource_destructor_scheduled(env: *TypeEnvironment[ct
     }
 }
 
+func make_type_resource(payload_type: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
+    mut args_resource_type: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+    args_resource_type.Push(payload_type);
+    return make_type_generic("Resource", args_resource_type, ctx);
+}
+
+func type_is_resource(t: ast.Type[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag != 10 { // Generic
+            return 0;
+        }
+        if std.str_eq(t.Generic.name, "Resource") == 0 {
+            return 0;
+        }
+        mut args_type_is_resource: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
+        if len(args_type_is_resource) != 1 {
+            return 0;
+        }
+        return 1;
+    }
+}
+
+func resource_type_payload(t: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
+    mut t_resource_payload_void: ast.Type[ctx];
+    unsafe {
+        t_resource_payload_void.tag = 3; // Void
+        if type_is_resource(t, ctx) == 0 {
+            return t_resource_payload_void;
+        }
+        mut args_resource_payload: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
+        return args_resource_payload[0];
+    }
+}
+
+func resource_type_payload_matches(resource_type: ast.Type[ctx], payload_type: ast.Type[ctx], ctx: &Arena) int {
+    if type_is_resource(resource_type, ctx) == 0 {
+        return 0;
+    }
+    mut payload_resource_type_matches := resource_type_payload(resource_type, ctx);
+    return types_match(payload_resource_type_matches, payload_type, ctx);
+}
+
+func resource_type_payload_name(resource_type: ast.Type[ctx], ctx: &Arena) str {
+    if type_is_resource(resource_type, ctx) == 0 {
+        return "";
+    }
+    mut payload_resource_type_name := resource_type_payload(resource_type, ctx);
+    mut serialized_resource_type_payload := ast.serialize_type(payload_resource_type_name, ctx);
+    return std.Clone(ctx, serialized_resource_type_payload);
+}
+
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
     unsafe {
         mut lookup := (*env).struct_layout_repr_c.Get(name);

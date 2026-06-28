@@ -2123,6 +2123,13 @@ func main() {
     t_step52_linear_transfer_state.expected = "SUCCESS: inert linear transfer-state metadata verified!";
     tests.Push(t_step52_linear_transfer_state);
 
+    mut t_step52_resource_type_shape: Test[ctx];
+    t_step52_resource_type_shape.path = "compiler/typechecker_resource_type_shape_test_entry.gst";
+    t_step52_resource_type_shape.is_negative = 0;
+    t_step52_resource_type_shape.is_substring = 1;
+    t_step52_resource_type_shape.expected = "SUCCESS: inert Resource type-shape helpers verified!";
+    tests.Push(t_step52_resource_type_shape);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
