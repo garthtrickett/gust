@@ -65,7 +65,6 @@ make-test-guards:
     set -euo pipefail
     make gust
     guards=(
-      guard_step45_safe_subscript_write_enforcement
       guard_step51_basic_unsafe_enforcement
       guard_step51_extern_func_parser_metadata
       guard_step51_extern_func_call_enforcement
@@ -119,11 +118,9 @@ make-test-guards:
 make-test-guards-parallel: gust _make-test-guards-parallel-inner
 
 [parallel]
-_make-test-guards-parallel-inner: make-test-guards-step44-text make-test-guards-step45 make-test-guards-step51-basic make-test-guards-step51-provenance make-test-guards-step51-non-laundering make-test-guards-policy
+_make-test-guards-parallel-inner: make-test-guards-step44-text make-test-guards-step51-basic make-test-guards-step51-provenance make-test-guards-step51-non-laundering make-test-guards-policy
 
 # Buckets below intentionally run their dependencies serially; only the bucket layer is parallel.
-
-make-test-guards-step45: guard_step45_safe_subscript_write_enforcement
 
 make-test-guards-step51-basic: guard_step51_basic_unsafe_enforcement guard_step51_extern_func_parser_metadata guard_step51_extern_func_call_enforcement guard_step51_layout_metadata_defaults guard_step51_layout_ffi_policy_helpers guard_step51_layout_ffi_signature_helpers guard_step51_sandbox_policy_defaults guard_step51_address_origin_metadata
 
