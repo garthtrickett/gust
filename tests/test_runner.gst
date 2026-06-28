@@ -2116,6 +2116,13 @@ func main() {
     t_step52_linear_resource_registry.expected = "SUCCESS: inert open linear resource registry verified!";
     tests.Push(t_step52_linear_resource_registry);
 
+    mut t_step52_linear_transfer_state: Test[ctx];
+    t_step52_linear_transfer_state.path = "compiler/typechecker_linear_transfer_state_test_entry.gst";
+    t_step52_linear_transfer_state.is_negative = 0;
+    t_step52_linear_transfer_state.is_substring = 1;
+    t_step52_linear_transfer_state.expected = "SUCCESS: inert linear transfer-state metadata verified!";
+    tests.Push(t_step52_linear_transfer_state);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

@@ -43,7 +43,7 @@ Existing `linear` / `is_linear` metadata can inform this design, but it must not
 
 ### Resource value state
 
-A generalized resource value should carry compiler-owned state rather than string-matched cleanup facts:
+A generalized resource value should carry compiler-owned state rather than string-matched cleanup facts. The current implementation has inert `open_linear_resources` state helpers for these states, but they are metadata plumbing only until declaration/assignment integration and enforcement exist:
 
 - `owned`: the current scope owns the resource and must release or transfer it.
 - `borrowed`: the current expression observes the resource without taking ownership.

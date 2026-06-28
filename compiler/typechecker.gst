@@ -200,7 +200,9 @@ type LinearResourceRecord[ctx] struct {
     destructor_name: str,
     is_open: int,
     is_moved: int,
-    is_closed: int
+    is_closed: int,
+    is_borrowed: int,
+    is_destructor_scheduled: int
 }
 
 type TypeEnvironment[ctx] struct {
@@ -5569,6 +5571,8 @@ func linear_resource_record_new(variable_name: str, type_name: str, destructor_n
     record.is_open = 1;
     record.is_moved = 0;
     record.is_closed = 0;
+    record.is_borrowed = 0;
+    record.is_destructor_scheduled = 0;
     return record;
 }
 
@@ -5625,6 +5629,46 @@ func env_open_linear_resource_is_moved(env: *TypeEnvironment[ctx], variable_name
     }
 }
 
+func env_open_linear_resource_is_borrowed(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            return lookup.Val.is_borrowed;
+        }
+        return 0;
+    }
+}
+
+func env_open_linear_resource_is_destructor_scheduled(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            return lookup.Val.is_destructor_scheduled;
+        }
+        return 0;
+    }
+}
+
+func env_open_linear_resource_is_owned(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            if lookup.Val.is_open == 1 {
+                if lookup.Val.is_moved == 0 {
+                    if lookup.Val.is_closed == 0 {
+                        if lookup.Val.is_borrowed == 0 {
+                            if lookup.Val.is_destructor_scheduled == 0 {
+                                return 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+}
+
 func env_open_linear_resource_destructor_name(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) str {
     unsafe {
         mut lookup := (*env).open_linear_resources.Get(variable_name);
@@ -5643,6 +5687,8 @@ func env_mark_open_linear_resource_closed(env: *TypeEnvironment[ctx], variable_n
             record.is_open = 0;
             record.is_closed = 1;
             record.is_moved = 0;
+            record.is_borrowed = 0;
+            record.is_destructor_scheduled = 0;
             (*env).open_linear_resources.Insert(std.Clone(ctx, variable_name), record);
             return 1;
         }
@@ -5658,6 +5704,42 @@ func env_mark_open_linear_resource_moved(env: *TypeEnvironment[ctx], variable_na
             record.is_open = 0;
             record.is_closed = 0;
             record.is_moved = 1;
+            record.is_borrowed = 0;
+            record.is_destructor_scheduled = 0;
+            (*env).open_linear_resources.Insert(std.Clone(ctx, variable_name), record);
+            return 1;
+        }
+        return 0;
+    }
+}
+
+func env_mark_open_linear_resource_borrowed(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            mut record := lookup.Val;
+            record.is_open = 1;
+            record.is_closed = 0;
+            record.is_moved = 0;
+            record.is_borrowed = 1;
+            record.is_destructor_scheduled = 0;
+            (*env).open_linear_resources.Insert(std.Clone(ctx, variable_name), record);
+            return 1;
+        }
+        return 0;
+    }
+}
+
+func env_mark_open_linear_resource_destructor_scheduled(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).open_linear_resources.Get(variable_name);
+        if lookup.Ok {
+            mut record := lookup.Val;
+            record.is_open = 0;
+            record.is_closed = 0;
+            record.is_moved = 0;
+            record.is_borrowed = 0;
+            record.is_destructor_scheduled = 1;
             (*env).open_linear_resources.Insert(std.Clone(ctx, variable_name), record);
             return 1;
         }
