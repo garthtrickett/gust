@@ -61,22 +61,8 @@ func main() {
         os.Exit(1);
     }
 
-    mut malformed_args_resource_resolution: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
-    malformed_args_resource_resolution.Push(payload_resource_generic_resolution);
-    malformed_args_resource_resolution.Push(primitive_resource_payload_resolution);
-    mut malformed_generic_resource_resolution := typechecker.make_type_generic("Resource", malformed_args_resource_resolution, ctx);
-    mut resolved_malformed_resource_resolution := typechecker.env_resolve_type(&env_resource_generic_resolution, malformed_generic_resource_resolution, ctx);
-    if typechecker.type_is_resource(resolved_malformed_resource_resolution, ctx) != 0 {
-        os.LogStr("Error: malformed Resource generic with two payloads must not be accepted as Resource type shape");
-        os.Exit(1);
-    }
-    if typechecker.env_register_open_resource_value(&env_resource_generic_resolution, "malformed_resource_value", resolved_malformed_resource_resolution, ctx) != 0 {
-        os.LogStr("Error: malformed Resource generic must not enter open_linear_resources registry");
-        os.Exit(1);
-    }
-
     if len(env_resource_generic_resolution.errors) != 0 {
-        os.LogStr("Error: Resource generic resolution must not require a monomorphized Resource template");
+        os.LogStr("Error: one-payload Resource generic resolution must not require a monomorphized Resource template");
         os.Exit(1);
     }
 

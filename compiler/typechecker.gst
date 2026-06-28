@@ -6399,18 +6399,17 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                             mut args_vec_env_resolve_generic: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
 
                             if std.str_eq(t.Generic.name, "Resource") == 1 {
-                                mut new_args_resource_generic_resolution: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
-                                mut idx_resource_generic_resolution := 0;
-                                while idx_resource_generic_resolution < len(args_vec_env_resolve_generic) {
-                                    mut arg_resource_generic_resolution := args_vec_env_resolve_generic[idx_resource_generic_resolution];
-                                    new_args_resource_generic_resolution.Push(env_resolve_type(env, arg_resource_generic_resolution, ctx));
-                                    idx_resource_generic_resolution = idx_resource_generic_resolution + 1;
-                                }
-                                if len(new_args_resource_generic_resolution) == 1 {
+                                if len(args_vec_env_resolve_generic) == 1 {
+                                    mut new_args_resource_generic_resolution: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                                    mut idx_resource_generic_resolution := 0;
+                                    while idx_resource_generic_resolution < len(args_vec_env_resolve_generic) {
+                                        mut arg_resource_generic_resolution := args_vec_env_resolve_generic[idx_resource_generic_resolution];
+                                        new_args_resource_generic_resolution.Push(env_resolve_type(env, arg_resource_generic_resolution, ctx));
+                                        idx_resource_generic_resolution = idx_resource_generic_resolution + 1;
+                                    }
                                     mut payload_resource_generic_resolution := new_args_resource_generic_resolution[0];
                                     return make_type_resource(payload_resource_generic_resolution, ctx);
                                 }
-                                return make_type_generic("Resource", new_args_resource_generic_resolution, ctx);
                             }
 
                             mut name := env_resolve_namespaced_ident(env, t.Generic.name, ctx);
