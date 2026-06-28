@@ -851,6 +851,23 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
                 }
                 return s_alias_getref;
             }
+            if std.str_eq(resolved_func, "std_HashMapGetRef") == 1 || std.str_eq(resolved_func, "std.HashMapGetRef") == 1 {
+                mut s_alias_hashmap_getref := set_init(ctx);
+                mut args_vec_alias_hashmap_getref: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_alias_hashmap_getref) >= 1 {
+                    mut map_arg_idx_alias_hashmap_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx.Set(map_arg_idx_alias_hashmap_getref, args_vec_alias_hashmap_getref[0]);
+                    mut map_arg_origins_alias_hashmap_getref := get_expression_origins(map_arg_idx_alias_hashmap_getref, env, ctx);
+                    set_union(s_alias_hashmap_getref, map_arg_origins_alias_hashmap_getref, ctx);
+                }
+                if len(args_vec_alias_hashmap_getref) >= 2 {
+                    mut key_arg_idx_alias_hashmap_getref: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx.Set(key_arg_idx_alias_hashmap_getref, args_vec_alias_hashmap_getref[1]);
+                    mut key_arg_origins_alias_hashmap_getref := get_expression_origins(key_arg_idx_alias_hashmap_getref, env, ctx);
+                    set_union(s_alias_hashmap_getref, key_arg_origins_alias_hashmap_getref, ctx);
+                }
+                return s_alias_hashmap_getref;
+            }
             if std.str_eq(resolved_func, "std_Format") || std.str_eq(resolved_func, "std.Format") || 
                std.str_eq(resolved_func, "std_FormatInt") || std.str_eq(resolved_func, "std.FormatInt") || 
                std.str_eq(resolved_func, "std_Concat") || std.str_eq(resolved_func, "std.Concat") || 
@@ -2375,6 +2392,65 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 return make_type_reference(elem_t_vector_getref_alias, brand_name_vector_getref_alias, ctx);
             }
 
+            if std.str_eq(resolved_func, "std_HashMapGetRef") == 1 || std.str_eq(resolved_func, "std.HashMapGetRef") == 1 {
+                mut args_vec_hashmap_getref_alias: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                if len(args_vec_hashmap_getref_alias) != 2 {
+                    mut msg_hashmap_getref_alias_arity := "Semantic Error: std.HashMapGetRef expects exactly 2 arguments (map, key)";
+                    report_error(2, msg_hashmap_getref_alias_arity, expr.Call.span, env, ctx);
+                    return dummy;
+                }
+
+                mut map_arg_idx_hashmap_getref_alias: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx.Set(map_arg_idx_hashmap_getref_alias, args_vec_hashmap_getref_alias[0]);
+                mut map_arg_type_hashmap_getref_alias := check_expression(map_arg_idx_hashmap_getref_alias, env, scope, ctx);
+                map_arg_type_hashmap_getref_alias = env_resolve_type(env, map_arg_type_hashmap_getref_alias, ctx);
+
+                mut map_receiver_type_hashmap_getref_alias := map_arg_type_hashmap_getref_alias;
+                if map_receiver_type_hashmap_getref_alias.tag == 9 { // RawPointer
+                    map_receiver_type_hashmap_getref_alias = ctx[map_receiver_type_hashmap_getref_alias.RawPointer.inner];
+                } else if map_receiver_type_hashmap_getref_alias.tag == 11 { // Reference
+                    map_receiver_type_hashmap_getref_alias = ctx[map_receiver_type_hashmap_getref_alias.Reference.inner];
+                }
+
+                mut is_map_hashmap_getref_alias := 0;
+                mut s_name_hashmap_getref_alias := "";
+                if map_receiver_type_hashmap_getref_alias.tag == 8 { // Struct
+                    s_name_hashmap_getref_alias = map_receiver_type_hashmap_getref_alias.Struct.struct_name;
+                    mut clean_hashmap_getref_alias := typechecker_strip_module_prefix(s_name_hashmap_getref_alias, ctx);
+                    if std.str_find(clean_hashmap_getref_alias, "HashMap_") == 0 || std.str_find(clean_hashmap_getref_alias, "std_HashMap_") == 0 {
+                        is_map_hashmap_getref_alias = 1;
+                    }
+                }
+
+                if is_map_hashmap_getref_alias == 0 {
+                    mut msg_hashmap_getref_alias_receiver := std.Concat("Semantic Error: std.HashMapGetRef first argument must be std.HashMap receiver, got ", ast.serialize_type(map_arg_type_hashmap_getref_alias, ctx));
+                    report_error(2, msg_hashmap_getref_alias_receiver, get_expression_span(map_arg_idx_hashmap_getref_alias, ctx), env, ctx);
+                    return dummy;
+                }
+
+                mut key_arg_idx_hashmap_getref_alias: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx.Set(key_arg_idx_hashmap_getref_alias, args_vec_hashmap_getref_alias[1]);
+                mut key_arg_type_hashmap_getref_alias := check_expression(key_arg_idx_hashmap_getref_alias, env, scope, ctx);
+                key_arg_type_hashmap_getref_alias = env_resolve_type(env, key_arg_type_hashmap_getref_alias, ctx);
+
+                mut key_type_hashmap_getref_alias := typechecker_get_template_elem_type(s_name_hashmap_getref_alias, "keys", env, ctx);
+                key_type_hashmap_getref_alias = env_resolve_type(env, key_type_hashmap_getref_alias, ctx);
+                if types_match(key_type_hashmap_getref_alias, key_arg_type_hashmap_getref_alias, ctx) == 0 {
+                    mut msg_hashmap_getref_alias_key := std.Concat("Semantic Error: std.HashMapGetRef key type mismatch. Expected ", ast.serialize_type(key_type_hashmap_getref_alias, ctx));
+                    msg_hashmap_getref_alias_key = std.Concat(msg_hashmap_getref_alias_key, " but got ");
+                    msg_hashmap_getref_alias_key = std.Concat(msg_hashmap_getref_alias_key, ast.serialize_type(key_arg_type_hashmap_getref_alias, ctx));
+                    report_error(2, msg_hashmap_getref_alias_key, get_expression_span(key_arg_idx_hashmap_getref_alias, ctx), env, ctx);
+                    return dummy;
+                }
+
+                mut value_t_hashmap_getref_alias := typechecker_get_template_elem_type(s_name_hashmap_getref_alias, "values", env, ctx);
+                mut brand_name_hashmap_getref_alias := get_type_brand(map_arg_type_hashmap_getref_alias, env, ctx);
+                if std.str_eq(brand_name_hashmap_getref_alias, "") == 1 {
+                    brand_name_hashmap_getref_alias = get_root_variable(map_arg_idx_hashmap_getref_alias, ctx);
+                }
+                return make_type_reference(value_t_hashmap_getref_alias, brand_name_hashmap_getref_alias, ctx);
+            }
+
             if std.str_eq(resolved_func, "os_ArenaAlloc") || std.str_eq(resolved_func, "os.ArenaAlloc") {
                 mut args_vec_arena_alloc_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                 if len(args_vec_arena_alloc_call) != 1 {
@@ -3188,6 +3264,53 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                                 set_union(std_vector_getref_unsafe_origins, legacy_origins, ctx);
                                 std_vector_getref_unsafe_prov.legacy_origins = std_vector_getref_unsafe_origins;
                                 return std_vector_getref_unsafe_prov;
+                            }
+                        }
+                    }
+                }
+
+                mut is_std_hashmap_getref_prov := 0;
+                if std.str_eq(call_name_prov, "std.HashMapGetRef") == 1 {
+                    is_std_hashmap_getref_prov = 1;
+                }
+                if std.str_eq(call_name_prov, "std_HashMapGetRef") == 1 {
+                    is_std_hashmap_getref_prov = 1;
+                }
+                if std.str_eq(resolved_call_name_prov, "std.HashMapGetRef") == 1 {
+                    is_std_hashmap_getref_prov = 1;
+                }
+                if std.str_eq(resolved_call_name_prov, "std_HashMapGetRef") == 1 {
+                    is_std_hashmap_getref_prov = 1;
+                }
+                if is_std_hashmap_getref_prov == 1 {
+                    mut args_vec_std_hashmap_getref_prov: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                    if len(args_vec_std_hashmap_getref_prov) >= 2 {
+                        mut std_hashmap_getref_map_idx_prov: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx.Set(std_hashmap_getref_map_idx_prov, args_vec_std_hashmap_getref_prov[0]);
+                        mut std_hashmap_getref_key_idx_prov: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx.Set(std_hashmap_getref_key_idx_prov, args_vec_std_hashmap_getref_prov[1]);
+                        mut std_hashmap_getref_receiver_key_prov := expression_to_string(std_hashmap_getref_map_idx_prov, ctx);
+                        mut std_hashmap_getref_index_key_prov := expression_to_string(std_hashmap_getref_key_idx_prov, ctx);
+                        mut std_hashmap_getref_cell_key_prov := std.Concat(std_hashmap_getref_receiver_key_prov, "[");
+                        std_hashmap_getref_cell_key_prov = std.Concat(std_hashmap_getref_cell_key_prov, std_hashmap_getref_index_key_prov);
+                        std_hashmap_getref_cell_key_prov = std.Concat(std_hashmap_getref_cell_key_prov, "]");
+
+                        mut std_hashmap_getref_lookup_prov := (*env).container_provenance.Get(std_hashmap_getref_cell_key_prov);
+                        if std_hashmap_getref_lookup_prov.Ok {
+                            mut std_hashmap_getref_cell_prov := std_hashmap_getref_lookup_prov.Val;
+                            if expression_provenance_allows_safe_branding(std_hashmap_getref_cell_prov) == 1 {
+                                mut std_hashmap_getref_safe_prov := expression_provenance_safe_arena(t, ctx);
+                                std_hashmap_getref_safe_prov.legacy_origins = typechecker_clone_origin_set(std_hashmap_getref_cell_prov.legacy_origins, ctx);
+                                set_union(std_hashmap_getref_safe_prov.legacy_origins, legacy_origins, ctx);
+                                return std_hashmap_getref_safe_prov;
+                            }
+                            if expression_provenance_is_raw_or_sandbox_derived(std_hashmap_getref_cell_prov) == 1 {
+                                mut std_hashmap_getref_unsafe_prov := std_hashmap_getref_cell_prov;
+                                std_hashmap_getref_unsafe_prov.resolved_type = t;
+                                mut std_hashmap_getref_unsafe_origins := typechecker_clone_origin_set(std_hashmap_getref_unsafe_prov.legacy_origins, ctx);
+                                set_union(std_hashmap_getref_unsafe_origins, legacy_origins, ctx);
+                                std_hashmap_getref_unsafe_prov.legacy_origins = std_hashmap_getref_unsafe_origins;
+                                return std_hashmap_getref_unsafe_prov;
                             }
                         }
                     }
