@@ -7357,6 +7357,22 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                 env_record_field_provenance(env, field_alias_key_refassign, field_assign_prov, ctx);
                             }
                         }
+                        if std.str_eq(field_alias_func_expr_refassign.Selector.right, "VectorGetRef") == 1 {
+                            mut field_alias_std_vec_args_refassign: std.Vector[ast.Expression[ctx], ctx] := ctx[field_alias_left_expr_refassign.Call.arguments];
+                            if len(field_alias_std_vec_args_refassign) >= 2 {
+                                mut field_alias_std_vec_base_idx_refassign: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                                ctx.Set(field_alias_std_vec_base_idx_refassign, field_alias_std_vec_args_refassign[0]);
+                                mut field_alias_std_vec_index_idx_refassign: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                                ctx.Set(field_alias_std_vec_index_idx_refassign, field_alias_std_vec_args_refassign[1]);
+                                mut field_alias_std_vec_base_refassign := expression_to_string(field_alias_std_vec_base_idx_refassign, ctx);
+                                mut field_alias_std_vec_index_refassign := expression_to_string(field_alias_std_vec_index_idx_refassign, ctx);
+                                mut field_alias_std_vec_key_refassign := std.Concat(field_alias_std_vec_base_refassign, "[");
+                                field_alias_std_vec_key_refassign = std.Concat(field_alias_std_vec_key_refassign, field_alias_std_vec_index_refassign);
+                                field_alias_std_vec_key_refassign = std.Concat(field_alias_std_vec_key_refassign, "].");
+                                field_alias_std_vec_key_refassign = std.Concat(field_alias_std_vec_key_refassign, left.Selector.right);
+                                env_record_field_provenance(env, field_alias_std_vec_key_refassign, field_assign_prov, ctx);
+                            }
+                        }
                     }
                 }
             }
