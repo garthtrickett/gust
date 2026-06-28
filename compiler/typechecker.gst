@@ -3076,6 +3076,14 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                             set_union(get_ref_safe_prov.legacy_origins, get_ref_arg_prov.legacy_origins, ctx);
                             return get_ref_safe_prov;
                         }
+                        if expression_provenance_is_raw_or_sandbox_derived(get_ref_arg_prov) == 1 {
+                            mut get_ref_unsafe_prov := get_ref_arg_prov;
+                            get_ref_unsafe_prov.resolved_type = t;
+                            mut get_ref_unsafe_origins := typechecker_clone_origin_set(get_ref_unsafe_prov.legacy_origins, ctx);
+                            set_union(get_ref_unsafe_origins, legacy_origins, ctx);
+                            get_ref_unsafe_prov.legacy_origins = get_ref_unsafe_origins;
+                            return get_ref_unsafe_prov;
+                        }
                     }
                 }
 
