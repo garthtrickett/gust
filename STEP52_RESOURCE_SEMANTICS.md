@@ -18,7 +18,7 @@ Replace the specialized `open_directories` directory-handle lane with a generali
 A compiler-backed Resource design needs all of the following before enforcement:
 
 1. **Opt-in metadata:** only explicitly linear/resource-marked types enter the generalized resource checker. Ordinary AST, typechecker, codegen, primitive, and collection types must bypass this path by default.
-2. **Resource representation:** `Resource[ctx, T]` must carry enough type information to identify the branding context, payload kind, destructor identity, and transfer state. The current implementation has inert type-shape helpers for a one-payload `Resource` generic and registry-bridge helpers for resource-eligible payload structs, but no parser syntax or declaration/assignment integration yet.
+2. **Resource representation:** `Resource[ctx, T]` must carry enough type information to identify the branding context, payload kind, destructor identity, and transfer state. The current implementation has inert type-shape helpers for a one-payload `Resource` generic, a resolver bridge that preserves `Resource[T]` without requiring a monomorphized `Resource` template, and registry-bridge helpers for resource-eligible payload structs, but no declaration/assignment integration yet.
 3. **Open-resource registry:** `open_linear_resources` must be a typed registry keyed by resource identity, not a textual replacement for `open_directories`.
 4. **Destructor identity:** destructors must be registered semantically, so `drop_func` / `os.CloseDir`-style cleanup can be validated without string matching.
 5. **Transfer state:** resources must distinguish at least owned, borrowed, moved, closed, and destructor-scheduled states.
@@ -36,6 +36,7 @@ Linear resource opt-in should live on type metadata, not on textual names:
 
 - `is_linear_resource`: `0` by default for every existing type.
 - `Resource` generic shape: currently accepted only by inert helper predicates when it has exactly one payload type.
+- `Resource` resolver bridge: currently preserves `Resource[T]` as a one-payload type shape instead of requiring a `Resource` template monomorphization.
 - `Resource` registry bridge: currently allowed only for `Resource[T]` whose payload is a struct with explicit linear/destructor metadata.
 - `resource_payload_kind`: empty/default until a type is explicitly modeled as a resource wrapper.
 - `resource_destructor_name`: empty/default until a destructor is registered semantically.

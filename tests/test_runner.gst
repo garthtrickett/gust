@@ -2158,6 +2158,13 @@ func main() {
     t_step52_linear_resource_scope_state.expected = "SUCCESS: inert linear resource scope-state snapshots verified!";
     tests.Push(t_step52_linear_resource_scope_state);
 
+    mut t_step52_resource_generic_resolver: Test[ctx];
+    t_step52_resource_generic_resolver.path = "compiler/typechecker_resource_generic_resolver_test_entry.gst";
+    t_step52_resource_generic_resolver.is_negative = 0;
+    t_step52_resource_generic_resolver.is_substring = 1;
+    t_step52_resource_generic_resolver.expected = "SUCCESS: inert Resource generic resolver bridge verified!";
+    tests.Push(t_step52_resource_generic_resolver);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
