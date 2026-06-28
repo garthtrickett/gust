@@ -7284,6 +7284,34 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut field_assign_prov := val_prov_assignment;
                 field_assign_prov.resolved_type = left_type;
                 env_record_field_provenance(env, field_key_assignment_prov, field_assign_prov, ctx);
+
+                mut field_alias_left_expr_refassign := ctx[left.Selector.left];
+                if field_alias_left_expr_refassign.tag == 12 { // Call
+                    mut field_alias_func_expr_refassign := ctx[field_alias_left_expr_refassign.Call.function];
+                    if field_alias_func_expr_refassign.tag == 11 { // Selector
+                        mut field_alias_is_ref_accessor_refassign := 0;
+                        if std.str_eq(field_alias_func_expr_refassign.Selector.right, "get_ref") == 1 {
+                            field_alias_is_ref_accessor_refassign = 1;
+                        }
+                        if std.str_eq(field_alias_func_expr_refassign.Selector.right, "GetRef") == 1 {
+                            field_alias_is_ref_accessor_refassign = 1;
+                        }
+                        if field_alias_is_ref_accessor_refassign == 1 {
+                            mut field_alias_args_refassign: std.Vector[ast.Expression[ctx], ctx] := ctx[field_alias_left_expr_refassign.Call.arguments];
+                            if len(field_alias_args_refassign) > 0 {
+                                mut field_alias_arg_idx_refassign: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                                ctx.Set(field_alias_arg_idx_refassign, field_alias_args_refassign[0]);
+                                mut field_alias_base_refassign := expression_to_string(field_alias_func_expr_refassign.Selector.left, ctx);
+                                mut field_alias_index_refassign := expression_to_string(field_alias_arg_idx_refassign, ctx);
+                                mut field_alias_key_refassign := std.Concat(field_alias_base_refassign, "[");
+                                field_alias_key_refassign = std.Concat(field_alias_key_refassign, field_alias_index_refassign);
+                                field_alias_key_refassign = std.Concat(field_alias_key_refassign, "].");
+                                field_alias_key_refassign = std.Concat(field_alias_key_refassign, left.Selector.right);
+                                env_record_field_provenance(env, field_alias_key_refassign, field_assign_prov, ctx);
+                            }
+                        }
+                    }
+                }
             }
 
             if left.tag == 8 { // IndexAccess
