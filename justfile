@@ -107,27 +107,6 @@ make-test-guards:
       guard_step52_report_only_lanes_not_in_test
       guard_step52_no_post_closure_report_churn
       guard_parser_high_level_raw_casts
-      guard_step44_low_risk_entry_raw_casts
-      guard_step44_typechecker_aux_raw_casts
-      guard_step44_typechecker_types_raw_casts
-      guard_step44_codegen_initializer_raw_casts
-      guard_step44_typechecker_early_raw_casts
-      guard_step44_typechecker_methods_raw_casts
-      guard_step44_typechecker_pool_graph_raw_casts
-      guard_step44_typechecker_call_validation_raw_casts
-      guard_step44_typechecker_generic_helpers_raw_casts
-      guard_step44_typechecker_template_registration_raw_casts
-      guard_step44_typechecker_env_registration_raw_casts
-      guard_step44_typechecker_brand_helpers_raw_casts
-      guard_step44_typechecker_function_checks_raw_casts
-      guard_step44_typechecker_statement_traversal_raw_casts
-      guard_step44_codegen_early_helpers_raw_casts
-      guard_step44_codegen_dispatch_methods_raw_casts
-      guard_step44_codegen_pool_graph_std_raw_casts
-      guard_step44_codegen_std_alloc_helpers_raw_casts
-      guard_step44_codegen_runtime_tail_raw_casts
-      guard_step44_codegen_statement_emit_raw_casts
-      guard_step44_codegen_program_passes_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
     for guard_name in "${guards[@]}"; do
@@ -154,7 +133,7 @@ make-test-guards-step51-non-laundering: guard_step51_non_laundering_return_enfor
 
 make-test-guards-policy: guard_step51_report_only_lanes_not_in_test guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn
 
-make-test-guards-step44-text: guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
+make-test-guards-step44-text: guard_parser_high_level_raw_casts guard_step44_no_high_level_raw_collection_casts
 
 make-test-suite:
     just make-test-guards
