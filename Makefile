@@ -65,575 +65,78 @@ test_tree_sitter:
 	done
 	@echo "✅ Tree-sitter parsing validation passed!"
 
-report_phase4_formatter_tools:
-	@echo "🧰 Reporting Phase 4A formatter tooling scaffold..."
-	@echo "   Do not run repo-wide formatting until Phase 4B after Phase 5/6."
-	@if command -v treefmt >/dev/null 2>&1; then echo "   treefmt: $$(command -v treefmt)"; else echo "   treefmt: missing from current shell"; fi
-	@if command -v topiary >/dev/null 2>&1; then echo "   topiary: $$(command -v topiary)"; else echo "   topiary: missing from current shell"; fi
-	@if command -v clang-format >/dev/null 2>&1; then echo "   clang-format: $$(command -v clang-format)"; else echo "   clang-format: missing from current shell"; fi
-	@if command -v rustfmt >/dev/null 2>&1; then echo "   rustfmt: $$(command -v rustfmt)"; else echo "   rustfmt: missing from current shell"; fi
-	@echo "✅ Phase 4A formatter tool report complete. This target is report-only and does not format files."
+JUST_REPORT_TARGETS = \
+        report_phase4_formatter_tools \
+        report_step51_raw_pointer_deref \
+        report_step51_raw_pointer_casts \
+        report_step51_address_escapes_focused \
+        report_step51_ffi_calls \
+        report_step51_ffi_focused \
+        report_step51_unsafe_func_signatures \
+        report_step51_raw_pointer_classified \
+        report_step51_raw_pointer_safe_code_candidates \
+        report_step51_phase_b_wrapping_status \
+        report_step51_phase_c_basic_unsafe_status \
+        report_step51_phase_d_ffi_status \
+        report_step51_phase_e_address_escape_status \
+        report_step51_phase_f_non_laundering_status \
+        report_step51_deferred_unsafe_semantics_status \
+        report_step51_status_matrix \
+        report_step51_raw_pointer_safety_inventory \
+        report_step51_final_validation \
+        report_step52_linear_resource_inventory \
+        report_step52_linear_resource_focused \
+        report_step52_phase_a_status \
+        report_step52_phase_b_destructor_status \
+        report_step52_phase_c_resource_registry_status \
+        report_step52_phase_d_transfer_status \
+        report_step52_phase_e_enforcement_preconditions_status \
+        report_step52_phase_f_closure_status \
+        report_step52_status_matrix \
+        report_step52_final_validation \
+        report_step44_accessor_contract \
+        report_step45_accessor_contract \
+        report_step45_final_validation \
+        report_compiler_get_opt_migration \
+        report_high_level_raw_collection_casts \
+        report_step45_subscript_lvalue_writes \
+        report_step45_test_subscript_lvalue_writes \
+        report_step45_subscript_lvalue_classified
 
-fmt_check_phase4_infra:
-	@echo "🔎 Checking Phase 4A formatter scaffold files..."
-	@test -f treefmt.toml || (echo "❌ Missing treefmt.toml"; exit 1)
-	@test -f topiary/languages.ncl || (echo "❌ Missing topiary/languages.ncl"; exit 1)
-	@test -f topiary/queries/gust.scm || (echo "❌ Missing topiary/queries/gust.scm"; exit 1)
-	@echo "✅ Phase 4A formatter scaffold files are present. No formatting was run."
-
-report_step51_raw_pointer_deref:
-	@echo "📊 Reporting Step 5.1 raw pointer dereference candidates..."
-	@echo "   Broad regex inventory only; enforcement must be AST/typechecker-based later."
-	@rg -n '(^|[^[:alnum:]_])\*[[:space:]]*(\(|[A-Za-z_][A-Za-z0-9_]*)' compiler/*.gst tests/*.gst || true
-	@echo "✅ Step 5.1 raw pointer dereference report complete. This target is inventory-only and does not fail."
-
-report_step51_raw_pointer_casts:
-	@echo "📊 Reporting Step 5.1 raw pointer cast/address-escape candidates..."
-	@echo "   Includes raw pointer casts and direct address-taking patterns that may need unsafe wrapping."
-	@rg -n ' as \*|&ctx\[|&[A-Za-z_][A-Za-z0-9_]*\[' compiler/*.gst tests/*.gst || true
-	@echo "✅ Step 5.1 raw pointer cast/address report complete. This target is inventory-only and does not fail."
-
-report_step51_address_escapes_focused:
-	@echo "📊 Reporting Step 5.1 focused reference-aware address-escape candidates..."
-	@python3 tools/step51_address_escape_report.py || true
-	@echo "✅ Step 5.1 focused address-escape report complete. This target is inventory-only and does not fail."
-
-report_step51_ffi_calls:
-	@echo "📊 Reporting Step 5.1 direct FFI / external-call candidates..."
-	@echo "   Broad textual search across compiler, tests, and runtime sources."
-	@rg -n 'extern|ffi|Foreign|C\.|ccall|c_call|dlsym|dlopen|syscall' compiler/*.gst tests/*.gst src || true
-	@echo "✅ Step 5.1 FFI candidate report complete. This target is inventory-only and does not fail."
-
-report_step51_ffi_focused:
-	@echo "📊 Reporting Step 5.1 focused token-aware FFI/native-call candidates..."
-	@python3 tools/step51_ffi_report.py || true
-	@echo "✅ Step 5.1 focused FFI report complete. This target is inventory-only and does not fail."
-
-report_step51_unsafe_func_signatures:
-	@echo "📊 Reporting Step 5.1 unsafe function signature candidates..."
-	@echo "   Phase 5.1A should add no-op parser/typechecker support before enforcement."
-	@rg -n 'unsafe[[:space:]]+func|func[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\([^)]*\)[^{;]*unsafe' compiler/*.gst tests/*.gst || true
-	@echo "✅ Step 5.1 unsafe function signature report complete. This target is inventory-only and does not fail."
-
-report_step51_raw_pointer_classified:
-	@echo "📊 Reporting Step 5.1 classified raw pointer inventory..."
-	@echo "   Raw pointer dereference expression candidates:"
-	@rg -n '(^|[^[:alnum:]_])\*[[:space:]]*(\(|[A-Za-z_][A-Za-z0-9_]*)' compiler/*.gst tests/*.gst | rg -v ':[[:space:]]*\*| as \*|func[^(]*\([^)]*\*' || true
-	@echo "   Raw pointer type syntax / declarations:"
-	@rg -n ':[[:space:]]*\*|func[^(]*\([^)]*\*|std\.Vector\[[^]]*\*|Index\[[^]]*\*' compiler/*.gst tests/*.gst || true
-	@echo "   Raw pointer casts:"
-	@rg -n ' as \*' compiler/*.gst tests/*.gst || true
-	@echo "   Address escape candidates:"
-	@rg -n '&ctx\[|&[A-Za-z_][A-Za-z0-9_]*\[' compiler/*.gst tests/*.gst || true
-	@echo "   Generated C string / codegen template candidates:"
-	@rg -n '"[^"]*(\*|&|->|\[[^]]+\][^"]*=)' compiler/codegen.gst || true
-	@echo "   Test and intentional fixture candidates:"
-	@rg -n '(unsafe|raw|pointer|ffi|violation|rejected)' tests/*.gst | rg '\*| as \*|&' || true
-	@echo "   Unclassified migration candidates:"
-	@rg -n '(^|[^[:alnum:]_])\*[[:space:]]*(\(|[A-Za-z_][A-Za-z0-9_]*)| as \*|&ctx\[|&[A-Za-z_][A-Za-z0-9_]*\[' compiler/*.gst tests/*.gst | rg -v 'compiler/codegen\.gst:.*"' | rg -v 'tests/.*(unsafe|raw|pointer|ffi|violation|rejected).*\.gst:' || true
-	@echo "✅ Classified Step 5.1 raw pointer report complete. This target is inventory-only and does not fail."
-
-report_step51_raw_pointer_safe_code_candidates:
-	@echo "📊 Reporting Step 5.1 focused safe-code raw pointer candidates..."
-	@python3 tools/step51_raw_pointer_report.py || true
-	@echo "✅ Step 5.1 focused safe-code candidate report complete. This target is inventory-only and does not fail."
-
-report_step51_phase_b_wrapping_status:
-	@echo "🧭 Reporting Step 5.1B proactive wrapping status..."
-	@echo "   Review the focused safe-code candidate bucket before enabling any new raw pointer enforcement."
-	@$(MAKE) report_step51_raw_pointer_safe_code_candidates
-	@echo "   Intentional raw-gating negative fixtures are expected to remain visible in their dedicated bucket."
-	@echo "   Raw pointer enforcement and escape-analysis negative fixtures are not Phase 5.1B wrapping candidates."
-	@echo "   If the focused report shows no likely safe-code raw operation candidates, Phase 5.1B wrapping is ready for the next enforcement-design slice."
-	@echo "   This target is still report-only; it does not prove safety and must not replace AST/typechecker enforcement."
-	@echo "✅ Step 5.1B wrapping status report complete. This target is report-only and does not fail."
-
-report_step51_phase_c_basic_unsafe_status:
-	@echo "🧭 Reporting Step 5.1C basic unsafe enforcement status..."
-	@echo "   Enforced aggregate:"
-	@echo "   make guard_step51_basic_unsafe_enforcement"
-	@echo "   Covered compiler-backed subguards:"
-	@echo "   make guard_step51_raw_deref_unsafe_enforcement"
-	@echo "   make guard_step51_raw_cast_unsafe_enforcement"
-	@echo "   make guard_step51_pointer_arithmetic_unsafe_enforcement"
-	@echo "   make guard_step51_unsafe_func_call_enforcement"
-	@echo "   make guard_step51_raw_pointer_local_escape_enforcement"
-	@echo "   Deferred: address escapes, FFI gating, and broader non-laundering/provenance tracking."
-	@echo "✅ Step 5.1C basic unsafe enforcement status report complete. This target is report-only and does not run guards."
-
-report_step51_phase_d_ffi_status:
-	@echo "🧭 Reporting Step 5.1D FFI gating status..."
-	@echo "   Current direct FFI inventory targets:"
-	@echo "   make report_step51_ffi_calls"
-	@echo "   make report_step51_ffi_focused"
-	@echo "   Next enforcement-design slice should inspect direct external-call syntax and runtime/native boundaries before adding any guard."
-	@echo "   The focused report is token-aware to avoid substring noise such as suffix or generic_call."
-	@echo "   If the focused report shows zero Direct Gust source candidates, do not add an FFI guard yet."
-	@echo "   Do not wire broad textual FFI scans into make test; FFI enforcement must be compiler-backed and syntax-aware."
-	@echo "   Still deferred: direct FFI gating, #[repr(C)] / #[packed] layout annotations, sandboxed FFI sub-arenas, address escapes, and broader non-laundering/provenance tracking."
-	@echo "✅ Step 5.1D FFI/layout/sandboxing status report complete. This target is report-only and does not run guards."
-
-report_step51_phase_e_address_escape_status:
-	@echo "🧭 Reporting Step 5.1E address-escape status..."
-	@echo "   Current address-escape inventory targets:"
-	@echo "   make report_step51_raw_pointer_casts"
-	@echo "   make report_step51_address_escapes_focused"
-	@echo "   Inspect direct safe-code address-escape candidates before adding any guard."
-	@echo "   The focused report is reference-aware so branded reference type/cast syntax is not treated as an address escape."
-	@echo "   The focused report separates intentional raw-cast gating fixtures and already-unsafe address expressions from safe-code candidates."
-	@echo "   Do not wire broad textual address scans into make test; address-escape enforcement must be compiler-backed and semantic."
-	@echo "   Still deferred: address escapes and broader non-laundering/provenance tracking."
-	@echo "✅ Step 5.1E address-escape status report complete. This target is report-only and does not run guards."
-
-report_step51_phase_f_non_laundering_status:
-	@echo "🧭 Reporting Step 5.1F non-laundering/provenance status..."
-	@echo "   Current compiler-backed unsafe boundary aggregate:"
-	@echo "   make guard_step51_basic_unsafe_enforcement"
-	@echo "   Current report-only precursor targets:"
-	@echo "   make report_step51_phase_d_ffi_status"
-	@echo "   make report_step51_phase_e_address_escape_status"
-	@echo "   make report_step51_raw_pointer_safe_code_candidates"
-	@echo "   Provenance design anchor: STEP51_DEFERRED_UNSAFE_SEMANTICS.md"
-	@echo "   Inert expression carrier: make guard_step51_expression_provenance_carrier"
-	@echo "   Safe constructor provenance metadata: make guard_step51_safe_constructor_provenance"
-	@echo "   Selector safe constructor provenance metadata: make guard_step51_selector_safe_constructor_provenance"
-	@echo "   Container safe constructor provenance metadata: make guard_step51_container_safe_constructor_provenance"
-	@echo "   Container method write provenance metadata: make guard_step51_container_method_provenance"
-	@echo "   Arena.Set/Write provenance metadata: make guard_step51_arena_write_provenance"
-	@echo "   Container GetRef provenance metadata: make guard_step51_container_getref_provenance"
-	@echo "   HashMap.Get value provenance metadata: make guard_step51_hashmap_get_value_provenance"
-	@echo "   HashMap.Get value field provenance metadata: make guard_step51_hashmap_get_value_field_provenance"
-	@echo "   std.VectorGetRef provenance metadata: make guard_step51_std_vector_getref_provenance"
-	@echo "   std.HashMapGetRef provenance metadata: make guard_step51_std_hashmap_getref_provenance"
-	@echo "   std.HashMapGetRef selector alias provenance metadata: make guard_step51_std_hashmap_getref_selector_alias_provenance"
-	@echo "   std.VectorGetRef selector alias provenance metadata: make guard_step51_std_vector_getref_selector_alias_provenance"
-	@echo "   Reference selector alias provenance metadata: make guard_step51_reference_selector_alias_provenance"
-	@echo "   Inert variable binding/assignment metadata: make guard_step51_variable_provenance_bindings"
-	@echo "   Inert return provenance capture: make guard_step51_return_provenance_capture"
-	@echo "   Inert function-call return provenance: make guard_step51_function_call_provenance"
-	@echo "   Inert aggregate-field provenance: make guard_step51_aggregate_field_provenance"
-	@echo "   Inert container provenance: make guard_step51_container_provenance"
-	@echo "   Narrow safe-branded return rejection: make guard_step51_non_laundering_return_enforcement"
-	@echo "   Narrow safe-branded binding/assignment rejection: make guard_step51_non_laundering_binding_enforcement"
-	@echo "   Narrow safe-branded call-argument rejection: make guard_step51_non_laundering_call_enforcement"
-	@echo "   Narrow safe-branded aggregate-field rejection: make guard_step51_non_laundering_field_enforcement"
-	@echo "   Narrow safe-branded container-element rejection: make guard_step51_non_laundering_container_enforcement"
-	@echo "   Narrow safe-branded container method storage rejection: make guard_step51_non_laundering_container_method_enforcement"
-	@echo "   Narrow safe-branded Arena.Set/Write rejection: make guard_step51_non_laundering_arena_write_enforcement"
-	@echo "   Narrow safe-branded reference-selector field rejection: make guard_step51_non_laundering_reference_selector_enforcement"
-	@echo "   Narrow safe-branded HashMap.Get value readback rejection: make guard_step51_non_laundering_hashmap_get_value_enforcement"
-	@echo "   Narrow safe-branded HashMap.Get value field readback rejection: make guard_step51_non_laundering_hashmap_get_value_field_enforcement"
-	@echo "   Existing narrow escape-analysis coverage remains guarded by make guard_step51_raw_pointer_local_escape_enforcement."
-	@echo "   Still deferred: broader non-laundering diagnostics beyond direct safe-branded storage/call/return targets, field writes, indexed container writes, basic container storage methods, covered reference-selector writes, HashMap.Get value readback, and HashMap.Get value field readback."
-	@echo "✅ Step 5.1F non-laundering/provenance status report complete. This target is report-only and does not run guards."
-
-report_step51_deferred_unsafe_semantics_status:
-	@echo "🧭 Reporting Step 5.1 deferred unsafe semantics checkpoint..."
-	@echo "   Design anchor: STEP51_DEFERRED_UNSAFE_SEMANTICS.md"
-	@echo "   Closed compiler-backed subset: make guard_step51_basic_unsafe_enforcement"
-	@echo "   Deferred compiler-design lanes:"
-	@echo "   - direct FFI/native-call syntax metadata and unsafe gating"
-	@echo "   - #[repr(C)] / #[packed] layout attributes"
-	@echo "   - sandboxed FFI sub-arenas"
-	@echo "   - address-origin metadata and address-escape enforcement"
-	@echo "   - broader raw-derived provenance/non-laundering rejection guards beyond direct safe-branded storage, call, return, field-write, indexed container-write, and basic container method targets"
-	@echo "   Inert compiler carrier: FunctionSignature has direct FFI metadata fields."
-	@echo "   Inert AST carrier: FunctionDecl carries matching direct FFI metadata defaults."
-	@echo "   Inert extern syntax: parser accepts extern func with C ABI defaults and unsafe-call metadata."
-	@echo "   Bodyless extern declarations: parser accepts extern func signatures terminated with ';' and synthesizes an empty AST body."
-	@echo "   Compiler-backed FFI call-site gating: make guard_step51_extern_func_call_enforcement"
-	@echo "   Layout attribute parser metadata: parser accepts #[repr(C)] and #[packed] into StructDecl only."
-	@echo "   Payload-safe layout metadata store: TypeEnvironment keeps repr-C/packed/ABI maps separate from StructLayout."
-	@echo "   Layout metadata query helpers: env_struct_is_repr_c / env_struct_is_packed / env_struct_layout_abi_is_c / env_struct_requires_layout_metadata."
-	@echo "   Layout-aware FFI helper predicates: signatures and struct layout maps can be queried without enforcement."
-	@echo "   Signature-level C FFI layout helpers: resolved params/returns can be checked without rejecting programs."
-	@echo "   Sandboxed FFI semantics: transient sub-arena ownership/destruction is documented; wrapper codegen remains deferred."
-	@echo "   Inert sandbox policy helpers: function signatures expose sandbox/aggregate FFI policy predicates."
-	@echo "   Inert address-origin metadata: safe-arena, raw-derived, sandbox-derived, and unknown origins are represented."
-	@echo "   Provenance propagation design: assignments, calls, returns, aggregate fields, and containers must preserve origin metadata."
-	@echo "   Inert expression provenance carrier: make guard_step51_expression_provenance_carrier"
-	@echo "   Inert variable binding/assignment/readback provenance: make guard_step51_variable_provenance_bindings"
-	@echo "   Inert return provenance capture: make guard_step51_return_provenance_capture"
-	@echo "   Inert function-call return provenance: make guard_step51_function_call_provenance"
-	@echo "   Inert aggregate-field provenance: make guard_step51_aggregate_field_provenance"
-	@echo "   Inert container provenance: make guard_step51_container_provenance"
-	@echo "   Narrow safe-branded return rejection: make guard_step51_non_laundering_return_enforcement"
-	@echo "   Narrow safe-branded binding/assignment rejection: make guard_step51_non_laundering_binding_enforcement"
-	@echo "   Narrow safe-branded call-argument rejection: make guard_step51_non_laundering_call_enforcement"
-	@echo "   Narrow safe-branded aggregate-field rejection: make guard_step51_non_laundering_field_enforcement"
-	@echo "   Narrow safe-branded container-element rejection: make guard_step51_non_laundering_container_enforcement"
-	@echo "   Narrow safe-branded container method storage rejection: make guard_step51_non_laundering_container_method_enforcement"
-	@echo "   Next implementation checkpoint: extend non-laundering rejection through remaining wrapper/API-specific boundaries."
-	@echo "   Keep Step 5.2 compiler-backed enforcement paused until these lanes are resolved or explicitly scoped as non-blocking."
-	@echo "✅ Step 5.1 deferred unsafe semantics status complete. This target is report-only and does not run guards."
-
-report_step51_status_matrix:
-	@echo "🧭 Step 5.1 safety status matrix:"
-	@echo "   Compiler-backed guards wired through make test:"
-	@echo "   ✅ raw pointer dereference outside unsafe: make guard_step51_raw_deref_unsafe_enforcement"
-	@echo "   ✅ raw pointer casts outside unsafe: make guard_step51_raw_cast_unsafe_enforcement"
-	@echo "   ✅ pointer arithmetic outside unsafe: make guard_step51_pointer_arithmetic_unsafe_enforcement"
-	@echo "   ✅ unsafe function calls outside unsafe: make guard_step51_unsafe_func_call_enforcement"
-	@echo "   ✅ local raw-derived pointer return escape: make guard_step51_raw_pointer_local_escape_enforcement"
-	@echo "   ✅ extern function parser metadata: make guard_step51_extern_func_parser_metadata"
-	@echo "   ✅ extern function calls outside unsafe: make guard_step51_extern_func_call_enforcement"
-	@echo "   ✅ layout metadata defaults, attributes, and registry helpers: make guard_step51_layout_metadata_defaults"
-	@echo "   ✅ layout-aware FFI helper predicates: make guard_step51_layout_ffi_policy_helpers"
-	@echo "   ✅ signature-level C FFI layout helpers: make guard_step51_layout_ffi_signature_helpers"
-	@echo "   ✅ sandbox policy defaults and helpers: make guard_step51_sandbox_policy_defaults"
-	@echo "   ✅ address-origin metadata helpers: make guard_step51_address_origin_metadata"
-	@echo "   ✅ expression provenance carrier helpers: make guard_step51_expression_provenance_carrier"
-	@echo "   ✅ safe constructor provenance metadata: make guard_step51_safe_constructor_provenance"
-	@echo "   ✅ selector safe constructor provenance metadata: make guard_step51_selector_safe_constructor_provenance"
-	@echo "   ✅ container safe constructor provenance metadata: make guard_step51_container_safe_constructor_provenance"
-	@echo "   ✅ container method write provenance metadata: make guard_step51_container_method_provenance"
-	@echo "   ✅ Arena.Set/Write provenance metadata: make guard_step51_arena_write_provenance"
-	@echo "   ✅ container GetRef provenance metadata: make guard_step51_container_getref_provenance"
-	@echo "   ✅ HashMap.Get value provenance metadata: make guard_step51_hashmap_get_value_provenance"
-	@echo "   ✅ HashMap.Get value field provenance metadata: make guard_step51_hashmap_get_value_field_provenance"
-	@echo "   ✅ std.VectorGetRef provenance metadata: make guard_step51_std_vector_getref_provenance"
-	@echo "   ✅ std.HashMapGetRef provenance metadata: make guard_step51_std_hashmap_getref_provenance"
-	@echo "   ✅ std.HashMapGetRef selector alias provenance metadata: make guard_step51_std_hashmap_getref_selector_alias_provenance"
-	@echo "   ✅ std.VectorGetRef selector alias provenance metadata: make guard_step51_std_vector_getref_selector_alias_provenance"
-	@echo "   ✅ reference selector alias provenance metadata: make guard_step51_reference_selector_alias_provenance"
-	@echo "   ✅ variable binding/assignment/readback provenance metadata: make guard_step51_variable_provenance_bindings"
-	@echo "   ✅ return expression provenance capture: make guard_step51_return_provenance_capture"
-	@echo "   ✅ function-call return provenance metadata: make guard_step51_function_call_provenance"
-	@echo "   ✅ aggregate-field provenance metadata: make guard_step51_aggregate_field_provenance"
-	@echo "   ✅ container provenance metadata: make guard_step51_container_provenance"
-	@echo "   ✅ non-laundering safe-branded return rejection: make guard_step51_non_laundering_return_enforcement"
-	@echo "   ✅ non-laundering safe-branded binding/assignment rejection: make guard_step51_non_laundering_binding_enforcement"
-	@echo "   ✅ non-laundering safe-branded call-argument rejection: make guard_step51_non_laundering_call_enforcement"
-	@echo "   ✅ non-laundering safe-branded aggregate-field rejection: make guard_step51_non_laundering_field_enforcement"
-	@echo "   ✅ non-laundering safe-branded container-element rejection: make guard_step51_non_laundering_container_enforcement"
-	@echo "   ✅ non-laundering safe-branded container method storage rejection: make guard_step51_non_laundering_container_method_enforcement"
-	@echo "   ✅ non-laundering safe-branded Arena.Set/Write rejection: make guard_step51_non_laundering_arena_write_enforcement"
-	@echo "   ✅ non-laundering safe-branded reference-selector field rejection: make guard_step51_non_laundering_reference_selector_enforcement"
-	@echo "   ✅ non-laundering safe-branded HashMap.Get value readback rejection: make guard_step51_non_laundering_hashmap_get_value_enforcement"
-	@echo "   ✅ non-laundering safe-branded HashMap.Get value field readback rejection: make guard_step51_non_laundering_hashmap_get_value_field_enforcement"
-	@echo "   Aggregate: make guard_step51_basic_unsafe_enforcement"
-	@echo "   Report-only / deferred lanes:"
-	@echo "   🧭 FFI layout annotations and sandboxed FFI: make report_step51_phase_d_ffi_status"
-	@echo "   🧭 address escapes: make report_step51_phase_e_address_escape_status"
-	@echo "   🧭 broader non-laundering/provenance: make report_step51_phase_f_non_laundering_status"
-	@echo "   🧭 deferred semantics checkpoint: make report_step51_deferred_unsafe_semantics_status"
-	@echo "   Policy guard: make guard_step51_report_only_lanes_not_in_test"
-	@echo "   Step 5.1 direct extern-call gating is compiler-backed; do not mark full Step 5.1 complete until layout/sandboxing, address escapes, and full provenance are compiler-backed."
-	@echo "   Do not convert report-only lanes into make test guards until compiler-backed semantic rules exist."
-	@echo "✅ Step 5.1 safety status matrix complete. This target is report-only and does not run guards."
+$(JUST_REPORT_TARGETS): require_just
+    @just $@
 
 guard_step51_report_only_lanes_not_in_test:
-	@echo "🔒 Guarding Step 5.1 report-only lanes are not direct make test dependencies..."
-	@test_deps="$$(awk 'capture == 1 && /^[[:space:]]*@/ { exit } /^test:/ { capture = 1 } capture == 1 { print }' Makefile)"; \
-	if echo "$$test_deps" | grep -q 'report_step51_'; then \
-		echo "❌ Step 5.1 report-only target is wired directly into make test:"; \
-		echo "$$test_deps"; \
-		exit 1; \
-	fi
-	@echo "✅ Step 5.1 report-only lanes are not direct make test dependencies."
-
-report_step51_raw_pointer_safety_inventory:
-	@echo "🧾 Step 5.1 raw pointer safety inventory checklist:"
-	@echo "   make report_step51_raw_pointer_deref"
-	@echo "   make report_step51_raw_pointer_casts"
-	@echo "   make report_step51_address_escapes_focused"
-	@echo "   make report_step51_ffi_calls"
-	@echo "   make report_step51_ffi_focused"
-	@echo "   make report_step51_unsafe_func_signatures"
-	@echo "   make report_step51_raw_pointer_classified"
-	@echo "   make report_step51_raw_pointer_safe_code_candidates"
-	@echo "   make report_step51_phase_b_wrapping_status"
-	@echo "   make report_step51_phase_c_basic_unsafe_status"
-	@echo "   make report_step51_phase_d_ffi_status"
-	@echo "   make report_step51_phase_e_address_escape_status"
-	@echo "   make report_step51_phase_f_non_laundering_status"
-	@echo "   make report_step51_deferred_unsafe_semantics_status"
-	@echo "   make report_step51_status_matrix"
-	@$(MAKE) report_step51_raw_pointer_deref
-	@$(MAKE) report_step51_raw_pointer_casts
-	@$(MAKE) report_step51_address_escapes_focused
-	@$(MAKE) report_step51_ffi_calls
-	@$(MAKE) report_step51_ffi_focused
-	@$(MAKE) report_step51_unsafe_func_signatures
-	@$(MAKE) report_step51_raw_pointer_classified
-	@$(MAKE) report_step51_raw_pointer_safe_code_candidates
-	@$(MAKE) report_step51_phase_b_wrapping_status
-	@$(MAKE) report_step51_phase_c_basic_unsafe_status
-	@$(MAKE) report_step51_phase_d_ffi_status
-	@$(MAKE) report_step51_phase_e_address_escape_status
-	@$(MAKE) report_step51_phase_f_non_laundering_status
-	@$(MAKE) report_step51_deferred_unsafe_semantics_status
-	@$(MAKE) report_step51_status_matrix
-	@echo "✅ Step 5.1 raw pointer safety inventory complete. This target is report-only and does not fail."
-
-report_step51_final_validation:
-	@echo "🧾 Step 5.1 validation checklist:"
-	@echo "   make report_step51_raw_pointer_safety_inventory"
-	@echo "   make report_step51_raw_pointer_classified"
-	@echo "   make report_step51_raw_pointer_safe_code_candidates"
-	@echo "   make report_step51_phase_b_wrapping_status"
-	@echo "   make report_step51_phase_c_basic_unsafe_status"
-	@echo "   make report_step51_phase_d_ffi_status"
-	@echo "   make report_step51_phase_e_address_escape_status"
-	@echo "   make report_step51_phase_f_non_laundering_status"
-	@echo "   make report_step51_deferred_unsafe_semantics_status"
-	@echo "   make report_step51_status_matrix"
-	@echo "   make guard_step51_report_only_lanes_not_in_test"
-	@echo "   make report_step51_ffi_focused"
-	@echo "   make report_step51_address_escapes_focused"
-	@echo "   make guard_step51_basic_unsafe_enforcement"
-	@echo "   make guard_step51_extern_func_parser_metadata"
-	@echo "   make guard_step51_extern_func_call_enforcement"
-	@echo "   make guard_step51_layout_metadata_defaults"
-	@echo "   make guard_step51_layout_ffi_policy_helpers"
-	@echo "   make guard_step51_layout_ffi_signature_helpers"
-	@echo "   make guard_step51_sandbox_policy_defaults"
-	@echo "   make guard_step51_address_origin_metadata"
-	@echo "   make guard_step51_raw_deref_unsafe_enforcement"
-	@echo "   make guard_step51_raw_cast_unsafe_enforcement"
-	@echo "   make guard_step51_pointer_arithmetic_unsafe_enforcement"
-	@echo "   make guard_step51_unsafe_func_call_enforcement"
-	@echo "   make guard_step51_raw_pointer_local_escape_enforcement"
-	@echo "   gt-one-gst tests/e2e_unsafe_func_body_raw_ops.gst"
-	@echo "   gt-one-gst tests/e2e_unsafe_function_signature_noop.gst"
-	@echo "   make report_step45_final_validation"
-	@echo "   make report_phase4_formatter_tools"
-	@echo "   make fmt_check_phase4_infra"
-	@echo "   make"
-	@echo "   make test"
-	@echo "   make bootstrap"
-	@echo "   git diff --check"
-	@echo "✅ Step 5.1 validation checklist complete. Basic unsafe enforcement, direct extern-call gating, layout metadata helpers, inert layout-aware FFI predicates, inert signature-level layout checks, inert sandbox policy helpers, and address-origin metadata helpers are compiler-backed; call-site layout rejection, sandbox wrapper codegen, and broader non-laundering remain deferred lanes."
-
-report_step52_linear_resource_inventory:
-	@echo "📊 Reporting Step 5.2 generalized linear resource precursor inventory..."
-	@echo "   Existing specialized directory tracking and resource-like syntax:"
-	@rg -n 'open_directories|OpenDir|ReadDir|CloseDir|Dir|drop_func|linear|Resource|defer' compiler/*.gst tests/*.gst src || true
-	@echo "   Native/runtime directory boundary candidates:"
-	@rg -n 'DIR\*|opendir|readdir|closedir|os_OpenDir|os_ReadDir|os_CloseDir' src compiler/*.gst tests/*.gst || true
-	@echo "✅ Step 5.2 linear resource precursor inventory complete. This target is report-only and does not fail."
-
-report_step52_linear_resource_focused:
-	@echo "📊 Reporting Step 5.2 focused linear resource precursor inventory..."
-	@python3 tools/step52_linear_resource_report.py || true
-	@echo "✅ Step 5.2 focused linear resource report complete. This target is inventory-only and does not fail."
-
-report_step52_phase_a_status:
-	@echo "🧭 Reporting Step 5.2A metadata opt-in status..."
-	@echo "   Current precursor inventory targets:"
-	@echo "   make report_step52_linear_resource_inventory"
-	@echo "   make report_step52_linear_resource_focused"
-	@echo "   Step 5.2A must stay metadata-opt-in so ordinary compiler structs, primitives, and unannotated collections bypass linear-resource analysis."
-	@echo "   Do not replace open_directories or add generalized leak enforcement until future Resource[ctx, T] syntax, destructor registration, and open_linear_resources representation are designed."
-	@echo "   Existing linear metadata/tests are not the same as the future generalized Resource[ctx, T] surface."
-	@echo "   Existing directory tracking remains the legacy specialized resource lane until generalized linear-resource infrastructure exists."
-	@echo "✅ Step 5.2A metadata opt-in status report complete. This target is report-only and does not run guards."
-
-report_step52_phase_b_destructor_status:
-	@echo "🧭 Reporting Step 5.2B destructor/defer status..."
-	@echo "   Current precursor inventory target:"
-	@echo "   make report_step52_linear_resource_focused"
-	@echo "   Inspect the focused report's Destructor/defer syntax bucket before designing destructor registration."
-	@echo "   Do not add destructor leak enforcement until Resource[ctx, T] ownership metadata and open_linear_resources tracking exist."
-	@echo "   Do not add defer validation until defer has explicit AST/typechecker semantics rather than textual inventory matches."
-	@echo "   Existing open_directories cleanup remains the legacy specialized lane, not generalized destructor registration."
-	@echo "✅ Step 5.2B destructor/defer status report complete. This target is report-only and does not run guards."
-
-report_step52_phase_c_resource_registry_status:
-	@echo "🧭 Reporting Step 5.2C Resource/open-linear registry status..."
-	@echo "   Current precursor inventory target:"
-	@echo "   make report_step52_linear_resource_focused"
-	@echo "   Inspect the focused report's Future Resource/open-linear registry bucket before designing Resource[ctx, T]."
-	@echo "   Do not replace open_directories until open_linear_resources can track Resource[ctx, T] ownership by context, destructor, and transfer state."
-	@echo "   Resource[ctx, T] must be compiler-backed metadata, not a textual alias for existing linear structs or directory handles."
-	@echo "   Existing open_directories remains the legacy specialized lane until the generalized registry has equivalent directory-handle coverage."
-	@echo "✅ Step 5.2C Resource/open-linear registry status report complete. This target is report-only and does not run guards."
-
-report_step52_phase_d_transfer_status:
-	@echo "🧭 Reporting Step 5.2D ownership-transfer status..."
-	@echo "   Current precursor inventory targets:"
-	@echo "   make report_step52_linear_resource_focused"
-	@echo "   make report_step52_phase_c_resource_registry_status"
-	@echo "   Do not add move/use-after-move or double-close enforcement until Resource[ctx, T] values carry explicit transfer state in the typechecker."
-	@echo "   Transfer tracking must distinguish owned, moved, borrowed, closed, and destructor-scheduled resources semantically."
-	@echo "   Existing open_directories cleanup is still specialized directory tracking, not generalized ownership-transfer analysis."
-	@echo "✅ Step 5.2D ownership-transfer status report complete. This target is report-only and does not run guards."
-
-report_step52_phase_e_enforcement_preconditions_status:
-	@echo "🧭 Reporting Step 5.2E enforcement preconditions."
-	@echo "   Generalized linear-resource guards must remain deferred until all semantic prerequisites exist:"
-	@echo "   - explicit metadata opt-in for linear resource types"
-	@echo "   - Resource[ctx, T] representation with ownership state"
-	@echo "   - open_linear_resources registry with destructor identity"
-	@echo "   - destructor registration and explicit defer AST/typechecker semantics"
-	@echo "   - transfer-state validation for owned/moved/borrowed/closed/destructor-scheduled resources"
-	@echo "   - directory-handle parity with the legacy open_directories lane"
-	@echo "   Do not convert Step 5.2 textual inventories into make test guards before these preconditions are compiler-backed."
-	@echo "✅ Step 5.2E enforcement preconditions report complete. This target is report-only and does not run guards."
-
-report_step52_phase_f_closure_status:
-	@echo "🧭 Reporting Step 5.2F report-only closure status..."
-	@echo "   Step 5.2 report-only scaffold now covers:"
-	@echo "   - broad and focused resource inventory"
-	@echo "   - metadata opt-in handoff"
-	@echo "   - destructor/defer handoff"
-	@echo "   - Resource/open-linear registry handoff"
-	@echo "   - ownership-transfer handoff"
-	@echo "   - semantic enforcement preconditions"
-	@echo "   Stop adding textual report churn unless a new compiler-backed design requirement appears."
-	@echo "   Next implementation work must be AST/typechecker design for Resource[ctx, T], open_linear_resources, destructor identity, transfer state, and legacy open_directories parity."
-	@echo "✅ Step 5.2F report-only closure status complete. This target is report-only and does not run guards."
-
-report_step52_status_matrix:
-	@echo "🧭 Step 5.2 linear resource status matrix:"
-	@echo "   Legacy specialized lane still active:"
-	@echo "   🧭 directory-handle tracking: open_directories / os.OpenDir / os.ReadDir / os.CloseDir"
-	@echo "   Report-only precursor targets:"
-	@echo "   🧭 broad inventory: make report_step52_linear_resource_inventory"
-	@echo "   🧭 focused inventory: make report_step52_linear_resource_focused"
-	@echo "   🧭 metadata opt-in status: make report_step52_phase_a_status"
-	@echo "   🧭 destructor/defer status: make report_step52_phase_b_destructor_status"
-	@echo "   🧭 Resource/open-linear registry status: make report_step52_phase_c_resource_registry_status"
-	@echo "   🧭 ownership-transfer status: make report_step52_phase_d_transfer_status"
-	@echo "   🧭 enforcement preconditions: make report_step52_phase_e_enforcement_preconditions_status"
-	@echo "   🧭 report-only closure: make report_step52_phase_f_closure_status"
-	@echo "   Policy guards wired through make test:"
-	@echo "   ✅ report-only Step 5.2 targets stay out of test deps: make guard_step52_report_only_lanes_not_in_test"
-	@echo "   ✅ no new post-closure Step 5.2 report target churn: make guard_step52_no_post_closure_report_churn"
-	@echo "   Deferred generalized compiler-backed work:"
-	@echo "   ⏳ linear metadata / #[linear] opt-in"
-	@echo "   ⏳ Resource[ctx, T] representation"
-	@echo "   ⏳ open_linear_resources registry"
-	@echo "   ⏳ destructor registration and defer validation"
-	@echo "   ⏳ ownership transfer state and use-after-move validation"
-	@echo "   ⏳ compiler-backed enforcement preconditions before any Step 5.2 guard"
-	@echo "   ⏳ AST/typechecker design before further Step 5.2 report churn"
-	@echo "   Existing linear metadata/test coverage is inventory context, not generalized resource enforcement."
-	@echo "   Do not purge open_directories or add generalized leak enforcement until the deferred pieces exist."
-	@echo "✅ Step 5.2 linear resource status matrix complete. This target is report-only and does not run guards."
+        @echo "🔒 Guarding Step 5.1 report-only lanes are not direct just make-test-guards dependencies..."
+        @test_deps="$$(awk 'capture == 1 && /^make-test-suite:/ { exit } /^make-test-guards:/ { capture = 1 } capture == 1 { print }' justfile)"; \
+        if echo "$$test_deps" | grep -q 'report_step51_'; then \
+                echo "❌ Step 5.1 report-only target is wired into just make-test-guards:"; \
+                echo "$$test_deps"; \
+                exit 1; \
+        fi
+        @echo "✅ Step 5.1 report-only lanes are not direct just make-test-guards dependencies."
 
 guard_step52_report_only_lanes_not_in_test:
-	@echo "🔒 Guarding Step 5.2 report-only lanes are not direct make test dependencies..."
-	@test_deps="$$(awk 'capture == 1 && /^[[:space:]]*@/ { exit } /^test:/ { capture = 1 } capture == 1 { print }' Makefile)"; \
-	if echo "$$test_deps" | grep -q 'report_step52_'; then \
-		echo "❌ Step 5.2 report-only target is wired directly into make test:"; \
-		echo "$$test_deps"; \
-		exit 1; \
-	fi
-	@echo "✅ Step 5.2 report-only lanes are not direct make test dependencies."
+        @echo "🔒 Guarding Step 5.2 report-only lanes are not direct just make-test-guards dependencies..."
+        @test_deps="$$(awk 'capture == 1 && /^make-test-suite:/ { exit } /^make-test-guards:/ { capture = 1 } capture == 1 { print }' justfile)"; \
+        if echo "$$test_deps" | grep -q 'report_step52_'; then \
+                echo "❌ Step 5.2 report-only target is wired into just make-test-guards:"; \
+                echo "$$test_deps"; \
+                exit 1; \
+        fi
+        @echo "✅ Step 5.2 report-only lanes are not direct just make-test-guards dependencies."
 
 guard_step52_no_post_closure_report_churn:
-	@echo "🔒 Guarding Step 5.2 report-only closure against new report target churn..."
-	@allowed_reports='^(report_step52_linear_resource_inventory|report_step52_linear_resource_focused|report_step52_phase_a_status|report_step52_phase_b_destructor_status|report_step52_phase_c_resource_registry_status|report_step52_phase_d_transfer_status|report_step52_phase_e_enforcement_preconditions_status|report_step52_phase_f_closure_status|report_step52_status_matrix|report_step52_final_validation):$$'; \
-	extra_reports="$$(grep -E '^report_step52_.*:' Makefile | grep -Ev "$$allowed_reports" || true)"; \
-	if [ -n "$$extra_reports" ]; then \
-		echo "❌ Unexpected post-closure Step 5.2 report target(s):"; \
-		echo "$$extra_reports"; \
-		echo "Step 5.2F closed textual report churn; move to AST/typechecker design or update this whitelist intentionally."; \
-		exit 1; \
-	fi
-	@echo "✅ Step 5.2 report-only closure whitelist is unchanged."
-
-report_step52_final_validation:
-	@echo "🧾 Step 5.2 validation checklist:"
-	@echo "   make report_step52_linear_resource_inventory"
-	@echo "   make report_step52_linear_resource_focused"
-	@echo "   make report_step52_phase_a_status"
-	@echo "   make report_step52_phase_b_destructor_status"
-	@echo "   make report_step52_phase_c_resource_registry_status"
-	@echo "   make report_step52_phase_d_transfer_status"
-	@echo "   make report_step52_phase_e_enforcement_preconditions_status"
-	@echo "   make report_step52_phase_f_closure_status"
-	@echo "   make report_step52_status_matrix"
-	@echo "   make guard_step52_report_only_lanes_not_in_test"
-	@echo "   make guard_step52_no_post_closure_report_churn"
-	@echo "   make report_step51_status_matrix"
-	@echo "   make guard_step51_report_only_lanes_not_in_test"
-	@echo "   make guard_step51_basic_unsafe_enforcement"
-	@echo "   make report_step51_final_validation"
-	@echo "   make test"
-	@echo "   make bootstrap"
-	@echo "   git diff --check"
-	@echo "✅ Step 5.2 validation checklist complete. Generalized linear resources are report-only/deferred; do not purge open_directories yet."
-
-report_step44_accessor_contract:
-	@echo "🧪 Step 4.4 accessor contract focused checks:"
-	@echo "   gt-one-gst tests/e2e_collection_dual_signatures.gst"
-	@echo "   gt-one-gst tests/e2e_vector_get_ref_alias.gst"
-	@echo "   gt-one-gst tests/e2e_hashmap_get_ref.gst"
-	@echo "   gt-one-gst tests/test_vector_get_ref_alias_bad_index_type_rejected.gst"
-	@echo "   gt-one-gst tests/test_vector_get_ref_alias_non_vector_rejected.gst"
-	@echo "   gt-one-gst tests/test_hashmap_get_ref_bad_key_rejected.gst"
-	@echo "   gt-one-gst tests/test_hashmap_get_ref_missing_runtime_violation.gst"
-	@echo "✅ Accessor contract list complete. Run these before make test/bootstrap for Step 4.4 patches."
-
-report_step45_accessor_contract:
-	@echo "🧪 Step 4.5A explicit write/read-copy contract focused checks:"
-	@echo "   gt-one-gst tests/e2e_arena_explicit_set.gst"
-	@echo "   gt-one-gst tests/e2e_vector_explicit_set.gst"
-	@echo "   gt-one-gst tests/e2e_hashmap_explicit_write.gst"
-	@echo "   gt-one-gst tests/e2e_arena_subscript_read_copy.gst"
-	@echo "   gt-one-gst tests/e2e_vector_subscript_read_copy.gst"
-	@echo "✅ Step 4.5A accessor contract list complete. Run these before make test/bootstrap for Step 4.5A patches."
-
-report_step45_final_validation:
-	@echo "🧾 Step 4.5 final validation checklist:"
-	@echo "   make report_step45_accessor_contract"
-	@echo "   gt-one-gst tests/e2e_arena_explicit_set.gst"
-	@echo "   gt-one-gst tests/e2e_vector_explicit_set.gst"
-	@echo "   gt-one-gst tests/e2e_hashmap_explicit_write.gst"
-	@echo "   gt-one-gst tests/e2e_arena_subscript_read_copy.gst"
-	@echo "   gt-one-gst tests/e2e_vector_subscript_read_copy.gst"
-	@echo "   make report_step44_accessor_contract"
-	@echo "   make report_high_level_raw_collection_casts"
-	@echo "   make guard_step44_no_high_level_raw_collection_casts"
-	@echo "   make report_step45_subscript_lvalue_writes"
-	@echo "   make report_step45_test_subscript_lvalue_writes"
-	@echo "   make report_step45_subscript_lvalue_classified"
-	@echo "   make guard_step45_safe_subscript_write_enforcement"
-	@echo "   make"
-	@echo "   make test"
-	@echo "   make bootstrap"
-	@echo "   git diff --check"
-	@echo "✅ Step 4.5 final validation checklist complete. This target is report-only and does not fail."
-
-report_compiler_get_opt_migration:
-	@echo "📊 Reporting compiler .get_opt migration sites..."
-	@rg -n '\.get_opt[[:space:]]*\(' compiler/*.gst || true
-
-report_high_level_raw_collection_casts:
-	@echo "📊 Reporting Step 4.4 high-level raw collection/string cast migration sites..."
-	@echo "   Direct arena-to-vector casts:"
-	@rg -n '&ctx\[' compiler/*.gst | rg ' as \*std\.Vector' || true
-	@echo "   Direct arena-to-hashmap casts:"
-	@rg -n '&ctx\[' compiler/*.gst | rg ' as \*std\.HashMap' || true
-	@echo "   Direct arena-to-string-view casts:"
-	@rg -n '&ctx\[' compiler/*.gst | rg ' as \*str' || true
-	@echo "✅ Report complete. This target is inventory-only and does not fail."
-
-report_step45_subscript_lvalue_writes:
-	@echo "📊 Reporting Step 4.5 direct subscript LHS write inventory..."
-	@echo "   Direct subscript writes and field writes rooted at subscript expressions:"
-	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/*.gst tests/*.gst || true
-	@echo "✅ Report complete. This target is inventory-only and does not fail."
-
-report_step45_test_subscript_lvalue_writes:
-	@echo "📊 Reporting Step 4.5 test-side direct subscript LHS write inventory..."
-	@echo "   Test direct subscript writes and field writes rooted at subscript expressions:"
-	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/*.gst || true
-	@echo "✅ Test-side report complete. This target is inventory-only and does not fail."
-
-report_step45_subscript_lvalue_classified:
-	@echo "📊 Reporting Step 4.5 classified direct subscript LHS inventory..."
-	@echo "   Generated C string false positives:"
-	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/codegen.gst | rg 'data\[_gust_vector_set_idx\] = |_buf\[_s1\.len \+ _s2\.len\] = 0' || true
-	@echo "   Intentional safe-code rejection fixtures:"
-	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/test_safe_*subscript*_rejected.gst || true
-	@echo "   Intentional unsafe-positive fixtures:"
-	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/e2e_unsafe_*subscript*write*.gst || true
-	@echo "   Unexpected safe-code direct subscript writes:"
-	@rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/*.gst tests/*.gst | rg -v 'compiler/codegen\.gst:.*(data\[_gust_vector_set_idx\] = |_buf\[_s1\.len \+ _s2\.len\] = 0)' | rg -v 'tests/test_safe_.*subscript.*_rejected\.gst:' | rg -v 'tests/e2e_unsafe_.*subscript.*write.*\.gst:' || true
-	@echo "✅ Classified Step 4.5 subscript LHS report complete. This target is inventory-only and does not fail."
+        @echo "🔒 Guarding Step 5.2 report-only closure against new report target churn..."
+        @allowed_reports='^(report_step52_linear_resource_inventory|report_step52_linear_resource_focused|report_step52_phase_a_status|report_step52_phase_b_destructor_status|report_step52_phase_c_resource_registry_status|report_step52_phase_d_transfer_status|report_step52_phase_e_enforcement_preconditions_status|report_step52_phase_f_closure_status|report_step52_status_matrix|report_step52_final_validation):$$'; \
+        extra_reports="$$(grep -E '^report_step52_.*:' justfile-reports | grep -Ev "$$allowed_reports" || true)"; \
+        if [ -n "$$extra_reports" ]; then \
+                echo "❌ Unexpected post-closure Step 5.2 report target(s):"; \
+                echo "$$extra_reports"; \
+                echo "Step 5.2F closed textual report churn; move to AST/typechecker design or update this whitelist intentionally."; \
+                exit 1; \
+        fi
+        @echo "✅ Step 5.2 report-only closure whitelist is unchanged."
 
 guard_step45_safe_subscript_write_enforcement: gust
 	@echo "🔒 Checking Step 4.5C safe subscript write enforcement..."

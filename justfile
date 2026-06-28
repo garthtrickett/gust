@@ -1,4 +1,5 @@
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
+import 'justfile-reports'
 
 default:
     just --list
@@ -151,12 +152,12 @@ guard_parser_high_level_raw_casts:
 
 # Report aliases stay informational; Makefile policy guards keep reports out of make test.
 report-step51:
-    make report_step51_status_matrix
-    make report_step51_deferred_unsafe_semantics_status
+ just report_step51_status_matrix
+ just report_step51_deferred_unsafe_semantics_status
 
 report-step52:
-    make report_step52_status_matrix
-    make report_step52_final_validation
+ just report_step52_status_matrix
+ just report_step52_final_validation
 
 make-test-guards:
     #!/usr/bin/env bash
