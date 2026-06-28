@@ -445,6 +445,99 @@ func env_report_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], tar
     report_error(2, msg_nonlaunder_target, span, env, ctx);
 }
 
+func env_report_hashmap_get_val_readback_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], value_idx_hgv_readback_nlaunder: Index[ast.Expression[ctx], ctx], span_hgv_readback_nlaunder: token.Span, context_hgv_readback_nlaunder: str, ctx: &Arena) {
+    if env_type_is_safe_branded_return_target(target_t, ctx) == 0 {
+        return;
+    }
+
+    unsafe {
+        if value_idx_hgv_readback_nlaunder == empty[Index[ast.Expression[ctx], ctx]] {
+            return;
+        }
+
+        mut expr_hgv_readback_nlaunder := ctx[value_idx_hgv_readback_nlaunder];
+        if expr_hgv_readback_nlaunder.tag != 11 {
+            return;
+        }
+
+        if std.str_eq(expr_hgv_readback_nlaunder.Selector.right, "Val") == 1 {
+            mut call_expr_hgv_readback_nlaunder := ctx[expr_hgv_readback_nlaunder.Selector.left];
+            if call_expr_hgv_readback_nlaunder.tag != 12 {
+                return;
+            }
+
+            mut func_expr_hgv_readback_nlaunder := ctx[call_expr_hgv_readback_nlaunder.Call.function];
+            if func_expr_hgv_readback_nlaunder.tag != 11 {
+                return;
+            }
+            if std.str_eq(func_expr_hgv_readback_nlaunder.Selector.right, "Get") == 0 {
+                return;
+            }
+
+            mut args_hgv_readback_nlaunder: std.Vector[ast.Expression[ctx], ctx] := ctx[call_expr_hgv_readback_nlaunder.Call.arguments];
+            if len(args_hgv_readback_nlaunder) == 0 {
+                return;
+            }
+
+            mut key_idx_hgv_readback_nlaunder: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx.Set(key_idx_hgv_readback_nlaunder, args_hgv_readback_nlaunder[0]);
+            mut base_key_hgv_readback_nlaunder := expression_to_string(func_expr_hgv_readback_nlaunder.Selector.left, ctx);
+            mut index_key_hgv_readback_nlaunder := expression_to_string(key_idx_hgv_readback_nlaunder, ctx);
+            mut cell_key_hgv_readback_nlaunder := std.Concat(base_key_hgv_readback_nlaunder, "[");
+            cell_key_hgv_readback_nlaunder = std.Concat(cell_key_hgv_readback_nlaunder, index_key_hgv_readback_nlaunder);
+            cell_key_hgv_readback_nlaunder = std.Concat(cell_key_hgv_readback_nlaunder, "]");
+
+            mut cell_lookup_hgv_readback_nlaunder := (*env).container_provenance.Get(cell_key_hgv_readback_nlaunder);
+            if cell_lookup_hgv_readback_nlaunder.Ok {
+                mut cell_prov_hgv_readback_nlaunder := cell_lookup_hgv_readback_nlaunder.Val;
+                env_report_non_laundering_safe_brand_target(env, target_t, cell_prov_hgv_readback_nlaunder, span_hgv_readback_nlaunder, context_hgv_readback_nlaunder, ctx);
+            }
+            return;
+        }
+
+        mut val_selector_expr_hgv_readback_nlaunder := ctx[expr_hgv_readback_nlaunder.Selector.left];
+        if val_selector_expr_hgv_readback_nlaunder.tag != 11 {
+            return;
+        }
+        if std.str_eq(val_selector_expr_hgv_readback_nlaunder.Selector.right, "Val") == 0 {
+            return;
+        }
+
+        mut field_call_expr_hgv_readback_nlaunder := ctx[val_selector_expr_hgv_readback_nlaunder.Selector.left];
+        if field_call_expr_hgv_readback_nlaunder.tag != 12 {
+            return;
+        }
+
+        mut field_func_expr_hgv_readback_nlaunder := ctx[field_call_expr_hgv_readback_nlaunder.Call.function];
+        if field_func_expr_hgv_readback_nlaunder.tag != 11 {
+            return;
+        }
+        if std.str_eq(field_func_expr_hgv_readback_nlaunder.Selector.right, "Get") == 0 {
+            return;
+        }
+
+        mut field_args_hgv_readback_nlaunder: std.Vector[ast.Expression[ctx], ctx] := ctx[field_call_expr_hgv_readback_nlaunder.Call.arguments];
+        if len(field_args_hgv_readback_nlaunder) == 0 {
+            return;
+        }
+
+        mut field_key_idx_hgv_readback_nlaunder: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx.Set(field_key_idx_hgv_readback_nlaunder, field_args_hgv_readback_nlaunder[0]);
+        mut field_base_key_hgv_readback_nlaunder := expression_to_string(field_func_expr_hgv_readback_nlaunder.Selector.left, ctx);
+        mut field_index_key_hgv_readback_nlaunder := expression_to_string(field_key_idx_hgv_readback_nlaunder, ctx);
+        mut field_cell_key_hgv_readback_nlaunder := std.Concat(field_base_key_hgv_readback_nlaunder, "[");
+        field_cell_key_hgv_readback_nlaunder = std.Concat(field_cell_key_hgv_readback_nlaunder, field_index_key_hgv_readback_nlaunder);
+        field_cell_key_hgv_readback_nlaunder = std.Concat(field_cell_key_hgv_readback_nlaunder, "].");
+        field_cell_key_hgv_readback_nlaunder = std.Concat(field_cell_key_hgv_readback_nlaunder, expr_hgv_readback_nlaunder.Selector.right);
+
+        mut field_lookup_hgv_readback_nlaunder := (*env).field_provenance.Get(field_cell_key_hgv_readback_nlaunder);
+        if field_lookup_hgv_readback_nlaunder.Ok {
+            mut field_prov_hgv_readback_nlaunder := field_lookup_hgv_readback_nlaunder.Val;
+            env_report_non_laundering_safe_brand_target(env, target_t, field_prov_hgv_readback_nlaunder, span_hgv_readback_nlaunder, context_hgv_readback_nlaunder, ctx);
+        }
+    }
+}
+
 func env_resolve_selector_storage_target_type(env: *TypeEnvironment[ctx], selector_idx_nlaunder: Index[ast.Expression[ctx], ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
     mut selector_storage_void_nlaunder: ast.Type[ctx];
     unsafe {
@@ -7313,6 +7406,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
                 mut decl_span_nlaunder := get_expression_span(val_idx, ctx);
                 env_report_non_laundering_safe_brand_target(env, decl_target_type_nlaunder, val_prov_decl_for_nlaunder, decl_span_nlaunder, "Binding raw-derived or sandbox-derived value", ctx);
+                env_report_hashmap_get_val_readback_non_laundering_safe_brand_target(env, decl_target_type_nlaunder, val_idx, decl_span_nlaunder, "Binding raw-derived or sandbox-derived value read through HashMap.Get", ctx);
             }
 
             if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
@@ -7512,6 +7606,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut assignment_span_nlaunder := get_expression_span(val_idx, ctx);
             env_report_non_laundering_safe_brand_target(env, left_type, val_prov_assignment, assignment_span_nlaunder, "Assigning raw-derived or sandbox-derived value", ctx);
+            env_report_hashmap_get_val_readback_non_laundering_safe_brand_target(env, left_type, val_idx, assignment_span_nlaunder, "Assigning raw-derived or sandbox-derived value read through HashMap.Get", ctx);
 
             if left.tag == 11 { // Selector
                 if env_type_is_safe_branded_return_target(left_type, ctx) == 0 {
