@@ -7710,12 +7710,14 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
             mut parent_checked := typechecker_clone_int_map((*env).checked_results, ctx);
             mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
+            mut parent_open_linear_resources_function_decl := typechecker_clone_linear_resource_map((*env).open_linear_resources, ctx);
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
 
             // Clear states
             (*env).moved_vars = std.HashMapNew(ctx);
             (*env).checked_results = std.HashMapNew(ctx);
             (*env).open_directories = std.HashMapNew(ctx);
+            (*env).open_linear_resources = std.HashMapNew(ctx);
             (*env).variable_origins = std.HashMapNew(ctx);
 
             mut child_scope := scope_new(scope, ctx);
@@ -7849,6 +7851,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).moved_vars = parent_moved;
             (*env).checked_results = parent_checked;
             (*env).open_directories = parent_open_dirs;
+            (*env).open_linear_resources = parent_open_linear_resources_function_decl;
             (*env).variable_origins = parent_origins;
             (*env).expected_return_type = old_expected;
             (*env).current_function_return_origins = old_return_origins;
@@ -8940,6 +8943,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             // Step 3: Implement Isolated Else-Block Checking and Divergence Enforcement
             mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
             mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
+            mut parent_open_linear_resources_guard_else := typechecker_clone_linear_resource_map((*env).open_linear_resources, ctx);
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
 
             mut child_scope := scope_new(scope, ctx);
@@ -8963,6 +8967,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).variable_origins = parent_origins;
             (*env).moved_vars = parent_moved;
             (*env).open_directories = parent_open_dirs;
+            (*env).open_linear_resources = parent_open_linear_resources_guard_else;
 
             scope_insert(scope, std.Clone(ctx, name), payload_type, ctx);
             (*env).variable_types.Insert(std.Clone(ctx, name), payload_type);
@@ -9348,6 +9353,35 @@ func typechecker_clone_int_map(src: std.HashMap[str, int, ctx], ctx: &Arena) std
         i = i + 1;
     }
     return dest;
+}
+
+func linear_resource_record_clone(record: LinearResourceRecord[ctx], ctx: &Arena) LinearResourceRecord[ctx] {
+    mut cloned_linear_resource_record: LinearResourceRecord[ctx];
+    cloned_linear_resource_record.variable_name = std.Clone(ctx, record.variable_name);
+    cloned_linear_resource_record.type_name = std.Clone(ctx, record.type_name);
+    cloned_linear_resource_record.destructor_name = std.Clone(ctx, record.destructor_name);
+    cloned_linear_resource_record.is_open = record.is_open;
+    cloned_linear_resource_record.is_moved = record.is_moved;
+    cloned_linear_resource_record.is_closed = record.is_closed;
+    cloned_linear_resource_record.is_borrowed = record.is_borrowed;
+    cloned_linear_resource_record.is_destructor_scheduled = record.is_destructor_scheduled;
+    return cloned_linear_resource_record;
+}
+
+func typechecker_clone_linear_resource_map(src: std.HashMap[str, LinearResourceRecord[ctx], ctx], ctx: &Arena) std.HashMap[str, LinearResourceRecord[ctx], ctx] {
+    mut dest_linear_resource_map: std.HashMap[str, LinearResourceRecord[ctx], ctx] := std.HashMapNew(ctx);
+    mut keys_linear_resource_map := src.Keys(ctx);
+    mut i_linear_resource_map := 0;
+    while i_linear_resource_map < len(keys_linear_resource_map) {
+        mut key_linear_resource_map := keys_linear_resource_map[i_linear_resource_map];
+        mut lookup_linear_resource_map := src.Get(key_linear_resource_map);
+        if lookup_linear_resource_map.Ok {
+            mut cloned_record_linear_resource_map := linear_resource_record_clone(lookup_linear_resource_map.Val, ctx);
+            dest_linear_resource_map.Insert(std.Clone(ctx, key_linear_resource_map), cloned_record_linear_resource_map);
+        }
+        i_linear_resource_map = i_linear_resource_map + 1;
+    }
+    return dest_linear_resource_map;
 }
 
 func typechecker_has_boolean_fields_recursive(t: ast.Type[ctx], env: *TypeEnvironment[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) int {

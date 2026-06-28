@@ -2151,6 +2151,13 @@ func main() {
     t_step52_resource_diagnostics.expected = "SUCCESS: inert linear resource diagnostics verified!";
     tests.Push(t_step52_resource_diagnostics);
 
+    mut t_step52_linear_resource_scope_state: Test[ctx];
+    t_step52_linear_resource_scope_state.path = "compiler/typechecker_linear_resource_scope_state_test_entry.gst";
+    t_step52_linear_resource_scope_state.is_negative = 0;
+    t_step52_linear_resource_scope_state.is_substring = 1;
+    t_step52_linear_resource_scope_state.expected = "SUCCESS: inert linear resource scope-state snapshots verified!";
+    tests.Push(t_step52_linear_resource_scope_state);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
