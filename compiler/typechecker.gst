@@ -389,9 +389,9 @@ func expression_provenance_with_legacy_origins(prov: ExpressionProvenance[ctx], 
     return out;
 }
 
-func expression_provenance_join(left: ExpressionProvenance[ctx], right: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+func step51g_join_expression_provenance(left: ExpressionProvenance[ctx], right: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
     mut joined := expression_provenance_unknown(left.resolved_type, ctx);
-    joined.address_origin = address_origin_join(left.address_origin, right.address_origin);
+    joined.address_origin = step51g_join_address_origin(left.address_origin, right.address_origin);
     if left.legacy_origins != empty[Index[OriginSet[ctx], ctx]] {
         set_union(joined.legacy_origins, left.legacy_origins, ctx);
     }
@@ -399,6 +399,10 @@ func expression_provenance_join(left: ExpressionProvenance[ctx], right: Expressi
         set_union(joined.legacy_origins, right.legacy_origins, ctx);
     }
     return joined;
+}
+
+func expression_provenance_join(left: ExpressionProvenance[ctx], right: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    return step51g_join_expression_provenance(left, right, ctx);
 }
 
 func expression_provenance_allows_safe_branding(prov: ExpressionProvenance[ctx]) int {
