@@ -3028,6 +3028,23 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
             if expr.tag == 12 { // Call
                 mut call_name_prov := expression_to_string(expr.Call.function, ctx);
                 mut resolved_call_name_prov := env_resolve_namespaced_ident(env, call_name_prov, ctx);
+
+                if std.str_eq(call_name_prov, "os.ArenaAlloc") == 1 {
+                    mut arena_alloc_prov := expression_provenance_safe_arena(t, ctx);
+                    arena_alloc_prov.legacy_origins = legacy_origins;
+                    return arena_alloc_prov;
+                }
+                if std.str_eq(resolved_call_name_prov, "os.ArenaAlloc") == 1 {
+                    mut arena_alloc_resolved_prov := expression_provenance_safe_arena(t, ctx);
+                    arena_alloc_resolved_prov.legacy_origins = legacy_origins;
+                    return arena_alloc_resolved_prov;
+                }
+                if std.str_eq(call_name_prov, "ArenaAlloc") == 1 {
+                    mut arena_alloc_short_prov := expression_provenance_safe_arena(t, ctx);
+                    arena_alloc_short_prov.legacy_origins = legacy_origins;
+                    return arena_alloc_short_prov;
+                }
+
                 mut return_prov_lookup := (*env).function_return_provenance.Get(resolved_call_name_prov);
                 if return_prov_lookup.Ok {
                     mut found_call_prov := return_prov_lookup.Val;
