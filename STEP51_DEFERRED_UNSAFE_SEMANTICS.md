@@ -79,7 +79,7 @@ The compiler now has an inert `AddressOriginMetadata` carrier for classifying wh
 - `sandbox_derived`: a value whose origin traces to transient sandbox-FFI storage and must not be rebranded into caller-owned safe storage without an explicit future copy/validation rule.
 - `unknown`: an intentionally conservative default for values whose address origin has not yet been classified.
 
-The helper predicates classify whether an origin allows safe branding, whether it requires an unsafe boundary, and whether it is raw-or-sandbox-derived. These helpers are inert metadata utilities only. They do not yet replace the existing narrow local raw-derived pointer return guard.
+The helper predicates classify whether an origin allows safe branding, whether it requires an unsafe boundary, and whether it is raw-or-sandbox-derived. These helpers are inert metadata utilities only. They do not yet replace the existing narrow local raw-derived pointer return guard. `make guard_step51_safe_constructor_provenance` verifies that compiler-recognized safe constructors such as `os.ArenaAlloc(ctx)` and `ctx.get_ref(safe_index)` are classified as safe-arena provenance while `ctx.get_ref(raw_index)` does not become eligible for safe branding.
 
 ### Provenance propagation and non-laundering design checkpoint
 
