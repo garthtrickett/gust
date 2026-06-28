@@ -1,0 +1,28 @@
+# Step 5.2 policy guard implementations imported by justfile.
+# Makefile may keep compatibility wrappers; make-test guard execution calls these recipes directly.
+
+guard_step52_report_only_lanes_not_in_test:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Guarding Step 5.2 report-only lanes are not direct just make-test guard dependencies..."
+    test_deps="$(awk 'capture == 1 && /^make-test-suite:/ { exit } /^make-test-guards:/ { capture = 1 } capture == 1 { print }' justfile)"
+    if echo "$test_deps" | grep -q 'report_step52_'; then
+      echo "❌ Step 5.2 report-only target is wired into just make-test guards:"
+      echo "$test_deps"
+      exit 1
+    fi
+    echo "✅ Step 5.2 report-only lanes are not direct just make-test guard dependencies."
+
+guard_step52_no_post_closure_report_churn:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Guarding Step 5.2 report-only closure against new report target churn..."
+    allowed_reports='^(report_step52_linear_resource_inventory|report_step52_linear_resource_focused|report_step52_phase_a_status|report_step52_phase_b_destructor_status|report_step52_phase_c_resource_registry_status|report_step52_phase_d_transfer_status|report_step52_phase_e_enforcement_preconditions_status|report_step52_phase_f_closure_status|report_step52_status_matrix|report_step52_final_validation):$'
+    extra_reports="$(grep -E '^report_step52_.*:' justfile-reports | grep -Ev "$allowed_reports" || true)"
+    if [ -n "$extra_reports" ]; then
+      echo "❌ Unexpected post-closure Step 5.2 report target(s):"
+      echo "$extra_reports"
+      echo "Step 5.2F closed textual report churn; move to AST/typechecker design or update this whitelist intentionally."
+      exit 1
+    fi
+    echo "✅ Step 5.2 report-only closure whitelist is unchanged."
