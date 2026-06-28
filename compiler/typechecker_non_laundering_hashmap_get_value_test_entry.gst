@@ -39,7 +39,7 @@ func main() {
     typechecker.env_record_container_provenance(&env_raw_hgv_nlaunder, "map_raw_hgv_nlaunder[key_raw_hgv_nlaunder]", raw_cell_prov_hgv_nlaunder, ctx);
 
     mut lex_raw_bind_hgv_nlaunder: lexer.Lexer[ctx];
-    lexer.init_lexer(&lex_raw_bind_hgv_nlaunder, "mut alias_raw_hgv_nlaunder := map_raw_hgv_nlaunder.Get(key_raw_hgv_nlaunder).Val;");
+    lexer.init_lexer(&lex_raw_bind_hgv_nlaunder, "if map_raw_hgv_nlaunder.Get(key_raw_hgv_nlaunder).Ok { mut alias_raw_hgv_nlaunder := map_raw_hgv_nlaunder.Get(key_raw_hgv_nlaunder).Val; }");
     mut parser_raw_bind_hgv_nlaunder: parser.Parser[ctx];
     parser.init_parser(&parser_raw_bind_hgv_nlaunder, &lex_raw_bind_hgv_nlaunder, ctx);
     mut stmt_raw_bind_hgv_nlaunder := parser.parse_statement(&parser_raw_bind_hgv_nlaunder, ctx);
@@ -76,7 +76,7 @@ func main() {
     typechecker.env_record_container_provenance(&env_sandbox_hgv_nlaunder, "map_sandbox_hgv_nlaunder[key_sandbox_hgv_nlaunder]", sandbox_cell_prov_hgv_nlaunder, ctx);
 
     mut lex_sandbox_assign_hgv_nlaunder: lexer.Lexer[ctx];
-    lexer.init_lexer(&lex_sandbox_assign_hgv_nlaunder, "target_sandbox_hgv_nlaunder = map_sandbox_hgv_nlaunder.Get(key_sandbox_hgv_nlaunder).Val;");
+    lexer.init_lexer(&lex_sandbox_assign_hgv_nlaunder, "if map_sandbox_hgv_nlaunder.Get(key_sandbox_hgv_nlaunder).Ok { target_sandbox_hgv_nlaunder = map_sandbox_hgv_nlaunder.Get(key_sandbox_hgv_nlaunder).Val; }");
     mut parser_sandbox_assign_hgv_nlaunder: parser.Parser[ctx];
     parser.init_parser(&parser_sandbox_assign_hgv_nlaunder, &lex_sandbox_assign_hgv_nlaunder, ctx);
     mut stmt_sandbox_assign_hgv_nlaunder := parser.parse_statement(&parser_sandbox_assign_hgv_nlaunder, ctx);
@@ -110,7 +110,7 @@ func main() {
     typechecker.env_record_container_provenance(&env_safe_hgv_nlaunder, "map_safe_hgv_nlaunder[key_safe_hgv_nlaunder]", safe_cell_prov_hgv_nlaunder, ctx);
 
     mut lex_safe_bind_hgv_nlaunder: lexer.Lexer[ctx];
-    lexer.init_lexer(&lex_safe_bind_hgv_nlaunder, "mut alias_safe_hgv_nlaunder := map_safe_hgv_nlaunder.Get(key_safe_hgv_nlaunder).Val;");
+    lexer.init_lexer(&lex_safe_bind_hgv_nlaunder, "if map_safe_hgv_nlaunder.Get(key_safe_hgv_nlaunder).Ok { mut alias_safe_hgv_nlaunder := map_safe_hgv_nlaunder.Get(key_safe_hgv_nlaunder).Val; }");
     mut parser_safe_bind_hgv_nlaunder: parser.Parser[ctx];
     parser.init_parser(&parser_safe_bind_hgv_nlaunder, &lex_safe_bind_hgv_nlaunder, ctx);
     mut stmt_safe_bind_hgv_nlaunder := parser.parse_statement(&parser_safe_bind_hgv_nlaunder, ctx);
