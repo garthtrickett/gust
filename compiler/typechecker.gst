@@ -3111,6 +3111,41 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     }
                 }
 
+                mut get_ref_func_expr_container_prov := ctx[expr.Call.function];
+                if get_ref_func_expr_container_prov.tag == 11 { // Selector
+                    if std.str_eq(get_ref_func_expr_container_prov.Selector.right, "GetRef") == 1 {
+                        mut args_vec_container_getref_prov: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                        if len(args_vec_container_getref_prov) > 0 {
+                            mut container_getref_arg_idx_prov: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx.Set(container_getref_arg_idx_prov, args_vec_container_getref_prov[0]);
+                            mut container_getref_receiver_key_prov := expression_to_string(get_ref_func_expr_container_prov.Selector.left, ctx);
+                            mut container_getref_index_key_prov := expression_to_string(container_getref_arg_idx_prov, ctx);
+                            mut container_getref_cell_key_prov := std.Concat(container_getref_receiver_key_prov, "[");
+                            container_getref_cell_key_prov = std.Concat(container_getref_cell_key_prov, container_getref_index_key_prov);
+                            container_getref_cell_key_prov = std.Concat(container_getref_cell_key_prov, "]");
+
+                            mut container_getref_lookup_prov := (*env).container_provenance.Get(container_getref_cell_key_prov);
+                            if container_getref_lookup_prov.Ok {
+                                mut container_getref_cell_prov := container_getref_lookup_prov.Val;
+                                if expression_provenance_allows_safe_branding(container_getref_cell_prov) == 1 {
+                                    mut container_getref_safe_prov := expression_provenance_safe_arena(t, ctx);
+                                    container_getref_safe_prov.legacy_origins = typechecker_clone_origin_set(container_getref_cell_prov.legacy_origins, ctx);
+                                    set_union(container_getref_safe_prov.legacy_origins, legacy_origins, ctx);
+                                    return container_getref_safe_prov;
+                                }
+                                if expression_provenance_is_raw_or_sandbox_derived(container_getref_cell_prov) == 1 {
+                                    mut container_getref_unsafe_prov := container_getref_cell_prov;
+                                    container_getref_unsafe_prov.resolved_type = t;
+                                    mut container_getref_unsafe_origins := typechecker_clone_origin_set(container_getref_unsafe_prov.legacy_origins, ctx);
+                                    set_union(container_getref_unsafe_origins, legacy_origins, ctx);
+                                    container_getref_unsafe_prov.legacy_origins = container_getref_unsafe_origins;
+                                    return container_getref_unsafe_prov;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 mut return_prov_lookup := (*env).function_return_provenance.Get(resolved_call_name_prov);
                 if return_prov_lookup.Ok {
                     mut found_call_prov := return_prov_lookup.Val;
