@@ -2186,6 +2186,13 @@ func main() {
     t_step52_resource_lifecycle_ops.expected = "SUCCESS: inert linear resource lifecycle operation helpers verified!";
     tests.Push(t_step52_resource_lifecycle_ops);
 
+    mut t_step52_resource_cleanup_queries: Test[ctx];
+    t_step52_resource_cleanup_queries.path = "compiler/typechecker_resource_cleanup_queries_test_entry.gst";
+    t_step52_resource_cleanup_queries.is_negative = 0;
+    t_step52_resource_cleanup_queries.is_substring = 1;
+    t_step52_resource_cleanup_queries.expected = "SUCCESS: inert linear resource cleanup query helpers verified!";
+    tests.Push(t_step52_resource_cleanup_queries);
+
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 

@@ -5942,6 +5942,44 @@ func env_try_schedule_open_linear_resource_destructor(env: *TypeEnvironment[ctx]
     return env_mark_open_linear_resource_destructor_scheduled(env, variable_name, ctx);
 }
 
+func env_count_open_linear_resources_requiring_cleanup(env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    mut count_linear_resource_cleanup_query := 0;
+    unsafe {
+        mut keys_linear_resource_cleanup_query := (*env).open_linear_resources.Keys(ctx);
+        mut idx_linear_resource_cleanup_query := 0;
+        while idx_linear_resource_cleanup_query < len(keys_linear_resource_cleanup_query) {
+            mut key_linear_resource_cleanup_query := keys_linear_resource_cleanup_query[idx_linear_resource_cleanup_query];
+            if env_open_linear_resource_requires_cleanup(env, key_linear_resource_cleanup_query, ctx) == 1 {
+                count_linear_resource_cleanup_query = count_linear_resource_cleanup_query + 1;
+            }
+            idx_linear_resource_cleanup_query = idx_linear_resource_cleanup_query + 1;
+        }
+    }
+    return count_linear_resource_cleanup_query;
+}
+
+func env_open_linear_resources_have_pending_cleanup(env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    if env_count_open_linear_resources_requiring_cleanup(env, ctx) == 0 {
+        return 0;
+    }
+    return 1;
+}
+
+func env_first_open_linear_resource_requiring_cleanup(env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        mut keys_first_linear_resource_cleanup := (*env).open_linear_resources.Keys(ctx);
+        mut idx_first_linear_resource_cleanup := 0;
+        while idx_first_linear_resource_cleanup < len(keys_first_linear_resource_cleanup) {
+            mut key_first_linear_resource_cleanup := keys_first_linear_resource_cleanup[idx_first_linear_resource_cleanup];
+            if env_open_linear_resource_requires_cleanup(env, key_first_linear_resource_cleanup, ctx) == 1 {
+                return std.Clone(ctx, key_first_linear_resource_cleanup);
+            }
+            idx_first_linear_resource_cleanup = idx_first_linear_resource_cleanup + 1;
+        }
+    }
+    return "";
+}
+
 func make_type_resource(payload_type: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     mut args_resource_type: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     args_resource_type.Push(payload_type);
