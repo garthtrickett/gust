@@ -1581,11 +1581,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                     mut value_arg_arena_write: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx.Set(value_arg_arena_write, args_vec_arena_write[1]);
-                    mut value_type_arena_write := check_expression(value_arg_arena_write, env, scope, ctx);
-                    value_type_arena_write = env_resolve_type(env, value_type_arena_write, ctx);
+                    mut value_prov_arena_write_nlaunder := check_expression_with_provenance(value_arg_arena_write, env, scope, ctx);
+                    mut value_type_arena_write := env_resolve_type(env, value_prov_arena_write_nlaunder.resolved_type, ctx);
+                    value_prov_arena_write_nlaunder.resolved_type = value_type_arena_write;
 
                     mut elem_type_arena_write := typechecker_get_index_element_type(idx_type_arena_write, env, ctx);
                     elem_type_arena_write = env_resolve_type(env, elem_type_arena_write, ctx);
+                    env_report_non_laundering_safe_brand_target(env, elem_type_arena_write, value_prov_arena_write_nlaunder, get_expression_span(value_arg_arena_write, ctx), "Passing raw-derived or sandbox-derived value to Arena.Set/Write", ctx);
                     if types_match(elem_type_arena_write, value_type_arena_write, ctx) == 0 {
                         mut msg_value_arena_write := std.Concat("Semantic Error: Arena.Set/Write value type mismatch. Expected ", ast.serialize_type(elem_type_arena_write, ctx));
                         msg_value_arena_write = std.Concat(msg_value_arena_write, " but got ");
