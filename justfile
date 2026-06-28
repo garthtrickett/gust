@@ -1,6 +1,8 @@
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 import 'justfile-reports'
 import 'justfile-step51'
+import 'justfile-step44'
+import 'justfile-step45'
 
 default:
     just --list
@@ -46,110 +48,7 @@ guard-step51-non-launder-hashmap-get-value:
 guard-step51-non-launder-hashmap-get-value-field:
     just guard compiler/typechecker_non_laundering_hashmap_get_value_field_test_entry.gst
 
-# Command-only Make guards live here; Makefile keeps aggregate wiring.
-_guard-step44-file-scan label files fail pass:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "{{label}}"
-    if rg -n '&ctx\[' {{files}} | rg ' as \*(std\.Vector|std\.HashMap|str)'; then
-      echo "{{fail}}"
-      exit 1
-    else
-      echo "{{pass}}"
-    fi
-
-_guard-step44-range-scan label file range fail pass:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "{{label}}"
-    if sed -n '{{range}}' "{{file}}" | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then
-      echo "{{fail}}"
-      exit 1
-    else
-      echo "{{pass}}"
-    fi
-
-guard_step44_low_risk_entry_raw_casts:
-    just _guard-step44-file-scan "🔒 Checking Step 4.4 migrated low-risk entry files for high-level raw collection/string casts..." "compiler/type_dump_entry.gst compiler/test_runner_entry.gst compiler/parser_reference_access_test_entry.gst" "❌ Step 4.4 low-risk entry guard failed: migrated entry files must not reintroduce direct arena collection/string casts." "✅ Step 4.4 low-risk entry guard passed."
-
-guard_step44_typechecker_aux_raw_casts:
-    just _guard-step44-file-scan "🔒 Checking Step 4.4 migrated typechecker auxiliary test entries for high-level raw collection/string casts..." "compiler/typechecker_templates_test_entry.gst compiler/typechecker_origins_test_entry.gst" "❌ Step 4.4 typechecker auxiliary guard failed: migrated test entries must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker auxiliary guard passed."
-
-guard_step44_typechecker_types_raw_casts:
-    just _guard-step44-file-scan "🔒 Checking Step 4.4 migrated typechecker types test entry for high-level raw collection/string casts..." "compiler/typechecker_types_test_entry.gst" "❌ Step 4.4 typechecker types guard failed: migrated test entry must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker types guard passed."
-
-guard_step44_codegen_initializer_raw_casts:
-    just _guard-step44-file-scan "🔒 Checking Step 4.4 migrated codegen initializer test entry for high-level raw collection/string casts..." "compiler/codegen_initializer_test_entry.gst" "❌ Step 4.4 codegen initializer guard failed: migrated test entry must not reintroduce direct arena collection/string casts." "✅ Step 4.4 codegen initializer guard passed."
-
-guard_step44_typechecker_early_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated early typechecker slice for high-level raw collection/string casts..." "compiler/typechecker.gst" "1,460p" "❌ Step 4.4 early typechecker guard failed: migrated early slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 early typechecker guard passed."
-
-guard_step44_typechecker_methods_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated typechecker method-receiver slice for high-level raw collection/string casts..." "compiler/typechecker.gst" "1030,1468p" "❌ Step 4.4 typechecker method guard failed: migrated method-receiver slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker method guard passed."
-
-guard_step44_typechecker_pool_graph_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated typechecker Pool/Graph/top-level builtin slice for high-level raw collection/string casts..." "compiler/typechecker.gst" "1469,1899p" "❌ Step 4.4 typechecker Pool/Graph guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker Pool/Graph guard passed."
-
-guard_step44_typechecker_call_validation_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated typechecker call-validation slice for high-level raw collection/string casts..." "compiler/typechecker.gst" "1900,2350p" "❌ Step 4.4 typechecker call-validation guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker call-validation guard passed."
-
-guard_step44_typechecker_generic_helpers_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated typechecker generic-helper slice for high-level raw collection/string casts..." "compiler/typechecker.gst" "2546,3196p" "❌ Step 4.4 typechecker generic-helper guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker generic-helper guard passed."
-
-guard_step44_typechecker_template_registration_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated typechecker template-registration slice for high-level raw collection/string casts..." "compiler/typechecker.gst" "3197,3524p" "❌ Step 4.4 typechecker template-registration guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker template-registration guard passed."
-
-guard_step44_typechecker_env_registration_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated typechecker env-resolve/pre-registration slice for high-level raw collection/string casts..." "compiler/typechecker.gst" "4363,4824p" "❌ Step 4.4 typechecker env-registration guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker env-registration guard passed."
-
-guard_step44_typechecker_brand_helpers_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated typechecker block/string/brand helper slice for high-level raw collection/string casts..." "compiler/typechecker.gst" "5000,5530p" "❌ Step 4.4 typechecker brand-helper guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker brand-helper guard passed."
-
-guard_step44_typechecker_function_checks_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated typechecker function-check slice for high-level raw collection/string casts..." "compiler/typechecker.gst" "5780,6005p" "❌ Step 4.4 typechecker function-check guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker function-check guard passed."
-
-guard_step44_typechecker_statement_traversal_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated typechecker statement-traversal slice for high-level raw collection/string casts..." "compiler/typechecker.gst" "6460,6990p" "❌ Step 4.4 typechecker statement-traversal guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 typechecker statement-traversal guard passed."
-
-guard_step44_codegen_early_helpers_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated early codegen helper slice for high-level raw collection/string casts..." "compiler/codegen.gst" "120,1425p" "❌ Step 4.4 codegen early-helper guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 codegen early-helper guard passed."
-
-guard_step44_codegen_dispatch_methods_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated codegen method-dispatch slice for high-level raw collection/string casts..." "compiler/codegen.gst" "2175,2609p" "❌ Step 4.4 codegen method-dispatch guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 codegen method-dispatch guard passed."
-
-guard_step44_codegen_pool_graph_std_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated codegen Pool/Graph/std helper slice for high-level raw collection/string casts..." "compiler/codegen.gst" "2610,2988p" "❌ Step 4.4 codegen Pool/Graph/std guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 codegen Pool/Graph/std guard passed."
-
-guard_step44_codegen_std_alloc_helpers_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated codegen std/allocation helper slice for high-level raw collection/string casts..." "compiler/codegen.gst" "2989,3444p" "❌ Step 4.4 codegen std/allocation helper guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 codegen std/allocation helper guard passed."
-
-guard_step44_codegen_runtime_tail_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated codegen runtime-helper tail slice for high-level raw collection/string casts..." "compiler/codegen.gst" "3445,3772p" "❌ Step 4.4 codegen runtime-helper tail guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 codegen runtime-helper tail guard passed."
-
-guard_step44_codegen_statement_emit_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated codegen statement-emission slice for high-level raw collection/string casts..." "compiler/codegen.gst" "3773,4271p" "❌ Step 4.4 codegen statement-emission guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 codegen statement-emission guard passed."
-
-guard_step44_codegen_program_passes_raw_casts:
-    just _guard-step44-range-scan "🔒 Checking Step 4.4 migrated codegen program-level passes for high-level raw collection/string casts..." "compiler/codegen.gst" "4720,4865p" "❌ Step 4.4 codegen program-level guard failed: migrated slice must not reintroduce direct arena collection/string casts." "✅ Step 4.4 codegen program-level guard passed."
-
-guard_step44_no_high_level_raw_collection_casts:
-    just _guard-step44-file-scan "🔒 Checking Step 4.4 whole-compiler high-level raw collection/string cast migration..." "compiler/*.gst" "❌ Step 4.4 whole-compiler guard failed: direct arena collection/string casts must not be reintroduced." "✅ Step 4.4 whole-compiler high-level raw collection/string cast guard passed."
-
-guard_parser_high_level_raw_casts:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🔒 Checking parser raw casts are limited to lexer/token compatibility shims..."
-    if rg -n '&ctx\[' compiler/parser.gst; then
-      echo "❌ Parser guard failed: compiler/parser.gst must not use direct &ctx[...] arena casts."
-      exit 1
-    fi
-    if rg -n ' as \*' compiler/parser.gst | rg -v 'lexer\.Lexer|token\.Token'; then
-      echo "❌ Parser guard failed: compiler/parser.gst has a non-compat raw pointer cast."
-      echo "   Only lexer/token compatibility casts should remain in parser.gst after Step 6B."
-      exit 1
-    else
-      echo "✅ Parser guard passed: only lexer/token compatibility casts remain."
-    fi
+# Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
 # Report aliases stay informational; Makefile policy guards keep reports out of make test.
 report-step51:

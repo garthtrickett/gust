@@ -1,0 +1,14 @@
+# Step 4.5 textual guard implementations imported by justfile.
+# Makefile keeps compatibility wrappers; safe-subscript enforcement body lives here.
+
+guard_step45_safe_subscript_write_enforcement:
+    echo "🔒 Checking Step 4.5C safe subscript write enforcement..."
+    just guard-compile-fail tests/test_safe_arena_subscript_write_rejected.gst "direct subscript writes require unsafe or explicit write APIs" step45c_safe_arena_subscript_write
+    just guard-compile-fail tests/test_safe_arena_subscript_field_write_rejected.gst "direct subscript writes require unsafe or explicit write APIs" step45c_safe_arena_subscript_field_write
+    just guard-compile-fail tests/test_safe_vector_subscript_write_rejected.gst "direct subscript writes require unsafe or explicit write APIs" step45c_safe_vector_subscript_write
+    just guard-compile-fail tests/test_safe_nested_selector_subscript_field_write_rejected.gst "direct subscript writes require unsafe or explicit write APIs" step45c_safe_nested_selector_subscript_field_write
+    just guard-compile-pass tests/e2e_unsafe_arena_subscript_write.gst step45c_unsafe_arena_subscript_write
+    just guard-compile-pass tests/e2e_unsafe_arena_subscript_field_write.gst step45c_unsafe_arena_subscript_field_write
+    just guard-compile-pass tests/e2e_unsafe_vector_subscript_write.gst step45c_unsafe_vector_subscript_write
+    just guard-compile-pass tests/e2e_unsafe_nested_selector_subscript_field_write.gst step45c_unsafe_nested_selector_subscript_field_write
+    echo "✅ Step 4.5C safe subscript write enforcement guard passed."

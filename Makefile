@@ -176,44 +176,11 @@ guard_step52_no_post_closure_report_churn:
 	fi
 	@echo "✅ Step 5.2 report-only closure whitelist is unchanged."
 
-guard_step45_safe_subscript_write_enforcement: gust
-	@echo "🔒 Checking Step 4.5C safe subscript write enforcement..."
-	@mkdir -p build
-	@for f in \
-		tests/test_safe_arena_subscript_write_rejected.gst \
-		tests/test_safe_arena_subscript_field_write_rejected.gst \
-		tests/test_safe_vector_subscript_write_rejected.gst \
-		tests/test_safe_nested_selector_subscript_field_write_rejected.gst; do \
-		echo "Checking $$f rejects safe direct subscript writes..."; \
-		./gust $$f > build/step45c_guard.log 2>&1; \
-		status=$$?; \
-		if [ $$status -eq 0 ]; then \
-			echo "❌ Step 4.5C guard failed: $$f compiled but should reject safe direct subscript writes."; \
-			cat build/step45c_guard.log; \
-			exit 1; \
-		fi; \
-		if ! rg -q "direct subscript writes require unsafe or explicit write APIs" build/step45c_guard.log; then \
-			echo "❌ Step 4.5C guard failed: $$f rejected without the stable unsafe-subscript diagnostic."; \
-			cat build/step45c_guard.log; \
-			exit 1; \
-		fi; \
-	done
-	@for f in \
-		tests/e2e_unsafe_arena_subscript_write.gst \
-		tests/e2e_unsafe_arena_subscript_field_write.gst \
-		tests/e2e_unsafe_vector_subscript_write.gst \
-		tests/e2e_unsafe_nested_selector_subscript_field_write.gst; do \
-		echo "Checking $$f still accepts unsafe direct subscript writes..."; \
-		./gust $$f > build/step45c_guard.log 2>&1; \
-		status=$$?; \
-		if [ $$status -ne 0 ]; then \
-			echo "❌ Step 4.5C guard failed: $$f should compile inside unsafe."; \
-			cat build/step45c_guard.log; \
-			exit 1; \
-		fi; \
-	done
-	@echo "✅ Step 4.5C safe subscript write enforcement guard passed."
+JUST_STEP45_GUARD_TARGETS = \
+	guard_step45_safe_subscript_write_enforcement
 
+$(JUST_STEP45_GUARD_TARGETS): gust require_just
+	@just $@
 
 JUST_GUARD_TARGETS = \
 	guard_step44_low_risk_entry_raw_casts \
