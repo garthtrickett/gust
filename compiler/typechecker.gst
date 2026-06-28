@@ -1746,6 +1746,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             return dummy;
                         }
 
+                        mut method_container_base_vector_set_prov := expression_to_string(left_expr_idx, ctx);
+                        mut method_container_index_vector_set_prov := expression_to_string(idx_arg_idx_vector_set, ctx);
+                        mut method_container_key_vector_set_prov := std.Concat(method_container_base_vector_set_prov, "[");
+                        method_container_key_vector_set_prov = std.Concat(method_container_key_vector_set_prov, method_container_index_vector_set_prov);
+                        method_container_key_vector_set_prov = std.Concat(method_container_key_vector_set_prov, "]");
+                        env_record_container_provenance(env, method_container_key_vector_set_prov, value_arg_prov_vector_set_nlaunder, ctx);
+
                         mut t_void_vector_set: ast.Type[ctx];
                         t_void_vector_set.tag = 3; // Void
                         return t_void_vector_set;
@@ -1852,7 +1859,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 msg = std.Concat(msg, ast.serialize_type(v_arg, ctx));
                                 report_error(2, msg, get_expression_span(arg1_idx, ctx), env, ctx);
                             }
+
+                            mut method_container_base_map_insert_prov := expression_to_string(left_expr_idx, ctx);
+                            mut method_container_key_map_insert_prov := expression_to_string(arg0_idx, ctx);
+                            mut method_container_cell_map_insert_prov := std.Concat(method_container_base_map_insert_prov, "[");
+                            method_container_cell_map_insert_prov = std.Concat(method_container_cell_map_insert_prov, method_container_key_map_insert_prov);
+                            method_container_cell_map_insert_prov = std.Concat(method_container_cell_map_insert_prov, "]");
+                            env_record_container_provenance(env, method_container_cell_map_insert_prov, v_arg_prov_map_insert_nlaunder, ctx);
                         }
+                        mut t_void: ast.Type[ctx];
                         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                         return t_void;
                     }
