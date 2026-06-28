@@ -10,7 +10,10 @@ SHELL = bash
 # Keep Make's explicit phony surface small. The Makefile remains the canonical
 # build graph for core aggregate commands; focused guard/report discovery lives
 # in justfile and concrete recipe names below rather than in a giant .PHONY list.
-.PHONY: all clean test bootstrap install test_tree_sitter
+.PHONY: all clean test bootstrap install test_tree_sitter require_just
+
+require_just:
+	@command -v just >/dev/null 2>&1 || { echo "❌ just is required for focused Make guards. Run nix develop or install just."; exit 1; }
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
@@ -1623,219 +1626,33 @@ guard_step51_non_laundering_hashmap_get_value_field_enforcement: gust
 guard_step51_basic_unsafe_enforcement: guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement
 	@echo "✅ Step 5.1 basic unsafe enforcement aggregate passed."
 
-guard_step44_low_risk_entry_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated low-risk entry files for high-level raw collection/string casts..."
-	@STEP44_LOW_RISK_FILES="compiler/type_dump_entry.gst compiler/test_runner_entry.gst compiler/parser_reference_access_test_entry.gst"; \
-	if rg -n '&ctx\[' $$STEP44_LOW_RISK_FILES | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 low-risk entry guard failed: migrated entry files must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 low-risk entry guard passed."; \
-	fi
+JUST_GUARD_TARGETS = \
+	guard_step44_low_risk_entry_raw_casts \
+	guard_step44_typechecker_aux_raw_casts \
+	guard_step44_typechecker_types_raw_casts \
+	guard_step44_codegen_initializer_raw_casts \
+	guard_step44_typechecker_early_raw_casts \
+	guard_step44_typechecker_methods_raw_casts \
+	guard_step44_typechecker_pool_graph_raw_casts \
+	guard_step44_typechecker_call_validation_raw_casts \
+	guard_step44_typechecker_generic_helpers_raw_casts \
+	guard_step44_typechecker_template_registration_raw_casts \
+	guard_step44_typechecker_env_registration_raw_casts \
+	guard_step44_typechecker_brand_helpers_raw_casts \
+	guard_step44_typechecker_function_checks_raw_casts \
+	guard_step44_typechecker_statement_traversal_raw_casts \
+	guard_step44_codegen_early_helpers_raw_casts \
+	guard_step44_codegen_dispatch_methods_raw_casts \
+	guard_step44_codegen_pool_graph_std_raw_casts \
+	guard_step44_codegen_std_alloc_helpers_raw_casts \
+	guard_step44_codegen_runtime_tail_raw_casts \
+	guard_step44_codegen_statement_emit_raw_casts \
+	guard_step44_codegen_program_passes_raw_casts \
+	guard_step44_no_high_level_raw_collection_casts \
+	guard_parser_high_level_raw_casts
 
-guard_step44_typechecker_aux_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker auxiliary test entries for high-level raw collection/string casts..."
-	@STEP44_TYPECHECKER_AUX_FILES="compiler/typechecker_templates_test_entry.gst compiler/typechecker_origins_test_entry.gst"; \
-	if rg -n '&ctx\[' $$STEP44_TYPECHECKER_AUX_FILES | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker auxiliary guard failed: migrated test entries must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker auxiliary guard passed."; \
-	fi
-
-guard_step44_typechecker_types_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker types test entry for high-level raw collection/string casts..."
-	@if rg -n '&ctx\[' compiler/typechecker_types_test_entry.gst | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker types guard failed: migrated test entry must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker types guard passed."; \
-	fi
-
-guard_step44_codegen_initializer_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated codegen initializer test entry for high-level raw collection/string casts..."
-	@if rg -n '&ctx\[' compiler/codegen_initializer_test_entry.gst | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 codegen initializer guard failed: migrated test entry must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 codegen initializer guard passed."; \
-	fi
-
-guard_step44_typechecker_early_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated early typechecker slice for high-level raw collection/string casts..."
-	@if sed -n '1,460p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 early typechecker guard failed: migrated early slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 early typechecker guard passed."; \
-	fi
-
-guard_step44_typechecker_methods_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker method-receiver slice for high-level raw collection/string casts..."
-	@if sed -n '1030,1468p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker method guard failed: migrated method-receiver slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker method guard passed."; \
-	fi
-
-guard_step44_typechecker_pool_graph_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker Pool/Graph/top-level builtin slice for high-level raw collection/string casts..."
-	@if sed -n '1469,1899p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker Pool/Graph guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker Pool/Graph guard passed."; \
-	fi
-
-guard_step44_typechecker_call_validation_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker call-validation slice for high-level raw collection/string casts..."
-	@if sed -n '1900,2350p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker call-validation guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker call-validation guard passed."; \
-	fi
-
-guard_step44_typechecker_generic_helpers_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker generic-helper slice for high-level raw collection/string casts..."
-	@if sed -n '2546,3196p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker generic-helper guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker generic-helper guard passed."; \
-	fi
-
-guard_step44_typechecker_template_registration_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker template-registration slice for high-level raw collection/string casts..."
-	@if sed -n '3197,3524p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker template-registration guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker template-registration guard passed."; \
-	fi
-
-guard_step44_typechecker_env_registration_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker env-resolve/pre-registration slice for high-level raw collection/string casts..."
-	@if sed -n '4363,4824p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker env-registration guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker env-registration guard passed."; \
-	fi
-
-guard_step44_typechecker_brand_helpers_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker block/string/brand helper slice for high-level raw collection/string casts..."
-	@if sed -n '5000,5530p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker brand-helper guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker brand-helper guard passed."; \
-	fi
-
-guard_step44_typechecker_function_checks_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker function-check slice for high-level raw collection/string casts..."
-	@if sed -n '5780,6005p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker function-check guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker function-check guard passed."; \
-	fi
-
-guard_step44_typechecker_statement_traversal_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated typechecker statement-traversal slice for high-level raw collection/string casts..."
-	@if sed -n '6460,6990p' compiler/typechecker.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 typechecker statement-traversal guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 typechecker statement-traversal guard passed."; \
-	fi
-
-guard_step44_codegen_early_helpers_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated early codegen helper slice for high-level raw collection/string casts..."
-	@if sed -n '120,1425p' compiler/codegen.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 codegen early-helper guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 codegen early-helper guard passed."; \
-	fi
-
-guard_step44_codegen_dispatch_methods_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated codegen method-dispatch slice for high-level raw collection/string casts..."
-	@if sed -n '2175,2609p' compiler/codegen.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 codegen method-dispatch guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 codegen method-dispatch guard passed."; \
-	fi
-
-guard_step44_codegen_pool_graph_std_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated codegen Pool/Graph/std helper slice for high-level raw collection/string casts..."
-	@if sed -n '2610,2988p' compiler/codegen.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 codegen Pool/Graph/std guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 codegen Pool/Graph/std guard passed."; \
-	fi
-
-guard_step44_codegen_std_alloc_helpers_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated codegen std/allocation helper slice for high-level raw collection/string casts..."
-	@if sed -n '2989,3444p' compiler/codegen.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 codegen std/allocation helper guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 codegen std/allocation helper guard passed."; \
-	fi
-
-guard_step44_codegen_runtime_tail_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated codegen runtime-helper tail slice for high-level raw collection/string casts..."
-	@if sed -n '3445,3772p' compiler/codegen.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 codegen runtime-helper tail guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 codegen runtime-helper tail guard passed."; \
-	fi
-
-guard_step44_codegen_statement_emit_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated codegen statement-emission slice for high-level raw collection/string casts..."
-	@if sed -n '3773,4271p' compiler/codegen.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 codegen statement-emission guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 codegen statement-emission guard passed."; \
-	fi
-
-guard_step44_codegen_program_passes_raw_casts:
-	@echo "🔒 Checking Step 4.4 migrated codegen program-level passes for high-level raw collection/string casts..."
-	@if sed -n '4720,4865p' compiler/codegen.gst | rg '&ctx\[' | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 codegen program-level guard failed: migrated slice must not reintroduce direct arena collection/string casts."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 codegen program-level guard passed."; \
-	fi
-
-guard_step44_no_high_level_raw_collection_casts:
-	@echo "🔒 Checking Step 4.4 whole-compiler high-level raw collection/string cast migration..."
-	@if rg -n '&ctx\[' compiler/*.gst | rg ' as \*(std\.Vector|std\.HashMap|str)'; then \
-		echo "❌ Step 4.4 whole-compiler guard failed: direct arena collection/string casts must not be reintroduced."; \
-		exit 1; \
-	else \
-		echo "✅ Step 4.4 whole-compiler high-level raw collection/string cast guard passed."; \
-	fi
-
-guard_parser_high_level_raw_casts:
-	@echo "🔒 Checking parser raw casts are limited to lexer/token compatibility shims..."
-	@if rg -n '&ctx\[' compiler/parser.gst; then \
-		echo "❌ Parser guard failed: compiler/parser.gst must not use direct &ctx[...] arena casts."; \
-		exit 1; \
-	fi
-	@if rg -n ' as \*' compiler/parser.gst | rg -v 'lexer\.Lexer|token\.Token'; then \
-		echo "❌ Parser guard failed: compiler/parser.gst has a non-compat raw pointer cast."; \
-		echo "   Only lexer/token compatibility casts should remain in parser.gst after Step 6B."; \
-		exit 1; \
-	else \
-		echo "✅ Parser guard passed: only lexer/token compatibility casts remain."; \
-	fi
+$(JUST_GUARD_TARGETS): require_just
+	@just $@
 
 clean:
 	rm -rf gust_bootstrap gust build/
