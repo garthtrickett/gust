@@ -66,6 +66,45 @@ func main() {
         os.Exit(1);
     }
 
+    mut env_raw_assign_hgvfield_nlaunder := typechecker.env_new(ctx);
+    mut scope_raw_assign_hgvfield_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+    typechecker.env_register_struct(&env_raw_assign_hgvfield_nlaunder, "HashMapGetValueFieldNlaunderHolder", holder_layout_hgvfield_nlaunder, ctx);
+    typechecker.env_register_struct(&env_raw_assign_hgvfield_nlaunder, "HashMap_Int_HashMapGetValueFieldNlaunderHolder", map_layout_hgvfield_nlaunder, ctx);
+
+    typechecker.scope_insert(scope_raw_assign_hgvfield_nlaunder, "map_raw_assign_hgvfield_nlaunder", t_map_hgvfield_nlaunder, ctx);
+    env_raw_assign_hgvfield_nlaunder.variable_types.Insert("map_raw_assign_hgvfield_nlaunder", t_map_hgvfield_nlaunder);
+
+    typechecker.scope_insert(scope_raw_assign_hgvfield_nlaunder, "key_raw_assign_hgvfield_nlaunder", t_int_hgvfield_nlaunder, ctx);
+    env_raw_assign_hgvfield_nlaunder.variable_types.Insert("key_raw_assign_hgvfield_nlaunder", t_int_hgvfield_nlaunder);
+
+    typechecker.scope_insert(scope_raw_assign_hgvfield_nlaunder, "target_raw_assign_hgvfield_nlaunder", t_idx_hgvfield_nlaunder, ctx);
+    env_raw_assign_hgvfield_nlaunder.variable_types.Insert("target_raw_assign_hgvfield_nlaunder", t_idx_hgvfield_nlaunder);
+
+    mut raw_assign_origins_hgvfield_nlaunder := typechecker.set_init(ctx);
+    typechecker.set_add(raw_assign_origins_hgvfield_nlaunder, "raw_hashmap_get_value_field_assignment_nlaunder_root", ctx);
+    mut raw_assign_field_prov_hgvfield_nlaunder := typechecker.expression_provenance_raw_derived(t_idx_hgvfield_nlaunder, ctx);
+    raw_assign_field_prov_hgvfield_nlaunder.legacy_origins = raw_assign_origins_hgvfield_nlaunder;
+    typechecker.env_record_field_provenance(&env_raw_assign_hgvfield_nlaunder, "map_raw_assign_hgvfield_nlaunder[key_raw_assign_hgvfield_nlaunder].survivor", raw_assign_field_prov_hgvfield_nlaunder, ctx);
+    env_raw_assign_hgvfield_nlaunder.checked_results.Insert("map_raw_assign_hgvfield_nlaunder.Get(key_raw_assign_hgvfield_nlaunder)", 1);
+
+    mut lex_raw_assign_hgvfield_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_raw_assign_hgvfield_nlaunder, "target_raw_assign_hgvfield_nlaunder = map_raw_assign_hgvfield_nlaunder.Get(key_raw_assign_hgvfield_nlaunder).Val.survivor;");
+    mut parser_raw_assign_hgvfield_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_raw_assign_hgvfield_nlaunder, &lex_raw_assign_hgvfield_nlaunder, ctx);
+    mut stmt_raw_assign_hgvfield_nlaunder := parser.parse_statement(&parser_raw_assign_hgvfield_nlaunder, ctx);
+
+    typechecker.check_statement(stmt_raw_assign_hgvfield_nlaunder, &env_raw_assign_hgvfield_nlaunder, scope_raw_assign_hgvfield_nlaunder, ctx);
+
+    if len(env_raw_assign_hgvfield_nlaunder.errors) == 0 {
+        os.LogStr("Error: expected raw-derived HashMap.Get(key).Val.field assignment non-laundering rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_raw_assign_hgvfield_nlaunder.errors[0].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: HashMap.Get(key).Val.field raw assignment emitted wrong diagnostic");
+        os.LogStr(env_raw_assign_hgvfield_nlaunder.errors[0].message);
+        os.Exit(1);
+    }
+
     mut env_sandbox_hgvfield_nlaunder := typechecker.env_new(ctx);
     mut scope_sandbox_hgvfield_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_sandbox_hgvfield_nlaunder, "HashMapGetValueFieldNlaunderHolder", holder_layout_hgvfield_nlaunder, ctx);
