@@ -48,7 +48,7 @@ bootstrap: gust
 	touch build/gust_compiler.c
 	touch gust
 
-test: gust guard_step45_safe_subscript_write_enforcement guard_step51_basic_unsafe_enforcement guard_step51_extern_func_parser_metadata guard_step51_extern_func_call_enforcement guard_step51_layout_metadata_defaults guard_step51_layout_ffi_policy_helpers guard_step51_layout_ffi_signature_helpers guard_step51_sandbox_policy_defaults guard_step51_address_origin_metadata guard_step51_expression_provenance_carrier guard_step51_variable_provenance_bindings guard_step51_return_provenance_capture guard_step51_function_call_provenance guard_step51_aggregate_field_provenance guard_step51_container_provenance guard_step51_non_laundering_return_enforcement guard_step51_non_laundering_binding_enforcement guard_step51_non_laundering_call_enforcement guard_step51_non_laundering_field_enforcement guard_step51_non_laundering_container_enforcement guard_step51_non_laundering_container_method_enforcement guard_step51_report_only_lanes_not_in_test guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
+test: gust guard_step45_safe_subscript_write_enforcement guard_step51_basic_unsafe_enforcement guard_step51_extern_func_parser_metadata guard_step51_extern_func_call_enforcement guard_step51_layout_metadata_defaults guard_step51_layout_ffi_policy_helpers guard_step51_layout_ffi_signature_helpers guard_step51_sandbox_policy_defaults guard_step51_address_origin_metadata guard_step51_expression_provenance_carrier guard_step51_variable_provenance_bindings guard_step51_return_provenance_capture guard_step51_function_call_provenance guard_step51_aggregate_field_provenance guard_step51_container_provenance guard_step51_non_laundering_return_enforcement guard_step51_non_laundering_binding_enforcement guard_step51_non_laundering_call_enforcement guard_step51_non_laundering_field_enforcement guard_step51_non_laundering_container_enforcement guard_step51_non_laundering_container_method_enforcement guard_step51_non_laundering_unknown_enforcement guard_step51_report_only_lanes_not_in_test guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn guard_parser_high_level_raw_casts guard_step44_low_risk_entry_raw_casts guard_step44_typechecker_aux_raw_casts guard_step44_typechecker_types_raw_casts guard_step44_codegen_initializer_raw_casts guard_step44_typechecker_early_raw_casts guard_step44_typechecker_methods_raw_casts guard_step44_typechecker_pool_graph_raw_casts guard_step44_typechecker_call_validation_raw_casts guard_step44_typechecker_generic_helpers_raw_casts guard_step44_typechecker_template_registration_raw_casts guard_step44_typechecker_env_registration_raw_casts guard_step44_typechecker_brand_helpers_raw_casts guard_step44_typechecker_function_checks_raw_casts guard_step44_typechecker_statement_traversal_raw_casts guard_step44_codegen_early_helpers_raw_casts guard_step44_codegen_dispatch_methods_raw_casts guard_step44_codegen_pool_graph_std_raw_casts guard_step44_codegen_std_alloc_helpers_raw_casts guard_step44_codegen_runtime_tail_raw_casts guard_step44_codegen_statement_emit_raw_casts guard_step44_codegen_program_passes_raw_casts guard_step44_no_high_level_raw_collection_casts
 	@mkdir -p build
 	@echo "⚙️  Compiling native Gust test runner..."
 	@./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
@@ -209,6 +209,7 @@ report_step51_phase_f_non_laundering_status:
 	@echo "   Narrow safe-branded aggregate-field rejection: make guard_step51_non_laundering_field_enforcement"
 	@echo "   Narrow safe-branded container-element rejection: make guard_step51_non_laundering_container_enforcement"
 	@echo "   Narrow safe-branded container method storage rejection: make guard_step51_non_laundering_container_method_enforcement"
+	@echo "   Unknown-origin safe-branded rejection: make guard_step51_non_laundering_unknown_enforcement"
 	@echo "   Existing narrow escape-analysis coverage remains guarded by make guard_step51_raw_pointer_local_escape_enforcement."
 	@echo "   Still deferred: broader non-laundering diagnostics beyond direct safe-branded storage/call/return targets, field writes, indexed container writes, and basic container storage methods."
 	@echo "✅ Step 5.1F non-laundering/provenance status report complete. This target is report-only and does not run guards."
@@ -280,6 +281,7 @@ report_step51_status_matrix:
 	@echo "   ✅ non-laundering safe-branded aggregate-field rejection: make guard_step51_non_laundering_field_enforcement"
 	@echo "   ✅ non-laundering safe-branded container-element rejection: make guard_step51_non_laundering_container_enforcement"
 	@echo "   ✅ non-laundering safe-branded container method storage rejection: make guard_step51_non_laundering_container_method_enforcement"
+	@echo "   ✅ non-laundering unknown-origin safe-branded rejection: make guard_step51_non_laundering_unknown_enforcement"
 	@echo "   Aggregate: make guard_step51_basic_unsafe_enforcement"
 	@echo "   Report-only / deferred lanes:"
 	@echo "   🧭 FFI layout annotations and sandboxed FFI: make report_step51_phase_d_ffi_status"
@@ -1210,6 +1212,28 @@ guard_step51_non_laundering_container_method_enforcement: gust
 		exit $$status; \
 	fi
 	@echo "✅ Step 5.1 non-laundering safe-branded container method storage enforcement guard passed."
+
+guard_step51_non_laundering_unknown_enforcement: gust
+	@echo "🔒 Checking Step 5.1 non-laundering unknown-origin safe-branded enforcement..."
+	@mkdir -p build
+	@./gust compiler/typechecker_non_laundering_unknown_test_entry.gst > build/step51_non_laundering_unknown.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "❌ Step 5.1 non-laundering unknown-origin guard failed: compiler rejected the fixture."; \
+		cat build/step51_non_laundering_unknown.log; \
+		exit $$status; \
+	fi
+	@grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/step51_non_laundering_unknown.log > build/typechecker_non_laundering_unknown_test_entry.c
+	@cat src/runtime.c build/typechecker_non_laundering_unknown_test_entry.c > build/typechecker_non_laundering_unknown_test_entry_final.c
+	@${CC} ${CFLAGS} ${INCLUDES} build/typechecker_non_laundering_unknown_test_entry_final.c -o build/typechecker_non_laundering_unknown_test_entry_bin
+	@./build/typechecker_non_laundering_unknown_test_entry_bin >> build/step51_non_laundering_unknown.log 2>&1; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "❌ Step 5.1 non-laundering unknown-origin guard failed at runtime."; \
+		cat build/step51_non_laundering_unknown.log; \
+		exit $$status; \
+	fi
+	@echo "✅ Step 5.1 non-laundering unknown-origin safe-branded enforcement guard passed."
 
 guard_step51_basic_unsafe_enforcement: guard_step51_raw_deref_unsafe_enforcement guard_step51_raw_cast_unsafe_enforcement guard_step51_pointer_arithmetic_unsafe_enforcement guard_step51_unsafe_func_call_enforcement guard_step51_raw_pointer_local_escape_enforcement
 	@echo "✅ Step 5.1 basic unsafe enforcement aggregate passed."

@@ -433,7 +433,7 @@ func env_report_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], tar
     if env_type_is_safe_branded_return_target(target_t, ctx) == 0 {
         return;
     }
-    if expression_provenance_is_raw_or_sandbox_derived(prov) == 0 {
+    if expression_provenance_allows_safe_branding(prov) == 1 {
         return;
     }
 
