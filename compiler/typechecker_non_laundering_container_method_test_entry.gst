@@ -89,6 +89,64 @@ func main() {
     map_layout_method_nlaunder.fields.Insert("values", t_ptr_ref_method_nlaunder);
     mut t_map_method_nlaunder := typechecker.make_type_struct("HashMap_Int_SafeRefContainerMethod", "", ctx);
 
+    mut env_raw_map_method_nlaunder := typechecker.env_new(ctx);
+    mut scope_raw_map_method_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+    typechecker.env_register_struct(&env_raw_map_method_nlaunder, "HashMap_Int_SafeRefContainerMethod", map_layout_method_nlaunder, ctx);
+
+    typechecker.scope_insert(scope_raw_map_method_nlaunder, "map_raw_hash_method", t_map_method_nlaunder, ctx);
+    env_raw_map_method_nlaunder.variable_types.Insert("map_raw_hash_method", t_map_method_nlaunder);
+
+    typechecker.scope_insert(scope_raw_map_method_nlaunder, "key_raw_hash_method", t_int_method_nlaunder, ctx);
+    env_raw_map_method_nlaunder.variable_types.Insert("key_raw_hash_method", t_int_method_nlaunder);
+
+    typechecker.scope_insert(scope_raw_map_method_nlaunder, "raw_ref_method", t_ref_method_nlaunder, ctx);
+    env_raw_map_method_nlaunder.variable_types.Insert("raw_ref_method", t_ref_method_nlaunder);
+
+    mut raw_ref_origins_method_nlaunder := typechecker.set_init(ctx);
+    typechecker.set_add(raw_ref_origins_method_nlaunder, "raw_hash_method_root", ctx);
+    env_raw_map_method_nlaunder.variable_origins.Insert("raw_ref_method", raw_ref_origins_method_nlaunder);
+
+    mut raw_ref_prov_method_nlaunder := typechecker.expression_provenance_raw_derived(t_ref_method_nlaunder, ctx);
+    raw_ref_prov_method_nlaunder.legacy_origins = raw_ref_origins_method_nlaunder;
+    typechecker.env_record_variable_provenance(&env_raw_map_method_nlaunder, "raw_ref_method", raw_ref_prov_method_nlaunder, ctx);
+
+    mut lex_raw_hash_insert_method_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_raw_hash_insert_method_nlaunder, "map_raw_hash_method.Insert(key_raw_hash_method, raw_ref_method);");
+    mut parser_raw_hash_insert_method_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_raw_hash_insert_method_nlaunder, &lex_raw_hash_insert_method_nlaunder, ctx);
+    mut stmt_raw_hash_insert_method_nlaunder := parser.parse_statement(&parser_raw_hash_insert_method_nlaunder, ctx);
+
+    typechecker.check_statement(stmt_raw_hash_insert_method_nlaunder, &env_raw_map_method_nlaunder, scope_raw_map_method_nlaunder, ctx);
+
+    if len(env_raw_map_method_nlaunder.errors) == 0 {
+        os.LogStr("Error: non-laundering container method fixture expected raw-derived HashMap.Insert rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_raw_map_method_nlaunder.errors[0].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: non-laundering container method fixture emitted wrong raw HashMap.Insert diagnostic");
+        os.LogStr(env_raw_map_method_nlaunder.errors[0].message);
+        os.Exit(1);
+    }
+
+    mut errors_before_raw_hash_set_method_nlaunder := len(env_raw_map_method_nlaunder.errors);
+    mut lex_raw_hash_set_method_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_raw_hash_set_method_nlaunder, "map_raw_hash_method.Set(key_raw_hash_method, raw_ref_method);");
+    mut parser_raw_hash_set_method_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_raw_hash_set_method_nlaunder, &lex_raw_hash_set_method_nlaunder, ctx);
+    mut stmt_raw_hash_set_method_nlaunder := parser.parse_statement(&parser_raw_hash_set_method_nlaunder, ctx);
+
+    typechecker.check_statement(stmt_raw_hash_set_method_nlaunder, &env_raw_map_method_nlaunder, scope_raw_map_method_nlaunder, ctx);
+
+    if len(env_raw_map_method_nlaunder.errors) == errors_before_raw_hash_set_method_nlaunder {
+        os.LogStr("Error: non-laundering container method fixture expected raw-derived HashMap.Set rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_raw_map_method_nlaunder.errors[errors_before_raw_hash_set_method_nlaunder].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: non-laundering container method fixture emitted wrong raw HashMap.Set diagnostic");
+        os.LogStr(env_raw_map_method_nlaunder.errors[errors_before_raw_hash_set_method_nlaunder].message);
+        os.Exit(1);
+    }
+
     mut env_sandbox_method_nlaunder := typechecker.env_new(ctx);
     mut scope_sandbox_method_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_sandbox_method_nlaunder, "Vector_SafeCellContainerMethod", vector_layout_method_nlaunder, ctx);
@@ -148,6 +206,58 @@ func main() {
         os.Exit(1);
     }
 
+    typechecker.scope_insert(scope_sandbox_method_nlaunder, "values_sandbox_method", t_vector_method_nlaunder, ctx);
+    env_sandbox_method_nlaunder.variable_types.Insert("values_sandbox_method", t_vector_method_nlaunder);
+
+    typechecker.scope_insert(scope_sandbox_method_nlaunder, "sandbox_idx_method", t_idx_method_nlaunder, ctx);
+    env_sandbox_method_nlaunder.variable_types.Insert("sandbox_idx_method", t_idx_method_nlaunder);
+
+    mut sandbox_idx_origins_method_nlaunder := typechecker.set_init(ctx);
+    typechecker.set_add(sandbox_idx_origins_method_nlaunder, "sandbox_vector_method_root", ctx);
+    env_sandbox_method_nlaunder.variable_origins.Insert("sandbox_idx_method", sandbox_idx_origins_method_nlaunder);
+
+    mut sandbox_idx_prov_method_nlaunder := typechecker.expression_provenance_sandbox_derived(t_idx_method_nlaunder, ctx);
+    sandbox_idx_prov_method_nlaunder.legacy_origins = sandbox_idx_origins_method_nlaunder;
+    typechecker.env_record_variable_provenance(&env_sandbox_method_nlaunder, "sandbox_idx_method", sandbox_idx_prov_method_nlaunder, ctx);
+
+    mut errors_before_sandbox_push_method_nlaunder := len(env_sandbox_method_nlaunder.errors);
+    mut lex_sandbox_push_method_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_sandbox_push_method_nlaunder, "values_sandbox_method.Push(sandbox_idx_method);");
+    mut parser_sandbox_push_method_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_sandbox_push_method_nlaunder, &lex_sandbox_push_method_nlaunder, ctx);
+    mut stmt_sandbox_push_method_nlaunder := parser.parse_statement(&parser_sandbox_push_method_nlaunder, ctx);
+
+    typechecker.check_statement(stmt_sandbox_push_method_nlaunder, &env_sandbox_method_nlaunder, scope_sandbox_method_nlaunder, ctx);
+
+    if len(env_sandbox_method_nlaunder.errors) == errors_before_sandbox_push_method_nlaunder {
+        os.LogStr("Error: non-laundering container method fixture expected sandbox-derived Vector.Push rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_sandbox_method_nlaunder.errors[errors_before_sandbox_push_method_nlaunder].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: non-laundering container method fixture emitted wrong sandbox Vector.Push diagnostic");
+        os.LogStr(env_sandbox_method_nlaunder.errors[errors_before_sandbox_push_method_nlaunder].message);
+        os.Exit(1);
+    }
+
+    mut errors_before_sandbox_vector_set_method_nlaunder := len(env_sandbox_method_nlaunder.errors);
+    mut lex_sandbox_vector_set_method_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_sandbox_vector_set_method_nlaunder, "values_sandbox_method.Set(0, sandbox_idx_method);");
+    mut parser_sandbox_vector_set_method_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_sandbox_vector_set_method_nlaunder, &lex_sandbox_vector_set_method_nlaunder, ctx);
+    mut stmt_sandbox_vector_set_method_nlaunder := parser.parse_statement(&parser_sandbox_vector_set_method_nlaunder, ctx);
+
+    typechecker.check_statement(stmt_sandbox_vector_set_method_nlaunder, &env_sandbox_method_nlaunder, scope_sandbox_method_nlaunder, ctx);
+
+    if len(env_sandbox_method_nlaunder.errors) == errors_before_sandbox_vector_set_method_nlaunder {
+        os.LogStr("Error: non-laundering container method fixture expected sandbox-derived Vector.Set rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_sandbox_method_nlaunder.errors[errors_before_sandbox_vector_set_method_nlaunder].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: non-laundering container method fixture emitted wrong sandbox Vector.Set diagnostic");
+        os.LogStr(env_sandbox_method_nlaunder.errors[errors_before_sandbox_vector_set_method_nlaunder].message);
+        os.Exit(1);
+    }
+
     mut env_safe_method_nlaunder := typechecker.env_new(ctx);
     mut scope_safe_method_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_safe_method_nlaunder, "Vector_SafeCellContainerMethod", vector_layout_method_nlaunder, ctx);
@@ -198,6 +308,13 @@ func main() {
     mut stmt_safe_set_method_nlaunder := parser.parse_statement(&parser_safe_set_method_nlaunder, ctx);
     typechecker.check_statement(stmt_safe_set_method_nlaunder, &env_safe_method_nlaunder, scope_safe_method_nlaunder, ctx);
 
+    mut lex_safe_map_insert_method_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_safe_map_insert_method_nlaunder, "map_safe_method.Insert(key_safe_method, safe_ref_method);");
+    mut parser_safe_map_insert_method_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_safe_map_insert_method_nlaunder, &lex_safe_map_insert_method_nlaunder, ctx);
+    mut stmt_safe_map_insert_method_nlaunder := parser.parse_statement(&parser_safe_map_insert_method_nlaunder, ctx);
+    typechecker.check_statement(stmt_safe_map_insert_method_nlaunder, &env_safe_method_nlaunder, scope_safe_method_nlaunder, ctx);
+
     mut lex_safe_map_method_nlaunder: lexer.Lexer[ctx];
     lexer.init_lexer(&lex_safe_map_method_nlaunder, "map_safe_method.Set(key_safe_method, safe_ref_method);");
     mut parser_safe_map_method_nlaunder: parser.Parser[ctx];
@@ -211,5 +328,5 @@ func main() {
         os.Exit(1);
     }
 
-    os.LogStr("SUCCESS: non-laundering safe-branded container method Push/Set/Insert storage enforcement verified!");
+    os.LogStr("SUCCESS: non-laundering safe-branded container method raw/sandbox/safe Push/Set/Insert storage enforcement verified!");
 }
