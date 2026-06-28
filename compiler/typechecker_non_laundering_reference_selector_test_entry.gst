@@ -75,6 +75,17 @@ func main() {
     raw_prov_refsel_nlaunder.legacy_origins = raw_origins_refsel_nlaunder;
     typechecker.env_record_variable_provenance(&env_refsel_nlaunder, "raw_idx_refsel_nlaunder", raw_prov_refsel_nlaunder, ctx);
 
+    typechecker.scope_insert(scope_refsel_nlaunder, "sandbox_idx_refsel_nlaunder", t_idx_refsel_nlaunder, ctx);
+    env_refsel_nlaunder.variable_types.Insert("sandbox_idx_refsel_nlaunder", t_idx_refsel_nlaunder);
+
+    mut sandbox_origins_refsel_nlaunder := typechecker.set_init(ctx);
+    typechecker.set_add(sandbox_origins_refsel_nlaunder, "sandbox_reference_selector_nlaunder_root", ctx);
+    env_refsel_nlaunder.variable_origins.Insert("sandbox_idx_refsel_nlaunder", sandbox_origins_refsel_nlaunder);
+
+    mut sandbox_prov_refsel_nlaunder := typechecker.expression_provenance_sandbox_derived(t_idx_refsel_nlaunder, ctx);
+    sandbox_prov_refsel_nlaunder.legacy_origins = sandbox_origins_refsel_nlaunder;
+    typechecker.env_record_variable_provenance(&env_refsel_nlaunder, "sandbox_idx_refsel_nlaunder", sandbox_prov_refsel_nlaunder, ctx);
+
     mut errors_before_arena_refsel_nlaunder := len(env_refsel_nlaunder.errors);
     mut lex_arena_refsel_nlaunder: lexer.Lexer[ctx];
     lexer.init_lexer(&lex_arena_refsel_nlaunder, "ctx.get_ref(holder_idx_refsel_nlaunder).idx = raw_idx_refsel_nlaunder;");
@@ -160,5 +171,90 @@ func main() {
         os.Exit(1);
     }
 
-    os.LogStr("SUCCESS: reference selector non-laundering enforcement verified!");
+    mut errors_before_sandbox_arena_refsel_nlaunder := len(env_refsel_nlaunder.errors);
+    mut lex_sandbox_arena_refsel_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_sandbox_arena_refsel_nlaunder, "ctx.get_ref(holder_idx_refsel_nlaunder).idx = sandbox_idx_refsel_nlaunder;");
+    mut parser_sandbox_arena_refsel_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_sandbox_arena_refsel_nlaunder, &lex_sandbox_arena_refsel_nlaunder, ctx);
+    mut stmt_sandbox_arena_refsel_nlaunder := parser.parse_statement(&parser_sandbox_arena_refsel_nlaunder, ctx);
+    typechecker.check_statement(stmt_sandbox_arena_refsel_nlaunder, &env_refsel_nlaunder, scope_refsel_nlaunder, ctx);
+    if len(env_refsel_nlaunder.errors) == errors_before_sandbox_arena_refsel_nlaunder {
+        os.LogStr("Error: expected ctx.get_ref(...).field sandbox-derived non-laundering rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_refsel_nlaunder.errors[errors_before_sandbox_arena_refsel_nlaunder].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: sandbox ctx.get_ref(...).field emitted wrong diagnostic");
+        os.LogStr(env_refsel_nlaunder.errors[errors_before_sandbox_arena_refsel_nlaunder].message);
+        os.Exit(1);
+    }
+
+    mut errors_before_sandbox_vector_refsel_nlaunder := len(env_refsel_nlaunder.errors);
+    mut lex_sandbox_vector_refsel_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_sandbox_vector_refsel_nlaunder, "values_refsel_nlaunder.GetRef(i_refsel_nlaunder).idx = sandbox_idx_refsel_nlaunder;");
+    mut parser_sandbox_vector_refsel_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_sandbox_vector_refsel_nlaunder, &lex_sandbox_vector_refsel_nlaunder, ctx);
+    mut stmt_sandbox_vector_refsel_nlaunder := parser.parse_statement(&parser_sandbox_vector_refsel_nlaunder, ctx);
+    typechecker.check_statement(stmt_sandbox_vector_refsel_nlaunder, &env_refsel_nlaunder, scope_refsel_nlaunder, ctx);
+    if len(env_refsel_nlaunder.errors) == errors_before_sandbox_vector_refsel_nlaunder {
+        os.LogStr("Error: expected Vector.GetRef(...).field sandbox-derived non-laundering rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_refsel_nlaunder.errors[errors_before_sandbox_vector_refsel_nlaunder].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: sandbox Vector.GetRef(...).field emitted wrong diagnostic");
+        os.LogStr(env_refsel_nlaunder.errors[errors_before_sandbox_vector_refsel_nlaunder].message);
+        os.Exit(1);
+    }
+
+    mut errors_before_sandbox_map_refsel_nlaunder := len(env_refsel_nlaunder.errors);
+    mut lex_sandbox_map_refsel_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_sandbox_map_refsel_nlaunder, "map_refsel_nlaunder.GetRef(key_refsel_nlaunder).idx = sandbox_idx_refsel_nlaunder;");
+    mut parser_sandbox_map_refsel_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_sandbox_map_refsel_nlaunder, &lex_sandbox_map_refsel_nlaunder, ctx);
+    mut stmt_sandbox_map_refsel_nlaunder := parser.parse_statement(&parser_sandbox_map_refsel_nlaunder, ctx);
+    typechecker.check_statement(stmt_sandbox_map_refsel_nlaunder, &env_refsel_nlaunder, scope_refsel_nlaunder, ctx);
+    if len(env_refsel_nlaunder.errors) == errors_before_sandbox_map_refsel_nlaunder {
+        os.LogStr("Error: expected HashMap.GetRef(...).field sandbox-derived non-laundering rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_refsel_nlaunder.errors[errors_before_sandbox_map_refsel_nlaunder].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: sandbox HashMap.GetRef(...).field emitted wrong diagnostic");
+        os.LogStr(env_refsel_nlaunder.errors[errors_before_sandbox_map_refsel_nlaunder].message);
+        os.Exit(1);
+    }
+
+    mut errors_before_sandbox_std_vector_refsel_nlaunder := len(env_refsel_nlaunder.errors);
+    mut lex_sandbox_std_vector_refsel_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_sandbox_std_vector_refsel_nlaunder, "std.VectorGetRef(values_refsel_nlaunder, i_refsel_nlaunder).idx = sandbox_idx_refsel_nlaunder;");
+    mut parser_sandbox_std_vector_refsel_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_sandbox_std_vector_refsel_nlaunder, &lex_sandbox_std_vector_refsel_nlaunder, ctx);
+    mut stmt_sandbox_std_vector_refsel_nlaunder := parser.parse_statement(&parser_sandbox_std_vector_refsel_nlaunder, ctx);
+    typechecker.check_statement(stmt_sandbox_std_vector_refsel_nlaunder, &env_refsel_nlaunder, scope_refsel_nlaunder, ctx);
+    if len(env_refsel_nlaunder.errors) == errors_before_sandbox_std_vector_refsel_nlaunder {
+        os.LogStr("Error: expected std.VectorGetRef(...).field sandbox-derived non-laundering rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_refsel_nlaunder.errors[errors_before_sandbox_std_vector_refsel_nlaunder].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: sandbox std.VectorGetRef(...).field emitted wrong diagnostic");
+        os.LogStr(env_refsel_nlaunder.errors[errors_before_sandbox_std_vector_refsel_nlaunder].message);
+        os.Exit(1);
+    }
+
+    mut errors_before_sandbox_std_map_refsel_nlaunder := len(env_refsel_nlaunder.errors);
+    mut lex_sandbox_std_map_refsel_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_sandbox_std_map_refsel_nlaunder, "std.HashMapGetRef(map_refsel_nlaunder, key_refsel_nlaunder).idx = sandbox_idx_refsel_nlaunder;");
+    mut parser_sandbox_std_map_refsel_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_sandbox_std_map_refsel_nlaunder, &lex_sandbox_std_map_refsel_nlaunder, ctx);
+    mut stmt_sandbox_std_map_refsel_nlaunder := parser.parse_statement(&parser_sandbox_std_map_refsel_nlaunder, ctx);
+    typechecker.check_statement(stmt_sandbox_std_map_refsel_nlaunder, &env_refsel_nlaunder, scope_refsel_nlaunder, ctx);
+    if len(env_refsel_nlaunder.errors) == errors_before_sandbox_std_map_refsel_nlaunder {
+        os.LogStr("Error: expected std.HashMapGetRef(...).field sandbox-derived non-laundering rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_refsel_nlaunder.errors[errors_before_sandbox_std_map_refsel_nlaunder].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: sandbox std.HashMapGetRef(...).field emitted wrong diagnostic");
+        os.LogStr(env_refsel_nlaunder.errors[errors_before_sandbox_std_map_refsel_nlaunder].message);
+        os.Exit(1);
+    }
+
+    os.LogStr("SUCCESS: reference selector raw/sandbox non-laundering enforcement verified!");
 }

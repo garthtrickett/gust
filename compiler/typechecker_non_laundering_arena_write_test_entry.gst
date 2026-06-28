@@ -49,6 +49,44 @@ func main() {
         os.Exit(1);
     }
 
+    mut env_sandbox_aw_nlaunder := typechecker.env_new(ctx);
+    mut scope_sandbox_aw_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+
+    typechecker.scope_insert(scope_sandbox_aw_nlaunder, "ctx", t_arena_aw_nlaunder, ctx);
+    env_sandbox_aw_nlaunder.variable_types.Insert("ctx", t_arena_aw_nlaunder);
+
+    typechecker.scope_insert(scope_sandbox_aw_nlaunder, "target_idx_sandbox_aw_nlaunder", t_idx_aw_nlaunder, ctx);
+    env_sandbox_aw_nlaunder.variable_types.Insert("target_idx_sandbox_aw_nlaunder", t_idx_aw_nlaunder);
+
+    typechecker.scope_insert(scope_sandbox_aw_nlaunder, "sandbox_node_aw_nlaunder", t_struct_aw_nlaunder, ctx);
+    env_sandbox_aw_nlaunder.variable_types.Insert("sandbox_node_aw_nlaunder", t_struct_aw_nlaunder);
+
+    mut sandbox_origins_aw_nlaunder := typechecker.set_init(ctx);
+    typechecker.set_add(sandbox_origins_aw_nlaunder, "sandbox_arena_write_root", ctx);
+    env_sandbox_aw_nlaunder.variable_origins.Insert("sandbox_node_aw_nlaunder", sandbox_origins_aw_nlaunder);
+
+    mut sandbox_prov_aw_nlaunder := typechecker.expression_provenance_sandbox_derived(t_struct_aw_nlaunder, ctx);
+    sandbox_prov_aw_nlaunder.legacy_origins = sandbox_origins_aw_nlaunder;
+    typechecker.env_record_variable_provenance(&env_sandbox_aw_nlaunder, "sandbox_node_aw_nlaunder", sandbox_prov_aw_nlaunder, ctx);
+
+    mut lex_sandbox_aw_nlaunder: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_sandbox_aw_nlaunder, "ctx.Write(target_idx_sandbox_aw_nlaunder, sandbox_node_aw_nlaunder);");
+    mut parser_sandbox_aw_nlaunder: parser.Parser[ctx];
+    parser.init_parser(&parser_sandbox_aw_nlaunder, &lex_sandbox_aw_nlaunder, ctx);
+    mut stmt_sandbox_aw_nlaunder := parser.parse_statement(&parser_sandbox_aw_nlaunder, ctx);
+
+    typechecker.check_statement(stmt_sandbox_aw_nlaunder, &env_sandbox_aw_nlaunder, scope_sandbox_aw_nlaunder, ctx);
+
+    if len(env_sandbox_aw_nlaunder.errors) == 0 {
+        os.LogStr("Error: non-laundering arena write fixture expected sandbox-derived Arena.Write rejection");
+        os.Exit(1);
+    }
+    if std.str_find(env_sandbox_aw_nlaunder.errors[0].message, "Non-laundering violation") == 0 - 1 {
+        os.LogStr("Error: non-laundering sandbox arena write fixture emitted wrong diagnostic");
+        os.LogStr(env_sandbox_aw_nlaunder.errors[0].message);
+        os.Exit(1);
+    }
+
     mut env_safe_aw_nlaunder := typechecker.env_new(ctx);
     mut scope_safe_aw_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
 
@@ -83,5 +121,5 @@ func main() {
         os.Exit(1);
     }
 
-    os.LogStr("SUCCESS: non-laundering Arena.Set/Write enforcement verified!");
+    os.LogStr("SUCCESS: non-laundering Arena.Set/Write raw/sandbox enforcement verified!");
 }
