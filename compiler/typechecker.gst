@@ -3146,6 +3146,53 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     }
                 }
 
+                mut is_std_vector_getref_prov := 0;
+                if std.str_eq(call_name_prov, "std.VectorGetRef") == 1 {
+                    is_std_vector_getref_prov = 1;
+                }
+                if std.str_eq(call_name_prov, "std_VectorGetRef") == 1 {
+                    is_std_vector_getref_prov = 1;
+                }
+                if std.str_eq(resolved_call_name_prov, "std.VectorGetRef") == 1 {
+                    is_std_vector_getref_prov = 1;
+                }
+                if std.str_eq(resolved_call_name_prov, "std_VectorGetRef") == 1 {
+                    is_std_vector_getref_prov = 1;
+                }
+                if is_std_vector_getref_prov == 1 {
+                    mut args_vec_std_vector_getref_prov: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+                    if len(args_vec_std_vector_getref_prov) >= 2 {
+                        mut std_vector_getref_vec_idx_prov: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx.Set(std_vector_getref_vec_idx_prov, args_vec_std_vector_getref_prov[0]);
+                        mut std_vector_getref_index_idx_prov: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx.Set(std_vector_getref_index_idx_prov, args_vec_std_vector_getref_prov[1]);
+                        mut std_vector_getref_receiver_key_prov := expression_to_string(std_vector_getref_vec_idx_prov, ctx);
+                        mut std_vector_getref_index_key_prov := expression_to_string(std_vector_getref_index_idx_prov, ctx);
+                        mut std_vector_getref_cell_key_prov := std.Concat(std_vector_getref_receiver_key_prov, "[");
+                        std_vector_getref_cell_key_prov = std.Concat(std_vector_getref_cell_key_prov, std_vector_getref_index_key_prov);
+                        std_vector_getref_cell_key_prov = std.Concat(std_vector_getref_cell_key_prov, "]");
+
+                        mut std_vector_getref_lookup_prov := (*env).container_provenance.Get(std_vector_getref_cell_key_prov);
+                        if std_vector_getref_lookup_prov.Ok {
+                            mut std_vector_getref_cell_prov := std_vector_getref_lookup_prov.Val;
+                            if expression_provenance_allows_safe_branding(std_vector_getref_cell_prov) == 1 {
+                                mut std_vector_getref_safe_prov := expression_provenance_safe_arena(t, ctx);
+                                std_vector_getref_safe_prov.legacy_origins = typechecker_clone_origin_set(std_vector_getref_cell_prov.legacy_origins, ctx);
+                                set_union(std_vector_getref_safe_prov.legacy_origins, legacy_origins, ctx);
+                                return std_vector_getref_safe_prov;
+                            }
+                            if expression_provenance_is_raw_or_sandbox_derived(std_vector_getref_cell_prov) == 1 {
+                                mut std_vector_getref_unsafe_prov := std_vector_getref_cell_prov;
+                                std_vector_getref_unsafe_prov.resolved_type = t;
+                                mut std_vector_getref_unsafe_origins := typechecker_clone_origin_set(std_vector_getref_unsafe_prov.legacy_origins, ctx);
+                                set_union(std_vector_getref_unsafe_origins, legacy_origins, ctx);
+                                std_vector_getref_unsafe_prov.legacy_origins = std_vector_getref_unsafe_origins;
+                                return std_vector_getref_unsafe_prov;
+                            }
+                        }
+                    }
+                }
+
                 mut return_prov_lookup := (*env).function_return_provenance.Get(resolved_call_name_prov);
                 if return_prov_lookup.Ok {
                     mut found_call_prov := return_prov_lookup.Val;
