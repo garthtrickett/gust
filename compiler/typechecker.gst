@@ -3131,7 +3131,8 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                                     mut hashmap_get_val_lookup_prov := (*env).container_provenance.Get(hashmap_get_val_cell_key_prov);
                                     if hashmap_get_val_lookup_prov.Ok {
                                         mut hashmap_get_val_cell_prov := hashmap_get_val_lookup_prov.Val;
-                                        hashmap_get_val_cell_prov.resolved_type = t;
+                                        mut hashmap_get_val_cell_resolved_type_prov := env_resolve_type(env, hashmap_get_val_cell_prov.resolved_type, ctx);
+                                        hashmap_get_val_cell_prov.resolved_type = hashmap_get_val_cell_resolved_type_prov;
 
                                         mut hashmap_get_val_origins_prov := typechecker_clone_origin_set(hashmap_get_val_cell_prov.legacy_origins, ctx);
                                         set_union(hashmap_get_val_origins_prov, legacy_origins, ctx);
