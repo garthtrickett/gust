@@ -62,14 +62,19 @@ guard-negative file diagnostic label:
 guard_step51_report_only_lanes_not_in_test:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Guarding Step 5.1 report-only lanes are not direct just make-test-guards dependencies..."
-    test_deps="$(awk 'capture == 1 && /^make-test-suite:/ { exit } /^make-test-guards:/ { capture = 1 } capture == 1 { print }' justfile)"
-    if echo "$test_deps" | grep -q "report_step51_"; then
-      echo "❌ Step 5.1 report-only target is wired into just make-test-guards:"
-      echo "$test_deps"
-      exit 1
-    fi
-    echo "✅ Step 5.1 report-only lanes are not direct just make-test-guards dependencies."
+    echo "🔒 Guarding Step 5.1 report-only lanes are not direct default Just guard dependencies..."
+    serial_deps="$(awk 'capture == 1 && /^make-test-suite:/ { exit } /^make-test-guards:/ { capture = 1 } capture == 1 { print }' justfile)"
+    parallel_deps="$(awk '/^make-test-guards-policy:/ { print }' justfile)"
+    for guard_surface in "serial make-test-guards:$serial_deps" "bucket-parallel make-test-guards-policy:$parallel_deps"; do
+      guard_label="${guard_surface%%:*}"
+      guard_deps="${guard_surface#*:}"
+      if grep -q "report_step51_" <<< "$guard_deps"; then
+        echo "❌ Step 5.1 report-only target is wired into $guard_label:"
+        echo "$guard_deps"
+        exit 1
+      fi
+    done
+    echo "✅ Step 5.1 report-only lanes are not direct default Just guard dependencies."
 
 guard_step51g_default_guard_wiring:
     #!/usr/bin/env bash
