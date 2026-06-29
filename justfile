@@ -66,6 +66,7 @@ make-test-guards:
     make gust
     guards=(
       guard_step51_report_only_lanes_not_in_test
+      guard_step51_provenance_origin_spine
       guard_step52_report_only_lanes_not_in_test
       guard_step52_no_post_closure_report_churn
       guard_parser_high_level_raw_casts
