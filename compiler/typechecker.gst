@@ -6262,6 +6262,25 @@ func env_track_resource_assignment_if_applicable(env: *TypeEnvironment[ctx], var
     return env_register_open_resource_assignment(env, variable_name, assigned_resource_type, ctx);
 }
 
+func env_track_resource_move_assignment_if_applicable(env: *TypeEnvironment[ctx], target_variable_name: str, source_variable_name: str, ctx: &Arena) int {
+    if len(target_variable_name) == 0 {
+        return 0;
+    }
+    if len(source_variable_name) == 0 {
+        return 0;
+    }
+    if std.str_eq(target_variable_name, source_variable_name) == 1 {
+        return 0;
+    }
+    if env_open_linear_resource_is_tracked(env, target_variable_name, ctx) == 0 {
+        return 0;
+    }
+    if env_open_linear_resource_is_tracked(env, source_variable_name, ctx) == 0 {
+        return 0;
+    }
+    return env_try_move_open_linear_resource(env, source_variable_name, ctx);
+}
+
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
     unsafe {
         mut lookup := (*env).struct_layout_repr_c.Get(name);
@@ -8297,6 +8316,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut left_type: ast.Type[ctx];
             left_type.tag = 3; // Void
             mut assignment_lhs_resource_name_step52g := "";
+            mut assignment_rhs_resource_name_step52h := "";
 
             mut left := ctx[left_idx];
             
@@ -8394,6 +8414,16 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut val_type := env_resolve_type(env, val_prov_assignment.resolved_type, ctx);
             val_prov_assignment.resolved_type = val_type;
 
+            mut assignment_value_expr_step52h := ctx[val_idx];
+            if assignment_value_expr_step52h.tag == 0 { // Identifier
+                mut rhs_name_step52h := assignment_value_expr_step52h.Identifier.name;
+                mut rhs_is_local_step52h := scope_contains(scope, rhs_name_step52h, ctx);
+                if rhs_is_local_step52h == 0 {
+                    rhs_name_step52h = env_resolve_namespaced_ident(env, rhs_name_step52h, ctx);
+                }
+                assignment_rhs_resource_name_step52h = std.Clone(ctx, rhs_name_step52h);
+            }
+
             if types_match(left_type, val_type, ctx) == 0 {
                 mut msg := "Semantic Error: [TypeMismatch] Mismatched types in assignment. Cannot assign ";
                 msg = std.Concat(msg, ast.serialize_type(val_type, ctx));
@@ -8404,6 +8434,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             if len(assignment_lhs_resource_name_step52g) > 0 {
                 env_track_resource_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, val_type, ctx);
+                env_track_resource_move_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, assignment_rhs_resource_name_step52h, ctx);
             }
 
             mut assignment_span_nlaunder := get_expression_span(val_idx, ctx);

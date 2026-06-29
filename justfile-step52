@@ -31,3 +31,8 @@ guard_step52_resource_decl_assignment_tracking:
     echo "🔒 Checking Step 5.2 Resource declaration/assignment tracking integration..."
     just guard-positive compiler/typechecker_resource_decl_assignment_tracking_test_entry.gst step52_resource_decl_assignment_tracking
     echo "✅ Step 5.2 Resource declaration/assignment tracking guard passed."
+
+guard_step52_resource_move_assignment_tracking:
+    echo "🔒 Checking Step 5.2 Resource move assignment tracking integration..."
+    just guard-positive compiler/typechecker_resource_move_assignment_tracking_test_entry.gst step52_resource_move_assignment_tracking
+    echo "✅ Step 5.2 Resource move assignment tracking guard passed."
