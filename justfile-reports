@@ -402,6 +402,7 @@ report_step52_status_matrix:
     echo " ✅ Resource declaration/assignment tracking guard: just guard_step52_resource_decl_assignment_tracking"
     echo " ✅ Resource move-assignment tracking guard: just guard_step52_resource_move_assignment_tracking"
     echo " ✅ Resource destructor-call tracking guard: just guard_step52_resource_destructor_call_tracking"
+    echo " ✅ Step 5.2H tracked Resource double-close behavior guard: just guard_step52_resource_double_close_enforcement"
     echo " ✅ Step 5.2G tracked linear resource use-after-move pass/rejection behavior guard: just guard_step52_resource_use_after_move_enforcement"
     echo " Current Step 5.2 tracking guard boundary:"
     echo " 🧭 tracking guards protect helper integration and status drift, not generalized resource enforcement"
@@ -410,7 +411,7 @@ report_step52_status_matrix:
     echo " Deferred generalized compiler-backed work:"
     echo " ⏳ automatic Resource[ctx, T] declaration/assignment enforcement"
     echo " ⏳ destructor scheduling and defer validation"
-    echo " ⏳ broad double-close, leak, and full transfer-state validation"
+    echo " ⏳ broad double-close beyond the narrow destructor-call guard, leak, and full transfer-state validation"
     echo " ⏳ compiler-backed enforcement preconditions before any Step 5.2 guard"
     echo " ⏳ AST/typechecker design before further Step 5.2 report churn"
     echo " Existing linear metadata/test coverage is inventory context, not generalized resource enforcement."
@@ -435,6 +436,7 @@ report_step52_final_validation:
     echo " just guard_step52_resource_decl_assignment_tracking"
     echo " just guard_step52_resource_move_assignment_tracking"
     echo " just guard_step52_resource_destructor_call_tracking"
+    echo " just guard_step52_resource_double_close_enforcement"
     echo " just guard_step52_resource_use_after_move_enforcement"
     echo " make report_step51_status_matrix"
     echo " make guard_step51_report_only_lanes_not_in_test"
@@ -442,7 +444,7 @@ report_step52_final_validation:
     echo " make test # includes Step 5.2 inert linear metadata and Resource helper fixtures"
     echo " make bootstrap"
     echo " git diff --check"
-    echo "✅ Step 5.2 validation checklist complete. Step 5.2G now has one narrow guarded use-after-move pass/rejection behavior lane for tracked linear resources; generalized leak/double-close/defer enforcement remains deferred. Do not purge open_directories yet."
+    echo "✅ Step 5.2 validation checklist complete. Step 5.2G has one narrow guarded use-after-move pass/rejection behavior lane and Step 5.2H has one narrow destructor-call double-close guard for tracked linear resources; generalized leak/broader-double-close/defer enforcement remains deferred. Do not purge open_directories yet."
 
 report_step44_accessor_contract:
     #!/usr/bin/env bash

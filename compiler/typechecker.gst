@@ -6076,6 +6076,19 @@ func env_try_close_open_linear_resource(env: *TypeEnvironment[ctx], variable_nam
     return env_mark_open_linear_resource_closed(env, variable_name, ctx);
 }
 
+func env_report_linear_resource_double_close(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) int {
+    if env_open_linear_resource_is_tracked(env, name, ctx) == 0 {
+        return 0;
+    }
+    if env_open_linear_resource_is_closed(env, name, ctx) == 0 {
+        return 0;
+    }
+    mut msg := std.Concat("Semantic Error: LinearResourceDoubleClose: resource '", name);
+    msg = std.Concat(msg, "' cannot be closed more than once");
+    report_error(2, msg, span, env, ctx);
+    return 1;
+}
+
 func env_try_move_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
     if env_open_linear_resource_can_be_moved(env, variable_name, ctx) == 0 {
         return 0;
@@ -6330,6 +6343,7 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
     if len(resource_name_step52i) == 0 {
         return 0;
     }
+    mut first_arg_span_step52h := get_expression_span(first_arg_idx_step52i, ctx);
 
     mut is_local_step52i := scope_contains(scope, resource_name_step52i, ctx);
     if is_local_step52i == 0 {
@@ -6345,11 +6359,17 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
         return 0;
     }
     if std.str_eq(destructor_name_step52i, resolved_func) == 1 {
+        if env_report_linear_resource_double_close(env, resource_name_step52i, first_arg_span_step52h, ctx) == 1 {
+            return 0;
+        }
         return env_try_close_open_linear_resource(env, resource_name_step52i, ctx);
     }
 
     mut namespaced_destructor_step52i := env_resolve_namespaced_ident(env, destructor_name_step52i, ctx);
     if std.str_eq(namespaced_destructor_step52i, resolved_func) == 1 {
+        if env_report_linear_resource_double_close(env, resource_name_step52i, first_arg_span_step52h, ctx) == 1 {
+            return 0;
+        }
         return env_try_close_open_linear_resource(env, resource_name_step52i, ctx);
     }
 
