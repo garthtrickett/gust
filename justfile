@@ -55,7 +55,7 @@ guard_step52_resource_use_after_move_enforcement:
     echo "🔒 Checking Step 5.2G linear resource use-after-move behavior..."
     rg -n 'func env_report_linear_resource_use_after_move' compiler/typechecker.gst
     rg -n 'LinearResourceUseAfterMove' compiler/typechecker.gst
-    rg -n 'env_open_linear_resource_is_moved(env, name, ctx)' compiler/typechecker.gst
+    rg -n -F 'env_open_linear_resource_is_moved(env, name, ctx)' compiler/typechecker.gst
     rg -n 'env_report_linear_resource_use_after_move\(env, resolved_name, expr.Identifier.span, ctx\);' compiler/typechecker.gst
     just guard-positive compiler/typechecker_resource_use_after_move_pass_test_entry.gst step52_resource_use_after_move_pass
     just guard-positive compiler/typechecker_resource_use_after_move_rejected_test_entry.gst step52_resource_use_after_move_rejected
