@@ -13,32 +13,14 @@ func main() {
 
     typechecker.env_register_struct_linear_metadata(&env_double_close, "main__DoubleClosePayload", 1, ctx);
     typechecker.env_register_struct_linear_destructor(&env_double_close, "main__DoubleClosePayload", "main__close_double_close_payload", ctx);
-
-    mut span_double_close: token.Span;
-
-    mut payload_double_close := typechecker.make_type_struct("main__DoubleClosePayload", "", ctx);
-    mut resource_double_close := typechecker.make_type_resource(payload_double_close, ctx);
-    mut resource_type_idx_double_close: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(resource_type_idx_double_close, resource_double_close);
-
-    mut resource_decl_double_close: ast.Statement[ctx];
-    unsafe {
-        resource_decl_double_close.tag = 4; // VarDecl
-        resource_decl_double_close.VarDecl.name = "double_close_resource";
-        resource_decl_double_close.VarDecl.is_mut = 1;
-        resource_decl_double_close.VarDecl.value = empty[Index[ast.Expression[ctx], ctx]];
-        resource_decl_double_close.VarDecl.var_type = resource_type_idx_double_close;
-        resource_decl_double_close.VarDecl.span = span_double_close;
-    }
-    mut resource_decl_idx_double_close: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(resource_decl_idx_double_close, resource_decl_double_close);
-    typechecker.check_statement(resource_decl_idx_double_close, &env_double_close, scope_double_close, ctx);
+    typechecker.env_register_open_linear_resource(&env_double_close, "double_close_resource", "main__DoubleClosePayload", ctx);
 
     if typechecker.env_open_linear_resource_is_owned(&env_double_close, "double_close_resource", ctx) != 1 {
         os.LogStr("Error: double-close fixture resource must start owned");
         os.Exit(1);
     }
 
+    mut span_double_close: token.Span;
     mut close_arg_expr_double_close: ast.Expression[ctx];
     unsafe {
         close_arg_expr_double_close.tag = 0; // Identifier
