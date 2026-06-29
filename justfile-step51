@@ -115,7 +115,9 @@ guard_step51g_aggregate_surface_wiring:
     set -euo pipefail
     echo "🔒 Checking Step 5.1G aggregate surface wiring..."
     aggregate_surface="$(awk '/^guard_step51_provenance_origin_spine:/,/^guard_step51_basic_unsafe_enforcement:/' justfile-step51)"
+    previous_pos=0
     for required_surface in \
+      "just guard_step51g_aggregate_surface_wiring" \
       "guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst" \
@@ -136,6 +138,14 @@ guard_step51g_aggregate_surface_wiring:
         echo "❌ Step 5.1G aggregate surface guard failed: missing $required_surface"
         exit 1
       fi
+      before_surface="${aggregate_surface%%$required_surface*}"
+      surface_pos="${#before_surface}"
+      if [[ "$surface_pos" -lt "$previous_pos" ]]; then
+        echo "❌ Step 5.1G aggregate surface guard failed: aggregate entries are out of order at $required_surface"
+        echo "$aggregate_surface"
+        exit 1
+      fi
+      previous_pos="$surface_pos"
     done
     echo "✅ Step 5.1G aggregate surface wiring passed."
 
