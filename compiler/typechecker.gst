@@ -1164,10 +1164,16 @@ func env_report_linear_resource_use_after_move(env: *TypeEnvironment[ctx], name:
     unsafe {
         mut tracked_lookup := (*env).open_linear_resources.Get(name);
         if tracked_lookup.Ok {
-            if (*env).moved_vars.Get(name).Ok {
+            if env_open_linear_resource_is_moved(env, name, ctx) == 1 {
                 mut msg := std.Concat("Semantic Error: LinearResourceUseAfterMove: resource '", name);
                 msg = std.Concat(msg, "' cannot be used after move");
                 report_error(2, msg, span, env, ctx);
+            } else {
+                if (*env).moved_vars.Get(name).Ok {
+                    mut msg := std.Concat("Semantic Error: LinearResourceUseAfterMove: resource '", name);
+                    msg = std.Concat(msg, "' cannot be used after move");
+                    report_error(2, msg, span, env, ctx);
+                }
             }
         }
     }

@@ -52,11 +52,14 @@ guard-step51-non-launder-hashmap-get-value-field:
 guard_step52_resource_use_after_move_enforcement:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking Step 5.2G linear resource use-after-move enforcement hook..."
+    echo "🔒 Checking Step 5.2G linear resource use-after-move behavior..."
     rg -n 'func env_report_linear_resource_use_after_move' compiler/typechecker.gst
     rg -n 'LinearResourceUseAfterMove' compiler/typechecker.gst
+    rg -n 'env_open_linear_resource_is_moved(env, name, ctx)' compiler/typechecker.gst
     rg -n 'env_report_linear_resource_use_after_move\(env, resolved_name, expr.Identifier.span, ctx\);' compiler/typechecker.gst
-    echo "✅ Step 5.2G linear resource use-after-move enforcement hook guard passed."
+    just guard-positive compiler/typechecker_resource_use_after_move_pass_test_entry.gst step52_resource_use_after_move_pass
+    just guard-positive compiler/typechecker_resource_use_after_move_rejected_test_entry.gst step52_resource_use_after_move_rejected
+    echo "✅ Step 5.2G linear resource use-after-move behavior guard passed."
 
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
