@@ -361,8 +361,8 @@ report_step52_phase_f_closure_status:
     echo " - ownership-transfer handoff"
     echo " - semantic enforcement preconditions"
     echo " Stop adding textual report churn unless a new compiler-backed design requirement appears."
-    echo " Narrow compiler-backed Step 5.2 tracking guards now exist for Resource declaration/assignment paths, move-assignment paths, destructor-call recognition, use-after-move behavior, destructor-call double-close behavior, destructor-call close-after-move behavior, and destructor-scheduled state recognition."
-    echo " These guards protect helper integration and status drift. Step 5.2G adds the narrow tracked-resource use-after-move behavior lane, Step 5.2H adds the narrow tracked-resource destructor-call double-close behavior lane, Step 5.2I adds the narrow tracked-resource destructor-call close-after-move behavior lane, and Step 5.2J adds narrow tracked-resource destructor-scheduled state recognition; generalized leak, broader double-close, and defer enforcement remain deferred."
+    echo " Narrow compiler-backed Step 5.2 tracking guards now exist for Resource declaration/assignment paths, move-assignment paths, destructor-call recognition, use-after-move behavior, destructor-call double-close behavior, destructor-call close-after-move behavior, destructor-scheduled state recognition, and missing-cleanup diagnostic helper coverage."
+    echo " These guards protect helper integration and status drift. Step 5.2G adds the narrow tracked-resource use-after-move behavior lane, Step 5.2H adds the narrow tracked-resource destructor-call double-close behavior lane, Step 5.2I adds the narrow tracked-resource destructor-call close-after-move behavior lane, Step 5.2J adds narrow tracked-resource destructor-scheduled state recognition, and Step 5.2K adds narrow missing-cleanup diagnostic helper coverage; generalized leak, broader double-close, and defer enforcement remain deferred."
     echo " Next semantic implementation work must be AST/typechecker design for Resource[ctx, T], open_linear_resources, destructor identity, transfer state, explicit defer semantics, and legacy open_directories parity."
     echo "✅ Step 5.2F report-only closure status complete. This target is report-only and does not run guards."
 
@@ -405,6 +405,7 @@ report_step52_status_matrix:
     echo " ✅ Step 5.2H tracked Resource double-close behavior guard: just guard_step52_resource_double_close_enforcement"
     echo " ✅ Step 5.2I tracked Resource close-after-move behavior guard: just guard_step52_resource_close_after_move_enforcement"
     echo " ✅ Step 5.2J tracked Resource destructor-scheduled behavior guard: just guard_step52_resource_destructor_scheduled_enforcement"
+    echo " ✅ Step 5.2K tracked Resource missing-cleanup diagnostic helper guard: just guard_step52_resource_missing_cleanup_diagnostic"
     echo " ✅ Step 5.2G tracked linear resource use-after-move pass/rejection behavior guard: just guard_step52_resource_use_after_move_enforcement"
     echo " Current Step 5.2 tracking guard boundary:"
     echo " 🧭 tracking guards protect helper integration and status drift, not generalized resource enforcement"
@@ -416,6 +417,8 @@ report_step52_status_matrix:
     echo " ✅ destructor-call close-after-move fixture verifies a moved tracked-resource destructor call emits LinearResourceCloseAfterMove"
     echo " Narrow compiler-backed Step 5.2J enforcement:"
     echo " ✅ destructor-scheduled fixture verifies a destructor call on a scheduled tracked resource emits LinearResourceDestructorAlreadyScheduled"
+    echo " Narrow compiler-backed Step 5.2K diagnostic-helper coverage:"
+    echo " ✅ missing-cleanup fixture verifies an owned tracked resource emits LinearResourceMissingCleanup through the diagnostic helper"
     echo " Deferred generalized compiler-backed work:"
     echo " ⏳ automatic Resource[ctx, T] declaration/assignment enforcement"
     echo " ⏳ destructor scheduling and defer validation"
@@ -447,6 +450,7 @@ report_step52_final_validation:
     echo " just guard_step52_resource_double_close_enforcement"
     echo " just guard_step52_resource_close_after_move_enforcement"
     echo " just guard_step52_resource_destructor_scheduled_enforcement"
+    echo " just guard_step52_resource_missing_cleanup_diagnostic"
     echo " just guard_step52_resource_use_after_move_enforcement"
     echo " make report_step51_status_matrix"
     echo " make guard_step51_report_only_lanes_not_in_test"
@@ -454,7 +458,7 @@ report_step52_final_validation:
     echo " make test # includes Step 5.2 inert linear metadata and Resource helper fixtures"
     echo " make bootstrap"
     echo " git diff --check"
-    echo "✅ Step 5.2 validation checklist complete. Step 5.2G has one narrow guarded use-after-move pass/rejection behavior lane, Step 5.2H has one narrow destructor-call double-close guard, Step 5.2I has one narrow destructor-call close-after-move guard, and Step 5.2J has one narrow destructor-scheduled state recognition guard for tracked linear resources; generalized leak/broader-double-close/defer enforcement remains deferred. Do not purge open_directories yet."
+    echo "✅ Step 5.2 validation checklist complete. Step 5.2G has one narrow guarded use-after-move pass/rejection behavior lane, Step 5.2H has one narrow destructor-call double-close guard, Step 5.2I has one narrow destructor-call close-after-move guard, Step 5.2J has one narrow destructor-scheduled state recognition guard, and Step 5.2K has one narrow missing-cleanup diagnostic helper guard for tracked linear resources; generalized leak/broader-double-close/defer enforcement remains deferred. Do not purge open_directories yet."
 
 report_step44_accessor_contract:
     #!/usr/bin/env bash

@@ -127,6 +127,8 @@ guard_step52_resource_missing_cleanup_diagnostic:
     rg -n -F 'env_open_linear_resource_requires_cleanup(env, name, ctx)' compiler/typechecker.gst
     rg -n -F 'compiler/typechecker_resource_missing_cleanup_diagnostic_test_entry.gst' tests/test_runner.gst
     rg -n -F 'guard_step52_resource_missing_cleanup_diagnostic' justfile
+    rg -n -F 'Step 5.2K tracked Resource missing-cleanup diagnostic helper guard' justfile-reports
+    rg -n -F 'LinearResourceMissingCleanup' justfile-reports
     missing_cleanup_runner_count="$(rg -n 'mut t_step52_resource_missing_cleanup_diagnostic' tests/test_runner.gst | wc -l)"
     if [ "$missing_cleanup_runner_count" != "1" ]; then
       echo "❌ Step 5.2K guard failed: expected exactly one missing-cleanup test-runner entry, found $missing_cleanup_runner_count"
