@@ -167,7 +167,7 @@ report_step51_deferred_unsafe_semantics_status:
  echo " - focused safe-branded return/binding/call/field/container/container-method/Arena.Write/reference-selector/HashMap.Get-value/HashMap.Get-value-field non-laundering fixtures"
  echo " Current default Just guard subset:"
  echo " - report-only policy guards keeping report lanes out of default tests"
- echo " - Step 5.1G default wiring guard and provenance-origin spine aggregate"
+ echo " - Step 5.1G default wiring guard, aggregate surface guard, and provenance-origin spine aggregate"
  echo " - textual source guards that do not fit tests/test_runner.gst"
  echo " Reports to inspect before new enforcement:"
  echo " make report_step51_phase_d_ffi_status"
@@ -200,7 +200,7 @@ report_step51_status_matrix:
  echo " Policy/default guard wiring:"
  echo " ✅ report-only Step 5.1 targets stay out of make test: make guard_step51_report_only_lanes_not_in_test"
  echo " ✅ Step 5.1G default wiring guard verifies itself, the aggregate surface guard, and the provenance-origin spine are wired in serial and bucket-parallel Just guard lanes"
- echo " ✅ Step 5.1G aggregate surface guard verifies the core provenance fixtures and safe-brand target policy surface remain in the aggregate"
+ echo " ✅ Step 5.1G aggregate surface guard verifies the core provenance fixtures, focused non-laundering regressions, and safe-brand target policy surface remain in the aggregate"
  echo "✅ Step 5.1 status matrix complete."
 
 report_step51_raw_pointer_safety_inventory:
@@ -240,7 +240,7 @@ report_step51_final_validation:
  echo " make report_step51_status_matrix"
  echo " make test # test_runner-owned Step 5.1 fixtures plus default Just policy/textual/Step 5.1G guards"
  echo " just guard_step51g_default_guard_wiring # guard that Step 5.1G aggregate and wiring guard remain in default Just lanes"
- echo " just guard_step51g_aggregate_surface_wiring # guard that core Step 5.1G fixtures remain in the aggregate"
+ echo " just guard_step51g_aggregate_surface_wiring # guard that core Step 5.1G fixtures and focused non-laundering regressions remain in the aggregate"
  echo " just make-test-guards # default Just-only guard lane, including Step 5.1G provenance-origin spine"
  echo " just make-test-guards-parallel # opt-in bucket-parallel Just guard lane, also including Step 5.1G provenance-origin spine"
  echo " just guard_step51_provenance_origin_spine # explicit Step 5.1G aggregate debug lane"
