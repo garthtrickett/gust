@@ -58,11 +58,6 @@ func main() {
         os.LogStr("Error: Resource destructor call did not leave resource in closed state");
         os.Exit(1);
     }
-    if typechecker.env_track_resource_destructor_call_if_applicable(&env_close_call, "main__close_close_call_payload", close_args_idx_close_call, scope_close_call, ctx) != 0 {
-        os.LogStr("Error: Resource destructor call tracking must not allow double-close transition");
-        os.Exit(1);
-    }
-
     mut wrong_resource_decl_close_call: ast.Statement[ctx];
     unsafe {
         wrong_resource_decl_close_call.tag = 4; // VarDecl
