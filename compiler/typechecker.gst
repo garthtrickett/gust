@@ -439,7 +439,7 @@ func step51g_non_laundering_provenance_blocks_safe_brand(prov: ExpressionProvena
 }
 
 func step51g_non_laundering_provenance_requires_unsafe_boundary(prov: ExpressionProvenance[ctx], ctx: &Arena) int {
-    return expression_provenance_requires_unsafe_boundary(prov);
+    return step51g_expression_provenance_requires_unsafe_boundary(prov);
 }
 
 func expression_provenance_allows_safe_branding(prov: ExpressionProvenance[ctx]) int {

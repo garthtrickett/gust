@@ -132,6 +132,22 @@ func main() {
         os.LogStr("Error: legacy expression raw/sandbox helper diverged from Step 5.1G expression spine");
         os.Exit(1);
     }
+    if typechecker.step51g_non_laundering_provenance_requires_unsafe_boundary(safe_prov_51g6, ctx) != typechecker.step51g_expression_provenance_requires_unsafe_boundary(safe_prov_51g6) {
+        os.LogStr("Error: non-laundering provenance boundary helper diverged from Step 5.1G expression boundary spine for safe provenance");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_provenance_requires_unsafe_boundary(raw_prov_51g6, ctx) != typechecker.step51g_expression_provenance_requires_unsafe_boundary(raw_prov_51g6) {
+        os.LogStr("Error: non-laundering provenance boundary helper diverged from Step 5.1G expression boundary spine for raw provenance");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_provenance_requires_unsafe_boundary(sandbox_prov_51g6, ctx) != typechecker.step51g_expression_provenance_requires_unsafe_boundary(sandbox_prov_51g6) {
+        os.LogStr("Error: non-laundering provenance boundary helper diverged from Step 5.1G expression boundary spine for sandbox provenance");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_provenance_requires_unsafe_boundary(unknown_prov_51g6, ctx) != typechecker.step51g_expression_provenance_requires_unsafe_boundary(unknown_prov_51g6) {
+        os.LogStr("Error: non-laundering provenance boundary helper diverged from Step 5.1G expression boundary spine for unknown provenance");
+        os.Exit(1);
+    }
     if typechecker.step51g_non_laundering_provenance_requires_unsafe_boundary(raw_prov_51g6, ctx) != 1 {
         os.LogStr("Error: non-laundering provenance boundary helper did not require unsafe for raw provenance");
         os.Exit(1);
