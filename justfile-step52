@@ -49,3 +49,11 @@ guard_step52_resource_double_close_enforcement:
     rg -n -F 'env_report_linear_resource_double_close(env, resource_name_step52i, first_arg_span_step52h, ctx)' compiler/typechecker.gst
     just guard-positive compiler/typechecker_resource_double_close_rejected_test_entry.gst step52_resource_double_close_rejected
     echo "✅ Step 5.2H tracked Resource double-close recognition guard passed."
+
+guard_step52_resource_double_close_enforcement:
+    echo "🔒 Checking Step 5.2H tracked Resource double-close recognition..."
+    rg -n 'func env_report_linear_resource_double_close' compiler/typechecker.gst
+    rg -n 'LinearResourceDoubleClose' compiler/typechecker.gst
+    rg -n -F 'env_report_linear_resource_double_close(env, resource_name_step52i, first_arg_span_step52h, ctx)' compiler/typechecker.gst
+    just guard-positive compiler/typechecker_resource_double_close_rejected_test_entry.gst step52_resource_double_close_rejected
+    echo "✅ Step 5.2H tracked Resource double-close recognition guard passed."

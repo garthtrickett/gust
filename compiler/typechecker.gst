@@ -6089,6 +6089,19 @@ func env_report_linear_resource_double_close(env: *TypeEnvironment[ctx], name: s
     return 1;
 }
 
+func env_report_linear_resource_double_close(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) int {
+    if env_open_linear_resource_is_tracked(env, name, ctx) == 0 {
+        return 0;
+    }
+    if env_open_linear_resource_is_closed(env, name, ctx) == 0 {
+        return 0;
+    }
+    mut msg := std.Concat("Semantic Error: LinearResourceDoubleClose: resource '", name);
+    msg = std.Concat(msg, "' cannot be closed more than once");
+    report_error(2, msg, span, env, ctx);
+    return 1;
+}
+
 func env_try_move_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
     if env_open_linear_resource_can_be_moved(env, variable_name, ctx) == 0 {
         return 0;
@@ -6332,6 +6345,7 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
     mut first_arg_idx_step52i: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(first_arg_idx_step52i, args_vec_step52i[0]);
     mut first_arg_expr_step52i := ctx[first_arg_idx_step52i];
+    mut first_arg_span_step52h := get_expression_span(first_arg_idx_step52i, ctx);
     if first_arg_expr_step52i.tag != 0 { // Identifier
         return 0;
     }
@@ -6343,7 +6357,6 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
     if len(resource_name_step52i) == 0 {
         return 0;
     }
-    mut first_arg_span_step52h := get_expression_span(first_arg_idx_step52i, ctx);
 
     mut is_local_step52i := scope_contains(scope, resource_name_step52i, ctx);
     if is_local_step52i == 0 {
@@ -6374,6 +6387,7 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
     }
 
     return 0;
+}
 }
 
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
