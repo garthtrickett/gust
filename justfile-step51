@@ -91,6 +91,7 @@ guard_step51g_default_guard_wiring:
         guard_step51g_default_guard_wiring \
         guard_step51g_aggregate_surface_wiring \
         guard_step51g_address_origin_legacy_wrapper_surface \
+        guard_step51g_expression_provenance_legacy_wrapper_surface \
         guard_step51_provenance_origin_spine
       do
         if ! grep -Fq "$required_guard" <<< "$guard_deps"; then
@@ -120,6 +121,7 @@ guard_step51g_aggregate_surface_wiring:
     for required_surface in \
       "just guard_step51g_aggregate_surface_wiring" \
       "just guard_step51g_address_origin_legacy_wrapper_surface" \
+      "just guard_step51g_expression_provenance_legacy_wrapper_surface" \
       "guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst" \
@@ -179,6 +181,35 @@ guard_step51g_address_origin_legacy_wrapper_surface:
       exit 1
     fi
     echo "✅ Step 5.1G address-origin legacy wrapper surface guard passed."
+
+guard_step51g_expression_provenance_legacy_wrapper_surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.1G expression-provenance legacy wrapper surface..."
+    wrapper_surface="$(awk '
+      index($0, "func expression_provenance_allows_safe_branding(") { capture = 1 }
+      index($0, "func expression_provenance_blocks_safe_branding(") { capture = 1 }
+      index($0, "func expression_provenance_requires_unsafe_boundary(") { capture = 1 }
+      index($0, "func expression_provenance_is_raw_or_sandbox_derived(") { capture = 1 }
+      capture { print }
+      capture && $0 == "}" { capture = 0 }
+    ' compiler/typechecker.gst)"
+    for required_wrapper_route in \
+      "return step51g_address_origin_is_safe_arena_only(prov.address_origin);" \
+      "return step51g_address_origin_blocks_safe_brand(prov.address_origin);" \
+      "return step51g_expression_provenance_requires_unsafe_boundary(prov);" \
+      "return step51g_expression_provenance_is_raw_or_sandbox_derived(prov);"
+    do
+      if ! grep -Fq "$required_wrapper_route" <<< "$wrapper_surface"; then
+        echo "❌ Step 5.1G expression-provenance legacy wrapper guard failed: missing canonical route $required_wrapper_route"
+        exit 1
+      fi
+    done
+    if grep -Eq 'return (address_origin_|expression_provenance_)|init_address_origin_|\.is_(safe_arena|raw_derived|sandbox_derived|unknown)' <<< "$wrapper_surface"; then
+      echo "❌ Step 5.1G expression-provenance legacy wrapper guard failed: wrappers must delegate to canonical Step 5.1G helpers instead of reimplementing provenance logic."
+      exit 1
+    fi
+    echo "✅ Step 5.1G expression-provenance legacy wrapper surface guard passed."
 
 guard_step51_raw_deref_unsafe_enforcement:
     echo "🔒 Checking Step 5.1 raw pointer dereference unsafe enforcement..."
@@ -431,6 +462,7 @@ guard_step51_provenance_origin_spine:
     echo "🔒 Checking Step 5.1G unified provenance-origin spine helpers..."
     just guard_step51g_aggregate_surface_wiring
     just guard_step51g_address_origin_legacy_wrapper_surface
+    just guard_step51g_expression_provenance_legacy_wrapper_surface
     just guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst step51g_provenance_origin_spine
     just guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst step51g_provenance_origin_spine_compat
     just guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst step51g_provenance_expression_join_spine
