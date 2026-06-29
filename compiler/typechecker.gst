@@ -3245,6 +3245,8 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     k = k + 1;
                 }
 
+                env_track_resource_destructor_call_if_applicable(env, resolved_func, expr.Call.arguments, scope, ctx);
+
                 mut resolved_return := sig.return_type;
                 if new_brand != empty[Index[str, ctx]] {
                     resolved_return = typechecker_substitute_brand(resolved_return, new_brand, ctx);
@@ -6279,6 +6281,52 @@ func env_track_resource_move_assignment_if_applicable(env: *TypeEnvironment[ctx]
         return 0;
     }
     return env_try_move_open_linear_resource(env, source_variable_name, ctx);
+}
+
+func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx], resolved_func: str, arguments_idx: Index[std.Vector[ast.Expression[ctx], ctx], ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) int {
+    if len(resolved_func) == 0 {
+        return 0;
+    }
+    if arguments_idx == empty[Index[std.Vector[ast.Expression[ctx], ctx], ctx]] {
+        return 0;
+    }
+
+    mut args_vec_step52i: std.Vector[ast.Expression[ctx], ctx] := ctx[arguments_idx];
+    if len(args_vec_step52i) != 1 {
+        return 0;
+    }
+
+    mut first_arg_idx_step52i: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(first_arg_idx_step52i, args_vec_step52i[0]);
+    mut first_arg_expr_step52i := ctx[first_arg_idx_step52i];
+    if first_arg_expr_step52i.tag != 0 { // Identifier
+        return 0;
+    }
+
+    mut resource_name_step52i := first_arg_expr_step52i.Identifier.name;
+    mut is_local_step52i := scope_contains(scope, resource_name_step52i, ctx);
+    if is_local_step52i == 0 {
+        resource_name_step52i = env_resolve_namespaced_ident(env, resource_name_step52i, ctx);
+    }
+
+    if env_open_linear_resource_is_tracked(env, resource_name_step52i, ctx) == 0 {
+        return 0;
+    }
+
+    mut destructor_name_step52i := env_open_linear_resource_destructor_name(env, resource_name_step52i, ctx);
+    if len(destructor_name_step52i) == 0 {
+        return 0;
+    }
+    if std.str_eq(destructor_name_step52i, resolved_func) == 1 {
+        return env_try_close_open_linear_resource(env, resource_name_step52i, ctx);
+    }
+
+    mut namespaced_destructor_step52i := env_resolve_namespaced_ident(env, destructor_name_step52i, ctx);
+    if std.str_eq(namespaced_destructor_step52i, resolved_func) == 1 {
+        return env_try_close_open_linear_resource(env, resource_name_step52i, ctx);
+    }
+
+    return 0;
 }
 
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {

@@ -226,6 +226,7 @@ When providing file updates, you must output a single JSON payload. The pipeline
 * The root of your response MUST be a single, valid JSON object. Do NOT wrap it in a root array.
 * If you are editing multiple files, include all of them in the single `"files"` array.
 * Add a root-level `"project"` string to route downloads to the correct watcher. By default, each watcher uses the folder name of its `--cwd` as the project key. For example, a watcher running in `~/code/my-project` expects `"project": "my-project"`.
+in this case the project is gust
 
 ---
 
