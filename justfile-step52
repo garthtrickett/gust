@@ -220,6 +220,8 @@ guard_step52_resource_cleanup_boundary_mixed_states:
     rg -n -F 'env_validate_linear_resource_cleanup_boundary(&env_mixed_boundary, span_mixed_boundary, ctx)' compiler/typechecker_resource_cleanup_boundary_mixed_states_test_entry.gst
     rg -n -F 'main__pending_mixed_resource' compiler/typechecker_resource_cleanup_boundary_mixed_states_test_entry.gst
     rg -n -F 'guard_step52_resource_cleanup_boundary_mixed_states' justfile
+    rg -n -F 'Step 5.2O tracked Resource cleanup boundary mixed-state coverage guard' justfile-reports
+    rg -n -F 'cleanup boundary mixed-state coverage' justfile-reports
     cleanup_boundary_mixed_runner_count="$(rg -n 'mut t_step52_resource_cleanup_boundary_mixed_states' tests/test_runner.gst | wc -l)"
     if [ "$cleanup_boundary_mixed_runner_count" != "1" ]; then
       echo "❌ Step 5.2O guard failed: expected exactly one cleanup boundary mixed-state test-runner entry, found $cleanup_boundary_mixed_runner_count"
