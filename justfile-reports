@@ -362,7 +362,7 @@ report_step52_phase_f_closure_status:
     echo " - semantic enforcement preconditions"
     echo " Stop adding textual report churn unless a new compiler-backed design requirement appears."
     echo " Narrow compiler-backed Step 5.2 tracking guards now exist for Resource declaration/assignment paths, move-assignment paths, and destructor-call recognition."
-    echo " These guards protect helper integration and status drift; they are not generalized leak, double-close, use-after-move, or defer enforcement."
+    echo " These guards protect helper integration and status drift. Step 5.2G adds only the narrow tracked-resource use-after-move behavior lane; generalized leak, double-close, and defer enforcement remain deferred."
     echo " Next semantic implementation work must be AST/typechecker design for Resource[ctx, T], open_linear_resources, destructor identity, transfer state, explicit defer semantics, and legacy open_directories parity."
     echo "✅ Step 5.2F report-only closure status complete. This target is report-only and does not run guards."
 
@@ -402,11 +402,11 @@ report_step52_status_matrix:
     echo " ✅ Resource declaration/assignment tracking guard: just guard_step52_resource_decl_assignment_tracking"
     echo " ✅ Resource move-assignment tracking guard: just guard_step52_resource_move_assignment_tracking"
     echo " ✅ Resource destructor-call tracking guard: just guard_step52_resource_destructor_call_tracking"
-    echo " ✅ Step 5.2G tracked linear resource use-after-move enforcement hook: just guard_step52_resource_use_after_move_enforcement"
+    echo " ✅ Step 5.2G tracked linear resource use-after-move pass/rejection behavior guard: just guard_step52_resource_use_after_move_enforcement"
     echo " Current Step 5.2 tracking guard boundary:"
     echo " 🧭 tracking guards protect helper integration and status drift, not generalized resource enforcement"
     echo " Narrow compiler-backed Step 5.2G enforcement:"
-    echo " ✅ tracked open_linear_resources names that are also moved now emit LinearResourceUseAfterMove on identifier use"
+    echo " ✅ pass/rejection fixtures verify normal tracked resource use still works and moved tracked-resource reuse emits LinearResourceUseAfterMove"
     echo " Deferred generalized compiler-backed work:"
     echo " ⏳ automatic Resource[ctx, T] declaration/assignment enforcement"
     echo " ⏳ destructor scheduling and defer validation"
@@ -442,7 +442,7 @@ report_step52_final_validation:
     echo " make test # includes Step 5.2 inert linear metadata and Resource helper fixtures"
     echo " make bootstrap"
     echo " git diff --check"
-    echo "✅ Step 5.2 validation checklist complete. Step 5.2G now has one narrow use-after-move enforcement hook for tracked linear resources; generalized leak/double-close/defer enforcement remains deferred. Do not purge open_directories yet."
+    echo "✅ Step 5.2 validation checklist complete. Step 5.2G now has one narrow guarded use-after-move pass/rejection behavior lane for tracked linear resources; generalized leak/double-close/defer enforcement remains deferred. Do not purge open_directories yet."
 
 report_step44_accessor_contract:
     #!/usr/bin/env bash
