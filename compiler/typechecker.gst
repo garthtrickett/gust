@@ -589,7 +589,8 @@ func step51g_non_laundering_safe_brand_target_diagnostic_kind(target_t: ast.Type
 }
 
 func env_report_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], span: token.Span, context_nonlaunder: str, ctx: &Arena) {
-    if step51g_non_laundering_enforced_safe_brand_target_violation(target_t, prov, ctx) == 0 {
+    mut diagnostic_kind_nonlaunder_target := step51g_non_laundering_safe_brand_target_diagnostic_kind(target_t, prov, ctx);
+    if diagnostic_kind_nonlaunder_target != 1 {
         return;
     }
 

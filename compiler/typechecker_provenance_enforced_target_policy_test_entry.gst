@@ -98,5 +98,31 @@ func main() {
         os.Exit(1);
     }
 
+    mut report_kind_raw_51g5 := typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_index_target_51g5, raw_prov_51g5, ctx);
+    if report_kind_raw_51g5 != 1 {
+        os.LogStr("Error: Step 5.1G reporter diagnostic kind would not report raw-derived branded target violation");
+        os.Exit(1);
+    }
+    mut report_kind_sandbox_51g5 := typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_ref_target_51g5, sandbox_prov_51g5, ctx);
+    if report_kind_sandbox_51g5 != 1 {
+        os.LogStr("Error: Step 5.1G reporter diagnostic kind would not report sandbox-derived branded target violation");
+        os.Exit(1);
+    }
+    mut report_kind_unknown_51g5 := typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_index_target_51g5, unknown_prov_51g5, ctx);
+    if report_kind_unknown_51g5 == 1 {
+        os.LogStr("Error: Step 5.1G reporter diagnostic kind would report deferred unknown-origin branded target violation");
+        os.Exit(1);
+    }
+    mut report_kind_safe_51g5 := typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_ref_target_51g5, safe_prov_51g5, ctx);
+    if report_kind_safe_51g5 == 1 {
+        os.LogStr("Error: Step 5.1G reporter diagnostic kind would report safe branded target provenance");
+        os.Exit(1);
+    }
+    mut report_kind_unbranded_raw_51g5 := typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(unbranded_index_target_51g5, raw_prov_51g5, ctx);
+    if report_kind_unbranded_raw_51g5 == 1 {
+        os.LogStr("Error: Step 5.1G reporter diagnostic kind would report unbranded raw target provenance");
+        os.Exit(1);
+    }
+
     os.LogStr("SUCCESS: Step 5.1G enforced safe-brand target policy verified!");
 }
