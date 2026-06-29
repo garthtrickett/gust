@@ -578,6 +578,16 @@ func step51g_non_laundering_deferred_safe_brand_target_violation(target_t: ast.T
     return 0;
 }
 
+func step51g_non_laundering_safe_brand_target_diagnostic_kind(target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    if step51g_non_laundering_enforced_safe_brand_target_violation(target_t, prov, ctx) == 1 {
+        return 1;
+    }
+    if step51g_non_laundering_deferred_safe_brand_target_violation(target_t, prov, ctx) == 1 {
+        return 2;
+    }
+    return 0;
+}
+
 func env_report_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], span: token.Span, context_nonlaunder: str, ctx: &Arena) {
     if step51g_non_laundering_enforced_safe_brand_target_violation(target_t, prov, ctx) == 0 {
         return;

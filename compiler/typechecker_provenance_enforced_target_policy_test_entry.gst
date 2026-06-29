@@ -69,5 +69,34 @@ func main() {
         os.Exit(1);
     }
 
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_index_target_51g5, safe_prov_51g5, ctx) != 0 {
+        os.LogStr("Error: Step 5.1G target diagnostic kind did not classify safe provenance as no violation");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_index_target_51g5, raw_prov_51g5, ctx) != 1 {
+        os.LogStr("Error: Step 5.1G target diagnostic kind did not classify raw-derived provenance as enforced violation");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_ref_target_51g5, sandbox_prov_51g5, ctx) != 1 {
+        os.LogStr("Error: Step 5.1G target diagnostic kind did not classify sandbox-derived provenance as enforced violation");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_index_target_51g5, unknown_prov_51g5, ctx) != 2 {
+        os.LogStr("Error: Step 5.1G target diagnostic kind did not classify unknown branded Index provenance as deferred violation");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_ref_target_51g5, unknown_prov_51g5, ctx) != 2 {
+        os.LogStr("Error: Step 5.1G target diagnostic kind did not classify unknown branded Reference provenance as deferred violation");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(unbranded_index_target_51g5, raw_prov_51g5, ctx) != 0 {
+        os.LogStr("Error: Step 5.1G target diagnostic kind classified unbranded Index raw provenance as a violation");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(unbranded_ref_target_51g5, unknown_prov_51g5, ctx) != 0 {
+        os.LogStr("Error: Step 5.1G target diagnostic kind classified unbranded Reference unknown provenance as a violation");
+        os.Exit(1);
+    }
+
     os.LogStr("SUCCESS: Step 5.1G enforced safe-brand target policy verified!");
 }
