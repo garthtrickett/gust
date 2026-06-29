@@ -6375,7 +6375,6 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
 
     return 0;
 }
-}
 
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
     unsafe {
