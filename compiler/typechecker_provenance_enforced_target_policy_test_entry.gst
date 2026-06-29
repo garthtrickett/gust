@@ -124,5 +124,39 @@ func main() {
         os.Exit(1);
     }
 
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind_reports(0) != 0 {
+        os.LogStr("Error: Step 5.1G target reportability helper reported no-violation diagnostic kind");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind_reports(1) != 1 {
+        os.LogStr("Error: Step 5.1G target reportability helper did not report enforced diagnostic kind");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind_reports(2) != 0 {
+        os.LogStr("Error: Step 5.1G target reportability helper reported deferred unknown-origin diagnostic kind");
+        os.Exit(1);
+    }
+
+    if typechecker.step51g_non_laundering_safe_brand_target_should_report(branded_index_target_51g5, raw_prov_51g5, ctx) != 1 {
+        os.LogStr("Error: Step 5.1G target should-report helper did not report raw-derived branded target violation");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_should_report(branded_ref_target_51g5, sandbox_prov_51g5, ctx) != 1 {
+        os.LogStr("Error: Step 5.1G target should-report helper did not report sandbox-derived branded target violation");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_should_report(branded_index_target_51g5, unknown_prov_51g5, ctx) != 0 {
+        os.LogStr("Error: Step 5.1G target should-report helper reported deferred unknown-origin branded target violation");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_should_report(branded_ref_target_51g5, safe_prov_51g5, ctx) != 0 {
+        os.LogStr("Error: Step 5.1G target should-report helper reported safe branded target provenance");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_safe_brand_target_should_report(unbranded_index_target_51g5, raw_prov_51g5, ctx) != 0 {
+        os.LogStr("Error: Step 5.1G target should-report helper reported unbranded raw target provenance");
+        os.Exit(1);
+    }
+
     os.LogStr("SUCCESS: Step 5.1G enforced safe-brand target policy verified!");
 }
