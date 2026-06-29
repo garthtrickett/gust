@@ -43,6 +43,8 @@ guard_step52_resource_destructor_call_tracking:
     echo "✅ Step 5.2 Resource destructor call tracking guard passed."
 
 guard_step52_resource_double_close_enforcement:
+    #!/usr/bin/env bash
+    set -euo pipefail
     echo "🔒 Checking Step 5.2H tracked Resource double-close recognition..."
     double_close_helper_count="$(rg -n 'func env_report_linear_resource_double_close' compiler/typechecker.gst | wc -l)"
     if [ "$double_close_helper_count" != "1" ]; then
