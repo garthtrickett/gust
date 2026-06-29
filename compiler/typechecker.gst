@@ -6303,7 +6303,18 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
         return 0;
     }
 
-    mut resource_name_step52i := first_arg_expr_step52i.Identifier.name;
+    mut resource_name_step52i := "";
+    match first_arg_expr_step52i {
+        Identifier { name } => {
+            unsafe {
+                resource_name_step52i = *name;
+            }
+        }
+    }
+    if len(resource_name_step52i) == 0 {
+        return 0;
+    }
+
     mut is_local_step52i := scope_contains(scope, resource_name_step52i, ctx);
     if is_local_step52i == 0 {
         resource_name_step52i = env_resolve_namespaced_ident(env, resource_name_step52i, ctx);
