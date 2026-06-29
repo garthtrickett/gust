@@ -235,6 +235,8 @@ report_step51_final_validation:
  echo " make report_step51_status_matrix"
  echo " make test # test_runner-owned Step 5.1 fixtures plus default Just policy/textual/Step 5.1G guards"
  echo " just make-test-guards # default Just-only guard lane, including Step 5.1G provenance-origin spine"
+ echo " just make-test-guards-parallel # opt-in bucket-parallel Just guard lane, also including Step 5.1G provenance-origin spine"
+ echo " just guard_step51_provenance_origin_spine # explicit Step 5.1G aggregate debug lane"
  echo " just guard_step51_basic_unsafe_enforcement # manual compatibility/debug lane"
  echo " just guard_step51_extern_func_call_enforcement # manual compatibility/debug lane"
  echo " just guard_step51_extern_func_parser_metadata # manual compatibility/debug lane"
