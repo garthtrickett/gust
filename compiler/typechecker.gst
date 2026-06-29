@@ -6187,6 +6187,14 @@ func env_first_open_linear_resource_requiring_cleanup(env: *TypeEnvironment[ctx]
     return "";
 }
 
+func env_report_first_linear_resource_missing_cleanup(env: *TypeEnvironment[ctx], span: token.Span, ctx: &Arena) int {
+    mut resource_name_step52l := env_first_open_linear_resource_requiring_cleanup(env, ctx);
+    if std.str_eq(resource_name_step52l, "") == 1 {
+        return 0;
+    }
+    return env_report_linear_resource_missing_cleanup(env, resource_name_step52l, span, ctx);
+}
+
 func make_type_resource(payload_type: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     mut args_resource_type: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     args_resource_type.Push(payload_type);
