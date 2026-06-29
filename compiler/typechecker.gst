@@ -1161,12 +1161,14 @@ func typechecker_get_template_elem_type(struct_name: str, field_name: str, env: 
 }
 
 func env_report_linear_resource_use_after_move(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) {
-    mut tracked_lookup := (*env).open_linear_resources.Get(name);
-    if tracked_lookup.Ok {
-        if (*env).moved_vars.Get(name).Ok {
-            mut msg := std.Concat("Semantic Error: LinearResourceUseAfterMove: resource '", name);
-            msg = std.Concat(msg, "' cannot be used after move");
-            report_error(2, msg, span, env, ctx);
+    unsafe {
+        mut tracked_lookup := (*env).open_linear_resources.Get(name);
+        if tracked_lookup.Ok {
+            if (*env).moved_vars.Get(name).Ok {
+                mut msg := std.Concat("Semantic Error: LinearResourceUseAfterMove: resource '", name);
+                msg = std.Concat(msg, "' cannot be used after move");
+                report_error(2, msg, span, env, ctx);
+            }
         }
     }
 }
