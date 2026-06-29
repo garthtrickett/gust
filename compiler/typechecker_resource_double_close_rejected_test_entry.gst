@@ -13,9 +13,9 @@ func main() {
 
     typechecker.env_register_struct_linear_metadata(&env_double_close, "main__DoubleClosePayload", 1, ctx);
     typechecker.env_register_struct_linear_destructor(&env_double_close, "main__DoubleClosePayload", "main__close_double_close_payload", ctx);
-    typechecker.env_register_open_linear_resource(&env_double_close, "double_close_resource", "main__DoubleClosePayload", ctx);
+    typechecker.env_register_open_linear_resource(&env_double_close, "main__double_close_resource", "main__DoubleClosePayload", ctx);
 
-    if typechecker.env_open_linear_resource_is_owned(&env_double_close, "double_close_resource", ctx) != 1 {
+    if typechecker.env_open_linear_resource_is_owned(&env_double_close, "main__double_close_resource", ctx) != 1 {
         os.LogStr("Error: double-close fixture resource must start owned");
         os.Exit(1);
     }
@@ -36,7 +36,7 @@ func main() {
         os.LogStr("Error: first destructor call should close tracked resource");
         os.Exit(1);
     }
-    if typechecker.env_open_linear_resource_is_closed(&env_double_close, "double_close_resource", ctx) != 1 {
+    if typechecker.env_open_linear_resource_is_closed(&env_double_close, "main__double_close_resource", ctx) != 1 {
         os.LogStr("Error: first destructor call did not mark tracked resource closed");
         os.Exit(1);
     }
