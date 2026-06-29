@@ -152,6 +152,8 @@ guard_step52_resource_missing_cleanup_first_report:
     rg -n -F 'env_report_linear_resource_missing_cleanup(env, resource_name_step52l, span, ctx)' compiler/typechecker.gst
     rg -n -F 'compiler/typechecker_resource_missing_cleanup_first_report_test_entry.gst' tests/test_runner.gst
     rg -n -F 'guard_step52_resource_missing_cleanup_first_report' justfile
+    rg -n -F 'Step 5.2L tracked Resource first pending cleanup report helper guard' justfile-reports
+    rg -n -F 'env_report_first_linear_resource_missing_cleanup' justfile-reports
     first_cleanup_runner_count="$(rg -n 'mut t_step52_resource_missing_cleanup_first_report' tests/test_runner.gst | wc -l)"
     if [ "$first_cleanup_runner_count" != "1" ]; then
       echo "❌ Step 5.2L guard failed: expected exactly one first pending cleanup test-runner entry, found $first_cleanup_runner_count"
