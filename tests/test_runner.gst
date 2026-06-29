@@ -2200,6 +2200,13 @@ func main() {
     t_step52_resource_destructor_call_tracking.expected = "SUCCESS: compiler-backed Resource destructor call tracking verified!";
     tests.Push(t_step52_resource_destructor_call_tracking);
 
+    mut t_step52_resource_use_after_move_pass: Test[ctx];
+    t_step52_resource_use_after_move_pass.path = "compiler/typechecker_resource_use_after_move_pass_test_entry.gst";
+    t_step52_resource_use_after_move_pass.is_negative = 0;
+    t_step52_resource_use_after_move_pass.is_substring = 1;
+    t_step52_resource_use_after_move_pass.expected = "SUCCESS: compiler-backed Resource use-after-move pass path verified!";
+    tests.Push(t_step52_resource_use_after_move_pass);
+
     mut t_step52_resource_use_after_move_rejected: Test[ctx];
     t_step52_resource_use_after_move_rejected.path = "compiler/typechecker_resource_use_after_move_rejected_test_entry.gst";
     t_step52_resource_use_after_move_rejected.is_negative = 0;
