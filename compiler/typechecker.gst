@@ -6254,6 +6254,14 @@ func env_register_open_resource_assignment(env: *TypeEnvironment[ctx], variable_
     return env_register_open_resource_value(env, variable_name, assigned_resource_type, ctx);
 }
 
+func env_track_resource_declaration_if_applicable(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    return env_register_open_resource_declaration(env, variable_name, ctx);
+}
+
+func env_track_resource_assignment_if_applicable(env: *TypeEnvironment[ctx], variable_name: str, assigned_resource_type: ast.Type[ctx], ctx: &Arena) int {
+    return env_register_open_resource_assignment(env, variable_name, assigned_resource_type, ctx);
+}
+
 func env_struct_is_repr_c(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
     unsafe {
         mut lookup := (*env).struct_layout_repr_c.Get(name);
@@ -8233,6 +8241,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
             }
 
+            env_track_resource_declaration_if_applicable(env, name, ctx);
+
             if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
                 mut local_vars := (*env).current_function_local_vars;
                 set_add(local_vars, std.Clone(ctx, name), ctx);
@@ -8286,6 +8296,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut left_type: ast.Type[ctx];
             left_type.tag = 3; // Void
+            mut assignment_lhs_resource_name_step52g := "";
 
             mut left := ctx[left_idx];
             
@@ -8339,6 +8350,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 if is_local == 0 {
                     resolved_name = env_resolve_namespaced_ident(env, name, ctx);
                 }
+                assignment_lhs_resource_name_step52g = std.Clone(ctx, resolved_name);
                 left_type = scope_lookup(scope, resolved_name, ctx);
                 if left_type.tag == 3 {
                     mut msg := std.Concat("Semantic Error: Undefined variable '", name);
@@ -8388,6 +8400,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 msg = std.Concat(msg, " to ");
                 msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
                 report_error(2, msg, get_expression_span(val_idx, ctx), env, ctx);
+            }
+
+            if len(assignment_lhs_resource_name_step52g) > 0 {
+                env_track_resource_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, val_type, ctx);
             }
 
             mut assignment_span_nlaunder := get_expression_span(val_idx, ctx);

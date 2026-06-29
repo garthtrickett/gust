@@ -26,3 +26,8 @@ guard_step52_no_post_closure_report_churn:
       exit 1
     fi
     echo "✅ Step 5.2 report-only closure whitelist is unchanged."
+
+guard_step52_resource_decl_assignment_tracking:
+    echo "🔒 Checking Step 5.2 Resource declaration/assignment tracking integration..."
+    just guard-positive compiler/typechecker_resource_decl_assignment_tracking_test_entry.gst step52_resource_decl_assignment_tracking
+    echo "✅ Step 5.2 Resource declaration/assignment tracking guard passed."

@@ -2179,6 +2179,13 @@ func main() {
     t_step52_resource_assignment_bridge.expected = "SUCCESS: inert Resource assignment helper bridge verified!";
     tests.Push(t_step52_resource_assignment_bridge);
 
+    mut t_step52_resource_decl_assignment_tracking: Test[ctx];
+    t_step52_resource_decl_assignment_tracking.path = "compiler/typechecker_resource_decl_assignment_tracking_test_entry.gst";
+    t_step52_resource_decl_assignment_tracking.is_negative = 0;
+    t_step52_resource_decl_assignment_tracking.is_substring = 1;
+    t_step52_resource_decl_assignment_tracking.expected = "SUCCESS: compiler-backed Resource declaration/assignment tracking verified!";
+    tests.Push(t_step52_resource_decl_assignment_tracking);
+
     mut t_step52_resource_lifecycle_ops: Test[ctx];
     t_step52_resource_lifecycle_ops.path = "compiler/typechecker_resource_lifecycle_ops_test_entry.gst";
     t_step52_resource_lifecycle_ops.is_negative = 0;
