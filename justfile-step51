@@ -77,14 +77,19 @@ guard_step51g_default_guard_wiring:
     echo "🔒 Checking Step 5.1G default guard wiring..."
     serial_deps="$(awk '/^make-test-guards:/,/^$/' justfile)"
     parallel_deps="$(awk '/^make-test-guards-policy:/ { print }' justfile)"
-    if ! grep -Fq "guard_step51_provenance_origin_spine" <<< "$serial_deps"; then
-      echo "❌ Step 5.1G default wiring guard failed: serial make-test-guards must run guard_step51_provenance_origin_spine."
-      exit 1
-    fi
-    if ! grep -Fq "guard_step51_provenance_origin_spine" <<< "$parallel_deps"; then
-      echo "❌ Step 5.1G default wiring guard failed: bucket-parallel policy guards must run guard_step51_provenance_origin_spine."
-      exit 1
-    fi
+    for required_guard in \
+      guard_step51g_default_guard_wiring \
+      guard_step51_provenance_origin_spine
+    do
+      if ! grep -Fq "$required_guard" <<< "$serial_deps"; then
+        echo "❌ Step 5.1G default wiring guard failed: serial make-test-guards must run $required_guard."
+        exit 1
+      fi
+      if ! grep -Fq "$required_guard" <<< "$parallel_deps"; then
+        echo "❌ Step 5.1G default wiring guard failed: bucket-parallel policy guards must run $required_guard."
+        exit 1
+      fi
+    done
     echo "✅ Step 5.1G default guard wiring passed."
 
 guard_step51_raw_deref_unsafe_enforcement:
