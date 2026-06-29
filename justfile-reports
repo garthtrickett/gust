@@ -199,6 +199,7 @@ report_step51_status_matrix:
  echo " 🧭 deferred semantics checkpoint: make report_step51_deferred_unsafe_semantics_status"
  echo " Policy/default guard wiring:"
  echo " ✅ report-only Step 5.1 targets stay out of make test: make guard_step51_report_only_lanes_not_in_test"
+ echo " ✅ Step 5.1G default wiring is guarded: make guard_step51g_default_guard_wiring"
  echo " ✅ Step 5.1G provenance-origin spine runs in both serial and bucket-parallel Just guard lanes"
  echo "✅ Step 5.1 status matrix complete."
 
@@ -238,6 +239,7 @@ report_step51_final_validation:
  echo " make report_step51_deferred_unsafe_semantics_status"
  echo " make report_step51_status_matrix"
  echo " make test # test_runner-owned Step 5.1 fixtures plus default Just policy/textual/Step 5.1G guards"
+ echo " just guard_step51g_default_guard_wiring # guard that Step 5.1G remains wired into default Just lanes"
  echo " just make-test-guards # default Just-only guard lane, including Step 5.1G provenance-origin spine"
  echo " just make-test-guards-parallel # opt-in bucket-parallel Just guard lane, also including Step 5.1G provenance-origin spine"
  echo " just guard_step51_provenance_origin_spine # explicit Step 5.1G aggregate debug lane"

@@ -71,6 +71,22 @@ guard_step51_report_only_lanes_not_in_test:
     fi
     echo "✅ Step 5.1 report-only lanes are not direct just make-test-guards dependencies."
 
+guard_step51g_default_guard_wiring:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.1G default guard wiring..."
+    serial_deps="$(awk '/^make-test-guards:/,/^$/' justfile)"
+    parallel_deps="$(awk '/^make-test-guards-policy:/ { print }' justfile)"
+    if ! grep -Fq "guard_step51_provenance_origin_spine" <<< "$serial_deps"; then
+      echo "❌ Step 5.1G default wiring guard failed: serial make-test-guards must run guard_step51_provenance_origin_spine."
+      exit 1
+    fi
+    if ! grep -Fq "guard_step51_provenance_origin_spine" <<< "$parallel_deps"; then
+      echo "❌ Step 5.1G default wiring guard failed: bucket-parallel policy guards must run guard_step51_provenance_origin_spine."
+      exit 1
+    fi
+    echo "✅ Step 5.1G default guard wiring passed."
+
 guard_step51_raw_deref_unsafe_enforcement:
     echo "🔒 Checking Step 5.1 raw pointer dereference unsafe enforcement..."
     just guard-compile-fail tests/test_raw_pointer_deref_outside_unsafe_rejected.gst "Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks" step51_raw_deref_guard
