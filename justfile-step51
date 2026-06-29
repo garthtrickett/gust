@@ -79,6 +79,7 @@ guard_step51g_default_guard_wiring:
     parallel_deps="$(awk '/^make-test-guards-policy:/ { print }' justfile)"
     for required_guard in \
       guard_step51g_default_guard_wiring \
+      guard_step51g_aggregate_surface_wiring \
       guard_step51_provenance_origin_spine
     do
       if ! grep -Fq "$required_guard" <<< "$serial_deps"; then
@@ -91,6 +92,27 @@ guard_step51g_default_guard_wiring:
       fi
     done
     echo "✅ Step 5.1G default guard wiring passed."
+
+guard_step51g_aggregate_surface_wiring:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.1G aggregate surface wiring..."
+    aggregate_surface="$(awk '/^guard_step51_provenance_origin_spine:/,/^guard_step51_basic_unsafe_enforcement:/' justfile-step51)"
+    for required_surface in \
+      "guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst" \
+      "guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst" \
+      "guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst" \
+      "guard-positive compiler/typechecker_provenance_policy_spine_test_entry.gst" \
+      "guard-positive compiler/typechecker_provenance_boundary_spine_test_entry.gst" \
+      "guard-positive compiler/typechecker_provenance_enforced_target_policy_test_entry.gst" \
+      "guard_step51g_safe_brand_target_policy_surface"
+    do
+      if ! grep -Fq "$required_surface" <<< "$aggregate_surface"; then
+        echo "❌ Step 5.1G aggregate surface guard failed: missing $required_surface"
+        exit 1
+      fi
+    done
+    echo "✅ Step 5.1G aggregate surface wiring passed."
 
 guard_step51_raw_deref_unsafe_enforcement:
     echo "🔒 Checking Step 5.1 raw pointer dereference unsafe enforcement..."
@@ -341,6 +363,7 @@ guard_step51g_safe_brand_target_policy_surface:
 
 guard_step51_provenance_origin_spine:
     echo "🔒 Checking Step 5.1G unified provenance-origin spine helpers..."
+    just guard_step51g_aggregate_surface_wiring
     just guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst step51g_provenance_origin_spine
     just guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst step51g_provenance_origin_spine_compat
     just guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst step51g_provenance_expression_join_spine
