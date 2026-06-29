@@ -1160,6 +1160,17 @@ func typechecker_get_template_elem_type(struct_name: str, field_name: str, env: 
     }
 }
 
+func env_report_linear_resource_use_after_move(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) {
+    mut tracked_lookup := (*env).open_linear_resources.Get(name);
+    if tracked_lookup.Ok {
+        if (*env).moved_vars.Get(name).Ok {
+            mut msg := std.Concat("Semantic Error: LinearResourceUseAfterMove: resource '", name);
+            msg = std.Concat(msg, "' cannot be used after move");
+            report_error(2, msg, span, env, ctx);
+        }
+    }
+}
+
 func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
         mut dummy: ast.Type[ctx];
@@ -1185,6 +1196,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             if (*env).moved_vars.Get(resolved_name).Ok {
                 report_error(2, std.Concat("Semantic Error: Use of moved variable ", resolved_name), expr.Identifier.span, env, ctx);
             }
+            env_report_linear_resource_use_after_move(env, resolved_name, expr.Identifier.span, ctx);
 
              // Check variable origins
                     mut lookup_orig := (*env).variable_origins.Get(resolved_name);

@@ -2,535 +2,535 @@
 # Keep report_* implementations here so Makefile stays focused on build graph and wrappers.
 
 report_phase4_formatter_tools:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧰 Reporting Phase 4A formatter tooling scaffold..."
- echo " Do not run repo-wide formatting until Phase 4B after Phase 5/6."
- if command -v treefmt >/dev/null 2>&1; then echo " treefmt: $(command -v treefmt)"; else echo " treefmt: missing from current shell"; fi
- if command -v topiary >/dev/null 2>&1; then echo " topiary: $(command -v topiary)"; else echo " topiary: missing from current shell"; fi
- if command -v clang-format >/dev/null 2>&1; then echo " clang-format: $(command -v clang-format)"; else echo " clang-format: missing from current shell"; fi
- if command -v rustfmt >/dev/null 2>&1; then echo " rustfmt: $(command -v rustfmt)"; else echo " rustfmt: missing from current shell"; fi
- echo "✅ Phase 4A formatter tool report complete. This target is report-only and does not format files."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧰 Reporting Phase 4A formatter tooling scaffold..."
+    echo " Do not run repo-wide formatting until Phase 4B after Phase 5/6."
+    if command -v treefmt >/dev/null 2>&1; then echo " treefmt: $(command -v treefmt)"; else echo " treefmt: missing from current shell"; fi
+    if command -v topiary >/dev/null 2>&1; then echo " topiary: $(command -v topiary)"; else echo " topiary: missing from current shell"; fi
+    if command -v clang-format >/dev/null 2>&1; then echo " clang-format: $(command -v clang-format)"; else echo " clang-format: missing from current shell"; fi
+    if command -v rustfmt >/dev/null 2>&1; then echo " rustfmt: $(command -v rustfmt)"; else echo " rustfmt: missing from current shell"; fi
+    echo "✅ Phase 4A formatter tool report complete. This target is report-only and does not format files."
 
 report_step51_raw_pointer_deref:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 5.1 raw pointer dereference candidates..."
- echo " Broad regex inventory only; enforcement must be AST/typechecker-based later."
- rg -n '(^|[^[:alnum:]_])\*[[:space:]]*(\(|[A-Za-z_][A-Za-z0-9_]*)' compiler/*.gst tests/*.gst || true
- echo "✅ Step 5.1 raw pointer dereference report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 5.1 raw pointer dereference candidates..."
+    echo " Broad regex inventory only; enforcement must be AST/typechecker-based later."
+    rg -n '(^|[^[:alnum:]_])\*[[:space:]]*(\(|[A-Za-z_][A-Za-z0-9_]*)' compiler/*.gst tests/*.gst || true
+    echo "✅ Step 5.1 raw pointer dereference report complete. This target is inventory-only and does not fail."
 
 report_step51_raw_pointer_casts:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 5.1 raw pointer cast/address-escape candidates..."
- echo " Includes raw pointer casts and direct address-taking patterns that may need unsafe wrapping."
- rg -n ' as \*|&ctx\[|&[A-Za-z_][A-Za-z0-9_]*\[' compiler/*.gst tests/*.gst || true
- echo "✅ Step 5.1 raw pointer cast/address report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 5.1 raw pointer cast/address-escape candidates..."
+    echo " Includes raw pointer casts and direct address-taking patterns that may need unsafe wrapping."
+    rg -n ' as \*|&ctx\[|&[A-Za-z_][A-Za-z0-9_]*\[' compiler/*.gst tests/*.gst || true
+    echo "✅ Step 5.1 raw pointer cast/address report complete. This target is inventory-only and does not fail."
 
 report_step51_address_escapes_focused:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 5.1 focused reference-aware address-escape candidates..."
- python3 tools/step51_address_escape_report.py || true
- echo "✅ Step 5.1 focused address-escape report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 5.1 focused reference-aware address-escape candidates..."
+    python3 tools/step51_address_escape_report.py || true
+    echo "✅ Step 5.1 focused address-escape report complete. This target is inventory-only and does not fail."
 
 report_step51_ffi_calls:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 5.1 direct FFI / external-call candidates..."
- echo " Broad textual search across compiler, tests, and runtime sources."
- rg -n 'extern|ffi|Foreign|C\.|ccall|c_call|dlsym|dlopen|syscall' compiler/*.gst tests/*.gst src || true
- echo "✅ Step 5.1 FFI candidate report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 5.1 direct FFI / external-call candidates..."
+    echo " Broad textual search across compiler, tests, and runtime sources."
+    rg -n 'extern|ffi|Foreign|C\.|ccall|c_call|dlsym|dlopen|syscall' compiler/*.gst tests/*.gst src || true
+    echo "✅ Step 5.1 FFI candidate report complete. This target is inventory-only and does not fail."
 
 report_step51_ffi_focused:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 5.1 focused token-aware FFI/native-call candidates..."
- python3 tools/step51_ffi_report.py || true
- echo "✅ Step 5.1 focused FFI report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 5.1 focused token-aware FFI/native-call candidates..."
+    python3 tools/step51_ffi_report.py || true
+    echo "✅ Step 5.1 focused FFI report complete. This target is inventory-only and does not fail."
 
 report_step51_unsafe_func_signatures:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 5.1 unsafe function signature candidates..."
- echo " Phase 5.1A should add no-op parser/typechecker support before enforcement."
- rg -n 'unsafe[[:space:]]+func|func[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\([^)]*\)[^{;]*unsafe' compiler/*.gst tests/*.gst || true
- echo "✅ Step 5.1 unsafe function signature report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 5.1 unsafe function signature candidates..."
+    echo " Phase 5.1A should add no-op parser/typechecker support before enforcement."
+    rg -n 'unsafe[[:space:]]+func|func[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\([^)]*\)[^{;]*unsafe' compiler/*.gst tests/*.gst || true
+    echo "✅ Step 5.1 unsafe function signature report complete. This target is inventory-only and does not fail."
 
 report_step51_raw_pointer_classified:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 5.1 classified raw pointer inventory..."
- echo " Raw pointer dereference expression candidates:"
- rg -n '(^|[^[:alnum:]_])\*[[:space:]]*(\(|[A-Za-z_][A-Za-z0-9_]*)' compiler/*.gst tests/*.gst | rg -v ':[[:space:]]*\*| as \*|func[^(]*\([^)]*\*' || true
- echo " Raw pointer type syntax / declarations:"
- rg -n ':[[:space:]]*\*|func[^(]*\([^)]*\*|std\.Vector\[[^]]*\*|Index\[[^]]*\*' compiler/*.gst tests/*.gst || true
- echo " Raw pointer casts:"
- rg -n ' as \*' compiler/*.gst tests/*.gst || true
- echo " Direct address/indexed address expressions:"
- rg -n '&ctx\[|&[A-Za-z_][A-Za-z0-9_]*\[' compiler/*.gst tests/*.gst || true
- echo " Intentional raw pointer enforcement fixtures:"
- rg -n 'raw pointer|raw_pointer|outside_unsafe|inside_unsafe|unsafe' tests/test_*raw* tests/e2e_*raw* tests/test_*deref* tests/e2e_*deref* 2>/dev/null || true
- echo "✅ Step 5.1 classified raw pointer inventory complete. This target is report-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 5.1 classified raw pointer inventory..."
+    echo " Raw pointer dereference expression candidates:"
+    rg -n '(^|[^[:alnum:]_])\*[[:space:]]*(\(|[A-Za-z_][A-Za-z0-9_]*)' compiler/*.gst tests/*.gst | rg -v ':[[:space:]]*\*| as \*|func[^(]*\([^)]*\*' || true
+    echo " Raw pointer type syntax / declarations:"
+    rg -n ':[[:space:]]*\*|func[^(]*\([^)]*\*|std\.Vector\[[^]]*\*|Index\[[^]]*\*' compiler/*.gst tests/*.gst || true
+    echo " Raw pointer casts:"
+    rg -n ' as \*' compiler/*.gst tests/*.gst || true
+    echo " Direct address/indexed address expressions:"
+    rg -n '&ctx\[|&[A-Za-z_][A-Za-z0-9_]*\[' compiler/*.gst tests/*.gst || true
+    echo " Intentional raw pointer enforcement fixtures:"
+    rg -n 'raw pointer|raw_pointer|outside_unsafe|inside_unsafe|unsafe' tests/test_*raw* tests/e2e_*raw* tests/test_*deref* tests/e2e_*deref* 2>/dev/null || true
+    echo "✅ Step 5.1 classified raw pointer inventory complete. This target is report-only and does not fail."
 
 report_step51_raw_pointer_safe_code_candidates:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 5.1 focused safe-code raw pointer candidates..."
- python3 tools/step51_raw_pointer_report.py || true
- echo "✅ Step 5.1 focused safe-code candidate report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 5.1 focused safe-code raw pointer candidates..."
+    python3 tools/step51_raw_pointer_report.py || true
+    echo "✅ Step 5.1 focused safe-code candidate report complete. This target is inventory-only and does not fail."
 
 report_step51_phase_b_wrapping_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.1B proactive wrapping status..."
- echo " Review the focused safe-code candidate bucket before enabling any new raw pointer enforcement."
- just report_step51_raw_pointer_safe_code_candidates
- echo " Intentional raw-gating negative fixtures are expected to remain visible in their dedicated bucket."
- echo " Raw pointer enforcement and escape-analysis negative fixtures are not Phase 5.1B wrapping candidates."
- echo " If the focused report shows no likely outside-unsafe production/test raw operations, stop regex-driven wrapping churn."
- echo "✅ Step 5.1B wrapping status report complete. This target is report-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.1B proactive wrapping status..."
+    echo " Review the focused safe-code candidate bucket before enabling any new raw pointer enforcement."
+    just report_step51_raw_pointer_safe_code_candidates
+    echo " Intentional raw-gating negative fixtures are expected to remain visible in their dedicated bucket."
+    echo " Raw pointer enforcement and escape-analysis negative fixtures are not Phase 5.1B wrapping candidates."
+    echo " If the focused report shows no likely outside-unsafe production/test raw operations, stop regex-driven wrapping churn."
+    echo "✅ Step 5.1B wrapping status report complete. This target is report-only and does not fail."
 
 report_step51_phase_c_basic_unsafe_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.1C basic unsafe enforcement status..."
- echo " Test-runner-owned compiler-backed fixtures:"
- echo " tests/test_runner.gst covers raw pointer dereference/cast/arithmetic unsafe gates, unsafe function calls, raw local pointer escape, and extern-call gating."
- echo " Manual compatibility guards remain available in justfile-step51 for focused debugging, but are not default Just-suite entries."
- echo " Default Just-suite Step 5.1 coverage includes report-policy/textual source guards plus the Step 5.1G provenance-origin spine aggregate."
- echo " Other semantic Step 5.1 fixtures live in tests/test_runner.gst or remain available as focused manual justfile-step51 recipes."
- echo " Still deferred: richer FFI boundary modeling, layout/sandbox enforcement beyond helpers, broad address escapes, and whole-program non-laundering."
- echo "✅ Step 5.1C basic unsafe status report complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.1C basic unsafe enforcement status..."
+    echo " Test-runner-owned compiler-backed fixtures:"
+    echo " tests/test_runner.gst covers raw pointer dereference/cast/arithmetic unsafe gates, unsafe function calls, raw local pointer escape, and extern-call gating."
+    echo " Manual compatibility guards remain available in justfile-step51 for focused debugging, but are not default Just-suite entries."
+    echo " Default Just-suite Step 5.1 coverage includes report-policy/textual source guards plus the Step 5.1G provenance-origin spine aggregate."
+    echo " Other semantic Step 5.1 fixtures live in tests/test_runner.gst or remain available as focused manual justfile-step51 recipes."
+    echo " Still deferred: richer FFI boundary modeling, layout/sandbox enforcement beyond helpers, broad address escapes, and whole-program non-laundering."
+    echo "✅ Step 5.1C basic unsafe status report complete. This target is report-only and does not run guards."
 
 report_step51_phase_d_ffi_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.1D FFI gating status..."
- echo " Current direct FFI inventory targets:"
- echo " make report_step51_ffi_calls"
- echo " make report_step51_ffi_focused"
- echo " Next enforcement-design slice should inspect direct external-call syntax and runtime/native boundaries before adding any guard."
- echo " The focused report is token-aware to avoid substring noise such as suffix or generic_call."
- echo " If the focused report shows zero direct Gust source candidates, keep FFI enforcement deferred until real extern/native syntax exists."
- echo " Do not wire textual FFI scans into make test; eventual enforcement must be parser/typechecker-backed."
- echo "✅ Step 5.1D FFI status report complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.1D FFI gating status..."
+    echo " Current direct FFI inventory targets:"
+    echo " make report_step51_ffi_calls"
+    echo " make report_step51_ffi_focused"
+    echo " Next enforcement-design slice should inspect direct external-call syntax and runtime/native boundaries before adding any guard."
+    echo " The focused report is token-aware to avoid substring noise such as suffix or generic_call."
+    echo " If the focused report shows zero direct Gust source candidates, keep FFI enforcement deferred until real extern/native syntax exists."
+    echo " Do not wire textual FFI scans into make test; eventual enforcement must be parser/typechecker-backed."
+    echo "✅ Step 5.1D FFI status report complete. This target is report-only and does not run guards."
 
 report_step51_phase_e_address_escape_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.1E address-escape status..."
- echo " Current address-escape inventory targets:"
- echo " make report_step51_raw_pointer_casts"
- echo " make report_step51_address_escapes_focused"
- echo " Inspect direct safe-code address-escape candidates before adding any guard."
- echo " The focused report is reference-aware so branded reference type/cast syntax is not treated as an address escape."
- echo " The focused report also separates already-unsafe address expressions from safe-code candidates."
- echo " Do not wire textual address scans into make test; eventual enforcement must be AST/typechecker-backed."
- echo "✅ Step 5.1E address-escape status report complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.1E address-escape status..."
+    echo " Current address-escape inventory targets:"
+    echo " make report_step51_raw_pointer_casts"
+    echo " make report_step51_address_escapes_focused"
+    echo " Inspect direct safe-code address-escape candidates before adding any guard."
+    echo " The focused report is reference-aware so branded reference type/cast syntax is not treated as an address escape."
+    echo " The focused report also separates already-unsafe address expressions from safe-code candidates."
+    echo " Do not wire textual address scans into make test; eventual enforcement must be AST/typechecker-backed."
+    echo "✅ Step 5.1E address-escape status report complete. This target is report-only and does not run guards."
 
 report_step51_phase_f_non_laundering_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.1F non-laundering/provenance status..."
- echo " Current test-runner-owned unsafe/provenance coverage:"
- echo " tests/test_runner.gst covers basic unsafe/extern fixtures, positive metadata/provenance fixtures, and focused non-laundering fixtures with SUCCESS substring checks."
- echo " Current default Just-suite Step 5.1 enforcement:"
- echo " default Just guards include the Step 5.1 report-policy guard and the Step 5.1G provenance-origin spine aggregate."
- echo " Older Step 5.1 semantic fixture recipes remain available manually in justfile-step51 for focused debugging."
- echo " Current report-only precursor targets:"
- echo " make report_step51_phase_d_ffi_status"
- echo " make report_step51_phase_e_address_escape_status"
- echo " make report_step51_raw_pointer_safe_code_candidates"
- echo " Provenance design anchor: STEP51_DEFERRED_UNSAFE_SEMANTICS.md"
- echo " Implement broader non-laundering with semantic provenance/origin tracking, not textual scans."
- echo " Current non-laundering guards are focused read/write/flow checks; they are useful but not full whole-program provenance enforcement."
- echo "✅ Step 5.1F non-laundering status report complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.1F non-laundering/provenance status..."
+    echo " Current test-runner-owned unsafe/provenance coverage:"
+    echo " tests/test_runner.gst covers basic unsafe/extern fixtures, positive metadata/provenance fixtures, and focused non-laundering fixtures with SUCCESS substring checks."
+    echo " Current default Just-suite Step 5.1 enforcement:"
+    echo " default Just guards include the Step 5.1 report-policy guard and the Step 5.1G provenance-origin spine aggregate."
+    echo " Older Step 5.1 semantic fixture recipes remain available manually in justfile-step51 for focused debugging."
+    echo " Current report-only precursor targets:"
+    echo " make report_step51_phase_d_ffi_status"
+    echo " make report_step51_phase_e_address_escape_status"
+    echo " make report_step51_raw_pointer_safe_code_candidates"
+    echo " Provenance design anchor: STEP51_DEFERRED_UNSAFE_SEMANTICS.md"
+    echo " Implement broader non-laundering with semantic provenance/origin tracking, not textual scans."
+    echo " Current non-laundering guards are focused read/write/flow checks; they are useful but not full whole-program provenance enforcement."
+    echo "✅ Step 5.1F non-laundering status report complete. This target is report-only and does not run guards."
 
 report_step51_deferred_unsafe_semantics_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.1 deferred unsafe semantics checkpoint..."
- echo " Design anchor: STEP51_DEFERRED_UNSAFE_SEMANTICS.md"
- echo " Closed test-runner-owned subset:"
- echo " - basic unsafe/extern gates"
- echo " - positive metadata/provenance carriers with SUCCESS substring checks"
- echo " Deferred compiler-design lanes:"
- echo " - richer direct FFI/native-call boundary modeling"
- echo " - #[repr(C)] / #[packed] layout enforcement beyond helper metadata"
- echo " - sandboxed FFI sub-arenas"
- echo " - address-origin metadata beyond local raw pointer return escape"
- echo " - broad raw/sandbox-derived provenance propagation and non-laundering"
- echo " - unknown-origin safe-branded rejection after safe constructor coverage improves"
- echo " Current test-runner-owned non-laundering subset:"
- echo " - focused safe-branded return/binding/call/field/container/container-method/Arena.Write/reference-selector/HashMap.Get-value/HashMap.Get-value-field non-laundering fixtures"
- echo " Current default Just guard subset:"
- echo " - report-only policy guards keeping report lanes out of default tests"
- echo " - Step 5.1G default wiring guard, aggregate surface guard, legacy provenance wrapper surface guards, and provenance-origin spine aggregate"
- echo " - textual source guards that do not fit tests/test_runner.gst"
- echo " Reports to inspect before new enforcement:"
- echo " make report_step51_phase_d_ffi_status"
- echo " make report_step51_phase_e_address_escape_status"
- echo " make report_step51_phase_f_non_laundering_status"
- echo "✅ Step 5.1 deferred unsafe semantics status report complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.1 deferred unsafe semantics checkpoint..."
+    echo " Design anchor: STEP51_DEFERRED_UNSAFE_SEMANTICS.md"
+    echo " Closed test-runner-owned subset:"
+    echo " - basic unsafe/extern gates"
+    echo " - positive metadata/provenance carriers with SUCCESS substring checks"
+    echo " Deferred compiler-design lanes:"
+    echo " - richer direct FFI/native-call boundary modeling"
+    echo " - #[repr(C)] / #[packed] layout enforcement beyond helper metadata"
+    echo " - sandboxed FFI sub-arenas"
+    echo " - address-origin metadata beyond local raw pointer return escape"
+    echo " - broad raw/sandbox-derived provenance propagation and non-laundering"
+    echo " - unknown-origin safe-branded rejection after safe constructor coverage improves"
+    echo " Current test-runner-owned non-laundering subset:"
+    echo " - focused safe-branded return/binding/call/field/container/container-method/Arena.Write/reference-selector/HashMap.Get-value/HashMap.Get-value-field non-laundering fixtures"
+    echo " Current default Just guard subset:"
+    echo " - report-only policy guards keeping report lanes out of default tests"
+    echo " - Step 5.1G default wiring guard, aggregate surface guard, legacy provenance wrapper surface guards, and provenance-origin spine aggregate"
+    echo " - textual source guards that do not fit tests/test_runner.gst"
+    echo " Reports to inspect before new enforcement:"
+    echo " make report_step51_phase_d_ffi_status"
+    echo " make report_step51_phase_e_address_escape_status"
+    echo " make report_step51_phase_f_non_laundering_status"
+    echo "✅ Step 5.1 deferred unsafe semantics status report complete. This target is report-only and does not run guards."
 
 report_step51_status_matrix:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Step 5.1 safety status matrix:"
- echo " Test-runner-owned compiler-backed fixtures:"
- echo " ✅ basic unsafe gates: raw pointer deref/cast/arithmetic, unsafe function call, raw local pointer escape"
- echo " ✅ extern/native call unsafe boundary and extern parser metadata"
- echo " ✅ layout metadata/defaults, layout FFI helpers, sandbox policy defaults, and address-origin helpers"
- echo " ✅ positive provenance carriers: expression, constructors, container writes/refs, HashMap/GetRef aliases, variable/return/call/field/container"
- echo " Test-runner-owned focused non-laundering fixtures:"
- echo " ✅ non-laundering return/binding/call/field/container/container-method/Arena.Write/reference-selector/HashMap.Get-value/HashMap.Get-value-field coverage uses SUCCESS substring checks"
- echo " Default Just-suite guards:"
- echo " ✅ Step 5.1 report-only policy guard"
- echo " ✅ Step 5.1G default wiring guard, aggregate surface guard, legacy provenance wrapper surface guards, and provenance-origin spine aggregate"
- echo " ✅ Step 5.2 report-only policy guards"
- echo " ✅ parser-specific and whole-compiler textual raw-cast guards"
- echo " Manual compatibility/debug lanes remain in justfile-step51 for moved basic unsafe and older metadata/provenance guard recipes."
- echo " Deferred/report-only lanes:"
- echo " 🧭 FFI/layout/sandboxing design: make report_step51_phase_d_ffi_status"
- echo " 🧭 address-escape design: make report_step51_phase_e_address_escape_status"
- echo " 🧭 broader non-laundering/provenance design: make report_step51_phase_f_non_laundering_status"
- echo " 🧭 deferred semantics checkpoint: make report_step51_deferred_unsafe_semantics_status"
- echo " Policy/default guard wiring:"
- echo " ✅ report-only Step 5.1 targets stay out of serial and bucket-parallel default Just guards: make guard_step51_report_only_lanes_not_in_test"
- echo " ✅ Step 5.1G default wiring guard verifies report-policy, wiring, aggregate-surface, legacy wrapper surfaces, and provenance-origin spine guards are present and ordered in serial and bucket-parallel Just guard lanes"
- echo " ✅ Step 5.1G aggregate surface guard verifies the core provenance fixtures, focused non-laundering regressions, legacy provenance wrapper guards, and safe-brand target policy surface remain present and ordered in the aggregate"
- echo " ✅ Step 5.1G legacy address-origin wrapper surface guard verifies compatibility wrappers delegate to canonical provenance-origin helpers"
- echo " ✅ Step 5.1G legacy expression-provenance wrapper surface guard verifies compatibility wrappers delegate to canonical provenance-origin helpers"
- echo "✅ Step 5.1 status matrix complete."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Step 5.1 safety status matrix:"
+    echo " Test-runner-owned compiler-backed fixtures:"
+    echo " ✅ basic unsafe gates: raw pointer deref/cast/arithmetic, unsafe function call, raw local pointer escape"
+    echo " ✅ extern/native call unsafe boundary and extern parser metadata"
+    echo " ✅ layout metadata/defaults, layout FFI helpers, sandbox policy defaults, and address-origin helpers"
+    echo " ✅ positive provenance carriers: expression, constructors, container writes/refs, HashMap/GetRef aliases, variable/return/call/field/container"
+    echo " Test-runner-owned focused non-laundering fixtures:"
+    echo " ✅ non-laundering return/binding/call/field/container/container-method/Arena.Write/reference-selector/HashMap.Get-value/HashMap.Get-value-field coverage uses SUCCESS substring checks"
+    echo " Default Just-suite guards:"
+    echo " ✅ Step 5.1 report-only policy guard"
+    echo " ✅ Step 5.1G default wiring guard, aggregate surface guard, legacy provenance wrapper surface guards, and provenance-origin spine aggregate"
+    echo " ✅ Step 5.2 report-only policy guards"
+    echo " ✅ parser-specific and whole-compiler textual raw-cast guards"
+    echo " Manual compatibility/debug lanes remain in justfile-step51 for moved basic unsafe and older metadata/provenance guard recipes."
+    echo " Deferred/report-only lanes:"
+    echo " 🧭 FFI/layout/sandboxing design: make report_step51_phase_d_ffi_status"
+    echo " 🧭 address-escape design: make report_step51_phase_e_address_escape_status"
+    echo " 🧭 broader non-laundering/provenance design: make report_step51_phase_f_non_laundering_status"
+    echo " 🧭 deferred semantics checkpoint: make report_step51_deferred_unsafe_semantics_status"
+    echo " Policy/default guard wiring:"
+    echo " ✅ report-only Step 5.1 targets stay out of serial and bucket-parallel default Just guards: make guard_step51_report_only_lanes_not_in_test"
+    echo " ✅ Step 5.1G default wiring guard verifies report-policy, wiring, aggregate-surface, legacy wrapper surfaces, and provenance-origin spine guards are present and ordered in serial and bucket-parallel Just guard lanes"
+    echo " ✅ Step 5.1G aggregate surface guard verifies the core provenance fixtures, focused non-laundering regressions, legacy provenance wrapper guards, and safe-brand target policy surface remain present and ordered in the aggregate"
+    echo " ✅ Step 5.1G legacy address-origin wrapper surface guard verifies compatibility wrappers delegate to canonical provenance-origin helpers"
+    echo " ✅ Step 5.1G legacy expression-provenance wrapper surface guard verifies compatibility wrappers delegate to canonical provenance-origin helpers"
+    echo "✅ Step 5.1 status matrix complete."
 
 report_step51_raw_pointer_safety_inventory:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧾 Step 5.1 raw pointer safety inventory checklist:"
- echo " make report_step51_raw_pointer_deref"
- echo " make report_step51_raw_pointer_casts"
- echo " make report_step51_address_escapes_focused"
- echo " make report_step51_ffi_calls"
- echo " make report_step51_ffi_focused"
- echo " make report_step51_unsafe_func_signatures"
- echo " make report_step51_raw_pointer_classified"
- echo " make report_step51_raw_pointer_safe_code_candidates"
- echo " make report_step51_phase_b_wrapping_status"
- echo " make report_step51_phase_c_basic_unsafe_status"
- echo " make report_step51_phase_d_ffi_status"
- echo " make report_step51_phase_e_address_escape_status"
- echo " make report_step51_phase_f_non_laundering_status"
- echo " make report_step51_deferred_unsafe_semantics_status"
- echo " make report_step51_status_matrix"
- echo "✅ Inventory checklist complete. Reports are informational and do not fail builds."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧾 Step 5.1 raw pointer safety inventory checklist:"
+    echo " make report_step51_raw_pointer_deref"
+    echo " make report_step51_raw_pointer_casts"
+    echo " make report_step51_address_escapes_focused"
+    echo " make report_step51_ffi_calls"
+    echo " make report_step51_ffi_focused"
+    echo " make report_step51_unsafe_func_signatures"
+    echo " make report_step51_raw_pointer_classified"
+    echo " make report_step51_raw_pointer_safe_code_candidates"
+    echo " make report_step51_phase_b_wrapping_status"
+    echo " make report_step51_phase_c_basic_unsafe_status"
+    echo " make report_step51_phase_d_ffi_status"
+    echo " make report_step51_phase_e_address_escape_status"
+    echo " make report_step51_phase_f_non_laundering_status"
+    echo " make report_step51_deferred_unsafe_semantics_status"
+    echo " make report_step51_status_matrix"
+    echo "✅ Inventory checklist complete. Reports are informational and do not fail builds."
 
 report_step51_final_validation:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧾 Step 5.1 validation checklist:"
- echo " make report_step51_raw_pointer_safety_inventory"
- echo " make report_step51_raw_pointer_classified"
- echo " make report_step51_raw_pointer_safe_code_candidates"
- echo " make report_step51_phase_b_wrapping_status"
- echo " make report_step51_phase_c_basic_unsafe_status"
- echo " make report_step51_phase_d_ffi_status"
- echo " make report_step51_phase_e_address_escape_status"
- echo " make report_step51_phase_f_non_laundering_status"
- echo " make report_step51_deferred_unsafe_semantics_status"
- echo " make report_step51_status_matrix"
- echo " just guard_step51_report_only_lanes_not_in_test # guard that Step 5.1 report-only lanes stay out of serial and bucket-parallel default Just guards"
- echo " make test # test_runner-owned Step 5.1 fixtures plus default Just policy/textual/Step 5.1G guards"
- echo " just guard_step51g_default_guard_wiring # guard that report-policy and Step 5.1G wiring/surface/aggregate guards remain ordered in default Just lanes"
- echo " just guard_step51g_aggregate_surface_wiring # guard that core Step 5.1G fixtures and focused non-laundering regressions remain present and ordered in the aggregate"
- echo " just guard_step51g_address_origin_legacy_wrapper_surface # guard that legacy address-origin wrappers delegate to canonical Step 5.1G helpers"
- echo " just guard_step51g_expression_provenance_legacy_wrapper_surface # guard that legacy expression-provenance wrappers delegate to canonical Step 5.1G helpers"
- echo " just make-test-guards # default Just-only guard lane, including Step 5.1G provenance-origin spine"
- echo " just make-test-guards-parallel # opt-in bucket-parallel Just guard lane, also including Step 5.1G provenance-origin spine"
- echo " just guard_step51_provenance_origin_spine # explicit Step 5.1G aggregate debug lane"
- echo " just guard_step51_basic_unsafe_enforcement # manual compatibility/debug lane"
- echo " just guard_step51_extern_func_call_enforcement # manual compatibility/debug lane"
- echo " just guard_step51_extern_func_parser_metadata # manual compatibility/debug lane"
- echo " just guard_step51_expression_provenance_carrier # representative manual metadata/provenance debug lane"
- echo " make bootstrap"
- echo " git diff --check"
- echo "✅ Step 5.1 validation checklist complete. Reports remain informational; enforcement is compiler-backed through focused guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧾 Step 5.1 validation checklist:"
+    echo " make report_step51_raw_pointer_safety_inventory"
+    echo " make report_step51_raw_pointer_classified"
+    echo " make report_step51_raw_pointer_safe_code_candidates"
+    echo " make report_step51_phase_b_wrapping_status"
+    echo " make report_step51_phase_c_basic_unsafe_status"
+    echo " make report_step51_phase_d_ffi_status"
+    echo " make report_step51_phase_e_address_escape_status"
+    echo " make report_step51_phase_f_non_laundering_status"
+    echo " make report_step51_deferred_unsafe_semantics_status"
+    echo " make report_step51_status_matrix"
+    echo " just guard_step51_report_only_lanes_not_in_test # guard that Step 5.1 report-only lanes stay out of serial and bucket-parallel default Just guards"
+    echo " make test # test_runner-owned Step 5.1 fixtures plus default Just policy/textual/Step 5.1G guards"
+    echo " just guard_step51g_default_guard_wiring # guard that report-policy and Step 5.1G wiring/surface/aggregate guards remain ordered in default Just lanes"
+    echo " just guard_step51g_aggregate_surface_wiring # guard that core Step 5.1G fixtures and focused non-laundering regressions remain present and ordered in the aggregate"
+    echo " just guard_step51g_address_origin_legacy_wrapper_surface # guard that legacy address-origin wrappers delegate to canonical Step 5.1G helpers"
+    echo " just guard_step51g_expression_provenance_legacy_wrapper_surface # guard that legacy expression-provenance wrappers delegate to canonical Step 5.1G helpers"
+    echo " just make-test-guards # default Just-only guard lane, including Step 5.1G provenance-origin spine"
+    echo " just make-test-guards-parallel # opt-in bucket-parallel Just guard lane, also including Step 5.1G provenance-origin spine"
+    echo " just guard_step51_provenance_origin_spine # explicit Step 5.1G aggregate debug lane"
+    echo " just guard_step51_basic_unsafe_enforcement # manual compatibility/debug lane"
+    echo " just guard_step51_extern_func_call_enforcement # manual compatibility/debug lane"
+    echo " just guard_step51_extern_func_parser_metadata # manual compatibility/debug lane"
+    echo " just guard_step51_expression_provenance_carrier # representative manual metadata/provenance debug lane"
+    echo " make bootstrap"
+    echo " git diff --check"
+    echo "✅ Step 5.1 validation checklist complete. Reports remain informational; enforcement is compiler-backed through focused guards."
 
 report_step52_linear_resource_inventory:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 5.2 generalized linear resource precursor inventory..."
- echo " Existing specialized directory tracking and resource-like syntax:"
- rg -n 'open_directories|OpenDir|ReadDir|CloseDir|Dir|drop_func|linear|Resource|defer' compiler/*.gst tests/*.gst src || true
- echo " Native/runtime directory boundary candidates:"
- rg -n 'DIR\*|opendir|readdir|closedir|os_OpenDir|os_ReadDir|os_CloseDir' src compiler/*.gst tests/*.gst || true
- echo "✅ Step 5.2 linear resource precursor inventory complete. This target is report-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 5.2 generalized linear resource precursor inventory..."
+    echo " Existing specialized directory tracking and resource-like syntax:"
+    rg -n 'open_directories|OpenDir|ReadDir|CloseDir|Dir|drop_func|linear|Resource|defer' compiler/*.gst tests/*.gst src || true
+    echo " Native/runtime directory boundary candidates:"
+    rg -n 'DIR\*|opendir|readdir|closedir|os_OpenDir|os_ReadDir|os_CloseDir' src compiler/*.gst tests/*.gst || true
+    echo "✅ Step 5.2 linear resource precursor inventory complete. This target is report-only and does not fail."
 
 report_step52_linear_resource_focused:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 5.2 focused linear resource precursor inventory..."
- python3 tools/step52_linear_resource_report.py || true
- echo "✅ Step 5.2 focused linear resource report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 5.2 focused linear resource precursor inventory..."
+    python3 tools/step52_linear_resource_report.py || true
+    echo "✅ Step 5.2 focused linear resource report complete. This target is inventory-only and does not fail."
 
 report_step52_phase_a_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.2A metadata opt-in status..."
- echo " Compiler-backed inert metadata now exists:"
- echo " tests/test_runner.gst covers compiler/typechecker_linear_resource_metadata_test_entry.gst."
- echo " #[linear] marks explicit linear-resource opt-in metadata on struct declarations."
- echo " env_struct_is_linear_resource / env_struct_has_linear_metadata expose the inert type-environment predicate."
- echo " Ordinary compiler structs, primitives, and unannotated collections still bypass linear-resource analysis by default."
- echo " Do not replace open_directories or add generalized leak enforcement until Resource[ctx, T] syntax, destructor registration, open_linear_resources, transfer state, and defer semantics are designed."
- echo " Existing directory tracking remains the legacy specialized resource lane until generalized linear-resource infrastructure has parity."
- echo "✅ Step 5.2A metadata opt-in status report complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.2A metadata opt-in status..."
+    echo " Compiler-backed inert metadata now exists:"
+    echo " tests/test_runner.gst covers compiler/typechecker_linear_resource_metadata_test_entry.gst."
+    echo " #[linear] marks explicit linear-resource opt-in metadata on struct declarations."
+    echo " env_struct_is_linear_resource / env_struct_has_linear_metadata expose the inert type-environment predicate."
+    echo " Ordinary compiler structs, primitives, and unannotated collections still bypass linear-resource analysis by default."
+    echo " Do not replace open_directories or add generalized leak enforcement until Resource[ctx, T] syntax, destructor registration, open_linear_resources, transfer state, and defer semantics are designed."
+    echo " Existing directory tracking remains the legacy specialized resource lane until generalized linear-resource infrastructure has parity."
+    echo "✅ Step 5.2A metadata opt-in status report complete. This target is report-only and does not run guards."
 
 report_step52_phase_b_destructor_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.2B destructor/defer status..."
- echo " Compiler-backed inert destructor identity now exists:"
- echo " tests/test_runner.gst covers compiler/typechecker_linear_destructor_metadata_test_entry.gst."
- echo " env_register_struct_linear_destructor records semantic destructor identity metadata."
- echo " env_struct_has_resource_tracking_metadata treats either #[linear] metadata or destructor metadata as resource-tracking eligible."
- echo " This is metadata only: do not add leak, double-close, move, destructor scheduling, or defer validation yet."
- echo " Do not add destructor enforcement until Resource[ctx, T], open_linear_resources, transfer state, and explicit defer AST/typechecker semantics exist."
- echo " Existing open_directories cleanup remains the legacy specialized lane, not generalized destructor enforcement."
- echo "✅ Step 5.2B destructor/defer status report complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.2B destructor/defer status..."
+    echo " Compiler-backed inert destructor identity now exists:"
+    echo " tests/test_runner.gst covers compiler/typechecker_linear_destructor_metadata_test_entry.gst."
+    echo " env_register_struct_linear_destructor records semantic destructor identity metadata."
+    echo " env_struct_has_resource_tracking_metadata treats either #[linear] metadata or destructor metadata as resource-tracking eligible."
+    echo " This is metadata only: do not add leak, double-close, move, destructor scheduling, or defer validation yet."
+    echo " Do not add destructor enforcement until Resource[ctx, T], open_linear_resources, transfer state, and explicit defer AST/typechecker semantics exist."
+    echo " Existing open_directories cleanup remains the legacy specialized lane, not generalized destructor enforcement."
+    echo "✅ Step 5.2B destructor/defer status report complete. This target is report-only and does not run guards."
 
 report_step52_phase_c_resource_registry_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.2C Resource/open-linear registry status..."
- echo " Compiler-backed inert open-linear registry helpers now exist:"
- echo " tests/test_runner.gst covers compiler/typechecker_linear_resource_registry_test_entry.gst."
- echo " open_linear_resources records resource variable, type, destructor identity, and open/moved/closed state."
- echo " env_register_open_linear_resource only tracks resource-eligible types with #[linear] or destructor metadata."
- echo " This is metadata/state plumbing only; it does not enforce leaks, double-close, use-after-move, or destructor scheduling yet."
- echo " Do not replace open_directories until generalized open_linear_resources has full Resource[ctx, T] surface and directory-handle parity."
- echo " Existing open_directories remains the legacy specialized lane until explicit migration work starts."
- echo "✅ Step 5.2C Resource/open-linear registry status report complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.2C Resource/open-linear registry status..."
+    echo " Compiler-backed inert open-linear registry helpers now exist:"
+    echo " tests/test_runner.gst covers compiler/typechecker_linear_resource_registry_test_entry.gst."
+    echo " open_linear_resources records resource variable, type, destructor identity, and open/moved/closed state."
+    echo " env_register_open_linear_resource only tracks resource-eligible types with #[linear] or destructor metadata."
+    echo " This is metadata/state plumbing only; it does not enforce leaks, double-close, use-after-move, or destructor scheduling yet."
+    echo " Do not replace open_directories until generalized open_linear_resources has full Resource[ctx, T] surface and directory-handle parity."
+    echo " Existing open_directories remains the legacy specialized lane until explicit migration work starts."
+    echo "✅ Step 5.2C Resource/open-linear registry status report complete. This target is report-only and does not run guards."
 
 report_step52_phase_d_transfer_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.2D ownership-transfer status..."
- echo " Compiler-backed inert transfer-state helpers now exist:"
- echo " tests/test_runner.gst covers compiler/typechecker_linear_transfer_state_test_entry.gst."
- echo " open_linear_resources can represent owned, borrowed, moved, closed, and destructor-scheduled state."
- echo " This is metadata/state plumbing only; it does not reject use-after-move, double-close, leaks, or missing destructor schedules."
- echo " Do not add enforcement until Resource[ctx, T] syntax, declaration/assignment integration, explicit defer semantics, and directory parity exist."
- echo " Existing open_directories cleanup is still specialized directory tracking, not generalized ownership-transfer analysis."
- echo "✅ Step 5.2D ownership-transfer status report complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.2D ownership-transfer status..."
+    echo " Compiler-backed inert transfer-state helpers now exist:"
+    echo " tests/test_runner.gst covers compiler/typechecker_linear_transfer_state_test_entry.gst."
+    echo " open_linear_resources can represent owned, borrowed, moved, closed, and destructor-scheduled state."
+    echo " This is metadata/state plumbing only; it does not reject use-after-move, double-close, leaks, or missing destructor schedules."
+    echo " Do not add enforcement until Resource[ctx, T] syntax, declaration/assignment integration, explicit defer semantics, and directory parity exist."
+    echo " Existing open_directories cleanup is still specialized directory tracking, not generalized ownership-transfer analysis."
+    echo "✅ Step 5.2D ownership-transfer status report complete. This target is report-only and does not run guards."
 
 report_step52_phase_e_enforcement_preconditions_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.2E enforcement preconditions."
- echo " Generalized linear-resource guards must remain deferred until all semantic prerequisites exist:"
- echo " - explicit metadata opt-in for linear resource types"
- echo " - inert Resource[ctx, T] type-shape helpers: tests/test_runner.gst covers compiler/typechecker_resource_type_shape_test_entry.gst"
- echo " - inert Resource/open-linear registry bridge helpers: tests/test_runner.gst covers compiler/typechecker_resource_registry_bridge_test_entry.gst"
- echo " - inert validation predicates: tests/test_runner.gst covers compiler/typechecker_resource_validation_predicates_test_entry.gst"
- echo " - inert diagnostic helpers: tests/test_runner.gst covers compiler/typechecker_resource_diagnostics_test_entry.gst"
- echo " - inert scope-state snapshots: tests/test_runner.gst covers compiler/typechecker_linear_resource_scope_state_test_entry.gst"
- echo " - inert one-payload Resource generic resolver bridge: tests/test_runner.gst covers compiler/typechecker_resource_generic_resolver_test_entry.gst"
- echo " - inert Resource declaration helper bridge: tests/test_runner.gst covers compiler/typechecker_resource_declaration_bridge_test_entry.gst"
- echo " - inert Resource assignment helper bridge: tests/test_runner.gst covers compiler/typechecker_resource_assignment_bridge_test_entry.gst"
- echo " - inert lifecycle operation helpers: tests/test_runner.gst covers compiler/typechecker_resource_lifecycle_ops_test_entry.gst"
- echo " - inert cleanup query helpers: tests/test_runner.gst covers compiler/typechecker_resource_cleanup_queries_test_entry.gst"
- echo " - open_linear_resources registry with destructor identity"
- echo " - destructor registration and explicit defer AST/typechecker semantics"
- echo " - transfer-state validation for owned/moved/borrowed/closed/destructor-scheduled resources"
- echo " - directory-handle parity with the legacy open_directories lane"
- echo " Current Resource helpers are metadata/type-shape, registry-bridge, validation-predicate, diagnostic-message, lifecycle-operation, cleanup-query, scope-state, one-payload generic-resolution, declaration-helper, and assignment-helper plumbing only; do not treat them as automatic declaration/assignment/lifecycle enforcement. Legacy multi-arg Resource templates must keep normal monomorphization behavior."
- echo " Do not convert Step 5.2 textual inventories into make test guards before these preconditions are compiler-backed."
- echo "✅ Step 5.2E enforcement preconditions report complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.2E enforcement preconditions."
+    echo " Generalized linear-resource guards must remain deferred until all semantic prerequisites exist:"
+    echo " - explicit metadata opt-in for linear resource types"
+    echo " - inert Resource[ctx, T] type-shape helpers: tests/test_runner.gst covers compiler/typechecker_resource_type_shape_test_entry.gst"
+    echo " - inert Resource/open-linear registry bridge helpers: tests/test_runner.gst covers compiler/typechecker_resource_registry_bridge_test_entry.gst"
+    echo " - inert validation predicates: tests/test_runner.gst covers compiler/typechecker_resource_validation_predicates_test_entry.gst"
+    echo " - inert diagnostic helpers: tests/test_runner.gst covers compiler/typechecker_resource_diagnostics_test_entry.gst"
+    echo " - inert scope-state snapshots: tests/test_runner.gst covers compiler/typechecker_linear_resource_scope_state_test_entry.gst"
+    echo " - inert one-payload Resource generic resolver bridge: tests/test_runner.gst covers compiler/typechecker_resource_generic_resolver_test_entry.gst"
+    echo " - inert Resource declaration helper bridge: tests/test_runner.gst covers compiler/typechecker_resource_declaration_bridge_test_entry.gst"
+    echo " - inert Resource assignment helper bridge: tests/test_runner.gst covers compiler/typechecker_resource_assignment_bridge_test_entry.gst"
+    echo " - inert lifecycle operation helpers: tests/test_runner.gst covers compiler/typechecker_resource_lifecycle_ops_test_entry.gst"
+    echo " - inert cleanup query helpers: tests/test_runner.gst covers compiler/typechecker_resource_cleanup_queries_test_entry.gst"
+    echo " - open_linear_resources registry with destructor identity"
+    echo " - destructor registration and explicit defer AST/typechecker semantics"
+    echo " - transfer-state validation for owned/moved/borrowed/closed/destructor-scheduled resources"
+    echo " - directory-handle parity with the legacy open_directories lane"
+    echo " Current Resource helpers are metadata/type-shape, registry-bridge, validation-predicate, diagnostic-message, lifecycle-operation, cleanup-query, scope-state, one-payload generic-resolution, declaration-helper, and assignment-helper plumbing only; do not treat them as automatic declaration/assignment/lifecycle enforcement. Legacy multi-arg Resource templates must keep normal monomorphization behavior."
+    echo " Do not convert Step 5.2 textual inventories into make test guards before these preconditions are compiler-backed."
+    echo "✅ Step 5.2E enforcement preconditions report complete. This target is report-only and does not run guards."
 
 report_step52_phase_f_closure_status:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Reporting Step 5.2F report-only closure status..."
- echo " Step 5.2 report-only scaffold now covers:"
- echo " - broad and focused resource inventory"
- echo " - metadata opt-in handoff"
- echo " - destructor/defer handoff"
- echo " - Resource/open-linear registry handoff"
- echo " - ownership-transfer handoff"
- echo " - semantic enforcement preconditions"
- echo " Stop adding textual report churn unless a new compiler-backed design requirement appears."
- echo " Narrow compiler-backed Step 5.2 tracking guards now exist for Resource declaration/assignment paths, move-assignment paths, and destructor-call recognition."
- echo " These guards protect helper integration and status drift; they are not generalized leak, double-close, use-after-move, or defer enforcement."
- echo " Next semantic implementation work must be AST/typechecker design for Resource[ctx, T], open_linear_resources, destructor identity, transfer state, explicit defer semantics, and legacy open_directories parity."
- echo "✅ Step 5.2F report-only closure status complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Reporting Step 5.2F report-only closure status..."
+    echo " Step 5.2 report-only scaffold now covers:"
+    echo " - broad and focused resource inventory"
+    echo " - metadata opt-in handoff"
+    echo " - destructor/defer handoff"
+    echo " - Resource/open-linear registry handoff"
+    echo " - ownership-transfer handoff"
+    echo " - semantic enforcement preconditions"
+    echo " Stop adding textual report churn unless a new compiler-backed design requirement appears."
+    echo " Narrow compiler-backed Step 5.2 tracking guards now exist for Resource declaration/assignment paths, move-assignment paths, and destructor-call recognition."
+    echo " These guards protect helper integration and status drift; they are not generalized leak, double-close, use-after-move, or defer enforcement."
+    echo " Next semantic implementation work must be AST/typechecker design for Resource[ctx, T], open_linear_resources, destructor identity, transfer state, explicit defer semantics, and legacy open_directories parity."
+    echo "✅ Step 5.2F report-only closure status complete. This target is report-only and does not run guards."
 
 report_step52_status_matrix:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧭 Step 5.2 linear resource status matrix:"
- echo " Legacy specialized lane still active:"
- echo " 🧭 directory-handle tracking: open_directories / os.OpenDir / os.ReadDir / os.CloseDir"
- echo " Compiler-backed inert metadata subset:"
- echo " ✅ linear metadata / #[linear] opt-in: tests/test_runner.gst covers compiler/typechecker_linear_resource_metadata_test_entry.gst"
- echo " ✅ destructor identity metadata: tests/test_runner.gst covers compiler/typechecker_linear_destructor_metadata_test_entry.gst"
- echo " ✅ open-linear registry helpers: tests/test_runner.gst covers compiler/typechecker_linear_resource_registry_test_entry.gst"
- echo " ✅ transfer-state helpers: tests/test_runner.gst covers compiler/typechecker_linear_transfer_state_test_entry.gst"
- echo " ✅ Resource type-shape helpers: tests/test_runner.gst covers compiler/typechecker_resource_type_shape_test_entry.gst"
- echo " ✅ Resource registry bridge helpers: tests/test_runner.gst covers compiler/typechecker_resource_registry_bridge_test_entry.gst"
- echo " ✅ Resource validation predicates: tests/test_runner.gst covers compiler/typechecker_resource_validation_predicates_test_entry.gst"
- echo " ✅ Resource diagnostic helpers: tests/test_runner.gst covers compiler/typechecker_resource_diagnostics_test_entry.gst"
- echo " ✅ Resource scope-state snapshots: tests/test_runner.gst covers compiler/typechecker_linear_resource_scope_state_test_entry.gst"
- echo " ✅ one-payload Resource generic resolver bridge: tests/test_runner.gst covers compiler/typechecker_resource_generic_resolver_test_entry.gst"
- echo " ✅ Resource declaration helper bridge: tests/test_runner.gst covers compiler/typechecker_resource_declaration_bridge_test_entry.gst"
- echo " ✅ Resource assignment helper bridge: tests/test_runner.gst covers compiler/typechecker_resource_assignment_bridge_test_entry.gst"
- echo " ✅ Resource lifecycle operation helpers: tests/test_runner.gst covers compiler/typechecker_resource_lifecycle_ops_test_entry.gst"
- echo " ✅ Resource cleanup query helpers: tests/test_runner.gst covers compiler/typechecker_resource_cleanup_queries_test_entry.gst"
- echo " Report-only precursor targets:"
- echo " 🧭 broad inventory: make report_step52_linear_resource_inventory"
- echo " 🧭 focused inventory: make report_step52_linear_resource_focused"
- echo " 🧭 metadata opt-in status: make report_step52_phase_a_status"
- echo " 🧭 destructor/defer status: make report_step52_phase_b_destructor_status"
- echo " 🧭 Resource/open-linear registry status: make report_step52_phase_c_resource_registry_status"
- echo " 🧭 ownership-transfer status: make report_step52_phase_d_transfer_status"
- echo " 🧭 enforcement preconditions: make report_step52_phase_e_enforcement_preconditions_status"
- echo " 🧭 report-only closure: make report_step52_phase_f_closure_status"
- echo " Policy guards wired through make test:"
- echo " ✅ report-only Step 5.2 targets stay out of test deps: make guard_step52_report_only_lanes_not_in_test"
- echo " ✅ no new post-closure Step 5.2 report target churn: make guard_step52_no_post_closure_report_churn"
- echo " ✅ Resource declaration/assignment tracking guard: just guard_step52_resource_decl_assignment_tracking"
- echo " ✅ Resource move-assignment tracking guard: just guard_step52_resource_move_assignment_tracking"
- echo " ✅ Resource destructor-call tracking guard: just guard_step52_resource_destructor_call_tracking"
- echo " Current Step 5.2 tracking guard boundary:"
- echo " 🧭 tracking guards protect helper integration and status drift, not generalized resource enforcement"
- echo " Deferred generalized compiler-backed work:"
- echo " ⏳ automatic Resource[ctx, T] declaration/assignment enforcement"
- echo " ⏳ destructor scheduling and defer validation"
- echo " ⏳ use-after-move, double-close, and leak validation"
- echo " ⏳ compiler-backed enforcement preconditions before any Step 5.2 guard"
- echo " ⏳ AST/typechecker design before further Step 5.2 report churn"
- echo " Existing linear metadata/test coverage is inventory context, not generalized resource enforcement."
- echo " Do not purge open_directories or add generalized leak enforcement until the deferred pieces exist."
- echo "✅ Step 5.2 linear resource status matrix complete. This target is report-only and does not run guards."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Step 5.2 linear resource status matrix:"
+    echo " Legacy specialized lane still active:"
+    echo " 🧭 directory-handle tracking: open_directories / os.OpenDir / os.ReadDir / os.CloseDir"
+    echo " Compiler-backed inert metadata subset:"
+    echo " ✅ linear metadata / #[linear] opt-in: tests/test_runner.gst covers compiler/typechecker_linear_resource_metadata_test_entry.gst"
+    echo " ✅ destructor identity metadata: tests/test_runner.gst covers compiler/typechecker_linear_destructor_metadata_test_entry.gst"
+    echo " ✅ open-linear registry helpers: tests/test_runner.gst covers compiler/typechecker_linear_resource_registry_test_entry.gst"
+    echo " ✅ transfer-state helpers: tests/test_runner.gst covers compiler/typechecker_linear_transfer_state_test_entry.gst"
+    echo " ✅ Resource type-shape helpers: tests/test_runner.gst covers compiler/typechecker_resource_type_shape_test_entry.gst"
+    echo " ✅ Resource registry bridge helpers: tests/test_runner.gst covers compiler/typechecker_resource_registry_bridge_test_entry.gst"
+    echo " ✅ Resource validation predicates: tests/test_runner.gst covers compiler/typechecker_resource_validation_predicates_test_entry.gst"
+    echo " ✅ Resource diagnostic helpers: tests/test_runner.gst covers compiler/typechecker_resource_diagnostics_test_entry.gst"
+    echo " ✅ Resource scope-state snapshots: tests/test_runner.gst covers compiler/typechecker_linear_resource_scope_state_test_entry.gst"
+    echo " ✅ one-payload Resource generic resolver bridge: tests/test_runner.gst covers compiler/typechecker_resource_generic_resolver_test_entry.gst"
+    echo " ✅ Resource declaration helper bridge: tests/test_runner.gst covers compiler/typechecker_resource_declaration_bridge_test_entry.gst"
+    echo " ✅ Resource assignment helper bridge: tests/test_runner.gst covers compiler/typechecker_resource_assignment_bridge_test_entry.gst"
+    echo " ✅ Resource lifecycle operation helpers: tests/test_runner.gst covers compiler/typechecker_resource_lifecycle_ops_test_entry.gst"
+    echo " ✅ Resource cleanup query helpers: tests/test_runner.gst covers compiler/typechecker_resource_cleanup_queries_test_entry.gst"
+    echo " Report-only precursor targets:"
+    echo " 🧭 broad inventory: make report_step52_linear_resource_inventory"
+    echo " 🧭 focused inventory: make report_step52_linear_resource_focused"
+    echo " 🧭 metadata opt-in status: make report_step52_phase_a_status"
+    echo " 🧭 destructor/defer status: make report_step52_phase_b_destructor_status"
+    echo " 🧭 Resource/open-linear registry status: make report_step52_phase_c_resource_registry_status"
+    echo " 🧭 ownership-transfer status: make report_step52_phase_d_transfer_status"
+    echo " 🧭 enforcement preconditions: make report_step52_phase_e_enforcement_preconditions_status"
+    echo " 🧭 report-only closure: make report_step52_phase_f_closure_status"
+    echo " Policy guards wired through make test:"
+    echo " ✅ report-only Step 5.2 targets stay out of test deps: make guard_step52_report_only_lanes_not_in_test"
+    echo " ✅ no new post-closure Step 5.2 report target churn: make guard_step52_no_post_closure_report_churn"
+    echo " ✅ Resource declaration/assignment tracking guard: just guard_step52_resource_decl_assignment_tracking"
+    echo " ✅ Resource move-assignment tracking guard: just guard_step52_resource_move_assignment_tracking"
+    echo " ✅ Resource destructor-call tracking guard: just guard_step52_resource_destructor_call_tracking"
+    echo " Current Step 5.2 tracking guard boundary:"
+    echo " 🧭 tracking guards protect helper integration and status drift, not generalized resource enforcement"
+    echo " Deferred generalized compiler-backed work:"
+    echo " ⏳ automatic Resource[ctx, T] declaration/assignment enforcement"
+    echo " ⏳ destructor scheduling and defer validation"
+    echo " ⏳ use-after-move, double-close, and leak validation"
+    echo " ⏳ compiler-backed enforcement preconditions before any Step 5.2 guard"
+    echo " ⏳ AST/typechecker design before further Step 5.2 report churn"
+    echo " Existing linear metadata/test coverage is inventory context, not generalized resource enforcement."
+    echo " Do not purge open_directories or add generalized leak enforcement until the deferred pieces exist."
+    echo "✅ Step 5.2 linear resource status matrix complete. This target is report-only and does not run guards."
 
 report_step52_final_validation:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧾 Step 5.2 validation checklist:"
- echo " make report_step52_linear_resource_inventory"
- echo " make report_step52_linear_resource_focused"
- echo " make report_step52_phase_a_status"
- echo " make report_step52_phase_b_destructor_status"
- echo " make report_step52_phase_c_resource_registry_status"
- echo " make report_step52_phase_d_transfer_status"
- echo " make report_step52_phase_e_enforcement_preconditions_status"
- echo " make report_step52_phase_f_closure_status"
- echo " make report_step52_status_matrix"
- echo " make guard_step52_report_only_lanes_not_in_test"
- echo " make guard_step52_no_post_closure_report_churn"
- echo " just guard_step52_resource_decl_assignment_tracking"
- echo " just guard_step52_resource_move_assignment_tracking"
- echo " just guard_step52_resource_destructor_call_tracking"
- echo " make report_step51_status_matrix"
- echo " make guard_step51_report_only_lanes_not_in_test"
- echo " make report_step51_final_validation"
- echo " make test # includes Step 5.2 inert linear metadata and Resource helper fixtures"
- echo " make bootstrap"
- echo " git diff --check"
- echo "✅ Step 5.2 validation checklist complete. Generalized linear resources are report-only/deferred; do not purge open_directories yet."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧾 Step 5.2 validation checklist:"
+    echo " make report_step52_linear_resource_inventory"
+    echo " make report_step52_linear_resource_focused"
+    echo " make report_step52_phase_a_status"
+    echo " make report_step52_phase_b_destructor_status"
+    echo " make report_step52_phase_c_resource_registry_status"
+    echo " make report_step52_phase_d_transfer_status"
+    echo " make report_step52_phase_e_enforcement_preconditions_status"
+    echo " make report_step52_phase_f_closure_status"
+    echo " make report_step52_status_matrix"
+    echo " make guard_step52_report_only_lanes_not_in_test"
+    echo " make guard_step52_no_post_closure_report_churn"
+    echo " just guard_step52_resource_decl_assignment_tracking"
+    echo " just guard_step52_resource_move_assignment_tracking"
+    echo " just guard_step52_resource_destructor_call_tracking"
+    echo " make report_step51_status_matrix"
+    echo " make guard_step51_report_only_lanes_not_in_test"
+    echo " make report_step51_final_validation"
+    echo " make test # includes Step 5.2 inert linear metadata and Resource helper fixtures"
+    echo " make bootstrap"
+    echo " git diff --check"
+    echo "✅ Step 5.2 validation checklist complete. Generalized linear resources are report-only/deferred; do not purge open_directories yet."
 
 report_step44_accessor_contract:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧪 Step 4.4 accessor contract focused checks:"
- echo " gt-one-gst tests/e2e_collection_dual_signatures.gst"
- echo " gt-one-gst tests/e2e_vector_get_ref_alias.gst"
- echo " gt-one-gst tests/e2e_hashmap_get_ref.gst"
- echo " gt-one-gst tests/test_vector_get_ref_alias_bad_index_type_rejected.gst"
- echo " gt-one-gst tests/test_vector_get_ref_alias_non_vector_rejected.gst"
- echo " gt-one-gst tests/test_hashmap_get_ref_bad_key_rejected.gst"
- echo " gt-one-gst tests/test_hashmap_get_ref_missing_runtime_violation.gst"
- echo "✅ Accessor contract list complete. Run these before make test/bootstrap for Step 4.4 patches."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Step 4.4 accessor contract focused checks:"
+    echo " gt-one-gst tests/e2e_collection_dual_signatures.gst"
+    echo " gt-one-gst tests/e2e_vector_get_ref_alias.gst"
+    echo " gt-one-gst tests/e2e_hashmap_get_ref.gst"
+    echo " gt-one-gst tests/test_vector_get_ref_alias_bad_index_type_rejected.gst"
+    echo " gt-one-gst tests/test_vector_get_ref_alias_non_vector_rejected.gst"
+    echo " gt-one-gst tests/test_hashmap_get_ref_bad_key_rejected.gst"
+    echo " gt-one-gst tests/test_hashmap_get_ref_missing_runtime_violation.gst"
+    echo "✅ Accessor contract list complete. Run these before make test/bootstrap for Step 4.4 patches."
 
 report_step45_accessor_contract:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧪 Step 4.5A explicit write/read-copy contract focused checks:"
- echo " gt-one-gst tests/e2e_arena_explicit_set.gst"
- echo " gt-one-gst tests/e2e_vector_explicit_set.gst"
- echo " gt-one-gst tests/e2e_hashmap_explicit_write.gst"
- echo " gt-one-gst tests/e2e_arena_subscript_read_copy.gst"
- echo " gt-one-gst tests/e2e_vector_subscript_read_copy.gst"
- echo "✅ Step 4.5A accessor contract list complete. Run these before make test/bootstrap for Step 4.5A patches."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Step 4.5A explicit write/read-copy contract focused checks:"
+    echo " gt-one-gst tests/e2e_arena_explicit_set.gst"
+    echo " gt-one-gst tests/e2e_vector_explicit_set.gst"
+    echo " gt-one-gst tests/e2e_hashmap_explicit_write.gst"
+    echo " gt-one-gst tests/e2e_arena_subscript_read_copy.gst"
+    echo " gt-one-gst tests/e2e_vector_subscript_read_copy.gst"
+    echo "✅ Step 4.5A accessor contract list complete. Run these before make test/bootstrap for Step 4.5A patches."
 
 report_step45_final_validation:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "🧾 Step 4.5 final validation checklist:"
- echo " make report_step45_accessor_contract"
- echo " gt-one-gst tests/e2e_arena_explicit_set.gst"
- echo " gt-one-gst tests/e2e_vector_explicit_set.gst"
- echo " gt-one-gst tests/e2e_hashmap_explicit_write.gst"
- echo " gt-one-gst tests/e2e_arena_subscript_read_copy.gst"
- echo " gt-one-gst tests/e2e_vector_subscript_read_copy.gst"
- echo " make report_step44_accessor_contract"
- echo " make report_high_level_raw_collection_casts"
- echo " make guard_step44_no_high_level_raw_collection_casts"
- echo " make report_step45_subscript_lvalue_writes"
- echo " make report_step45_test_subscript_lvalue_writes"
- echo " make report_step45_subscript_lvalue_classified"
- echo " make guard_step45_safe_subscript_write_enforcement"
- echo " make"
- echo " make test"
- echo " make bootstrap"
- echo " git diff --check"
- echo "✅ Step 4.5 final validation checklist complete. This target is report-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧾 Step 4.5 final validation checklist:"
+    echo " make report_step45_accessor_contract"
+    echo " gt-one-gst tests/e2e_arena_explicit_set.gst"
+    echo " gt-one-gst tests/e2e_vector_explicit_set.gst"
+    echo " gt-one-gst tests/e2e_hashmap_explicit_write.gst"
+    echo " gt-one-gst tests/e2e_arena_subscript_read_copy.gst"
+    echo " gt-one-gst tests/e2e_vector_subscript_read_copy.gst"
+    echo " make report_step44_accessor_contract"
+    echo " make report_high_level_raw_collection_casts"
+    echo " make guard_step44_no_high_level_raw_collection_casts"
+    echo " make report_step45_subscript_lvalue_writes"
+    echo " make report_step45_test_subscript_lvalue_writes"
+    echo " make report_step45_subscript_lvalue_classified"
+    echo " make guard_step45_safe_subscript_write_enforcement"
+    echo " make"
+    echo " make test"
+    echo " make bootstrap"
+    echo " git diff --check"
+    echo "✅ Step 4.5 final validation checklist complete. This target is report-only and does not fail."
 
 report_compiler_get_opt_migration:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting compiler .get_opt migration sites..."
- rg -n '\.get_opt[[:space:]]*\(' compiler/*.gst || true
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting compiler .get_opt migration sites..."
+    rg -n '\.get_opt[[:space:]]*\(' compiler/*.gst || true
 
 report_high_level_raw_collection_casts:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 4.4 high-level raw collection/string cast migration sites..."
- echo " Direct arena-to-vector casts:"
- rg -n '&ctx\[' compiler/*.gst | rg ' as \*std\.Vector' || true
- echo " Direct arena-to-hashmap casts:"
- rg -n '&ctx\[' compiler/*.gst | rg ' as \*std\.HashMap' || true
- echo " Direct arena-to-string-view casts:"
- rg -n '&ctx\[' compiler/*.gst | rg ' as \*str' || true
- echo "✅ Report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 4.4 high-level raw collection/string cast migration sites..."
+    echo " Direct arena-to-vector casts:"
+    rg -n '&ctx\[' compiler/*.gst | rg ' as \*std\.Vector' || true
+    echo " Direct arena-to-hashmap casts:"
+    rg -n '&ctx\[' compiler/*.gst | rg ' as \*std\.HashMap' || true
+    echo " Direct arena-to-string-view casts:"
+    rg -n '&ctx\[' compiler/*.gst | rg ' as \*str' || true
+    echo "✅ Report complete. This target is inventory-only and does not fail."
 
 report_step45_subscript_lvalue_writes:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 4.5 direct subscript LHS write inventory..."
- echo " Direct subscript writes and field writes rooted at subscript expressions:"
- rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/*.gst tests/*.gst || true
- echo "✅ Report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 4.5 direct subscript LHS write inventory..."
+    echo " Direct subscript writes and field writes rooted at subscript expressions:"
+    rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/*.gst tests/*.gst || true
+    echo "✅ Report complete. This target is inventory-only and does not fail."
 
 report_step45_test_subscript_lvalue_writes:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 4.5 test-side direct subscript LHS write inventory..."
- echo " Test direct subscript writes and field writes rooted at subscript expressions:"
- rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/*.gst || true
- echo "✅ Test-side report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 4.5 test-side direct subscript LHS write inventory..."
+    echo " Test direct subscript writes and field writes rooted at subscript expressions:"
+    rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/*.gst || true
+    echo "✅ Test-side report complete. This target is inventory-only and does not fail."
 
 report_step45_subscript_lvalue_classified:
- #!/usr/bin/env bash
- set -euo pipefail
- echo "📊 Reporting Step 4.5 classified direct subscript LHS inventory..."
- echo " Generated C string false positives:"
- rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/codegen.gst | rg 'data\[_gust_vector_set_idx\] = |_buf\[_s1\.len \+ _s2\.len\] = 0' || true
- echo " Intentional safe-code rejection fixtures:"
- rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/test_safe_*subscript*_rejected.gst || true
- echo " Intentional unsafe-positive fixtures:"
- rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/e2e_unsafe_*subscript*write*.gst || true
- echo " Unexpected safe-code direct subscript writes:"
- rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/*.gst tests/*.gst | rg -v 'compiler/codegen\.gst:.*(data\[_gust_vector_set_idx\] = |_buf\[_s1\.len \+ _s2\.len\] = 0)' | rg -v 'tests/test_safe_.*subscript.*_rejected\.gst:' | rg -v 'tests/e2e_unsafe_.*subscript.*write.*\.gst:' || true
- echo "✅ Classified Step 4.5 subscript LHS report complete. This target is inventory-only and does not fail."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Reporting Step 4.5 classified direct subscript LHS inventory..."
+    echo " Generated C string false positives:"
+    rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/codegen.gst | rg 'data\[_gust_vector_set_idx\] = |_buf\[_s1\.len \+ _s2\.len\] = 0' || true
+    echo " Intentional safe-code rejection fixtures:"
+    rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/test_safe_*subscript*_rejected.gst || true
+    echo " Intentional unsafe-positive fixtures:"
+    rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' tests/e2e_unsafe_*subscript*write*.gst || true
+    echo " Unexpected safe-code direct subscript writes:"
+    rg -n '\[[^;\n]*\][^;\n]*[^:!<>=]=[^=]' compiler/*.gst tests/*.gst | rg -v 'compiler/codegen\.gst:.*(data\[_gust_vector_set_idx\] = |_buf\[_s1\.len \+ _s2\.len\] = 0)' | rg -v 'tests/test_safe_.*subscript.*_rejected\.gst:' | rg -v 'tests/e2e_unsafe_.*subscript.*write.*\.gst:' || true
+    echo "✅ Classified Step 4.5 subscript LHS report complete. This target is inventory-only and does not fail."

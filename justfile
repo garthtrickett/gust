@@ -49,6 +49,15 @@ guard-step51-non-launder-hashmap-get-value:
 guard-step51-non-launder-hashmap-get-value-field:
     just guard compiler/typechecker_non_laundering_hashmap_get_value_field_test_entry.gst
 
+guard_step52_resource_use_after_move_enforcement:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2G linear resource use-after-move enforcement hook..."
+    rg -n 'func env_report_linear_resource_use_after_move' compiler/typechecker.gst
+    rg -n 'LinearResourceUseAfterMove' compiler/typechecker.gst
+    rg -n 'env_report_linear_resource_use_after_move\(env, resolved_name, expr.Identifier.span, ctx\);' compiler/typechecker.gst
+    echo "✅ Step 5.2G linear resource use-after-move enforcement hook guard passed."
+
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
 # Report aliases stay informational; Makefile policy guards keep reports out of make test.
@@ -76,6 +85,7 @@ make-test-guards:
       guard_step52_resource_decl_assignment_tracking
       guard_step52_resource_move_assignment_tracking
       guard_step52_resource_destructor_call_tracking
+      guard_step52_resource_use_after_move_enforcement
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
@@ -94,7 +104,7 @@ _make-test-guards-parallel-inner: make-test-guards-step44-text make-test-guards-
 # Buckets below intentionally run their dependencies serially; only the bucket layer is parallel.
 # Keep the policy bucket aligned with make-test-guards so Step 5.1G runs in both default guard modes.
 
-make-test-guards-policy: guard_step51_report_only_lanes_not_in_test guard_step51g_default_guard_wiring guard_step51g_aggregate_surface_wiring guard_step51g_address_origin_legacy_wrapper_surface guard_step51g_expression_provenance_legacy_wrapper_surface guard_step51_provenance_origin_spine guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn guard_step52_resource_decl_assignment_tracking guard_step52_resource_move_assignment_tracking guard_step52_resource_destructor_call_tracking
+make-test-guards-policy: guard_step51_report_only_lanes_not_in_test guard_step51g_default_guard_wiring guard_step51g_aggregate_surface_wiring guard_step51g_address_origin_legacy_wrapper_surface guard_step51g_expression_provenance_legacy_wrapper_surface guard_step51_provenance_origin_spine guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn guard_step52_resource_decl_assignment_tracking guard_step52_resource_move_assignment_tracking guard_step52_resource_destructor_call_tracking guard_step52_resource_use_after_move_enforcement
 
 make-test-guards-step44-text: guard_parser_high_level_raw_casts guard_step44_no_high_level_raw_collection_casts
 
