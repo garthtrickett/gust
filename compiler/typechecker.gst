@@ -150,32 +150,11 @@ func step51g_expression_provenance_is_raw_or_sandbox_derived(prov: ExpressionPro
 }
 
 func address_origin_allows_safe_branding(origin: AddressOriginMetadata) int {
-    if origin.is_safe_arena == 1 && origin.is_raw_derived == 0 && origin.is_sandbox_derived == 0 && origin.is_unknown == 0 {
-        return 1;
-    }
-    return 0;
+    return step51g_address_origin_is_safe_arena_only(origin);
 }
 
 func address_origin_join(left: AddressOriginMetadata, right: AddressOriginMetadata) AddressOriginMetadata {
-    mut joined: AddressOriginMetadata;
-    if left.is_raw_derived == 1 || right.is_raw_derived == 1 {
-        init_address_origin_raw_derived(&joined);
-        return joined;
-    }
-    if left.is_sandbox_derived == 1 || right.is_sandbox_derived == 1 {
-        init_address_origin_sandbox_derived(&joined);
-        return joined;
-    }
-    if left.is_unknown == 1 || right.is_unknown == 1 {
-        init_address_origin_unknown(&joined);
-        return joined;
-    }
-    if left.is_safe_arena == 1 && right.is_safe_arena == 1 {
-        init_address_origin_safe_arena(&joined);
-        return joined;
-    }
-    init_address_origin_unknown(&joined);
-    return joined;
+    return step51g_join_address_origin(left, right);
 }
 
 type StructLayout[ctx] struct {
