@@ -82,20 +82,32 @@ guard_step51g_default_guard_wiring:
     echo "🔒 Checking Step 5.1G default guard wiring..."
     serial_deps="$(awk '/^make-test-guards:/,/^$/' justfile)"
     parallel_deps="$(awk '/^make-test-guards-policy:/ { print }' justfile)"
-    for required_guard in \
-      guard_step51g_default_guard_wiring \
-      guard_step51g_aggregate_surface_wiring \
-      guard_step51_provenance_origin_spine
-    do
-      if ! grep -Fq "$required_guard" <<< "$serial_deps"; then
-        echo "❌ Step 5.1G default wiring guard failed: serial make-test-guards must run $required_guard."
-        exit 1
-      fi
-      if ! grep -Fq "$required_guard" <<< "$parallel_deps"; then
-        echo "❌ Step 5.1G default wiring guard failed: bucket-parallel policy guards must run $required_guard."
-        exit 1
-      fi
-    done
+    check_ordered_guard_surface() {
+      local guard_label="$1"
+      local guard_deps="$2"
+      local previous_pos=0
+      for required_guard in \
+        guard_step51_report_only_lanes_not_in_test \
+        guard_step51g_default_guard_wiring \
+        guard_step51g_aggregate_surface_wiring \
+        guard_step51_provenance_origin_spine
+      do
+        if ! grep -Fq "$required_guard" <<< "$guard_deps"; then
+          echo "❌ Step 5.1G default wiring guard failed: $guard_label must run $required_guard."
+          exit 1
+        fi
+        local before_guard="${guard_deps%%$required_guard*}"
+        local guard_pos="${#before_guard}"
+        if [[ "$guard_pos" -lt "$previous_pos" ]]; then
+          echo "❌ Step 5.1G default wiring guard failed: $guard_label must run report-policy and Step 5.1G wiring guards before the aggregate."
+          echo "$guard_deps"
+          exit 1
+        fi
+        previous_pos="$guard_pos"
+      done
+    }
+    check_ordered_guard_surface "serial make-test-guards" "$serial_deps"
+    check_ordered_guard_surface "bucket-parallel policy guards" "$parallel_deps"
     echo "✅ Step 5.1G default guard wiring passed."
 
 guard_step51g_aggregate_surface_wiring:
