@@ -86,7 +86,7 @@ _make-test-guards-parallel-inner: make-test-guards-step44-text make-test-guards-
 
 # Buckets below intentionally run their dependencies serially; only the bucket layer is parallel.
 
-make-test-guards-policy: guard_step51_report_only_lanes_not_in_test guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn
+make-test-guards-policy: guard_step51_report_only_lanes_not_in_test guard_step51_provenance_origin_spine guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn
 
 make-test-guards-step44-text: guard_parser_high_level_raw_casts guard_step44_no_high_level_raw_collection_casts
 
