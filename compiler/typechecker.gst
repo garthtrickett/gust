@@ -6304,12 +6304,8 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
     }
 
     mut resource_name_step52i := "";
-    match first_arg_expr_step52i {
-        Identifier { name } => {
-            unsafe {
-                resource_name_step52i = *name;
-            }
-        }
+    unsafe {
+        resource_name_step52i = first_arg_expr_step52i.Identifier.name;
     }
     if len(resource_name_step52i) == 0 {
         return 0;
