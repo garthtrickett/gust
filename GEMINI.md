@@ -222,11 +222,10 @@ If there is more than one block of changes write out more than one code block wi
 ## CRITICAL: JSON DIFF FORMATTING RULES
 When providing file updates, you must output a single JSON payload. The pipeline executes updates transactionally: if any single search block fails to match, or if syntax errors are introduced, **the entire patch is aborted and no files are modified on disk**.
 
----
-
 ### 1. Root Structure Rules
 * The root of your response MUST be a single, valid JSON object. Do NOT wrap it in a root array.
 * If you are editing multiple files, include all of them in the single `"files"` array.
+* Add a root-level `"project"` string to route downloads to the correct watcher. By default, each watcher uses the folder name of its `--cwd` as the project key. For example, a watcher running in `~/code/my-project` expects `"project": "my-project"`.
 
 ---
 
@@ -241,6 +240,7 @@ Within the `"code_diff"` string of each file entry, use Aider-style `<<<<<<< SEA
 
 ```json
 {
+  "project": "my-project",
   "summary": "feat: implement rate limiting middleware",
   "files": [
     {
@@ -251,7 +251,6 @@ Within the `"code_diff"` string of each file entry, use Aider-style `<<<<<<< SEA
 }
 ```
 
----
 
 ### 4. Advanced Block Matching Features
 

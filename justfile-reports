@@ -99,7 +99,8 @@ report_step51_phase_c_basic_unsafe_status:
  echo " Test-runner-owned compiler-backed fixtures:"
  echo " tests/test_runner.gst covers raw pointer dereference/cast/arithmetic unsafe gates, unsafe function calls, raw local pointer escape, and extern-call gating."
  echo " Manual compatibility guards remain available in justfile-step51 for focused debugging, but are not default Just-suite entries."
- echo " Default Just-suite Step 5.1 coverage now focuses on report-policy and textual source guards; semantic Step 5.1 fixtures live in tests/test_runner.gst."
+ echo " Default Just-suite Step 5.1 coverage includes report-policy/textual source guards plus the Step 5.1G provenance-origin spine aggregate."
+ echo " Other semantic Step 5.1 fixtures live in tests/test_runner.gst or remain available as focused manual justfile-step51 recipes."
  echo " Still deferred: richer FFI boundary modeling, layout/sandbox enforcement beyond helpers, broad address escapes, and whole-program non-laundering."
  echo "✅ Step 5.1C basic unsafe status report complete. This target is report-only and does not run guards."
 
@@ -136,7 +137,8 @@ report_step51_phase_f_non_laundering_status:
  echo " Current test-runner-owned unsafe/provenance coverage:"
  echo " tests/test_runner.gst covers basic unsafe/extern fixtures, positive metadata/provenance fixtures, and focused non-laundering fixtures with SUCCESS substring checks."
  echo " Current default Just-suite Step 5.1 enforcement:"
- echo " default Just guards now focus on report-policy/textual checks; Step 5.1 semantic fixture recipes remain available manually in justfile-step51."
+ echo " default Just guards include the Step 5.1 report-policy guard and the Step 5.1G provenance-origin spine aggregate."
+ echo " Older Step 5.1 semantic fixture recipes remain available manually in justfile-step51 for focused debugging."
  echo " Current report-only precursor targets:"
  echo " make report_step51_phase_d_ffi_status"
  echo " make report_step51_phase_e_address_escape_status"
@@ -165,6 +167,7 @@ report_step51_deferred_unsafe_semantics_status:
  echo " - focused safe-branded return/binding/call/field/container/container-method/Arena.Write/reference-selector/HashMap.Get-value/HashMap.Get-value-field non-laundering fixtures"
  echo " Current default Just guard subset:"
  echo " - report-only policy guards keeping report lanes out of default tests"
+ echo " - Step 5.1G provenance-origin spine aggregate"
  echo " - textual source guards that do not fit tests/test_runner.gst"
  echo " Reports to inspect before new enforcement:"
  echo " make report_step51_phase_d_ffi_status"
@@ -194,8 +197,9 @@ report_step51_status_matrix:
  echo " 🧭 address-escape design: make report_step51_phase_e_address_escape_status"
  echo " 🧭 broader non-laundering/provenance design: make report_step51_phase_f_non_laundering_status"
  echo " 🧭 deferred semantics checkpoint: make report_step51_deferred_unsafe_semantics_status"
- echo " Policy guard:"
+ echo " Policy/default guard wiring:"
  echo " ✅ report-only Step 5.1 targets stay out of make test: make guard_step51_report_only_lanes_not_in_test"
+ echo " ✅ Step 5.1G provenance-origin spine runs in both serial and bucket-parallel Just guard lanes"
  echo "✅ Step 5.1 status matrix complete."
 
 report_step51_raw_pointer_safety_inventory:

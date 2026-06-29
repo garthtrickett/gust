@@ -85,6 +85,7 @@ make-test-guards-parallel: gust _make-test-guards-parallel-inner
 _make-test-guards-parallel-inner: make-test-guards-step44-text make-test-guards-policy
 
 # Buckets below intentionally run their dependencies serially; only the bucket layer is parallel.
+# Keep the policy bucket aligned with make-test-guards so Step 5.1G runs in both default guard modes.
 
 make-test-guards-policy: guard_step51_report_only_lanes_not_in_test guard_step51_provenance_origin_spine guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn
 
