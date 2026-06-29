@@ -2235,6 +2235,13 @@ func main() {
     t_step52_resource_missing_cleanup_first_report.expected = "SUCCESS: compiler-backed Resource first pending cleanup report helper verified!";
     tests.Push(t_step52_resource_missing_cleanup_first_report);
 
+    mut t_step52_resource_cleanup_boundary_validation: Test[ctx];
+    t_step52_resource_cleanup_boundary_validation.path = "compiler/typechecker_resource_cleanup_boundary_validation_test_entry.gst";
+    t_step52_resource_cleanup_boundary_validation.is_negative = 0;
+    t_step52_resource_cleanup_boundary_validation.is_substring = 1;
+    t_step52_resource_cleanup_boundary_validation.expected = "SUCCESS: compiler-backed Resource cleanup boundary validation helper verified!";
+    tests.Push(t_step52_resource_cleanup_boundary_validation);
+
     mut t_step52_resource_use_after_move_pass: Test[ctx];
     t_step52_resource_use_after_move_pass.path = "compiler/typechecker_resource_use_after_move_pass_test_entry.gst";
     t_step52_resource_use_after_move_pass.is_negative = 0;

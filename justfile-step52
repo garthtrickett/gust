@@ -162,3 +162,26 @@ guard_step52_resource_missing_cleanup_first_report:
     fi
     just guard-positive compiler/typechecker_resource_missing_cleanup_first_report_test_entry.gst step52_resource_missing_cleanup_first_report
     echo "✅ Step 5.2L tracked Resource first pending cleanup report helper guard passed."
+
+guard_step52_resource_cleanup_boundary_validation:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2M tracked Resource cleanup boundary validation helper."
+    cleanup_boundary_helper_count="$(rg -n 'func env_validate_linear_resource_cleanup_boundary' compiler/typechecker.gst | wc -l)"
+    if [ "$cleanup_boundary_helper_count" != "1" ]; then
+      echo "❌ Step 5.2M guard failed: expected exactly one cleanup boundary validation helper, found $cleanup_boundary_helper_count"
+      rg -n 'func env_validate_linear_resource_cleanup_boundary' compiler/typechecker.gst || true
+      exit 1
+    fi
+    rg -n -F 'env_open_linear_resources_have_pending_cleanup(env, ctx)' compiler/typechecker.gst
+    rg -n -F 'env_report_first_linear_resource_missing_cleanup(env, span, ctx)' compiler/typechecker.gst
+    rg -n -F 'compiler/typechecker_resource_cleanup_boundary_validation_test_entry.gst' tests/test_runner.gst
+    rg -n -F 'guard_step52_resource_cleanup_boundary_validation' justfile
+    cleanup_boundary_runner_count="$(rg -n 'mut t_step52_resource_cleanup_boundary_validation' tests/test_runner.gst | wc -l)"
+    if [ "$cleanup_boundary_runner_count" != "1" ]; then
+      echo "❌ Step 5.2M guard failed: expected exactly one cleanup boundary validation test-runner entry, found $cleanup_boundary_runner_count"
+      rg -n 'mut t_step52_resource_cleanup_boundary_validation' tests/test_runner.gst || true
+      exit 1
+    fi
+    just guard-positive compiler/typechecker_resource_cleanup_boundary_validation_test_entry.gst step52_resource_cleanup_boundary_validation
+    echo "✅ Step 5.2M tracked Resource cleanup boundary validation helper guard passed."
