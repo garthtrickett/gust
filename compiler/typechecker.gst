@@ -6115,6 +6115,19 @@ func env_report_linear_resource_destructor_already_scheduled(env: *TypeEnvironme
     return 1;
 }
 
+func env_report_linear_resource_missing_cleanup(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) int {
+    if env_open_linear_resource_is_tracked(env, name, ctx) == 0 {
+        return 0;
+    }
+    if env_open_linear_resource_requires_cleanup(env, name, ctx) == 0 {
+        return 0;
+    }
+    mut msg := std.Concat("Semantic Error: LinearResourceMissingCleanup: resource '", name);
+    msg = std.Concat(msg, "' requires cleanup before leaving scope");
+    report_error(2, msg, span, env, ctx);
+    return 1;
+}
+
 func env_try_move_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
     if env_open_linear_resource_can_be_moved(env, variable_name, ctx) == 0 {
         return 0;

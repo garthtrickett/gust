@@ -112,3 +112,26 @@ guard_step52_resource_destructor_scheduled_enforcement:
     fi
     just guard-positive compiler/typechecker_resource_destructor_scheduled_rejected_test_entry.gst step52_resource_destructor_scheduled_rejected
     echo "✅ Step 5.2J tracked Resource destructor-scheduled recognition guard passed."
+
+guard_step52_resource_missing_cleanup_diagnostic:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2K tracked Resource missing-cleanup diagnostic helper..."
+    missing_cleanup_helper_count="$(rg -n 'func env_report_linear_resource_missing_cleanup' compiler/typechecker.gst | wc -l)"
+    if [ "$missing_cleanup_helper_count" != "1" ]; then
+      echo "❌ Step 5.2K guard failed: expected exactly one missing-cleanup diagnostic helper, found $missing_cleanup_helper_count"
+      rg -n 'func env_report_linear_resource_missing_cleanup' compiler/typechecker.gst || true
+      exit 1
+    fi
+    rg -n 'LinearResourceMissingCleanup' compiler/typechecker.gst
+    rg -n -F 'env_open_linear_resource_requires_cleanup(env, name, ctx)' compiler/typechecker.gst
+    rg -n -F 'compiler/typechecker_resource_missing_cleanup_diagnostic_test_entry.gst' tests/test_runner.gst
+    rg -n -F 'guard_step52_resource_missing_cleanup_diagnostic' justfile
+    missing_cleanup_runner_count="$(rg -n 'mut t_step52_resource_missing_cleanup_diagnostic' tests/test_runner.gst | wc -l)"
+    if [ "$missing_cleanup_runner_count" != "1" ]; then
+      echo "❌ Step 5.2K guard failed: expected exactly one missing-cleanup test-runner entry, found $missing_cleanup_runner_count"
+      rg -n 'mut t_step52_resource_missing_cleanup_diagnostic' tests/test_runner.gst || true
+      exit 1
+    fi
+    just guard-positive compiler/typechecker_resource_missing_cleanup_diagnostic_test_entry.gst step52_resource_missing_cleanup_diagnostic
+    echo "✅ Step 5.2K tracked Resource missing-cleanup diagnostic helper guard passed."
