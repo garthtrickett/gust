@@ -2207,6 +2207,13 @@ func main() {
     t_step52_resource_double_close_rejected.expected = "SUCCESS: compiler-backed Resource double-close rejection verified!";
     tests.Push(t_step52_resource_double_close_rejected);
 
+    mut t_step52_resource_close_after_move_rejected: Test[ctx];
+    t_step52_resource_close_after_move_rejected.path = "compiler/typechecker_resource_close_after_move_rejected_test_entry.gst";
+    t_step52_resource_close_after_move_rejected.is_negative = 0;
+    t_step52_resource_close_after_move_rejected.is_substring = 1;
+    t_step52_resource_close_after_move_rejected.expected = "SUCCESS: compiler-backed Resource close-after-move rejection verified!";
+    tests.Push(t_step52_resource_close_after_move_rejected);
+
     mut t_step52_resource_use_after_move_pass: Test[ctx];
     t_step52_resource_use_after_move_pass.path = "compiler/typechecker_resource_use_after_move_pass_test_entry.gst";
     t_step52_resource_use_after_move_pass.is_negative = 0;
