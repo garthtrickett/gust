@@ -87,3 +87,26 @@ guard_step52_resource_close_after_move_enforcement:
     fi
     just guard-positive compiler/typechecker_resource_close_after_move_rejected_test_entry.gst step52_resource_close_after_move_rejected
     echo "✅ Step 5.2I tracked Resource close-after-move recognition guard passed."
+
+guard_step52_resource_destructor_scheduled_enforcement:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2J tracked Resource destructor-scheduled recognition..."
+    scheduled_helper_count="$(rg -n 'func env_report_linear_resource_destructor_already_scheduled' compiler/typechecker.gst | wc -l)"
+    if [ "$scheduled_helper_count" != "1" ]; then
+      echo "❌ Step 5.2J guard failed: expected exactly one destructor-scheduled diagnostic helper, found $scheduled_helper_count"
+      rg -n 'func env_report_linear_resource_destructor_already_scheduled' compiler/typechecker.gst || true
+      exit 1
+    fi
+    rg -n 'LinearResourceDestructorAlreadyScheduled' compiler/typechecker.gst
+    rg -n -F 'env_report_linear_resource_destructor_already_scheduled(env, resource_name_step52i, first_arg_span_step52h, ctx)' compiler/typechecker.gst
+    rg -n -F 'compiler/typechecker_resource_destructor_scheduled_rejected_test_entry.gst' tests/test_runner.gst
+    rg -n -F 'guard_step52_resource_destructor_scheduled_enforcement' justfile
+    scheduled_runner_count="$(rg -n 'mut t_step52_resource_destructor_scheduled_rejected' tests/test_runner.gst | wc -l)"
+    if [ "$scheduled_runner_count" != "1" ]; then
+      echo "❌ Step 5.2J guard failed: expected exactly one destructor-scheduled test-runner entry, found $scheduled_runner_count"
+      rg -n 'mut t_step52_resource_destructor_scheduled_rejected' tests/test_runner.gst || true
+      exit 1
+    fi
+    just guard-positive compiler/typechecker_resource_destructor_scheduled_rejected_test_entry.gst step52_resource_destructor_scheduled_rejected
+    echo "✅ Step 5.2J tracked Resource destructor-scheduled recognition guard passed."

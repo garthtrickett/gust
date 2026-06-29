@@ -2214,6 +2214,13 @@ func main() {
     t_step52_resource_close_after_move_rejected.expected = "SUCCESS: compiler-backed Resource close-after-move rejection verified!";
     tests.Push(t_step52_resource_close_after_move_rejected);
 
+    mut t_step52_resource_destructor_scheduled_rejected: Test[ctx];
+    t_step52_resource_destructor_scheduled_rejected.path = "compiler/typechecker_resource_destructor_scheduled_rejected_test_entry.gst";
+    t_step52_resource_destructor_scheduled_rejected.is_negative = 0;
+    t_step52_resource_destructor_scheduled_rejected.is_substring = 1;
+    t_step52_resource_destructor_scheduled_rejected.expected = "SUCCESS: compiler-backed Resource destructor-scheduled rejection verified!";
+    tests.Push(t_step52_resource_destructor_scheduled_rejected);
+
     mut t_step52_resource_use_after_move_pass: Test[ctx];
     t_step52_resource_use_after_move_pass.path = "compiler/typechecker_resource_use_after_move_pass_test_entry.gst";
     t_step52_resource_use_after_move_pass.is_negative = 0;
