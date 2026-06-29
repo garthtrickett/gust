@@ -3,61 +3,61 @@
 # Generic fixture helpers isolate outputs under build/guards/<label>/ so guard recipes can be parallelized safely later.
 
 guard-positive file label:
- #!/usr/bin/env bash
- set -euo pipefail
- test_path="{{file}}"
- label="{{label}}"
- stem="$(basename "$test_path" .gst)"
- guard_dir="build/guards/${label}"
- mkdir -p "$guard_dir"
- log="$guard_dir/compiler.log"
- c_file="$guard_dir/${stem}.c"
- final_file="$guard_dir/${stem}_final.c"
- bin_file="$guard_dir/${stem}_bin"
- echo "Checking $test_path accepts and runs..."
- ./gust "$test_path" > "$log" 2>&1
- grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$log" > "$c_file"
- cat src/runtime.c "$c_file" > "$final_file"
- CC_BIN="${CC:-cc}"
- CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"
- INCLUDES_VAL="${INCLUDES:--Isrc}"
- "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$final_file" -o "$bin_file" >> "$log" 2>&1
- "$bin_file" >> "$log" 2>&1
+    #!/usr/bin/env bash
+    set -euo pipefail
+    test_path="{{ file }}"
+    label="{{ label }}"
+    stem="$(basename "$test_path" .gst)"
+    guard_dir="build/guards/${label}"
+    mkdir -p "$guard_dir"
+    log="$guard_dir/compiler.log"
+    c_file="$guard_dir/${stem}.c"
+    final_file="$guard_dir/${stem}_final.c"
+    bin_file="$guard_dir/${stem}_bin"
+    echo "Checking $test_path accepts and runs..."
+    ./gust "$test_path" > "$log" 2>&1
+    grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$log" > "$c_file"
+    cat src/runtime.c "$c_file" > "$final_file"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"
+    INCLUDES_VAL="${INCLUDES:--Isrc}"
+    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$final_file" -o "$bin_file" >> "$log" 2>&1
+    "$bin_file" >> "$log" 2>&1
 
 guard-compile-pass file label:
- #!/usr/bin/env bash
- set -euo pipefail
- test_path="{{file}}"
- label="{{label}}"
- guard_dir="build/guards/${label}"
- mkdir -p "$guard_dir"
- log="$guard_dir/compiler.log"
- echo "Checking $test_path accepts..."
- ./gust "$test_path" > "$log" 2>&1
+    #!/usr/bin/env bash
+    set -euo pipefail
+    test_path="{{ file }}"
+    label="{{ label }}"
+    guard_dir="build/guards/${label}"
+    mkdir -p "$guard_dir"
+    log="$guard_dir/compiler.log"
+    echo "Checking $test_path accepts..."
+    ./gust "$test_path" > "$log" 2>&1
 
 guard-compile-fail file diagnostic label:
- #!/usr/bin/env bash
- set -euo pipefail
- test_path="{{file}}"
- diagnostic="{{diagnostic}}"
- label="{{label}}"
- guard_dir="build/guards/${label}"
- mkdir -p "$guard_dir"
- log="$guard_dir/compiler.log"
- echo "Checking $test_path rejects..."
- if ./gust "$test_path" > "$log" 2>&1; then
- echo "❌ Expected $test_path to fail compilation, but it succeeded."
- cat "$log"
- exit 1
- fi
- if ! rg -q "$diagnostic" "$log"; then
- echo "❌ Rejection for $test_path did not contain expected diagnostic: $diagnostic"
- cat "$log"
- exit 1
- fi
+    #!/usr/bin/env bash
+    set -euo pipefail
+    test_path="{{ file }}"
+    diagnostic="{{ diagnostic }}"
+    label="{{ label }}"
+    guard_dir="build/guards/${label}"
+    mkdir -p "$guard_dir"
+    log="$guard_dir/compiler.log"
+    echo "Checking $test_path rejects..."
+    if ./gust "$test_path" > "$log" 2>&1; then
+    echo "❌ Expected $test_path to fail compilation, but it succeeded."
+    cat "$log"
+    exit 1
+    fi
+    if ! rg -q "$diagnostic" "$log"; then
+    echo "❌ Rejection for $test_path did not contain expected diagnostic: $diagnostic"
+    cat "$log"
+    exit 1
+    fi
 
 guard-negative file diagnostic label:
-    just guard-compile-fail "{{file}}" "{{diagnostic}}" "{{label}}"
+    just guard-compile-fail "{{ file }}" "{{ diagnostic }}" "{{ label }}"
 
 guard_step51_report_only_lanes_not_in_test:
     #!/usr/bin/env bash
@@ -282,6 +282,41 @@ guard_step51_non_laundering_hashmap_get_value_field_enforcement:
     echo "🔒 Checking Step 5.1 non-laundering safe-branded HashMap.Get value field enforcement..."
     just guard-positive compiler/typechecker_non_laundering_hashmap_get_value_field_test_entry.gst step51_non_laundering_hashmap_get_value_field_enforcement
     echo "✅ guard_step51_non_laundering_hashmap_get_value_field_enforcement passed."
+
+guard_step51g_safe_brand_target_policy_surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.1G safe-brand target policy surface..."
+    policy_surface="$(awk '
+      index($0, "func step51g_non_laundering_safe_brand_target_diagnostic_kind(") { capture = 1 }
+      capture { print }
+      index($0, "func env_report_hashmap_get_val_readback_non_laundering_safe_brand_target(") { exit }
+    ' compiler/typechecker.gst)"
+    for required_surface in \
+      "func step51g_non_laundering_safe_brand_target_diagnostic_kind(" \
+      "func step51g_non_laundering_safe_brand_target_diagnostic_kind_reports(" \
+      "func step51g_non_laundering_safe_brand_target_should_report(" \
+      "func env_report_non_laundering_safe_brand_target("
+    do
+      if ! grep -Fq "$required_surface" <<< "$policy_surface"; then
+        echo "❌ Step 5.1G safe-brand target policy surface guard failed: missing $required_surface"
+        exit 1
+      fi
+    done
+    reporter_surface="$(awk '
+      index($0, "func env_report_non_laundering_safe_brand_target(") { capture = 1 }
+      capture { print }
+      index($0, "func env_report_hashmap_get_val_readback_non_laundering_safe_brand_target(") { exit }
+    ' compiler/typechecker.gst)"
+    if ! grep -Fq "step51g_non_laundering_safe_brand_target_should_report(target_t, prov, ctx)" <<< "$reporter_surface"; then
+      echo "❌ Step 5.1G safe-brand target reporter guard failed: reporter must route through should-report helper."
+      exit 1
+    fi
+    if grep -Eq 'step51g_non_laundering_(enforced|deferred)_safe_brand_target_violation|step51g_non_laundering_safe_brand_target_diagnostic_kind\(' <<< "$reporter_surface"; then
+      echo "❌ Step 5.1G safe-brand target reporter guard failed: reporter must not bypass should-report helper."
+      exit 1
+    fi
+    echo "✅ Step 5.1G safe-brand target policy surface guard passed."
 
 guard_step51_provenance_origin_spine:
     echo "🔒 Checking Step 5.1G unified provenance-origin spine helpers..."

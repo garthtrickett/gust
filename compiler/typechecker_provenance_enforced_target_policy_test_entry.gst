@@ -2,11 +2,11 @@ import "typechecker.gst" as typechecker;
 import "ast.gst" as ast;
 
 func main() {
-    mut ctx := os.ArenaNew();
+    mut ctx := os.Arena.New();
     defer ctx.Free();
+    os.SetThreadScratch(ctx);
 
-    mut t_int_51g5: ast.Type[ctx];
-    t_int_51g5.tag = 0;
+    mut t_int_51g5 := typechecker.make_type_int();
 
     mut branded_index_target_51g5 := typechecker.make_type_index("PolicyNode", "ctx", ctx);
     mut unbranded_index_target_51g5 := typechecker.make_type_index("PolicyNode", "", ctx);

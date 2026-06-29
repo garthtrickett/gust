@@ -2,11 +2,11 @@ import "typechecker.gst" as typechecker;
 import "ast.gst" as ast;
 
 func main() {
-    mut ctx := os.ArenaNew();
+    mut ctx := os.Arena.New();
     defer ctx.Free();
+    os.SetThreadScratch(ctx);
 
-    mut t_int_51g3: ast.Type[ctx];
-    t_int_51g3.tag = 0;
+    mut t_int_51g3 := typechecker.make_type_int();
 
     mut safe_left_51g3 := typechecker.expression_provenance_safe_arena(t_int_51g3, ctx);
     typechecker.set_add(safe_left_51g3.legacy_origins, "safe_left_root", ctx);

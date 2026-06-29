@@ -2,11 +2,11 @@ import "typechecker.gst" as typechecker;
 import "ast.gst" as ast;
 
 func main() {
-    mut ctx := os.ArenaNew();
+    mut ctx := os.Arena.New();
     defer ctx.Free();
+    os.SetThreadScratch(ctx);
 
-    mut t_int_51g2: ast.Type[ctx];
-    t_int_51g2.tag = 0;
+    mut t_int_51g2 := typechecker.make_type_int();
 
     mut safe_origin_51g2: typechecker.AddressOriginMetadata;
     typechecker.init_address_origin_safe_arena(&safe_origin_51g2);
