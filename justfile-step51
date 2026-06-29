@@ -155,42 +155,14 @@ guard_step51g_address_origin_legacy_wrapper_surface:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Step 5.1G address-origin legacy wrapper surface..."
-    wrapper_surface="$(python3 - <<'PY'
-from pathlib import Path
-
-src = Path('compiler/typechecker.gst').read_text()
-names = [
-    'address_origin_is_raw_or_sandbox_derived',
-    'address_origin_requires_unsafe_boundary',
-    'address_origin_allows_safe_branding',
-    'address_origin_join',
-]
-chunks = []
-for name in names:
-    marker = 'func ' + name + '('
-    start = src.find(marker)
-    if start < 0:
-        raise SystemExit('missing legacy address-origin wrapper: ' + name)
-    brace = src.find('{', start)
-    if brace < 0:
-        raise SystemExit('missing body for legacy address-origin wrapper: ' + name)
-    depth = 0
-    end = -1
-    for idx in range(brace, len(src)):
-        ch = src[idx]
-        if ch == '{':
-            depth += 1
-        elif ch == '}':
-            depth -= 1
-            if depth == 0:
-                end = idx + 1
-                break
-    if end < 0:
-        raise SystemExit('unterminated legacy address-origin wrapper: ' + name)
-    chunks.append(src[start:end])
-print('\n\n'.join(chunks))
-PY
-)"
+    wrapper_surface="$(awk '
+      index($0, "func address_origin_is_raw_or_sandbox_derived(") { capture = 1 }
+      index($0, "func address_origin_requires_unsafe_boundary(") { capture = 1 }
+      index($0, "func address_origin_allows_safe_branding(") { capture = 1 }
+      index($0, "func address_origin_join(") { capture = 1 }
+      capture { print }
+      capture && $0 == "}" { capture = 0 }
+    ' compiler/typechecker.gst)"
     for required_wrapper_route in \
       "return step51g_address_origin_is_raw_or_sandbox_derived(origin);" \
       "return step51g_address_origin_requires_unsafe_boundary(origin);" \
