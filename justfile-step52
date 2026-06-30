@@ -325,3 +325,22 @@ guard_step52_resource_missing_cleanup_dedup:
     fi
     just guard-positive compiler/typechecker_resource_missing_cleanup_dedup_test_entry.gst step52_resource_missing_cleanup_dedup
     echo "✅ Step 5.2S tracked Resource missing-cleanup diagnostic dedup guard passed."
+
+guard_step52_resource_return_cleanup_dedup_integration:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2T tracked Resource return cleanup dedup integration."
+    rg -n -F 'compiler/typechecker_resource_return_cleanup_dedup_integration_test_entry.gst' tests/test_runner.gst
+    rg -n -F 'return_dedup_resource' compiler/typechecker_resource_return_cleanup_dedup_integration_test_entry.gst
+    rg -n -F 'return_dedup_missing_cleanup_count' compiler/typechecker_resource_return_cleanup_dedup_integration_test_entry.gst
+    rg -n -F 'LinearResourceMissingCleanup' compiler/typechecker_resource_return_cleanup_dedup_integration_test_entry.gst
+    rg -n -F 'return_dedup_missing_cleanup_count != 1' compiler/typechecker_resource_return_cleanup_dedup_integration_test_entry.gst
+    rg -n -F 'guard_step52_resource_return_cleanup_dedup_integration' justfile
+    return_cleanup_dedup_runner_count="$(rg -n 'mut t_step52_resource_return_cleanup_dedup_integration' tests/test_runner.gst | wc -l)"
+    if [ "$return_cleanup_dedup_runner_count" != "1" ]; then
+      echo "❌ Step 5.2T guard failed: expected exactly one return cleanup dedup integration test-runner entry, found $return_cleanup_dedup_runner_count"
+      rg -n 'mut t_step52_resource_return_cleanup_dedup_integration' tests/test_runner.gst || true
+      exit 1
+    fi
+    just guard-positive compiler/typechecker_resource_return_cleanup_dedup_integration_test_entry.gst step52_resource_return_cleanup_dedup_integration
+    echo "✅ Step 5.2T tracked Resource return cleanup dedup integration guard passed."
