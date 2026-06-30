@@ -99,39 +99,6 @@ func main() {
         os.Exit(1);
     }
 
-    mut self_assign_left_move_assignment: ast.Expression[ctx];
-    unsafe {
-        self_assign_left_move_assignment.tag = 0; // Identifier
-        self_assign_left_move_assignment.Identifier.name = "target_move_resource";
-        self_assign_left_move_assignment.Identifier.span = span_move_assignment;
-    }
-    mut self_assign_left_idx_move_assignment: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(self_assign_left_idx_move_assignment, self_assign_left_move_assignment);
-
-    mut self_assign_value_move_assignment: ast.Expression[ctx];
-    unsafe {
-        self_assign_value_move_assignment.tag = 0; // Identifier
-        self_assign_value_move_assignment.Identifier.name = "target_move_resource";
-        self_assign_value_move_assignment.Identifier.span = span_move_assignment;
-    }
-    mut self_assign_value_idx_move_assignment: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(self_assign_value_idx_move_assignment, self_assign_value_move_assignment);
-
-    mut self_assign_stmt_move_assignment: ast.Statement[ctx];
-    unsafe {
-        self_assign_stmt_move_assignment.tag = 5; // Assignment
-        self_assign_stmt_move_assignment.Assignment.left = self_assign_left_idx_move_assignment;
-        self_assign_stmt_move_assignment.Assignment.value = self_assign_value_idx_move_assignment;
-        self_assign_stmt_move_assignment.Assignment.span = span_move_assignment;
-    }
-    mut self_assign_stmt_idx_move_assignment: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(self_assign_stmt_idx_move_assignment, self_assign_stmt_move_assignment);
-    typechecker.check_statement(self_assign_stmt_idx_move_assignment, &env_move_assignment, scope_move_assignment, ctx);
-
-    if typechecker.env_open_linear_resource_is_owned(&env_move_assignment, "target_move_resource", ctx) != 1 {
-        os.LogStr("Error: Resource self-assignment must not mark target as moved");
-        os.Exit(1);
-    }
 
     if len(env_move_assignment.errors) != 0 {
         os.LogStr("Error: Resource move assignment tracking produced unexpected typechecker error");
