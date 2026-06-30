@@ -21,6 +21,21 @@ func main() {
     mut resource_type_idx_return_terminal: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(resource_type_idx_return_terminal, resource_return_terminal);
 
+    mut destructor_sig_return_terminal: typechecker.FunctionSignature[ctx];
+    typechecker.init_function_signature_ffi_defaults(&destructor_sig_return_terminal);
+    destructor_sig_return_terminal.param_names = std.VectorNew(ctx);
+    destructor_sig_return_terminal.param_names.Push("resource");
+    destructor_sig_return_terminal.params = std.VectorNew(ctx);
+    destructor_sig_return_terminal.params.Push(resource_return_terminal);
+    mut destructor_void_return_terminal: ast.Type[ctx];
+    unsafe {
+        destructor_void_return_terminal.tag = 3; // Void
+    }
+    destructor_sig_return_terminal.return_type = destructor_void_return_terminal;
+    destructor_sig_return_terminal.return_origins = typechecker.set_init(ctx);
+    destructor_sig_return_terminal.is_unsafe = 0;
+    env_return_terminal.function_registry.Insert("main__close_return_terminal_payload", destructor_sig_return_terminal);
+
     mut body_decl_return_terminal: ast.Statement[ctx];
     unsafe {
         body_decl_return_terminal.tag = 4; // VarDecl
