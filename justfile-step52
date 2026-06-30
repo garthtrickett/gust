@@ -230,3 +230,28 @@ guard_step52_resource_cleanup_boundary_mixed_states:
     fi
     just guard-positive compiler/typechecker_resource_cleanup_boundary_mixed_states_test_entry.gst step52_resource_cleanup_boundary_mixed_states
     echo "✅ Step 5.2O tracked Resource cleanup boundary mixed-state coverage guard passed."
+
+guard_step52_resource_scope_exit_cleanup_boundary:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2P tracked Resource scope-exit cleanup boundary helper."
+    scope_exit_cleanup_helper_count="$(rg -n 'func env_validate_linear_resource_scope_exit_cleanup' compiler/typechecker.gst | wc -l)"
+    if [ "$scope_exit_cleanup_helper_count" != "1" ]; then
+      echo "❌ Step 5.2P guard failed: expected exactly one scope-exit cleanup boundary helper, found $scope_exit_cleanup_helper_count"
+      rg -n 'func env_validate_linear_resource_scope_exit_cleanup' compiler/typechecker.gst || true
+      exit 1
+    fi
+    rg -n -F 'return env_validate_linear_resource_cleanup_boundary(env, span, ctx)' compiler/typechecker.gst
+    rg -n -F 'compiler/typechecker_resource_scope_exit_cleanup_boundary_test_entry.gst' tests/test_runner.gst
+    rg -n -F 'env_validate_linear_resource_scope_exit_cleanup(&env_clean_scope_exit, span_scope_exit_cleanup, ctx)' compiler/typechecker_resource_scope_exit_cleanup_boundary_test_entry.gst
+    rg -n -F 'env_validate_linear_resource_scope_exit_cleanup(&env_pending_scope_exit, span_scope_exit_cleanup, ctx)' compiler/typechecker_resource_scope_exit_cleanup_boundary_test_entry.gst
+    rg -n -F 'main__scope_exit_resource' compiler/typechecker_resource_scope_exit_cleanup_boundary_test_entry.gst
+    rg -n -F 'guard_step52_resource_scope_exit_cleanup_boundary' justfile
+    scope_exit_cleanup_runner_count="$(rg -n 'mut t_step52_resource_scope_exit_cleanup_boundary' tests/test_runner.gst | wc -l)"
+    if [ "$scope_exit_cleanup_runner_count" != "1" ]; then
+      echo "❌ Step 5.2P guard failed: expected exactly one scope-exit cleanup boundary test-runner entry, found $scope_exit_cleanup_runner_count"
+      rg -n 'mut t_step52_resource_scope_exit_cleanup_boundary' tests/test_runner.gst || true
+      exit 1
+    fi
+    just guard-positive compiler/typechecker_resource_scope_exit_cleanup_boundary_test_entry.gst step52_resource_scope_exit_cleanup_boundary
+    echo "✅ Step 5.2P tracked Resource scope-exit cleanup boundary helper guard passed."

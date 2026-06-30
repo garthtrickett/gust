@@ -2256,6 +2256,13 @@ func main() {
     t_step52_resource_cleanup_boundary_mixed_states.expected = "SUCCESS: compiler-backed Resource cleanup boundary mixed-state coverage verified!";
     tests.Push(t_step52_resource_cleanup_boundary_mixed_states);
 
+    mut t_step52_resource_scope_exit_cleanup_boundary: Test[ctx];
+    t_step52_resource_scope_exit_cleanup_boundary.path = "compiler/typechecker_resource_scope_exit_cleanup_boundary_test_entry.gst";
+    t_step52_resource_scope_exit_cleanup_boundary.is_negative = 0;
+    t_step52_resource_scope_exit_cleanup_boundary.is_substring = 1;
+    t_step52_resource_scope_exit_cleanup_boundary.expected = "SUCCESS: compiler-backed Resource scope-exit cleanup boundary helper verified!";
+    tests.Push(t_step52_resource_scope_exit_cleanup_boundary);
+
     mut t_step52_resource_use_after_move_pass: Test[ctx];
     t_step52_resource_use_after_move_pass.path = "compiler/typechecker_resource_use_after_move_pass_test_entry.gst";
     t_step52_resource_use_after_move_pass.is_negative = 0;

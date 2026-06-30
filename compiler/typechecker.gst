@@ -6203,6 +6203,10 @@ func env_validate_linear_resource_cleanup_boundary(env: *TypeEnvironment[ctx], s
     return 0;
 }
 
+func env_validate_linear_resource_scope_exit_cleanup(env: *TypeEnvironment[ctx], span: token.Span, ctx: &Arena) int {
+    return env_validate_linear_resource_cleanup_boundary(env, span, ctx);
+}
+
 func make_type_resource(payload_type: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     mut args_resource_type: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
     args_resource_type.Push(payload_type);
