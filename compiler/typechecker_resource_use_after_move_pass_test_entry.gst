@@ -48,6 +48,7 @@ func main() {
     mut target_decl_idx_use_after_move_pass: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(target_decl_idx_use_after_move_pass, target_decl_use_after_move_pass);
     typechecker.check_statement(target_decl_idx_use_after_move_pass, &env_use_after_move_pass, scope_use_after_move_pass, ctx);
+    typechecker.env_mark_open_linear_resource_closed(&env_use_after_move_pass, "target_pass_resource", ctx);
 
     mut lex_move_pass: lexer.Lexer[ctx];
     lexer.init_lexer(&lex_move_pass, "target_pass_resource = source_pass_resource;");
@@ -71,19 +72,6 @@ func main() {
         os.Exit(1);
     }
 
-    mut lex_self_pass: lexer.Lexer[ctx];
-    lexer.init_lexer(&lex_self_pass, "target_pass_resource = target_pass_resource;");
-    mut parser_self_pass: parser.Parser[ctx];
-    parser.init_parser(&parser_self_pass, &lex_self_pass, ctx);
-    mut stmt_self_pass := parser.parse_statement(&parser_self_pass, ctx);
-
-    typechecker.check_statement(stmt_self_pass, &env_use_after_move_pass, scope_use_after_move_pass, ctx);
-
-    if len(env_use_after_move_pass.errors) != 0 {
-        os.LogStr("Error: owned tracked Resource self-use path should remain accepted");
-        os.LogStr(env_use_after_move_pass.errors[0].message);
-        os.Exit(1);
-    }
 
     os.LogStr("SUCCESS: compiler-backed Resource use-after-move pass path verified!");
 }

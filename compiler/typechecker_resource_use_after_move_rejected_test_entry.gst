@@ -48,6 +48,7 @@ func main() {
     mut target_decl_idx_use_after_move_reject: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(target_decl_idx_use_after_move_reject, target_decl_use_after_move_reject);
     typechecker.check_statement(target_decl_idx_use_after_move_reject, &env_use_after_move_reject, scope_use_after_move_reject, ctx);
+    typechecker.env_mark_open_linear_resource_closed(&env_use_after_move_reject, "target_reject_resource", ctx);
 
     mut lex_move_reject: lexer.Lexer[ctx];
     lexer.init_lexer(&lex_move_reject, "target_reject_resource = source_reject_resource;");
