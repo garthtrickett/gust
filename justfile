@@ -168,10 +168,17 @@ check-fast guard_name="":
     set -euo pipefail
     make
     if [ -n "{{guard_name}}" ]; then
-      just "{{guard_name}}"
+      echo "ℹ️  check-fast: ignoring focused guard '{{guard_name}}' to keep this lane build-only. Use 'just check-focused {{guard_name}}' when you want that full guard."
     else
-      echo "ℹ️  check-fast: no focused guard supplied; ran build and whitespace checks only."
+      echo "ℹ️  check-fast: ran build and whitespace checks only."
     fi
+    git diff --check
+
+check-focused guard_name:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    make
+    just "{{guard_name}}"
     git diff --check
 
 check-step52:
