@@ -2263,6 +2263,13 @@ func main() {
     t_step52_resource_scope_exit_cleanup_boundary.expected = "SUCCESS: compiler-backed Resource scope-exit cleanup boundary helper verified!";
     tests.Push(t_step52_resource_scope_exit_cleanup_boundary);
 
+    mut t_step52_resource_function_exit_cleanup_integration: Test[ctx];
+    t_step52_resource_function_exit_cleanup_integration.path = "compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst";
+    t_step52_resource_function_exit_cleanup_integration.is_negative = 0;
+    t_step52_resource_function_exit_cleanup_integration.is_substring = 1;
+    t_step52_resource_function_exit_cleanup_integration.expected = "SUCCESS: compiler-backed Resource function-exit cleanup integration verified!";
+    tests.Push(t_step52_resource_function_exit_cleanup_integration);
+
     mut t_step52_resource_use_after_move_pass: Test[ctx];
     t_step52_resource_use_after_move_pass.path = "compiler/typechecker_resource_use_after_move_pass_test_entry.gst";
     t_step52_resource_use_after_move_pass.is_negative = 0;

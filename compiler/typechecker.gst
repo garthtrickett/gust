@@ -8310,6 +8310,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 m = m + 1;
             }
 
+            // Step 5.2Q: narrow compiler-backed Resource cleanup validation at function exit.
+            env_validate_linear_resource_scope_exit_cleanup(env, stmt.FunctionDecl.span, ctx);
+
             env_record_function_return_provenance(env, function_name_return_prov, (*env).current_function_return_provenance, ctx);
 
             // Restore parent states

@@ -255,3 +255,22 @@ guard_step52_resource_scope_exit_cleanup_boundary:
     fi
     just guard-positive compiler/typechecker_resource_scope_exit_cleanup_boundary_test_entry.gst step52_resource_scope_exit_cleanup_boundary
     echo "✅ Step 5.2P tracked Resource scope-exit cleanup boundary helper guard passed."
+
+guard_step52_resource_function_exit_cleanup_integration:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2Q tracked Resource function-exit cleanup integration."
+    rg -n -F 'env_validate_linear_resource_scope_exit_cleanup(env, stmt.FunctionDecl.span, ctx)' compiler/typechecker.gst
+    rg -n -F 'compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst' tests/test_runner.gst
+    rg -n -F 'FunctionDecl' compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst
+    rg -n -F 'function_exit_resource' compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst
+    rg -n -F 'LinearResourceMissingCleanup' compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst
+    rg -n -F 'guard_step52_resource_function_exit_cleanup_integration' justfile
+    function_exit_cleanup_runner_count="$(rg -n 'mut t_step52_resource_function_exit_cleanup_integration' tests/test_runner.gst | wc -l)"
+    if [ "$function_exit_cleanup_runner_count" != "1" ]; then
+      echo "❌ Step 5.2Q guard failed: expected exactly one function-exit cleanup integration test-runner entry, found $function_exit_cleanup_runner_count"
+      rg -n 'mut t_step52_resource_function_exit_cleanup_integration' tests/test_runner.gst || true
+      exit 1
+    fi
+    just guard-positive compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst step52_resource_function_exit_cleanup_integration
+    echo "✅ Step 5.2Q tracked Resource function-exit cleanup integration guard passed."
