@@ -367,3 +367,25 @@ guard_step52_resource_return_cleanup_terminal_states:
     fi
     just guard-positive compiler/typechecker_resource_return_cleanup_terminal_states_test_entry.gst step52_resource_return_cleanup_terminal_states
     echo "✅ Step 5.2U tracked Resource return cleanup terminal-state integration guard passed."
+
+guard_step52_resource_return_cleanup_moved_terminal_states:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2V tracked Resource return cleanup moved terminal-state integration."
+    rg -n -F 'compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst' tests/test_runner.gst
+    rg -n -F 'return_moved_source_resource' compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst
+    rg -n -F 'return_moved_target_resource' compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst
+    rg -n -F 'assign_stmt_return_moved_terminal.Assignment.left = assign_left_idx_return_moved_terminal' compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst
+    rg -n -F 'assign_stmt_return_moved_terminal.Assignment.value = assign_value_idx_return_moved_terminal' compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst
+    rg -n -F 'call_close_return_moved_terminal.Call.function = callee_close_idx_return_moved_terminal' compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst
+    rg -n -F 'env_return_moved_terminal.function_registry.Insert("main__close_return_moved_payload", destructor_sig_return_moved_terminal)' compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst
+    rg -n -F 'return_moved_missing_cleanup_count != 0' compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst
+    rg -n -F 'guard_step52_resource_return_cleanup_moved_terminal_states' justfile
+    return_cleanup_moved_terminal_runner_count="$(rg -n 'mut t_step52_resource_return_cleanup_moved_terminal_states' tests/test_runner.gst | wc -l)"
+    if [ "$return_cleanup_moved_terminal_runner_count" != "1" ]; then
+      echo "❌ Step 5.2V guard failed: expected exactly one return cleanup moved terminal-state test-runner entry, found $return_cleanup_moved_terminal_runner_count"
+      rg -n 'mut t_step52_resource_return_cleanup_moved_terminal_states' tests/test_runner.gst || true
+      exit 1
+    fi
+    just guard-positive compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst step52_resource_return_cleanup_moved_terminal_states
+    echo "✅ Step 5.2V tracked Resource return cleanup moved terminal-state integration guard passed."
