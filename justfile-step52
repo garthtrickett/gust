@@ -487,3 +487,23 @@ guard_step52_resource_function_exit_mixed_terminal_states:
     fi
     just guard-positive compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst step52_resource_function_exit_mixed_terminal_states
     echo "✅ Step 5.2Z tracked Resource function-exit mixed terminal-state integration guard passed."
+
+guard_step52_resource_return_cleanup_scheduled_terminal_states:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2AA tracked Resource return cleanup destructor-scheduled terminal-state integration."
+    rg -n -F 'compiler/typechecker_resource_return_cleanup_scheduled_terminal_states_test_entry.gst' tests/test_runner.gst
+    rg -n -F 'return_scheduled_resource' compiler/typechecker_resource_return_cleanup_scheduled_terminal_states_test_entry.gst
+    rg -n -F 'env_try_schedule_open_linear_resource_destructor(&env_return_scheduled_terminal, "main__return_scheduled_resource", ctx)' compiler/typechecker_resource_return_cleanup_scheduled_terminal_states_test_entry.gst
+    rg -n -F 'env_return_scheduled_terminal.expected_return_type = return_type_idx_return_scheduled_terminal' compiler/typechecker_resource_return_cleanup_scheduled_terminal_states_test_entry.gst
+    rg -n -F 'typechecker.check_statement(return_stmt_idx_return_scheduled_terminal, &env_return_scheduled_terminal, scope_return_scheduled_terminal, ctx)' compiler/typechecker_resource_return_cleanup_scheduled_terminal_states_test_entry.gst
+    rg -n -F 'return_scheduled_missing_cleanup_count != 0' compiler/typechecker_resource_return_cleanup_scheduled_terminal_states_test_entry.gst
+    rg -n -F 'guard_step52_resource_return_cleanup_scheduled_terminal_states' justfile
+    return_cleanup_scheduled_terminal_runner_count="$(rg -n 'mut t_step52_resource_return_cleanup_scheduled_terminal_states' tests/test_runner.gst | wc -l)"
+    if [ "$return_cleanup_scheduled_terminal_runner_count" != "1" ]; then
+      echo "❌ Step 5.2AA guard failed: expected exactly one return cleanup scheduled terminal-state test-runner entry, found $return_cleanup_scheduled_terminal_runner_count"
+      rg -n 'mut t_step52_resource_return_cleanup_scheduled_terminal_states' tests/test_runner.gst || true
+      exit 1
+    fi
+    just guard-positive compiler/typechecker_resource_return_cleanup_scheduled_terminal_states_test_entry.gst step52_resource_return_cleanup_scheduled_terminal_states
+    echo "✅ Step 5.2AA tracked Resource return cleanup destructor-scheduled terminal-state integration guard passed."
