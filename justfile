@@ -162,3 +162,21 @@ check:
     make
     make test
     make bootstrap
+
+check-fast guard_name="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    make
+    if [ -n "{{guard_name}}" ]; then
+      just "{{guard_name}}"
+    else
+      echo "ℹ️  check-fast: no focused guard supplied; ran build and whitespace checks only."
+    fi
+    git diff --check
+
+check-step52:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just make-test-guards
+    make test
+    git diff --check
