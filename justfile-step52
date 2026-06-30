@@ -415,3 +415,25 @@ guard_step52_resource_function_exit_terminal_states:
     fi
     just guard-positive compiler/typechecker_resource_function_exit_terminal_states_test_entry.gst step52_resource_function_exit_terminal_states
     echo "✅ Step 5.2W tracked Resource function-exit terminal-state integration guard passed."
+
+guard_step52_resource_function_exit_moved_terminal_states:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2X tracked Resource function-exit moved terminal-state integration."
+    rg -n -F 'compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst' tests/test_runner.gst
+    rg -n -F 'function_moved_source_resource' compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst
+    rg -n -F 'function_moved_target_resource' compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst
+    rg -n -F 'assign_stmt_function_moved_terminal.Assignment.left = assign_left_idx_function_moved_terminal' compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst
+    rg -n -F 'assign_stmt_function_moved_terminal.Assignment.value = assign_value_idx_function_moved_terminal' compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst
+    rg -n -F 'call_close_function_moved_terminal.Call.function = callee_close_idx_function_moved_terminal' compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst
+    rg -n -F 'env_function_moved_terminal.function_registry.Insert("main__close_function_moved_payload", destructor_sig_function_moved_terminal)' compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst
+    rg -n -F 'function_moved_missing_cleanup_count != 0' compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst
+    rg -n -F 'guard_step52_resource_function_exit_moved_terminal_states' justfile
+    function_exit_moved_terminal_runner_count="$(rg -n 'mut t_step52_resource_function_exit_moved_terminal_states' tests/test_runner.gst | wc -l)"
+    if [ "$function_exit_moved_terminal_runner_count" != "1" ]; then
+      echo "❌ Step 5.2X guard failed: expected exactly one function-exit moved terminal-state test-runner entry, found $function_exit_moved_terminal_runner_count"
+      rg -n 'mut t_step52_resource_function_exit_moved_terminal_states' tests/test_runner.gst || true
+      exit 1
+    fi
+    just guard-positive compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst step52_resource_function_exit_moved_terminal_states
+    echo "✅ Step 5.2X tracked Resource function-exit moved terminal-state integration guard passed."
