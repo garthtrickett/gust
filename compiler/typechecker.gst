@@ -9381,6 +9381,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 report_error(2, msg, stmt.Return.span, env, ctx);
             }
 
+            // Step 5.2R: narrow compiler-backed Resource cleanup validation on explicit return paths.
+            env_validate_linear_resource_scope_exit_cleanup(env, stmt.Return.span, ctx);
+
             return res;
         }
 
