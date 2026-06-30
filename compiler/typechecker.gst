@@ -6115,11 +6115,29 @@ func env_report_linear_resource_destructor_already_scheduled(env: *TypeEnvironme
     return 1;
 }
 
+func env_linear_resource_missing_cleanup_already_reported(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    mut needle := std.Concat("LinearResourceMissingCleanup: resource '", name);
+    unsafe {
+        mut idx_missing_cleanup_dedup := 0;
+        while idx_missing_cleanup_dedup < len((*env).errors) {
+            mut existing_msg_missing_cleanup_dedup := (*env).errors[idx_missing_cleanup_dedup].message;
+            if std.str_find(existing_msg_missing_cleanup_dedup, needle) != 0 - 1 {
+                return 1;
+            }
+            idx_missing_cleanup_dedup = idx_missing_cleanup_dedup + 1;
+        }
+    }
+    return 0;
+}
+
 func env_report_linear_resource_missing_cleanup(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) int {
     if env_open_linear_resource_is_tracked(env, name, ctx) == 0 {
         return 0;
     }
     if env_open_linear_resource_requires_cleanup(env, name, ctx) == 0 {
+        return 0;
+    }
+    if env_linear_resource_missing_cleanup_already_reported(env, name, ctx) == 1 {
         return 0;
     }
     mut msg := std.Concat("Semantic Error: LinearResourceMissingCleanup: resource '", name);

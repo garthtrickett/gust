@@ -2277,6 +2277,13 @@ func main() {
     t_step52_resource_return_cleanup_integration.expected = "SUCCESS: compiler-backed Resource return cleanup integration verified!";
     tests.Push(t_step52_resource_return_cleanup_integration);
 
+    mut t_step52_resource_missing_cleanup_dedup: Test[ctx];
+    t_step52_resource_missing_cleanup_dedup.path = "compiler/typechecker_resource_missing_cleanup_dedup_test_entry.gst";
+    t_step52_resource_missing_cleanup_dedup.is_negative = 0;
+    t_step52_resource_missing_cleanup_dedup.is_substring = 1;
+    t_step52_resource_missing_cleanup_dedup.expected = "SUCCESS: compiler-backed Resource missing-cleanup dedup verified!";
+    tests.Push(t_step52_resource_missing_cleanup_dedup);
+
     mut t_step52_resource_use_after_move_pass: Test[ctx];
     t_step52_resource_use_after_move_pass.path = "compiler/typechecker_resource_use_after_move_pass_test_entry.gst";
     t_step52_resource_use_after_move_pass.is_negative = 0;
