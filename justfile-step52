@@ -544,6 +544,8 @@ guard_step52_resource_return_cleanup_mixed_scheduled_terminal_states:
     rg -n -F 'pending_missing_cleanup_count != 1' compiler/typechecker_resource_return_cleanup_mixed_scheduled_terminal_states_test_entry.gst
     rg -n -F 'scheduled_missing_cleanup_count != 0' compiler/typechecker_resource_return_cleanup_mixed_scheduled_terminal_states_test_entry.gst
     rg -n -F 'guard_step52_resource_return_cleanup_mixed_scheduled_terminal_states' justfile
+    rg -n -F 'Step 5.2AC tracked Resource return cleanup mixed scheduled terminal-state integration guard' justfile-reports
+    rg -n -F 'return cleanup mixed scheduled terminal-state integration' justfile-reports
     return_cleanup_mixed_scheduled_terminal_runner_count="$(rg -n 'mut t_step52_resource_return_cleanup_mixed_scheduled_terminal_states' tests/test_runner.gst | wc -l)"
     if [ "$return_cleanup_mixed_scheduled_terminal_runner_count" != "1" ]; then
       echo "❌ Step 5.2AC guard failed: expected exactly one return cleanup mixed scheduled terminal-state test-runner entry, found $return_cleanup_mixed_scheduled_terminal_runner_count"
@@ -565,6 +567,8 @@ guard_step52_resource_scope_exit_mixed_scheduled_terminal_states:
     rg -n -F 'pending_missing_cleanup_count != 1' compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst
     rg -n -F 'scheduled_missing_cleanup_count != 0' compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst
     rg -n -F 'guard_step52_resource_scope_exit_mixed_scheduled_terminal_states' justfile
+    rg -n -F 'Step 5.2AD tracked Resource scope-exit mixed scheduled terminal-state integration guard' justfile-reports
+    rg -n -F 'scope-exit mixed scheduled terminal-state integration' justfile-reports
     scope_exit_mixed_scheduled_terminal_runner_count="$(rg -n 'mut t_step52_resource_scope_exit_mixed_scheduled_terminal_states' tests/test_runner.gst | wc -l)"
     if [ "$scope_exit_mixed_scheduled_terminal_runner_count" != "1" ]; then
       echo "❌ Step 5.2AD guard failed: expected exactly one scope-exit mixed scheduled terminal-state test-runner entry, found $scope_exit_mixed_scheduled_terminal_runner_count"
