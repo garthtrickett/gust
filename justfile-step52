@@ -429,6 +429,10 @@ guard_step52_resource_function_exit_moved_terminal_states:
     rg -n -F 'env_function_moved_terminal.function_registry.Insert("main__close_function_moved_payload", destructor_sig_function_moved_terminal)' compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst
     rg -n -F 'function_moved_missing_cleanup_count != 0' compiler/typechecker_resource_function_exit_moved_terminal_states_test_entry.gst
     rg -n -F 'guard_step52_resource_function_exit_moved_terminal_states' justfile
+    rg -n -F 'Step 5.2W tracked Resource function-exit terminal-state integration guard' justfile-reports
+    rg -n -F 'Step 5.2X tracked Resource function-exit moved terminal-state integration guard' justfile-reports
+    rg -n -F 'function-exit terminal-state integration' justfile-reports
+    rg -n -F 'function-exit moved terminal-state integration' justfile-reports
     function_exit_moved_terminal_runner_count="$(rg -n 'mut t_step52_resource_function_exit_moved_terminal_states' tests/test_runner.gst | wc -l)"
     if [ "$function_exit_moved_terminal_runner_count" != "1" ]; then
       echo "❌ Step 5.2X guard failed: expected exactly one function-exit moved terminal-state test-runner entry, found $function_exit_moved_terminal_runner_count"
