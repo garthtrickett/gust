@@ -42,6 +42,11 @@ guard_step52_resource_move_assignment_transfer:
     just guard-positive compiler/typechecker_resource_move_assignment_transfer_test_entry.gst step52_resource_move_assignment_transfer
     echo "✅ Step 5.2 Resource-to-Resource move assignment transfer guard passed."
 
+guard_step52_resource_reassignment_terminal_required:
+    echo "🔒 Checking Step 5.2 Resource reassignment requires terminal old value..."
+    just guard-positive compiler/typechecker_resource_reassignment_terminal_required_test_entry.gst step52_resource_reassignment_terminal_required
+    echo "✅ Step 5.2 Resource reassignment terminal requirement guard passed."
+
 guard_step52_resource_decl_assignment_tracking:
     echo "🔒 Checking Step 5.2 Resource declaration/assignment tracking integration..."
     just guard-positive compiler/typechecker_resource_decl_assignment_tracking_test_entry.gst step52_resource_decl_assignment_tracking

@@ -2200,6 +2200,13 @@ func main() {
     t_step52_resource_move_assignment_transfer.expected = "SUCCESS: compiler-backed Resource-to-Resource move assignment transfer verified!";
     tests.Push(t_step52_resource_move_assignment_transfer);
 
+    mut t_step52_resource_reassignment_terminal_required: Test[ctx];
+    t_step52_resource_reassignment_terminal_required.path = "compiler/typechecker_resource_reassignment_terminal_required_test_entry.gst";
+    t_step52_resource_reassignment_terminal_required.is_negative = 0;
+    t_step52_resource_reassignment_terminal_required.is_substring = 1;
+    t_step52_resource_reassignment_terminal_required.expected = "SUCCESS: compiler-backed Resource reassignment terminal requirement verified!";
+    tests.Push(t_step52_resource_reassignment_terminal_required);
+
     mut t_step52_resource_decl_assignment_tracking: Test[ctx];
     t_step52_resource_decl_assignment_tracking.path = "compiler/typechecker_resource_decl_assignment_tracking_test_entry.gst";
     t_step52_resource_decl_assignment_tracking.is_negative = 0;

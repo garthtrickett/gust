@@ -56,6 +56,7 @@ func main() {
         os.LogStr("Error: target Resource declaration did not auto-register before move transfer");
         os.Exit(1);
     }
+    typechecker.env_mark_open_linear_resource_closed(&env_transfer, "target_transfer_resource", ctx);
 
     mut transfer_left: ast.Expression[ctx];
     unsafe {

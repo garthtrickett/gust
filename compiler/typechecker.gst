@@ -6146,6 +6146,22 @@ func env_report_linear_resource_missing_cleanup(env: *TypeEnvironment[ctx], name
     return 1;
 }
 
+func env_report_linear_resource_reassignment_requires_terminal(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) int {
+    if env_open_linear_resource_is_tracked(env, name, ctx) == 0 {
+        return 0;
+    }
+    if env_open_linear_resource_has_terminal_state(env, name, ctx) == 1 {
+        return 0;
+    }
+    if env_linear_resource_missing_cleanup_already_reported(env, name, ctx) == 1 {
+        return 0;
+    }
+    mut msg_reassign_terminal := std.Concat("Semantic Error: LinearResourceMissingCleanup: resource '", name);
+    msg_reassign_terminal = std.Concat(msg_reassign_terminal, "' requires cleanup before reassignment");
+    report_error(2, msg_reassign_terminal, span, env, ctx);
+    return 1;
+}
+
 func env_try_move_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
     if env_open_linear_resource_can_be_moved(env, variable_name, ctx) == 0 {
         return 0;
@@ -6370,7 +6386,16 @@ func env_track_resource_declaration_if_applicable(env: *TypeEnvironment[ctx], va
     return env_register_open_resource_declaration(env, variable_name, ctx);
 }
 
-func env_track_resource_assignment_if_applicable(env: *TypeEnvironment[ctx], variable_name: str, assigned_resource_type: ast.Type[ctx], ctx: &Arena) int {
+func env_track_resource_assignment_if_applicable(env: *TypeEnvironment[ctx], variable_name: str, assigned_resource_type: ast.Type[ctx], span: token.Span, ctx: &Arena) int {
+    if env_resource_assignment_is_tracking_eligible(env, variable_name, assigned_resource_type, ctx) == 0 {
+        return 0;
+    }
+    if env_open_linear_resource_is_tracked(env, variable_name, ctx) == 1 {
+        if env_open_linear_resource_has_terminal_state(env, variable_name, ctx) == 0 {
+            env_report_linear_resource_reassignment_requires_terminal(env, variable_name, span, ctx);
+            return 0;
+        }
+    }
     return env_register_open_resource_assignment(env, variable_name, assigned_resource_type, ctx);
 }
 
@@ -8620,8 +8645,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             if len(assignment_lhs_resource_name_step52g) > 0 {
-                env_track_resource_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, val_type, ctx);
-                env_track_resource_move_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, assignment_rhs_resource_name_step52h, ctx);
+                mut assignment_resource_registered_step52ah := env_track_resource_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, val_type, stmt.Assignment.span, ctx);
+                if assignment_resource_registered_step52ah == 1 {
+                    env_track_resource_move_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, assignment_rhs_resource_name_step52h, ctx);
+                }
             }
 
             mut assignment_span_nlaunder := get_expression_span(val_idx, ctx);
