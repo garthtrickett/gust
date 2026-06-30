@@ -312,6 +312,11 @@ guard_step52_resource_missing_cleanup_dedup:
     rg -n -F 'env_report_linear_resource_missing_cleanup(&env_dedup_cleanup, "main__dedup_cleanup_resource", span_dedup_cleanup, ctx) != 0' compiler/typechecker_resource_missing_cleanup_dedup_test_entry.gst
     rg -n -F 'env_validate_linear_resource_scope_exit_cleanup(&env_dedup_cleanup, span_dedup_cleanup, ctx) != 0' compiler/typechecker_resource_missing_cleanup_dedup_test_entry.gst
     rg -n -F 'guard_step52_resource_missing_cleanup_dedup' justfile
+    rg -n -F 'Step 5.2S tracked Resource missing-cleanup diagnostic dedup guard' justfile-reports
+    rg -n -F 'scope-exit cleanup boundary helper' justfile-reports
+    rg -n -F 'function-exit cleanup integration' justfile-reports
+    rg -n -F 'return-path cleanup integration' justfile-reports
+    rg -n -F 'missing-cleanup diagnostic dedup' justfile-reports
     missing_cleanup_dedup_runner_count="$(rg -n 'mut t_step52_resource_missing_cleanup_dedup' tests/test_runner.gst | wc -l)"
     if [ "$missing_cleanup_dedup_runner_count" != "1" ]; then
       echo "❌ Step 5.2S guard failed: expected exactly one missing-cleanup dedup test-runner entry, found $missing_cleanup_dedup_runner_count"
