@@ -475,6 +475,10 @@ guard_step52_resource_function_exit_mixed_terminal_states:
     rg -n -F 'pending_missing_cleanup_count != 1' compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst
     rg -n -F 'closed_missing_cleanup_count != 0' compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst
     rg -n -F 'guard_step52_resource_function_exit_mixed_terminal_states' justfile
+    rg -n -F 'Step 5.2Y tracked Resource return cleanup mixed terminal-state integration guard' justfile-reports
+    rg -n -F 'Step 5.2Z tracked Resource function-exit mixed terminal-state integration guard' justfile-reports
+    rg -n -F 'return cleanup mixed terminal-state integration' justfile-reports
+    rg -n -F 'function-exit mixed terminal-state integration' justfile-reports
     function_exit_mixed_terminal_runner_count="$(rg -n 'mut t_step52_resource_function_exit_mixed_terminal_states' tests/test_runner.gst | wc -l)"
     if [ "$function_exit_mixed_terminal_runner_count" != "1" ]; then
       echo "❌ Step 5.2Z guard failed: expected exactly one function-exit mixed terminal-state test-runner entry, found $function_exit_mixed_terminal_runner_count"
