@@ -47,7 +47,9 @@ func main() {
     ctx.Set(params_idx_function_exit, params_function_exit);
 
     mut return_type_function_exit: ast.Type[ctx];
-    return_type_function_exit.tag = 3; // Void
+    unsafe {
+        return_type_function_exit.tag = 3; // Void
+    }
     mut return_type_idx_function_exit: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(return_type_idx_function_exit, return_type_function_exit);
 
