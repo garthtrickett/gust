@@ -178,6 +178,25 @@ make-test-guards-step52-surface:
     rg -n -F 'scope-exit mixed scheduled terminal-state integration' justfile-reports >/dev/null
     echo "✅ Step 5.2 surface-only guard batch passed."
 
+run-step52-positive-batch:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running batched Step 5.2 positive fixture runner."
+    rg -n -F 'compiler/typechecker_resource_declaration_bridge_test_entry.gst' tests/test_runner.gst >/dev/null
+    rg -n -F 'compiler/typechecker_resource_assignment_bridge_test_entry.gst' tests/test_runner.gst >/dev/null
+    rg -n -F 'compiler/typechecker_resource_return_cleanup_mixed_scheduled_terminal_states_test_entry.gst' tests/test_runner.gst >/dev/null
+    rg -n -F 'compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst' tests/test_runner.gst >/dev/null
+    mkdir -p build
+    echo "⚙️  Compiling native batched Step 5.2 positive runner from tests/test_runner.gst..."
+    ./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner_step52_positive.c
+    rg -n -F 'compiler/typechecker_resource_return_cleanup_mixed_scheduled_terminal_states_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
+    rg -n -F 'compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
+    cat src/runtime.c build/test_runner_step52_positive.c > build/test_runner_step52_positive_final.c
+    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_step52_positive_final.c -o build/test_runner_step52_positive_bin
+    echo "🏃 Running native batched Step 5.2 positive runner..."
+    ./build/test_runner_step52_positive_bin
+    echo "✅ Batched Step 5.2 positive fixture runner passed."
+
 make-test-guards-step44-text: guard_parser_high_level_raw_casts guard_step44_no_high_level_raw_collection_casts
 
 make-test-suite:
