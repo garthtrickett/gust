@@ -55,6 +55,7 @@ func main() {
         os.LogStr("Error: target Resource must start owned before move assignment");
         os.Exit(1);
     }
+    typechecker.env_mark_open_linear_resource_closed(&env_move_assignment, "target_move_resource", ctx);
 
     mut assign_left_move_assignment: ast.Expression[ctx];
     unsafe {

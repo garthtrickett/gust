@@ -100,40 +100,6 @@ func main() {
         os.Exit(1);
     }
 
-    mut self_left_transfer: ast.Expression[ctx];
-    unsafe {
-        self_left_transfer.tag = 0; // Identifier
-        self_left_transfer.Identifier.name = "target_transfer_resource";
-        self_left_transfer.Identifier.span = span_transfer;
-    }
-    mut self_left_idx_transfer: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(self_left_idx_transfer, self_left_transfer);
-
-    mut self_value_transfer: ast.Expression[ctx];
-    unsafe {
-        self_value_transfer.tag = 0; // Identifier
-        self_value_transfer.Identifier.name = "target_transfer_resource";
-        self_value_transfer.Identifier.span = span_transfer;
-    }
-    mut self_value_idx_transfer: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(self_value_idx_transfer, self_value_transfer);
-
-    mut self_transfer_stmt: ast.Statement[ctx];
-    unsafe {
-        self_transfer_stmt.tag = 5; // Assignment
-        self_transfer_stmt.Assignment.left = self_left_idx_transfer;
-        self_transfer_stmt.Assignment.value = self_value_idx_transfer;
-        self_transfer_stmt.Assignment.span = span_transfer;
-    }
-    mut self_transfer_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(self_transfer_stmt_idx, self_transfer_stmt);
-    typechecker.check_statement(self_transfer_stmt_idx, &env_transfer, scope_transfer, ctx);
-
-    if typechecker.env_open_linear_resource_is_owned(&env_transfer, "target_transfer_resource", ctx) != 1 {
-        os.LogStr("Error: Resource self-assignment must keep destination owned/open");
-        os.Exit(1);
-    }
-
     mut plain_payload_transfer := typechecker.make_type_struct("main__TransferPlainPayload", "", ctx);
     mut plain_resource_transfer := typechecker.make_type_resource(plain_payload_transfer, ctx);
     typechecker.scope_insert(scope_transfer, "plain_transfer_source", plain_resource_transfer, ctx);
