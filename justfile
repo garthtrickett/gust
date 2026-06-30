@@ -197,6 +197,53 @@ run-step52-positive-batch:
     ./build/test_runner_step52_positive_bin
     echo "✅ Batched Step 5.2 positive fixture runner passed."
 
+run-step52-negative-batch:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Checking batched Step 5.2 negative diagnostic harness."
+    diagnostics=(
+      LinearResourceUseAfterMove
+      LinearResourceDoubleClose
+      LinearResourceCloseAfterMove
+      LinearResourceDestructorAlreadyScheduled
+      LinearResourceMissingCleanup
+    )
+    for diagnostic in "${diagnostics[@]}"; do
+      rg -n -F "$diagnostic" compiler/typechecker.gst >/dev/null
+      rg -n -F "$diagnostic" justfile-reports >/dev/null
+    done
+    fixtures=(
+      compiler/typechecker_resource_use_after_move_rejected_test_entry.gst
+      compiler/typechecker_resource_double_close_rejected_test_entry.gst
+      compiler/typechecker_resource_close_after_move_rejected_test_entry.gst
+      compiler/typechecker_resource_destructor_scheduled_rejected_test_entry.gst
+      compiler/typechecker_resource_missing_cleanup_diagnostic_test_entry.gst
+      compiler/typechecker_resource_missing_cleanup_first_report_test_entry.gst
+      compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst
+      compiler/typechecker_resource_return_cleanup_integration_test_entry.gst
+      compiler/typechecker_resource_missing_cleanup_dedup_test_entry.gst
+      compiler/typechecker_resource_return_cleanup_dedup_integration_test_entry.gst
+    )
+    for fixture in "${fixtures[@]}"; do
+      rg -n -F "$fixture" tests/test_runner.gst justfile-step52 >/dev/null
+    done
+    labels=(
+      step52_resource_use_after_move_rejected
+      step52_resource_double_close_rejected
+      step52_resource_close_after_move_rejected
+      step52_resource_destructor_scheduled_rejected
+      step52_resource_missing_cleanup_diagnostic
+      step52_resource_missing_cleanup_first_report
+      step52_resource_function_exit_cleanup_integration
+      step52_resource_return_cleanup_integration
+      step52_resource_missing_cleanup_dedup
+      step52_resource_return_cleanup_dedup_integration
+    )
+    for label in "${labels[@]}"; do
+      rg -n -F "$label" tests/test_runner.gst justfile justfile-step52 >/dev/null
+    done
+    echo "✅ Batched Step 5.2 negative diagnostic harness passed."
+
 make-test-guards-step44-text: guard_parser_high_level_raw_casts guard_step44_no_high_level_raw_collection_casts
 
 make-test-suite:
@@ -247,6 +294,9 @@ check-focused guard_name:
 check-step52:
     #!/usr/bin/env bash
     set -euo pipefail
-    just make-test-guards
+    make gust
+    just make-test-guards-step52-surface
+    just run-step52-positive-batch
+    just run-step52-negative-batch
     make test
     git diff --check
