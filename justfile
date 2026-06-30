@@ -134,6 +134,50 @@ _make-test-guards-parallel-inner: make-test-guards-step44-text make-test-guards-
 
 make-test-guards-policy: guard_step51_report_only_lanes_not_in_test guard_step51g_default_guard_wiring guard_step51g_aggregate_surface_wiring guard_step51g_address_origin_legacy_wrapper_surface guard_step51g_expression_provenance_legacy_wrapper_surface guard_step51_provenance_origin_spine guard_step52_report_only_lanes_not_in_test guard_step52_no_post_closure_report_churn guard_step52_resource_decl_assignment_tracking guard_step52_resource_move_assignment_tracking guard_step52_resource_destructor_call_tracking guard_step52_resource_double_close_enforcement guard_step52_resource_close_after_move_enforcement guard_step52_resource_destructor_scheduled_enforcement guard_step52_resource_missing_cleanup_diagnostic guard_step52_resource_missing_cleanup_first_report guard_step52_resource_cleanup_boundary_validation guard_step52_resource_cleanup_boundary_terminal_states guard_step52_resource_cleanup_boundary_mixed_states guard_step52_resource_scope_exit_cleanup_boundary guard_step52_resource_function_exit_cleanup_integration guard_step52_resource_return_cleanup_integration guard_step52_resource_missing_cleanup_dedup guard_step52_resource_return_cleanup_dedup_integration guard_step52_resource_return_cleanup_terminal_states guard_step52_resource_return_cleanup_moved_terminal_states guard_step52_resource_function_exit_terminal_states guard_step52_resource_function_exit_moved_terminal_states guard_step52_resource_return_cleanup_mixed_terminal_states guard_step52_resource_function_exit_mixed_terminal_states guard_step52_resource_return_cleanup_scheduled_terminal_states guard_step52_resource_scope_exit_scheduled_terminal_states guard_step52_resource_return_cleanup_mixed_scheduled_terminal_states guard_step52_resource_scope_exit_mixed_scheduled_terminal_states guard_step52_resource_use_after_move_enforcement
 
+make-test-guards-step52-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2 surface-only guard batch."
+    needles=(
+      guard_step52_report_only_lanes_not_in_test
+      guard_step52_no_post_closure_report_churn
+      guard_step52_resource_decl_assignment_tracking
+      guard_step52_resource_move_assignment_tracking
+      guard_step52_resource_destructor_call_tracking
+      guard_step52_resource_double_close_enforcement
+      guard_step52_resource_close_after_move_enforcement
+      guard_step52_resource_destructor_scheduled_enforcement
+      guard_step52_resource_missing_cleanup_diagnostic
+      guard_step52_resource_missing_cleanup_first_report
+      guard_step52_resource_cleanup_boundary_validation
+      guard_step52_resource_cleanup_boundary_terminal_states
+      guard_step52_resource_cleanup_boundary_mixed_states
+      guard_step52_resource_scope_exit_cleanup_boundary
+      guard_step52_resource_function_exit_cleanup_integration
+      guard_step52_resource_return_cleanup_integration
+      guard_step52_resource_missing_cleanup_dedup
+      guard_step52_resource_return_cleanup_dedup_integration
+      guard_step52_resource_return_cleanup_terminal_states
+      guard_step52_resource_return_cleanup_moved_terminal_states
+      guard_step52_resource_function_exit_terminal_states
+      guard_step52_resource_function_exit_moved_terminal_states
+      guard_step52_resource_return_cleanup_mixed_terminal_states
+      guard_step52_resource_function_exit_mixed_terminal_states
+      guard_step52_resource_return_cleanup_scheduled_terminal_states
+      guard_step52_resource_scope_exit_scheduled_terminal_states
+      guard_step52_resource_return_cleanup_mixed_scheduled_terminal_states
+      guard_step52_resource_scope_exit_mixed_scheduled_terminal_states
+      guard_step52_resource_use_after_move_enforcement
+    )
+    for needle in "${needles[@]}"; do
+      rg -n -F "$needle" justfile justfile-step52 justfile-reports Makefile tests/test_runner.gst compiler/*.gst >/dev/null
+    done
+    rg -n -F 'compiler/typechecker_resource_return_cleanup_mixed_scheduled_terminal_states_test_entry.gst' tests/test_runner.gst justfile-step52 >/dev/null
+    rg -n -F 'compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst' tests/test_runner.gst justfile-step52 >/dev/null
+    rg -n -F 'return cleanup mixed scheduled terminal-state integration' justfile-reports >/dev/null
+    rg -n -F 'scope-exit mixed scheduled terminal-state integration' justfile-reports >/dev/null
+    echo "✅ Step 5.2 surface-only guard batch passed."
+
 make-test-guards-step44-text: guard_parser_high_level_raw_casts guard_step44_no_high_level_raw_collection_casts
 
 make-test-suite:
