@@ -35,11 +35,11 @@ func main() {
 
     typechecker.check_statement(decl_idx_return_scheduled_terminal, &env_return_scheduled_terminal, scope_return_scheduled_terminal, ctx);
 
-    if typechecker.env_try_schedule_open_linear_resource_destructor(&env_return_scheduled_terminal, "main__return_scheduled_resource", ctx) != 1 {
+    if typechecker.env_try_schedule_open_linear_resource_destructor(&env_return_scheduled_terminal, "return_scheduled_resource", ctx) != 1 {
         os.LogStr("Error: return scheduled terminal fixture failed to schedule destructor");
         os.Exit(1);
     }
-    if typechecker.env_open_linear_resource_is_destructor_scheduled(&env_return_scheduled_terminal, "main__return_scheduled_resource", ctx) != 1 {
+    if typechecker.env_open_linear_resource_is_destructor_scheduled(&env_return_scheduled_terminal, "return_scheduled_resource", ctx) != 1 {
         os.LogStr("Error: return scheduled terminal fixture must start destructor-scheduled before return cleanup");
         os.Exit(1);
     }
@@ -87,7 +87,7 @@ func main() {
         os.LogStr(env_return_scheduled_terminal.errors[0].message);
         os.Exit(1);
     }
-    if typechecker.env_open_linear_resource_is_destructor_scheduled(&env_return_scheduled_terminal, "main__return_scheduled_resource", ctx) != 1 {
+    if typechecker.env_open_linear_resource_is_destructor_scheduled(&env_return_scheduled_terminal, "return_scheduled_resource", ctx) != 1 {
         os.LogStr("Error: return cleanup should preserve destructor-scheduled terminal state");
         os.Exit(1);
     }
