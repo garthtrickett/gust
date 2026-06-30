@@ -381,6 +381,12 @@ guard_step52_resource_return_cleanup_moved_terminal_states:
     rg -n -F 'env_return_moved_terminal.function_registry.Insert("main__close_return_moved_payload", destructor_sig_return_moved_terminal)' compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst
     rg -n -F 'return_moved_missing_cleanup_count != 0' compiler/typechecker_resource_return_cleanup_moved_terminal_states_test_entry.gst
     rg -n -F 'guard_step52_resource_return_cleanup_moved_terminal_states' justfile
+    rg -n -F 'Step 5.2T tracked Resource return cleanup dedup integration guard' justfile-reports
+    rg -n -F 'Step 5.2U tracked Resource return cleanup terminal-state integration guard' justfile-reports
+    rg -n -F 'Step 5.2V tracked Resource return cleanup moved terminal-state integration guard' justfile-reports
+    rg -n -F 'return cleanup dedup integration' justfile-reports
+    rg -n -F 'return cleanup terminal-state integration' justfile-reports
+    rg -n -F 'return cleanup moved terminal-state integration' justfile-reports
     return_cleanup_moved_terminal_runner_count="$(rg -n 'mut t_step52_resource_return_cleanup_moved_terminal_states' tests/test_runner.gst | wc -l)"
     if [ "$return_cleanup_moved_terminal_runner_count" != "1" ]; then
       echo "❌ Step 5.2V guard failed: expected exactly one return cleanup moved terminal-state test-runner entry, found $return_cleanup_moved_terminal_runner_count"
