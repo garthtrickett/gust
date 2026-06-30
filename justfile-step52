@@ -265,6 +265,7 @@ guard_step52_resource_function_exit_cleanup_integration:
     rg -n -F 'FunctionDecl' compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst
     rg -n -F 'function_exit_resource' compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst
     rg -n -F 'LinearResourceMissingCleanup' compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst
+    rg -n -F 'found_function_exit_cleanup_error' compiler/typechecker_resource_function_exit_cleanup_integration_test_entry.gst
     rg -n -F 'guard_step52_resource_function_exit_cleanup_integration' justfile
     function_exit_cleanup_runner_count="$(rg -n 'mut t_step52_resource_function_exit_cleanup_integration' tests/test_runner.gst | wc -l)"
     if [ "$function_exit_cleanup_runner_count" != "1" ]; then

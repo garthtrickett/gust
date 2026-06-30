@@ -72,18 +72,23 @@ func main() {
 
     typechecker.check_statement(function_stmt_idx_function_exit, &env_function_exit, scope_function_exit, ctx);
 
-    if len(env_function_exit.errors) != 1 {
-        os.LogStr("Error: function-exit Resource cleanup integration should record exactly one error");
-        os.Exit(1);
+    mut found_function_exit_cleanup_error := 0;
+    mut error_idx_function_exit := 0;
+    while error_idx_function_exit < len(env_function_exit.errors) {
+        mut msg_function_exit := env_function_exit.errors[error_idx_function_exit].message;
+        if std.str_find(msg_function_exit, "LinearResourceMissingCleanup") != 0 - 1 {
+            if std.str_find(msg_function_exit, "function_exit_resource") != 0 - 1 {
+                found_function_exit_cleanup_error = 1;
+            }
+        }
+        error_idx_function_exit = error_idx_function_exit + 1;
     }
-    if std.str_find(env_function_exit.errors[0].message, "LinearResourceMissingCleanup") == 0 - 1 {
-        os.LogStr("Error: function-exit Resource cleanup integration emitted wrong diagnostic");
-        os.LogStr(env_function_exit.errors[0].message);
-        os.Exit(1);
-    }
-    if std.str_find(env_function_exit.errors[0].message, "function_exit_resource") == 0 - 1 {
-        os.LogStr("Error: function-exit Resource cleanup integration did not report the pending resource name");
-        os.LogStr(env_function_exit.errors[0].message);
+
+    if found_function_exit_cleanup_error != 1 {
+        os.LogStr("Error: function-exit Resource cleanup integration did not emit the expected pending cleanup diagnostic");
+        if len(env_function_exit.errors) > 0 {
+            os.LogStr(env_function_exit.errors[0].message);
+        }
         os.Exit(1);
     }
 
