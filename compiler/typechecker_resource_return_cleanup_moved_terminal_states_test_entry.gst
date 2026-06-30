@@ -130,6 +130,7 @@ func main() {
     mut body_statements_return_moved_terminal: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
     body_statements_return_moved_terminal.Push(source_decl_return_moved_terminal);
     body_statements_return_moved_terminal.Push(target_decl_return_moved_terminal);
+    body_statements_return_moved_terminal.Push(close_stmt_return_moved_terminal);
     body_statements_return_moved_terminal.Push(assign_stmt_return_moved_terminal);
     body_statements_return_moved_terminal.Push(close_stmt_return_moved_terminal);
     body_statements_return_moved_terminal.Push(return_stmt_return_moved_terminal);

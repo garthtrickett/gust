@@ -123,6 +123,7 @@ func main() {
     mut body_statements_function_moved_terminal: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
     body_statements_function_moved_terminal.Push(source_decl_function_moved_terminal);
     body_statements_function_moved_terminal.Push(target_decl_function_moved_terminal);
+    body_statements_function_moved_terminal.Push(close_stmt_function_moved_terminal);
     body_statements_function_moved_terminal.Push(assign_stmt_function_moved_terminal);
     body_statements_function_moved_terminal.Push(close_stmt_function_moved_terminal);
     mut body_statements_idx_function_moved_terminal: Index[std.Vector[ast.Statement[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
