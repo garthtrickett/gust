@@ -499,6 +499,8 @@ guard_step52_resource_return_cleanup_scheduled_terminal_states:
     rg -n -F 'typechecker.check_statement(return_stmt_idx_return_scheduled_terminal, &env_return_scheduled_terminal, scope_return_scheduled_terminal, ctx)' compiler/typechecker_resource_return_cleanup_scheduled_terminal_states_test_entry.gst
     rg -n -F 'return_scheduled_missing_cleanup_count != 0' compiler/typechecker_resource_return_cleanup_scheduled_terminal_states_test_entry.gst
     rg -n -F 'guard_step52_resource_return_cleanup_scheduled_terminal_states' justfile
+    rg -n -F 'Step 5.2AA tracked Resource return cleanup destructor-scheduled terminal-state integration guard' justfile-reports
+    rg -n -F 'return cleanup destructor-scheduled terminal-state integration' justfile-reports
     return_cleanup_scheduled_terminal_runner_count="$(rg -n 'mut t_step52_resource_return_cleanup_scheduled_terminal_states' tests/test_runner.gst | wc -l)"
     if [ "$return_cleanup_scheduled_terminal_runner_count" != "1" ]; then
       echo "❌ Step 5.2AA guard failed: expected exactly one return cleanup scheduled terminal-state test-runner entry, found $return_cleanup_scheduled_terminal_runner_count"
