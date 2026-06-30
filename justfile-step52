@@ -37,6 +37,11 @@ guard_step52_resource_assignment_auto_registration:
     just guard-positive compiler/typechecker_resource_assignment_auto_registration_test_entry.gst step52_resource_assignment_auto_registration
     echo "✅ Step 5.2 Resource assignment auto-registration guard passed."
 
+guard_step52_resource_move_assignment_transfer:
+    echo "🔒 Checking Step 5.2 Resource-to-Resource move assignment transfer..."
+    just guard-positive compiler/typechecker_resource_move_assignment_transfer_test_entry.gst step52_resource_move_assignment_transfer
+    echo "✅ Step 5.2 Resource-to-Resource move assignment transfer guard passed."
+
 guard_step52_resource_decl_assignment_tracking:
     echo "🔒 Checking Step 5.2 Resource declaration/assignment tracking integration..."
     just guard-positive compiler/typechecker_resource_decl_assignment_tracking_test_entry.gst step52_resource_decl_assignment_tracking

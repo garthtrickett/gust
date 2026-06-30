@@ -2193,6 +2193,13 @@ func main() {
     t_step52_resource_assignment_auto_registration.expected = "SUCCESS: compiler-backed Resource assignment auto-registration verified!";
     tests.Push(t_step52_resource_assignment_auto_registration);
 
+    mut t_step52_resource_move_assignment_transfer: Test[ctx];
+    t_step52_resource_move_assignment_transfer.path = "compiler/typechecker_resource_move_assignment_transfer_test_entry.gst";
+    t_step52_resource_move_assignment_transfer.is_negative = 0;
+    t_step52_resource_move_assignment_transfer.is_substring = 1;
+    t_step52_resource_move_assignment_transfer.expected = "SUCCESS: compiler-backed Resource-to-Resource move assignment transfer verified!";
+    tests.Push(t_step52_resource_move_assignment_transfer);
+
     mut t_step52_resource_decl_assignment_tracking: Test[ctx];
     t_step52_resource_decl_assignment_tracking.path = "compiler/typechecker_resource_decl_assignment_tracking_test_entry.gst";
     t_step52_resource_decl_assignment_tracking.is_negative = 0;
