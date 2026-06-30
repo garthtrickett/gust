@@ -352,6 +352,8 @@ guard_step52_resource_return_cleanup_terminal_states:
     rg -n -F 'compiler/typechecker_resource_return_cleanup_terminal_states_test_entry.gst' tests/test_runner.gst
     rg -n -F 'return_terminal_resource' compiler/typechecker_resource_return_cleanup_terminal_states_test_entry.gst
     rg -n -F 'main__close_return_terminal_payload' compiler/typechecker_resource_return_cleanup_terminal_states_test_entry.gst
+    rg -n -F 'call_close_return_terminal.Call.function = callee_close_idx_return_terminal' compiler/typechecker_resource_return_cleanup_terminal_states_test_entry.gst
+    rg -n -F 'call_close_return_terminal.Call.arguments = args_close_idx_return_terminal' compiler/typechecker_resource_return_cleanup_terminal_states_test_entry.gst
     rg -n -F 'return_terminal_missing_cleanup_count' compiler/typechecker_resource_return_cleanup_terminal_states_test_entry.gst
     rg -n -F 'return_terminal_missing_cleanup_count != 0' compiler/typechecker_resource_return_cleanup_terminal_states_test_entry.gst
     rg -n -F 'guard_step52_resource_return_cleanup_terminal_states' justfile

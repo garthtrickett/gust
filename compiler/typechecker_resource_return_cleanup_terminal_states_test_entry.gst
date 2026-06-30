@@ -33,7 +33,7 @@ func main() {
 
     mut callee_close_return_terminal: ast.Expression[ctx];
     unsafe {
-        callee_close_return_terminal.tag = 8; // Identifier
+        callee_close_return_terminal.tag = 0; // Identifier
         callee_close_return_terminal.Identifier.name = "main__close_return_terminal_payload";
         callee_close_return_terminal.Identifier.span = span_return_terminal;
     }
@@ -42,23 +42,21 @@ func main() {
 
     mut arg_close_return_terminal: ast.Expression[ctx];
     unsafe {
-        arg_close_return_terminal.tag = 8; // Identifier
+        arg_close_return_terminal.tag = 0; // Identifier
         arg_close_return_terminal.Identifier.name = "return_terminal_resource";
         arg_close_return_terminal.Identifier.span = span_return_terminal;
     }
-    mut arg_close_idx_return_terminal: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(arg_close_idx_return_terminal, arg_close_return_terminal);
 
-    mut args_close_return_terminal: std.Vector[Index[ast.Expression[ctx], ctx], ctx] := std.VectorNew(ctx);
-    args_close_return_terminal.Push(arg_close_idx_return_terminal);
-    mut args_close_idx_return_terminal: Index[std.Vector[Index[ast.Expression[ctx], ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    mut args_close_return_terminal: std.Vector[ast.Expression[ctx], ctx] := std.VectorNew(ctx);
+    args_close_return_terminal.Push(arg_close_return_terminal);
+    mut args_close_idx_return_terminal: Index[std.Vector[ast.Expression[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(args_close_idx_return_terminal, args_close_return_terminal);
 
     mut call_close_return_terminal: ast.Expression[ctx];
     unsafe {
-        call_close_return_terminal.tag = 9; // Call
-        call_close_return_terminal.Call.callee = callee_close_idx_return_terminal;
-        call_close_return_terminal.Call.args = args_close_idx_return_terminal;
+        call_close_return_terminal.tag = 12; // Call
+        call_close_return_terminal.Call.function = callee_close_idx_return_terminal;
+        call_close_return_terminal.Call.arguments = args_close_idx_return_terminal;
         call_close_return_terminal.Call.span = span_return_terminal;
     }
     mut call_close_idx_return_terminal: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
