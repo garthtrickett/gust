@@ -462,3 +462,24 @@ guard_step52_resource_return_cleanup_mixed_terminal_states:
     fi
     just guard-positive compiler/typechecker_resource_return_cleanup_mixed_terminal_states_test_entry.gst step52_resource_return_cleanup_mixed_terminal_states
     echo "✅ Step 5.2Y tracked Resource return cleanup mixed terminal-state integration guard passed."
+
+guard_step52_resource_function_exit_mixed_terminal_states:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2Z tracked Resource function-exit mixed terminal-state integration."
+    rg -n -F 'compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst' tests/test_runner.gst
+    rg -n -F 'function_mixed_pending_resource' compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst
+    rg -n -F 'function_mixed_closed_resource' compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst
+    rg -n -F 'call_close_function_mixed_terminal.Call.function = callee_close_idx_function_mixed_terminal' compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst
+    rg -n -F 'env_function_mixed_terminal.function_registry.Insert("main__close_function_mixed_payload", destructor_sig_function_mixed_terminal)' compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst
+    rg -n -F 'pending_missing_cleanup_count != 1' compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst
+    rg -n -F 'closed_missing_cleanup_count != 0' compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst
+    rg -n -F 'guard_step52_resource_function_exit_mixed_terminal_states' justfile
+    function_exit_mixed_terminal_runner_count="$(rg -n 'mut t_step52_resource_function_exit_mixed_terminal_states' tests/test_runner.gst | wc -l)"
+    if [ "$function_exit_mixed_terminal_runner_count" != "1" ]; then
+      echo "❌ Step 5.2Z guard failed: expected exactly one function-exit mixed terminal-state test-runner entry, found $function_exit_mixed_terminal_runner_count"
+      rg -n 'mut t_step52_resource_function_exit_mixed_terminal_states' tests/test_runner.gst || true
+      exit 1
+    fi
+    just guard-positive compiler/typechecker_resource_function_exit_mixed_terminal_states_test_entry.gst step52_resource_function_exit_mixed_terminal_states
+    echo "✅ Step 5.2Z tracked Resource function-exit mixed terminal-state integration guard passed."
