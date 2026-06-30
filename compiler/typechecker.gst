@@ -6396,7 +6396,8 @@ func env_track_resource_assignment_if_applicable(env: *TypeEnvironment[ctx], var
             return 0;
         }
     }
-    return env_register_open_resource_assignment(env, variable_name, assigned_resource_type, ctx);
+    env_register_open_resource_assignment(env, variable_name, assigned_resource_type, ctx);
+    return 1;
 }
 
 func env_track_resource_move_assignment_if_applicable(env: *TypeEnvironment[ctx], target_variable_name: str, source_variable_name: str, ctx: &Arena) int {
@@ -8645,8 +8646,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             if len(assignment_lhs_resource_name_step52g) > 0 {
-                mut assignment_resource_registered_step52ah := env_track_resource_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, val_type, stmt.Assignment.span, ctx);
-                if assignment_resource_registered_step52ah == 1 {
+                mut assignment_resource_move_allowed_step52ah := env_track_resource_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, val_type, stmt.Assignment.span, ctx);
+                if assignment_resource_move_allowed_step52ah == 1 {
                     env_track_resource_move_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, assignment_rhs_resource_name_step52h, ctx);
                 }
             }
