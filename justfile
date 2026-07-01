@@ -95,6 +95,7 @@ guard_step52_transfer_state_surface_inventory:
     rg -n -F 'compiler/typechecker_resource_reassignment_terminal_required_test_entry.gst' tests/test_runner.gst justfile-step52 >/dev/null
     rg -n -F 'compiler/typechecker_resource_transfer_transition_table_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/typechecker_resource_transfer_real_path_move_test_entry.gst' justfile >/dev/null
+    rg -n -F 'guard_step52_transfer_state_matrix' justfile justfile-reports >/dev/null
     echo "✅ Step 5.2 transfer-state surface inventory guard passed."
 
 guard_step52_transfer_state_transition_table:
@@ -119,6 +120,23 @@ guard_step52_transfer_state_real_path_move:
     rg -n -F 'compiler/typechecker_resource_transfer_real_path_move_test_entry.gst' justfile >/dev/null
     just guard-positive compiler/typechecker_resource_transfer_real_path_move_test_entry.gst step52_transfer_state_real_path_move
     echo "✅ Step 5.2 real move-assignment transfer-state validation guard passed."
+
+guard_step52_transfer_state_matrix:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2 transfer-state matrix guard..."
+    rg -n -F 'guard_step52_transfer_state_transition_table' justfile justfile-reports >/dev/null
+    rg -n -F 'guard_step52_transfer_state_real_path_move' justfile justfile-reports >/dev/null
+    rg -n -F 'owned Resource should allow move transition' compiler/typechecker_resource_transfer_transition_table_test_entry.gst >/dev/null
+    rg -n -F 'moved Resource should reject move transition' compiler/typechecker_resource_transfer_transition_table_test_entry.gst >/dev/null
+    rg -n -F 'closed Resource should reject move transition' compiler/typechecker_resource_transfer_transition_table_test_entry.gst >/dev/null
+    rg -n -F 'destructor-scheduled Resource should reject move transition' compiler/typechecker_resource_transfer_transition_table_test_entry.gst >/dev/null
+    rg -n -F 'borrowed Resource should reject move transition' compiler/typechecker_resource_transfer_transition_table_test_entry.gst >/dev/null
+    rg -n -F 'untracked Resource should reject move transition' compiler/typechecker_resource_transfer_transition_table_test_entry.gst >/dev/null
+    rg -n -F 'move-after-scheduled Resource source' compiler/typechecker_resource_transfer_real_path_move_test_entry.gst >/dev/null
+    just guard_step52_transfer_state_transition_table
+    just guard_step52_transfer_state_real_path_move
+    echo "✅ Step 5.2 transfer-state matrix guard passed."
 
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
@@ -178,6 +196,7 @@ make-test-guards:
       guard_step52_transfer_state_surface_inventory
       guard_step52_transfer_state_transition_table
       guard_step52_transfer_state_real_path_move
+      guard_step52_transfer_state_matrix
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
@@ -239,6 +258,7 @@ make-test-guards-step52-surface:
       guard_step52_transfer_state_surface_inventory
       guard_step52_transfer_state_transition_table
       guard_step52_transfer_state_real_path_move
+      guard_step52_transfer_state_matrix
     )
     for needle in "${needles[@]}"; do
       rg -n -F "$needle" justfile justfile-step52 justfile-reports Makefile tests/test_runner.gst compiler/*.gst >/dev/null
@@ -379,6 +399,7 @@ check-step52:
     just guard_step52_transfer_state_surface_inventory
     just guard_step52_transfer_state_transition_table
     just guard_step52_transfer_state_real_path_move
+    just guard_step52_transfer_state_matrix
     just run-step52-positive-batch
     just run-step52-negative-batch
     make test
