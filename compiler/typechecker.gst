@@ -5834,6 +5834,75 @@ func env_open_linear_resource_destructor_name(env: *TypeEnvironment[ctx], variab
     }
 }
 
+func env_defer_statement_resource_destructor_candidate_name(env: *TypeEnvironment[ctx], stmt_idx: Index[ast.Statement[ctx], ctx], ctx: &Arena) str {
+    unsafe {
+        if stmt_idx == empty[Index[ast.Statement[ctx], ctx]] {
+            return "";
+        }
+
+        mut stmt := ctx[stmt_idx];
+        if stmt.tag != 11 { // Defer
+            return "";
+        }
+
+        mut defer_expr_idx := stmt.Defer.expr;
+        if defer_expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return "";
+        }
+
+        mut defer_expr := ctx[defer_expr_idx];
+        if defer_expr.tag != 12 { // Call
+            return "";
+        }
+
+        mut callee_idx := defer_expr.Call.function;
+        if callee_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return "";
+        }
+
+        mut callee_expr := ctx[callee_idx];
+        if callee_expr.tag != 0 { // Identifier
+            return "";
+        }
+
+        mut args: std.Vector[ast.Expression[ctx], ctx] := ctx[defer_expr.Call.arguments];
+        if len(args) != 1 {
+            return "";
+        }
+
+        mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx.Set(arg_idx, args[0]);
+        mut arg_expr := ctx[arg_idx];
+        if arg_expr.tag != 0 { // Identifier
+            return "";
+        }
+
+        mut resource_name := arg_expr.Identifier.name;
+        if env_open_linear_resource_is_tracked(env, resource_name, ctx) == 0 {
+            return "";
+        }
+
+        mut registered_destructor_name := env_open_linear_resource_destructor_name(env, resource_name, ctx);
+        if len(registered_destructor_name) == 0 {
+            return "";
+        }
+
+        if std.str_eq(callee_expr.Identifier.name, registered_destructor_name) == 0 {
+            return "";
+        }
+
+        return std.Clone(ctx, resource_name);
+    }
+}
+
+func env_defer_statement_is_resource_destructor_candidate(env: *TypeEnvironment[ctx], stmt_idx: Index[ast.Statement[ctx], ctx], ctx: &Arena) int {
+    mut candidate_name := env_defer_statement_resource_destructor_candidate_name(env, stmt_idx, ctx);
+    if len(candidate_name) > 0 {
+        return 1;
+    }
+    return 0;
+}
+
 func env_mark_open_linear_resource_closed(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
     unsafe {
         mut lookup := (*env).open_linear_resources.Get(variable_name);
