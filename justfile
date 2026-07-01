@@ -201,6 +201,19 @@ guard_step52_defer_function_body_scheduled_terminal:
     just guard-positive compiler/typechecker_resource_defer_function_body_scheduled_terminal_test_entry.gst step52_defer_function_body_scheduled_terminal
     echo "✅ Step 5.2 real function-body scheduled Resource return/implicit-exit cleanup guard passed."
 
+guard_step52_open_directories_legacy_freeze:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2 legacy open_directories behavior freeze..."
+    rg -n -F 'open_directories' compiler/typechecker.gst compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
+    rg -n -F 'Directory resource variable' compiler/typechecker.gst compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
+    rg -n -F 'must be cleanly closed with os.CloseDir before leaving local scope' compiler/typechecker.gst compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
+    rg -n -F 'legacy os.CloseDir should clear open_directories entry' compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
+    rg -n -F 'legacy open_directories move-open-directory diagnostic drifted' compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
+    rg -n -F 'legacy open_directories function-exit leak diagnostic drifted' compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
+    just guard-positive compiler/typechecker_open_directories_legacy_freeze_test_entry.gst step52_open_directories_legacy_freeze
+    echo "✅ Step 5.2 legacy open_directories behavior freeze guard passed."
+
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
 # Report aliases stay informational; Makefile policy guards keep reports out of make test.
@@ -265,6 +278,7 @@ make-test-guards:
       guard_step52_defer_real_path_scheduling
       guard_step52_defer_close_manual_interaction
       guard_step52_defer_function_body_scheduled_terminal
+      guard_step52_open_directories_legacy_freeze
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
@@ -332,6 +346,7 @@ make-test-guards-step52-surface:
       guard_step52_defer_real_path_scheduling
       guard_step52_defer_close_manual_interaction
       guard_step52_defer_function_body_scheduled_terminal
+      guard_step52_open_directories_legacy_freeze
     )
     for needle in "${needles[@]}"; do
       rg -n -F "$needle" justfile justfile-step52 justfile-reports Makefile tests/test_runner.gst compiler/*.gst >/dev/null
@@ -478,6 +493,7 @@ check-step52:
     just guard_step52_defer_real_path_scheduling
     just guard_step52_defer_close_manual_interaction
     just guard_step52_defer_function_body_scheduled_terminal
+    just guard_step52_open_directories_legacy_freeze
     just run-step52-positive-batch
     just run-step52-negative-batch
     make test
