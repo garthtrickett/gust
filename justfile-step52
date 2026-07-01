@@ -73,7 +73,8 @@ guard_step52_resource_double_close_enforcement:
       exit 1
     fi
     rg -n 'LinearResourceDoubleClose' compiler/typechecker.gst
-    rg -n -F 'env_report_linear_resource_double_close(env, resource_name_step52i, first_arg_span_step52h, ctx)' compiler/typechecker.gst
+    rg -n -F 'env_report_linear_resource_double_close' compiler/typechecker.gst
+    rg -n -F 'env_report_linear_resource_close_transition_rejected(env, resource_name_step52i, first_arg_span_step52h, ctx)' compiler/typechecker.gst
     rg -n -F 'compiler/typechecker_resource_double_close_rejected_test_entry.gst' tests/test_runner.gst
     rg -n -F 'guard_step52_resource_double_close_enforcement' justfile
     double_close_runner_count="$(rg -n 'mut t_step52_resource_double_close_rejected' tests/test_runner.gst | wc -l)"
