@@ -539,7 +539,7 @@ func step51g_non_laundering_enforced_safe_brand_target_violation(target_t: ast.T
     if step51g_non_laundering_type_is_safe_brand_target(target_t, ctx) == 0 {
         return 0;
     }
-    if step51g_non_laundering_provenance_requires_unsafe_boundary(prov, ctx) == 1 {
+    if step51g_non_laundering_provenance_blocks_safe_brand(prov, ctx) == 1 {
         return 1;
     }
     return 0;
@@ -550,9 +550,7 @@ func step51g_non_laundering_deferred_safe_brand_target_violation(target_t: ast.T
         return 0;
     }
     if step51g_non_laundering_provenance_blocks_safe_brand(prov, ctx) == 1 {
-        if step51g_non_laundering_provenance_requires_unsafe_boundary(prov, ctx) == 0 {
-            return 1;
-        }
+        return 0;
     }
     return 0;
 }

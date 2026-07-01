@@ -56,16 +56,16 @@ func main() {
         os.Exit(1);
     }
 
-    if typechecker.step51g_non_laundering_enforced_safe_brand_target_violation(branded_index_target_51g5, unknown_prov_51g5, ctx) != 0 {
-        os.LogStr("Error: Step 5.1G enforced target policy rejected unknown provenance before deferred unknown-origin enforcement");
+    if typechecker.step51g_non_laundering_enforced_safe_brand_target_violation(branded_index_target_51g5, unknown_prov_51g5, ctx) != 1 {
+        os.LogStr("Error: Step 5.1G enforced target policy did not reject unknown provenance after safe constructor coverage");
         os.Exit(1);
     }
-    if typechecker.step51g_non_laundering_deferred_safe_brand_target_violation(branded_index_target_51g5, unknown_prov_51g5, ctx) != 1 {
-        os.LogStr("Error: Step 5.1G deferred target policy did not classify unknown safe-brand target as deferred");
+    if typechecker.step51g_non_laundering_deferred_safe_brand_target_violation(branded_index_target_51g5, unknown_prov_51g5, ctx) != 0 {
+        os.LogStr("Error: Step 5.1G retired deferred target policy still classified unknown safe-brand target as deferred");
         os.Exit(1);
     }
     if typechecker.step51g_non_laundering_deferred_safe_brand_target_violation(unbranded_index_target_51g5, unknown_prov_51g5, ctx) != 0 {
-        os.LogStr("Error: Step 5.1G deferred target policy classified unbranded unknown target as deferred violation");
+        os.LogStr("Error: Step 5.1G retired deferred target policy classified unbranded unknown target as deferred violation");
         os.Exit(1);
     }
 
@@ -81,12 +81,12 @@ func main() {
         os.LogStr("Error: Step 5.1G target diagnostic kind did not classify sandbox-derived provenance as enforced violation");
         os.Exit(1);
     }
-    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_index_target_51g5, unknown_prov_51g5, ctx) != 2 {
-        os.LogStr("Error: Step 5.1G target diagnostic kind did not classify unknown branded Index provenance as deferred violation");
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_index_target_51g5, unknown_prov_51g5, ctx) != 1 {
+        os.LogStr("Error: Step 5.1G target diagnostic kind did not classify unknown branded Index provenance as enforced violation");
         os.Exit(1);
     }
-    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_ref_target_51g5, unknown_prov_51g5, ctx) != 2 {
-        os.LogStr("Error: Step 5.1G target diagnostic kind did not classify unknown branded Reference provenance as deferred violation");
+    if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_ref_target_51g5, unknown_prov_51g5, ctx) != 1 {
+        os.LogStr("Error: Step 5.1G target diagnostic kind did not classify unknown branded Reference provenance as enforced violation");
         os.Exit(1);
     }
     if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(unbranded_index_target_51g5, raw_prov_51g5, ctx) != 0 {
@@ -109,8 +109,8 @@ func main() {
         os.Exit(1);
     }
     mut report_kind_unknown_51g5 := typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_index_target_51g5, unknown_prov_51g5, ctx);
-    if report_kind_unknown_51g5 == 1 {
-        os.LogStr("Error: Step 5.1G reporter diagnostic kind would report deferred unknown-origin branded target violation");
+    if report_kind_unknown_51g5 != 1 {
+        os.LogStr("Error: Step 5.1G reporter diagnostic kind would not report unknown-origin branded target violation");
         os.Exit(1);
     }
     mut report_kind_safe_51g5 := typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind(branded_ref_target_51g5, safe_prov_51g5, ctx);
@@ -133,7 +133,7 @@ func main() {
         os.Exit(1);
     }
     if typechecker.step51g_non_laundering_safe_brand_target_diagnostic_kind_reports(2) != 0 {
-        os.LogStr("Error: Step 5.1G target reportability helper reported deferred unknown-origin diagnostic kind");
+        os.LogStr("Error: Step 5.1G target reportability helper reported retired deferred diagnostic kind");
         os.Exit(1);
     }
 
@@ -145,8 +145,8 @@ func main() {
         os.LogStr("Error: Step 5.1G target should-report helper did not report sandbox-derived branded target violation");
         os.Exit(1);
     }
-    if typechecker.step51g_non_laundering_safe_brand_target_should_report(branded_index_target_51g5, unknown_prov_51g5, ctx) != 0 {
-        os.LogStr("Error: Step 5.1G target should-report helper reported deferred unknown-origin branded target violation");
+    if typechecker.step51g_non_laundering_safe_brand_target_should_report(branded_index_target_51g5, unknown_prov_51g5, ctx) != 1 {
+        os.LogStr("Error: Step 5.1G target should-report helper did not report unknown-origin branded target violation");
         os.Exit(1);
     }
     if typechecker.step51g_non_laundering_safe_brand_target_should_report(branded_ref_target_51g5, safe_prov_51g5, ctx) != 0 {
