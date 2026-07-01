@@ -95,8 +95,12 @@ func main() {
         }
         os.Exit(1);
     }
-    mut close_shadow_expr_node := ctx[close_shadow_expr];
-    typechecker.env_track_resource_destructor_call_if_applicable(&env_decl_shadow, "os.CloseDir", close_shadow_expr_node.Call.arguments, scope_decl_shadow, ctx);
+    mut close_shadow_args_for_helper: Index[std.Vector[ast.Expression[ctx], ctx], ctx];
+    unsafe {
+        mut close_shadow_expr_node := ctx[close_shadow_expr];
+        close_shadow_args_for_helper = close_shadow_expr_node.Call.arguments;
+    }
+    typechecker.env_track_resource_destructor_call_if_applicable(&env_decl_shadow, "os.CloseDir", close_shadow_args_for_helper, scope_decl_shadow, ctx);
     if env_has_error_containing(&env_decl_shadow, "LinearResourceDoubleClose", ctx) == 1 {
         os.LogStr("Error: direct generic destructor tracking helper should ignore os.CloseDir directory shadows");
         if len(env_decl_shadow.errors) > 0 {
