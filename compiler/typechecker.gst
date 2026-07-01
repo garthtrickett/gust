@@ -9502,6 +9502,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         }
 
         if stmt.tag == 11 { // Defer
+            mut defer_resource_name_step52ai := env_defer_statement_resource_destructor_candidate_name(env, stmt_idx, ctx);
+            if len(defer_resource_name_step52ai) > 0 {
+                env_try_schedule_open_linear_resource_destructor(env, defer_resource_name_step52ai, ctx);
+                return res;
+            }
+
             mut expr_idx := stmt.Defer.expr;
             check_expression(expr_idx, env, scope, ctx);
 

@@ -166,6 +166,16 @@ guard_step52_defer_destructor_candidate_recognizer:
     just guard-positive compiler/typechecker_resource_defer_destructor_candidate_test_entry.gst step52_defer_destructor_candidate_recognizer
     echo "✅ Step 5.2 semantic defer destructor candidate recognizer guard passed."
 
+guard_step52_defer_real_path_scheduling:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2 real Resource defer scheduling path..."
+    rg -n -F 'env_try_schedule_open_linear_resource_destructor(env, defer_resource_name_step52ai, ctx);' compiler/typechecker.gst >/dev/null
+    rg -n -F 'real canonical Resource defer should mark the Resource destructor_scheduled' compiler/typechecker_resource_defer_real_path_scheduling_test_entry.gst >/dev/null
+    rg -n -F 'real Resource defer scheduling must not mark the Resource closed' compiler/typechecker_resource_defer_real_path_scheduling_test_entry.gst >/dev/null
+    just guard-positive compiler/typechecker_resource_defer_real_path_scheduling_test_entry.gst step52_defer_real_path_scheduling
+    echo "✅ Step 5.2 real Resource defer scheduling path guard passed."
+
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
 # Report aliases stay informational; Makefile policy guards keep reports out of make test.
@@ -227,6 +237,7 @@ make-test-guards:
       guard_step52_transfer_state_matrix
       guard_step52_defer_canonical_syntax_surface
       guard_step52_defer_destructor_candidate_recognizer
+      guard_step52_defer_real_path_scheduling
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
@@ -291,6 +302,7 @@ make-test-guards-step52-surface:
       guard_step52_transfer_state_matrix
       guard_step52_defer_canonical_syntax_surface
       guard_step52_defer_destructor_candidate_recognizer
+      guard_step52_defer_real_path_scheduling
     )
     for needle in "${needles[@]}"; do
       rg -n -F "$needle" justfile justfile-step52 justfile-reports Makefile tests/test_runner.gst compiler/*.gst >/dev/null
@@ -434,6 +446,7 @@ check-step52:
     just guard_step52_transfer_state_matrix
     just guard_step52_defer_canonical_syntax_surface
     just guard_step52_defer_destructor_candidate_recognizer
+    just guard_step52_defer_real_path_scheduling
     just run-step52-positive-batch
     just run-step52-negative-batch
     make test
