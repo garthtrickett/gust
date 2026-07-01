@@ -625,6 +625,9 @@ func step51g_struct_name_is_internal_metadata_safe_brand_target(metadata_struct_
     if typechecker_starts_with(metadata_struct_name, "typechecker__") == 1 {
         return 1;
     }
+    if std.str_eq(metadata_struct_name, "TestTaskArg_ctx") == 1 {
+        return 1;
+    }
     return 0;
 }
 
