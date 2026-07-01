@@ -5455,6 +5455,12 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
         }
     }
 
+
+func env_register_directory_resource_parity_metadata(env: *TypeEnvironment[ctx], ctx: &Arena) {
+    env_register_struct_linear_metadata(env, "os_Dir_ctx", 1, ctx);
+    env_register_struct_linear_destructor(env, "os_Dir_ctx", "os.CloseDir", ctx);
+}
+
 func env_new(ctx: &Arena) TypeEnvironment[ctx] { 
     mut env_idx: Index[TypeEnvironment[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe { 
@@ -5499,6 +5505,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_register_std_templates(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
         env_register_std_structs(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
         env_register_std_functions(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
+        env_register_directory_resource_parity_metadata(&ctx[env_idx] as *TypeEnvironment[ctx], ctx);
 
         return ctx[env_idx];
     }
