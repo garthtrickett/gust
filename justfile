@@ -85,6 +85,7 @@ guard_step52_transfer_state_surface_inventory:
     rg -n -F 'LinearResourceDoubleClose' compiler/typechecker.gst justfile-reports >/dev/null
     rg -n -F 'LinearResourceCloseAfterMove' compiler/typechecker.gst justfile-reports >/dev/null
     rg -n -F 'LinearResourceDestructorAlreadyScheduled' compiler/typechecker.gst justfile-reports >/dev/null
+    rg -n -F 'LinearResourceInvalidTransfer' compiler/typechecker.gst justfile-reports >/dev/null
     rg -n -F 'compiler/typechecker_resource_use_after_move_pass_test_entry.gst' tests/test_runner.gst justfile >/dev/null
     rg -n -F 'compiler/typechecker_resource_use_after_move_rejected_test_entry.gst' tests/test_runner.gst justfile >/dev/null
     rg -n -F 'compiler/typechecker_resource_double_close_rejected_test_entry.gst' tests/test_runner.gst justfile-step52 >/dev/null
@@ -93,6 +94,7 @@ guard_step52_transfer_state_surface_inventory:
     rg -n -F 'compiler/typechecker_resource_move_assignment_transfer_test_entry.gst' tests/test_runner.gst justfile-step52 >/dev/null
     rg -n -F 'compiler/typechecker_resource_reassignment_terminal_required_test_entry.gst' tests/test_runner.gst justfile-step52 >/dev/null
     rg -n -F 'compiler/typechecker_resource_transfer_transition_table_test_entry.gst' justfile >/dev/null
+    rg -n -F 'compiler/typechecker_resource_transfer_real_path_move_test_entry.gst' justfile >/dev/null
     echo "✅ Step 5.2 transfer-state surface inventory guard passed."
 
 guard_step52_transfer_state_transition_table:
@@ -105,6 +107,18 @@ guard_step52_transfer_state_transition_table:
     rg -n -F 'compiler/typechecker_resource_transfer_transition_table_test_entry.gst' justfile >/dev/null
     just guard-positive compiler/typechecker_resource_transfer_transition_table_test_entry.gst step52_transfer_state_transition_table
     echo "✅ Step 5.2 helper-level transfer transition table guard passed."
+
+guard_step52_transfer_state_real_path_move:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2 real move-assignment transfer-state validation..."
+    rg -n -F 'LinearResourceInvalidTransfer' compiler/typechecker.gst justfile-reports >/dev/null
+    rg -n -F 'env_report_linear_resource_invalid_transfer' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_report_linear_resource_move_transition_rejected' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_track_resource_move_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, assignment_rhs_resource_name_step52h, get_expression_span(val_idx, ctx), ctx);' compiler/typechecker.gst >/dev/null
+    rg -n -F 'compiler/typechecker_resource_transfer_real_path_move_test_entry.gst' justfile >/dev/null
+    just guard-positive compiler/typechecker_resource_transfer_real_path_move_test_entry.gst step52_transfer_state_real_path_move
+    echo "✅ Step 5.2 real move-assignment transfer-state validation guard passed."
 
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
@@ -163,6 +177,7 @@ make-test-guards:
       guard_step52_resource_use_after_move_enforcement
       guard_step52_transfer_state_surface_inventory
       guard_step52_transfer_state_transition_table
+      guard_step52_transfer_state_real_path_move
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
@@ -223,6 +238,7 @@ make-test-guards-step52-surface:
       guard_step52_resource_use_after_move_enforcement
       guard_step52_transfer_state_surface_inventory
       guard_step52_transfer_state_transition_table
+      guard_step52_transfer_state_real_path_move
     )
     for needle in "${needles[@]}"; do
       rg -n -F "$needle" justfile justfile-step52 justfile-reports Makefile tests/test_runner.gst compiler/*.gst >/dev/null
@@ -269,6 +285,7 @@ run-step52-negative-batch:
       LinearResourceDoubleClose
       LinearResourceCloseAfterMove
       LinearResourceDestructorAlreadyScheduled
+      LinearResourceInvalidTransfer
       LinearResourceMissingCleanup
     )
     for diagnostic in "${diagnostics[@]}"; do
@@ -361,6 +378,7 @@ check-step52:
     just make-test-guards-step52-surface
     just guard_step52_transfer_state_surface_inventory
     just guard_step52_transfer_state_transition_table
+    just guard_step52_transfer_state_real_path_move
     just run-step52-positive-batch
     just run-step52-negative-batch
     make test

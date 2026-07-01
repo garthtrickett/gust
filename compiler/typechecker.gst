@@ -6221,6 +6221,34 @@ func env_report_linear_resource_reassignment_requires_terminal(env: *TypeEnviron
     return 1;
 }
 
+func env_report_linear_resource_invalid_transfer(env: *TypeEnvironment[ctx], name: str, transition_name: str, span: token.Span, ctx: &Arena) int {
+    if env_open_linear_resource_is_tracked(env, name, ctx) == 0 {
+        return 0;
+    }
+    mut state_invalid_transfer := env_open_linear_resource_state_name(env, name, ctx);
+    mut msg_invalid_transfer := std.Concat("Semantic Error: LinearResourceInvalidTransfer: resource '", name);
+    msg_invalid_transfer = std.Concat(msg_invalid_transfer, "' cannot perform transfer '");
+    msg_invalid_transfer = std.Concat(msg_invalid_transfer, transition_name);
+    msg_invalid_transfer = std.Concat(msg_invalid_transfer, "' from state '");
+    msg_invalid_transfer = std.Concat(msg_invalid_transfer, state_invalid_transfer);
+    msg_invalid_transfer = std.Concat(msg_invalid_transfer, "'");
+    report_error(2, msg_invalid_transfer, span, env, ctx);
+    return 1;
+}
+
+func env_report_linear_resource_move_transition_rejected(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) int {
+    if env_open_linear_resource_is_tracked(env, name, ctx) == 0 {
+        return 0;
+    }
+    if env_open_linear_resource_can_be_moved(env, name, ctx) == 1 {
+        return 0;
+    }
+    if env_open_linear_resource_is_moved(env, name, ctx) == 1 {
+        return 1;
+    }
+    return env_report_linear_resource_invalid_transfer(env, name, "move", span, ctx);
+}
+
 func env_try_move_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
     if env_open_linear_resource_can_be_moved(env, variable_name, ctx) == 0 {
         return 0;
@@ -6459,7 +6487,7 @@ func env_track_resource_assignment_if_applicable(env: *TypeEnvironment[ctx], var
     return 1;
 }
 
-func env_track_resource_move_assignment_if_applicable(env: *TypeEnvironment[ctx], target_variable_name: str, source_variable_name: str, ctx: &Arena) int {
+func env_track_resource_move_assignment_if_applicable(env: *TypeEnvironment[ctx], target_variable_name: str, source_variable_name: str, span: token.Span, ctx: &Arena) int {
     if len(target_variable_name) == 0 {
         return 0;
     }
@@ -6473,6 +6501,9 @@ func env_track_resource_move_assignment_if_applicable(env: *TypeEnvironment[ctx]
         return 0;
     }
     if env_open_linear_resource_is_tracked(env, source_variable_name, ctx) == 0 {
+        return 0;
+    }
+    if env_report_linear_resource_move_transition_rejected(env, source_variable_name, span, ctx) == 1 {
         return 0;
     }
     return env_try_move_open_linear_resource(env, source_variable_name, ctx);
@@ -8705,9 +8736,23 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             if len(assignment_lhs_resource_name_step52g) > 0 {
-                mut assignment_resource_move_allowed_step52ah := env_track_resource_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, val_type, stmt.Assignment.span, ctx);
-                if assignment_resource_move_allowed_step52ah == 1 {
-                    env_track_resource_move_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, assignment_rhs_resource_name_step52h, ctx);
+                mut assignment_resource_move_source_allowed_step52ai := 1;
+                if len(assignment_rhs_resource_name_step52h) > 0 {
+                    if std.str_eq(assignment_lhs_resource_name_step52g, assignment_rhs_resource_name_step52h) == 0 {
+                        if env_open_linear_resource_is_tracked(env, assignment_lhs_resource_name_step52g, ctx) == 1 {
+                            if env_open_linear_resource_is_tracked(env, assignment_rhs_resource_name_step52h, ctx) == 1 {
+                                if env_report_linear_resource_move_transition_rejected(env, assignment_rhs_resource_name_step52h, get_expression_span(val_idx, ctx), ctx) == 1 {
+                                    assignment_resource_move_source_allowed_step52ai = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+                if assignment_resource_move_source_allowed_step52ai == 1 {
+                    mut assignment_resource_move_allowed_step52ah := env_track_resource_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, val_type, stmt.Assignment.span, ctx);
+                    if assignment_resource_move_allowed_step52ah == 1 {
+                        env_track_resource_move_assignment_if_applicable(env, assignment_lhs_resource_name_step52g, assignment_rhs_resource_name_step52h, get_expression_span(val_idx, ctx), ctx);
+                    }
                 }
             }
 
