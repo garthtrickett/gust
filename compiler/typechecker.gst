@@ -499,6 +499,17 @@ func env_type_is_safe_parameter_origin(t: ast.Type[ctx], ctx: &Arena) int {
     if step51g_non_laundering_type_is_safe_brand_target(t, ctx) == 1 {
         return 1;
     }
+    unsafe {
+        if t.tag == 8 { // Struct
+            if t.Struct.brand != empty[Index[str, ctx]] {
+                return 1;
+            }
+            mut struct_suffix_brand_param_origin := typechecker_extract_brand_from_suffix(t.Struct.struct_name, ctx);
+            if len(struct_suffix_brand_param_origin) > 0 {
+                return 1;
+            }
+        }
+    }
     return 0;
 }
 
@@ -9854,8 +9865,16 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 if (*env).current_function_return_origins != empty[Index[OriginSet[ctx], ctx]] {
                     mut return_origins := (*env).current_function_return_origins;
+                    mut had_prior_return_provenance_step51g := 0;
+                    if ctx[return_origins].map.len > 0 {
+                        had_prior_return_provenance_step51g = 1;
+                    }
                     set_union(return_origins, expr_origins, ctx);
-                    (*env).current_function_return_provenance = expression_provenance_join((*env).current_function_return_provenance, return_prov_stmt, ctx);
+                    if had_prior_return_provenance_step51g == 1 {
+                        (*env).current_function_return_provenance = expression_provenance_join((*env).current_function_return_provenance, return_prov_stmt, ctx);
+                    } else {
+                        (*env).current_function_return_provenance = return_prov_stmt;
+                    }
                 }
             }
 

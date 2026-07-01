@@ -108,6 +108,12 @@ func main() {
         os.Exit(1);
     }
 
+    mut branded_struct_param_type_51g := typechecker.make_type_struct("ast__MatchCase_ctx", "ctx", ctx);
+    if typechecker.env_type_is_safe_parameter_origin(branded_struct_param_type_51g, ctx) != 1 {
+        os.LogStr("Error: branded struct aggregate parameter was not classified as a safe parameter origin");
+        os.Exit(1);
+    }
+
     mut readback_origins_51g := typechecker.set_init(ctx);
     typechecker.set_add(readback_origins_51g, "safe_readback_base", ctx);
     mut safe_readback_prov_51g := typechecker.expression_provenance_inherit_readback(safe_prov_51g, branded_index_param_type_51g, readback_origins_51g, ctx);
