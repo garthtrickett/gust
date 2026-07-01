@@ -592,6 +592,24 @@ func step51g_struct_name_is_internal_metadata_safe_brand_target(metadata_struct_
     if std.str_eq(metadata_struct_name, "std_Vector_str_ctx") == 1 {
         return 1;
     }
+    if typechecker_starts_with(metadata_struct_name, "std_Vector_ast__") == 1 {
+        return 1;
+    }
+    if typechecker_starts_with(metadata_struct_name, "std_Vector_errors__") == 1 {
+        return 1;
+    }
+    if typechecker_starts_with(metadata_struct_name, "std_Vector_token__") == 1 {
+        return 1;
+    }
+    if typechecker_starts_with(metadata_struct_name, "std_Vector_typechecker__") == 1 {
+        return 1;
+    }
+    if typechecker_starts_with(metadata_struct_name, "std_Vector_parser__") == 1 {
+        return 1;
+    }
+    if typechecker_starts_with(metadata_struct_name, "std_Vector_lexer__") == 1 {
+        return 1;
+    }
     if std.str_find(metadata_struct_name, "OriginSet") != 0 - 1 {
         return 1;
     }

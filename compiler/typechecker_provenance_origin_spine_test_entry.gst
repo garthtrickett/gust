@@ -138,6 +138,12 @@ func main() {
         os.Exit(1);
     }
 
+    mut internal_vector_ast_statement_ref_51g := typechecker.make_type_reference(typechecker.make_type_struct("std_Vector_ast__Statement_ctx_ctx", "ctx", ctx), "ctx", ctx);
+    if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_vector_ast_statement_ref_51g, ctx) != 0 {
+        os.LogStr("Error: internal AST statement vector reference should not be a non-laundering enforcement target");
+        os.Exit(1);
+    }
+
     mut internal_prefix_entry_ref_51g := typechecker.make_type_reference(typechecker.make_type_struct("typechecker__PrefixMapEntry_ctx", "ctx", ctx), "ctx", ctx);
     if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_prefix_entry_ref_51g, ctx) != 0 {
         os.LogStr("Error: internal PrefixMapEntry reference should not be a non-laundering enforcement target");
