@@ -74,6 +74,9 @@ guard_step52_transfer_state_surface_inventory:
     rg -n -F 'env_try_move_open_linear_resource' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_try_schedule_open_linear_resource_destructor' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_try_borrow_open_linear_resource' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_open_linear_resource_state_name' compiler/typechecker.gst >/dev/null
+    rg -n -F 'linear_resource_transfer_transition_is_allowed' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_open_linear_resource_transfer_transition_is_allowed' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_mark_open_linear_resource_moved' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_mark_open_linear_resource_closed' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_mark_open_linear_resource_destructor_scheduled' compiler/typechecker.gst >/dev/null
@@ -89,7 +92,19 @@ guard_step52_transfer_state_surface_inventory:
     rg -n -F 'compiler/typechecker_resource_destructor_scheduled_rejected_test_entry.gst' tests/test_runner.gst justfile-step52 >/dev/null
     rg -n -F 'compiler/typechecker_resource_move_assignment_transfer_test_entry.gst' tests/test_runner.gst justfile-step52 >/dev/null
     rg -n -F 'compiler/typechecker_resource_reassignment_terminal_required_test_entry.gst' tests/test_runner.gst justfile-step52 >/dev/null
+    rg -n -F 'compiler/typechecker_resource_transfer_transition_table_test_entry.gst' justfile >/dev/null
     echo "✅ Step 5.2 transfer-state surface inventory guard passed."
+
+guard_step52_transfer_state_transition_table:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2 helper-level transfer transition table..."
+    rg -n -F 'env_open_linear_resource_state_name' compiler/typechecker.gst >/dev/null
+    rg -n -F 'linear_resource_transfer_transition_is_allowed' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_open_linear_resource_transfer_transition_is_allowed' compiler/typechecker.gst >/dev/null
+    rg -n -F 'compiler/typechecker_resource_transfer_transition_table_test_entry.gst' justfile >/dev/null
+    just guard-positive compiler/typechecker_resource_transfer_transition_table_test_entry.gst step52_transfer_state_transition_table
+    echo "✅ Step 5.2 helper-level transfer transition table guard passed."
 
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
@@ -147,6 +162,7 @@ make-test-guards:
       guard_step52_resource_scope_exit_mixed_scheduled_terminal_states
       guard_step52_resource_use_after_move_enforcement
       guard_step52_transfer_state_surface_inventory
+      guard_step52_transfer_state_transition_table
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
@@ -206,6 +222,7 @@ make-test-guards-step52-surface:
       guard_step52_resource_scope_exit_mixed_scheduled_terminal_states
       guard_step52_resource_use_after_move_enforcement
       guard_step52_transfer_state_surface_inventory
+      guard_step52_transfer_state_transition_table
     )
     for needle in "${needles[@]}"; do
       rg -n -F "$needle" justfile justfile-step52 justfile-reports Makefile tests/test_runner.gst compiler/*.gst >/dev/null
@@ -343,6 +360,7 @@ check-step52:
     make gust
     just make-test-guards-step52-surface
     just guard_step52_transfer_state_surface_inventory
+    just guard_step52_transfer_state_transition_table
     just run-step52-positive-batch
     just run-step52-negative-batch
     make test

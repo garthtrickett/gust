@@ -5902,43 +5902,102 @@ func env_mark_open_linear_resource_destructor_scheduled(env: *TypeEnvironment[ct
     }
 }
 
-func env_open_linear_resource_can_be_used(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+func env_open_linear_resource_state_name(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) str {
     if env_open_linear_resource_is_tracked(env, variable_name, ctx) == 0 {
-        return 0;
+        return "untracked";
+    }
+    if env_open_linear_resource_is_owned(env, variable_name, ctx) == 1 {
+        return "owned";
+    }
+    if env_open_linear_resource_is_borrowed(env, variable_name, ctx) == 1 {
+        return "borrowed";
     }
     if env_open_linear_resource_is_moved(env, variable_name, ctx) == 1 {
-        return 0;
+        return "moved";
     }
     if env_open_linear_resource_is_closed(env, variable_name, ctx) == 1 {
-        return 0;
+        return "closed";
     }
     if env_open_linear_resource_is_destructor_scheduled(env, variable_name, ctx) == 1 {
+        return "destructor_scheduled";
+    }
+    if env_open_linear_resource_is_open(env, variable_name, ctx) == 1 {
+        return "open";
+    }
+    return "unknown";
+}
+
+func linear_resource_transfer_transition_is_allowed(current_state: str, transition_name: str, has_destructor: int, ctx: &Arena) int {
+    if std.str_eq(current_state, "owned") == 1 {
+        if std.str_eq(transition_name, "use") == 1 {
+            return 1;
+        }
+        if std.str_eq(transition_name, "move") == 1 {
+            return 1;
+        }
+        if std.str_eq(transition_name, "close") == 1 {
+            return 1;
+        }
+        if std.str_eq(transition_name, "borrow") == 1 {
+            return 1;
+        }
+        if std.str_eq(transition_name, "cleanup_required") == 1 {
+            return 1;
+        }
+        if std.str_eq(transition_name, "schedule_destructor") == 1 {
+            if has_destructor == 1 {
+                return 1;
+            }
+        }
+        return 0;
+    }
+    if std.str_eq(current_state, "borrowed") == 1 {
+        if std.str_eq(transition_name, "use") == 1 {
+            return 1;
+        }
+        return 0;
+    }
+    if std.str_eq(current_state, "open") == 1 {
+        if std.str_eq(transition_name, "use") == 1 {
+            return 1;
+        }
+        return 0;
+    }
+    return 0;
+}
+
+func env_open_linear_resource_has_destructor(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    mut destructor_name_transition_table := env_open_linear_resource_destructor_name(env, variable_name, ctx);
+    if len(destructor_name_transition_table) == 0 {
         return 0;
     }
     return 1;
+}
+
+func env_open_linear_resource_transfer_transition_is_allowed(env: *TypeEnvironment[ctx], variable_name: str, transition_name: str, ctx: &Arena) int {
+    mut state_transfer_transition := env_open_linear_resource_state_name(env, variable_name, ctx);
+    mut has_destructor_transfer_transition := env_open_linear_resource_has_destructor(env, variable_name, ctx);
+    return linear_resource_transfer_transition_is_allowed(state_transfer_transition, transition_name, has_destructor_transfer_transition, ctx);
+}
+
+func env_open_linear_resource_can_be_used(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    return env_open_linear_resource_transfer_transition_is_allowed(env, variable_name, "use", ctx);
 }
 
 func env_open_linear_resource_can_be_closed(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
-    return env_open_linear_resource_is_owned(env, variable_name, ctx);
+    return env_open_linear_resource_transfer_transition_is_allowed(env, variable_name, "close", ctx);
 }
 
 func env_open_linear_resource_can_be_moved(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
-    return env_open_linear_resource_is_owned(env, variable_name, ctx);
+    return env_open_linear_resource_transfer_transition_is_allowed(env, variable_name, "move", ctx);
 }
 
 func env_open_linear_resource_requires_cleanup(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
-    return env_open_linear_resource_is_owned(env, variable_name, ctx);
+    return env_open_linear_resource_transfer_transition_is_allowed(env, variable_name, "cleanup_required", ctx);
 }
 
 func env_open_linear_resource_can_schedule_destructor(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
-    if env_open_linear_resource_is_owned(env, variable_name, ctx) == 0 {
-        return 0;
-    }
-    mut destructor_name_schedule_resource := env_open_linear_resource_destructor_name(env, variable_name, ctx);
-    if len(destructor_name_schedule_resource) == 0 {
-        return 0;
-    }
-    return 1;
+    return env_open_linear_resource_transfer_transition_is_allowed(env, variable_name, "schedule_destructor", ctx);
 }
 
 func env_open_linear_resource_has_terminal_state(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
@@ -6170,7 +6229,7 @@ func env_try_move_open_linear_resource(env: *TypeEnvironment[ctx], variable_name
 }
 
 func env_try_borrow_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
-    if env_open_linear_resource_is_owned(env, variable_name, ctx) == 0 {
+    if env_open_linear_resource_transfer_transition_is_allowed(env, variable_name, "borrow", ctx) == 0 {
         return 0;
     }
     return env_mark_open_linear_resource_borrowed(env, variable_name, ctx);
