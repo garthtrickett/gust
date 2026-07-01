@@ -108,6 +108,24 @@ func main() {
         os.Exit(1);
     }
 
+    mut internal_origin_set_index_51g := typechecker.make_type_index("typechecker__OriginSet_ctx", "ctx", ctx);
+    if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_origin_set_index_51g, ctx) != 0 {
+        os.LogStr("Error: internal OriginSet metadata index should not be a non-laundering enforcement target");
+        os.Exit(1);
+    }
+
+    mut internal_string_index_51g := typechecker.make_type_index("str", "ctx", ctx);
+    if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_string_index_51g, ctx) != 0 {
+        os.LogStr("Error: internal string metadata index should not be a non-laundering enforcement target");
+        os.Exit(1);
+    }
+
+    mut explicit_safe_cell_index_51g := typechecker.make_type_index("SafeCellUnknown", "ctx", ctx);
+    if typechecker.step51g_non_laundering_type_is_safe_brand_target(explicit_safe_cell_index_51g, ctx) != 1 {
+        os.LogStr("Error: ordinary safe-branded indexes must remain non-laundering enforcement targets");
+        os.Exit(1);
+    }
+
     mut branded_struct_param_type_51g := typechecker.make_type_struct("ast__MatchCase_ctx", "ctx", ctx);
     if typechecker.env_type_is_safe_parameter_origin(branded_struct_param_type_51g, ctx) != 1 {
         os.LogStr("Error: branded struct aggregate parameter was not classified as a safe parameter origin");

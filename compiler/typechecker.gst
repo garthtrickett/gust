@@ -585,9 +585,27 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
     }
 }
 
+func step51g_type_is_internal_metadata_safe_brand_target(t: ast.Type[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 7 { // Index
+            mut metadata_index_struct_name := t.Index.struct_name;
+            if std.str_eq(metadata_index_struct_name, "str") == 1 {
+                return 1;
+            }
+            if std.str_find(metadata_index_struct_name, "OriginSet") != 0 - 1 {
+                return 1;
+            }
+        }
+        return 0;
+    }
+}
+
 func env_type_is_safe_branded_return_target(t: ast.Type[ctx], ctx: &Arena) int {
     unsafe {
         if t.tag == 7 { // Index
+            if step51g_type_is_internal_metadata_safe_brand_target(t, ctx) == 1 {
+                return 0;
+            }
             if t.Index.brand != empty[Index[str, ctx]] {
                 return 1;
             }
