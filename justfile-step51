@@ -128,6 +128,7 @@ guard_step51g_aggregate_surface_wiring:
       "guard-positive compiler/typechecker_provenance_policy_spine_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_boundary_spine_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_enforced_target_policy_test_entry.gst" \
+      "just guard_step51_safe_constructor_origin_coverage" \
       "guard-positive compiler/typechecker_non_laundering_binding_test_entry.gst" \
       "guard-positive compiler/typechecker_non_laundering_container_test_entry.gst" \
       "guard-positive compiler/typechecker_non_laundering_hashmap_get_value_test_entry.gst" \
@@ -348,6 +349,23 @@ guard_step51_reference_selector_alias_provenance:
     just guard-positive compiler/typechecker_reference_selector_alias_provenance_test_entry.gst step51_reference_selector_alias_provenance
     echo "✅ guard_step51_reference_selector_alias_provenance passed."
 
+guard_step51_safe_constructor_origin_coverage:
+    echo "🔒 Checking Step 5.1 safe constructor origin coverage..."
+    just guard_step51_safe_constructor_provenance
+    just guard_step51_selector_safe_constructor_provenance
+    just guard_step51_container_safe_constructor_provenance
+    just guard_step51_container_method_provenance
+    just guard_step51_arena_write_provenance
+    just guard_step51_container_getref_provenance
+    just guard_step51_hashmap_get_value_provenance
+    just guard_step51_hashmap_get_value_field_provenance
+    just guard_step51_std_vector_getref_provenance
+    just guard_step51_std_hashmap_getref_provenance
+    just guard_step51_std_hashmap_getref_selector_alias_provenance
+    just guard_step51_std_vector_getref_selector_alias_provenance
+    just guard_step51_reference_selector_alias_provenance
+    echo "✅ Step 5.1 safe constructor origin coverage guard passed."
+
 guard_step51_variable_provenance_bindings:
     echo "🔒 Checking Step 5.1 variable provenance binding/assignment/readback metadata..."
     just guard-positive compiler/typechecker_variable_provenance_test_entry.gst step51_variable_provenance_bindings
@@ -469,6 +487,7 @@ guard_step51_provenance_origin_spine:
     just guard-positive compiler/typechecker_provenance_policy_spine_test_entry.gst step51g_provenance_policy_spine
     just guard-positive compiler/typechecker_provenance_boundary_spine_test_entry.gst step51g_provenance_boundary_spine
     just guard-positive compiler/typechecker_provenance_enforced_target_policy_test_entry.gst step51g_provenance_enforced_target_policy
+    just guard_step51_safe_constructor_origin_coverage
     just guard-positive compiler/typechecker_non_laundering_binding_test_entry.gst step51g_policy_binding_regression
     just guard-positive compiler/typechecker_non_laundering_container_test_entry.gst step51g_policy_container_regression
     just guard-positive compiler/typechecker_non_laundering_hashmap_get_value_test_entry.gst step51g_policy_hashmap_get_value_regression

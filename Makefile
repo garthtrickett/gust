@@ -32,6 +32,7 @@ build/gust_compiler.c: gust_bootstrap $(COMPILER_SRCS)
 	mv build/gust_compiler.tmp build/gust_compiler.c
 	sync
 
+## just "make" doesnt do anything need to run "make gust"
 gust: build/gust_compiler.c $(RUNTIME_SRCS)
 	cat src/runtime.c build/gust_compiler.c > build/gust_final.c
 	${CC} ${CFLAGS} ${INCLUDES} build/gust_final.c -o gust
