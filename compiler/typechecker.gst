@@ -645,6 +645,9 @@ func env_type_is_safe_branded_return_target(t: ast.Type[ctx], ctx: &Arena) int {
             }
         }
         if t.tag == 11 { // Reference
+            if step51g_type_is_internal_metadata_safe_brand_target(t, ctx) == 1 {
+                return 0;
+            }
             if t.Reference.brand != empty[Index[str, ctx]] {
                 return 1;
             }
