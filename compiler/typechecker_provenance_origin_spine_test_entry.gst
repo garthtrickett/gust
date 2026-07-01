@@ -108,6 +108,24 @@ func main() {
         os.Exit(1);
     }
 
+    mut readback_origins_51g := typechecker.set_init(ctx);
+    typechecker.set_add(readback_origins_51g, "safe_readback_base", ctx);
+    mut safe_readback_prov_51g := typechecker.expression_provenance_inherit_readback(safe_prov_51g, branded_index_param_type_51g, readback_origins_51g, ctx);
+    if typechecker.step51g_expression_provenance_allows_safe_brand(safe_readback_prov_51g, ctx) != 1 {
+        os.LogStr("Error: safe aggregate readback did not preserve safe provenance");
+        os.Exit(1);
+    }
+    if typechecker.set_contains(safe_readback_prov_51g.legacy_origins, "safe_readback_base", ctx) != 1 {
+        os.LogStr("Error: safe aggregate readback did not merge legacy origins");
+        os.Exit(1);
+    }
+
+    mut raw_readback_prov_51g := typechecker.expression_provenance_inherit_readback(raw_prov_51g, branded_index_param_type_51g, readback_origins_51g, ctx);
+    if typechecker.step51g_expression_provenance_blocks_safe_brand(raw_readback_prov_51g, ctx) != 1 {
+        os.LogStr("Error: raw aggregate readback did not preserve unsafe provenance");
+        os.Exit(1);
+    }
+
     if typechecker.env_type_is_safe_parameter_origin(t_int_51g, ctx) != 0 {
         os.LogStr("Error: plain int parameter was incorrectly classified as a safe branded parameter origin");
         os.Exit(1);

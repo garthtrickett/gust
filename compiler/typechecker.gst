@@ -381,6 +381,36 @@ func expression_provenance_with_legacy_origins(prov: ExpressionProvenance[ctx], 
     return out;
 }
 
+func expression_provenance_has_known_readback_origin(prov: ExpressionProvenance[ctx]) int {
+    if expression_provenance_allows_safe_branding(prov) == 1 {
+        return 1;
+    }
+    if expression_provenance_is_raw_or_sandbox_derived(prov) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func expression_provenance_inherit_readback(base_prov: ExpressionProvenance[ctx], result_t: ast.Type[ctx], legacy_origins: Index[OriginSet[ctx], ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    if expression_provenance_allows_safe_branding(base_prov) == 1 {
+        mut safe_readback_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_readback_prov.legacy_origins = typechecker_clone_origin_set(base_prov.legacy_origins, ctx);
+        set_union(safe_readback_prov.legacy_origins, legacy_origins, ctx);
+        return safe_readback_prov;
+    }
+    if expression_provenance_is_raw_or_sandbox_derived(base_prov) == 1 {
+        mut unsafe_readback_prov := base_prov;
+        unsafe_readback_prov.resolved_type = result_t;
+        unsafe_readback_prov.legacy_origins = typechecker_clone_origin_set(base_prov.legacy_origins, ctx);
+        set_union(unsafe_readback_prov.legacy_origins, legacy_origins, ctx);
+        return unsafe_readback_prov;
+    }
+
+    mut unknown_readback_prov := expression_provenance_unknown(result_t, ctx);
+    unknown_readback_prov.legacy_origins = legacy_origins;
+    return unknown_readback_prov;
+}
+
 func step51g_join_expression_provenance(left: ExpressionProvenance[ctx], right: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
     mut joined := expression_provenance_unknown(left.resolved_type, ctx);
     joined.address_origin = step51g_join_address_origin(left.address_origin, right.address_origin);
@@ -3402,6 +3432,11 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     found_container_prov.legacy_origins = merged_container_origins;
                     return found_container_prov;
                 }
+
+                mut index_allocator_prov_readback := check_expression_with_provenance(expr.IndexAccess.allocator, env, scope, ctx);
+                if expression_provenance_has_known_readback_origin(index_allocator_prov_readback) == 1 {
+                    return expression_provenance_inherit_readback(index_allocator_prov_readback, t, legacy_origins, ctx);
+                }
             }
 
             if expr.tag == 11 { // Selector
@@ -3485,6 +3520,11 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     set_union(merged_field_origins, legacy_origins, ctx);
                     found_field_prov.legacy_origins = merged_field_origins;
                     return found_field_prov;
+                }
+
+                mut selector_base_prov_readback := check_expression_with_provenance(expr.Selector.left, env, scope, ctx);
+                if expression_provenance_has_known_readback_origin(selector_base_prov_readback) == 1 {
+                    return expression_provenance_inherit_readback(selector_base_prov_readback, t, legacy_origins, ctx);
                 }
             }
 
