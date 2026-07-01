@@ -132,6 +132,23 @@ func main() {
         os.Exit(1);
     }
 
+    mut sig_return_seed_51g: typechecker.FunctionSignature[ctx];
+    typechecker.init_function_signature_ffi_defaults(&sig_return_seed_51g);
+    sig_return_seed_51g.return_type = branded_index_param_type_51g;
+    sig_return_seed_51g.is_extern = 0;
+    mut seeded_return_prov_51g := typechecker.expression_provenance_for_function_signature_return(sig_return_seed_51g, ctx);
+    if typechecker.step51g_expression_provenance_allows_safe_brand(seeded_return_prov_51g, ctx) != 1 {
+        os.LogStr("Error: safe-branded non-extern function return seed was not classified as safe provenance");
+        os.Exit(1);
+    }
+
+    sig_return_seed_51g.is_extern = 1;
+    mut extern_seeded_return_prov_51g := typechecker.expression_provenance_for_function_signature_return(sig_return_seed_51g, ctx);
+    if typechecker.step51g_expression_provenance_blocks_safe_brand(extern_seeded_return_prov_51g, ctx) != 1 {
+        os.LogStr("Error: extern safe-branded function return seed did not remain unknown before FFI boundary modeling");
+        os.Exit(1);
+    }
+
     if typechecker.env_type_is_safe_parameter_origin(t_int_51g, ctx) != 0 {
         os.LogStr("Error: plain int parameter was incorrectly classified as a safe branded parameter origin");
         os.Exit(1);

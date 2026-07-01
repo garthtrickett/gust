@@ -541,6 +541,15 @@ func env_record_function_return_provenance(env: *TypeEnvironment[ctx], name: str
     }
 }
 
+func expression_provenance_for_function_signature_return(sig: FunctionSignature[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    if sig.is_extern == 0 {
+        if env_type_is_safe_parameter_origin(sig.return_type, ctx) == 1 {
+            return expression_provenance_safe_arena(sig.return_type, ctx);
+        }
+    }
+    return expression_provenance_unknown(sig.return_type, ctx);
+}
+
 func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
     unsafe {
         if t.tag == 5 { // Str
@@ -7053,7 +7062,7 @@ func env_register_function(env: *TypeEnvironment[ctx], name: str, sig: FunctionS
 
         mut return_prov_lookup := (*env).function_return_provenance.Get(name);
         if return_prov_lookup.Ok == false {
-            (*env).function_return_provenance.Insert(std.Clone(ctx, name), expression_provenance_unknown(sig.return_type, ctx));
+            (*env).function_return_provenance.Insert(std.Clone(ctx, name), expression_provenance_for_function_signature_return(sig, ctx));
         }
     }
     mut msg := std.Format("env_register_function: registered function '%s' with %d parameters", name, sig.params.len);
