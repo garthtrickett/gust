@@ -47,7 +47,7 @@ func main() {
         }
         os.Exit(1);
     }
-    if env_move_open_dir.open_directories.Get("legacy_move_dir").Ok == 0 {
+    if env_move_open_dir.open_directories.Get("legacy_move_dir").Ok == false {
         os.LogStr("Error: rejected move of open directory should leave legacy open_directories entry intact");
         os.Exit(1);
     }
