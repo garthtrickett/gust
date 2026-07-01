@@ -6318,6 +6318,19 @@ func env_report_linear_resource_move_transition_rejected(env: *TypeEnvironment[c
     return env_report_linear_resource_invalid_transfer(env, name, "move", span, ctx);
 }
 
+func env_report_linear_resource_schedule_transition_rejected(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) int {
+    if env_open_linear_resource_is_tracked(env, name, ctx) == 0 {
+        return 0;
+    }
+    if env_open_linear_resource_can_schedule_destructor(env, name, ctx) == 1 {
+        return 0;
+    }
+    if env_open_linear_resource_is_destructor_scheduled(env, name, ctx) == 1 {
+        return env_report_linear_resource_destructor_already_scheduled(env, name, span, ctx);
+    }
+    return env_report_linear_resource_invalid_transfer(env, name, "schedule_destructor", span, ctx);
+}
+
 func env_try_move_open_linear_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
     if env_open_linear_resource_can_be_moved(env, variable_name, ctx) == 0 {
         return 0;
@@ -9504,7 +9517,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         if stmt.tag == 11 { // Defer
             mut defer_resource_name_step52ai := env_defer_statement_resource_destructor_candidate_name(env, stmt_idx, ctx);
             if len(defer_resource_name_step52ai) > 0 {
-                env_try_schedule_open_linear_resource_destructor(env, defer_resource_name_step52ai, ctx);
+                mut defer_expr_span_step52aj := get_expression_span(stmt.Defer.expr, ctx);
+                if env_try_schedule_open_linear_resource_destructor(env, defer_resource_name_step52ai, ctx) == 0 {
+                    env_report_linear_resource_schedule_transition_rejected(env, defer_resource_name_step52ai, defer_expr_span_step52aj, ctx);
+                }
                 return res;
             }
 
