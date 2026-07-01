@@ -239,6 +239,19 @@ guard_step52_directory_resource_shadow_tracking:
     just guard-positive compiler/typechecker_directory_resource_shadow_tracking_test_entry.gst step52_directory_resource_shadow_tracking
     echo "✅ Step 5.2 directory Resource shadow tracking guard passed."
 
+guard_step52_directory_resource_cleanup_boundary_routing:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2 directory Resource cleanup-boundary routing..."
+    rg -n -F 'env_open_directory_resource_requires_cleanup' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_open_linear_resource_should_emit_generic_cleanup_diagnostic' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_open_directory_resource_requires_cleanup(env, local_var, ctx)' compiler/typechecker.gst >/dev/null
+    rg -n -F 'directory shadow should reuse Resource cleanup-required transition predicate' compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst >/dev/null
+    rg -n -F 'generic Resource cleanup boundary should skip directory shadow records' compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst >/dev/null
+    rg -n -F 'routed directory cleanup boundary should preserve legacy CloseDir diagnostic' compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst >/dev/null
+    just guard-positive compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst step52_directory_resource_cleanup_boundary_routing
+    echo "✅ Step 5.2 directory Resource cleanup-boundary routing guard passed."
+
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
 # Report aliases stay informational; Makefile policy guards keep reports out of make test.
@@ -306,6 +319,7 @@ make-test-guards:
       guard_step52_open_directories_legacy_freeze
       guard_step52_directory_resource_parity_metadata
       guard_step52_directory_resource_shadow_tracking
+      guard_step52_directory_resource_cleanup_boundary_routing
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
@@ -376,6 +390,7 @@ make-test-guards-step52-surface:
       guard_step52_open_directories_legacy_freeze
       guard_step52_directory_resource_parity_metadata
       guard_step52_directory_resource_shadow_tracking
+      guard_step52_directory_resource_cleanup_boundary_routing
     )
     for needle in "${needles[@]}"; do
       rg -n -F "$needle" justfile justfile-step52 justfile-reports Makefile tests/test_runner.gst compiler/*.gst >/dev/null
@@ -525,6 +540,7 @@ check-step52:
     just guard_step52_open_directories_legacy_freeze
     just guard_step52_directory_resource_parity_metadata
     just guard_step52_directory_resource_shadow_tracking
+    just guard_step52_directory_resource_cleanup_boundary_routing
     just run-step52-positive-batch
     just run-step52-negative-batch
     make test

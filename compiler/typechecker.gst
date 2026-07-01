@@ -6127,10 +6127,21 @@ func env_open_linear_resource_can_be_moved(env: *TypeEnvironment[ctx], variable_
 }
 
 func env_open_linear_resource_requires_cleanup(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    return env_open_linear_resource_transfer_transition_is_allowed(env, variable_name, "cleanup_required", ctx);
+}
+
+func env_open_linear_resource_should_emit_generic_cleanup_diagnostic(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
     if env_open_linear_resource_is_directory_shadow(env, variable_name, ctx) == 1 {
         return 0;
     }
-    return env_open_linear_resource_transfer_transition_is_allowed(env, variable_name, "cleanup_required", ctx);
+    return env_open_linear_resource_requires_cleanup(env, variable_name, ctx);
+}
+
+func env_open_directory_resource_requires_cleanup(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    if env_open_linear_resource_is_directory_shadow(env, variable_name, ctx) == 0 {
+        return 0;
+    }
+    return env_open_linear_resource_requires_cleanup(env, variable_name, ctx);
 }
 
 func env_open_linear_resource_can_schedule_destructor(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
@@ -6427,7 +6438,7 @@ func env_count_open_linear_resources_requiring_cleanup(env: *TypeEnvironment[ctx
         mut idx_linear_resource_cleanup_query := 0;
         while idx_linear_resource_cleanup_query < len(keys_linear_resource_cleanup_query) {
             mut key_linear_resource_cleanup_query := keys_linear_resource_cleanup_query[idx_linear_resource_cleanup_query];
-            if env_open_linear_resource_requires_cleanup(env, key_linear_resource_cleanup_query, ctx) == 1 {
+            if env_open_linear_resource_should_emit_generic_cleanup_diagnostic(env, key_linear_resource_cleanup_query, ctx) == 1 {
                 count_linear_resource_cleanup_query = count_linear_resource_cleanup_query + 1;
             }
             idx_linear_resource_cleanup_query = idx_linear_resource_cleanup_query + 1;
@@ -6449,7 +6460,7 @@ func env_first_open_linear_resource_requiring_cleanup(env: *TypeEnvironment[ctx]
         mut idx_first_linear_resource_cleanup := 0;
         while idx_first_linear_resource_cleanup < len(keys_first_linear_resource_cleanup) {
             mut key_first_linear_resource_cleanup := keys_first_linear_resource_cleanup[idx_first_linear_resource_cleanup];
-            if env_open_linear_resource_requires_cleanup(env, key_first_linear_resource_cleanup, ctx) == 1 {
+            if env_open_linear_resource_should_emit_generic_cleanup_diagnostic(env, key_first_linear_resource_cleanup, ctx) == 1 {
                 return std.Clone(ctx, key_first_linear_resource_cleanup);
             }
             idx_first_linear_resource_cleanup = idx_first_linear_resource_cleanup + 1;
@@ -8613,7 +8624,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut m := 0;
             while m < len(local_var_keys) {
                 mut local_var := local_var_keys[m];
-                if (*env).open_directories.Get(local_var).Ok {
+                if env_open_directory_resource_requires_cleanup(env, local_var, ctx) == 1 {
                     mut msg := std.Concat("Semantic Error: Resource leak. Directory resource variable '", local_var);
                     msg = std.Concat(msg, "' must be cleanly closed with os.CloseDir before leaving local scope");
                     report_error(2, msg, stmt.FunctionDecl.span, env, ctx);
