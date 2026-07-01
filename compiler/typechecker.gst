@@ -462,6 +462,26 @@ func env_record_variable_self_provenance(env: *TypeEnvironment[ctx], name: str, 
     env_record_variable_provenance(env, name, prov, ctx);
 }
 
+func env_type_is_safe_parameter_origin(t: ast.Type[ctx], ctx: &Arena) int {
+    if typechecker_is_arena_value_or_ref(t, ctx) == 1 {
+        return 1;
+    }
+    if step51g_non_laundering_type_is_safe_brand_target(t, ctx) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func env_record_safe_parameter_provenance(env: *TypeEnvironment[ctx], name: str, t: ast.Type[ctx], ctx: &Arena) {
+    if env_type_is_safe_parameter_origin(t, ctx) == 0 {
+        return;
+    }
+
+    mut param_prov := expression_provenance_safe_arena(t, ctx);
+    set_add(param_prov.legacy_origins, name, ctx);
+    env_record_variable_provenance(env, name, param_prov, ctx);
+}
+
 func env_record_field_provenance(env: *TypeEnvironment[ctx], field_key: str, prov: ExpressionProvenance[ctx], ctx: &Arena) {
     unsafe {
         (*env).field_provenance.Insert(std.Clone(ctx, field_key), prov);
@@ -8637,6 +8657,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut param_origins := set_init(ctx);
                 set_add(param_origins, param.name, ctx);
                 (*env).variable_origins.Insert(std.Clone(ctx, param.name), param_origins);
+                env_record_safe_parameter_provenance(env, param.name, resolved_param_type, ctx);
 
                 i = i + 1;
             }

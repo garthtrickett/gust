@@ -84,5 +84,34 @@ func main() {
         os.Exit(1);
     }
 
+    mut arena_ref_param_type_51g := typechecker.make_type_reference(typechecker.make_type_arena(), "ctx", ctx);
+    if typechecker.env_type_is_safe_parameter_origin(arena_ref_param_type_51g, ctx) != 1 {
+        os.LogStr("Error: ctx: &Arena parameter was not classified as a safe parameter origin");
+        os.Exit(1);
+    }
+
+    mut arena_ptr_param_type_51g := typechecker.make_type_pointer(typechecker.make_type_arena(), ctx);
+    if typechecker.env_type_is_safe_parameter_origin(arena_ptr_param_type_51g, ctx) != 1 {
+        os.LogStr("Error: raw-pointer Arena compatibility parameter was not classified as a safe parameter origin");
+        os.Exit(1);
+    }
+
+    mut branded_ref_param_type_51g := typechecker.make_type_reference(t_int_51g, "ctx", ctx);
+    if typechecker.env_type_is_safe_parameter_origin(branded_ref_param_type_51g, ctx) != 1 {
+        os.LogStr("Error: branded reference parameter was not classified as a safe parameter origin");
+        os.Exit(1);
+    }
+
+    mut branded_index_param_type_51g := typechecker.make_type_index("int", "ctx", ctx);
+    if typechecker.env_type_is_safe_parameter_origin(branded_index_param_type_51g, ctx) != 1 {
+        os.LogStr("Error: branded index parameter was not classified as a safe parameter origin");
+        os.Exit(1);
+    }
+
+    if typechecker.env_type_is_safe_parameter_origin(t_int_51g, ctx) != 0 {
+        os.LogStr("Error: plain int parameter was incorrectly classified as a safe branded parameter origin");
+        os.Exit(1);
+    }
+
     os.LogStr("SUCCESS: Step 5.1G provenance-origin spine helpers verified!");
 }
