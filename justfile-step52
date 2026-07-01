@@ -97,7 +97,8 @@ guard_step52_resource_close_after_move_enforcement:
       exit 1
     fi
     rg -n 'LinearResourceCloseAfterMove' compiler/typechecker.gst
-    rg -n -F 'env_report_linear_resource_close_after_move(env, resource_name_step52i, first_arg_span_step52h, ctx)' compiler/typechecker.gst
+    rg -n -F 'env_report_linear_resource_close_after_move' compiler/typechecker.gst
+    rg -n -F 'env_report_linear_resource_close_transition_rejected(env, resource_name_step52i, first_arg_span_step52h, ctx)' compiler/typechecker.gst
     rg -n -F 'compiler/typechecker_resource_close_after_move_rejected_test_entry.gst' tests/test_runner.gst
     rg -n -F 'guard_step52_resource_close_after_move_enforcement' justfile
     close_after_move_runner_count="$(rg -n 'mut t_step52_resource_close_after_move_rejected' tests/test_runner.gst | wc -l)"
@@ -120,7 +121,8 @@ guard_step52_resource_destructor_scheduled_enforcement:
       exit 1
     fi
     rg -n 'LinearResourceDestructorAlreadyScheduled' compiler/typechecker.gst
-    rg -n -F 'env_report_linear_resource_destructor_already_scheduled(env, resource_name_step52i, first_arg_span_step52h, ctx)' compiler/typechecker.gst
+    rg -n -F 'env_report_linear_resource_destructor_already_scheduled' compiler/typechecker.gst
+    rg -n -F 'env_report_linear_resource_close_transition_rejected(env, resource_name_step52i, first_arg_span_step52h, ctx)' compiler/typechecker.gst
     rg -n -F 'compiler/typechecker_resource_destructor_scheduled_rejected_test_entry.gst' tests/test_runner.gst
     rg -n -F 'guard_step52_resource_destructor_scheduled_enforcement' justfile
     rg -n -F 'Step 5.2J tracked Resource destructor-scheduled behavior guard' justfile-reports
