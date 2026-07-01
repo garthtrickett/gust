@@ -233,9 +233,11 @@ guard_step52_directory_resource_shadow_tracking:
     rg -n -F 'env_shadow_track_open_directory_resource' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_shadow_track_closed_directory_resource' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_open_linear_resource_is_directory_shadow' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_function_is_directory_close_destructor' compiler/typechecker.gst >/dev/null
     rg -n -F 'directory declaration should shadow-track an owned open_linear_resource' compiler/typechecker_directory_resource_shadow_tracking_test_entry.gst >/dev/null
     rg -n -F 'os.CloseDir should shadow-track closed open_linear_resource state' compiler/typechecker_directory_resource_shadow_tracking_test_entry.gst >/dev/null
     rg -n -F 'os.CloseDir directory shadow close should not also trigger generic Resource destructor-call tracking' compiler/typechecker_directory_resource_shadow_tracking_test_entry.gst >/dev/null
+    rg -n -F 'direct generic destructor tracking helper should ignore os.CloseDir directory shadows' compiler/typechecker_directory_resource_shadow_tracking_test_entry.gst >/dev/null
     rg -n -F 'directory shadow records should require cleanup through the shared Resource predicate' compiler/typechecker_directory_resource_shadow_tracking_test_entry.gst >/dev/null
     rg -n -F 'directory shadow tracking must not emit generic Resource cleanup diagnostics' compiler/typechecker_directory_resource_shadow_tracking_test_entry.gst >/dev/null
     just guard-positive compiler/typechecker_directory_resource_shadow_tracking_test_entry.gst step52_directory_resource_shadow_tracking

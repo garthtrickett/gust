@@ -95,6 +95,14 @@ func main() {
         }
         os.Exit(1);
     }
+    typechecker.env_track_resource_destructor_call_if_applicable(&env_decl_shadow, "os.CloseDir", close_shadow_expr.Call.arguments, scope_decl_shadow, ctx);
+    if env_has_error_containing(&env_decl_shadow, "LinearResourceDoubleClose", ctx) == 1 {
+        os.LogStr("Error: direct generic destructor tracking helper should ignore os.CloseDir directory shadows");
+        if len(env_decl_shadow.errors) > 0 {
+            os.LogStr(env_decl_shadow.errors[0].message);
+        }
+        os.Exit(1);
+    }
 
     mut env_manual_shadow := typechecker.env_new(ctx);
     env_manual_shadow.current_prefix = "main__";
