@@ -3268,7 +3268,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     k = k + 1;
                 }
 
-                env_track_resource_destructor_call_if_applicable(env, resolved_func, expr.Call.arguments, scope, ctx);
+                mut skip_directory_shadow_destructor_tracking_step52dir := 0;
+                if std.str_eq(resolved_func, "os_CloseDir") || std.str_eq(resolved_func, "os.CloseDir") {
+                    skip_directory_shadow_destructor_tracking_step52dir = 1;
+                }
+                if skip_directory_shadow_destructor_tracking_step52dir == 0 {
+                    env_track_resource_destructor_call_if_applicable(env, resolved_func, expr.Call.arguments, scope, ctx);
+                }
 
                 mut resolved_return := sig.return_type;
                 if new_brand != empty[Index[str, ctx]] {

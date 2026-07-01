@@ -88,6 +88,13 @@ func main() {
         os.LogStr("Error: os.CloseDir should shadow-track closed open_linear_resource state");
         os.Exit(1);
     }
+    if env_has_error_containing(&env_decl_shadow, "LinearResourceDoubleClose", ctx) == 1 {
+        os.LogStr("Error: os.CloseDir directory shadow close should not also trigger generic Resource destructor-call tracking");
+        if len(env_decl_shadow.errors) > 0 {
+            os.LogStr(env_decl_shadow.errors[0].message);
+        }
+        os.Exit(1);
+    }
 
     mut env_manual_shadow := typechecker.env_new(ctx);
     env_manual_shadow.current_prefix = "main__";
