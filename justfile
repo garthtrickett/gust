@@ -138,6 +138,20 @@ guard_step52_transfer_state_matrix:
     just guard_step52_transfer_state_real_path_move
     echo "✅ Step 5.2 transfer-state matrix guard passed."
 
+guard_step52_defer_canonical_syntax_surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2 canonical Resource defer syntax surface..."
+    rg -n -F 'Defer {' compiler/ast.gst >/dev/null
+    rg -n -F 'stmt.Defer.expr' compiler/ast.gst compiler/typechecker.gst >/dev/null
+    rg -n -F 'defer close_resource(resource);' compiler/parser_resource_defer_canonical_surface_test_entry.gst >/dev/null
+    rg -n -F 'canonical Resource cleanup form must parse as a Defer statement' compiler/parser_resource_defer_canonical_surface_test_entry.gst >/dev/null
+    rg -n -F 'canonical Resource cleanup defer must wrap a call expression' compiler/parser_resource_defer_canonical_surface_test_entry.gst >/dev/null
+    rg -n -F 'canonical Resource cleanup defer must have exactly one argument' compiler/parser_resource_defer_canonical_surface_test_entry.gst >/dev/null
+    rg -n -F 'canonical Resource cleanup defer first argument must be a tracked Resource identifier surface' compiler/parser_resource_defer_canonical_surface_test_entry.gst >/dev/null
+    just guard-positive compiler/parser_resource_defer_canonical_surface_test_entry.gst step52_defer_canonical_syntax_surface
+    echo "✅ Step 5.2 canonical Resource defer syntax surface guard passed."
+
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
 # Report aliases stay informational; Makefile policy guards keep reports out of make test.
@@ -197,6 +211,7 @@ make-test-guards:
       guard_step52_transfer_state_transition_table
       guard_step52_transfer_state_real_path_move
       guard_step52_transfer_state_matrix
+      guard_step52_defer_canonical_syntax_surface
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
@@ -259,6 +274,7 @@ make-test-guards-step52-surface:
       guard_step52_transfer_state_transition_table
       guard_step52_transfer_state_real_path_move
       guard_step52_transfer_state_matrix
+      guard_step52_defer_canonical_syntax_surface
     )
     for needle in "${needles[@]}"; do
       rg -n -F "$needle" justfile justfile-step52 justfile-reports Makefile tests/test_runner.gst compiler/*.gst >/dev/null
@@ -400,6 +416,7 @@ check-step52:
     just guard_step52_transfer_state_transition_table
     just guard_step52_transfer_state_real_path_move
     just guard_step52_transfer_state_matrix
+    just guard_step52_defer_canonical_syntax_surface
     just run-step52-positive-batch
     just run-step52-negative-batch
     make test
