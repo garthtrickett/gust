@@ -6328,6 +6328,29 @@ func env_report_linear_resource_destructor_already_scheduled(env: *TypeEnvironme
     return 1;
 }
 
+func env_report_linear_resource_close_transition_rejected(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) int {
+    if env_open_linear_resource_is_tracked(env, name, ctx) == 0 {
+        return 0;
+    }
+    if env_open_linear_resource_can_be_closed(env, name, ctx) == 1 {
+        return 0;
+    }
+    if env_report_linear_resource_close_after_move(env, name, span, ctx) == 1 {
+        return 1;
+    }
+    if env_report_linear_resource_destructor_already_scheduled(env, name, span, ctx) == 1 {
+        return 1;
+    }
+    if env_report_linear_resource_double_close(env, name, span, ctx) == 1 {
+        return 1;
+    }
+    mut msg := std.Concat("Semantic Error: LinearResourceInvalidTransfer: resource '", name);
+    msg = std.Concat(msg, "' cannot be closed from state ");
+    msg = std.Concat(msg, env_open_linear_resource_state_name(env, name, ctx));
+    report_error(2, msg, span, env, ctx);
+    return 1;
+}
+
 func env_linear_resource_missing_cleanup_already_reported(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
     mut needle := std.Concat("LinearResourceMissingCleanup: resource '", name);
     unsafe {
@@ -6782,13 +6805,7 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
         return 0;
     }
     if std.str_eq(destructor_name_step52i, resolved_func) == 1 {
-        if env_report_linear_resource_close_after_move(env, resource_name_step52i, first_arg_span_step52h, ctx) == 1 {
-            return 0;
-        }
-        if env_report_linear_resource_destructor_already_scheduled(env, resource_name_step52i, first_arg_span_step52h, ctx) == 1 {
-            return 0;
-        }
-        if env_report_linear_resource_double_close(env, resource_name_step52i, first_arg_span_step52h, ctx) == 1 {
+        if env_report_linear_resource_close_transition_rejected(env, resource_name_step52i, first_arg_span_step52h, ctx) == 1 {
             return 0;
         }
         return env_try_close_open_linear_resource(env, resource_name_step52i, ctx);
@@ -6796,13 +6813,7 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
 
     mut namespaced_destructor_step52i := env_resolve_namespaced_ident(env, destructor_name_step52i, ctx);
     if std.str_eq(namespaced_destructor_step52i, resolved_func) == 1 {
-        if env_report_linear_resource_close_after_move(env, resource_name_step52i, first_arg_span_step52h, ctx) == 1 {
-            return 0;
-        }
-        if env_report_linear_resource_destructor_already_scheduled(env, resource_name_step52i, first_arg_span_step52h, ctx) == 1 {
-            return 0;
-        }
-        if env_report_linear_resource_double_close(env, resource_name_step52i, first_arg_span_step52h, ctx) == 1 {
+        if env_report_linear_resource_close_transition_rejected(env, resource_name_step52i, first_arg_span_step52h, ctx) == 1 {
             return 0;
         }
         return env_try_close_open_linear_resource(env, resource_name_step52i, ctx);

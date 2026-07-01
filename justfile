@@ -79,6 +79,7 @@ guard_step52_transfer_state_surface_inventory:
     rg -n -F 'env_open_linear_resource_transfer_transition_is_allowed' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_mark_open_linear_resource_moved' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_mark_open_linear_resource_closed' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_report_linear_resource_close_transition_rejected' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_mark_open_linear_resource_destructor_scheduled' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_open_linear_resource_has_terminal_state' compiler/typechecker.gst >/dev/null
     rg -n -F 'LinearResourceUseAfterMove' compiler/typechecker.gst justfile-reports >/dev/null
@@ -256,6 +257,18 @@ guard_step52_directory_resource_cleanup_boundary_routing:
     just guard-positive compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst step52_directory_resource_cleanup_boundary_routing
     echo "✅ Step 5.2 directory Resource cleanup-boundary routing guard passed."
 
+guard_step52_directory_resource_close_diagnostics_routing:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2 directory Resource close/double-close diagnostic routing..."
+    rg -n -F 'env_report_linear_resource_close_transition_rejected' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_open_linear_resource_can_be_closed(env, name, ctx)' compiler/typechecker.gst >/dev/null
+    rg -n -F 'close transition helper should preserve LinearResourceDoubleClose diagnostic' compiler/typechecker_directory_resource_close_diagnostics_routing_test_entry.gst >/dev/null
+    rg -n -F 'close transition helper should preserve LinearResourceCloseAfterMove diagnostic' compiler/typechecker_directory_resource_close_diagnostics_routing_test_entry.gst >/dev/null
+    rg -n -F 'directory close shadow helper should route successful close through shared transfer helper' compiler/typechecker_directory_resource_close_diagnostics_routing_test_entry.gst >/dev/null
+    just guard-positive compiler/typechecker_directory_resource_close_diagnostics_routing_test_entry.gst step52_directory_resource_close_diagnostics_routing
+    echo "✅ Step 5.2 directory Resource close/double-close diagnostic routing guard passed."
+
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
 # Report aliases stay informational; Makefile policy guards keep reports out of make test.
@@ -324,6 +337,7 @@ make-test-guards:
       guard_step52_directory_resource_parity_metadata
       guard_step52_directory_resource_shadow_tracking
       guard_step52_directory_resource_cleanup_boundary_routing
+      guard_step52_directory_resource_close_diagnostics_routing
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
@@ -395,6 +409,7 @@ make-test-guards-step52-surface:
       guard_step52_directory_resource_parity_metadata
       guard_step52_directory_resource_shadow_tracking
       guard_step52_directory_resource_cleanup_boundary_routing
+      guard_step52_directory_resource_close_diagnostics_routing
     )
     for needle in "${needles[@]}"; do
       rg -n -F "$needle" justfile justfile-step52 justfile-reports Makefile tests/test_runner.gst compiler/*.gst >/dev/null
@@ -545,6 +560,7 @@ check-step52:
     just guard_step52_directory_resource_parity_metadata
     just guard_step52_directory_resource_shadow_tracking
     just guard_step52_directory_resource_cleanup_boundary_routing
+    just guard_step52_directory_resource_close_diagnostics_routing
     just run-step52-positive-batch
     just run-step52-negative-batch
     make test
