@@ -6729,8 +6729,18 @@ func env_resource_destructor_call_is_applicable(env: *TypeEnvironment[ctx], reso
     return 0;
 }
 
+func env_function_is_directory_close_destructor(resolved_func: str) int {
+    if std.str_eq(resolved_func, "os_CloseDir") || std.str_eq(resolved_func, "os.CloseDir") {
+        return 1;
+    }
+    return 0;
+}
+
 func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx], resolved_func: str, arguments_idx: Index[std.Vector[ast.Expression[ctx], ctx], ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) int {
     if len(resolved_func) == 0 {
+        return 0;
+    }
+    if env_function_is_directory_close_destructor(resolved_func) == 1 {
         return 0;
     }
     if arguments_idx == empty[Index[std.Vector[ast.Expression[ctx], ctx], ctx]] {
