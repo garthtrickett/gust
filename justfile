@@ -269,6 +269,20 @@ guard_step52_directory_resource_close_diagnostics_routing:
     just guard-positive compiler/typechecker_directory_resource_close_diagnostics_routing_test_entry.gst step52_directory_resource_close_diagnostics_routing
     echo "✅ Step 5.2 directory Resource close/double-close diagnostic routing guard passed."
 
+guard_step52_directory_resource_source_of_truth_flip:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Step 5.2 directory Resource source-of-truth flip..."
+    rg -n -F 'env_open_directory_resource_compatibility_sync_from_open_directories' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_open_directory_resource_compatibility_mark_open' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_open_directory_resource_compatibility_mark_closed' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_open_directory_resource_compatibility_mark_moved' compiler/typechecker.gst >/dev/null
+    rg -n -F 'directory move-open diagnostic should read Resource source of truth without open_directories shim state' compiler/typechecker_directory_resource_source_of_truth_flip_test_entry.gst >/dev/null
+    rg -n -F 'open_directories compatibility shim should sync into Resource cleanup source of truth' compiler/typechecker_directory_resource_source_of_truth_flip_test_entry.gst >/dev/null
+    rg -n -F 'real directory declaration should still mirror into open_directories compatibility shim' compiler/typechecker_directory_resource_source_of_truth_flip_test_entry.gst >/dev/null
+    just guard-positive compiler/typechecker_directory_resource_source_of_truth_flip_test_entry.gst step52_directory_resource_source_of_truth_flip
+    echo "✅ Step 5.2 directory Resource source-of-truth flip guard passed."
+
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
 
 # Report aliases stay informational; Makefile policy guards keep reports out of make test.
@@ -338,6 +352,7 @@ make-test-guards:
       guard_step52_directory_resource_shadow_tracking
       guard_step52_directory_resource_cleanup_boundary_routing
       guard_step52_directory_resource_close_diagnostics_routing
+      guard_step52_directory_resource_source_of_truth_flip
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )
@@ -410,6 +425,7 @@ make-test-guards-step52-surface:
       guard_step52_directory_resource_shadow_tracking
       guard_step52_directory_resource_cleanup_boundary_routing
       guard_step52_directory_resource_close_diagnostics_routing
+      guard_step52_directory_resource_source_of_truth_flip
     )
     for needle in "${needles[@]}"; do
       rg -n -F "$needle" justfile justfile-step52 justfile-reports Makefile tests/test_runner.gst compiler/*.gst >/dev/null
@@ -561,6 +577,7 @@ check-step52:
     just guard_step52_directory_resource_shadow_tracking
     just guard_step52_directory_resource_cleanup_boundary_routing
     just guard_step52_directory_resource_close_diagnostics_routing
+    just guard_step52_directory_resource_source_of_truth_flip
     just run-step52-positive-batch
     just run-step52-negative-batch
     make test

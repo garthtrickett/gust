@@ -1275,7 +1275,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     msg = std.Concat(msg, "' has already been moved");
                     report_error(2, msg, expr.Move.span, env, ctx);
                 }
-                if (*env).open_directories.Get(name).Ok {
+                if env_open_directory_resource_requires_cleanup(env, name, ctx) == 1 {
                     mut msg := std.Concat("Semantic Error: Directory resource variable '", name);
                     msg = std.Concat(msg, "' cannot be moved while open. Close it first.");
                     report_error(2, msg, expr.Move.span, env, ctx);
@@ -1345,8 +1345,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut clean_brand := strip_brand_prefix(brand, ctx);
                         if std.str_eq(clean_brand, name) == 1 {
                             (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
-                            (*env).open_directories.Remove(var_name);
-                            env_shadow_track_moved_directory_resource(env, var_name, ctx);
+                                                    env_open_directory_resource_compatibility_mark_moved(env, var_name, ctx);
                         }
                         m = m + 1;
                     }
@@ -2755,8 +2754,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut var_type_lookup := scope_lookup(scope, var_name, ctx);
                     if std.str_eq(strip_brand_prefix(get_type_brand(var_type_lookup, env, ctx), ctx), get_root_variable(arg0_idx, ctx)) == 1 {
                         (*env).moved_vars.Insert(std.Clone(ctx, var_name), 1);
-                        (*env).open_directories.Remove(var_name);
-                        env_shadow_track_moved_directory_resource(env, var_name, ctx);
+                        env_open_directory_resource_compatibility_mark_moved(env, var_name, ctx);
                     }
                     m = m + 1;
                 }
@@ -2908,8 +2906,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     ctx.Set(arg_idx, arg_expr);
                     mut arg_name := get_root_variable(arg_idx, ctx);
                     if std.str_eq(arg_name, "") == 0 {
-                        (*env).open_directories.Remove(arg_name);
-                        env_shadow_track_closed_directory_resource(env, arg_name, ctx);
+                        env_open_directory_resource_compatibility_mark_closed(env, arg_name, ctx);
                     }
                 }
             }
@@ -5801,6 +5798,36 @@ func env_shadow_track_open_directory_resource(env: *TypeEnvironment[ctx], variab
     return env_register_open_linear_resource(env, variable_name, type_name, ctx);
 }
 
+func env_open_directory_resource_compatibility_sync_from_open_directories(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    if env_open_linear_resource_is_directory_shadow(env, variable_name, ctx) == 1 {
+        return 1;
+    }
+    unsafe {
+        if (*env).open_directories.Get(variable_name).Ok == false {
+            return 0;
+        }
+        mut type_name := "os_Dir_ctx";
+        mut type_lookup := (*env).variable_types.Get(variable_name);
+        if type_lookup.Ok {
+            mut resolved_type := env_resolve_type(env, type_lookup.Val, ctx);
+            if resolved_type.tag == 8 {
+                type_name = resolved_type.Struct.struct_name;
+            }
+        }
+        return env_shadow_track_open_directory_resource(env, variable_name, type_name, ctx);
+    }
+}
+
+func env_open_directory_resource_compatibility_mark_open(env: *TypeEnvironment[ctx], variable_name: str, type_name: str, ctx: &Arena) int {
+    if env_shadow_track_open_directory_resource(env, variable_name, type_name, ctx) == 0 {
+        return 0;
+    }
+    unsafe {
+        (*env).open_directories.Insert(std.Clone(ctx, variable_name), 1);
+    }
+    return 1;
+}
+
 func env_shadow_track_closed_directory_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
     if env_open_linear_resource_is_directory_shadow(env, variable_name, ctx) == 0 {
         return 0;
@@ -5808,11 +5835,29 @@ func env_shadow_track_closed_directory_resource(env: *TypeEnvironment[ctx], vari
     return env_try_close_open_linear_resource(env, variable_name, ctx);
 }
 
+func env_open_directory_resource_compatibility_mark_closed(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    env_open_directory_resource_compatibility_sync_from_open_directories(env, variable_name, ctx);
+    mut result := env_shadow_track_closed_directory_resource(env, variable_name, ctx);
+    unsafe {
+        (*env).open_directories.Remove(variable_name);
+    }
+    return result;
+}
+
 func env_shadow_track_moved_directory_resource(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
     if env_open_linear_resource_is_directory_shadow(env, variable_name, ctx) == 0 {
         return 0;
     }
     return env_try_move_open_linear_resource(env, variable_name, ctx);
+}
+
+func env_open_directory_resource_compatibility_mark_moved(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    env_open_directory_resource_compatibility_sync_from_open_directories(env, variable_name, ctx);
+    mut result := env_shadow_track_moved_directory_resource(env, variable_name, ctx);
+    unsafe {
+        (*env).open_directories.Remove(variable_name);
+    }
+    return result;
 }
 
 func env_open_linear_resource_is_tracked(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
@@ -6144,6 +6189,7 @@ func env_open_linear_resource_should_emit_generic_cleanup_diagnostic(env: *TypeE
 }
 
 func env_open_directory_resource_requires_cleanup(env: *TypeEnvironment[ctx], variable_name: str, ctx: &Arena) int {
+    env_open_directory_resource_compatibility_sync_from_open_directories(env, variable_name, ctx);
     if env_open_linear_resource_is_directory_shadow(env, variable_name, ctx) == 0 {
         return 0;
     }
@@ -8800,8 +8846,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             if val_type.tag == 8 { // Struct
                 mut decl_struct_name := val_type.Struct.struct_name;
                 if len(decl_struct_name) >= 7 && std.str_eq(std.str_slice(decl_struct_name, 0, 7), "os_Dir_") {
-                    (*env).open_directories.Insert(std.Clone(ctx, name), 1);
-                    env_shadow_track_open_directory_resource(env, name, decl_struct_name, ctx);
+                    env_open_directory_resource_compatibility_mark_open(env, name, decl_struct_name, ctx);
                 }
             }
 
@@ -9232,8 +9277,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         if val_type.tag == 8 { // Struct
                             mut assign_struct_name := val_type.Struct.struct_name;
                             if len(assign_struct_name) >= 7 && std.str_eq(std.str_slice(assign_struct_name, 0, 7), "os_Dir_") {
-                                (*env).open_directories.Insert(std.Clone(ctx, root_name), 1);
-                                env_shadow_track_open_directory_resource(env, root_name, assign_struct_name, ctx);
+                                env_open_directory_resource_compatibility_mark_open(env, root_name, assign_struct_name, ctx);
                             }
                         }
                     }
@@ -9300,8 +9344,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         if val_type.tag == 8 { // Struct
                             mut assign_struct_name := val_type.Struct.struct_name;
                             if len(assign_struct_name) >= 7 && std.str_eq(std.str_slice(assign_struct_name, 0, 7), "os_Dir_") {
-                                (*env).open_directories.Insert(std.Clone(ctx, root_name), 1);
-                                env_shadow_track_open_directory_resource(env, root_name, assign_struct_name, ctx);
+                                env_open_directory_resource_compatibility_mark_open(env, root_name, assign_struct_name, ctx);
                             }
                         }
                     }
@@ -9869,8 +9912,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             if payload_type.tag == 8 { // Struct
                 mut guard_struct_name := payload_type.Struct.struct_name;
                 if len(guard_struct_name) >= 7 && std.str_eq(std.str_slice(guard_struct_name, 0, 7), "os_Dir_") {
-                    (*env).open_directories.Insert(std.Clone(ctx, name), 1);
-                    env_shadow_track_open_directory_resource(env, name, guard_struct_name, ctx);
+                    env_open_directory_resource_compatibility_mark_open(env, name, guard_struct_name, ctx);
                 }
             }
 
