@@ -3274,6 +3274,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 resolved_return = env_resolve_type(env, resolved_return, ctx);
                 return resolved_return;
             }
+            if env_resource_destructor_call_is_applicable(env, resolved_func, expr.Call.arguments, scope, ctx) == 1 {
+                env_track_resource_destructor_call_if_applicable(env, resolved_func, expr.Call.arguments, scope, ctx);
+                mut t_resource_destructor_call: ast.Type[ctx];
+                t_resource_destructor_call.tag = 3; // Void
+                return t_resource_destructor_call;
+            }
+
             mut msg := std.Concat("Semantic Error: Undefined function '", func_name);
             msg = std.Concat(msg, "'");
             report_error(2, msg, expr.Call.span, env, ctx);
@@ -6589,6 +6596,59 @@ func env_track_resource_move_assignment_if_applicable(env: *TypeEnvironment[ctx]
         return 0;
     }
     return env_try_move_open_linear_resource(env, source_variable_name, ctx);
+}
+
+func env_resource_destructor_call_is_applicable(env: *TypeEnvironment[ctx], resolved_func: str, arguments_idx: Index[std.Vector[ast.Expression[ctx], ctx], ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) int {
+    if len(resolved_func) == 0 {
+        return 0;
+    }
+    if arguments_idx == empty[Index[std.Vector[ast.Expression[ctx], ctx], ctx]] {
+        return 0;
+    }
+
+    mut args_vec_step52ak: std.Vector[ast.Expression[ctx], ctx] := ctx[arguments_idx];
+    if len(args_vec_step52ak) != 1 {
+        return 0;
+    }
+
+    mut first_arg_idx_step52ak: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(first_arg_idx_step52ak, args_vec_step52ak[0]);
+    mut first_arg_expr_step52ak := ctx[first_arg_idx_step52ak];
+    if first_arg_expr_step52ak.tag != 0 { // Identifier
+        return 0;
+    }
+
+    mut resource_name_step52ak := "";
+    unsafe {
+        resource_name_step52ak = first_arg_expr_step52ak.Identifier.name;
+    }
+    if len(resource_name_step52ak) == 0 {
+        return 0;
+    }
+
+    mut is_local_step52ak := scope_contains(scope, resource_name_step52ak, ctx);
+    if is_local_step52ak == 0 {
+        resource_name_step52ak = env_resolve_namespaced_ident(env, resource_name_step52ak, ctx);
+    }
+
+    if env_open_linear_resource_is_tracked(env, resource_name_step52ak, ctx) == 0 {
+        return 0;
+    }
+
+    mut destructor_name_step52ak := env_open_linear_resource_destructor_name(env, resource_name_step52ak, ctx);
+    if len(destructor_name_step52ak) == 0 {
+        return 0;
+    }
+    if std.str_eq(destructor_name_step52ak, resolved_func) == 1 {
+        return 1;
+    }
+
+    mut namespaced_destructor_step52ak := env_resolve_namespaced_ident(env, destructor_name_step52ak, ctx);
+    if std.str_eq(namespaced_destructor_step52ak, resolved_func) == 1 {
+        return 1;
+    }
+
+    return 0;
 }
 
 func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx], resolved_func: str, arguments_idx: Index[std.Vector[ast.Expression[ctx], ctx], ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) int {

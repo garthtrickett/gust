@@ -181,6 +181,7 @@ guard_step52_defer_close_manual_interaction:
     set -euo pipefail
     echo "🔒 Checking Step 5.2 real Resource defer/manual-close interaction..."
     rg -n -F 'env_report_linear_resource_schedule_transition_rejected' compiler/typechecker.gst >/dev/null
+    rg -n -F 'env_resource_destructor_call_is_applicable' compiler/typechecker.gst >/dev/null
     rg -n -F 'schedule_destructor' compiler/typechecker.gst >/dev/null
     rg -n -F 'manual close after real defer scheduling should be rejected' compiler/typechecker_resource_defer_close_manual_interaction_test_entry.gst >/dev/null
     rg -n -F 'manual close after scheduling should emit LinearResourceDestructorAlreadyScheduled' compiler/typechecker_resource_defer_close_manual_interaction_test_entry.gst >/dev/null
