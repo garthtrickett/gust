@@ -58,8 +58,12 @@ func main() {
         os.LogStr("Error: directory declaration shadow record should be marked as directory shadow");
         os.Exit(1);
     }
-    if typechecker.env_open_linear_resource_requires_cleanup(&env_decl_shadow, "shadow_decl_dir", ctx) != 0 {
-        os.LogStr("Error: directory shadow records must not emit Resource cleanup diagnostics before cleanup parity routing");
+    if typechecker.env_open_linear_resource_requires_cleanup(&env_decl_shadow, "shadow_decl_dir", ctx) != 1 {
+        os.LogStr("Error: directory shadow records should require cleanup through the shared Resource predicate");
+        os.Exit(1);
+    }
+    if typechecker.env_open_linear_resource_should_emit_generic_cleanup_diagnostic(&env_decl_shadow, "shadow_decl_dir", ctx) != 0 {
+        os.LogStr("Error: directory shadow records must not emit generic Resource cleanup diagnostics");
         os.Exit(1);
     }
     mut shadow_decl_destructor := typechecker.env_open_linear_resource_destructor_name(&env_decl_shadow, "shadow_decl_dir", ctx);
@@ -109,7 +113,7 @@ func main() {
     typechecker.env_shadow_track_open_directory_resource(&env_cleanup_shadow, "cleanup_shadow_dir", "os_Dir_ctx", ctx);
     typechecker.env_validate_linear_resource_scope_exit_cleanup(&env_cleanup_shadow, span_dir_shadow, ctx);
     if env_has_error_containing(&env_cleanup_shadow, "LinearResourceMissingCleanup", ctx) == 1 {
-        os.LogStr("Error: directory shadow tracking must not emit Resource cleanup diagnostics before cleanup parity routing");
+        os.LogStr("Error: directory shadow tracking must not emit generic Resource cleanup diagnostics");
         if len(env_cleanup_shadow.errors) > 0 {
             os.LogStr(env_cleanup_shadow.errors[0].message);
         }
