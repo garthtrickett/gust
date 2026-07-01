@@ -120,6 +120,30 @@ func main() {
         os.Exit(1);
     }
 
+    mut internal_ast_expression_index_51g := typechecker.make_type_index("ast__Expression_ctx", "ctx", ctx);
+    if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_ast_expression_index_51g, ctx) != 0 {
+        os.LogStr("Error: internal AST expression index should not be a non-laundering enforcement target");
+        os.Exit(1);
+    }
+
+    mut internal_compiler_error_index_51g := typechecker.make_type_index("errors__CompilerError_ctx", "ctx", ctx);
+    if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_compiler_error_index_51g, ctx) != 0 {
+        os.LogStr("Error: internal compiler error index should not be a non-laundering enforcement target");
+        os.Exit(1);
+    }
+
+    mut internal_vector_string_index_51g := typechecker.make_type_index("std_Vector_str_ctx", "ctx", ctx);
+    if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_vector_string_index_51g, ctx) != 0 {
+        os.LogStr("Error: internal string vector index should not be a non-laundering enforcement target");
+        os.Exit(1);
+    }
+
+    mut internal_prefix_entry_ref_51g := typechecker.make_type_reference(typechecker.make_type_struct("typechecker__PrefixMapEntry_ctx", "ctx", ctx), "ctx", ctx);
+    if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_prefix_entry_ref_51g, ctx) != 0 {
+        os.LogStr("Error: internal PrefixMapEntry reference should not be a non-laundering enforcement target");
+        os.Exit(1);
+    }
+
     mut explicit_safe_cell_index_51g := typechecker.make_type_index("SafeCellUnknown", "ctx", ctx);
     if typechecker.step51g_non_laundering_type_is_safe_brand_target(explicit_safe_cell_index_51g, ctx) != 1 {
         os.LogStr("Error: ordinary safe-branded indexes must remain non-laundering enforcement targets");

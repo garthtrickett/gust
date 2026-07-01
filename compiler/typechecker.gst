@@ -585,15 +585,49 @@ func env_type_is_ephemeral_view(t: ast.Type[ctx], ctx: &Arena) int {
     }
 }
 
+func step51g_struct_name_is_internal_metadata_safe_brand_target(metadata_struct_name: str) int {
+    if std.str_eq(metadata_struct_name, "str") == 1 {
+        return 1;
+    }
+    if std.str_eq(metadata_struct_name, "std_Vector_str_ctx") == 1 {
+        return 1;
+    }
+    if std.str_find(metadata_struct_name, "OriginSet") != 0 - 1 {
+        return 1;
+    }
+    if typechecker_starts_with(metadata_struct_name, "ast__") == 1 {
+        return 1;
+    }
+    if typechecker_starts_with(metadata_struct_name, "errors__") == 1 {
+        return 1;
+    }
+    if typechecker_starts_with(metadata_struct_name, "token__") == 1 {
+        return 1;
+    }
+    if typechecker_starts_with(metadata_struct_name, "typechecker__") == 1 {
+        return 1;
+    }
+    return 0;
+}
+
 func step51g_type_is_internal_metadata_safe_brand_target(t: ast.Type[ctx], ctx: &Arena) int {
     unsafe {
         if t.tag == 7 { // Index
-            mut metadata_index_struct_name := t.Index.struct_name;
-            if std.str_eq(metadata_index_struct_name, "str") == 1 {
+            if step51g_struct_name_is_internal_metadata_safe_brand_target(t.Index.struct_name) == 1 {
                 return 1;
             }
-            if std.str_find(metadata_index_struct_name, "OriginSet") != 0 - 1 {
-                return 1;
+        }
+        if t.tag == 11 { // Reference
+            mut metadata_reference_inner_type := ctx[t.Reference.inner];
+            if metadata_reference_inner_type.tag == 7 { // Index
+                if step51g_struct_name_is_internal_metadata_safe_brand_target(metadata_reference_inner_type.Index.struct_name) == 1 {
+                    return 1;
+                }
+            }
+            if metadata_reference_inner_type.tag == 8 { // Struct
+                if step51g_struct_name_is_internal_metadata_safe_brand_target(metadata_reference_inner_type.Struct.struct_name) == 1 {
+                    return 1;
+                }
             }
         }
         return 0;
