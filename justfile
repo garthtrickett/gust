@@ -535,6 +535,9 @@ make-test-guards-step44-text: guard_parser_high_level_raw_casts guard_step44_no_
 test-fast-c:
     CC=cc CFLAGS="-O0 -w -pthread" make test
 
+test-tree-sitter-fast-c:
+    CC=cc CFLAGS="-O0 -w -pthread" make test_tree_sitter
+
 make-test-suite:
     just make-test-guards
     mkdir -p build
@@ -564,6 +567,7 @@ validate-fast-c:
     just guard-step51-provenance-origin-spine-fast-c
     just make-test-guards-fast-c
     just test-fast-c
+    just test-tree-sitter-fast-c
     just bootstrap-fast-c
     git diff --check
 
