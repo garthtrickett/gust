@@ -634,6 +634,9 @@ func step51g_struct_name_is_internal_metadata_safe_brand_target(metadata_struct_
     if typechecker_starts_with(metadata_struct_name, "std_Vector_lexer__") == 1 {
         return 1;
     }
+    if typechecker_starts_with(metadata_struct_name, "std_GraphNode_") == 1 {
+        return 1;
+    }
     if std.str_find(metadata_struct_name, "OriginSet") != 0 - 1 {
         return 1;
     }

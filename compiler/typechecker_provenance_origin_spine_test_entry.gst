@@ -144,6 +144,12 @@ func main() {
         os.Exit(1);
     }
 
+    mut internal_graph_node_ref_51g := typechecker.make_type_reference(typechecker.make_type_struct("std_GraphNode_str_ctx", "ctx", ctx), "ctx", ctx);
+    if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_graph_node_ref_51g, ctx) != 0 {
+        os.LogStr("Error: internal GraphNode reference should not be a non-laundering enforcement target");
+        os.Exit(1);
+    }
+
     mut internal_test_task_arg_index_51g := typechecker.make_type_index("TestTaskArg_ctx", "ctx", ctx);
     if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_test_task_arg_index_51g, ctx) != 0 {
         os.LogStr("Error: internal test runner task argument index should not be a non-laundering enforcement target");
