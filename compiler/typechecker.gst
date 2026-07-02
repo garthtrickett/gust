@@ -13,6 +13,11 @@ type AddressOriginMetadata struct {
     is_unknown: int
 }
 
+type AddressOriginRecord[ctx] struct {
+    kind: str,
+    label: str
+}
+
 type ExpressionProvenance[ctx] struct {
     resolved_type: ast.Type[ctx],
     address_origin: AddressOriginMetadata,
@@ -104,6 +109,119 @@ func step51g_address_origin_blocks_safe_brand(origin: AddressOriginMetadata) int
         return 1;
     }
     return 0;
+}
+
+func address_origin_record_kind_safe() str {
+    return "safe";
+}
+
+func address_origin_record_kind_local_stack() str {
+    return "local_stack";
+}
+
+func address_origin_record_kind_arena() str {
+    return "arena";
+}
+
+func address_origin_record_kind_scratchpad() str {
+    return "scratchpad";
+}
+
+func address_origin_record_kind_ffi() str {
+    return "ffi";
+}
+
+func address_origin_record_kind_sandbox() str {
+    return "sandbox";
+}
+
+func address_origin_record_kind_raw_unknown() str {
+    return "raw_unknown";
+}
+
+func address_origin_record_kind_borrowed_field() str {
+    return "borrowed_field";
+}
+
+func address_origin_record_kind_container_element() str {
+    return "container_element";
+}
+
+func address_origin_record_make(kind: str, label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut record: AddressOriginRecord[ctx];
+    record.kind = std.Clone(ctx, kind);
+    record.label = std.Clone(ctx, label);
+    return record;
+}
+
+func address_origin_record_make_safe(label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make(address_origin_record_kind_safe(), label, ctx);
+}
+
+func address_origin_record_make_local_stack(label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make(address_origin_record_kind_local_stack(), label, ctx);
+}
+
+func address_origin_record_make_arena(label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make(address_origin_record_kind_arena(), label, ctx);
+}
+
+func address_origin_record_make_scratchpad(label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make(address_origin_record_kind_scratchpad(), label, ctx);
+}
+
+func address_origin_record_make_ffi(label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make(address_origin_record_kind_ffi(), label, ctx);
+}
+
+func address_origin_record_make_sandbox(label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make(address_origin_record_kind_sandbox(), label, ctx);
+}
+
+func address_origin_record_make_raw_unknown(label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make(address_origin_record_kind_raw_unknown(), label, ctx);
+}
+
+func address_origin_record_make_borrowed_field(label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make(address_origin_record_kind_borrowed_field(), label, ctx);
+}
+
+func address_origin_record_make_container_element(label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make(address_origin_record_kind_container_element(), label, ctx);
+}
+
+func address_origin_record_kind_name(record: AddressOriginRecord[ctx]) str {
+    return record.kind;
+}
+
+func address_origin_record_is_safe(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_safe()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_is_raw_like(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_raw_unknown()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_is_external_like(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_ffi()) == 1 {
+        return 1;
+    }
+    if std.str_eq(record.kind, address_origin_record_kind_sandbox()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_debug_string(record: AddressOriginRecord[ctx], ctx: &Arena) str {
+    mut res := std.Concat(record.kind, ":");
+    res = std.Concat(res, record.label);
+    return std.Clone(ctx, res);
 }
 
 func step51g_join_address_origin(left: AddressOriginMetadata, right: AddressOriginMetadata) AddressOriginMetadata {

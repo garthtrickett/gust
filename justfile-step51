@@ -280,6 +280,11 @@ guard_step51_address_origin_metadata:
     just guard-positive compiler/typechecker_address_origin_test_entry.gst step51_address_origin_metadata
     echo "✅ guard_step51_address_origin_metadata passed."
 
+guard_step51_address_origin_record_helpers:
+    echo "🔒 Checking Step 5.1 address-origin record vocabulary helpers..."
+    just guard-positive compiler/typechecker_address_origin_test_entry.gst step51_address_origin_record_helpers
+    echo "✅ guard_step51_address_origin_record_helpers passed."
+
 guard_step51_expression_provenance_carrier:
     echo "🔒 Checking Step 5.1 expression provenance carrier helpers..."
     just guard-positive compiler/typechecker_expression_provenance_test_entry.gst step51_expression_provenance_carrier
