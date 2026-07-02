@@ -233,6 +233,27 @@ func main() {
         os.Exit(1);
     }
 
+    mut unsafe_ref_binding_env_51g := typechecker.env_new(ctx);
+    unsafe_ref_binding_env_51g.in_unsafe_block = 1;
+    mut branded_ref_int_51g := typechecker.make_type_reference(t_int_51g, "ctx", ctx);
+    if typechecker.step51g_non_laundering_unsafe_block_allows_local_reference_binding(&unsafe_ref_binding_env_51g, branded_ref_int_51g, "Binding raw-derived or sandbox-derived value") != 1 {
+        os.LogStr("Error: unsafe-block local reference binding escape hatch did not allow explicit unsafe address binding");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_unsafe_block_allows_local_reference_binding(&unsafe_ref_binding_env_51g, branded_index_param_type_51g, "Binding raw-derived or sandbox-derived value") != 0 {
+        os.LogStr("Error: unsafe-block local reference binding escape hatch incorrectly allowed Index laundering");
+        os.Exit(1);
+    }
+    if typechecker.step51g_non_laundering_unsafe_block_allows_local_reference_binding(&unsafe_ref_binding_env_51g, branded_ref_int_51g, "Assigning raw-derived or sandbox-derived value") != 0 {
+        os.LogStr("Error: unsafe-block local reference binding escape hatch incorrectly allowed non-binding contexts");
+        os.Exit(1);
+    }
+    unsafe_ref_binding_env_51g.in_unsafe_block = 0;
+    if typechecker.step51g_non_laundering_unsafe_block_allows_local_reference_binding(&unsafe_ref_binding_env_51g, branded_ref_int_51g, "Binding raw-derived or sandbox-derived value") != 0 {
+        os.LogStr("Error: unsafe-block local reference binding escape hatch incorrectly allowed safe-context reference binding");
+        os.Exit(1);
+    }
+
     mut sig_return_seed_51g: typechecker.FunctionSignature[ctx];
     typechecker.init_function_signature_ffi_defaults(&sig_return_seed_51g);
     sig_return_seed_51g.return_type = branded_index_param_type_51g;

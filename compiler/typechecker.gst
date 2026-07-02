@@ -748,8 +748,24 @@ func step51g_non_laundering_safe_brand_target_should_report(target_t: ast.Type[c
     return step51g_non_laundering_safe_brand_target_diagnostic_kind_reports(diagnostic_kind_nonlaunder_target);
 }
 
+func step51g_non_laundering_unsafe_block_allows_local_reference_binding(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], context_nonlaunder: str) int {
+    if (*env).in_unsafe_block == 0 {
+        return 0;
+    }
+    if std.str_eq(context_nonlaunder, "Binding raw-derived or sandbox-derived value") == 0 {
+        return 0;
+    }
+    if target_t.tag == 11 { // Reference
+        return 1;
+    }
+    return 0;
+}
+
 func env_report_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], span: token.Span, context_nonlaunder: str, ctx: &Arena) {
     if step51g_non_laundering_safe_brand_target_should_report(target_t, prov, ctx) == 0 {
+        return;
+    }
+    if step51g_non_laundering_unsafe_block_allows_local_reference_binding(env, target_t, context_nonlaunder) == 1 {
         return;
     }
 
