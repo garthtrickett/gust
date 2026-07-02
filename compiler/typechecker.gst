@@ -749,8 +749,10 @@ func step51g_non_laundering_safe_brand_target_should_report(target_t: ast.Type[c
 }
 
 func step51g_non_laundering_unsafe_block_allows_local_reference_binding(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], context_nonlaunder: str) int {
-    if (*env).in_unsafe_block == 0 {
-        return 0;
+    unsafe {
+        if (*env).in_unsafe_block == 0 {
+            return 0;
+        }
     }
     if std.str_eq(context_nonlaunder, "Binding raw-derived or sandbox-derived value") == 0 {
         return 0;
