@@ -10148,7 +10148,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                         // Track assignments to variables to update their active memory origins
                         mut origs := set_init(ctx);
-                        if env_type_is_ephemeral_view(left_type, ctx) == 1 {
+                        mut should_inherit_assignment_flow_origins := env_type_is_ephemeral_view(left_type, ctx);
+                        if step51g_expression_provenance_is_raw_or_sandbox_derived(val_prov_assignment) == 1 {
+                            should_inherit_assignment_flow_origins = 1;
+                        }
+                        if should_inherit_assignment_flow_origins == 1 {
                             origs = typechecker_clone_origin_set(val_prov_assignment.legacy_origins, ctx);
                         }
                         if left.tag == 0 { // Identifier
