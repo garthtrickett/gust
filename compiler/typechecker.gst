@@ -1058,6 +1058,31 @@ func step51g_expression_provenance_aggregate_from_member_preserving_raw_sandbox(
     return unknown_aggregate_prov;
 }
 
+func step51g_expression_provenance_project_container_element_preserving_raw_sandbox(element_prov: ExpressionProvenance[ctx], result_t: ast.Type[ctx], legacy_origins: Index[OriginSet[ctx], ctx], element_label: str, ctx: &Arena) ExpressionProvenance[ctx] {
+    mut container_label := "container.element";
+    if std.str_eq(element_label, "") == 0 {
+        container_label = std.Concat("container.element:", element_label);
+    }
+
+    if step51g_expression_provenance_is_raw_or_sandbox_derived(element_prov) == 1 {
+        return step51g_expression_provenance_retarget_preserving_raw_sandbox(element_prov, result_t, legacy_origins, container_label, ctx);
+    }
+
+    if expression_provenance_allows_safe_branding(element_prov) == 1 {
+        mut safe_container_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_container_prov.legacy_origins = typechecker_clone_origin_set(element_prov.legacy_origins, ctx);
+        set_union(safe_container_prov.legacy_origins, legacy_origins, ctx);
+        set_add(safe_container_prov.legacy_origins, container_label, ctx);
+        return safe_container_prov;
+    }
+
+    mut unknown_container_prov := expression_provenance_unknown(result_t, ctx);
+    unknown_container_prov.legacy_origins = typechecker_clone_origin_set(element_prov.legacy_origins, ctx);
+    set_union(unknown_container_prov.legacy_origins, legacy_origins, ctx);
+    set_add(unknown_container_prov.legacy_origins, container_label, ctx);
+    return unknown_container_prov;
+}
+
 func expression_provenance_literal_value(t: ast.Type[ctx], literal_kind: str, ctx: &Arena) ExpressionProvenance[ctx] {
     return expression_provenance_safe_arena(t, ctx);
 }
@@ -4230,15 +4255,13 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                 mut container_lookup_contprov := (*env).container_provenance.Get(container_key_contprov);
                 if container_lookup_contprov.Ok {
                     mut found_container_prov := container_lookup_contprov.Val;
-                    found_container_prov.resolved_type = t;
-
-                    mut merged_container_origins := typechecker_clone_origin_set(found_container_prov.legacy_origins, ctx);
-                    set_union(merged_container_origins, legacy_origins, ctx);
-                    found_container_prov.legacy_origins = merged_container_origins;
-                    return found_container_prov;
+                    return step51g_expression_provenance_project_container_element_preserving_raw_sandbox(found_container_prov, t, legacy_origins, "index", ctx);
                 }
 
                 mut index_allocator_prov_readback := check_expression_with_provenance(expr.IndexAccess.allocator, env, scope, ctx);
+                if step51g_expression_provenance_is_raw_or_sandbox_derived(index_allocator_prov_readback) == 1 {
+                    return step51g_expression_provenance_project_container_element_preserving_raw_sandbox(index_allocator_prov_readback, t, legacy_origins, "base", ctx);
+                }
                 if expression_provenance_has_known_readback_origin(index_allocator_prov_readback) == 1 {
                     return expression_provenance_inherit_readback(index_allocator_prov_readback, t, legacy_origins, ctx);
                 }
@@ -4266,11 +4289,7 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                                         mut hashmap_get_val_cell_prov := hashmap_get_val_lookup_prov.Val;
                                         mut hashmap_get_val_cell_resolved_type_prov := env_resolve_type(env, hashmap_get_val_cell_prov.resolved_type, ctx);
                                         hashmap_get_val_cell_prov.resolved_type = hashmap_get_val_cell_resolved_type_prov;
-
-                                        mut hashmap_get_val_origins_prov := typechecker_clone_origin_set(hashmap_get_val_cell_prov.legacy_origins, ctx);
-                                        set_union(hashmap_get_val_origins_prov, legacy_origins, ctx);
-                                        hashmap_get_val_cell_prov.legacy_origins = hashmap_get_val_origins_prov;
-                                        return hashmap_get_val_cell_prov;
+                                        return step51g_expression_provenance_project_container_element_preserving_raw_sandbox(hashmap_get_val_cell_prov, t, legacy_origins, "HashMap.Get", ctx);
                                     }
                                 }
                             }
@@ -4451,12 +4470,7 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                                     return container_getref_safe_prov;
                                 }
                                 if expression_provenance_is_raw_or_sandbox_derived(container_getref_cell_prov) == 1 {
-                                    mut container_getref_unsafe_prov := container_getref_cell_prov;
-                                    container_getref_unsafe_prov.resolved_type = t;
-                                    mut container_getref_unsafe_origins := typechecker_clone_origin_set(container_getref_unsafe_prov.legacy_origins, ctx);
-                                    set_union(container_getref_unsafe_origins, legacy_origins, ctx);
-                                    container_getref_unsafe_prov.legacy_origins = container_getref_unsafe_origins;
-                                    return container_getref_unsafe_prov;
+                                    return step51g_expression_provenance_project_container_element_preserving_raw_sandbox(container_getref_cell_prov, t, legacy_origins, "GetRef", ctx);
                                 }
                             }
                         }
@@ -4519,12 +4533,7 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                                 return std_vector_getref_safe_prov;
                             }
                             if expression_provenance_is_raw_or_sandbox_derived(std_vector_getref_cell_prov) == 1 {
-                                mut std_vector_getref_unsafe_prov := std_vector_getref_cell_prov;
-                                std_vector_getref_unsafe_prov.resolved_type = t;
-                                mut std_vector_getref_unsafe_origins := typechecker_clone_origin_set(std_vector_getref_unsafe_prov.legacy_origins, ctx);
-                                set_union(std_vector_getref_unsafe_origins, legacy_origins, ctx);
-                                std_vector_getref_unsafe_prov.legacy_origins = std_vector_getref_unsafe_origins;
-                                return std_vector_getref_unsafe_prov;
+                                return step51g_expression_provenance_project_container_element_preserving_raw_sandbox(std_vector_getref_cell_prov, t, legacy_origins, "std.VectorGetRef", ctx);
                             }
                         }
                         if std_vector_getref_has_cell_prov == 0 {
@@ -4573,12 +4582,7 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                                 return std_hashmap_getref_safe_prov;
                             }
                             if expression_provenance_is_raw_or_sandbox_derived(std_hashmap_getref_cell_prov) == 1 {
-                                mut std_hashmap_getref_unsafe_prov := std_hashmap_getref_cell_prov;
-                                std_hashmap_getref_unsafe_prov.resolved_type = t;
-                                mut std_hashmap_getref_unsafe_origins := typechecker_clone_origin_set(std_hashmap_getref_unsafe_prov.legacy_origins, ctx);
-                                set_union(std_hashmap_getref_unsafe_origins, legacy_origins, ctx);
-                                std_hashmap_getref_unsafe_prov.legacy_origins = std_hashmap_getref_unsafe_origins;
-                                return std_hashmap_getref_unsafe_prov;
+                                return step51g_expression_provenance_project_container_element_preserving_raw_sandbox(std_hashmap_getref_cell_prov, t, legacy_origins, "std.HashMapGetRef", ctx);
                             }
                         }
                     }
