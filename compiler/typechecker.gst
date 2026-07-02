@@ -485,6 +485,30 @@ func expression_provenance_empty_value(t: ast.Type[ctx], ctx: &Arena) Expression
     return expression_provenance_safe_arena(t, ctx);
 }
 
+func expression_provenance_address_of(inner_prov: ExpressionProvenance[ctx], result_t: ast.Type[ctx], legacy_origins: Index[OriginSet[ctx], ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    if expression_provenance_allows_safe_branding(inner_prov) == 1 {
+        mut safe_address_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_address_prov.legacy_origins = typechecker_clone_origin_set(inner_prov.legacy_origins, ctx);
+        set_union(safe_address_prov.legacy_origins, legacy_origins, ctx);
+        set_add(safe_address_prov.legacy_origins, "address_of", ctx);
+        return safe_address_prov;
+    }
+    if expression_provenance_is_raw_or_sandbox_derived(inner_prov) == 1 {
+        mut unsafe_address_prov := inner_prov;
+        unsafe_address_prov.resolved_type = result_t;
+        unsafe_address_prov.legacy_origins = typechecker_clone_origin_set(inner_prov.legacy_origins, ctx);
+        set_union(unsafe_address_prov.legacy_origins, legacy_origins, ctx);
+        set_add(unsafe_address_prov.legacy_origins, "address_of", ctx);
+        return unsafe_address_prov;
+    }
+
+    mut unknown_address_prov := expression_provenance_unknown(result_t, ctx);
+    unknown_address_prov.legacy_origins = typechecker_clone_origin_set(inner_prov.legacy_origins, ctx);
+    set_union(unknown_address_prov.legacy_origins, legacy_origins, ctx);
+    set_add(unknown_address_prov.legacy_origins, "address_of", ctx);
+    return unknown_address_prov;
+}
+
 func expression_provenance_literal_value(t: ast.Type[ctx], literal_kind: str, ctx: &Arena) ExpressionProvenance[ctx] {
     return expression_provenance_safe_arena(t, ctx);
 }
@@ -3580,6 +3604,11 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
 
             if expr.tag == 13 { // Empty
                 return expression_provenance_empty_value(t, ctx);
+            }
+
+            if expr.tag == 6 { // AddressOf
+                mut address_inner_prov := check_expression_with_provenance(expr.AddressOf.expr, env, scope, ctx);
+                return expression_provenance_address_of(address_inner_prov, t, legacy_origins, ctx);
             }
 
             if expr.tag == 7 { // Dereference

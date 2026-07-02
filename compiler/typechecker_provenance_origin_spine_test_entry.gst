@@ -239,6 +239,24 @@ func main() {
         os.Exit(1);
     }
 
+    mut address_of_ref_type_51g := typechecker.make_type_reference(t_int_51g, "val", ctx);
+    mut address_of_origins_51g := typechecker.set_init(ctx);
+    typechecker.set_add(address_of_origins_51g, "val", ctx);
+    mut address_of_safe_prov_51g := typechecker.expression_provenance_address_of(literal_int_prov_51g, address_of_ref_type_51g, address_of_origins_51g, ctx);
+    if typechecker.step51g_expression_provenance_allows_safe_brand(address_of_safe_prov_51g, ctx) != 1 {
+        os.LogStr("Error: safe local address-of provenance did not allow Reference binding");
+        os.Exit(1);
+    }
+    if typechecker.set_contains(address_of_safe_prov_51g.legacy_origins, "address_of", ctx) != 1 {
+        os.LogStr("Error: safe local address-of provenance did not preserve address_of marker");
+        os.Exit(1);
+    }
+    mut address_of_raw_prov_51g := typechecker.expression_provenance_address_of(raw_prov_51g, address_of_ref_type_51g, address_of_origins_51g, ctx);
+    if typechecker.step51g_expression_provenance_blocks_safe_brand(address_of_raw_prov_51g, ctx) != 1 {
+        os.LogStr("Error: raw-derived address-of provenance did not block Reference binding");
+        os.Exit(1);
+    }
+
     mut unsafe_ref_binding_env_51g := typechecker.env_new(ctx);
     unsafe_ref_binding_env_51g.in_unsafe_block = 1;
     mut branded_ref_int_51g := typechecker.make_type_reference(t_int_51g, "ctx", ctx);
