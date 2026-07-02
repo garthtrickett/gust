@@ -4195,6 +4195,42 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
     return t;
 }
 
+func step51g_expression_provenance_lookup_without_rechecking(expr_idx: Index[ast.Expression[ctx], ctx], resolved_t: ast.Type[ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    mut prov := expression_provenance_unknown(resolved_t, ctx);
+    prov.legacy_origins = get_expression_origins(expr_idx, env, ctx);
+
+    unsafe {
+        if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+            mut expr := ctx[expr_idx];
+            if expr.tag == 0 { // Identifier
+                mut name := expr.Identifier.name;
+                if std.str_eq(name, "null") == 1 {
+                    return expression_provenance_null_value(resolved_t, ctx);
+                }
+
+                mut direct_lookup := (*env).variable_provenance.Get(name);
+                if direct_lookup.Ok {
+                    mut found_direct := direct_lookup.Val;
+                    found_direct.resolved_type = resolved_t;
+                    return found_direct;
+                }
+
+                if scope_contains(scope, name, ctx) == 0 {
+                    mut resolved_name := env_resolve_namespaced_ident(env, name, ctx);
+                    mut resolved_lookup := (*env).variable_provenance.Get(resolved_name);
+                    if resolved_lookup.Ok {
+                        mut found_resolved := resolved_lookup.Val;
+                        found_resolved.resolved_type = resolved_t;
+                        return found_resolved;
+                    }
+                }
+            }
+        }
+    }
+
+    return prov;
+}
+
 func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ExpressionProvenance[ctx] {
     mut t := check_expression(expr_idx, env, scope, ctx);
     mut legacy_origins := get_expression_origins(expr_idx, env, ctx);
@@ -4243,14 +4279,14 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
             }
 
             if expr.tag == 4 { // Move
-                mut move_inner_prov := check_expression_with_provenance(expr.Move.expr, env, scope, ctx);
+                mut move_inner_prov := step51g_expression_provenance_lookup_without_rechecking(expr.Move.expr, t, env, scope, ctx);
                 if step51g_expression_provenance_is_raw_or_sandbox_derived(move_inner_prov) == 1 {
                     return step51g_expression_provenance_retarget_preserving_raw_sandbox(move_inner_prov, t, legacy_origins, "move", ctx);
                 }
             }
 
             if expr.tag == 5 { // Take
-                mut take_inner_prov := check_expression_with_provenance(expr.Take.expr, env, scope, ctx);
+                mut take_inner_prov := step51g_expression_provenance_lookup_without_rechecking(expr.Take.expr, t, env, scope, ctx);
                 if step51g_expression_provenance_is_raw_or_sandbox_derived(take_inner_prov) == 1 {
                     return step51g_expression_provenance_retarget_preserving_raw_sandbox(take_inner_prov, t, legacy_origins, "take", ctx);
                 }
