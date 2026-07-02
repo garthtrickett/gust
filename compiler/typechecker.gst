@@ -224,6 +224,62 @@ func address_origin_record_debug_string(record: AddressOriginRecord[ctx], ctx: &
     return std.Clone(ctx, res);
 }
 
+func address_origin_record_is_local_stack(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_local_stack()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_label_has_prefix(record: AddressOriginRecord[ctx], prefix: str) int {
+    if std.str_find(record.label, prefix) == 0 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_make_local_value(name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("local.value:", name);
+    return address_origin_record_make_local_stack(label, ctx);
+}
+
+func address_origin_record_make_local_address(name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("local.address:", name);
+    return address_origin_record_make_local_stack(label, ctx);
+}
+
+func address_origin_record_is_local_value(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_local_stack(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "local.value:");
+}
+
+func address_origin_record_is_local_address(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_local_stack(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "local.address:");
+}
+
+func address_origin_record_local_name(record: AddressOriginRecord[ctx], ctx: &Arena) str {
+    if address_origin_record_is_local_value(record) == 1 {
+        return std.str_slice(record.label, len("local.value:"), len(record.label));
+    }
+    if address_origin_record_is_local_address(record) == 1 {
+        return std.str_slice(record.label, len("local.address:"), len(record.label));
+    }
+    return std.Clone(ctx, "");
+}
+
+func address_origin_record_for_local_identifier(name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_local_value(name, ctx);
+}
+
+func address_origin_record_for_address_of_local_identifier(name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_local_address(name, ctx);
+}
+
 func step51g_join_address_origin(left: AddressOriginMetadata, right: AddressOriginMetadata) AddressOriginMetadata {
     mut joined: AddressOriginMetadata;
     unsafe {

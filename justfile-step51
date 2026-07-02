@@ -281,14 +281,19 @@ guard_step51_address_origin_metadata:
     echo "✅ guard_step51_address_origin_metadata passed."
 
 guard_step51_address_origin_record_helpers:
-    echo "🔒 Checking Step 5.1 address-origin record vocabulary helpers..."
+    echo "🔒 Checking Step 5.1 address-origin record vocabulary helpers."
     just guard-positive compiler/typechecker_address_origin_test_entry.gst step51_address_origin_record_helpers
     echo "✅ guard_step51_address_origin_record_helpers passed."
 
-guard_step51_expression_provenance_carrier:
-    echo "🔒 Checking Step 5.1 expression provenance carrier helpers..."
-    just guard-positive compiler/typechecker_expression_provenance_test_entry.gst step51_expression_provenance_carrier
-    echo "✅ guard_step51_expression_provenance_carrier passed."
+guard_step51_address_origin_local_stack:
+    echo "🔒 Checking Step 5.1 local_stack address-origin metadata helpers."
+    just guard-positive compiler/typechecker_address_origin_local_stack_test_entry.gst step51_address_origin_local_stack
+    echo "✅ guard_step51_address_origin_local_stack passed."
+
+guard_step51_address_origin_local_stack:
+    echo "🔒 Checking Step 5.1 local_stack address-origin metadata helpers."
+    just guard-positive compiler/typechecker_address_origin_local_stack_test_entry.gst step51_address_origin_local_stack
+    echo "✅ guard_step51_address_origin_local_stack passed."
 
 guard_step51_safe_constructor_provenance:
     echo "🔒 Checking Step 5.1 safe constructor provenance metadata..."
