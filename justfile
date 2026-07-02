@@ -549,6 +549,31 @@ make-test-suite:
 make-test-suite-fast-c:
     CC=cc CFLAGS="-O0 -w -pthread" just make-test-suite
 
+guard-step51-provenance-origin-spine-fast-c:
+    CC=cc CFLAGS="-O0 -w -pthread" just guard_step51_provenance_origin_spine
+
+make-test-guards-fast-c:
+    CC=cc CFLAGS="-O0 -w -pthread" just make-test-guards
+
+bootstrap-fast-c:
+    CC=cc CFLAGS="-O0 -w -pthread" make bootstrap
+
+validate-fast-c:
+    git diff --check
+    make gust
+    just guard-step51-provenance-origin-spine-fast-c
+    just make-test-guards-fast-c
+    just test-fast-c
+    just bootstrap-fast-c
+    git diff --check
+
+validate-native-fast-c:
+    git diff --check
+    make gust
+    just make-test-suite-fast-c
+    just bootstrap-fast-c
+    git diff --check
+
 make-test-suite-parallel:
     just make-test-guards-parallel
     mkdir -p build
