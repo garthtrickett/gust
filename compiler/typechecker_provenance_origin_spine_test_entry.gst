@@ -226,6 +226,13 @@ func main() {
         os.Exit(1);
     }
 
+    mut pool_alloc_constructed_prov_51g := typechecker.expression_provenance_safe_arena(branded_index_param_type_51g, ctx);
+    typechecker.set_add(pool_alloc_constructed_prov_51g.legacy_origins, "Pool.Alloc", ctx);
+    if typechecker.step51g_expression_provenance_allows_safe_brand(pool_alloc_constructed_prov_51g, ctx) != 1 {
+        os.LogStr("Error: Pool.Alloc constructed provenance did not allow safe-branded binding");
+        os.Exit(1);
+    }
+
     mut sig_return_seed_51g: typechecker.FunctionSignature[ctx];
     typechecker.init_function_signature_ffi_defaults(&sig_return_seed_51g);
     sig_return_seed_51g.return_type = branded_index_param_type_51g;

@@ -3721,6 +3721,26 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     return clone_constructed_prov;
                 }
 
+                mut pool_alloc_func_expr_prov := ctx[expr.Call.function];
+                if pool_alloc_func_expr_prov.tag == 11 { // Selector
+                    if std.str_eq(pool_alloc_func_expr_prov.Selector.right, "Alloc") == 1 {
+                        mut pool_alloc_receiver_type_prov := check_expression(pool_alloc_func_expr_prov.Selector.left, env, scope, ctx);
+                        pool_alloc_receiver_type_prov = env_resolve_type(env, pool_alloc_receiver_type_prov, ctx);
+                        if pool_alloc_receiver_type_prov.tag == 8 { // Struct
+                            mut pool_alloc_receiver_name_prov := typechecker_strip_module_prefix(pool_alloc_receiver_type_prov.Struct.struct_name, ctx);
+                            if std.str_find(pool_alloc_receiver_name_prov, "Pool_") == 0 || std.str_find(pool_alloc_receiver_name_prov, "std_Pool_") == 0 {
+                                mut pool_alloc_result_type_prov := env_resolve_type(env, t, ctx);
+                                if pool_alloc_result_type_prov.tag == 7 { // Index
+                                    mut pool_alloc_constructed_prov := expression_provenance_safe_arena(t, ctx);
+                                    pool_alloc_constructed_prov.legacy_origins = legacy_origins;
+                                    set_add(pool_alloc_constructed_prov.legacy_origins, "Pool.Alloc", ctx);
+                                    return pool_alloc_constructed_prov;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 mut is_get_ref_call_prov := 0;
                 if std.str_eq(call_name_prov, "get_ref") == 1 {
                     is_get_ref_call_prov = 1;
