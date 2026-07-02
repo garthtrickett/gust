@@ -1399,10 +1399,6 @@ func env_report_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], tar
 }
 
 func env_report_hashmap_get_val_readback_non_laundering_safe_brand_target(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], value_idx_hgv_readback_nlaunder: Index[ast.Expression[ctx], ctx], span_hgv_readback_nlaunder: token.Span, context_hgv_readback_nlaunder: str, ctx: &Arena) {
-    if step51g_non_laundering_type_is_safe_brand_target(target_t, ctx) == 0 {
-        return;
-    }
-
     unsafe {
         if value_idx_hgv_readback_nlaunder == empty[Index[ast.Expression[ctx], ctx]] {
             return;
@@ -1443,7 +1439,11 @@ func env_report_hashmap_get_val_readback_non_laundering_safe_brand_target(env: *
             mut cell_lookup_hgv_readback_nlaunder := (*env).container_provenance.Get(cell_key_hgv_readback_nlaunder);
             if cell_lookup_hgv_readback_nlaunder.Ok {
                 mut cell_prov_hgv_readback_nlaunder := cell_lookup_hgv_readback_nlaunder.Val;
-                env_report_non_laundering_safe_brand_target(env, target_t, cell_prov_hgv_readback_nlaunder, span_hgv_readback_nlaunder, context_hgv_readback_nlaunder, ctx);
+                mut cell_target_hgv_readback_nlaunder := target_t;
+                if step51g_non_laundering_type_is_safe_brand_target(cell_target_hgv_readback_nlaunder, ctx) == 0 {
+                    cell_target_hgv_readback_nlaunder = env_resolve_type(env, cell_prov_hgv_readback_nlaunder.resolved_type, ctx);
+                }
+                env_report_non_laundering_safe_brand_target(env, cell_target_hgv_readback_nlaunder, cell_prov_hgv_readback_nlaunder, span_hgv_readback_nlaunder, context_hgv_readback_nlaunder, ctx);
             }
             return;
         }
@@ -1486,7 +1486,11 @@ func env_report_hashmap_get_val_readback_non_laundering_safe_brand_target(env: *
         mut field_lookup_hgv_readback_nlaunder := (*env).field_provenance.Get(field_cell_key_hgv_readback_nlaunder);
         if field_lookup_hgv_readback_nlaunder.Ok {
             mut field_prov_hgv_readback_nlaunder := field_lookup_hgv_readback_nlaunder.Val;
-            env_report_non_laundering_safe_brand_target(env, target_t, field_prov_hgv_readback_nlaunder, span_hgv_readback_nlaunder, context_hgv_readback_nlaunder, ctx);
+            mut field_target_hgv_readback_nlaunder := target_t;
+            if step51g_non_laundering_type_is_safe_brand_target(field_target_hgv_readback_nlaunder, ctx) == 0 {
+                field_target_hgv_readback_nlaunder = env_resolve_type(env, field_prov_hgv_readback_nlaunder.resolved_type, ctx);
+            }
+            env_report_non_laundering_safe_brand_target(env, field_target_hgv_readback_nlaunder, field_prov_hgv_readback_nlaunder, span_hgv_readback_nlaunder, context_hgv_readback_nlaunder, ctx);
         }
     }
 }
