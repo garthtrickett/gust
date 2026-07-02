@@ -482,9 +482,7 @@ func expression_provenance_null_value(t: ast.Type[ctx], ctx: &Arena) ExpressionP
 }
 
 func expression_provenance_literal_value(t: ast.Type[ctx], literal_kind: str, ctx: &Arena) ExpressionProvenance[ctx] {
-    mut literal_prov := expression_provenance_safe_arena(t, ctx);
-    set_add(literal_prov.legacy_origins, literal_kind, ctx);
-    return literal_prov;
+    return expression_provenance_safe_arena(t, ctx);
 }
 
 func expression_provenance_for_self_binding(name: str, t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {

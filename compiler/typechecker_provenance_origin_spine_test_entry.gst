@@ -214,8 +214,8 @@ func main() {
         os.LogStr("Error: literal int provenance did not allow safe-branded Arena.Set");
         os.Exit(1);
     }
-    if typechecker.set_contains(literal_int_prov_51g.legacy_origins, "literal.int", ctx) != 1 {
-        os.LogStr("Error: literal int provenance did not preserve literal legacy origin marker");
+    if typechecker.set_contains(literal_int_prov_51g.legacy_origins, "literal.int", ctx) != 0 {
+        os.LogStr("Error: literal int provenance should not pollute legacy escape origins");
         os.Exit(1);
     }
 
