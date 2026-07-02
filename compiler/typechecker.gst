@@ -996,6 +996,18 @@ func step51g_expression_provenance_retarget_preserving_raw_sandbox(inner_prov: E
     return retargeted;
 }
 
+func step51g_expression_provenance_join_retarget_preserving_raw_sandbox(left_prov: ExpressionProvenance[ctx], right_prov: ExpressionProvenance[ctx], result_t: ast.Type[ctx], legacy_origins: Index[OriginSet[ctx], ctx], flow_label: str, ctx: &Arena) ExpressionProvenance[ctx] {
+    mut joined := step51g_join_expression_provenance_preserving_raw_sandbox(left_prov, right_prov, ctx);
+    joined.resolved_type = result_t;
+    mut joined_origins := typechecker_clone_origin_set(joined.legacy_origins, ctx);
+    set_union(joined_origins, legacy_origins, ctx);
+    if std.str_eq(flow_label, "") == 0 {
+        set_add(joined_origins, flow_label, ctx);
+    }
+    joined.legacy_origins = joined_origins;
+    return joined;
+}
+
 func expression_provenance_literal_value(t: ast.Type[ctx], literal_kind: str, ctx: &Arena) ExpressionProvenance[ctx] {
     return expression_provenance_safe_arena(t, ctx);
 }
@@ -4108,6 +4120,28 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
 
             if expr.tag == 13 { // Empty
                 return expression_provenance_empty_value(t, ctx);
+            }
+
+            if expr.tag == 4 { // Move
+                mut move_inner_prov := check_expression_with_provenance(expr.Move.expr, env, scope, ctx);
+                if step51g_expression_provenance_is_raw_or_sandbox_derived(move_inner_prov) == 1 {
+                    return step51g_expression_provenance_retarget_preserving_raw_sandbox(move_inner_prov, t, legacy_origins, "move", ctx);
+                }
+            }
+
+            if expr.tag == 5 { // Take
+                mut take_inner_prov := check_expression_with_provenance(expr.Take.expr, env, scope, ctx);
+                if step51g_expression_provenance_is_raw_or_sandbox_derived(take_inner_prov) == 1 {
+                    return step51g_expression_provenance_retarget_preserving_raw_sandbox(take_inner_prov, t, legacy_origins, "take", ctx);
+                }
+            }
+
+            if expr.tag == 10 { // Binary
+                mut binary_left_prov := check_expression_with_provenance(expr.Binary.left, env, scope, ctx);
+                mut binary_right_prov := check_expression_with_provenance(expr.Binary.right, env, scope, ctx);
+                if step51g_expression_provenance_is_raw_or_sandbox_derived(binary_left_prov) == 1 || step51g_expression_provenance_is_raw_or_sandbox_derived(binary_right_prov) == 1 {
+                    return step51g_expression_provenance_join_retarget_preserving_raw_sandbox(binary_left_prov, binary_right_prov, t, legacy_origins, "binary", ctx);
+                }
             }
 
             if expr.tag == 6 { // AddressOf

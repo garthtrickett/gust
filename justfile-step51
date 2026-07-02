@@ -124,6 +124,8 @@ guard_step51g_aggregate_surface_wiring:
       "just guard_step51g_expression_provenance_legacy_wrapper_surface" \
       "just guard_step51_address_origin_metadata_surface" \
       "just guard_step51_raw_sandbox_provenance_predicates" \
+      "just guard_step51_raw_sandbox_provenance_local_flow" \
+      "just guard_step51_raw_sandbox_provenance_expression_flow" \
       "guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst" \
@@ -331,6 +333,11 @@ guard_step51_raw_sandbox_provenance_local_flow:
     just guard-positive compiler/typechecker_raw_sandbox_provenance_local_flow_test_entry.gst step51_raw_sandbox_provenance_local_flow
     echo "✅ guard_step51_raw_sandbox_provenance_local_flow passed."
 
+guard_step51_raw_sandbox_provenance_expression_flow:
+    echo "🔒 Checking Step 5.1 raw/sandbox expression-shape provenance propagation."
+    just guard-positive compiler/typechecker_raw_sandbox_provenance_expression_flow_test_entry.gst step51_raw_sandbox_provenance_expression_flow
+    echo "✅ guard_step51_raw_sandbox_provenance_expression_flow passed."
+
 guard_step51_safe_constructor_provenance:
     echo "🔒 Checking Step 5.1 safe constructor provenance metadata..."
     just guard-positive compiler/typechecker_safe_constructor_provenance_test_entry.gst step51_safe_constructor_provenance
@@ -536,6 +543,7 @@ guard_step51_provenance_origin_spine:
     just guard_step51_address_origin_metadata_surface
     just guard_step51_raw_sandbox_provenance_predicates
     just guard_step51_raw_sandbox_provenance_local_flow
+    just guard_step51_raw_sandbox_provenance_expression_flow
     just guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst step51g_provenance_origin_spine
     just guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst step51g_provenance_origin_spine_compat
     just guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst step51g_provenance_expression_join_spine
