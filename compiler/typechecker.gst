@@ -3836,6 +3836,24 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     }
                 }
 
+                mut func_expr_selector_getref_prov := ctx[expr.Call.function];
+                if func_expr_selector_getref_prov.tag == 11 { // Selector
+                    mut is_selector_getref_prov := 0;
+                    if std.str_eq(func_expr_selector_getref_prov.Selector.right, "GetRef") == 1 {
+                        is_selector_getref_prov = 1;
+                    }
+                    if std.str_eq(func_expr_selector_getref_prov.Selector.right, "get_ref") == 1 {
+                        is_selector_getref_prov = 1;
+                    }
+                    if is_selector_getref_prov == 1 {
+                        if t.tag == 11 { // Reference
+                            mut selector_getref_safe_prov := expression_provenance_safe_arena(t, ctx);
+                            set_union(selector_getref_safe_prov.legacy_origins, legacy_origins, ctx);
+                            return selector_getref_safe_prov;
+                        }
+                    }
+                }
+
                 mut is_std_vector_getref_prov := 0;
                 if std.str_eq(call_name_prov, "std.VectorGetRef") == 1 {
                     is_std_vector_getref_prov = 1;
