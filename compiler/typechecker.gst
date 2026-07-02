@@ -3880,8 +3880,10 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                         std_vector_getref_cell_key_prov = std.Concat(std_vector_getref_cell_key_prov, std_vector_getref_index_key_prov);
                         std_vector_getref_cell_key_prov = std.Concat(std_vector_getref_cell_key_prov, "]");
 
+                        mut std_vector_getref_has_cell_prov := 0;
                         mut std_vector_getref_lookup_prov := (*env).container_provenance.Get(std_vector_getref_cell_key_prov);
                         if std_vector_getref_lookup_prov.Ok {
+                            std_vector_getref_has_cell_prov = 1;
                             mut std_vector_getref_cell_prov := std_vector_getref_lookup_prov.Val;
                             if expression_provenance_allows_safe_branding(std_vector_getref_cell_prov) == 1 {
                                 mut std_vector_getref_safe_prov := expression_provenance_safe_arena(t, ctx);
@@ -3896,6 +3898,13 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                                 set_union(std_vector_getref_unsafe_origins, legacy_origins, ctx);
                                 std_vector_getref_unsafe_prov.legacy_origins = std_vector_getref_unsafe_origins;
                                 return std_vector_getref_unsafe_prov;
+                            }
+                        }
+                        if std_vector_getref_has_cell_prov == 0 {
+                            if t.tag == 11 { // Reference
+                                mut std_vector_getref_default_safe_prov := expression_provenance_safe_arena(t, ctx);
+                                set_union(std_vector_getref_default_safe_prov.legacy_origins, legacy_origins, ctx);
+                                return std_vector_getref_default_safe_prov;
                             }
                         }
                     }
