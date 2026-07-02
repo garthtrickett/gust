@@ -123,11 +123,13 @@ guard_step51g_aggregate_surface_wiring:
       "just guard_step51g_address_origin_legacy_wrapper_surface" \
       "just guard_step51g_expression_provenance_legacy_wrapper_surface" \
       "just guard_step51_address_origin_metadata_surface" \
+      "just guard_step51_raw_sandbox_provenance_propagation" \
       "just guard_step51_raw_sandbox_provenance_predicates" \
       "just guard_step51_raw_sandbox_provenance_local_flow" \
       "just guard_step51_raw_sandbox_provenance_expression_flow" \
       "just guard_step51_raw_sandbox_provenance_field_aggregate_flow" \
       "just guard_step51_raw_sandbox_provenance_container_flow" \
+      "just guard_step51_raw_sandbox_provenance_call_return_flow" \
       "guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst" \
@@ -350,6 +352,11 @@ guard_step51_raw_sandbox_provenance_container_flow:
     just guard-positive compiler/typechecker_raw_sandbox_provenance_container_flow_test_entry.gst step51_raw_sandbox_provenance_container_flow
     echo "✅ guard_step51_raw_sandbox_provenance_container_flow passed."
 
+guard_step51_raw_sandbox_provenance_call_return_flow:
+    echo "🔒 Checking Step 5.1 raw/sandbox call and return provenance propagation."
+    just guard-positive compiler/typechecker_raw_sandbox_provenance_call_return_flow_test_entry.gst step51_raw_sandbox_provenance_call_return_flow
+    echo "✅ guard_step51_raw_sandbox_provenance_call_return_flow passed."
+
 guard_step51_safe_constructor_provenance:
     echo "🔒 Checking Step 5.1 safe constructor provenance metadata..."
     just guard-positive compiler/typechecker_safe_constructor_provenance_test_entry.gst step51_safe_constructor_provenance
@@ -553,11 +560,7 @@ guard_step51_provenance_origin_spine:
     just guard_step51g_address_origin_legacy_wrapper_surface
     just guard_step51g_expression_provenance_legacy_wrapper_surface
     just guard_step51_address_origin_metadata_surface
-    just guard_step51_raw_sandbox_provenance_predicates
-    just guard_step51_raw_sandbox_provenance_local_flow
-    just guard_step51_raw_sandbox_provenance_expression_flow
-    just guard_step51_raw_sandbox_provenance_field_aggregate_flow
-    just guard_step51_raw_sandbox_provenance_container_flow
+    just guard_step51_raw_sandbox_provenance_propagation
     just guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst step51g_provenance_origin_spine
     just guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst step51g_provenance_origin_spine_compat
     just guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst step51g_provenance_expression_join_spine
@@ -576,6 +579,16 @@ guard_step51_provenance_origin_spine:
     just guard-positive compiler/typechecker_non_laundering_reference_selector_test_entry.gst step51g_policy_reference_selector_regression
     just guard_step51g_safe_brand_target_policy_surface
     echo "✅ guard_step51_provenance_origin_spine passed."
+
+guard_step51_raw_sandbox_provenance_propagation:
+    echo "🔒 Checking Step 5.1 raw/sandbox provenance propagation aggregate."
+    just guard_step51_raw_sandbox_provenance_predicates
+    just guard_step51_raw_sandbox_provenance_local_flow
+    just guard_step51_raw_sandbox_provenance_expression_flow
+    just guard_step51_raw_sandbox_provenance_field_aggregate_flow
+    just guard_step51_raw_sandbox_provenance_container_flow
+    just guard_step51_raw_sandbox_provenance_call_return_flow
+    echo "✅ guard_step51_raw_sandbox_provenance_propagation passed."
 
 guard_step51_basic_unsafe_enforcement:
     just guard_step51_raw_deref_unsafe_enforcement

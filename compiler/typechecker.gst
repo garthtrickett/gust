@@ -1083,6 +1083,47 @@ func step51g_expression_provenance_project_container_element_preserving_raw_sand
     return unknown_container_prov;
 }
 
+func step51g_expression_provenance_call_return_preserving_raw_sandbox(return_prov: ExpressionProvenance[ctx], result_t: ast.Type[ctx], legacy_origins: Index[OriginSet[ctx], ctx], callee_label: str, ctx: &Arena) ExpressionProvenance[ctx] {
+    mut call_label := "call";
+    if std.str_eq(callee_label, "") == 0 {
+        call_label = std.Concat("call:", callee_label);
+    }
+
+    if step51g_expression_provenance_is_raw_or_sandbox_derived(return_prov) == 1 {
+        return step51g_expression_provenance_retarget_preserving_raw_sandbox(return_prov, result_t, legacy_origins, call_label, ctx);
+    }
+
+    if expression_provenance_allows_safe_branding(return_prov) == 1 {
+        mut safe_call_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_call_prov.legacy_origins = typechecker_clone_origin_set(return_prov.legacy_origins, ctx);
+        set_union(safe_call_prov.legacy_origins, legacy_origins, ctx);
+        return safe_call_prov;
+    }
+
+    mut unknown_call_prov := expression_provenance_unknown(result_t, ctx);
+    unknown_call_prov.legacy_origins = typechecker_clone_origin_set(return_prov.legacy_origins, ctx);
+    set_union(unknown_call_prov.legacy_origins, legacy_origins, ctx);
+    return unknown_call_prov;
+}
+
+func step51g_expression_provenance_return_boundary_preserving_raw_sandbox(return_prov: ExpressionProvenance[ctx], result_t: ast.Type[ctx], legacy_origins: Index[OriginSet[ctx], ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    if step51g_expression_provenance_is_raw_or_sandbox_derived(return_prov) == 1 {
+        return step51g_expression_provenance_retarget_preserving_raw_sandbox(return_prov, result_t, legacy_origins, "return", ctx);
+    }
+
+    if expression_provenance_allows_safe_branding(return_prov) == 1 {
+        mut safe_return_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_return_prov.legacy_origins = typechecker_clone_origin_set(return_prov.legacy_origins, ctx);
+        set_union(safe_return_prov.legacy_origins, legacy_origins, ctx);
+        return safe_return_prov;
+    }
+
+    mut unknown_return_prov := expression_provenance_unknown(result_t, ctx);
+    unknown_return_prov.legacy_origins = typechecker_clone_origin_set(return_prov.legacy_origins, ctx);
+    set_union(unknown_return_prov.legacy_origins, legacy_origins, ctx);
+    return unknown_return_prov;
+}
+
 func expression_provenance_literal_value(t: ast.Type[ctx], literal_kind: str, ctx: &Arena) ExpressionProvenance[ctx] {
     return expression_provenance_safe_arena(t, ctx);
 }
@@ -4595,12 +4636,7 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                 mut return_prov_lookup := (*env).function_return_provenance.Get(resolved_call_name_prov);
                 if return_prov_lookup.Ok {
                     mut found_call_prov := return_prov_lookup.Val;
-                    found_call_prov.resolved_type = t;
-
-                    mut merged_call_origins := typechecker_clone_origin_set(found_call_prov.legacy_origins, ctx);
-                    set_union(merged_call_origins, legacy_origins, ctx);
-                    found_call_prov.legacy_origins = merged_call_origins;
-                    return found_call_prov;
+                    return step51g_expression_provenance_call_return_preserving_raw_sandbox(found_call_prov, t, legacy_origins, resolved_call_name_prov, ctx);
                 }
             }
         }
@@ -10705,8 +10741,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 actual_return = env_resolve_type(env, return_prov_stmt.resolved_type, ctx);
 
                 mut expr_origins := typechecker_clone_origin_set(return_prov_stmt.legacy_origins, ctx);
-                return_prov_stmt.resolved_type = actual_return;
-                return_prov_stmt.legacy_origins = expr_origins;
+                return_prov_stmt = step51g_expression_provenance_return_boundary_preserving_raw_sandbox(return_prov_stmt, actual_return, expr_origins, ctx);
+                expr_origins = typechecker_clone_origin_set(return_prov_stmt.legacy_origins, ctx);
                 return_prov_for_enforcement = return_prov_stmt;
 
                 if set_contains(expr_origins, "scratch", ctx) == 1 {
@@ -10744,7 +10780,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     }
                     set_union(return_origins, expr_origins, ctx);
                     if had_prior_return_provenance_step51g == 1 {
-                        (*env).current_function_return_provenance = expression_provenance_join((*env).current_function_return_provenance, return_prov_stmt, ctx);
+                        mut joined_return_prov_step51g := expression_provenance_join_preserving_raw_sandbox((*env).current_function_return_provenance, return_prov_stmt, ctx);
+                        joined_return_prov_step51g.resolved_type = actual_return;
+                        (*env).current_function_return_provenance = joined_return_prov_step51g;
                     } else {
                         (*env).current_function_return_provenance = return_prov_stmt;
                     }
