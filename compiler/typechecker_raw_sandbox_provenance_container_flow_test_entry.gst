@@ -133,18 +133,19 @@ func main() {
     assert_sandbox_container_flow(sandbox_index_prov, "sandbox_container_flow_root", "container.element:index", "Vector.Set indexed readback", ctx);
 
     mut t_map := register_hashmap_int_int_container_flow(&env, "HashMap_Int_Int_RawSandboxContainerFlow", ctx);
-    typechecker.scope_insert(scope, "map_container_flow", t_map, ctx);
-    env.variable_types.Insert("map_container_flow", t_map);
+        typechecker.scope_insert(scope, "map_container_flow", t_map, ctx);
+        env.variable_types.Insert("map_container_flow", t_map);
 
-    typechecker.scope_insert(scope, "key_container_flow", t_int, ctx);
-    env.variable_types.Insert("key_container_flow", t_int);
+        typechecker.scope_insert(scope, "key_container_flow", t_int, ctx);
+        env.variable_types.Insert("key_container_flow", t_int);
 
-    mut map_set_stmt := parse_stmt_container_flow("map_container_flow.Set(key_container_flow, sandbox_container_source);", ctx);
-    typechecker.check_statement(map_set_stmt, &env, scope, ctx);
+        mut map_set_stmt := parse_stmt_container_flow("map_container_flow.Set(key_container_flow, sandbox_container_source);", ctx);
+        typechecker.check_statement(map_set_stmt, &env, scope, ctx);
 
-    mut map_get_expr := parse_expr_container_flow("map_container_flow.Get(key_container_flow).Val", ctx);
-    mut map_get_prov := typechecker.check_expression_with_provenance(map_get_expr, &env, scope, ctx);
-    assert_sandbox_container_flow(map_get_prov, "sandbox_container_flow_root", "container.element:HashMap.Get", "HashMap.Get value readback", ctx);
+        env.checked_results.Insert("map_container_flow.Get(key_container_flow)", 1);
+        mut map_get_expr := parse_expr_container_flow("map_container_flow.Get(key_container_flow).Val", ctx);
+        mut map_get_prov := typechecker.check_expression_with_provenance(map_get_expr, &env, scope, ctx);
+        assert_sandbox_container_flow(map_get_prov, "sandbox_container_flow_root", "container.element:HashMap.Get", "HashMap.Get value readback", ctx);
 
     if len(env.errors) != 0 {
         os.LogStr("Error: raw/sandbox container flow fixture produced unexpected typechecker error");
