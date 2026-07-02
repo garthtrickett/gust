@@ -290,10 +290,21 @@ guard_step51_address_origin_local_stack:
     just guard-positive compiler/typechecker_address_origin_local_stack_test_entry.gst step51_address_origin_local_stack
     echo "✅ guard_step51_address_origin_local_stack passed."
 
-guard_step51_address_origin_local_stack:
-    echo "🔒 Checking Step 5.1 local_stack address-origin metadata helpers."
-    just guard-positive compiler/typechecker_address_origin_local_stack_test_entry.gst step51_address_origin_local_stack
-    echo "✅ guard_step51_address_origin_local_stack passed."
+guard_step51_address_origin_borrowed_field:
+    echo "🔒 Checking Step 5.1 borrowed_field address-origin metadata helpers."
+    just guard-positive compiler/typechecker_address_origin_borrowed_field_test_entry.gst step51_address_origin_borrowed_field
+    echo "✅ guard_step51_address_origin_borrowed_field passed."
+
+guard_step51_address_origin_container_element:
+    echo "🔒 Checking Step 5.1 container_element address-origin metadata helpers."
+    just guard-positive compiler/typechecker_address_origin_container_element_test_entry.gst step51_address_origin_container_element
+    echo "✅ guard_step51_address_origin_container_element passed."
+
+guard_step51_address_origin_projection_metadata:
+    echo "🔒 Checking Step 5.1 field/container address-origin projection metadata helpers."
+    just guard_step51_address_origin_borrowed_field
+    just guard_step51_address_origin_container_element
+    echo "✅ guard_step51_address_origin_projection_metadata passed."
 
 guard_step51_safe_constructor_provenance:
     echo "🔒 Checking Step 5.1 safe constructor provenance metadata..."

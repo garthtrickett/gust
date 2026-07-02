@@ -280,6 +280,94 @@ func address_origin_record_for_address_of_local_identifier(name: str, ctx: &Aren
     return address_origin_record_make_local_address(name, ctx);
 }
 
+func address_origin_record_is_borrowed_field(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_borrowed_field()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_is_container_element(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_container_element()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_make_borrowed_field_value(base_name: str, field_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("borrowed.field.value:", base_name);
+    label = std.Concat(label, ".");
+    label = std.Concat(label, field_name);
+    return address_origin_record_make_borrowed_field(label, ctx);
+}
+
+func address_origin_record_make_borrowed_field_address(base_name: str, field_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("borrowed.field.address:", base_name);
+    label = std.Concat(label, ".");
+    label = std.Concat(label, field_name);
+    return address_origin_record_make_borrowed_field(label, ctx);
+}
+
+func address_origin_record_is_borrowed_field_value(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_borrowed_field(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "borrowed.field.value:");
+}
+
+func address_origin_record_is_borrowed_field_address(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_borrowed_field(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "borrowed.field.address:");
+}
+
+func address_origin_record_for_borrowed_field_value(base_name: str, field_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_borrowed_field_value(base_name, field_name, ctx);
+}
+
+func address_origin_record_for_address_of_borrowed_field(base_name: str, field_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_borrowed_field_address(base_name, field_name, ctx);
+}
+
+func address_origin_record_make_container_element_value(container_name: str, element_label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("container.element.value:", container_name);
+    label = std.Concat(label, "[");
+    label = std.Concat(label, element_label);
+    label = std.Concat(label, "]");
+    return address_origin_record_make_container_element(label, ctx);
+}
+
+func address_origin_record_make_container_element_address(container_name: str, element_label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("container.element.address:", container_name);
+    label = std.Concat(label, "[");
+    label = std.Concat(label, element_label);
+    label = std.Concat(label, "]");
+    return address_origin_record_make_container_element(label, ctx);
+}
+
+func address_origin_record_is_container_element_value(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_container_element(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "container.element.value:");
+}
+
+func address_origin_record_is_container_element_address(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_container_element(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "container.element.address:");
+}
+
+func address_origin_record_for_container_element_value(container_name: str, element_label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_container_element_value(container_name, element_label, ctx);
+}
+
+func address_origin_record_for_address_of_container_element(container_name: str, element_label: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_container_element_address(container_name, element_label, ctx);
+}
+
 func step51g_join_address_origin(left: AddressOriginMetadata, right: AddressOriginMetadata) AddressOriginMetadata {
     mut joined: AddressOriginMetadata;
     unsafe {
