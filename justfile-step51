@@ -124,12 +124,6 @@ guard_step51g_aggregate_surface_wiring:
       "just guard_step51g_expression_provenance_legacy_wrapper_surface" \
       "just guard_step51_address_origin_metadata_surface" \
       "just guard_step51_raw_sandbox_provenance_propagation" \
-      "just guard_step51_raw_sandbox_provenance_predicates" \
-      "just guard_step51_raw_sandbox_provenance_local_flow" \
-      "just guard_step51_raw_sandbox_provenance_expression_flow" \
-      "just guard_step51_raw_sandbox_provenance_field_aggregate_flow" \
-      "just guard_step51_raw_sandbox_provenance_container_flow" \
-      "just guard_step51_raw_sandbox_provenance_call_return_flow" \
       "guard-positive compiler/typechecker_provenance_origin_spine_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_origin_spine_compat_test_entry.gst" \
       "guard-positive compiler/typechecker_provenance_expression_join_spine_test_entry.gst" \
@@ -160,6 +154,30 @@ guard_step51g_aggregate_surface_wiring:
         exit 1
       fi
       previous_pos="$surface_pos"
+    done
+
+    propagation_surface="$(awk '/^guard_step51_raw_sandbox_provenance_propagation:/,/^guard_step51_basic_unsafe_enforcement:/' justfile-step51)"
+    previous_pos=0
+    for required_propagation_surface in \
+      "just guard_step51_raw_sandbox_provenance_predicates" \
+      "just guard_step51_raw_sandbox_provenance_local_flow" \
+      "just guard_step51_raw_sandbox_provenance_expression_flow" \
+      "just guard_step51_raw_sandbox_provenance_field_aggregate_flow" \
+      "just guard_step51_raw_sandbox_provenance_container_flow" \
+      "just guard_step51_raw_sandbox_provenance_call_return_flow"
+    do
+      if ! grep -Fq "$required_propagation_surface" <<< "$propagation_surface"; then
+        echo "❌ Step 5.1G aggregate surface guard failed: raw/sandbox propagation aggregate missing $required_propagation_surface"
+        exit 1
+      fi
+      before_propagation_surface="${propagation_surface%%$required_propagation_surface*}"
+      propagation_pos="${#before_propagation_surface}"
+      if [[ "$propagation_pos" -lt "$previous_pos" ]]; then
+        echo "❌ Step 5.1G aggregate surface guard failed: raw/sandbox propagation aggregate entries are out of order at $required_propagation_surface"
+        echo "$propagation_surface"
+        exit 1
+      fi
+      previous_pos="$propagation_pos"
     done
     echo "✅ Step 5.1G aggregate surface wiring passed."
 
