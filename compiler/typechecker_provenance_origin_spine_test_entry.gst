@@ -219,6 +219,12 @@ func main() {
         os.Exit(1);
     }
 
+    mut empty_index_prov_51g := typechecker.expression_provenance_empty_value(branded_index_param_type_51g, ctx);
+    if typechecker.step51g_expression_provenance_allows_safe_brand(empty_index_prov_51g, ctx) != 1 {
+        os.LogStr("Error: empty[Index] sentinel provenance did not allow safe-branded binding");
+        os.Exit(1);
+    }
+
     mut clone_constructed_prov_51g := typechecker.expression_provenance_safe_arena(branded_index_param_type_51g, ctx);
     typechecker.set_add(clone_constructed_prov_51g.legacy_origins, "std.Clone", ctx);
     if typechecker.step51g_expression_provenance_allows_safe_brand(clone_constructed_prov_51g, ctx) != 1 {

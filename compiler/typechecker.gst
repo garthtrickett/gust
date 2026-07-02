@@ -481,6 +481,10 @@ func expression_provenance_null_value(t: ast.Type[ctx], ctx: &Arena) ExpressionP
     return null_prov;
 }
 
+func expression_provenance_empty_value(t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    return expression_provenance_safe_arena(t, ctx);
+}
+
 func expression_provenance_literal_value(t: ast.Type[ctx], literal_kind: str, ctx: &Arena) ExpressionProvenance[ctx] {
     return expression_provenance_safe_arena(t, ctx);
 }
@@ -3572,6 +3576,10 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
 
             if expr.tag == 3 { // Bool
                 return expression_provenance_literal_value(t, "literal.bool", ctx);
+            }
+
+            if expr.tag == 13 { // Empty
+                return expression_provenance_empty_value(t, ctx);
             }
 
             if expr.tag == 7 { // Dereference
