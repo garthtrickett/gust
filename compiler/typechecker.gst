@@ -368,6 +368,160 @@ func address_origin_record_for_address_of_container_element(container_name: str,
     return address_origin_record_make_container_element_address(container_name, element_label, ctx);
 }
 
+func address_origin_record_is_arena(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_arena()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_is_scratchpad(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_scratchpad()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_is_ffi(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_ffi()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_is_sandbox(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_sandbox()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_is_raw_unknown(record: AddressOriginRecord[ctx]) int {
+    if std.str_eq(record.kind, address_origin_record_kind_raw_unknown()) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_is_managed_storage(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_arena(record) == 1 {
+        return 1;
+    }
+    if address_origin_record_is_scratchpad(record) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func address_origin_record_make_arena_allocation(arena_name: str, value_type_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("arena.alloc:", arena_name);
+    label = std.Concat(label, ":");
+    label = std.Concat(label, value_type_name);
+    return address_origin_record_make_arena(label, ctx);
+}
+
+func address_origin_record_make_arena_read(arena_name: str, index_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("arena.read:", arena_name);
+    label = std.Concat(label, "[");
+    label = std.Concat(label, index_name);
+    label = std.Concat(label, "]");
+    return address_origin_record_make_arena(label, ctx);
+}
+
+func address_origin_record_make_scratchpad_allocation(scratchpad_name: str, value_type_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("scratchpad.alloc:", scratchpad_name);
+    label = std.Concat(label, ":");
+    label = std.Concat(label, value_type_name);
+    return address_origin_record_make_scratchpad(label, ctx);
+}
+
+func address_origin_record_make_ffi_return(function_name: str, value_type_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("ffi.return:", function_name);
+    label = std.Concat(label, ":");
+    label = std.Concat(label, value_type_name);
+    return address_origin_record_make_ffi(label, ctx);
+}
+
+func address_origin_record_make_sandbox_value(sandbox_name: str, value_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("sandbox.value:", sandbox_name);
+    label = std.Concat(label, ":");
+    label = std.Concat(label, value_name);
+    return address_origin_record_make_sandbox(label, ctx);
+}
+
+func address_origin_record_make_raw_unknown_cast(source_name: str, value_type_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    mut label := std.Concat("raw_unknown.cast:", source_name);
+    label = std.Concat(label, ":");
+    label = std.Concat(label, value_type_name);
+    return address_origin_record_make_raw_unknown(label, ctx);
+}
+
+func address_origin_record_is_arena_allocation(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_arena(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "arena.alloc:");
+}
+
+func address_origin_record_is_arena_read(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_arena(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "arena.read:");
+}
+
+func address_origin_record_is_scratchpad_allocation(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_scratchpad(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "scratchpad.alloc:");
+}
+
+func address_origin_record_is_ffi_return(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_ffi(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "ffi.return:");
+}
+
+func address_origin_record_is_sandbox_value(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_sandbox(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "sandbox.value:");
+}
+
+func address_origin_record_is_raw_unknown_cast(record: AddressOriginRecord[ctx]) int {
+    if address_origin_record_is_raw_unknown(record) == 0 {
+        return 0;
+    }
+    return address_origin_record_label_has_prefix(record, "raw_unknown.cast:");
+}
+
+func address_origin_record_for_arena_allocation(arena_name: str, value_type_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_arena_allocation(arena_name, value_type_name, ctx);
+}
+
+func address_origin_record_for_arena_read(arena_name: str, index_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_arena_read(arena_name, index_name, ctx);
+}
+
+func address_origin_record_for_scratchpad_allocation(scratchpad_name: str, value_type_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_scratchpad_allocation(scratchpad_name, value_type_name, ctx);
+}
+
+func address_origin_record_for_ffi_return(function_name: str, value_type_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_ffi_return(function_name, value_type_name, ctx);
+}
+
+func address_origin_record_for_sandbox_value(sandbox_name: str, value_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_sandbox_value(sandbox_name, value_name, ctx);
+}
+
+func address_origin_record_for_raw_unknown_cast(source_name: str, value_type_name: str, ctx: &Arena) AddressOriginRecord[ctx] {
+    return address_origin_record_make_raw_unknown_cast(source_name, value_type_name, ctx);
+}
+
 func step51g_join_address_origin(left: AddressOriginMetadata, right: AddressOriginMetadata) AddressOriginMetadata {
     mut joined: AddressOriginMetadata;
     unsafe {
