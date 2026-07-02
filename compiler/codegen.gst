@@ -4475,10 +4475,7 @@ typedef void Any;
 ";
 
         // 1. Generate Slice structure definitions
-        c_code = std.Concat(c_code, "typedef struct Slice_unsigned_char Slice_unsigned_char;\n");
-        c_code = std.Concat(c_code, "struct Slice_unsigned_char {\n    unsigned char* data;\n    int len;\n};\n\n");
-        c_code = std.Concat(c_code, "typedef struct Slice_int Slice_int;\n");
-        c_code = std.Concat(c_code, "struct Slice_int {\n    int* data;\n    int len;\n};\n\n");
+        c_code = std.Concat(c_code, "/* Builtin slice structs are runtime-owned in src/runtime/core_headers.h. */\n\n");
 
         // 2. Generate forward declarations for all structs
         c_code = std.Concat(c_code, "// Forward Declarations\n");
