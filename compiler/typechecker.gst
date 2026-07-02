@@ -60,14 +60,50 @@ func init_address_origin_sandbox_derived(origin: *AddressOriginMetadata) {
     }
 }
 
-func step51g_address_origin_is_raw_or_sandbox_derived(origin: AddressOriginMetadata) int {
+func step51g_address_origin_is_raw_derived(origin: AddressOriginMetadata) int {
     if origin.is_raw_derived == 1 {
         return 1;
     }
+    return 0;
+}
+
+func step51g_address_origin_is_sandbox_derived(origin: AddressOriginMetadata) int {
     if origin.is_sandbox_derived == 1 {
         return 1;
     }
     return 0;
+}
+
+func step51g_address_origin_is_raw_or_sandbox_derived(origin: AddressOriginMetadata) int {
+    if step51g_address_origin_is_raw_derived(origin) == 1 {
+        return 1;
+    }
+    if step51g_address_origin_is_sandbox_derived(origin) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func step51g_address_origin_debug_raw_sandbox(origin: AddressOriginMetadata, ctx: &Arena) str {
+    mut res := "raw=";
+    if step51g_address_origin_is_raw_derived(origin) == 1 {
+        res = std.Concat(res, "1");
+    } else {
+        res = std.Concat(res, "0");
+    }
+    res = std.Concat(res, ",sandbox=");
+    if step51g_address_origin_is_sandbox_derived(origin) == 1 {
+        res = std.Concat(res, "1");
+    } else {
+        res = std.Concat(res, "0");
+    }
+    res = std.Concat(res, ",unknown=");
+    if origin.is_unknown == 1 {
+        res = std.Concat(res, "1");
+    } else {
+        res = std.Concat(res, "0");
+    }
+    return std.Clone(ctx, res);
 }
 
 func step51g_address_origin_requires_unsafe_boundary(origin: AddressOriginMetadata) int {
@@ -531,10 +567,10 @@ func step51g_join_address_origin(left: AddressOriginMetadata, right: AddressOrig
         joined.is_unknown = 0;
     }
 
-    if left.is_raw_derived == 1 || right.is_raw_derived == 1 {
+    if step51g_address_origin_is_raw_derived(left) == 1 || step51g_address_origin_is_raw_derived(right) == 1 {
         unsafe { joined.is_raw_derived = 1; }
     }
-    if left.is_sandbox_derived == 1 || right.is_sandbox_derived == 1 {
+    if step51g_address_origin_is_sandbox_derived(left) == 1 || step51g_address_origin_is_sandbox_derived(right) == 1 {
         unsafe { joined.is_sandbox_derived = 1; }
     }
     if left.is_unknown == 1 || right.is_unknown == 1 {
@@ -549,6 +585,10 @@ func step51g_join_address_origin(left: AddressOriginMetadata, right: AddressOrig
     return joined;
 }
 
+func step51g_join_address_origin_preserving_raw_sandbox(left: AddressOriginMetadata, right: AddressOriginMetadata) AddressOriginMetadata {
+    return step51g_join_address_origin(left, right);
+}
+
 func step51g_expression_provenance_allows_safe_brand(prov: ExpressionProvenance[ctx], ctx: &Arena) int {
     return step51g_address_origin_is_safe_arena_only(prov.address_origin);
 }
@@ -561,8 +601,20 @@ func step51g_expression_provenance_requires_unsafe_boundary(prov: ExpressionProv
     return step51g_address_origin_requires_unsafe_boundary(prov.address_origin);
 }
 
+func step51g_expression_provenance_is_raw_derived(prov: ExpressionProvenance[ctx]) int {
+    return step51g_address_origin_is_raw_derived(prov.address_origin);
+}
+
+func step51g_expression_provenance_is_sandbox_derived(prov: ExpressionProvenance[ctx]) int {
+    return step51g_address_origin_is_sandbox_derived(prov.address_origin);
+}
+
 func step51g_expression_provenance_is_raw_or_sandbox_derived(prov: ExpressionProvenance[ctx]) int {
     return step51g_address_origin_is_raw_or_sandbox_derived(prov.address_origin);
+}
+
+func step51g_expression_provenance_debug_raw_sandbox(prov: ExpressionProvenance[ctx], ctx: &Arena) str {
+    return step51g_address_origin_debug_raw_sandbox(prov.address_origin, ctx);
 }
 
 func address_origin_allows_safe_branding(origin: AddressOriginMetadata) int {
@@ -829,7 +881,7 @@ func expression_provenance_inherit_readback(base_prov: ExpressionProvenance[ctx]
 
 func step51g_join_expression_provenance(left: ExpressionProvenance[ctx], right: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
     mut joined := expression_provenance_unknown(left.resolved_type, ctx);
-    joined.address_origin = step51g_join_address_origin(left.address_origin, right.address_origin);
+    joined.address_origin = step51g_join_address_origin_preserving_raw_sandbox(left.address_origin, right.address_origin);
     if left.legacy_origins != empty[Index[OriginSet[ctx], ctx]] {
         set_union(joined.legacy_origins, left.legacy_origins, ctx);
     }
@@ -839,8 +891,16 @@ func step51g_join_expression_provenance(left: ExpressionProvenance[ctx], right: 
     return joined;
 }
 
+func step51g_join_expression_provenance_preserving_raw_sandbox(left: ExpressionProvenance[ctx], right: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    return step51g_join_expression_provenance(left, right, ctx);
+}
+
 func expression_provenance_join(left: ExpressionProvenance[ctx], right: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
     return step51g_join_expression_provenance(left, right, ctx);
+}
+
+func expression_provenance_join_preserving_raw_sandbox(left: ExpressionProvenance[ctx], right: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    return step51g_join_expression_provenance_preserving_raw_sandbox(left, right, ctx);
 }
 
 func step51g_non_laundering_origin_allows_safe_brand(origin: AddressOriginMetadata) int {
