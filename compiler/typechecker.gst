@@ -1008,6 +1008,56 @@ func step51g_expression_provenance_join_retarget_preserving_raw_sandbox(left_pro
     return joined;
 }
 
+func step51g_expression_provenance_project_field_preserving_raw_sandbox(base_prov: ExpressionProvenance[ctx], result_t: ast.Type[ctx], legacy_origins: Index[OriginSet[ctx], ctx], field_name: str, ctx: &Arena) ExpressionProvenance[ctx] {
+    mut field_label := "field";
+    if std.str_eq(field_name, "") == 0 {
+        field_label = std.Concat("field:", field_name);
+    }
+
+    if step51g_expression_provenance_is_raw_or_sandbox_derived(base_prov) == 1 {
+        return step51g_expression_provenance_retarget_preserving_raw_sandbox(base_prov, result_t, legacy_origins, field_label, ctx);
+    }
+
+    if expression_provenance_allows_safe_branding(base_prov) == 1 {
+        mut safe_field_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_field_prov.legacy_origins = typechecker_clone_origin_set(base_prov.legacy_origins, ctx);
+        set_union(safe_field_prov.legacy_origins, legacy_origins, ctx);
+        set_add(safe_field_prov.legacy_origins, field_label, ctx);
+        return safe_field_prov;
+    }
+
+    mut unknown_field_prov := expression_provenance_unknown(result_t, ctx);
+    unknown_field_prov.legacy_origins = typechecker_clone_origin_set(base_prov.legacy_origins, ctx);
+    set_union(unknown_field_prov.legacy_origins, legacy_origins, ctx);
+    set_add(unknown_field_prov.legacy_origins, field_label, ctx);
+    return unknown_field_prov;
+}
+
+func step51g_expression_provenance_aggregate_from_member_preserving_raw_sandbox(member_prov: ExpressionProvenance[ctx], aggregate_t: ast.Type[ctx], legacy_origins: Index[OriginSet[ctx], ctx], member_label: str, ctx: &Arena) ExpressionProvenance[ctx] {
+    mut aggregate_label := "aggregate";
+    if std.str_eq(member_label, "") == 0 {
+        aggregate_label = std.Concat("aggregate:", member_label);
+    }
+
+    if step51g_expression_provenance_is_raw_or_sandbox_derived(member_prov) == 1 {
+        return step51g_expression_provenance_retarget_preserving_raw_sandbox(member_prov, aggregate_t, legacy_origins, aggregate_label, ctx);
+    }
+
+    if expression_provenance_allows_safe_branding(member_prov) == 1 {
+        mut safe_aggregate_prov := expression_provenance_safe_arena(aggregate_t, ctx);
+        safe_aggregate_prov.legacy_origins = typechecker_clone_origin_set(member_prov.legacy_origins, ctx);
+        set_union(safe_aggregate_prov.legacy_origins, legacy_origins, ctx);
+        set_add(safe_aggregate_prov.legacy_origins, aggregate_label, ctx);
+        return safe_aggregate_prov;
+    }
+
+    mut unknown_aggregate_prov := expression_provenance_unknown(aggregate_t, ctx);
+    unknown_aggregate_prov.legacy_origins = typechecker_clone_origin_set(member_prov.legacy_origins, ctx);
+    set_union(unknown_aggregate_prov.legacy_origins, legacy_origins, ctx);
+    set_add(unknown_aggregate_prov.legacy_origins, aggregate_label, ctx);
+    return unknown_aggregate_prov;
+}
+
 func expression_provenance_literal_value(t: ast.Type[ctx], literal_kind: str, ctx: &Arena) ExpressionProvenance[ctx] {
     return expression_provenance_safe_arena(t, ctx);
 }
@@ -4269,6 +4319,9 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                 mut field_lookup_fieldprov := (*env).field_provenance.Get(selector_key_fieldprov);
                 if field_lookup_fieldprov.Ok {
                     mut found_field_prov := field_lookup_fieldprov.Val;
+                    if step51g_expression_provenance_is_raw_or_sandbox_derived(found_field_prov) == 1 {
+                        return step51g_expression_provenance_project_field_preserving_raw_sandbox(found_field_prov, t, legacy_origins, expr.Selector.right, ctx);
+                    }
                     found_field_prov.resolved_type = t;
 
                     mut merged_field_origins := typechecker_clone_origin_set(found_field_prov.legacy_origins, ctx);
@@ -4278,6 +4331,9 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                 }
 
                 mut selector_base_prov_readback := check_expression_with_provenance(expr.Selector.left, env, scope, ctx);
+                if step51g_expression_provenance_is_raw_or_sandbox_derived(selector_base_prov_readback) == 1 {
+                    return step51g_expression_provenance_project_field_preserving_raw_sandbox(selector_base_prov_readback, t, legacy_origins, expr.Selector.right, ctx);
+                }
                 if expression_provenance_has_known_readback_origin(selector_base_prov_readback) == 1 {
                     return expression_provenance_inherit_readback(selector_base_prov_readback, t, legacy_origins, ctx);
                 }
