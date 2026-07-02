@@ -519,6 +519,23 @@ func expression_provenance_for_self_binding(name: str, t: ast.Type[ctx], ctx: &A
     return prov;
 }
 
+func expression_provenance_for_uninitialized_local_binding(name: str, t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    if step51g_non_laundering_type_is_safe_brand_target(t, ctx) == 1 {
+        return expression_provenance_for_self_binding(name, t, ctx);
+    }
+
+    unsafe {
+        if t.tag == 9 { // RawPointer
+            return expression_provenance_for_self_binding(name, t, ctx);
+        }
+    }
+
+    mut prov := expression_provenance_safe_arena(t, ctx);
+    set_add(prov.legacy_origins, name, ctx);
+    set_add(prov.legacy_origins, "local.uninitialized", ctx);
+    return prov;
+}
+
 func env_record_variable_provenance(env: *TypeEnvironment[ctx], name: str, prov: ExpressionProvenance[ctx], ctx: &Arena) {
     unsafe {
         (*env).variable_provenance.Insert(std.Clone(ctx, name), prov);
@@ -9126,7 +9143,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     set_add(origs, std.Clone(ctx, name), ctx);
                     (*env).variable_origins.Insert(std.Clone(ctx, name), origs);
 
-                    mut decl_prov := expression_provenance_unknown(val_type, ctx);
+                    mut decl_prov := expression_provenance_for_uninitialized_local_binding(name, val_type, ctx);
                     decl_prov.legacy_origins = origs;
                     env_record_variable_provenance(env, name, decl_prov, ctx);
                 } else {
