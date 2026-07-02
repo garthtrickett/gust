@@ -475,6 +475,12 @@ func expression_provenance_void_unknown(ctx: &Arena) ExpressionProvenance[ctx] {
     return expression_provenance_unknown(t_void_ret_prov, ctx);
 }
 
+func expression_provenance_null_value(t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    mut null_prov := expression_provenance_safe_arena(t, ctx);
+    set_add(null_prov.legacy_origins, "null", ctx);
+    return null_prov;
+}
+
 func expression_provenance_for_self_binding(name: str, t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
     mut prov := expression_provenance_unknown(t, ctx);
     set_add(prov.legacy_origins, name, ctx);
@@ -3497,6 +3503,9 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
             mut expr := ctx[expr_idx];
             if expr.tag == 0 { // Identifier
                 mut name := expr.Identifier.name;
+                if std.str_eq(name, "null") == 1 {
+                    return expression_provenance_null_value(t, ctx);
+                }
 
                 mut direct_lookup := (*env).variable_provenance.Get(name);
                 if direct_lookup.Ok {
@@ -3642,6 +3651,13 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     mut arena_alloc_short_prov := expression_provenance_safe_arena(t, ctx);
                     arena_alloc_short_prov.legacy_origins = legacy_origins;
                     return arena_alloc_short_prov;
+                }
+
+                if std.str_eq(call_name_prov, "std.Clone") == 1 || std.str_eq(call_name_prov, "std_Clone") == 1 || std.str_eq(resolved_call_name_prov, "std.Clone") == 1 || std.str_eq(resolved_call_name_prov, "std_Clone") == 1 {
+                    mut clone_constructed_prov := expression_provenance_safe_arena(t, ctx);
+                    clone_constructed_prov.legacy_origins = legacy_origins;
+                    set_add(clone_constructed_prov.legacy_origins, "std.Clone", ctx);
+                    return clone_constructed_prov;
                 }
 
                 mut is_get_ref_call_prov := 0;

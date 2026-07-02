@@ -186,6 +186,23 @@ func main() {
         os.Exit(1);
     }
 
+    mut null_value_prov_51g := typechecker.expression_provenance_null_value(branded_index_param_type_51g, ctx);
+    if typechecker.step51g_expression_provenance_allows_safe_brand(null_value_prov_51g, ctx) != 1 {
+        os.LogStr("Error: null sentinel provenance did not allow safe-branded assignment");
+        os.Exit(1);
+    }
+    if typechecker.set_contains(null_value_prov_51g.legacy_origins, "null", ctx) != 1 {
+        os.LogStr("Error: null sentinel provenance did not preserve null legacy origin marker");
+        os.Exit(1);
+    }
+
+    mut clone_constructed_prov_51g := typechecker.expression_provenance_safe_arena(branded_index_param_type_51g, ctx);
+    typechecker.set_add(clone_constructed_prov_51g.legacy_origins, "std.Clone", ctx);
+    if typechecker.step51g_expression_provenance_allows_safe_brand(clone_constructed_prov_51g, ctx) != 1 {
+        os.LogStr("Error: std.Clone constructed provenance did not allow safe-branded binding");
+        os.Exit(1);
+    }
+
     mut sig_return_seed_51g: typechecker.FunctionSignature[ctx];
     typechecker.init_function_signature_ffi_defaults(&sig_return_seed_51g);
     sig_return_seed_51g.return_type = branded_index_param_type_51g;
