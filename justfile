@@ -532,6 +532,9 @@ run-step52-negative-batch:
 
 make-test-guards-step44-text: guard_parser_high_level_raw_casts guard_step44_no_high_level_raw_collection_casts
 
+test-fast-c:
+    CC=cc CFLAGS="-O0 -w -pthread" make test
+
 make-test-suite:
     just make-test-guards
     mkdir -p build
@@ -542,6 +545,9 @@ make-test-suite:
     echo "🏃 Running native Gust test runner..."
     ./build/test_runner_bin
     make test_tree_sitter
+
+make-test-suite-fast-c:
+    CC=cc CFLAGS="-O0 -w -pthread" just make-test-suite
 
 make-test-suite-parallel:
     just make-test-guards-parallel

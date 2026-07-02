@@ -17,6 +17,16 @@
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
+            tinycc
+            clang
+            lld
+            mold
+            tinycc
+            time
+
+            # optional experiments, if available in your nixpkgs:
+            qbe
+            zig
             bashInteractive
             pkg-config
             # Explicitly provide the Nix C compiler/linker toolchain
