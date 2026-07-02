@@ -39,16 +39,18 @@ func main() {
     typechecker.check_statement(bind_stmt, &env, scope, ctx);
 
     mut alias_lookup := env.variable_provenance.Get("alias_raw_local_flow");
-    if alias_lookup.Ok == false {
+    if alias_lookup.Ok {
+        mut alias_prov := alias_lookup.Val;
+        if typechecker.step51g_expression_provenance_is_raw_derived(alias_prov) != 1 {
+            os.LogStr("Error: raw local binding did not preserve raw-derived provenance");
+            os.Exit(1);
+        }
+        if typechecker.set_contains(alias_prov.legacy_origins, "raw_local_flow_root", ctx) != 1 {
+            os.LogStr("Error: raw local binding did not preserve raw legacy origin");
+            os.Exit(1);
+        }
+    } else {
         os.LogStr("Error: raw local binding did not record variable provenance");
-        os.Exit(1);
-    }
-    if typechecker.step51g_expression_provenance_is_raw_derived(alias_lookup.Val) != 1 {
-        os.LogStr("Error: raw local binding did not preserve raw-derived provenance");
-        os.Exit(1);
-    }
-    if typechecker.set_contains(alias_lookup.Val.legacy_origins, "raw_local_flow_root", ctx) != 1 {
-        os.LogStr("Error: raw local binding did not preserve raw legacy origin");
         os.Exit(1);
     }
 
@@ -60,16 +62,18 @@ func main() {
     typechecker.check_statement(assign_stmt, &env, scope, ctx);
 
     mut assign_lookup := env.variable_provenance.Get("target_raw_local_flow");
-    if assign_lookup.Ok == false {
+    if assign_lookup.Ok {
+        mut assign_prov := assign_lookup.Val;
+        if typechecker.step51g_expression_provenance_is_raw_derived(assign_prov) != 1 {
+            os.LogStr("Error: raw assignment did not preserve raw-derived provenance");
+            os.Exit(1);
+        }
+        if typechecker.set_contains(assign_prov.legacy_origins, "raw_local_flow_root", ctx) != 1 {
+            os.LogStr("Error: raw assignment did not preserve raw legacy origin");
+            os.Exit(1);
+        }
+    } else {
         os.LogStr("Error: raw assignment did not record target variable provenance");
-        os.Exit(1);
-    }
-    if typechecker.step51g_expression_provenance_is_raw_derived(assign_lookup.Val) != 1 {
-        os.LogStr("Error: raw assignment did not preserve raw-derived provenance");
-        os.Exit(1);
-    }
-    if typechecker.set_contains(assign_lookup.Val.legacy_origins, "raw_local_flow_root", ctx) != 1 {
-        os.LogStr("Error: raw assignment did not preserve raw legacy origin");
         os.Exit(1);
     }
 
@@ -98,16 +102,18 @@ func main() {
     typechecker.check_statement(sandbox_bind_stmt, &env, scope, ctx);
 
     mut sandbox_alias_lookup := env.variable_provenance.Get("alias_sandbox_local_flow");
-    if sandbox_alias_lookup.Ok == false {
+    if sandbox_alias_lookup.Ok {
+        mut sandbox_alias_prov := sandbox_alias_lookup.Val;
+        if typechecker.step51g_expression_provenance_is_sandbox_derived(sandbox_alias_prov) != 1 {
+            os.LogStr("Error: sandbox local binding did not preserve sandbox-derived provenance");
+            os.Exit(1);
+        }
+        if typechecker.set_contains(sandbox_alias_prov.legacy_origins, "sandbox_local_flow_root", ctx) != 1 {
+            os.LogStr("Error: sandbox local binding did not preserve sandbox legacy origin");
+            os.Exit(1);
+        }
+    } else {
         os.LogStr("Error: sandbox local binding did not record variable provenance");
-        os.Exit(1);
-    }
-    if typechecker.step51g_expression_provenance_is_sandbox_derived(sandbox_alias_lookup.Val) != 1 {
-        os.LogStr("Error: sandbox local binding did not preserve sandbox-derived provenance");
-        os.Exit(1);
-    }
-    if typechecker.set_contains(sandbox_alias_lookup.Val.legacy_origins, "sandbox_local_flow_root", ctx) != 1 {
-        os.LogStr("Error: sandbox local binding did not preserve sandbox legacy origin");
         os.Exit(1);
     }
 
