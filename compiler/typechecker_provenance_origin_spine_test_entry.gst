@@ -150,6 +150,13 @@ func main() {
         os.Exit(1);
     }
 
+    mut branded_task_arg_struct_51g := typechecker.make_type_struct("TaskArg_arena", "arena", ctx);
+    mut branded_task_arg_ptr_51g := typechecker.make_type_pointer(branded_task_arg_struct_51g, ctx);
+    if typechecker.env_type_is_safe_parameter_origin(branded_task_arg_ptr_51g, ctx) != 1 {
+        os.LogStr("Error: raw pointer to branded struct parameter was not classified as a safe parameter origin");
+        os.Exit(1);
+    }
+
     mut internal_prefix_entry_ref_51g := typechecker.make_type_reference(typechecker.make_type_struct("typechecker__PrefixMapEntry_ctx", "ctx", ctx), "ctx", ctx);
     if typechecker.step51g_non_laundering_type_is_safe_brand_target(internal_prefix_entry_ref_51g, ctx) != 0 {
         os.LogStr("Error: internal PrefixMapEntry reference should not be a non-laundering enforcement target");
@@ -193,6 +200,16 @@ func main() {
     }
     if typechecker.set_contains(null_value_prov_51g.legacy_origins, "null", ctx) != 1 {
         os.LogStr("Error: null sentinel provenance did not preserve null legacy origin marker");
+        os.Exit(1);
+    }
+
+    mut literal_int_prov_51g := typechecker.expression_provenance_literal_value(t_int_51g, "literal.int", ctx);
+    if typechecker.step51g_expression_provenance_allows_safe_brand(literal_int_prov_51g, ctx) != 1 {
+        os.LogStr("Error: literal int provenance did not allow safe-branded Arena.Set");
+        os.Exit(1);
+    }
+    if typechecker.set_contains(literal_int_prov_51g.legacy_origins, "literal.int", ctx) != 1 {
+        os.LogStr("Error: literal int provenance did not preserve literal legacy origin marker");
         os.Exit(1);
     }
 

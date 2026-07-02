@@ -481,6 +481,12 @@ func expression_provenance_null_value(t: ast.Type[ctx], ctx: &Arena) ExpressionP
     return null_prov;
 }
 
+func expression_provenance_literal_value(t: ast.Type[ctx], literal_kind: str, ctx: &Arena) ExpressionProvenance[ctx] {
+    mut literal_prov := expression_provenance_safe_arena(t, ctx);
+    set_add(literal_prov.legacy_origins, literal_kind, ctx);
+    return literal_prov;
+}
+
 func expression_provenance_for_self_binding(name: str, t: ast.Type[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
     mut prov := expression_provenance_unknown(t, ctx);
     set_add(prov.legacy_origins, name, ctx);
@@ -513,6 +519,18 @@ func env_type_is_safe_parameter_origin(t: ast.Type[ctx], ctx: &Arena) int {
             mut struct_suffix_brand_param_origin := typechecker_extract_brand_from_suffix(t.Struct.struct_name, ctx);
             if len(struct_suffix_brand_param_origin) > 0 {
                 return 1;
+            }
+        }
+        if t.tag == 9 { // RawPointer
+            mut raw_pointer_inner_param_origin := ctx[t.RawPointer.inner];
+            if raw_pointer_inner_param_origin.tag == 8 { // Struct
+                if raw_pointer_inner_param_origin.Struct.brand != empty[Index[str, ctx]] {
+                    return 1;
+                }
+                mut raw_pointer_struct_suffix_brand_param_origin := typechecker_extract_brand_from_suffix(raw_pointer_inner_param_origin.Struct.struct_name, ctx);
+                if len(raw_pointer_struct_suffix_brand_param_origin) > 0 {
+                    return 1;
+                }
             }
         }
     }
@@ -3523,6 +3541,48 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                         return found_resolved;
                     }
                 }
+            }
+
+            if expr.tag == 1 { // Integer
+                return expression_provenance_literal_value(t, "literal.int", ctx);
+            }
+
+            if expr.tag == 2 { // String
+                return expression_provenance_literal_value(t, "literal.str", ctx);
+            }
+
+            if expr.tag == 3 { // Bool
+                return expression_provenance_literal_value(t, "literal.bool", ctx);
+            }
+
+            if expr.tag == 7 { // Dereference
+                mut deref_base_prov_readback := check_expression_with_provenance(expr.Dereference.expr, env, scope, ctx);
+                if expression_provenance_has_known_readback_origin(deref_base_prov_readback) == 1 {
+                    return expression_provenance_inherit_readback(deref_base_prov_readback, t, legacy_origins, ctx);
+                }
+            }
+
+            if expr.tag == 9 { // AsCast
+                mut cast_left_prov := check_expression_with_provenance(expr.AsCast.left, env, scope, ctx);
+                if expression_provenance_allows_safe_branding(cast_left_prov) == 1 {
+                    mut cast_safe_prov := expression_provenance_safe_arena(t, ctx);
+                    cast_safe_prov.legacy_origins = typechecker_clone_origin_set(cast_left_prov.legacy_origins, ctx);
+                    set_union(cast_safe_prov.legacy_origins, legacy_origins, ctx);
+                    set_add(cast_safe_prov.legacy_origins, "as_cast", ctx);
+                    return cast_safe_prov;
+                }
+                if expression_provenance_is_raw_or_sandbox_derived(cast_left_prov) == 1 {
+                    mut cast_unsafe_prov := cast_left_prov;
+                    cast_unsafe_prov.resolved_type = t;
+                    cast_unsafe_prov.legacy_origins = typechecker_clone_origin_set(cast_left_prov.legacy_origins, ctx);
+                    set_union(cast_unsafe_prov.legacy_origins, legacy_origins, ctx);
+                    return cast_unsafe_prov;
+                }
+
+                mut cast_unknown_prov := expression_provenance_unknown(t, ctx);
+                cast_unknown_prov.legacy_origins = typechecker_clone_origin_set(cast_left_prov.legacy_origins, ctx);
+                set_union(cast_unknown_prov.legacy_origins, legacy_origins, ctx);
+                return cast_unknown_prov;
             }
 
             if expr.tag == 8 { // IndexAccess
