@@ -985,6 +985,17 @@ func expression_provenance_address_of(inner_prov: ExpressionProvenance[ctx], res
     return unknown_address_prov;
 }
 
+func step51g_expression_provenance_retarget_preserving_raw_sandbox(inner_prov: ExpressionProvenance[ctx], result_t: ast.Type[ctx], legacy_origins: Index[OriginSet[ctx], ctx], flow_label: str, ctx: &Arena) ExpressionProvenance[ctx] {
+    mut retargeted := inner_prov;
+    retargeted.resolved_type = result_t;
+    retargeted.legacy_origins = typechecker_clone_origin_set(inner_prov.legacy_origins, ctx);
+    set_union(retargeted.legacy_origins, legacy_origins, ctx);
+    if std.str_eq(flow_label, "") == 0 {
+        set_add(retargeted.legacy_origins, flow_label, ctx);
+    }
+    return retargeted;
+}
+
 func expression_provenance_literal_value(t: ast.Type[ctx], literal_kind: str, ctx: &Arena) ExpressionProvenance[ctx] {
     return expression_provenance_safe_arena(t, ctx);
 }
@@ -4120,12 +4131,8 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     set_add(cast_safe_prov.legacy_origins, "as_cast", ctx);
                     return cast_safe_prov;
                 }
-                if expression_provenance_is_raw_or_sandbox_derived(cast_left_prov) == 1 {
-                    mut cast_unsafe_prov := cast_left_prov;
-                    cast_unsafe_prov.resolved_type = t;
-                    cast_unsafe_prov.legacy_origins = typechecker_clone_origin_set(cast_left_prov.legacy_origins, ctx);
-                    set_union(cast_unsafe_prov.legacy_origins, legacy_origins, ctx);
-                    return cast_unsafe_prov;
+                if step51g_expression_provenance_is_raw_or_sandbox_derived(cast_left_prov) == 1 {
+                    return step51g_expression_provenance_retarget_preserving_raw_sandbox(cast_left_prov, t, legacy_origins, "as_cast", ctx);
                 }
 
                 mut cast_unknown_prov := expression_provenance_unknown(t, ctx);
@@ -9599,8 +9606,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 val_type = env_resolve_type(env, val_prov_decl.resolved_type, ctx);
 
                 mut origs := set_init(ctx);
-                mut is_ephemeral := env_type_is_ephemeral_view(val_type, ctx);
-                if is_ephemeral == 1 {
+                mut should_inherit_local_flow_origins := env_type_is_ephemeral_view(val_type, ctx);
+                if step51g_expression_provenance_is_raw_or_sandbox_derived(val_prov_decl) == 1 {
+                    should_inherit_local_flow_origins = 1;
+                }
+                if should_inherit_local_flow_origins == 1 {
                     origs = typechecker_clone_origin_set(val_prov_decl.legacy_origins, ctx);
                 }
                 if ctx[origs].map.len == 0 {
@@ -10067,7 +10077,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                         // Track assignments to variables to update their active memory origins
                         mut origs := set_init(ctx);
-                        if env_type_is_ephemeral_view(left_type, ctx) == 1 {
+                        mut should_inherit_assignment_flow_origins := env_type_is_ephemeral_view(left_type, ctx);
+                        if step51g_expression_provenance_is_raw_or_sandbox_derived(val_prov_assignment) == 1 {
+                            should_inherit_assignment_flow_origins = 1;
+                        }
+                        if should_inherit_assignment_flow_origins == 1 {
                             origs = typechecker_clone_origin_set(val_prov_assignment.legacy_origins, ctx);
                         }
                         if left.tag == 0 { // Identifier
