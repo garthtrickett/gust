@@ -1,8 +1,9 @@
 # MIR Feature Migration Harness
 
 MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1
-MIR_FEATURE_MIGRATION_PHASE: first-preservation-entry
+MIR_FEATURE_MIGRATION_PHASE: tiny-registry
 MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: false
+MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md
 
 This file defines the Phase 5 feature migration harness contract.
 
@@ -30,6 +31,12 @@ Every migrated feature entry must name:
 - `mir_to_c_guard`
 - `native_execution_guard`
 - `expected_behavior`
+
+## Registry
+
+The machine-checkable registry lives at `compiler/MIR_FEATURE_MIGRATION_REGISTRY.md`.
+
+The entries below mirror the registry for human review, but guard wiring should validate the registry file directly.
 
 ## Registered preservation entries
 

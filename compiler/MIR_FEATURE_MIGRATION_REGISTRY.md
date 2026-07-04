@@ -1,0 +1,35 @@
+# MIR Feature Migration Registry
+
+MIR_FEATURE_MIGRATION_REGISTRY_VERSION: 1
+MIR_FEATURE_MIGRATION_REGISTRY_PHASE: tiny-registry
+MIR_FEATURE_MIGRATION_REGISTRY_ENTRY_COUNT: 1
+
+This registry is the machine-checkable source of truth for migrated MIR feature preservation entries.
+
+The harness contract describes the required preservation shape. This registry records the concrete feature entries that must preserve old AST-to-C behavior while proving the MIR lowering, MIR-to-C, and native-execution path.
+
+## Entry schema
+
+Each entry must provide these fields:
+
+- `feature_name`
+- `source_fixture`
+- `old_behavior_guard`
+- `mir_lowering_guard`
+- `mir_verifier_guard`
+- `mir_to_c_guard`
+- `native_execution_guard`
+- `expected_behavior`
+
+## Entries
+
+### return_int_literal
+
+feature_name: return_int_literal
+source_fixture: compiler/mir_feature_return_int_preservation_source.gst
+old_behavior_guard: guard-mir-feature-return-int-preservation
+mir_lowering_guard: guard-mir-lower-return-int-literal-smoke
+mir_verifier_guard: guard-mir-lower-return-int-literal-smoke
+mir_to_c_guard: guard-mir-to-c-return-int-literal-smoke
+native_execution_guard: guard-mir-to-c-return-int-literal-native-smoke
+expected_behavior: native executable exits with status 1
