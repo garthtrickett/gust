@@ -446,7 +446,7 @@ guard-mir-ast-to-c-retirement-manifest-surface:
       exit 1
     fi
     rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_VERSION: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-mir-owned-validation-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-return-int-retirement-candidate-entry' "$manifest_doc" >/dev/null
     rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_ENTRY_COUNT: 4' "$manifest_doc" >/dev/null
     rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md' "$manifest_doc" >/dev/null
     rg -n -F 'still_required' "$manifest_doc" >/dev/null
@@ -472,20 +472,24 @@ guard-mir-ast-to-c-retirement-manifest-surface:
     rg -n -F 'old_behavior_guard: guard-mir-feature-if-else-return-int-preservation' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'old_behavior_guard: guard-mir-feature-local-binding-read-provenance-metadata-preservation' "$manifest_doc" "$registry_doc" >/dev/null
     status_count="$(rg -n -F 'ast_to_c_status: still_required' "$manifest_doc" | wc -l | tr -d '[:space:]')"
-    if [ "$status_count" != "4" ]; then
-      echo "Expected exactly four still_required AST-to-C retirement manifest entries, found $status_count."
+    if [ "$status_count" != "3" ]; then
+      echo "Expected exactly three still_required AST-to-C retirement manifest entries after marking return_int_literal as candidate, found $status_count."
       rg -n -F 'ast_to_c_status:' "$manifest_doc" || true
       exit 1
     fi
-    candidate_entries="$(rg -n -F 'ast_to_c_status: retirement_candidate' "$manifest_doc" || true)"
-    if [ -n "$candidate_entries" ]; then
-      echo "Phase 8 Step 1 must not mark entries retirement_candidate yet:"
-      echo "$candidate_entries"
+    candidate_count="$(rg -n -F 'ast_to_c_status: retirement_candidate' "$manifest_doc" | wc -l | tr -d '[:space:]')"
+    if [ "$candidate_count" != "1" ]; then
+      echo "Expected exactly one retirement_candidate AST-to-C retirement manifest entry, found $candidate_count."
+      rg -n -F 'ast_to_c_status:' "$manifest_doc" || true
       exit 1
     fi
+    rg -n -F 'feature_name: return_int_literal' "$manifest_doc" >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-return-int-literal-validation' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'ast_to_c_status: retirement_candidate' "$manifest_doc" >/dev/null
+    rg -n -F 'first retirement candidate because MIR-owned validation passes' "$manifest_doc" >/dev/null
     retired_entries="$(rg -n -F 'ast_to_c_status: retired' "$manifest_doc" || true)"
     if [ -n "$retired_entries" ]; then
-      echo "Phase 8 Step 1 must not mark entries retired yet:"
+      echo "Phase 8 Step 3 must not mark entries retired yet:"
       echo "$retired_entries"
       exit 1
     fi

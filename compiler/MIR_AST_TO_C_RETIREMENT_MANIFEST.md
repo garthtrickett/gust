@@ -1,7 +1,7 @@
 # MIR AST-to-C Retirement Manifest
 
 MIR_AST_TO_C_RETIREMENT_MANIFEST_VERSION: 1
-MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-mir-owned-validation-entry
+MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-return-int-retirement-candidate-entry
 MIR_AST_TO_C_RETIREMENT_MANIFEST_ENTRY_COUNT: 4
 MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md
 
@@ -43,8 +43,8 @@ mir_lowering_guard: guard-mir-lower-return-int-literal-smoke
 mir_to_c_guard: guard-mir-to-c-return-int-literal-smoke
 native_execution_guard: guard-mir-to-c-return-int-literal-native-smoke
 mir_owned_validation_guard: guard-mir-owned-return-int-literal-validation
-ast_to_c_status: still_required
-retirement_note: Phase 8 has MIR-owned validation for this feature, but has not added MIR-preferred routing yet; legacy AST-to-C behavior validation remains required.
+ast_to_c_status: retirement_candidate
+retirement_note: Phase 8 has marked this feature as the first retirement candidate because MIR-owned validation passes; legacy AST-to-C behavior validation remains required until MIR-preferred routing lands.
 
 ### local_binding_read
 
