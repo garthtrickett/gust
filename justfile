@@ -55,6 +55,9 @@ guard-mir-data-structures-smoke:
 guard-mir-debug-leaf-smoke:
     just guard compiler/mir_debug_leaf_smoke_test_entry.gst
 
+guard-mir-debug-printer-smoke:
+    just guard compiler/mir_debug_printer_smoke_test_entry.gst
+
 guard_step52_resource_use_after_move_enforcement:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -373,3 +373,40 @@ func mir_debug_terminator_kind(terminator: MirTerminator[ctx]) str {
     }
     return "MirTerminator.<unknown>";
 }
+
+func mir_debug_print_program(program: MirProgram[ctx]) {
+    os.LogStr("mir.program");
+    os.LogStr("  functions");
+}
+
+func mir_debug_print_function(function: MirFunction[ctx]) {
+    os.LogStr("mir.function");
+    os.LogStr("  name");
+    os.LogStr(function.name);
+    os.LogStr("  return_type");
+    os.LogStr(function.return_type);
+    os.LogStr("  params");
+    os.LogStr("  locals");
+    os.LogStr("  blocks");
+}
+
+func mir_debug_print_block(block: MirBlock[ctx], ctx: &Arena) {
+    os.LogStr("mir.block");
+    os.LogStr("  terminator");
+    os.LogStr(mir_debug_terminator_kind(ctx[block.terminator]));
+}
+
+func mir_debug_print_stmt(stmt: MirStmt[ctx]) {
+    os.LogStr("mir.stmt");
+    os.LogStr(mir_debug_stmt_kind(stmt));
+}
+
+func mir_debug_print_value(value: MirValue[ctx]) {
+    os.LogStr("mir.value");
+    os.LogStr(mir_debug_value_kind(value));
+}
+
+func mir_debug_print_terminator(terminator: MirTerminator[ctx]) {
+    os.LogStr("mir.terminator");
+    os.LogStr(mir_debug_terminator_kind(terminator));
+}
