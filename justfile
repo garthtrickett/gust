@@ -212,8 +212,9 @@ guard-mir-feature-return-int-preservation:
     old_final_c="$build_dir/old_ast_to_c_return_int_final.c"
     old_binary="$build_dir/old_ast_to_c_return_int_bin"
     mkdir -p "$build_dir"
-    rg -n -F 'func main() int' "$feature_fixture" >/dev/null
+    rg -n -F 'func return_one() int' "$feature_fixture" >/dev/null
     rg -n -F 'return 1;' "$feature_fixture" >/dev/null
+    rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
     echo "  ↳ old AST-to-C native behavior"
     ./gust "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
     cat src/runtime.c "$old_c" > "$old_final_c"
