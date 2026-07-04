@@ -125,6 +125,30 @@ guard-mir-to-c-return-int-literal-native-smoke:
     fi
     echo "✅ Tiny MIR-to-C return literal native smoke passed."
 
+guard-mir-to-c-local-binding-read-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling tiny MIR-to-C local binding/read..."
+    mkdir -p build/guards/mir_to_c_local_binding_read_native
+    just guard compiler/mir_to_c_local_binding_read_smoke_test_entry.gst
+    generated_c="build/guards/mir_to_c_local_binding_read_native/tiny_local_binding_read.c"
+    binary="build/guards/mir_to_c_local_binding_read_native/tiny_local_binding_read_bin"
+    rg -n -F 'int tiny_local_binding_read(void) { int value = 2; return value; }' to.log >/dev/null
+    printf '%s\n' 'int tiny_local_binding_read(void) { int value = 2; return value; }' > "$generated_c"
+    printf '%s\n' 'int main(void) { return tiny_local_binding_read(); }' >> "$generated_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$generated_c" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "2" ]; then
+      echo "Expected tiny MIR-to-C local binding/read native binary to exit with status 2, got $status"
+      exit 1
+    fi
+    echo "✅ Tiny MIR-to-C local binding/read native smoke passed."
+
 guard-mir-to-c-tiny-surface:
     #!/usr/bin/env bash
     set -euo pipefail
