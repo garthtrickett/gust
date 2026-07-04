@@ -427,11 +427,11 @@ func mir_lower_tiny_function_fixture(ctx: &Arena) MirProgram[ctx] {
     mut entry_block := mir_make_block(0, return_void_idx, span, ctx);
 
     mut function := mir_make_function("tiny_shell", "void", span, ctx);
-    mut blocks := ctx[function.blocks];
+    mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
     blocks.Push(entry_block);
     ctx.Set(function.blocks, blocks);
 
-    mut functions := ctx[program.functions];
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
     functions.Push(function);
     ctx.Set(program.functions, functions);
 
