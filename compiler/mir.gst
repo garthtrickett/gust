@@ -448,7 +448,7 @@ func mir_lower_return_int_literal_fixture(ctx: &Arena) MirProgram[ctx] {
     //   }
     //
     // It is intentionally not wired into parser, typechecker, verifier,
-    // C emission, Cranelift, or the production compiler path.
+    // C emission, native backend emission, or the production compiler path.
     mut span := mir_make_empty_span();
     mut program := mir_make_program(ctx);
 
