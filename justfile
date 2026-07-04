@@ -196,6 +196,15 @@ guard-mir-to-c-return-int-literal-native-smoke:
     fi
     echo "✅ Tiny MIR-to-C return literal native smoke passed."
 
+guard-mir-owned-return-int-literal-validation:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR-owned validation: return int literal..."
+    just guard-mir-lower-return-int-literal-smoke
+    just guard-mir-to-c-return-int-literal-smoke
+    just guard-mir-to-c-return-int-literal-native-smoke
+    echo "✅ MIR-owned validation passed: return int literal lowers, emits C, and executes natively through MIR."
+
 guard-mir-to-c-block-jump-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -437,7 +446,7 @@ guard-mir-ast-to-c-retirement-manifest-surface:
       exit 1
     fi
     rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_VERSION: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-retirement-manifest-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-mir-owned-validation-entry' "$manifest_doc" >/dev/null
     rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_ENTRY_COUNT: 4' "$manifest_doc" >/dev/null
     rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md' "$manifest_doc" >/dev/null
     rg -n -F 'still_required' "$manifest_doc" >/dev/null
@@ -445,6 +454,8 @@ guard-mir-ast-to-c-retirement-manifest-surface:
     rg -n -F 'retired' "$manifest_doc" >/dev/null
     rg -n -F 'ast_to_c_status' "$manifest_doc" >/dev/null
     rg -n -F 'retirement_note' "$manifest_doc" >/dev/null
+    rg -n -F 'mir_owned_validation_guard' "$manifest_doc" >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-return-int-literal-validation' "$manifest_doc" justfile >/dev/null
     rg -n -F 'feature_name: return_int_literal' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'feature_name: local_binding_read' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'feature_name: if_else_return_int' "$manifest_doc" "$registry_doc" >/dev/null
@@ -454,6 +465,9 @@ guard-mir-ast-to-c-retirement-manifest-surface:
     rg -n -F 'source_fixture: compiler/mir_feature_if_else_return_int_preservation_source.gst' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'source_fixture: compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'old_behavior_guard: guard-mir-feature-return-int-preservation' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'mir_lowering_guard: guard-mir-lower-return-int-literal-smoke' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'mir_to_c_guard: guard-mir-to-c-return-int-literal-smoke' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'native_execution_guard: guard-mir-to-c-return-int-literal-native-smoke' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'old_behavior_guard: guard-mir-feature-local-binding-read-preservation' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'old_behavior_guard: guard-mir-feature-if-else-return-int-preservation' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'old_behavior_guard: guard-mir-feature-local-binding-read-provenance-metadata-preservation' "$manifest_doc" "$registry_doc" >/dev/null
@@ -712,6 +726,7 @@ guard-mir-feature-migration-suite:
     just guard-mir-feature-harness-surface
     just guard-mir-feature-migration-registry
     just guard-mir-ast-to-c-retirement-manifest-surface
+    just guard-mir-owned-return-int-literal-validation
     just guard-mir-feature-return-int-preservation
     just guard-mir-feature-local-binding-read-preservation
     just guard-mir-feature-if-else-return-int-preservation
