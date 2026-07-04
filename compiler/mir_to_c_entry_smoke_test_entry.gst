@@ -21,13 +21,13 @@ func main() {
     defer ctx.Free();
     os.SetThreadScratch(ctx);
 
-    mut program := mir.mir_lower_return_int_literal_fixture(ctx);
+    mut program := mir.mir_make_program(ctx);
     mut c_source := mir.mir_to_c_tiny_fixture(program, ctx);
 
     expect_str_eq(c_source, "/* gust MIR-to-C tiny fixture */", "MIR-to-C entry smoke: banner drifted");
 
-    if len(ctx[program.functions]) != 1 {
-        fail("MIR-to-C entry smoke: source MIR fixture should still contain one function");
+    if len(ctx[program.functions]) != 0 {
+        fail("MIR-to-C entry smoke: inert source MIR program should contain no functions");
     }
 
     os.LogStr(c_source);

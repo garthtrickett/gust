@@ -474,17 +474,38 @@ func mir_to_c_tiny_fixture(program: MirProgram[ctx], ctx: &Arena) str {
     // Phase 4 fixture-only MIR-to-C entry point.
     //
     // This is not wired into parser, typechecker, verifier, normal C emission,
-    // native backend emission, or the production compiler path. Step 2 emits
-    // only the tiny function-shell shape produced by mir_lower_tiny_function_fixture:
-    // one void function, no params, no locals, one empty entry block, and a
-    // ReturnVoid terminator. It does not emit expressions, locals, calls,
-    // branches, loops, or real AST-lowered programs yet.
+    // native backend emission, or the production compiler path. Step 3 emits
+    // only the tiny function-shell shape and the tiny return-int-literal shape.
+    // It does not emit params, locals, statements, calls, branches, loops, or
+    // real AST-lowered programs yet.
     mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
     if len(functions) == 1 {
         mut function := functions[0];
         if std.str_eq(function.name, "tiny_shell") != 0 {
             if std.str_eq(function.return_type, "void") != 0 {
                 return "void tiny_shell(void) { return; }";
+            }
+        }
+
+        if std.str_eq(function.name, "tiny_return_int") != 0 {
+            if std.str_eq(function.return_type, "int") != 0 {
+                mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+                if len(blocks) == 1 {
+                    mut block := blocks[0];
+                    mut terminator: MirTerminator[ctx] := ctx[block.terminator];
+                    if std.str_eq(mir_debug_terminator_kind(terminator), "MirTerminator.Return") != 0 {
+                        unsafe {
+                            mut return_value: MirValue[ctx] := ctx[terminator.Return.value];
+                            if std.str_eq(mir_debug_value_kind(return_value), "MirValue.IntLiteral") != 0 {
+                                if return_value.IntLiteral.val == 1 {
+                                    if std.str_eq(return_value.IntLiteral.value_type, "int") != 0 {
+                                        return "int tiny_return_int(void) { return 1; }";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
