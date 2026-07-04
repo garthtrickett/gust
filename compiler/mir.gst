@@ -25,9 +25,9 @@ type MirProgram[ctx] struct {
 
 type MirFunction[ctx] struct {
     name: str,
-    params: Index[std.Vector[MirLocal, ctx], ctx],
+    params: Index[std.Vector[MirLocal[ctx], ctx], ctx],
     return_type: str,
-    locals: Index[std.Vector[MirLocal, ctx], ctx],
+    locals: Index[std.Vector[MirLocal[ctx], ctx], ctx],
     blocks: Index[std.Vector[MirBlock[ctx], ctx], ctx],
     entry_block: int,
     span: token.Span
@@ -40,7 +40,7 @@ type MirBlock[ctx] struct {
     span: token.Span
 }
 
-type MirLocal struct {
+type MirLocal[ctx] struct {
     id: int,
     name: str,
     local_type: str,
@@ -111,10 +111,8 @@ type MirTerminator[ctx] enum {
     }
 }
 
-func mir_make_span(start: int, end: int) token.Span {
+func mir_make_empty_span() token.Span {
     mut span: token.Span;
-    span.start = start;
-    span.end = end;
     return span;
 }
 
@@ -125,9 +123,9 @@ func mir_empty_function_vector(ctx: &Arena) Index[std.Vector[MirFunction[ctx], c
     return functions_idx;
 }
 
-func mir_empty_local_vector(ctx: &Arena) Index[std.Vector[MirLocal, ctx], ctx] {
-    mut locals: std.Vector[MirLocal, ctx] := std.VectorNew(ctx);
-    mut locals_idx: Index[std.Vector[MirLocal, ctx], ctx] := os.ArenaAlloc(ctx);
+func mir_empty_local_vector(ctx: &Arena) Index[std.Vector[MirLocal[ctx], ctx], ctx] {
+    mut locals: std.Vector[MirLocal[ctx], ctx] := std.VectorNew(ctx);
+    mut locals_idx: Index[std.Vector[MirLocal[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(locals_idx, locals);
     return locals_idx;
 }
@@ -192,8 +190,8 @@ func mir_make_block(id: int, terminator: Index[MirTerminator[ctx], ctx], span: t
     return block;
 }
 
-func mir_make_local(id: int, name: str, local_type: str, span: token.Span) MirLocal {
-    mut local: MirLocal;
+func mir_make_local(id: int, name: str, local_type: str, span: token.Span, ctx: &Arena) MirLocal[ctx] {
+    mut local: MirLocal[ctx];
     local.id = id;
     local.name = name;
     local.local_type = local_type;
@@ -201,7 +199,7 @@ func mir_make_local(id: int, name: str, local_type: str, span: token.Span) MirLo
     return local;
 }
 
-func mir_make_stmt_nop(span: token.Span) MirStmt[ctx] {
+func mir_make_stmt_nop(span: token.Span, ctx: &Arena) MirStmt[ctx] {
     mut stmt: MirStmt[ctx];
     unsafe {
         stmt.tag = 0; // Nop
@@ -231,7 +229,7 @@ func mir_make_stmt_expr(value: Index[MirValue[ctx], ctx], span: token.Span) MirS
     return stmt;
 }
 
-func mir_make_value_int_literal(val: int, value_type: str, span: token.Span) MirValue[ctx] {
+func mir_make_value_int_literal(val: int, value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
     mut value: MirValue[ctx];
     unsafe {
         value.tag = 0; // IntLiteral
@@ -242,7 +240,7 @@ func mir_make_value_int_literal(val: int, value_type: str, span: token.Span) Mir
     return value;
 }
 
-func mir_make_value_bool_literal(val: int, value_type: str, span: token.Span) MirValue[ctx] {
+func mir_make_value_bool_literal(val: int, value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
     mut value: MirValue[ctx];
     unsafe {
         value.tag = 1; // BoolLiteral
@@ -253,7 +251,7 @@ func mir_make_value_bool_literal(val: int, value_type: str, span: token.Span) Mi
     return value;
 }
 
-func mir_make_value_string_literal(val: str, value_type: str, span: token.Span) MirValue[ctx] {
+func mir_make_value_string_literal(val: str, value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
     mut value: MirValue[ctx];
     unsafe {
         value.tag = 2; // StringLiteral
@@ -287,7 +285,7 @@ func mir_make_value_call(callee: str, args: Index[std.Vector[MirValue[ctx], ctx]
     return value;
 }
 
-func mir_make_terminator_return_void(span: token.Span) MirTerminator[ctx] {
+func mir_make_terminator_return_void(span: token.Span, ctx: &Arena) MirTerminator[ctx] {
     mut terminator: MirTerminator[ctx];
     unsafe {
         terminator.tag = 0; // ReturnVoid

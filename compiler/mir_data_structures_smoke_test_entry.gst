@@ -10,7 +10,7 @@ func main() {
     defer ctx.Free();
     os.SetThreadScratch(ctx);
 
-    mut span := mir.mir_make_span(1, 2);
+    mut span := mir.mir_make_empty_span();
 
     mut program := mir.mir_make_program(ctx);
     if len(ctx[program.functions]) != 0 {
