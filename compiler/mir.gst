@@ -264,7 +264,7 @@ func mir_make_value_string_literal(val: str, value_type: str, span: token.Span) 
     return value;
 }
 
-func mir_make_value_local_read(local_id: int, value_type: str, span: token.Span) MirValue[ctx] {
+func mir_make_value_local_read(local_id: int, value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
     mut value: MirValue[ctx];
     unsafe {
         value.tag = 3; // LocalRead

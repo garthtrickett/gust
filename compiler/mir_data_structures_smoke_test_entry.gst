@@ -37,7 +37,7 @@ func main() {
         fail("MIR smoke: new function should start with zero blocks");
     }
 
-    mut local := mir.mir_make_local(0, "x", "int", span);
+    mut local := mir.mir_make_local(0, "x", "int", span, ctx);
     if local.id != 0 {
         fail("MIR smoke: local id constructor field drifted");
     }
