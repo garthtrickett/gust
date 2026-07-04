@@ -125,6 +125,47 @@ guard-mir-to-c-return-int-literal-native-smoke:
     fi
     echo "✅ Tiny MIR-to-C return literal native smoke passed."
 
+guard-mir-to-c-tiny-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking tiny MIR-to-C surface..."
+    rg -n -F 'func mir_to_c_tiny_fixture' compiler/mir.gst >/dev/null
+    rg -n -F 'gust MIR-to-C tiny fixture' compiler/mir.gst compiler/mir_to_c_entry_smoke_test_entry.gst >/dev/null
+    rg -n -F 'void tiny_shell(void) { return; }' compiler/mir.gst compiler/mir_to_c_function_shell_smoke_test_entry.gst >/dev/null
+    rg -n -F 'int tiny_return_int(void) { return 1; }' compiler/mir.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst justfile >/dev/null
+    rg -n -F 'int main(void) { return tiny_return_int(); }' justfile >/dev/null
+    rg -n -F 'SUCCESS: mir to c entry smoke' compiler/mir_to_c_entry_smoke_test_entry.gst >/dev/null
+    rg -n -F 'SUCCESS: mir to c function shell smoke' compiler/mir_to_c_function_shell_smoke_test_entry.gst >/dev/null
+    rg -n -F 'SUCCESS: mir to c return int literal smoke' compiler/mir_to_c_return_int_literal_smoke_test_entry.gst >/dev/null
+    rg -n -F 'guard-mir-to-c-entry-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-function-shell-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-return-int-literal-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-return-int-literal-native-smoke' justfile >/dev/null
+    rg -n -F 'compiler/mir_to_c_entry_smoke_test_entry.gst' justfile >/dev/null
+    rg -n -F 'compiler/mir_to_c_function_shell_smoke_test_entry.gst' justfile >/dev/null
+    rg -n -F 'compiler/mir_to_c_return_int_literal_smoke_test_entry.gst' justfile >/dev/null
+    unexpected_mir_to_c_refs="$(rg -n -F 'mir_to_c_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:' || true)"
+    if [ -n "$unexpected_mir_to_c_refs" ]; then
+      echo "Unexpected MIR-to-C reference outside fixture-only files:"
+      echo "$unexpected_mir_to_c_refs"
+      exit 1
+    fi
+    forbidden_refs="$(rg -n -F 'MirStmt.LocalSet' compiler/mir_to_c_entry_smoke_test_entry.gst compiler/mir_to_c_function_shell_smoke_test_entry.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst || true)"
+    if [ -n "$forbidden_refs" ]; then
+      echo "Tiny MIR-to-C fixtures must not cover locals/statements yet:"
+      echo "$forbidden_refs"
+      exit 1
+    fi
+    if rg -n -F 'MirTerminator.Branch' compiler/mir_to_c_entry_smoke_test_entry.gst compiler/mir_to_c_function_shell_smoke_test_entry.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst >/dev/null; then
+      echo "Tiny MIR-to-C fixtures must not cover branches yet."
+      exit 1
+    fi
+    if rg -n -F 'MirValue.Call' compiler/mir_to_c_entry_smoke_test_entry.gst compiler/mir_to_c_function_shell_smoke_test_entry.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst >/dev/null; then
+      echo "Tiny MIR-to-C fixtures must not cover calls yet."
+      exit 1
+    fi
+    echo "✅ Tiny MIR-to-C surface guard passed."
+
 guard-mir-lower-tiny-function-surface:
     #!/usr/bin/env bash
     set -euo pipefail
