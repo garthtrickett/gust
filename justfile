@@ -201,6 +201,41 @@ guard-mir-feature-harness-surface:
     rg -n -F 'native executable exits with status `1`' "$harness_doc" >/dev/null
     echo "✅ MIR feature migration harness surface guard passed."
 
+guard-mir-feature-registry-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR feature migration registry surface..."
+    registry_doc="compiler/MIR_FEATURE_MIGRATION_REGISTRY.md"
+    if [ ! -f "$registry_doc" ]; then
+      echo "Missing $registry_doc. Step 3 requires the MIR feature migration registry."
+      exit 1
+    fi
+    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_VERSION: 1' "$registry_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_PHASE: tiny-registry' "$registry_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_ENTRY_COUNT: 1' "$registry_doc" >/dev/null
+    rg -n -F 'feature_name' "$registry_doc" >/dev/null
+    rg -n -F 'source_fixture' "$registry_doc" >/dev/null
+    rg -n -F 'old_behavior_guard' "$registry_doc" >/dev/null
+    rg -n -F 'mir_lowering_guard' "$registry_doc" >/dev/null
+    rg -n -F 'mir_verifier_guard' "$registry_doc" >/dev/null
+    rg -n -F 'mir_to_c_guard' "$registry_doc" >/dev/null
+    rg -n -F 'native_execution_guard' "$registry_doc" >/dev/null
+    rg -n -F 'expected_behavior' "$registry_doc" >/dev/null
+    rg -n -F 'feature_name: return_int_literal' "$registry_doc" >/dev/null
+    rg -n -F 'source_fixture: compiler/mir_feature_return_int_preservation_source.gst' "$registry_doc" >/dev/null
+    rg -n -F 'old_behavior_guard: guard-mir-feature-return-int-preservation' "$registry_doc" >/dev/null
+    rg -n -F 'mir_lowering_guard: guard-mir-lower-return-int-literal-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'mir_verifier_guard: guard-mir-lower-return-int-literal-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'mir_to_c_guard: guard-mir-to-c-return-int-literal-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'native_execution_guard: guard-mir-to-c-return-int-literal-native-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'expected_behavior: native executable exits with status 1' "$registry_doc" >/dev/null
+    rg -n -F 'compiler/mir_feature_return_int_preservation_source.gst' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-feature-return-int-preservation' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-lower-return-int-literal-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-return-int-literal-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-return-int-literal-native-smoke' "$registry_doc" justfile >/dev/null
+    echo "✅ MIR feature migration registry surface guard passed."
+
 guard-mir-feature-return-int-preservation:
     #!/usr/bin/env bash
     set -euo pipefail
