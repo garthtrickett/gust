@@ -69,9 +69,9 @@ guard-mir-debug-printer-surface:
     rg -n -F 'type MirResourceState enum' compiler/mir.gst >/dev/null
     rg -n -F 'type MirProvenanceKind enum' compiler/mir.gst >/dev/null
     rg -n -F 'type MirNativeBoundaryKind enum' compiler/mir.gst >/dev/null
-    rg -n -F 'type MirResourceMetadata struct' compiler/mir.gst >/dev/null
+    rg -n -F 'type MirResourceMetadata[ctx] struct' compiler/mir.gst >/dev/null
     rg -n -F 'type MirProvenanceMetadata[ctx] struct' compiler/mir.gst >/dev/null
-    rg -n -F 'type MirNativeBoundaryMetadata struct' compiler/mir.gst >/dev/null
+    rg -n -F 'type MirNativeBoundaryMetadata[ctx] struct' compiler/mir.gst >/dev/null
     rg -n -F 'resource_metadata' compiler/mir.gst compiler/mir_data_structures_smoke_test_entry.gst >/dev/null
     rg -n -F 'provenance_metadata' compiler/mir.gst compiler/mir_data_structures_smoke_test_entry.gst >/dev/null
     rg -n -F 'native_boundary_metadata' compiler/mir.gst compiler/mir_data_structures_smoke_test_entry.gst >/dev/null

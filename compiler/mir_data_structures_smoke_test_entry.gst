@@ -122,7 +122,7 @@ func main() {
         fail("MIR smoke: native-boundary metadata kind field drifted");
     }
 
-    mut resource_metadata_records: std.Vector[mir.MirResourceMetadata, ctx] := ctx[program.resource_metadata];
+    mut resource_metadata_records: std.Vector[mir.MirResourceMetadata[ctx], ctx] := ctx[program.resource_metadata];
     resource_metadata_records.Push(resource_metadata);
     ctx.Set(program.resource_metadata, resource_metadata_records);
     if len(ctx[program.resource_metadata]) != 1 {
@@ -136,7 +136,7 @@ func main() {
         fail("MIR smoke: provenance metadata side table should accept one record");
     }
 
-    mut native_boundary_metadata_records: std.Vector[mir.MirNativeBoundaryMetadata, ctx] := ctx[program.native_boundary_metadata];
+    mut native_boundary_metadata_records: std.Vector[mir.MirNativeBoundaryMetadata[ctx], ctx] := ctx[program.native_boundary_metadata];
     native_boundary_metadata_records.Push(native_boundary_metadata);
     ctx.Set(program.native_boundary_metadata, native_boundary_metadata_records);
     if len(ctx[program.native_boundary_metadata]) != 1 {

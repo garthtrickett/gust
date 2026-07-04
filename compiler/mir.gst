@@ -21,9 +21,9 @@ import "token.gst" as token;
 
 type MirProgram[ctx] struct {
     functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
-    resource_metadata: Index[std.Vector[MirResourceMetadata, ctx], ctx],
+    resource_metadata: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx],
     provenance_metadata: Index[std.Vector[MirProvenanceMetadata[ctx], ctx], ctx],
-    native_boundary_metadata: Index[std.Vector[MirNativeBoundaryMetadata, ctx], ctx]
+    native_boundary_metadata: Index[std.Vector[MirNativeBoundaryMetadata[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -153,7 +153,7 @@ type MirNativeBoundaryKind enum {
     LayoutSensitiveCall
 }
 
-type MirResourceMetadata struct {
+type MirResourceMetadata[ctx] struct {
     local_id: int,
     resource_kind: MirResourceKind,
     resource_state: MirResourceState,
@@ -167,7 +167,7 @@ type MirProvenanceMetadata[ctx] struct {
     span: token.Span
 }
 
-type MirNativeBoundaryMetadata struct {
+type MirNativeBoundaryMetadata[ctx] struct {
     function_name: str,
     boundary_kind: MirNativeBoundaryKind,
     span: token.Span
@@ -213,9 +213,9 @@ func mir_empty_value_vector(ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], c
     return values_idx;
 }
 
-func mir_empty_resource_metadata_vector(ctx: &Arena) Index[std.Vector[MirResourceMetadata, ctx], ctx] {
-    mut metadata: std.Vector[MirResourceMetadata, ctx] := std.VectorNew(ctx);
-    mut metadata_idx: Index[std.Vector[MirResourceMetadata, ctx], ctx] := os.ArenaAlloc(ctx);
+func mir_empty_resource_metadata_vector(ctx: &Arena) Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx] {
+    mut metadata: std.Vector[MirResourceMetadata[ctx], ctx] := std.VectorNew(ctx);
+    mut metadata_idx: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(metadata_idx, metadata);
     return metadata_idx;
 }
@@ -227,9 +227,9 @@ func mir_empty_provenance_metadata_vector(ctx: &Arena) Index[std.Vector[MirProve
     return metadata_idx;
 }
 
-func mir_empty_native_boundary_metadata_vector(ctx: &Arena) Index[std.Vector[MirNativeBoundaryMetadata, ctx], ctx] {
-    mut metadata: std.Vector[MirNativeBoundaryMetadata, ctx] := std.VectorNew(ctx);
-    mut metadata_idx: Index[std.Vector[MirNativeBoundaryMetadata, ctx], ctx] := os.ArenaAlloc(ctx);
+func mir_empty_native_boundary_metadata_vector(ctx: &Arena) Index[std.Vector[MirNativeBoundaryMetadata[ctx], ctx], ctx] {
+    mut metadata: std.Vector[MirNativeBoundaryMetadata[ctx], ctx] := std.VectorNew(ctx);
+    mut metadata_idx: Index[std.Vector[MirNativeBoundaryMetadata[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(metadata_idx, metadata);
     return metadata_idx;
 }
@@ -255,8 +255,8 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     return program;
 }
 
-func mir_make_resource_metadata(local_id: int, resource_kind: MirResourceKind, resource_state: MirResourceState, span: token.Span) MirResourceMetadata {
-    mut metadata: MirResourceMetadata;
+func mir_make_resource_metadata(local_id: int, resource_kind: MirResourceKind, resource_state: MirResourceState, span: token.Span) MirResourceMetadata[ctx] {
+    mut metadata: MirResourceMetadata[ctx];
     metadata.local_id = local_id;
     metadata.resource_kind = resource_kind;
     metadata.resource_state = resource_state;
@@ -273,8 +273,8 @@ func mir_make_provenance_metadata(value: Index[MirValue[ctx], ctx], provenance_k
     return metadata;
 }
 
-func mir_make_native_boundary_metadata(function_name: str, boundary_kind: MirNativeBoundaryKind, span: token.Span) MirNativeBoundaryMetadata {
-    mut metadata: MirNativeBoundaryMetadata;
+func mir_make_native_boundary_metadata(function_name: str, boundary_kind: MirNativeBoundaryKind, span: token.Span) MirNativeBoundaryMetadata[ctx] {
+    mut metadata: MirNativeBoundaryMetadata[ctx];
     metadata.function_name = function_name;
     metadata.boundary_kind = boundary_kind;
     metadata.span = span;
