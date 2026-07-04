@@ -77,6 +77,32 @@ func main() {
         fail("MIR smoke: return terminator tag drifted");
     }
 
+    mut jump_terminator: mir.MirTerminator[ctx] := mir.mir_make_terminator_jump(1, span, ctx);
+    if jump_terminator.tag != 2 {
+        fail("MIR smoke: jump terminator tag drifted");
+    }
+    unsafe {
+        if jump_terminator.Jump.target_block != 1 {
+            fail("MIR smoke: jump target_block field drifted");
+        }
+    }
+
+    mut branch_terminator: mir.MirTerminator[ctx] := mir.mir_make_terminator_branch(local_read_idx, 1, 2, span);
+    if branch_terminator.tag != 3 {
+        fail("MIR smoke: branch terminator tag drifted");
+    }
+    unsafe {
+        if branch_terminator.Branch.condition == empty[Index[mir.MirValue[ctx], ctx]] {
+            fail("MIR smoke: branch condition field should be allocated");
+        }
+        if branch_terminator.Branch.then_block != 1 {
+            fail("MIR smoke: branch then_block field drifted");
+        }
+        if branch_terminator.Branch.else_block != 2 {
+            fail("MIR smoke: branch else_block field drifted");
+        }
+    }
+
     mut return_terminator_idx := mir.mir_alloc_terminator(return_terminator, ctx);
     mut block := mir.mir_make_block(0, return_terminator_idx, span, ctx);
     if block.id != 0 {

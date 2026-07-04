@@ -74,6 +74,13 @@ guard-mir-debug-printer-surface:
     rg -n -F 'MirStmt.LocalSet' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
     rg -n -F 'MirValue.LocalRead' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
     rg -n -F 'MirTerminator.Return' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirTerminator.Jump' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirTerminator.Branch' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'func mir_make_terminator_jump' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_make_terminator_branch' compiler/mir.gst >/dev/null
+    rg -n -F 'target_block' compiler/mir.gst compiler/mir_data_structures_smoke_test_entry.gst >/dev/null
+    rg -n -F 'then_block' compiler/mir.gst compiler/mir_data_structures_smoke_test_entry.gst >/dev/null
+    rg -n -F 'else_block' compiler/mir.gst compiler/mir_data_structures_smoke_test_entry.gst >/dev/null
     rg -n -F 'mir.program' compiler/mir.gst compiler/mir_debug_printer_smoke_test_entry.gst >/dev/null
     rg -n -F 'mir.function' compiler/mir.gst compiler/mir_debug_printer_smoke_test_entry.gst >/dev/null
     rg -n -F 'mir.block' compiler/mir.gst compiler/mir_debug_printer_smoke_test_entry.gst >/dev/null
