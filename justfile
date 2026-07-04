@@ -290,7 +290,7 @@ guard-mir-feature-harness-surface:
       exit 1
     fi
     rg -n -F 'MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1' "$harness_doc" >/dev/null
-    rg -n -F 'MIR_FEATURE_MIGRATION_PHASE: tiny-registry' "$harness_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_PHASE: phase6-branch-preservation-entry' "$harness_doc" >/dev/null
     rg -n -F 'MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: false' "$harness_doc" >/dev/null
     rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md' "$harness_doc" >/dev/null
     rg -n -F 'source Gust fixture' "$harness_doc" >/dev/null
@@ -308,13 +308,27 @@ guard-mir-feature-harness-surface:
     rg -n -F 'native_execution_guard' "$harness_doc" >/dev/null
     rg -n -F 'expected_behavior' "$harness_doc" >/dev/null
     rg -n -F 'return_int_literal' "$harness_doc" "$registry_doc" >/dev/null
+    rg -n -F 'local_binding_read' "$harness_doc" "$registry_doc" >/dev/null
+    rg -n -F 'if_else_return_int' "$harness_doc" "$registry_doc" >/dev/null
     rg -n -F 'compiler/mir_feature_return_int_preservation_source.gst' "$harness_doc" "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-feature-return-int-preservation' "$harness_doc" "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-lower-return-int-literal-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-to-c-return-int-literal-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-to-c-return-int-literal-native-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'compiler/mir_feature_local_binding_read_preservation_source.gst' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-feature-local-binding-read-preservation' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-lower-local-binding-read-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-local-binding-read-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-local-binding-read-native-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'compiler/mir_feature_if_else_return_int_preservation_source.gst' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-feature-if-else-return-int-preservation' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-lower-conditional-branch-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-conditional-branch-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-conditional-branch-native-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
     rg -n -F 'native executable exits with status `1`' "$harness_doc" >/dev/null
+    rg -n -F 'native executable exits with status `2`' "$harness_doc" >/dev/null
     rg -n -F 'expected_behavior: native executable exits with status 1' "$registry_doc" >/dev/null
+    rg -n -F 'expected_behavior: native executable exits with status 2' "$registry_doc" >/dev/null
     just guard-mir-feature-registry-surface
     echo "✅ MIR feature migration harness surface guard passed."
 
@@ -331,8 +345,8 @@ guard-mir-feature-registry-surface:
       exit 1
     fi
     rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_VERSION: 1' "$registry_doc" >/dev/null
-    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_PHASE: tiny-registry' "$registry_doc" >/dev/null
-    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_ENTRY_COUNT: 1' "$registry_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_PHASE: phase6-branch-preservation-entry' "$registry_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_ENTRY_COUNT: 3' "$registry_doc" >/dev/null
     rg -n -F 'feature_name' "$registry_doc" >/dev/null
     rg -n -F 'source_fixture' "$registry_doc" >/dev/null
     rg -n -F 'old_behavior_guard' "$registry_doc" >/dev/null
@@ -349,11 +363,36 @@ guard-mir-feature-registry-surface:
     rg -n -F 'mir_to_c_guard: guard-mir-to-c-return-int-literal-smoke' "$registry_doc" >/dev/null
     rg -n -F 'native_execution_guard: guard-mir-to-c-return-int-literal-native-smoke' "$registry_doc" >/dev/null
     rg -n -F 'expected_behavior: native executable exits with status 1' "$registry_doc" >/dev/null
+    rg -n -F 'feature_name: local_binding_read' "$registry_doc" >/dev/null
+    rg -n -F 'source_fixture: compiler/mir_feature_local_binding_read_preservation_source.gst' "$registry_doc" >/dev/null
+    rg -n -F 'old_behavior_guard: guard-mir-feature-local-binding-read-preservation' "$registry_doc" >/dev/null
+    rg -n -F 'mir_lowering_guard: guard-mir-lower-local-binding-read-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'mir_verifier_guard: guard-mir-lower-local-binding-read-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'mir_to_c_guard: guard-mir-to-c-local-binding-read-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'native_execution_guard: guard-mir-to-c-local-binding-read-native-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'expected_behavior: native executable exits with status 2' "$registry_doc" >/dev/null
+    rg -n -F 'feature_name: if_else_return_int' "$registry_doc" >/dev/null
+    rg -n -F 'source_fixture: compiler/mir_feature_if_else_return_int_preservation_source.gst' "$registry_doc" >/dev/null
+    rg -n -F 'old_behavior_guard: guard-mir-feature-if-else-return-int-preservation' "$registry_doc" >/dev/null
+    rg -n -F 'mir_lowering_guard: guard-mir-lower-conditional-branch-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'mir_verifier_guard: guard-mir-lower-conditional-branch-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'mir_to_c_guard: guard-mir-to-c-conditional-branch-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'native_execution_guard: guard-mir-to-c-conditional-branch-native-smoke' "$registry_doc" >/dev/null
     rg -n -F 'compiler/mir_feature_return_int_preservation_source.gst' "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-feature-return-int-preservation' "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-lower-return-int-literal-smoke' "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-to-c-return-int-literal-smoke' "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-to-c-return-int-literal-native-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'compiler/mir_feature_local_binding_read_preservation_source.gst' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-feature-local-binding-read-preservation' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-lower-local-binding-read-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-local-binding-read-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-local-binding-read-native-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'compiler/mir_feature_if_else_return_int_preservation_source.gst' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-feature-if-else-return-int-preservation' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-lower-conditional-branch-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-conditional-branch-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-conditional-branch-native-smoke' "$registry_doc" justfile >/dev/null
     echo "✅ MIR feature migration registry surface guard passed."
 
 guard-mir-feature-return-int-preservation:
