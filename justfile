@@ -433,6 +433,46 @@ guard-mir-feature-local-binding-read-preservation:
     just guard-mir-to-c-local-binding-read-native-smoke
     echo "✅ MIR feature preservation passed: local binding/read exits with status 2 on old and MIR-backed paths."
 
+guard-mir-feature-if-else-return-int-preservation:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR feature preservation: if/else return int..."
+    just guard-mir-feature-harness-surface
+    just guard-mir-feature-registry-surface
+    feature_fixture="compiler/mir_feature_if_else_return_int_preservation_source.gst"
+    build_dir="build/guards/mir_feature_if_else_return_int_preservation"
+    old_c="$build_dir/old_ast_to_c_if_else_return_int.c"
+    old_final_c="$build_dir/old_ast_to_c_if_else_return_int_final.c"
+    old_binary="$build_dir/old_ast_to_c_if_else_return_int_bin"
+    mkdir -p "$build_dir"
+    rg -n -F 'func if_else_return_int() int' "$feature_fixture" >/dev/null
+    rg -n -F 'if true {' "$feature_fixture" >/dev/null
+    rg -n -F 'return 1;' "$feature_fixture" >/dev/null
+    rg -n -F 'return 2;' "$feature_fixture" >/dev/null
+    rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
+    echo "  ↳ old AST-to-C native behavior"
+    ./gust "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
+    cat src/runtime.c "$old_c" > "$old_final_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
+    INCLUDES_VAL="${INCLUDES:--Isrc}"
+    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$old_final_c" -o "$old_binary"
+    set +e
+    "$old_binary"
+    old_status="$?"
+    set -e
+    if [ "$old_status" != "1" ]; then
+      echo "Expected old AST-to-C if/else return-int fixture to exit with status 1, got $old_status"
+      exit 1
+    fi
+    echo "  ↳ MIR lowering structural behavior"
+    just guard-mir-lower-conditional-branch-smoke
+    echo "  ↳ MIR-to-C textual behavior"
+    just guard-mir-to-c-conditional-branch-smoke
+    echo "  ↳ MIR-to-C native behavior"
+    just guard-mir-to-c-conditional-branch-native-smoke
+    echo "✅ MIR feature preservation passed: if/else return int exits with status 1 on old and MIR-backed paths."
+
 guard-mir-feature-migration-suite:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -441,6 +481,7 @@ guard-mir-feature-migration-suite:
     just guard-mir-feature-migration-registry
     just guard-mir-feature-return-int-preservation
     just guard-mir-feature-local-binding-read-preservation
+    just guard-mir-feature-if-else-return-int-preservation
     echo "✅ MIR feature migration suite passed."
 
 guard-test-runner-bounded-concurrency-surface:

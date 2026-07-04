@@ -69,11 +69,33 @@ The entries below mirror the registry for human review, but guard wiring should 
 - `native_execution_guard`: `guard-mir-to-c-local-binding-read-native-smoke`
 - `expected_behavior`: native executable exits with status `2`
 
+### if_else_return_int
+
+- `feature_name`: `if_else_return_int`
+- `source_fixture`: `compiler/mir_feature_if_else_return_int_preservation_source.gst`
+- `old_behavior_guard`: `guard-mir-feature-if-else-return-int-preservation`
+- `mir_lowering_guard`: `guard-mir-lower-conditional-branch-smoke`
+- `mir_verifier_guard`: `guard-mir-lower-conditional-branch-smoke`
+- `mir_to_c_guard`: `guard-mir-to-c-conditional-branch-smoke`
+- `native_execution_guard`: `guard-mir-to-c-conditional-branch-native-smoke`
+- `expected_behavior`: native executable exits with status `1`
+
+### local_binding_read
+
+- `feature_name`: `local_binding_read`
+- `source_fixture`: `compiler/mir_feature_local_binding_read_preservation_source.gst`
+- `old_behavior_guard`: `guard-mir-feature-local-binding-read-preservation`
+- `mir_lowering_guard`: `guard-mir-lower-local-binding-read-smoke`
+- `mir_verifier_guard`: `guard-mir-lower-local-binding-read-smoke`
+- `mir_to_c_guard`: `guard-mir-to-c-local-binding-read-smoke`
+- `native_execution_guard`: `guard-mir-to-c-local-binding-read-native-smoke`
+- `expected_behavior`: native executable exits with status `2`
+
 The current verifier slot is backed by focused MIR structural invariant guards until a dedicated MIR verifier target exists.
 # MIR Feature Migration Harness
 
 MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1
-MIR_FEATURE_MIGRATION_PHASE: tiny-registry
+MIR_FEATURE_MIGRATION_PHASE: phase6-branch-preservation-entry
 MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: false
 
 This file defines the Phase 5 feature migration harness contract without migrating any additional AST-to-C feature yet.
