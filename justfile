@@ -49,6 +49,9 @@ guard-step51-non-launder-hashmap-get-value:
 guard-step51-non-launder-hashmap-get-value-field:
     just guard compiler/typechecker_non_laundering_hashmap_get_value_field_test_entry.gst
 
+guard-mir-data-structures-smoke:
+    just guard compiler/mir_data_structures_smoke_test_entry.gst
+
 guard_step52_resource_use_after_move_enforcement:
     #!/usr/bin/env bash
     set -euo pipefail

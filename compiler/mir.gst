@@ -110,3 +110,220 @@ type MirTerminator[ctx] enum {
         span: token.Span
     }
 }
+
+func mir_make_span(start: int, end: int) token.Span {
+    mut span: token.Span;
+    span.start = start;
+    span.end = end;
+    return span;
+}
+
+func mir_empty_function_vector(ctx: &Arena) Index[std.Vector[MirFunction[ctx], ctx], ctx] {
+    mut functions: std.Vector[MirFunction[ctx], ctx] := std.VectorNew(ctx);
+    mut functions_idx: Index[std.Vector[MirFunction[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(functions_idx, functions);
+    return functions_idx;
+}
+
+func mir_empty_local_vector(ctx: &Arena) Index[std.Vector[MirLocal, ctx], ctx] {
+    mut locals: std.Vector[MirLocal, ctx] := std.VectorNew(ctx);
+    mut locals_idx: Index[std.Vector[MirLocal, ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(locals_idx, locals);
+    return locals_idx;
+}
+
+func mir_empty_block_vector(ctx: &Arena) Index[std.Vector[MirBlock[ctx], ctx], ctx] {
+    mut blocks: std.Vector[MirBlock[ctx], ctx] := std.VectorNew(ctx);
+    mut blocks_idx: Index[std.Vector[MirBlock[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(blocks_idx, blocks);
+    return blocks_idx;
+}
+
+func mir_empty_stmt_vector(ctx: &Arena) Index[std.Vector[MirStmt[ctx], ctx], ctx] {
+    mut statements: std.Vector[MirStmt[ctx], ctx] := std.VectorNew(ctx);
+    mut statements_idx: Index[std.Vector[MirStmt[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(statements_idx, statements);
+    return statements_idx;
+}
+
+func mir_empty_value_vector(ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], ctx] {
+    mut values: std.Vector[MirValue[ctx], ctx] := std.VectorNew(ctx);
+    mut values_idx: Index[std.Vector[MirValue[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(values_idx, values);
+    return values_idx;
+}
+
+func mir_alloc_value(value: MirValue[ctx], ctx: &Arena) Index[MirValue[ctx], ctx] {
+    mut value_idx: Index[MirValue[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(value_idx, value);
+    return value_idx;
+}
+
+func mir_alloc_terminator(terminator: MirTerminator[ctx], ctx: &Arena) Index[MirTerminator[ctx], ctx] {
+    mut terminator_idx: Index[MirTerminator[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(terminator_idx, terminator);
+    return terminator_idx;
+}
+
+func mir_make_program(ctx: &Arena) MirProgram[ctx] {
+    mut program: MirProgram[ctx];
+    program.functions = mir_empty_function_vector(ctx);
+    return program;
+}
+
+func mir_make_function(name: str, return_type: str, span: token.Span, ctx: &Arena) MirFunction[ctx] {
+    mut function: MirFunction[ctx];
+    function.name = name;
+    function.params = mir_empty_local_vector(ctx);
+    function.return_type = return_type;
+    function.locals = mir_empty_local_vector(ctx);
+    function.blocks = mir_empty_block_vector(ctx);
+    function.entry_block = 0;
+    function.span = span;
+    return function;
+}
+
+func mir_make_block(id: int, terminator: Index[MirTerminator[ctx], ctx], span: token.Span, ctx: &Arena) MirBlock[ctx] {
+    mut block: MirBlock[ctx];
+    block.id = id;
+    block.statements = mir_empty_stmt_vector(ctx);
+    block.terminator = terminator;
+    block.span = span;
+    return block;
+}
+
+func mir_make_local(id: int, name: str, local_type: str, span: token.Span) MirLocal {
+    mut local: MirLocal;
+    local.id = id;
+    local.name = name;
+    local.local_type = local_type;
+    local.span = span;
+    return local;
+}
+
+func mir_make_stmt_nop(span: token.Span) MirStmt[ctx] {
+    mut stmt: MirStmt[ctx];
+    unsafe {
+        stmt.tag = 0; // Nop
+        stmt.Nop.span = span;
+    }
+    return stmt;
+}
+
+func mir_make_stmt_local_set(local_id: int, value: Index[MirValue[ctx], ctx], span: token.Span) MirStmt[ctx] {
+    mut stmt: MirStmt[ctx];
+    unsafe {
+        stmt.tag = 1; // LocalSet
+        stmt.LocalSet.local_id = local_id;
+        stmt.LocalSet.value = value;
+        stmt.LocalSet.span = span;
+    }
+    return stmt;
+}
+
+func mir_make_stmt_expr(value: Index[MirValue[ctx], ctx], span: token.Span) MirStmt[ctx] {
+    mut stmt: MirStmt[ctx];
+    unsafe {
+        stmt.tag = 2; // Expr
+        stmt.Expr.value = value;
+        stmt.Expr.span = span;
+    }
+    return stmt;
+}
+
+func mir_make_value_int_literal(val: int, value_type: str, span: token.Span) MirValue[ctx] {
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 0; // IntLiteral
+        value.IntLiteral.val = val;
+        value.IntLiteral.value_type = value_type;
+        value.IntLiteral.span = span;
+    }
+    return value;
+}
+
+func mir_make_value_bool_literal(val: int, value_type: str, span: token.Span) MirValue[ctx] {
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 1; // BoolLiteral
+        value.BoolLiteral.val = val;
+        value.BoolLiteral.value_type = value_type;
+        value.BoolLiteral.span = span;
+    }
+    return value;
+}
+
+func mir_make_value_string_literal(val: str, value_type: str, span: token.Span) MirValue[ctx] {
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 2; // StringLiteral
+        value.StringLiteral.val = val;
+        value.StringLiteral.value_type = value_type;
+        value.StringLiteral.span = span;
+    }
+    return value;
+}
+
+func mir_make_value_local_read(local_id: int, value_type: str, span: token.Span) MirValue[ctx] {
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 3; // LocalRead
+        value.LocalRead.local_id = local_id;
+        value.LocalRead.value_type = value_type;
+        value.LocalRead.span = span;
+    }
+    return value;
+}
+
+func mir_make_value_call(callee: str, args: Index[std.Vector[MirValue[ctx], ctx], ctx], value_type: str, span: token.Span) MirValue[ctx] {
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 4; // Call
+        value.Call.callee = callee;
+        value.Call.args = args;
+        value.Call.value_type = value_type;
+        value.Call.span = span;
+    }
+    return value;
+}
+
+func mir_make_terminator_return_void(span: token.Span) MirTerminator[ctx] {
+    mut terminator: MirTerminator[ctx];
+    unsafe {
+        terminator.tag = 0; // ReturnVoid
+        terminator.ReturnVoid.span = span;
+    }
+    return terminator;
+}
+
+func mir_make_terminator_return(value: Index[MirValue[ctx], ctx], span: token.Span) MirTerminator[ctx] {
+    mut terminator: MirTerminator[ctx];
+    unsafe {
+        terminator.tag = 1; // Return
+        terminator.Return.value = value;
+        terminator.Return.span = span;
+    }
+    return terminator;
+}
+
+func mir_make_terminator_jump(target_block: int, span: token.Span) MirTerminator[ctx] {
+    mut terminator: MirTerminator[ctx];
+    unsafe {
+        terminator.tag = 2; // Jump
+        terminator.Jump.target_block = target_block;
+        terminator.Jump.span = span;
+    }
+    return terminator;
+}
+
+func mir_make_terminator_branch(condition: Index[MirValue[ctx], ctx], then_block: int, else_block: int, span: token.Span) MirTerminator[ctx] {
+    mut terminator: MirTerminator[ctx];
+    unsafe {
+        terminator.tag = 3; // Branch
+        terminator.Branch.condition = condition;
+        terminator.Branch.then_block = then_block;
+        terminator.Branch.else_block = else_block;
+        terminator.Branch.span = span;
+    }
+    return terminator;
+}
