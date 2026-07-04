@@ -198,6 +198,42 @@ guard-mir-feature-harness-surface:
     fi
     echo "✅ MIR feature migration harness shell guard passed."
 
+guard-mir-feature-return-int-preservation:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR feature preservation: return int literal..."
+    just guard-mir-feature-harness-surface
+    feature_fixture="compiler/mir_feature_return_int_preservation_source.gst"
+    build_dir="build/guards/mir_feature_return_int_preservation"
+    old_c="$build_dir/old_ast_to_c_return_int.c"
+    old_final_c="$build_dir/old_ast_to_c_return_int_final.c"
+    old_binary="$build_dir/old_ast_to_c_return_int_bin"
+    mkdir -p "$build_dir"
+    rg -n -F 'func main() int' "$feature_fixture" >/dev/null
+    rg -n -F 'return 1;' "$feature_fixture" >/dev/null
+    echo "  ↳ old AST-to-C native behavior"
+    ./gust "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
+    cat src/runtime.c "$old_c" > "$old_final_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
+    INCLUDES_VAL="${INCLUDES:--Isrc}"
+    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$old_final_c" -o "$old_binary"
+    set +e
+    "$old_binary"
+    old_status="$?"
+    set -e
+    if [ "$old_status" != "1" ]; then
+      echo "Expected old AST-to-C return-int fixture to exit with status 1, got $old_status"
+      exit 1
+    fi
+    echo "  ↳ MIR lowering structural behavior"
+    just guard-mir-lower-return-int-literal-smoke
+    echo "  ↳ MIR-to-C textual behavior"
+    just guard-mir-to-c-return-int-literal-smoke
+    echo "  ↳ MIR-to-C native behavior"
+    just guard-mir-to-c-return-int-literal-native-smoke
+    echo "✅ MIR feature preservation passed: return int literal exits with status 1 on old and MIR-backed paths."
+
 guard-test-runner-bounded-concurrency-surface:
     #!/usr/bin/env bash
     set -euo pipefail
