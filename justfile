@@ -192,8 +192,8 @@ guard-mir-feature-harness-surface:
     rg -n -F 'mir_to_c_guard' "$harness_doc" >/dev/null
     rg -n -F 'native_execution_guard' "$harness_doc" >/dev/null
     rg -n -F 'expected_behavior' "$harness_doc" >/dev/null
-    if rg -n -F 'guard-mir-feature-return-int-preservation' justfile "$harness_doc" >/dev/null; then
-      echo "Step 1 must add only the harness shell; return-int preservation belongs to Step 2."
+    if rg -n '^guard-mir-feature-.*-preservation:' justfile >/dev/null; then
+      echo "Step 1 must add only the harness shell; preservation guard recipes belong to Step 2+."
       exit 1
     fi
     echo "✅ MIR feature migration harness shell guard passed."
