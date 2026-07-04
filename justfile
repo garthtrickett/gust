@@ -205,6 +205,19 @@ guard-mir-owned-return-int-literal-validation:
     just guard-mir-to-c-return-int-literal-native-smoke
     echo "✅ MIR-owned validation passed: return int literal lowers, emits C, and executes natively through MIR."
 
+guard-mir-feature-return-int-routed-execution:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔀 Checking MIR-preferred routed execution: return int literal..."
+    manifest_doc="compiler/MIR_AST_TO_C_RETIREMENT_MANIFEST.md"
+    rg -n -F 'feature_name: return_int_literal' "$manifest_doc" >/dev/null
+    rg -n -F 'ast_to_c_status: retirement_candidate' "$manifest_doc" >/dev/null
+    rg -n -F 'preferred_codegen_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'routed_execution_guard: guard-mir-feature-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-return-int-literal-validation' "$manifest_doc" justfile >/dev/null
+    just guard-mir-owned-return-int-literal-validation
+    echo "✅ MIR-preferred routed execution passed: return_int_literal uses MIR-owned validation as its primary routed path."
+
 guard-mir-to-c-block-jump-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -446,7 +459,7 @@ guard-mir-ast-to-c-retirement-manifest-surface:
       exit 1
     fi
     rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_VERSION: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-return-int-retirement-candidate-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-return-int-mir-preferred-routing-entry' "$manifest_doc" >/dev/null
     rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_ENTRY_COUNT: 4' "$manifest_doc" >/dev/null
     rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md' "$manifest_doc" >/dev/null
     rg -n -F 'still_required' "$manifest_doc" >/dev/null
@@ -455,7 +468,11 @@ guard-mir-ast-to-c-retirement-manifest-surface:
     rg -n -F 'ast_to_c_status' "$manifest_doc" >/dev/null
     rg -n -F 'retirement_note' "$manifest_doc" >/dev/null
     rg -n -F 'mir_owned_validation_guard' "$manifest_doc" >/dev/null
+    rg -n -F 'preferred_codegen_route' "$manifest_doc" >/dev/null
+    rg -n -F 'routed_execution_guard' "$manifest_doc" >/dev/null
     rg -n -F 'mir_owned_validation_guard: guard-mir-owned-return-int-literal-validation' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'preferred_codegen_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'routed_execution_guard: guard-mir-feature-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
     rg -n -F 'feature_name: return_int_literal' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'feature_name: local_binding_read' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'feature_name: if_else_return_int' "$manifest_doc" "$registry_doc" >/dev/null
@@ -486,10 +503,10 @@ guard-mir-ast-to-c-retirement-manifest-surface:
     rg -n -F 'feature_name: return_int_literal' "$manifest_doc" >/dev/null
     rg -n -F 'mir_owned_validation_guard: guard-mir-owned-return-int-literal-validation' "$manifest_doc" justfile >/dev/null
     rg -n -F 'ast_to_c_status: retirement_candidate' "$manifest_doc" >/dev/null
-    rg -n -F 'first retirement candidate because MIR-owned validation passes' "$manifest_doc" >/dev/null
+    rg -n -F "routes this feature's primary validation execution through MIR-to-C" "$manifest_doc" >/dev/null
     retired_entries="$(rg -n -F 'ast_to_c_status: retired' "$manifest_doc" || true)"
     if [ -n "$retired_entries" ]; then
-      echo "Phase 8 Step 3 must not mark entries retired yet:"
+      echo "Phase 8 Step 4 must not mark entries retired yet:"
       echo "$retired_entries"
       exit 1
     fi
@@ -731,6 +748,7 @@ guard-mir-feature-migration-suite:
     just guard-mir-feature-migration-registry
     just guard-mir-ast-to-c-retirement-manifest-surface
     just guard-mir-owned-return-int-literal-validation
+    just guard-mir-feature-return-int-routed-execution
     just guard-mir-feature-return-int-preservation
     just guard-mir-feature-local-binding-read-preservation
     just guard-mir-feature-if-else-return-int-preservation
