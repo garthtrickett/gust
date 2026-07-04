@@ -103,7 +103,7 @@ func main() {
     mir.mir_debug_print_program(program);
     mir.mir_debug_print_function(function);
     mir.mir_debug_print_block(entry_block, ctx);
-    mir.mir_debug_print_stmt(stmt, ctx);
+    mir.mir_debug_print_stmt(stmt);
     mir.mir_debug_print_terminator(terminator);
 
     os.LogStr("SUCCESS: mir lower resource metadata smoke");
