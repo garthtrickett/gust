@@ -101,6 +101,9 @@ guard-mir-to-c-function-shell-smoke:
 guard-mir-to-c-return-int-literal-smoke:
     just guard compiler/mir_to_c_return_int_literal_smoke_test_entry.gst
 
+guard-mir-to-c-local-binding-read-smoke:
+    just guard compiler/mir_to_c_local_binding_read_smoke_test_entry.gst
+
 guard-mir-to-c-return-int-literal-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
