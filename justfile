@@ -170,24 +170,29 @@ guard-mir-feature-harness-surface:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking MIR feature migration harness shell..."
-    rg -n -F 'MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'MIR_FEATURE_MIGRATION_PHASE: shell-only' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: true' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'source Gust fixture' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'old AST-to-C expected behavior' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'MIR lowering' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'MIR verifier' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'MIR-to-C' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'native execution' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'feature_name' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'source_fixture' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'old_behavior_guard' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'mir_lowering_guard' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'mir_verifier_guard' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'mir_to_c_guard' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'native_execution_guard' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    rg -n -F 'expected_behavior' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
-    if rg -n -F 'guard-mir-feature-return-int-preservation' justfile compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null; then
+    harness_doc="compiler/MIR_FEATURE_MIGRATION_HARNESS.md"
+    if [ ! -f "$harness_doc" ]; then
+      echo "Missing $harness_doc. Step 1 requires the harness contract file before any migrated feature entries."
+      exit 1
+    fi
+    rg -n -F 'MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1' "$harness_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_PHASE: shell-only' "$harness_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: true' "$harness_doc" >/dev/null
+    rg -n -F 'source Gust fixture' "$harness_doc" >/dev/null
+    rg -n -F 'old AST-to-C expected behavior' "$harness_doc" >/dev/null
+    rg -n -F 'MIR lowering' "$harness_doc" >/dev/null
+    rg -n -F 'MIR verifier' "$harness_doc" >/dev/null
+    rg -n -F 'MIR-to-C' "$harness_doc" >/dev/null
+    rg -n -F 'native execution' "$harness_doc" >/dev/null
+    rg -n -F 'feature_name' "$harness_doc" >/dev/null
+    rg -n -F 'source_fixture' "$harness_doc" >/dev/null
+    rg -n -F 'old_behavior_guard' "$harness_doc" >/dev/null
+    rg -n -F 'mir_lowering_guard' "$harness_doc" >/dev/null
+    rg -n -F 'mir_verifier_guard' "$harness_doc" >/dev/null
+    rg -n -F 'mir_to_c_guard' "$harness_doc" >/dev/null
+    rg -n -F 'native_execution_guard' "$harness_doc" >/dev/null
+    rg -n -F 'expected_behavior' "$harness_doc" >/dev/null
+    if rg -n -F 'guard-mir-feature-return-int-preservation' justfile "$harness_doc" >/dev/null; then
       echo "Step 1 must add only the harness shell; return-int preservation belongs to Step 2."
       exit 1
     fi
