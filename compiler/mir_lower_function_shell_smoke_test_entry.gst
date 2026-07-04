@@ -27,7 +27,8 @@ func main() {
         fail("MIR lower function shell: program should contain exactly one function");
     }
 
-    mut function := ctx[program.functions][0];
+    mut functions_shell: std.Vector[mir.MirFunction[ctx], ctx] := ctx[program.functions];
+    mut function := functions_shell[0];
     expect_str_eq(function.name, "tiny_shell", "MIR lower function shell: function name drifted");
     expect_str_eq(function.return_type, "void", "MIR lower function shell: return type drifted");
 
