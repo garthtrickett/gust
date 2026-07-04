@@ -44,7 +44,8 @@ func main() {
         fail("MIR lower function shell: function should contain exactly one block");
     }
 
-    mut block := ctx[function.blocks][0];
+    mut blocks_shell: std.Vector[mir.MirBlock[ctx], ctx] := ctx[function.blocks];
+    mut block := blocks_shell[0];
     if block.id != 0 {
         fail("MIR lower function shell: block id should be zero");
     }

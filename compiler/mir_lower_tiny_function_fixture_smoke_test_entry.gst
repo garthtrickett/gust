@@ -16,7 +16,8 @@ func main() {
         fail("MIR lower tiny fixture Step 2: entry point should lower exactly one function shell");
     }
 
-    mut function := ctx[program.functions][0];
+    mut functions_fixture: std.Vector[mir.MirFunction[ctx], ctx] := ctx[program.functions];
+    mut function := functions_fixture[0];
     if std.str_eq(function.name, "tiny_shell") == 0 {
         fail("MIR lower tiny fixture Step 2: lowered function name drifted");
     }
