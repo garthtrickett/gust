@@ -887,7 +887,7 @@ func mir_lower_native_boundary_metadata_fixture(ctx: &Arena) MirProgram[ctx] {
     mut span := mir_make_empty_span();
     mut program := mir_make_program(ctx);
 
-    mut return_void := mir_make_terminator_return_void(span);
+    mut return_void := mir_make_terminator_return_void(span, ctx);
     mut return_void_idx := mir_alloc_terminator(return_void, ctx);
     mut entry_block := mir_make_block(0, return_void_idx, span, ctx);
 
