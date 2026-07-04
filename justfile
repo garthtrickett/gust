@@ -377,6 +377,7 @@ guard-mir-feature-harness-surface:
     rg -n -F 'MIR_FEATURE_MIGRATION_PHASE: phase7-provenance-metadata-preservation-entry' "$harness_doc" >/dev/null
     rg -n -F 'MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: false' "$harness_doc" >/dev/null
     rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md' "$harness_doc" >/dev/null
+    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST: compiler/MIR_AST_TO_C_RETIREMENT_MANIFEST.md' "$harness_doc" >/dev/null
     rg -n -F 'source Gust fixture' "$harness_doc" >/dev/null
     rg -n -F 'old AST-to-C expected behavior' "$harness_doc" >/dev/null
     rg -n -F 'MIR lowering' "$harness_doc" >/dev/null
@@ -424,6 +425,57 @@ guard-mir-feature-harness-surface:
 
 guard-mir-feature-migration-registry:
     just guard-mir-feature-registry-surface
+
+guard-mir-ast-to-c-retirement-manifest-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR AST-to-C retirement manifest surface..."
+    manifest_doc="compiler/MIR_AST_TO_C_RETIREMENT_MANIFEST.md"
+    registry_doc="compiler/MIR_FEATURE_MIGRATION_REGISTRY.md"
+    if [ ! -f "$manifest_doc" ]; then
+      echo "Missing $manifest_doc. Phase 8 requires the AST-to-C retirement manifest."
+      exit 1
+    fi
+    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_VERSION: 1' "$manifest_doc" >/dev/null
+    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-retirement-manifest-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_ENTRY_COUNT: 4' "$manifest_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md' "$manifest_doc" >/dev/null
+    rg -n -F 'still_required' "$manifest_doc" >/dev/null
+    rg -n -F 'retirement_candidate' "$manifest_doc" >/dev/null
+    rg -n -F 'retired' "$manifest_doc" >/dev/null
+    rg -n -F 'ast_to_c_status' "$manifest_doc" >/dev/null
+    rg -n -F 'retirement_note' "$manifest_doc" >/dev/null
+    rg -n -F 'feature_name: return_int_literal' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'feature_name: local_binding_read' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'feature_name: if_else_return_int' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'feature_name: local_binding_read_provenance_metadata' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'source_fixture: compiler/mir_feature_return_int_preservation_source.gst' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'source_fixture: compiler/mir_feature_local_binding_read_preservation_source.gst' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'source_fixture: compiler/mir_feature_if_else_return_int_preservation_source.gst' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'source_fixture: compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'old_behavior_guard: guard-mir-feature-return-int-preservation' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'old_behavior_guard: guard-mir-feature-local-binding-read-preservation' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'old_behavior_guard: guard-mir-feature-if-else-return-int-preservation' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'old_behavior_guard: guard-mir-feature-local-binding-read-provenance-metadata-preservation' "$manifest_doc" "$registry_doc" >/dev/null
+    status_count="$(rg -n -F 'ast_to_c_status: still_required' "$manifest_doc" | wc -l | tr -d '[:space:]')"
+    if [ "$status_count" != "4" ]; then
+      echo "Expected exactly four still_required AST-to-C retirement manifest entries, found $status_count."
+      rg -n -F 'ast_to_c_status:' "$manifest_doc" || true
+      exit 1
+    fi
+    candidate_entries="$(rg -n -F 'ast_to_c_status: retirement_candidate' "$manifest_doc" || true)"
+    if [ -n "$candidate_entries" ]; then
+      echo "Phase 8 Step 1 must not mark entries retirement_candidate yet:"
+      echo "$candidate_entries"
+      exit 1
+    fi
+    retired_entries="$(rg -n -F 'ast_to_c_status: retired' "$manifest_doc" || true)"
+    if [ -n "$retired_entries" ]; then
+      echo "Phase 8 Step 1 must not mark entries retired yet:"
+      echo "$retired_entries"
+      exit 1
+    fi
+    echo "✅ MIR AST-to-C retirement manifest surface guard passed."
 
 guard-mir-feature-registry-surface:
     #!/usr/bin/env bash
@@ -659,6 +711,7 @@ guard-mir-feature-migration-suite:
     echo "🔒 Checking MIR feature migration suite..."
     just guard-mir-feature-harness-surface
     just guard-mir-feature-migration-registry
+    just guard-mir-ast-to-c-retirement-manifest-surface
     just guard-mir-feature-return-int-preservation
     just guard-mir-feature-local-binding-read-preservation
     just guard-mir-feature-if-else-return-int-preservation

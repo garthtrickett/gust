@@ -4,6 +4,7 @@ MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1
 MIR_FEATURE_MIGRATION_PHASE: phase7-provenance-metadata-preservation-entry
 MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: false
 MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md
+MIR_AST_TO_C_RETIREMENT_MANIFEST: compiler/MIR_AST_TO_C_RETIREMENT_MANIFEST.md
 
 This file defines the feature migration harness contract.
 
@@ -37,6 +38,12 @@ Every migrated feature entry must name:
 The machine-checkable registry lives at `compiler/MIR_FEATURE_MIGRATION_REGISTRY.md`.
 
 The entries below mirror the registry for human review, but guard wiring should validate the registry file directly.
+
+## AST-to-C retirement manifest
+
+The machine-checkable AST-to-C retirement manifest lives at `compiler/MIR_AST_TO_C_RETIREMENT_MANIFEST.md`.
+
+Phase 8 uses that manifest to classify migrated features as `still_required`, `retirement_candidate`, or `retired` before any compiler routing is changed.
 
 ## Registered preservation entries
 
