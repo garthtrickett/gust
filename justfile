@@ -209,6 +209,9 @@ guard-mir-feature-harness-surface:
     just guard-mir-feature-registry-surface
     echo "✅ MIR feature migration harness surface guard passed."
 
+guard-mir-feature-migration-registry:
+    just guard-mir-feature-registry-surface
+
 guard-mir-feature-registry-surface:
     #!/usr/bin/env bash
     set -euo pipefail
