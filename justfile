@@ -169,19 +169,19 @@ guard-mir-to-c-tiny-surface:
 guard-mir-feature-harness-surface:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking MIR feature migration harness shell..."
+    echo "🔒 Checking MIR feature migration harness surface..."
     harness_doc="compiler/MIR_FEATURE_MIGRATION_HARNESS.md"
     if [ ! -f "$harness_doc" ]; then
-      echo "Missing $harness_doc. Step 1 requires the harness contract file before any migrated feature entries."
+      echo "Missing $harness_doc. Phase 5 requires the harness contract file."
       exit 1
     fi
     rg -n -F 'MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1' "$harness_doc" >/dev/null
-    rg -n -F 'MIR_FEATURE_MIGRATION_PHASE: shell-only' "$harness_doc" >/dev/null
-    rg -n -F 'MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: true' "$harness_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_PHASE: first-preservation-entry' "$harness_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: false' "$harness_doc" >/dev/null
     rg -n -F 'source Gust fixture' "$harness_doc" >/dev/null
     rg -n -F 'old AST-to-C expected behavior' "$harness_doc" >/dev/null
     rg -n -F 'MIR lowering' "$harness_doc" >/dev/null
-    rg -n -F 'MIR verifier' "$harness_doc" >/dev/null
+    rg -n -F 'MIR verifier or focused MIR structural invariant guard' "$harness_doc" >/dev/null
     rg -n -F 'MIR-to-C' "$harness_doc" >/dev/null
     rg -n -F 'native execution' "$harness_doc" >/dev/null
     rg -n -F 'feature_name' "$harness_doc" >/dev/null
@@ -192,11 +192,14 @@ guard-mir-feature-harness-surface:
     rg -n -F 'mir_to_c_guard' "$harness_doc" >/dev/null
     rg -n -F 'native_execution_guard' "$harness_doc" >/dev/null
     rg -n -F 'expected_behavior' "$harness_doc" >/dev/null
-    if rg -n '^guard-mir-feature-.*-preservation:' justfile >/dev/null; then
-      echo "Step 1 must add only the harness shell; preservation guard recipes belong to Step 2+."
-      exit 1
-    fi
-    echo "✅ MIR feature migration harness shell guard passed."
+    rg -n -F 'return_int_literal' "$harness_doc" >/dev/null
+    rg -n -F 'compiler/mir_feature_return_int_preservation_source.gst' "$harness_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-feature-return-int-preservation' "$harness_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-lower-return-int-literal-smoke' "$harness_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-return-int-literal-smoke' "$harness_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-return-int-literal-native-smoke' "$harness_doc" justfile >/dev/null
+    rg -n -F 'native executable exits with status `1`' "$harness_doc" >/dev/null
+    echo "✅ MIR feature migration harness surface guard passed."
 
 guard-mir-feature-return-int-preservation:
     #!/usr/bin/env bash
