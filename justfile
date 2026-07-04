@@ -58,6 +58,31 @@ guard-mir-debug-leaf-smoke:
 guard-mir-debug-printer-smoke:
     just guard compiler/mir_debug_printer_smoke_test_entry.gst
 
+guard-mir-debug-printer-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR debug printer surface..."
+    rg -n -F 'func mir_debug_stmt_kind' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_value_kind' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_terminator_kind' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_print_program' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_print_function' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_print_block' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_print_stmt' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_print_value' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_print_terminator' compiler/mir.gst >/dev/null
+    rg -n -F 'MirStmt.LocalSet' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirValue.LocalRead' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirTerminator.Return' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'mir.program' compiler/mir.gst compiler/mir_debug_printer_smoke_test_entry.gst >/dev/null
+    rg -n -F 'mir.function' compiler/mir.gst compiler/mir_debug_printer_smoke_test_entry.gst >/dev/null
+    rg -n -F 'mir.block' compiler/mir.gst compiler/mir_debug_printer_smoke_test_entry.gst >/dev/null
+    rg -n -F 'compiler/mir_debug_leaf_smoke_test_entry.gst' justfile >/dev/null
+    rg -n -F 'compiler/mir_debug_printer_smoke_test_entry.gst' justfile >/dev/null
+    rg -n -F 'guard-mir-debug-leaf-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-debug-printer-smoke' justfile >/dev/null
+    echo "✅ MIR debug printer surface guard passed."
+
 guard_step52_resource_use_after_move_enforcement:
     #!/usr/bin/env bash
     set -euo pipefail
