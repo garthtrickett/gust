@@ -92,6 +92,9 @@ guard-mir-lower-function-shell-smoke:
 guard-mir-lower-return-int-literal-smoke:
     just guard compiler/mir_lower_return_int_literal_smoke_test_entry.gst
 
+guard-mir-lower-local-binding-read-smoke:
+    just guard compiler/mir_lower_local_binding_read_smoke_test_entry.gst
+
 guard-mir-to-c-entry-smoke:
     just guard compiler/mir_to_c_entry_smoke_test_entry.gst
 
