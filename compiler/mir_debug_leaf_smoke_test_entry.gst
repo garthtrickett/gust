@@ -62,5 +62,80 @@ func main() {
     mut branch_term: mir.MirTerminator[ctx] := mir.mir_make_terminator_branch(local_read_idx, 1, 2, span);
     expect_str_eq(mir.mir_debug_terminator_kind(branch_term), "MirTerminator.Branch", "MIR leaf debug: branch terminator kind drifted");
 
+    mut non_resource: mir.MirResourceKind;
+    mut linear_resource: mir.MirResourceKind;
+    mut directory_resource: mir.MirResourceKind;
+    mut native_handle_resource: mir.MirResourceKind;
+    unsafe {
+        non_resource.tag = 0;
+        linear_resource.tag = 1;
+        directory_resource.tag = 2;
+        native_handle_resource.tag = 3;
+    }
+    expect_str_eq(mir.mir_debug_resource_kind(non_resource), "MirResourceKind.NonResource", "MIR metadata debug: non-resource kind drifted");
+    expect_str_eq(mir.mir_debug_resource_kind(linear_resource), "MirResourceKind.LinearResource", "MIR metadata debug: linear resource kind drifted");
+    expect_str_eq(mir.mir_debug_resource_kind(directory_resource), "MirResourceKind.DirectoryResource", "MIR metadata debug: directory resource kind drifted");
+    expect_str_eq(mir.mir_debug_resource_kind(native_handle_resource), "MirResourceKind.NativeHandleResource", "MIR metadata debug: native handle resource kind drifted");
+
+    mut resource_untracked: mir.MirResourceState;
+    mut resource_owned: mir.MirResourceState;
+    mut resource_borrowed: mir.MirResourceState;
+    mut resource_moved: mir.MirResourceState;
+    mut resource_closed: mir.MirResourceState;
+    mut resource_destructor_scheduled: mir.MirResourceState;
+    unsafe {
+        resource_untracked.tag = 0;
+        resource_owned.tag = 1;
+        resource_borrowed.tag = 2;
+        resource_moved.tag = 3;
+        resource_closed.tag = 4;
+        resource_destructor_scheduled.tag = 5;
+    }
+    expect_str_eq(mir.mir_debug_resource_state(resource_untracked), "MirResourceState.Untracked", "MIR metadata debug: untracked resource state drifted");
+    expect_str_eq(mir.mir_debug_resource_state(resource_owned), "MirResourceState.Owned", "MIR metadata debug: owned resource state drifted");
+    expect_str_eq(mir.mir_debug_resource_state(resource_borrowed), "MirResourceState.Borrowed", "MIR metadata debug: borrowed resource state drifted");
+    expect_str_eq(mir.mir_debug_resource_state(resource_moved), "MirResourceState.Moved", "MIR metadata debug: moved resource state drifted");
+    expect_str_eq(mir.mir_debug_resource_state(resource_closed), "MirResourceState.Closed", "MIR metadata debug: closed resource state drifted");
+    expect_str_eq(mir.mir_debug_resource_state(resource_destructor_scheduled), "MirResourceState.DestructorScheduled", "MIR metadata debug: destructor-scheduled resource state drifted");
+
+    mut provenance_unknown: mir.MirProvenanceKind;
+    mut provenance_local_binding: mir.MirProvenanceKind;
+    mut provenance_parameter: mir.MirProvenanceKind;
+    mut provenance_return_value: mir.MirProvenanceKind;
+    mut provenance_native_boundary: mir.MirProvenanceKind;
+    mut provenance_resource_destructor: mir.MirProvenanceKind;
+    unsafe {
+        provenance_unknown.tag = 0;
+        provenance_local_binding.tag = 1;
+        provenance_parameter.tag = 2;
+        provenance_return_value.tag = 3;
+        provenance_native_boundary.tag = 4;
+        provenance_resource_destructor.tag = 5;
+    }
+    expect_str_eq(mir.mir_debug_provenance_kind(provenance_unknown), "MirProvenanceKind.Unknown", "MIR metadata debug: unknown provenance kind drifted");
+    expect_str_eq(mir.mir_debug_provenance_kind(provenance_local_binding), "MirProvenanceKind.LocalBinding", "MIR metadata debug: local-binding provenance kind drifted");
+    expect_str_eq(mir.mir_debug_provenance_kind(provenance_parameter), "MirProvenanceKind.Parameter", "MIR metadata debug: parameter provenance kind drifted");
+    expect_str_eq(mir.mir_debug_provenance_kind(provenance_return_value), "MirProvenanceKind.ReturnValue", "MIR metadata debug: return-value provenance kind drifted");
+    expect_str_eq(mir.mir_debug_provenance_kind(provenance_native_boundary), "MirProvenanceKind.NativeBoundary", "MIR metadata debug: native-boundary provenance kind drifted");
+    expect_str_eq(mir.mir_debug_provenance_kind(provenance_resource_destructor), "MirProvenanceKind.ResourceDestructor", "MIR metadata debug: resource-destructor provenance kind drifted");
+
+    mut native_not_boundary: mir.MirNativeBoundaryKind;
+    mut native_runtime_call: mir.MirNativeBoundaryKind;
+    mut native_extern_function: mir.MirNativeBoundaryKind;
+    mut native_unsafe_call: mir.MirNativeBoundaryKind;
+    mut native_layout_sensitive_call: mir.MirNativeBoundaryKind;
+    unsafe {
+        native_not_boundary.tag = 0;
+        native_runtime_call.tag = 1;
+        native_extern_function.tag = 2;
+        native_unsafe_call.tag = 3;
+        native_layout_sensitive_call.tag = 4;
+    }
+    expect_str_eq(mir.mir_debug_native_boundary_kind(native_not_boundary), "MirNativeBoundaryKind.NotNativeBoundary", "MIR metadata debug: not-native-boundary kind drifted");
+    expect_str_eq(mir.mir_debug_native_boundary_kind(native_runtime_call), "MirNativeBoundaryKind.RuntimeCall", "MIR metadata debug: runtime-call native boundary kind drifted");
+    expect_str_eq(mir.mir_debug_native_boundary_kind(native_extern_function), "MirNativeBoundaryKind.ExternFunction", "MIR metadata debug: extern-function native boundary kind drifted");
+    expect_str_eq(mir.mir_debug_native_boundary_kind(native_unsafe_call), "MirNativeBoundaryKind.UnsafeNativeCall", "MIR metadata debug: unsafe-native-call boundary kind drifted");
+    expect_str_eq(mir.mir_debug_native_boundary_kind(native_layout_sensitive_call), "MirNativeBoundaryKind.LayoutSensitiveCall", "MIR metadata debug: layout-sensitive native boundary kind drifted");
+
     os.LogStr("SUCCESS: mir debug leaf smoke");
 }

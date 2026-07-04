@@ -65,6 +65,14 @@ guard-mir-debug-printer-surface:
     rg -n -F 'func mir_debug_stmt_kind' compiler/mir.gst >/dev/null
     rg -n -F 'func mir_debug_value_kind' compiler/mir.gst >/dev/null
     rg -n -F 'func mir_debug_terminator_kind' compiler/mir.gst >/dev/null
+    rg -n -F 'type MirResourceKind enum' compiler/mir.gst >/dev/null
+    rg -n -F 'type MirResourceState enum' compiler/mir.gst >/dev/null
+    rg -n -F 'type MirProvenanceKind enum' compiler/mir.gst >/dev/null
+    rg -n -F 'type MirNativeBoundaryKind enum' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_resource_kind' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_resource_state' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_provenance_kind' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_debug_native_boundary_kind' compiler/mir.gst >/dev/null
     rg -n -F 'func mir_debug_print_program' compiler/mir.gst >/dev/null
     rg -n -F 'func mir_debug_print_function' compiler/mir.gst >/dev/null
     rg -n -F 'func mir_debug_print_block' compiler/mir.gst >/dev/null
@@ -76,6 +84,14 @@ guard-mir-debug-printer-surface:
     rg -n -F 'MirTerminator.Return' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
     rg -n -F 'MirTerminator.Jump' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
     rg -n -F 'MirTerminator.Branch' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirResourceKind.LinearResource' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirResourceKind.DirectoryResource' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirResourceState.DestructorScheduled' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirProvenanceKind.NativeBoundary' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirProvenanceKind.ResourceDestructor' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirNativeBoundaryKind.RuntimeCall' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirNativeBoundaryKind.ExternFunction' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirNativeBoundaryKind.LayoutSensitiveCall' compiler/mir.gst compiler/mir_debug_leaf_smoke_test_entry.gst >/dev/null
     rg -n -F 'func mir_make_terminator_jump' compiler/mir.gst >/dev/null
     rg -n -F 'func mir_make_terminator_branch' compiler/mir.gst >/dev/null
     rg -n -F 'target_block' compiler/mir.gst compiler/mir_data_structures_smoke_test_entry.gst >/dev/null

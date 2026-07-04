@@ -111,6 +111,45 @@ type MirTerminator[ctx] enum {
     }
 }
 
+// Phase 7 metadata vocabulary only.
+//
+// These tags intentionally do not attach to MirProgram, MirFunction, MirBlock,
+// MirLocal, MirStmt, MirValue, or MirTerminator yet. Later Phase 7 steps will
+// add explicit metadata side tables and fixtures. This step only reserves the
+// stable debug vocabulary for resource/provenance/native-boundary metadata.
+type MirResourceKind enum {
+    NonResource,
+    LinearResource,
+    DirectoryResource,
+    NativeHandleResource
+}
+
+type MirResourceState enum {
+    Untracked,
+    Owned,
+    Borrowed,
+    Moved,
+    Closed,
+    DestructorScheduled
+}
+
+type MirProvenanceKind enum {
+    Unknown,
+    LocalBinding,
+    Parameter,
+    ReturnValue,
+    NativeBoundary,
+    ResourceDestructor
+}
+
+type MirNativeBoundaryKind enum {
+    NotNativeBoundary,
+    RuntimeCall,
+    ExternFunction,
+    UnsafeNativeCall,
+    LayoutSensitiveCall
+}
+
 func mir_make_empty_span() token.Span {
     mut span: token.Span;
     return span;
@@ -324,6 +363,85 @@ func mir_make_terminator_branch(condition: Index[MirValue[ctx], ctx], then_block
         terminator.Branch.span = span;
     }
     return terminator;
+}
+
+func mir_debug_resource_kind(kind: MirResourceKind) str {
+    if kind.tag == 0 {
+        return "MirResourceKind.NonResource";
+    }
+    if kind.tag == 1 {
+        return "MirResourceKind.LinearResource";
+    }
+    if kind.tag == 2 {
+        return "MirResourceKind.DirectoryResource";
+    }
+    if kind.tag == 3 {
+        return "MirResourceKind.NativeHandleResource";
+    }
+    return "MirResourceKind.<unknown>";
+}
+
+func mir_debug_resource_state(state: MirResourceState) str {
+    if state.tag == 0 {
+        return "MirResourceState.Untracked";
+    }
+    if state.tag == 1 {
+        return "MirResourceState.Owned";
+    }
+    if state.tag == 2 {
+        return "MirResourceState.Borrowed";
+    }
+    if state.tag == 3 {
+        return "MirResourceState.Moved";
+    }
+    if state.tag == 4 {
+        return "MirResourceState.Closed";
+    }
+    if state.tag == 5 {
+        return "MirResourceState.DestructorScheduled";
+    }
+    return "MirResourceState.<unknown>";
+}
+
+func mir_debug_provenance_kind(kind: MirProvenanceKind) str {
+    if kind.tag == 0 {
+        return "MirProvenanceKind.Unknown";
+    }
+    if kind.tag == 1 {
+        return "MirProvenanceKind.LocalBinding";
+    }
+    if kind.tag == 2 {
+        return "MirProvenanceKind.Parameter";
+    }
+    if kind.tag == 3 {
+        return "MirProvenanceKind.ReturnValue";
+    }
+    if kind.tag == 4 {
+        return "MirProvenanceKind.NativeBoundary";
+    }
+    if kind.tag == 5 {
+        return "MirProvenanceKind.ResourceDestructor";
+    }
+    return "MirProvenanceKind.<unknown>";
+}
+
+func mir_debug_native_boundary_kind(kind: MirNativeBoundaryKind) str {
+    if kind.tag == 0 {
+        return "MirNativeBoundaryKind.NotNativeBoundary";
+    }
+    if kind.tag == 1 {
+        return "MirNativeBoundaryKind.RuntimeCall";
+    }
+    if kind.tag == 2 {
+        return "MirNativeBoundaryKind.ExternFunction";
+    }
+    if kind.tag == 3 {
+        return "MirNativeBoundaryKind.UnsafeNativeCall";
+    }
+    if kind.tag == 4 {
+        return "MirNativeBoundaryKind.LayoutSensitiveCall";
+    }
+    return "MirNativeBoundaryKind.<unknown>";
 }
 
 func mir_debug_stmt_kind(stmt: MirStmt[ctx]) str {
