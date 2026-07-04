@@ -555,6 +555,7 @@ make-test-guards:
       guard_step52_directory_resource_close_diagnostics_routing
       guard_step52_directory_resource_source_of_truth_flip
       guard_step52_directory_resource_no_open_directories_enforcement_reads
+      guard-test-runner-bounded-concurrency-surface
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts
     )

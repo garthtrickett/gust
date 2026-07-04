@@ -2420,9 +2420,20 @@ func main() {
     os.LogStr("🏃 Starting self-hosted Gust test suite...");
     mut chan: std.Channel[int, ctx] := std.ChannelNew(ctx);
 
-    mut i := 0;
-    while i < len(tests) { 
-        mut t := tests[i];
+    // Keep local native validation from spawning one compiler/native worker per test.
+    // This is intentionally fixed and conservative until Gust has environment/config plumbing here.
+    mut max_test_runner_jobs := 4;
+    mut next_test_idx := 0;
+    mut running_count := 0;
+    mut completed_count := 0;
+    mut passed_count := 0;
+    mut failed_count := 0;
+
+    mut jobs_msg := std.Format("🧵 Self-hosted Gust test runner max concurrent jobs: %d", max_test_runner_jobs);
+    os.LogStr(jobs_msg);
+
+    while next_test_idx < len(tests) && running_count < max_test_runner_jobs {
+        mut t := tests[next_test_idx];
         mut arg: TestTaskArg[ctx];
         arg.test = t;
         arg.chan = chan;
@@ -2433,21 +2444,35 @@ func main() {
         unsafe {
             std.Spawn(test_worker_task, &ctx[arg_idx]);
         }
-        i = i + 1;
+        next_test_idx = next_test_idx + 1;
+        running_count = running_count + 1;
     }
 
-    mut passed_count := 0;
-    mut failed_count := 0;
-
-    mut j := 0;
-    while j < len(tests) {
+    while completed_count < len(tests) {
         mut ok := chan.Recv();
         if ok == 1 {
             passed_count = passed_count + 1;
         } else {
             failed_count = failed_count + 1;
         }
-        j = j + 1;
+        completed_count = completed_count + 1;
+        running_count = running_count - 1;
+
+        if next_test_idx < len(tests) {
+            mut t := tests[next_test_idx];
+            mut arg: TestTaskArg[ctx];
+            arg.test = t;
+            arg.chan = chan;
+
+            mut arg_idx := os.ArenaAlloc(ctx) as Index[TestTaskArg[ctx], ctx];
+            ctx.Set(arg_idx, arg);
+
+            unsafe {
+                std.Spawn(test_worker_task, &ctx[arg_idx]);
+            }
+            next_test_idx = next_test_idx + 1;
+            running_count = running_count + 1;
+        }
     }
 
     mut summary_msg := std.Format("🏁 Test Suite Finished. Passed: %d, Failed: %d", passed_count, failed_count);
