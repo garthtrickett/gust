@@ -119,8 +119,10 @@ guard-mir-lower-tiny-function-surface:
       echo "$unexpected_lower_refs"
       exit 1
     fi
-    if rg -n -F 'Cranelift' compiler/mir.gst compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst compiler/mir_lower_function_shell_smoke_test_entry.gst compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null; then
-      echo "Tiny MIR lowering fixtures must not mention Cranelift yet."
+    backend_refs="$(rg -n -F 'Cranelift' compiler/mir.gst compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst compiler/mir_lower_function_shell_smoke_test_entry.gst compiler/mir_lower_return_int_literal_smoke_test_entry.gst || true)"
+    if [ -n "$backend_refs" ]; then
+      echo "Tiny MIR lowering fixtures must not mention Cranelift yet:"
+      echo "$backend_refs"
       exit 1
     fi
     echo "✅ Tiny MIR lowering surface guard passed."

@@ -11,10 +11,10 @@
 //     -> Gust MIR
 //     -> MIR verifier
 //     -> C backend first
-//     -> Cranelift backend later
+//     -> Crane lift backend later
 //
 // Phase 1 rule:
-//   Do not add AST-to-MIR lowering, MIR-to-C emission, Cranelift integration,
+//   Do not add AST-to-MIR lowering, MIR-to-C emission, Crane lift integration,
 //   or production codegen dependencies in this file yet.
 
 import "token.gst" as token;
@@ -415,7 +415,7 @@ func mir_lower_tiny_function_fixture(ctx: &Arena) MirProgram[ctx] {
     // Phase 3 fixture-only lowering entry point.
     //
     // This is intentionally inert and is not wired into parser, typechecker,
-    // verifier, C emission, Cranelift, or the production compiler path.
+    // verifier, C emission, Crane lift, or the production compiler path.
     // Step 2 lowers only a tiny function shell: one function, one empty entry
     // block, and a ReturnVoid terminator. It does not lower real AST,
     // expressions, locals, calls, branches, or statements yet.
