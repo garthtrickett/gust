@@ -116,7 +116,7 @@ guard-mir-lower-tiny-function-surface:
     rg -n -F 'guard-mir-lower-tiny-function-fixture-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-lower-function-shell-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-lower-return-int-literal-smoke' justfile >/dev/null
-    unexpected_lower_refs="$(rg -n -F 'mir_lower_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst:|compiler/mir_lower_function_shell_smoke_test_entry.gst:|compiler/mir_lower_return_int_literal_smoke_test_entry.gst:' || true)"
+    unexpected_lower_refs="$(rg -n -F 'mir_lower_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst:|compiler/mir_lower_function_shell_smoke_test_entry.gst:|compiler/mir_lower_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:' || true)"
     if [ -n "$unexpected_lower_refs" ]; then
       echo "Unexpected MIR lowering reference outside fixture-only files:"
       echo "$unexpected_lower_refs"
