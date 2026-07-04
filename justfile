@@ -92,6 +92,39 @@ guard-mir-lower-function-shell-smoke:
 guard-mir-lower-return-int-literal-smoke:
     just guard compiler/mir_lower_return_int_literal_smoke_test_entry.gst
 
+guard-mir-lower-tiny-function-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking tiny MIR lowering surface..."
+    rg -n -F 'func mir_lower_tiny_function_fixture' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_lower_return_int_literal_fixture' compiler/mir.gst >/dev/null
+    rg -n -F 'tiny_shell' compiler/mir.gst compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst compiler/mir_lower_function_shell_smoke_test_entry.gst >/dev/null
+    rg -n -F 'tiny_return_int' compiler/mir.gst compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirTerminator.ReturnVoid' compiler/mir_lower_function_shell_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirTerminator.Return' compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirValue.IntLiteral' compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null
+    rg -n -F 'return_value.IntLiteral.val != 1' compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null
+    rg -n -F 'SUCCESS: mir lower tiny function fixture entry' compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst >/dev/null
+    rg -n -F 'SUCCESS: mir lower function shell smoke' compiler/mir_lower_function_shell_smoke_test_entry.gst >/dev/null
+    rg -n -F 'SUCCESS: mir lower return int literal smoke' compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null
+    rg -n -F 'compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst' justfile >/dev/null
+    rg -n -F 'compiler/mir_lower_function_shell_smoke_test_entry.gst' justfile >/dev/null
+    rg -n -F 'compiler/mir_lower_return_int_literal_smoke_test_entry.gst' justfile >/dev/null
+    rg -n -F 'guard-mir-lower-tiny-function-fixture-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-lower-function-shell-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-lower-return-int-literal-smoke' justfile >/dev/null
+    unexpected_lower_refs="$(rg -n -F 'mir_lower_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst:|compiler/mir_lower_function_shell_smoke_test_entry.gst:|compiler/mir_lower_return_int_literal_smoke_test_entry.gst:' || true)"
+    if [ -n "$unexpected_lower_refs" ]; then
+      echo "Unexpected MIR lowering reference outside fixture-only files:"
+      echo "$unexpected_lower_refs"
+      exit 1
+    fi
+    if rg -n -F 'Cranelift' compiler/mir.gst compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst compiler/mir_lower_function_shell_smoke_test_entry.gst compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null; then
+      echo "Tiny MIR lowering fixtures must not mention Cranelift yet."
+      exit 1
+    fi
+    echo "✅ Tiny MIR lowering surface guard passed."
+
 guard_step52_resource_use_after_move_enforcement:
     #!/usr/bin/env bash
     set -euo pipefail
