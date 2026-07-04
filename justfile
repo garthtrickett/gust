@@ -166,6 +166,33 @@ guard-mir-to-c-tiny-surface:
     fi
     echo "✅ Tiny MIR-to-C surface guard passed."
 
+guard-mir-feature-harness-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR feature migration harness shell..."
+    rg -n -F 'MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_PHASE: shell-only' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: true' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'source Gust fixture' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'old AST-to-C expected behavior' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'MIR lowering' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'MIR verifier' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'MIR-to-C' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'native execution' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'feature_name' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'source_fixture' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'old_behavior_guard' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'mir_lowering_guard' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'mir_verifier_guard' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'mir_to_c_guard' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'native_execution_guard' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    rg -n -F 'expected_behavior' compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null
+    if rg -n -F 'guard-mir-feature-return-int-preservation' justfile compiler/MIR_FEATURE_MIGRATION_HARNESS.md >/dev/null; then
+      echo "Step 1 must add only the harness shell; return-int preservation belongs to Step 2."
+      exit 1
+    fi
+    echo "✅ MIR feature migration harness shell guard passed."
+
 guard-mir-lower-tiny-function-surface:
     #!/usr/bin/env bash
     set -euo pipefail
