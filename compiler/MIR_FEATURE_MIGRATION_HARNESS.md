@@ -91,6 +91,18 @@ The entries below mirror the registry for human review, but guard wiring should 
 - `native_execution_guard`: `guard-mir-to-c-local-binding-read-native-smoke`
 - `expected_behavior`: native executable exits with status `2`
 
+Phase 7 first metadata-preservation feature:
+
+feature_name: local_binding_read_provenance_metadata
+source_fixture: compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst
+old_behavior_guard: guard-mir-feature-local-binding-read-provenance-metadata-preservation
+mir_lowering_guard: guard-mir-lower-provenance-metadata-smoke
+mir_verifier_guard: guard-mir-lower-provenance-metadata-smoke
+mir_to_c_guard: guard-mir-to-c-provenance-metadata-smoke
+native_execution_guard: guard-mir-to-c-provenance-metadata-native-smoke
+expected_behavior: native executable exits with status 2
+native executable exits with status `2`
+
 The current verifier slot is backed by focused MIR structural invariant guards until a dedicated MIR verifier target exists.
 # MIR Feature Migration Harness
 

@@ -244,6 +244,30 @@ guard-mir-to-c-conditional-branch-native-smoke:
     fi
     echo "✅ Tiny MIR-to-C conditional branch native smoke passed."
 
+guard-mir-to-c-provenance-metadata-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling tiny MIR-to-C provenance metadata fixture..."
+    mkdir -p build/guards/mir_to_c_provenance_metadata_native
+    just guard compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst
+    generated_c="build/guards/mir_to_c_provenance_metadata_native/tiny_provenance_metadata_local_read.c"
+    binary="build/guards/mir_to_c_provenance_metadata_native/tiny_provenance_metadata_local_read_bin"
+    rg -n -F 'int tiny_provenance_metadata_local_read(void) { int value = 2; return value; }' to.log >/dev/null
+    printf '%s\n' 'int tiny_provenance_metadata_local_read(void) { int value = 2; return value; }' > "$generated_c"
+    printf '%s\n' 'int main(void) { return tiny_provenance_metadata_local_read(); }' >> "$generated_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$generated_c" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "2" ]; then
+      echo "Expected tiny MIR-to-C provenance metadata native binary to exit with status 2, got $status"
+      exit 1
+    fi
+    echo "✅ Tiny MIR-to-C provenance metadata native smoke passed."
+
 guard-mir-to-c-local-binding-read-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -304,6 +328,7 @@ guard-mir-to-c-tiny-surface:
     rg -n -F 'guard-mir-to-c-resource-metadata-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-provenance-metadata-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-native-boundary-metadata-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-provenance-metadata-native-smoke' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_entry_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_function_shell_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_return_int_literal_smoke_test_entry.gst' justfile >/dev/null
@@ -349,7 +374,7 @@ guard-mir-feature-harness-surface:
       exit 1
     fi
     rg -n -F 'MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1' "$harness_doc" >/dev/null
-    rg -n -F 'MIR_FEATURE_MIGRATION_PHASE: phase6-branch-preservation-entry' "$harness_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_PHASE: phase7-provenance-metadata-preservation-entry' "$harness_doc" >/dev/null
     rg -n -F 'MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: false' "$harness_doc" >/dev/null
     rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md' "$harness_doc" >/dev/null
     rg -n -F 'source Gust fixture' "$harness_doc" >/dev/null
@@ -369,6 +394,7 @@ guard-mir-feature-harness-surface:
     rg -n -F 'return_int_literal' "$harness_doc" "$registry_doc" >/dev/null
     rg -n -F 'local_binding_read' "$harness_doc" "$registry_doc" >/dev/null
     rg -n -F 'if_else_return_int' "$harness_doc" "$registry_doc" >/dev/null
+    rg -n -F 'local_binding_read_provenance_metadata' "$harness_doc" "$registry_doc" >/dev/null
     rg -n -F 'compiler/mir_feature_return_int_preservation_source.gst' "$harness_doc" "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-feature-return-int-preservation' "$harness_doc" "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-lower-return-int-literal-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
@@ -384,6 +410,11 @@ guard-mir-feature-harness-surface:
     rg -n -F 'guard-mir-lower-conditional-branch-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-to-c-conditional-branch-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-to-c-conditional-branch-native-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-feature-local-binding-read-provenance-metadata-preservation' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-lower-provenance-metadata-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-provenance-metadata-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-provenance-metadata-native-smoke' "$harness_doc" "$registry_doc" justfile >/dev/null
     rg -n -F 'native executable exits with status `1`' "$harness_doc" >/dev/null
     rg -n -F 'native executable exits with status `2`' "$harness_doc" >/dev/null
     rg -n -F 'expected_behavior: native executable exits with status 1' "$registry_doc" >/dev/null
@@ -404,8 +435,8 @@ guard-mir-feature-registry-surface:
       exit 1
     fi
     rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_VERSION: 1' "$registry_doc" >/dev/null
-    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_PHASE: phase6-branch-preservation-entry' "$registry_doc" >/dev/null
-    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_ENTRY_COUNT: 3' "$registry_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_PHASE: phase7-provenance-metadata-preservation-entry' "$registry_doc" >/dev/null
+    rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY_ENTRY_COUNT: 4' "$registry_doc" >/dev/null
     rg -n -F 'feature_name' "$registry_doc" >/dev/null
     rg -n -F 'source_fixture' "$registry_doc" >/dev/null
     rg -n -F 'old_behavior_guard' "$registry_doc" >/dev/null
@@ -437,6 +468,13 @@ guard-mir-feature-registry-surface:
     rg -n -F 'mir_verifier_guard: guard-mir-lower-conditional-branch-smoke' "$registry_doc" >/dev/null
     rg -n -F 'mir_to_c_guard: guard-mir-to-c-conditional-branch-smoke' "$registry_doc" >/dev/null
     rg -n -F 'native_execution_guard: guard-mir-to-c-conditional-branch-native-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'feature_name: local_binding_read_provenance_metadata' "$registry_doc" >/dev/null
+    rg -n -F 'source_fixture: compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst' "$registry_doc" >/dev/null
+    rg -n -F 'old_behavior_guard: guard-mir-feature-local-binding-read-provenance-metadata-preservation' "$registry_doc" >/dev/null
+    rg -n -F 'mir_lowering_guard: guard-mir-lower-provenance-metadata-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'mir_verifier_guard: guard-mir-lower-provenance-metadata-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'mir_to_c_guard: guard-mir-to-c-provenance-metadata-smoke' "$registry_doc" >/dev/null
+    rg -n -F 'native_execution_guard: guard-mir-to-c-provenance-metadata-native-smoke' "$registry_doc" >/dev/null
     rg -n -F 'compiler/mir_feature_return_int_preservation_source.gst' "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-feature-return-int-preservation' "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-lower-return-int-literal-smoke' "$registry_doc" justfile >/dev/null
@@ -452,6 +490,11 @@ guard-mir-feature-registry-surface:
     rg -n -F 'guard-mir-lower-conditional-branch-smoke' "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-to-c-conditional-branch-smoke' "$registry_doc" justfile >/dev/null
     rg -n -F 'guard-mir-to-c-conditional-branch-native-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-feature-local-binding-read-provenance-metadata-preservation' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-lower-provenance-metadata-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-provenance-metadata-smoke' "$registry_doc" justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-provenance-metadata-native-smoke' "$registry_doc" justfile >/dev/null
     echo "✅ MIR feature migration registry surface guard passed."
 
 guard-mir-feature-return-int-preservation:
@@ -571,6 +614,45 @@ guard-mir-feature-if-else-return-int-preservation:
     just guard-mir-to-c-conditional-branch-native-smoke
     echo "✅ MIR feature preservation passed: if/else return int exits with status 1 on old and MIR-backed paths."
 
+guard-mir-feature-local-binding-read-provenance-metadata-preservation:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR feature preservation: local binding/read with provenance metadata..."
+    just guard-mir-feature-harness-surface
+    just guard-mir-feature-registry-surface
+    feature_fixture="compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst"
+    build_dir="build/guards/mir_feature_local_binding_read_provenance_metadata_preservation"
+    old_c="$build_dir/old_ast_to_c_local_binding_read_provenance_metadata.c"
+    old_final_c="$build_dir/old_ast_to_c_local_binding_read_provenance_metadata_final.c"
+    old_binary="$build_dir/old_ast_to_c_local_binding_read_provenance_metadata_bin"
+    mkdir -p "$build_dir"
+    rg -n -F 'func local_binding_read_provenance_metadata() int' "$feature_fixture" >/dev/null
+    rg -n -F 'mut value := 2;' "$feature_fixture" >/dev/null
+    rg -n -F 'return value;' "$feature_fixture" >/dev/null
+    rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
+    echo "  ↳ old AST-to-C native behavior"
+    ./gust "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
+    cat src/runtime.c "$old_c" > "$old_final_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
+    INCLUDES_VAL="${INCLUDES:--Isrc}"
+    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$old_final_c" -o "$old_binary"
+    set +e
+    "$old_binary"
+    old_status="$?"
+    set -e
+    if [ "$old_status" != "2" ]; then
+      echo "Expected old AST-to-C local binding/read provenance metadata fixture to exit with status 2, got $old_status"
+      exit 1
+    fi
+    echo "  ↳ MIR lowering provenance metadata behavior"
+    just guard-mir-lower-provenance-metadata-smoke
+    echo "  ↳ MIR-to-C provenance metadata textual behavior"
+    just guard-mir-to-c-provenance-metadata-smoke
+    echo "  ↳ MIR-to-C provenance metadata native behavior"
+    just guard-mir-to-c-provenance-metadata-native-smoke
+    echo "✅ MIR feature preservation passed: local binding/read provenance metadata exits with status 2 on old and MIR-backed paths."
+
 guard-mir-feature-migration-suite:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -580,6 +662,7 @@ guard-mir-feature-migration-suite:
     just guard-mir-feature-return-int-preservation
     just guard-mir-feature-local-binding-read-preservation
     just guard-mir-feature-if-else-return-int-preservation
+    just guard-mir-feature-local-binding-read-provenance-metadata-preservation
     echo "✅ MIR feature migration suite passed."
 
 guard-test-runner-bounded-concurrency-surface:
