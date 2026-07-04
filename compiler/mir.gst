@@ -416,7 +416,24 @@ func mir_lower_tiny_function_fixture(ctx: &Arena) MirProgram[ctx] {
     //
     // This is intentionally inert and is not wired into parser, typechecker,
     // verifier, C emission, Cranelift, or the production compiler path.
-    // Step 1 only establishes the lowering lane and returns an empty MIR
-    // program. Later Phase 3 steps may populate one tiny function shape here.
-    return mir_make_program(ctx);
+    // Step 2 lowers only a tiny function shell: one function, one empty entry
+    // block, and a ReturnVoid terminator. It does not lower real AST,
+    // expressions, locals, calls, branches, or statements yet.
+    mut span := mir_make_empty_span();
+    mut program := mir_make_program(ctx);
+
+    mut return_void := mir_make_terminator_return_void(span, ctx);
+    mut return_void_idx := mir_alloc_terminator(return_void, ctx);
+    mut entry_block := mir_make_block(0, return_void_idx, span, ctx);
+
+    mut function := mir_make_function("tiny_shell", "void", span, ctx);
+    mut blocks := ctx[function.blocks];
+    blocks.Push(entry_block);
+    ctx.Set(function.blocks, blocks);
+
+    mut functions := ctx[program.functions];
+    functions.Push(function);
+    ctx.Set(program.functions, functions);
+
+    return program;
 }
