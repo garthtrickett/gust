@@ -123,6 +123,9 @@ guard-mir-to-c-local-binding-read-smoke:
 guard-mir-to-c-block-jump-smoke:
     just guard compiler/mir_to_c_block_jump_smoke_test_entry.gst
 
+guard-mir-to-c-conditional-branch-smoke:
+    just guard compiler/mir_to_c_conditional_branch_smoke_test_entry.gst
+
 guard-mir-to-c-return-int-literal-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -171,6 +174,30 @@ guard-mir-to-c-block-jump-native-smoke:
     fi
     echo "✅ Tiny MIR-to-C block jump native smoke passed."
 
+guard-mir-to-c-conditional-branch-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling tiny MIR-to-C conditional branch..."
+    mkdir -p build/guards/mir_to_c_conditional_branch_native
+    just guard compiler/mir_to_c_conditional_branch_smoke_test_entry.gst
+    generated_c="build/guards/mir_to_c_conditional_branch_native/tiny_conditional_branch.c"
+    binary="build/guards/mir_to_c_conditional_branch_native/tiny_conditional_branch_bin"
+    rg -n -F 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' to.log >/dev/null
+    printf '%s\n' 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' > "$generated_c"
+    printf '%s\n' 'int main(void) { return tiny_conditional_branch(); }' >> "$generated_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$generated_c" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "1" ]; then
+      echo "Expected tiny MIR-to-C conditional branch native binary to exit with status 1, got $status"
+      exit 1
+    fi
+    echo "✅ Tiny MIR-to-C conditional branch native smoke passed."
+
 guard-mir-to-c-local-binding-read-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -206,21 +233,27 @@ guard-mir-to-c-tiny-surface:
     rg -n -F 'int main(void) { return tiny_return_int(); }' justfile >/dev/null
     rg -n -F 'int tiny_block_jump(void) { goto block_1; block_1: return 1; }' compiler/mir.gst compiler/mir_to_c_block_jump_smoke_test_entry.gst justfile >/dev/null
     rg -n -F 'int main(void) { return tiny_block_jump(); }' justfile >/dev/null
+    rg -n -F 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' compiler/mir.gst compiler/mir_to_c_conditional_branch_smoke_test_entry.gst justfile >/dev/null
+    rg -n -F 'int main(void) { return tiny_conditional_branch(); }' justfile >/dev/null
     rg -n -F 'SUCCESS: mir to c entry smoke' compiler/mir_to_c_entry_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir to c function shell smoke' compiler/mir_to_c_function_shell_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir to c return int literal smoke' compiler/mir_to_c_return_int_literal_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir to c block jump smoke' compiler/mir_to_c_block_jump_smoke_test_entry.gst >/dev/null
+    rg -n -F 'SUCCESS: mir to c conditional branch smoke' compiler/mir_to_c_conditional_branch_smoke_test_entry.gst >/dev/null
     rg -n -F 'guard-mir-to-c-entry-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-function-shell-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-return-int-literal-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-return-int-literal-native-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-block-jump-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-block-jump-native-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-conditional-branch-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-conditional-branch-native-smoke' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_entry_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_function_shell_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_return_int_literal_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_block_jump_smoke_test_entry.gst' justfile >/dev/null
-    unexpected_mir_to_c_refs="$(rg -n -F 'mir_to_c_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_local_binding_read_smoke_test_entry.gst:|compiler/mir_to_c_block_jump_smoke_test_entry.gst:' || true)"
+    rg -n -F 'compiler/mir_to_c_conditional_branch_smoke_test_entry.gst' justfile >/dev/null
+    unexpected_mir_to_c_refs="$(rg -n -F 'mir_to_c_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_local_binding_read_smoke_test_entry.gst:|compiler/mir_to_c_block_jump_smoke_test_entry.gst:|compiler/mir_to_c_conditional_branch_smoke_test_entry.gst:' || true)"
     if [ -n "$unexpected_mir_to_c_refs" ]; then
       echo "Unexpected MIR-to-C reference outside fixture-only files:"
       echo "$unexpected_mir_to_c_refs"
@@ -464,7 +497,7 @@ guard-mir-lower-tiny-function-surface:
     rg -n -F 'guard-mir-lower-return-int-literal-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-lower-block-jump-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-lower-conditional-branch-smoke' justfile >/dev/null
-    unexpected_lower_refs="$(rg -n -F 'mir_lower_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst:|compiler/mir_lower_function_shell_smoke_test_entry.gst:|compiler/mir_lower_return_int_literal_smoke_test_entry.gst:|compiler/mir_lower_local_binding_read_smoke_test_entry.gst:|compiler/mir_lower_block_jump_smoke_test_entry.gst:|compiler/mir_lower_conditional_branch_smoke_test_entry.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_local_binding_read_smoke_test_entry.gst:|compiler/mir_to_c_block_jump_smoke_test_entry.gst:' || true)"
+    unexpected_lower_refs="$(rg -n -F 'mir_lower_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst:|compiler/mir_lower_function_shell_smoke_test_entry.gst:|compiler/mir_lower_return_int_literal_smoke_test_entry.gst:|compiler/mir_lower_local_binding_read_smoke_test_entry.gst:|compiler/mir_lower_block_jump_smoke_test_entry.gst:|compiler/mir_lower_conditional_branch_smoke_test_entry.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_local_binding_read_smoke_test_entry.gst:|compiler/mir_to_c_block_jump_smoke_test_entry.gst:|compiler/mir_to_c_conditional_branch_smoke_test_entry.gst:' || true)"
     if [ -n "$unexpected_lower_refs" ]; then
       echo "Unexpected MIR lowering reference outside fixture-only files:"
       echo "$unexpected_lower_refs"

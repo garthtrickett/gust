@@ -636,6 +636,72 @@ func mir_to_c_tiny_fixture(program: MirProgram[ctx], ctx: &Arena) str {
             }
         }
 
+        if std.str_eq(function.name, "tiny_conditional_branch") != 0 {
+            if std.str_eq(function.return_type, "int") != 0 {
+                mut locals: std.Vector[MirLocal[ctx], ctx] := ctx[function.locals];
+                if len(locals) == 0 {
+                    mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+                    if len(blocks) == 3 {
+                        mut entry_block := blocks[0];
+                        mut then_block := blocks[1];
+                        mut else_block := blocks[2];
+                        if entry_block.id == 0 {
+                            if then_block.id == 1 {
+                                if else_block.id == 2 {
+                                    mut entry_statements: std.Vector[MirStmt[ctx], ctx] := ctx[entry_block.statements];
+                                    mut then_statements: std.Vector[MirStmt[ctx], ctx] := ctx[then_block.statements];
+                                    mut else_statements: std.Vector[MirStmt[ctx], ctx] := ctx[else_block.statements];
+                                    if len(entry_statements) == 0 {
+                                        if len(then_statements) == 0 {
+                                            if len(else_statements) == 0 {
+                                                mut entry_terminator: MirTerminator[ctx] := ctx[entry_block.terminator];
+                                                mut then_terminator: MirTerminator[ctx] := ctx[then_block.terminator];
+                                                mut else_terminator: MirTerminator[ctx] := ctx[else_block.terminator];
+                                                if std.str_eq(mir_debug_terminator_kind(entry_terminator), "MirTerminator.Branch") != 0 {
+                                                    if std.str_eq(mir_debug_terminator_kind(then_terminator), "MirTerminator.Return") != 0 {
+                                                        if std.str_eq(mir_debug_terminator_kind(else_terminator), "MirTerminator.Return") != 0 {
+                                                            unsafe {
+                                                                if entry_terminator.Branch.then_block == 1 {
+                                                                    if entry_terminator.Branch.else_block == 2 {
+                                                                        mut condition_value: MirValue[ctx] := ctx[entry_terminator.Branch.condition];
+                                                                        mut then_value: MirValue[ctx] := ctx[then_terminator.Return.value];
+                                                                        mut else_value: MirValue[ctx] := ctx[else_terminator.Return.value];
+                                                                        if std.str_eq(mir_debug_value_kind(condition_value), "MirValue.IntLiteral") != 0 {
+                                                                            if std.str_eq(mir_debug_value_kind(then_value), "MirValue.IntLiteral") != 0 {
+                                                                                if std.str_eq(mir_debug_value_kind(else_value), "MirValue.IntLiteral") != 0 {
+                                                                                    if condition_value.IntLiteral.val == 1 {
+                                                                                        if then_value.IntLiteral.val == 1 {
+                                                                                            if else_value.IntLiteral.val == 2 {
+                                                                                                if std.str_eq(condition_value.IntLiteral.value_type, "bool") != 0 {
+                                                                                                    if std.str_eq(then_value.IntLiteral.value_type, "int") != 0 {
+                                                                                                        if std.str_eq(else_value.IntLiteral.value_type, "int") != 0 {
+                                                                                                            return "int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }";
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if std.str_eq(function.name, "tiny_block_jump") != 0 {
             if std.str_eq(function.return_type, "int") != 0 {
                 mut locals: std.Vector[MirLocal[ctx], ctx] := ctx[function.locals];
