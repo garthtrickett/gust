@@ -354,6 +354,16 @@ guard-mir-feature-local-binding-read-preservation:
     just guard-mir-to-c-local-binding-read-native-smoke
     echo "✅ MIR feature preservation passed: local binding/read exits with status 2 on old and MIR-backed paths."
 
+guard-mir-feature-migration-suite:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR feature migration suite..."
+    just guard-mir-feature-harness-surface
+    just guard-mir-feature-migration-registry
+    just guard-mir-feature-return-int-preservation
+    just guard-mir-feature-local-binding-read-preservation
+    echo "✅ MIR feature migration suite passed."
+
 guard-test-runner-bounded-concurrency-surface:
     #!/usr/bin/env bash
     set -euo pipefail
