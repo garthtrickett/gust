@@ -163,6 +163,15 @@ guard-mir-to-c-block-jump-smoke:
 guard-mir-to-c-conditional-branch-smoke:
     just guard compiler/mir_to_c_conditional_branch_smoke_test_entry.gst
 
+guard-mir-to-c-resource-metadata-smoke:
+    just guard compiler/mir_to_c_resource_metadata_smoke_test_entry.gst
+
+guard-mir-to-c-provenance-metadata-smoke:
+    just guard compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst
+
+guard-mir-to-c-native-boundary-metadata-smoke:
+    just guard compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst
+
 guard-mir-to-c-return-int-literal-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -272,11 +281,18 @@ guard-mir-to-c-tiny-surface:
     rg -n -F 'int main(void) { return tiny_block_jump(); }' justfile >/dev/null
     rg -n -F 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' compiler/mir.gst compiler/mir_to_c_conditional_branch_smoke_test_entry.gst justfile >/dev/null
     rg -n -F 'int main(void) { return tiny_conditional_branch(); }' justfile >/dev/null
+    rg -n -F 'int tiny_resource_metadata_local(void) { int value = 2; return value; }' compiler/mir.gst compiler/mir_to_c_resource_metadata_smoke_test_entry.gst >/dev/null
+    rg -n -F 'int tiny_provenance_metadata_local_read(void) { int value = 2; return value; }' compiler/mir.gst compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst >/dev/null
+    rg -n -F 'void tiny_native_boundary_metadata_function(void) { return; }' compiler/mir.gst compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst >/dev/null
+    rg -n -F 'metadata perturbed C source' compiler/mir_to_c_resource_metadata_smoke_test_entry.gst compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir to c entry smoke' compiler/mir_to_c_entry_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir to c function shell smoke' compiler/mir_to_c_function_shell_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir to c return int literal smoke' compiler/mir_to_c_return_int_literal_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir to c block jump smoke' compiler/mir_to_c_block_jump_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir to c conditional branch smoke' compiler/mir_to_c_conditional_branch_smoke_test_entry.gst >/dev/null
+    rg -n -F 'SUCCESS: mir to c resource metadata smoke' compiler/mir_to_c_resource_metadata_smoke_test_entry.gst >/dev/null
+    rg -n -F 'SUCCESS: mir to c provenance metadata smoke' compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst >/dev/null
+    rg -n -F 'SUCCESS: mir to c native boundary metadata smoke' compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst >/dev/null
     rg -n -F 'guard-mir-to-c-entry-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-function-shell-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-return-int-literal-smoke' justfile >/dev/null
@@ -285,12 +301,18 @@ guard-mir-to-c-tiny-surface:
     rg -n -F 'guard-mir-to-c-block-jump-native-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-conditional-branch-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-to-c-conditional-branch-native-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-resource-metadata-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-provenance-metadata-smoke' justfile >/dev/null
+    rg -n -F 'guard-mir-to-c-native-boundary-metadata-smoke' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_entry_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_function_shell_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_return_int_literal_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_block_jump_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_to_c_conditional_branch_smoke_test_entry.gst' justfile >/dev/null
-    unexpected_mir_to_c_refs="$(rg -n -F 'mir_to_c_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_local_binding_read_smoke_test_entry.gst:|compiler/mir_to_c_block_jump_smoke_test_entry.gst:|compiler/mir_to_c_conditional_branch_smoke_test_entry.gst:' || true)"
+    rg -n -F 'compiler/mir_to_c_resource_metadata_smoke_test_entry.gst' justfile >/dev/null
+    rg -n -F 'compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst' justfile >/dev/null
+    rg -n -F 'compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst' justfile >/dev/null
+    unexpected_mir_to_c_refs="$(rg -n -F 'mir_to_c_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_local_binding_read_smoke_test_entry.gst:|compiler/mir_to_c_block_jump_smoke_test_entry.gst:|compiler/mir_to_c_conditional_branch_smoke_test_entry.gst:|compiler/mir_to_c_resource_metadata_smoke_test_entry.gst:|compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst:|compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst:' || true)"
     if [ -n "$unexpected_mir_to_c_refs" ]; then
       echo "Unexpected MIR-to-C reference outside fixture-only files:"
       echo "$unexpected_mir_to_c_refs"

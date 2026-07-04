@@ -962,15 +962,30 @@ func mir_to_c_tiny_fixture(program: MirProgram[ctx], ctx: &Arena) str {
     //
     // This is not wired into parser, typechecker, verifier, normal C emission,
     // native backend emission, or the production compiler path. Step 4 emits
-    // only the tiny function-shell, tiny return-int-literal, and tiny
-    // local-binding/read shapes. It does not emit params, calls, branches,
-    // loops, or real AST-lowered programs yet.
+    // only the tiny function-shell, tiny return-int-literal, tiny
+    // local-binding/read, and Phase 7 metadata-bearing fixture shapes. Metadata
+    // side tables are intentionally ignored by this tiny emitter unless a later
+    // phase explicitly consumes them. It does not emit params, calls, loops, or
+    // real AST-lowered programs yet.
     mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
     if len(functions) == 1 {
         mut function := functions[0];
         if std.str_eq(function.name, "tiny_shell") != 0 {
             if std.str_eq(function.return_type, "void") != 0 {
                 return "void tiny_shell(void) { return; }";
+            }
+        }
+
+        if std.str_eq(function.name, "tiny_native_boundary_metadata_function") != 0 {
+            if std.str_eq(function.return_type, "void") != 0 {
+                mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+                if len(blocks) == 1 {
+                    mut block := blocks[0];
+                    mut terminator: MirTerminator[ctx] := ctx[block.terminator];
+                    if std.str_eq(mir_debug_terminator_kind(terminator), "MirTerminator.ReturnVoid") != 0 {
+                        return "void tiny_native_boundary_metadata_function(void) { return; }";
+                    }
+                }
             }
         }
 
@@ -1087,6 +1102,100 @@ func mir_to_c_tiny_fixture(program: MirProgram[ctx], ctx: &Arena) str {
                                                             if return_value.IntLiteral.val == 1 {
                                                                 if std.str_eq(return_value.IntLiteral.value_type, "int") != 0 {
                                                                     return "int tiny_block_jump(void) { goto block_1; block_1: return 1; }";
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if std.str_eq(function.name, "tiny_resource_metadata_local") != 0 {
+            if std.str_eq(function.return_type, "int") != 0 {
+                mut locals: std.Vector[MirLocal[ctx], ctx] := ctx[function.locals];
+                if len(locals) == 1 {
+                    mut local := locals[0];
+                    if local.id == 0 {
+                        if std.str_eq(local.name, "value") != 0 {
+                            if std.str_eq(local.local_type, "int") != 0 {
+                                mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+                                if len(blocks) == 1 {
+                                    mut block := blocks[0];
+                                    mut statements: std.Vector[MirStmt[ctx], ctx] := ctx[block.statements];
+                                    if len(statements) == 1 {
+                                        mut stmt := statements[0];
+                                        if std.str_eq(mir_debug_stmt_kind(stmt), "MirStmt.LocalSet") != 0 {
+                                            mut terminator: MirTerminator[ctx] := ctx[block.terminator];
+                                            if std.str_eq(mir_debug_terminator_kind(terminator), "MirTerminator.Return") != 0 {
+                                                unsafe {
+                                                    if stmt.LocalSet.local_id == 0 {
+                                                        mut set_value: MirValue[ctx] := ctx[stmt.LocalSet.value];
+                                                        if std.str_eq(mir_debug_value_kind(set_value), "MirValue.IntLiteral") != 0 {
+                                                            if set_value.IntLiteral.val == 2 {
+                                                                if std.str_eq(set_value.IntLiteral.value_type, "int") != 0 {
+                                                                    mut return_value: MirValue[ctx] := ctx[terminator.Return.value];
+                                                                    if std.str_eq(mir_debug_value_kind(return_value), "MirValue.LocalRead") != 0 {
+                                                                        if return_value.LocalRead.local_id == 0 {
+                                                                            if std.str_eq(return_value.LocalRead.value_type, "int") != 0 {
+                                                                                return "int tiny_resource_metadata_local(void) { int value = 2; return value; }";
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if std.str_eq(function.name, "tiny_provenance_metadata_local_read") != 0 {
+            if std.str_eq(function.return_type, "int") != 0 {
+                mut locals: std.Vector[MirLocal[ctx], ctx] := ctx[function.locals];
+                if len(locals) == 1 {
+                    mut local := locals[0];
+                    if local.id == 0 {
+                        if std.str_eq(local.name, "value") != 0 {
+                            if std.str_eq(local.local_type, "int") != 0 {
+                                mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+                                if len(blocks) == 1 {
+                                    mut block := blocks[0];
+                                    mut statements: std.Vector[MirStmt[ctx], ctx] := ctx[block.statements];
+                                    if len(statements) == 1 {
+                                        mut stmt := statements[0];
+                                        if std.str_eq(mir_debug_stmt_kind(stmt), "MirStmt.LocalSet") != 0 {
+                                            mut terminator: MirTerminator[ctx] := ctx[block.terminator];
+                                            if std.str_eq(mir_debug_terminator_kind(terminator), "MirTerminator.Return") != 0 {
+                                                unsafe {
+                                                    if stmt.LocalSet.local_id == 0 {
+                                                        mut set_value: MirValue[ctx] := ctx[stmt.LocalSet.value];
+                                                        if std.str_eq(mir_debug_value_kind(set_value), "MirValue.IntLiteral") != 0 {
+                                                            if set_value.IntLiteral.val == 2 {
+                                                                if std.str_eq(set_value.IntLiteral.value_type, "int") != 0 {
+                                                                    mut return_value: MirValue[ctx] := ctx[terminator.Return.value];
+                                                                    if std.str_eq(mir_debug_value_kind(return_value), "MirValue.LocalRead") != 0 {
+                                                                        if return_value.LocalRead.local_id == 0 {
+                                                                            if std.str_eq(return_value.LocalRead.value_type, "int") != 0 {
+                                                                                return "int tiny_provenance_metadata_local_read(void) { int value = 2; return value; }";
+                                                                            }
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
                                                         }
