@@ -867,6 +867,51 @@ func mir_lower_provenance_metadata_fixture(ctx: &Arena) MirProgram[ctx] {
     return program;
 }
 
+func mir_lower_native_boundary_metadata_fixture(ctx: &Arena) MirProgram[ctx] {
+    // Phase 7 fixture-only native-boundary metadata lowering.
+    //
+    // This represents the constrained MIR metadata shape:
+    //
+    //   func tiny_native_boundary_metadata_function() {
+    //       return;
+    //   }
+    //
+    // plus one side-table native-boundary metadata record:
+    //
+    //   function_name: tiny_native_boundary_metadata_function
+    //   boundary_kind: RuntimeCall
+    //
+    // It is intentionally not wired into parser, typechecker, verifier,
+    // MIR-to-C emission, native backend emission, call lowering, or production
+    // compiler paths.
+    mut span := mir_make_empty_span();
+    mut program := mir_make_program(ctx);
+
+    mut return_void := mir_make_terminator_return_void(span);
+    mut return_void_idx := mir_alloc_terminator(return_void, ctx);
+    mut entry_block := mir_make_block(0, return_void_idx, span, ctx);
+
+    mut function := mir_make_function("tiny_native_boundary_metadata_function", "void", span, ctx);
+    mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+    blocks.Push(entry_block);
+    ctx.Set(function.blocks, blocks);
+
+    mut runtime_boundary_kind: MirNativeBoundaryKind;
+    unsafe {
+        runtime_boundary_kind.tag = 1;
+    }
+    mut native_boundary_metadata := mir_make_native_boundary_metadata(function.name, runtime_boundary_kind, span);
+    mut native_boundary_metadata_records: std.Vector[MirNativeBoundaryMetadata[ctx], ctx] := ctx[program.native_boundary_metadata];
+    native_boundary_metadata_records.Push(native_boundary_metadata);
+    ctx.Set(program.native_boundary_metadata, native_boundary_metadata_records);
+
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    functions.Push(function);
+    ctx.Set(program.functions, functions);
+
+    return program;
+}
+
 func mir_lower_local_binding_read_fixture(ctx: &Arena) MirProgram[ctx] {
     // Phase 5 feature-migration fixture-only local binding/read lowering.
     //

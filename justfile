@@ -136,6 +136,9 @@ guard-mir-lower-resource-metadata-smoke:
 guard-mir-lower-provenance-metadata-smoke:
     just guard compiler/mir_lower_provenance_metadata_smoke_test_entry.gst
 
+guard-mir-lower-native-boundary-metadata-smoke:
+    just guard compiler/mir_lower_native_boundary_metadata_smoke_test_entry.gst
+
 guard-mir-lower-block-jump-smoke:
     just guard compiler/mir_lower_block_jump_smoke_test_entry.gst
 
@@ -588,12 +591,14 @@ guard-mir-lower-tiny-function-surface:
     rg -n -F 'func mir_lower_conditional_branch_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'func mir_lower_resource_metadata_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'func mir_lower_provenance_metadata_fixture' compiler/mir.gst >/dev/null
+    rg -n -F 'func mir_lower_native_boundary_metadata_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'tiny_shell' compiler/mir.gst compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst compiler/mir_lower_function_shell_smoke_test_entry.gst >/dev/null
     rg -n -F 'tiny_return_int' compiler/mir.gst compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null
     rg -n -F 'tiny_block_jump' compiler/mir.gst compiler/mir_lower_block_jump_smoke_test_entry.gst >/dev/null
     rg -n -F 'tiny_conditional_branch' compiler/mir.gst compiler/mir_lower_conditional_branch_smoke_test_entry.gst >/dev/null
     rg -n -F 'tiny_resource_metadata_local' compiler/mir.gst compiler/mir_lower_resource_metadata_smoke_test_entry.gst >/dev/null
     rg -n -F 'tiny_provenance_metadata_local_read' compiler/mir.gst compiler/mir_lower_provenance_metadata_smoke_test_entry.gst >/dev/null
+    rg -n -F 'tiny_native_boundary_metadata_function' compiler/mir.gst compiler/mir_lower_native_boundary_metadata_smoke_test_entry.gst >/dev/null
     rg -n -F 'MirTerminator.ReturnVoid' compiler/mir_lower_function_shell_smoke_test_entry.gst >/dev/null
     rg -n -F 'MirTerminator.Return' compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null
     rg -n -F 'MirTerminator.Jump' compiler/mir_lower_block_jump_smoke_test_entry.gst >/dev/null
@@ -601,6 +606,7 @@ guard-mir-lower-tiny-function-surface:
     rg -n -F 'MirResourceKind.LinearResource' compiler/mir.gst compiler/mir_lower_resource_metadata_smoke_test_entry.gst >/dev/null
     rg -n -F 'MirResourceState.Owned' compiler/mir.gst compiler/mir_lower_resource_metadata_smoke_test_entry.gst >/dev/null
     rg -n -F 'MirProvenanceKind.LocalBinding' compiler/mir.gst compiler/mir_lower_provenance_metadata_smoke_test_entry.gst >/dev/null
+    rg -n -F 'MirNativeBoundaryKind.RuntimeCall' compiler/mir.gst compiler/mir_lower_native_boundary_metadata_smoke_test_entry.gst >/dev/null
     rg -n -F 'MirValue.IntLiteral' compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null
     rg -n -F 'return_value.IntLiteral.val != 1' compiler/mir_lower_return_int_literal_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir lower tiny function fixture entry' compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst >/dev/null
@@ -610,6 +616,7 @@ guard-mir-lower-tiny-function-surface:
     rg -n -F 'SUCCESS: mir lower conditional branch smoke' compiler/mir_lower_conditional_branch_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir lower resource metadata smoke' compiler/mir_lower_resource_metadata_smoke_test_entry.gst >/dev/null
     rg -n -F 'SUCCESS: mir lower provenance metadata smoke' compiler/mir_lower_provenance_metadata_smoke_test_entry.gst >/dev/null
+    rg -n -F 'SUCCESS: mir lower native boundary metadata smoke' compiler/mir_lower_native_boundary_metadata_smoke_test_entry.gst >/dev/null
     rg -n -F 'compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_lower_function_shell_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_lower_return_int_literal_smoke_test_entry.gst' justfile >/dev/null
@@ -617,6 +624,7 @@ guard-mir-lower-tiny-function-surface:
     rg -n -F 'compiler/mir_lower_conditional_branch_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_lower_resource_metadata_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'compiler/mir_lower_provenance_metadata_smoke_test_entry.gst' justfile >/dev/null
+    rg -n -F 'compiler/mir_lower_native_boundary_metadata_smoke_test_entry.gst' justfile >/dev/null
     rg -n -F 'guard-mir-lower-tiny-function-fixture-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-lower-function-shell-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-lower-return-int-literal-smoke' justfile >/dev/null
@@ -624,13 +632,14 @@ guard-mir-lower-tiny-function-surface:
     rg -n -F 'guard-mir-lower-conditional-branch-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-lower-resource-metadata-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-lower-provenance-metadata-smoke' justfile >/dev/null
-    unexpected_lower_refs="$(rg -n -F 'mir_lower_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst:|compiler/mir_lower_function_shell_smoke_test_entry.gst:|compiler/mir_lower_return_int_literal_smoke_test_entry.gst:|compiler/mir_lower_local_binding_read_smoke_test_entry.gst:|compiler/mir_lower_resource_metadata_smoke_test_entry.gst:|compiler/mir_lower_provenance_metadata_smoke_test_entry.gst:|compiler/mir_lower_block_jump_smoke_test_entry.gst:|compiler/mir_lower_conditional_branch_smoke_test_entry.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_local_binding_read_smoke_test_entry.gst:|compiler/mir_to_c_block_jump_smoke_test_entry.gst:|compiler/mir_to_c_conditional_branch_smoke_test_entry.gst:' || true)"
+    rg -n -F 'guard-mir-lower-native-boundary-metadata-smoke' justfile >/dev/null
+    unexpected_lower_refs="$(rg -n -F 'mir_lower_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst:|compiler/mir_lower_function_shell_smoke_test_entry.gst:|compiler/mir_lower_return_int_literal_smoke_test_entry.gst:|compiler/mir_lower_local_binding_read_smoke_test_entry.gst:|compiler/mir_lower_resource_metadata_smoke_test_entry.gst:|compiler/mir_lower_provenance_metadata_smoke_test_entry.gst:|compiler/mir_lower_native_boundary_metadata_smoke_test_entry.gst:|compiler/mir_lower_block_jump_smoke_test_entry.gst:|compiler/mir_lower_conditional_branch_smoke_test_entry.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_local_binding_read_smoke_test_entry.gst:|compiler/mir_to_c_block_jump_smoke_test_entry.gst:|compiler/mir_to_c_conditional_branch_smoke_test_entry.gst:' || true)"
     if [ -n "$unexpected_lower_refs" ]; then
       echo "Unexpected MIR lowering reference outside fixture-only files:"
       echo "$unexpected_lower_refs"
       exit 1
     fi
-    backend_refs="$(rg -n -F 'Cranelift' compiler/mir.gst compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst compiler/mir_lower_function_shell_smoke_test_entry.gst compiler/mir_lower_return_int_literal_smoke_test_entry.gst compiler/mir_lower_local_binding_read_smoke_test_entry.gst compiler/mir_lower_resource_metadata_smoke_test_entry.gst compiler/mir_lower_provenance_metadata_smoke_test_entry.gst compiler/mir_lower_block_jump_smoke_test_entry.gst compiler/mir_lower_conditional_branch_smoke_test_entry.gst || true)"
+    backend_refs="$(rg -n -F 'Cranelift' compiler/mir.gst compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst compiler/mir_lower_function_shell_smoke_test_entry.gst compiler/mir_lower_return_int_literal_smoke_test_entry.gst compiler/mir_lower_local_binding_read_smoke_test_entry.gst compiler/mir_lower_resource_metadata_smoke_test_entry.gst compiler/mir_lower_provenance_metadata_smoke_test_entry.gst compiler/mir_lower_native_boundary_metadata_smoke_test_entry.gst compiler/mir_lower_block_jump_smoke_test_entry.gst compiler/mir_lower_conditional_branch_smoke_test_entry.gst || true)"
     if [ -n "$backend_refs" ]; then
       echo "Tiny MIR lowering fixtures must not mention Cranelift yet:"
       echo "$backend_refs"
