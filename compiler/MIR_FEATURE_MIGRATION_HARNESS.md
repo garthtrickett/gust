@@ -4,6 +4,7 @@ MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1
 MIR_FEATURE_MIGRATION_PHASE: tiny-registry
 MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: false
 MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md
+MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md
 
 This file defines the Phase 5 feature migration harness contract.
 
@@ -38,6 +39,12 @@ The machine-checkable registry lives at `compiler/MIR_FEATURE_MIGRATION_REGISTRY
 
 The entries below mirror the registry for human review, but guard wiring should validate the registry file directly.
 
+## Registry
+
+The machine-checkable registry lives at `compiler/MIR_FEATURE_MIGRATION_REGISTRY.md`.
+
+The entries below mirror the registry for human review, but guard wiring should validate the registry file directly.
+
 ## Registered preservation entries
 
 ### return_int_literal
@@ -55,7 +62,7 @@ The current verifier slot is backed by the focused return-int MIR structural inv
 # MIR Feature Migration Harness
 
 MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1
-MIR_FEATURE_MIGRATION_PHASE: first-preservation-entry
+MIR_FEATURE_MIGRATION_PHASE: tiny-registry
 MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: false
 
 This file defines the Phase 5 feature migration harness contract without migrating any additional AST-to-C feature yet.

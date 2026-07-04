@@ -206,6 +206,7 @@ guard-mir-feature-return-int-preservation:
     set -euo pipefail
     echo "🔒 Checking MIR feature preservation: return int literal..."
     just guard-mir-feature-harness-surface
+    just guard-mir-feature-registry-surface
     feature_fixture="compiler/mir_feature_return_int_preservation_source.gst"
     build_dir="build/guards/mir_feature_return_int_preservation"
     old_c="$build_dir/old_ast_to_c_return_int.c"
