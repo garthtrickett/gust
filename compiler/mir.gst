@@ -470,14 +470,59 @@ func mir_lower_return_int_literal_fixture(ctx: &Arena) MirProgram[ctx] {
     return program;
 }
 
+func mir_lower_local_binding_read_fixture(ctx: &Arena) MirProgram[ctx] {
+    // Phase 5 feature-migration fixture-only local binding/read lowering.
+    //
+    // This represents the constrained source shape:
+    //
+    //   func tiny_local_binding_read() int {
+    //       mut value := 2;
+    //       return value;
+    //   }
+    //
+    // It is intentionally not wired into parser, typechecker, verifier,
+    // normal C emission, native backend emission, or the production compiler path.
+    mut span := mir_make_empty_span();
+    mut program := mir_make_program(ctx);
+
+    mut initial_value := mir_make_value_int_literal(2, "int", span, ctx);
+    mut initial_value_idx := mir_alloc_value(initial_value, ctx);
+    mut local_set := mir_make_stmt_local_set(0, initial_value_idx, span);
+
+    mut local_read := mir_make_value_local_read(0, "int", span, ctx);
+    mut local_read_idx := mir_alloc_value(local_read, ctx);
+    mut return_terminator := mir_make_terminator_return(local_read_idx, span);
+    mut return_terminator_idx := mir_alloc_terminator(return_terminator, ctx);
+    mut entry_block := mir_make_block(0, return_terminator_idx, span, ctx);
+
+    mut statements: std.Vector[MirStmt[ctx], ctx] := ctx[entry_block.statements];
+    statements.Push(local_set);
+    ctx.Set(entry_block.statements, statements);
+
+    mut function := mir_make_function("tiny_local_binding_read", "int", span, ctx);
+    mut locals: std.Vector[MirLocal[ctx], ctx] := ctx[function.locals];
+    locals.Push(mir_make_local(0, "value", "int", span, ctx));
+    ctx.Set(function.locals, locals);
+
+    mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+    blocks.Push(entry_block);
+    ctx.Set(function.blocks, blocks);
+
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    functions.Push(function);
+    ctx.Set(program.functions, functions);
+
+    return program;
+}
+
 func mir_to_c_tiny_fixture(program: MirProgram[ctx], ctx: &Arena) str {
     // Phase 4 fixture-only MIR-to-C entry point.
     //
     // This is not wired into parser, typechecker, verifier, normal C emission,
-    // native backend emission, or the production compiler path. Step 3 emits
-    // only the tiny function-shell shape and the tiny return-int-literal shape.
-    // It does not emit params, locals, statements, calls, branches, loops, or
-    // real AST-lowered programs yet.
+    // native backend emission, or the production compiler path. Step 4 emits
+    // only the tiny function-shell, tiny return-int-literal, and tiny
+    // local-binding/read shapes. It does not emit params, calls, branches,
+    // loops, or real AST-lowered programs yet.
     mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
     if len(functions) == 1 {
         mut function := functions[0];
@@ -500,6 +545,53 @@ func mir_to_c_tiny_fixture(program: MirProgram[ctx], ctx: &Arena) str {
                                 if return_value.IntLiteral.val == 1 {
                                     if std.str_eq(return_value.IntLiteral.value_type, "int") != 0 {
                                         return "int tiny_return_int(void) { return 1; }";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if std.str_eq(function.name, "tiny_local_binding_read") != 0 {
+            if std.str_eq(function.return_type, "int") != 0 {
+                mut locals: std.Vector[MirLocal[ctx], ctx] := ctx[function.locals];
+                if len(locals) == 1 {
+                    mut local := locals[0];
+                    if local.id == 0 {
+                        if std.str_eq(local.name, "value") != 0 {
+                            if std.str_eq(local.local_type, "int") != 0 {
+                                mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+                                if len(blocks) == 1 {
+                                    mut block := blocks[0];
+                                    mut statements: std.Vector[MirStmt[ctx], ctx] := ctx[block.statements];
+                                    if len(statements) == 1 {
+                                        mut stmt := statements[0];
+                                        if std.str_eq(mir_debug_stmt_kind(stmt), "MirStmt.LocalSet") != 0 {
+                                            mut terminator: MirTerminator[ctx] := ctx[block.terminator];
+                                            if std.str_eq(mir_debug_terminator_kind(terminator), "MirTerminator.Return") != 0 {
+                                                unsafe {
+                                                    if stmt.LocalSet.local_id == 0 {
+                                                        mut set_value: MirValue[ctx] := ctx[stmt.LocalSet.value];
+                                                        if std.str_eq(mir_debug_value_kind(set_value), "MirValue.IntLiteral") != 0 {
+                                                            if set_value.IntLiteral.val == 2 {
+                                                                if std.str_eq(set_value.IntLiteral.value_type, "int") != 0 {
+                                                                    mut return_value: MirValue[ctx] := ctx[terminator.Return.value];
+                                                                    if std.str_eq(mir_debug_value_kind(return_value), "MirValue.LocalRead") != 0 {
+                                                                        if return_value.LocalRead.local_id == 0 {
+                                                                            if std.str_eq(return_value.LocalRead.value_type, "int") != 0 {
+                                                                                return "int tiny_local_binding_read(void) { int value = 2; return value; }";
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }

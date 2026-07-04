@@ -1,7 +1,7 @@
 # MIR Feature Migration Harness
 
 MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1
-MIR_FEATURE_MIGRATION_PHASE: tiny-registry
+MIR_FEATURE_MIGRATION_PHASE: second-preservation-entry
 MIR_FEATURE_MIGRATION_NO_FEATURES_MIGRATED: false
 MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md
 MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md
@@ -58,7 +58,18 @@ The entries below mirror the registry for human review, but guard wiring should 
 - `native_execution_guard`: `guard-mir-to-c-return-int-literal-native-smoke`
 - `expected_behavior`: native executable exits with status `1`
 
-The current verifier slot is backed by the focused return-int MIR structural invariant guard until a dedicated MIR verifier target exists.
+### local_binding_read
+
+- `feature_name`: `local_binding_read`
+- `source_fixture`: `compiler/mir_feature_local_binding_read_preservation_source.gst`
+- `old_behavior_guard`: `guard-mir-feature-local-binding-read-preservation`
+- `mir_lowering_guard`: `guard-mir-lower-local-binding-read-smoke`
+- `mir_verifier_guard`: `guard-mir-lower-local-binding-read-smoke`
+- `mir_to_c_guard`: `guard-mir-to-c-local-binding-read-smoke`
+- `native_execution_guard`: `guard-mir-to-c-local-binding-read-native-smoke`
+- `expected_behavior`: native executable exits with status `2`
+
+The current verifier slot is backed by focused MIR structural invariant guards until a dedicated MIR verifier target exists.
 # MIR Feature Migration Harness
 
 MIR_FEATURE_MIGRATION_HARNESS_VERSION: 1

@@ -285,6 +285,45 @@ guard-mir-feature-return-int-preservation:
     just guard-mir-to-c-return-int-literal-native-smoke
     echo "✅ MIR feature preservation passed: return int literal exits with status 1 on old and MIR-backed paths."
 
+guard-mir-feature-local-binding-read-preservation:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR feature preservation: local binding/read..."
+    just guard-mir-feature-harness-surface
+    just guard-mir-feature-registry-surface
+    feature_fixture="compiler/mir_feature_local_binding_read_preservation_source.gst"
+    build_dir="build/guards/mir_feature_local_binding_read_preservation"
+    old_c="$build_dir/old_ast_to_c_local_binding_read.c"
+    old_final_c="$build_dir/old_ast_to_c_local_binding_read_final.c"
+    old_binary="$build_dir/old_ast_to_c_local_binding_read_bin"
+    mkdir -p "$build_dir"
+    rg -n -F 'func local_binding_read() int' "$feature_fixture" >/dev/null
+    rg -n -F 'mut value := 2;' "$feature_fixture" >/dev/null
+    rg -n -F 'return value;' "$feature_fixture" >/dev/null
+    rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
+    echo "  ↳ old AST-to-C native behavior"
+    ./gust "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
+    cat src/runtime.c "$old_c" > "$old_final_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
+    INCLUDES_VAL="${INCLUDES:--Isrc}"
+    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$old_final_c" -o "$old_binary"
+    set +e
+    "$old_binary"
+    old_status="$?"
+    set -e
+    if [ "$old_status" != "2" ]; then
+      echo "Expected old AST-to-C local binding/read fixture to exit with status 2, got $old_status"
+      exit 1
+    fi
+    echo "  ↳ MIR lowering structural behavior"
+    just guard-mir-lower-local-binding-read-smoke
+    echo "  ↳ MIR-to-C textual behavior"
+    just guard-mir-to-c-local-binding-read-smoke
+    echo "  ↳ MIR-to-C native behavior"
+    just guard-mir-to-c-local-binding-read-native-smoke
+    echo "✅ MIR feature preservation passed: local binding/read exits with status 2 on old and MIR-backed paths."
+
 guard-test-runner-bounded-concurrency-surface:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -665,6 +704,7 @@ make-test-guards:
       guard_step52_directory_resource_no_open_directories_enforcement_reads
       guard-mir-feature-registry-surface
       guard-mir-feature-return-int-preservation
+      guard-mir-feature-local-binding-read-preservation
       guard-test-runner-bounded-concurrency-surface
       guard_parser_high_level_raw_casts
       guard_step44_no_high_level_raw_collection_casts

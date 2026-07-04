@@ -1,8 +1,8 @@
 # MIR Feature Migration Registry
 
 MIR_FEATURE_MIGRATION_REGISTRY_VERSION: 1
-MIR_FEATURE_MIGRATION_REGISTRY_PHASE: tiny-registry
-MIR_FEATURE_MIGRATION_REGISTRY_ENTRY_COUNT: 1
+MIR_FEATURE_MIGRATION_REGISTRY_PHASE: second-preservation-entry
+MIR_FEATURE_MIGRATION_REGISTRY_ENTRY_COUNT: 2
 
 This registry is the machine-checkable source of truth for migrated MIR feature preservation entries.
 
@@ -33,6 +33,17 @@ mir_verifier_guard: guard-mir-lower-return-int-literal-smoke
 mir_to_c_guard: guard-mir-to-c-return-int-literal-smoke
 native_execution_guard: guard-mir-to-c-return-int-literal-native-smoke
 expected_behavior: native executable exits with status 1
+
+### local_binding_read
+
+feature_name: local_binding_read
+source_fixture: compiler/mir_feature_local_binding_read_preservation_source.gst
+old_behavior_guard: guard-mir-feature-local-binding-read-preservation
+mir_lowering_guard: guard-mir-lower-local-binding-read-smoke
+mir_verifier_guard: guard-mir-lower-local-binding-read-smoke
+mir_to_c_guard: guard-mir-to-c-local-binding-read-smoke
+native_execution_guard: guard-mir-to-c-local-binding-read-native-smoke
+expected_behavior: native executable exits with status 2
 # MIR Feature Migration Registry
 
 MIR_FEATURE_MIGRATION_REGISTRY_VERSION: 1
