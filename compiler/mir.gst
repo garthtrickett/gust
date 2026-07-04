@@ -325,3 +325,51 @@ func mir_make_terminator_branch(condition: Index[MirValue[ctx], ctx], then_block
     }
     return terminator;
 }
+
+func mir_debug_stmt_kind(stmt: MirStmt[ctx]) str {
+    if stmt.tag == 0 {
+        return "MirStmt.Nop";
+    }
+    if stmt.tag == 1 {
+        return "MirStmt.LocalSet";
+    }
+    if stmt.tag == 2 {
+        return "MirStmt.Expr";
+    }
+    return "MirStmt.<unknown>";
+}
+
+func mir_debug_value_kind(value: MirValue[ctx]) str {
+    if value.tag == 0 {
+        return "MirValue.IntLiteral";
+    }
+    if value.tag == 1 {
+        return "MirValue.BoolLiteral";
+    }
+    if value.tag == 2 {
+        return "MirValue.StringLiteral";
+    }
+    if value.tag == 3 {
+        return "MirValue.LocalRead";
+    }
+    if value.tag == 4 {
+        return "MirValue.Call";
+    }
+    return "MirValue.<unknown>";
+}
+
+func mir_debug_terminator_kind(terminator: MirTerminator[ctx]) str {
+    if terminator.tag == 0 {
+        return "MirTerminator.ReturnVoid";
+    }
+    if terminator.tag == 1 {
+        return "MirTerminator.Return";
+    }
+    if terminator.tag == 2 {
+        return "MirTerminator.Jump";
+    }
+    if terminator.tag == 3 {
+        return "MirTerminator.Branch";
+    }
+    return "MirTerminator.<unknown>";
+}

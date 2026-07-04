@@ -52,6 +52,9 @@ guard-step51-non-launder-hashmap-get-value-field:
 guard-mir-data-structures-smoke:
     just guard compiler/mir_data_structures_smoke_test_entry.gst
 
+guard-mir-debug-leaf-smoke:
+    just guard compiler/mir_debug_leaf_smoke_test_entry.gst
+
 guard_step52_resource_use_after_move_enforcement:
     #!/usr/bin/env bash
     set -euo pipefail
