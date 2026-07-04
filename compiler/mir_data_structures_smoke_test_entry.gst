@@ -16,6 +16,15 @@ func main() {
     if len(ctx[program.functions]) != 0 {
         fail("MIR smoke: new program should start with zero functions");
     }
+    if len(ctx[program.resource_metadata]) != 0 {
+        fail("MIR smoke: new program should start with zero resource metadata records");
+    }
+    if len(ctx[program.provenance_metadata]) != 0 {
+        fail("MIR smoke: new program should start with zero provenance metadata records");
+    }
+    if len(ctx[program.native_boundary_metadata]) != 0 {
+        fail("MIR smoke: new program should start with zero native-boundary metadata records");
+    }
 
     mut function := mir.mir_make_function("mir_smoke", "int", span, ctx);
     if std.str_eq(function.name, "mir_smoke") == 0 {
@@ -70,6 +79,68 @@ func main() {
         if local_set.LocalSet.local_id != 0 {
             fail("MIR smoke: local-set local_id field drifted");
         }
+    }
+
+    mut linear_resource_kind: mir.MirResourceKind;
+    mut owned_resource_state: mir.MirResourceState;
+    mut local_binding_provenance: mir.MirProvenanceKind;
+    mut runtime_boundary_kind: mir.MirNativeBoundaryKind;
+    unsafe {
+        linear_resource_kind.tag = 1;
+        owned_resource_state.tag = 1;
+        local_binding_provenance.tag = 1;
+        runtime_boundary_kind.tag = 1;
+    }
+
+    mut resource_metadata := mir.mir_make_resource_metadata(local.id, linear_resource_kind, owned_resource_state, span);
+    if resource_metadata.local_id != 0 {
+        fail("MIR smoke: resource metadata local_id field drifted");
+    }
+    if std.str_eq(mir.mir_debug_resource_kind(resource_metadata.resource_kind), "MirResourceKind.LinearResource") == 0 {
+        fail("MIR smoke: resource metadata kind field drifted");
+    }
+    if std.str_eq(mir.mir_debug_resource_state(resource_metadata.resource_state), "MirResourceState.Owned") == 0 {
+        fail("MIR smoke: resource metadata state field drifted");
+    }
+
+    mut provenance_metadata := mir.mir_make_provenance_metadata(local_read_idx, local_binding_provenance, "x", span);
+    if provenance_metadata.value == empty[Index[mir.MirValue[ctx], ctx]] {
+        fail("MIR smoke: provenance metadata value field should be allocated");
+    }
+    if std.str_eq(mir.mir_debug_provenance_kind(provenance_metadata.provenance_kind), "MirProvenanceKind.LocalBinding") == 0 {
+        fail("MIR smoke: provenance metadata kind field drifted");
+    }
+    if std.str_eq(provenance_metadata.origin_name, "x") == 0 {
+        fail("MIR smoke: provenance metadata origin_name field drifted");
+    }
+
+    mut native_boundary_metadata := mir.mir_make_native_boundary_metadata("mir_smoke", runtime_boundary_kind, span);
+    if std.str_eq(native_boundary_metadata.function_name, "mir_smoke") == 0 {
+        fail("MIR smoke: native-boundary metadata function_name field drifted");
+    }
+    if std.str_eq(mir.mir_debug_native_boundary_kind(native_boundary_metadata.boundary_kind), "MirNativeBoundaryKind.RuntimeCall") == 0 {
+        fail("MIR smoke: native-boundary metadata kind field drifted");
+    }
+
+    mut resource_metadata_records: std.Vector[mir.MirResourceMetadata, ctx] := ctx[program.resource_metadata];
+    resource_metadata_records.Push(resource_metadata);
+    ctx.Set(program.resource_metadata, resource_metadata_records);
+    if len(ctx[program.resource_metadata]) != 1 {
+        fail("MIR smoke: resource metadata side table should accept one record");
+    }
+
+    mut provenance_metadata_records: std.Vector[mir.MirProvenanceMetadata[ctx], ctx] := ctx[program.provenance_metadata];
+    provenance_metadata_records.Push(provenance_metadata);
+    ctx.Set(program.provenance_metadata, provenance_metadata_records);
+    if len(ctx[program.provenance_metadata]) != 1 {
+        fail("MIR smoke: provenance metadata side table should accept one record");
+    }
+
+    mut native_boundary_metadata_records: std.Vector[mir.MirNativeBoundaryMetadata, ctx] := ctx[program.native_boundary_metadata];
+    native_boundary_metadata_records.Push(native_boundary_metadata);
+    ctx.Set(program.native_boundary_metadata, native_boundary_metadata_records);
+    if len(ctx[program.native_boundary_metadata]) != 1 {
+        fail("MIR smoke: native-boundary metadata side table should accept one record");
     }
 
     mut return_terminator: mir.MirTerminator[ctx] := mir.mir_make_terminator_return(local_read_idx, span);

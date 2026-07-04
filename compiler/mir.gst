@@ -20,7 +20,10 @@
 import "token.gst" as token;
 
 type MirProgram[ctx] struct {
-    functions: Index[std.Vector[MirFunction[ctx], ctx], ctx]
+    functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
+    resource_metadata: Index[std.Vector[MirResourceMetadata, ctx], ctx],
+    provenance_metadata: Index[std.Vector[MirProvenanceMetadata[ctx], ctx], ctx],
+    native_boundary_metadata: Index[std.Vector[MirNativeBoundaryMetadata, ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -111,12 +114,12 @@ type MirTerminator[ctx] enum {
     }
 }
 
-// Phase 7 metadata vocabulary only.
+// Phase 7 metadata vocabulary and side-table containers.
 //
-// These tags intentionally do not attach to MirProgram, MirFunction, MirBlock,
-// MirLocal, MirStmt, MirValue, or MirTerminator yet. Later Phase 7 steps will
-// add explicit metadata side tables and fixtures. This step only reserves the
-// stable debug vocabulary for resource/provenance/native-boundary metadata.
+// These tags and records intentionally remain side-table metadata. They do not
+// change MIR lowering, verifier behavior, MIR-to-C output, native backend
+// behavior, or production codegen decisions yet. Later Phase 7 steps will add
+// focused fixtures that populate these tables.
 type MirResourceKind enum {
     NonResource,
     LinearResource,
@@ -148,6 +151,26 @@ type MirNativeBoundaryKind enum {
     ExternFunction,
     UnsafeNativeCall,
     LayoutSensitiveCall
+}
+
+type MirResourceMetadata struct {
+    local_id: int,
+    resource_kind: MirResourceKind,
+    resource_state: MirResourceState,
+    span: token.Span
+}
+
+type MirProvenanceMetadata[ctx] struct {
+    value: Index[MirValue[ctx], ctx],
+    provenance_kind: MirProvenanceKind,
+    origin_name: str,
+    span: token.Span
+}
+
+type MirNativeBoundaryMetadata struct {
+    function_name: str,
+    boundary_kind: MirNativeBoundaryKind,
+    span: token.Span
 }
 
 func mir_make_empty_span() token.Span {
@@ -190,6 +213,27 @@ func mir_empty_value_vector(ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], c
     return values_idx;
 }
 
+func mir_empty_resource_metadata_vector(ctx: &Arena) Index[std.Vector[MirResourceMetadata, ctx], ctx] {
+    mut metadata: std.Vector[MirResourceMetadata, ctx] := std.VectorNew(ctx);
+    mut metadata_idx: Index[std.Vector[MirResourceMetadata, ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(metadata_idx, metadata);
+    return metadata_idx;
+}
+
+func mir_empty_provenance_metadata_vector(ctx: &Arena) Index[std.Vector[MirProvenanceMetadata[ctx], ctx], ctx] {
+    mut metadata: std.Vector[MirProvenanceMetadata[ctx], ctx] := std.VectorNew(ctx);
+    mut metadata_idx: Index[std.Vector[MirProvenanceMetadata[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(metadata_idx, metadata);
+    return metadata_idx;
+}
+
+func mir_empty_native_boundary_metadata_vector(ctx: &Arena) Index[std.Vector[MirNativeBoundaryMetadata, ctx], ctx] {
+    mut metadata: std.Vector[MirNativeBoundaryMetadata, ctx] := std.VectorNew(ctx);
+    mut metadata_idx: Index[std.Vector[MirNativeBoundaryMetadata, ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(metadata_idx, metadata);
+    return metadata_idx;
+}
+
 func mir_alloc_value(value: MirValue[ctx], ctx: &Arena) Index[MirValue[ctx], ctx] {
     mut value_idx: Index[MirValue[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(value_idx, value);
@@ -205,7 +249,36 @@ func mir_alloc_terminator(terminator: MirTerminator[ctx], ctx: &Arena) Index[Mir
 func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     mut program: MirProgram[ctx];
     program.functions = mir_empty_function_vector(ctx);
+    program.resource_metadata = mir_empty_resource_metadata_vector(ctx);
+    program.provenance_metadata = mir_empty_provenance_metadata_vector(ctx);
+    program.native_boundary_metadata = mir_empty_native_boundary_metadata_vector(ctx);
     return program;
+}
+
+func mir_make_resource_metadata(local_id: int, resource_kind: MirResourceKind, resource_state: MirResourceState, span: token.Span) MirResourceMetadata {
+    mut metadata: MirResourceMetadata;
+    metadata.local_id = local_id;
+    metadata.resource_kind = resource_kind;
+    metadata.resource_state = resource_state;
+    metadata.span = span;
+    return metadata;
+}
+
+func mir_make_provenance_metadata(value: Index[MirValue[ctx], ctx], provenance_kind: MirProvenanceKind, origin_name: str, span: token.Span) MirProvenanceMetadata[ctx] {
+    mut metadata: MirProvenanceMetadata[ctx];
+    metadata.value = value;
+    metadata.provenance_kind = provenance_kind;
+    metadata.origin_name = origin_name;
+    metadata.span = span;
+    return metadata;
+}
+
+func mir_make_native_boundary_metadata(function_name: str, boundary_kind: MirNativeBoundaryKind, span: token.Span) MirNativeBoundaryMetadata {
+    mut metadata: MirNativeBoundaryMetadata;
+    metadata.function_name = function_name;
+    metadata.boundary_kind = boundary_kind;
+    metadata.span = span;
+    return metadata;
 }
 
 func mir_make_function(name: str, return_type: str, span: token.Span, ctx: &Arena) MirFunction[ctx] {
