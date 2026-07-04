@@ -473,9 +473,21 @@ func mir_lower_return_int_literal_fixture(ctx: &Arena) MirProgram[ctx] {
 func mir_to_c_tiny_fixture(program: MirProgram[ctx], ctx: &Arena) str {
     // Phase 4 fixture-only MIR-to-C entry point.
     //
-    // This is intentionally inert and is not wired into parser, typechecker,
-    // verifier, normal C emission, native backend emission, or the production
-    // compiler path. Step 1 only establishes the MIR-to-C lane and returns a
-    // stable banner string. Later Phase 4 steps may emit the tiny MIR subset.
+    // This is not wired into parser, typechecker, verifier, normal C emission,
+    // native backend emission, or the production compiler path. Step 2 emits
+    // only the tiny function-shell shape produced by mir_lower_tiny_function_fixture:
+    // one void function, no params, no locals, one empty entry block, and a
+    // ReturnVoid terminator. It does not emit expressions, locals, calls,
+    // branches, loops, or real AST-lowered programs yet.
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    if len(functions) == 1 {
+        mut function := functions[0];
+        if std.str_eq(function.name, "tiny_shell") != 0 {
+            if std.str_eq(function.return_type, "void") != 0 {
+                return "void tiny_shell(void) { return; }";
+            }
+        }
+    }
+
     return "/* gust MIR-to-C tiny fixture */";
 }
