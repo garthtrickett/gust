@@ -101,6 +101,30 @@ guard-mir-to-c-function-shell-smoke:
 guard-mir-to-c-return-int-literal-smoke:
     just guard compiler/mir_to_c_return_int_literal_smoke_test_entry.gst
 
+guard-mir-to-c-return-int-literal-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling tiny MIR-to-C return literal..."
+    mkdir -p build/guards/mir_to_c_return_int_literal_native
+    just guard compiler/mir_to_c_return_int_literal_smoke_test_entry.gst
+    generated_c="build/guards/mir_to_c_return_int_literal_native/tiny_return_int.c"
+    binary="build/guards/mir_to_c_return_int_literal_native/tiny_return_int_bin"
+    rg -n -F 'int tiny_return_int(void) { return 1; }' to.log >/dev/null
+    printf '%s\n' 'int tiny_return_int(void) { return 1; }' > "$generated_c"
+    printf '%s\n' 'int main(void) { return tiny_return_int(); }' >> "$generated_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$generated_c" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "1" ]; then
+      echo "Expected tiny MIR-to-C native binary to exit with status 1, got $status"
+      exit 1
+    fi
+    echo "✅ Tiny MIR-to-C return literal native smoke passed."
+
 guard-mir-lower-tiny-function-surface:
     #!/usr/bin/env bash
     set -euo pipefail
