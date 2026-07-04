@@ -306,7 +306,7 @@ func mir_make_terminator_return(value: Index[MirValue[ctx], ctx], span: token.Sp
     return terminator;
 }
 
-func mir_make_terminator_jump(target_block: int, span: token.Span) MirTerminator[ctx] {
+func mir_make_terminator_jump(target_block: int, span: token.Span, ctx: &Arena) MirTerminator[ctx] {
     mut terminator: MirTerminator[ctx];
     unsafe {
         terminator.tag = 2; // Jump

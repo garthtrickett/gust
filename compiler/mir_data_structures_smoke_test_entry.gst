@@ -48,7 +48,7 @@ func main() {
         fail("MIR smoke: local type constructor field drifted");
     }
 
-    mut local_read: mir.MirValue[ctx] := mir.mir_make_value_local_read(local.id, "int", span);
+    mut local_read: mir.MirValue[ctx] := mir.mir_make_value_local_read(local.id, "int", span, ctx);
     if local_read.tag != 3 {
         fail("MIR smoke: local-read value tag drifted");
     }
