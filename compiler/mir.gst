@@ -437,3 +437,35 @@ func mir_lower_tiny_function_fixture(ctx: &Arena) MirProgram[ctx] {
 
     return program;
 }
+
+func mir_lower_return_int_literal_fixture(ctx: &Arena) MirProgram[ctx] {
+    // Phase 3 fixture-only tiny return-literal lowering.
+    //
+    // This represents the constrained source shape:
+    //
+    //   func tiny_return_int() int {
+    //       return 1;
+    //   }
+    //
+    // It is intentionally not wired into parser, typechecker, verifier,
+    // C emission, Cranelift, or the production compiler path.
+    mut span := mir_make_empty_span();
+    mut program := mir_make_program(ctx);
+
+    mut return_value := mir_make_value_int_literal(1, "int", span, ctx);
+    mut return_value_idx := mir_alloc_value(return_value, ctx);
+    mut return_terminator := mir_make_terminator_return(return_value_idx, span);
+    mut return_terminator_idx := mir_alloc_terminator(return_terminator, ctx);
+    mut entry_block := mir_make_block(0, return_terminator_idx, span, ctx);
+
+    mut function := mir_make_function("tiny_return_int", "int", span, ctx);
+    mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+    blocks.Push(entry_block);
+    ctx.Set(function.blocks, blocks);
+
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    functions.Push(function);
+    ctx.Set(program.functions, functions);
+
+    return program;
+}

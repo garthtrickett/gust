@@ -89,6 +89,9 @@ guard-mir-lower-tiny-function-fixture-smoke:
 guard-mir-lower-function-shell-smoke:
     just guard compiler/mir_lower_function_shell_smoke_test_entry.gst
 
+guard-mir-lower-return-int-literal-smoke:
+    just guard compiler/mir_lower_return_int_literal_smoke_test_entry.gst
+
 guard_step52_resource_use_after_move_enforcement:
     #!/usr/bin/env bash
     set -euo pipefail
