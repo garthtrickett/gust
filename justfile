@@ -198,6 +198,27 @@ guard-mir-feature-harness-surface:
     fi
     echo "✅ MIR feature migration harness shell guard passed."
 
+guard-test-runner-bounded-concurrency-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking self-hosted test runner bounded concurrency surface..."
+    rg -n -F 'max_test_runner_jobs := 4' tests/test_runner.gst >/dev/null
+    rg -n -F 'Self-hosted Gust test runner max concurrent jobs' tests/test_runner.gst >/dev/null
+    rg -n -F 'running_count < max_test_runner_jobs' tests/test_runner.gst >/dev/null
+    rg -n -F 'completed_count < len(tests)' tests/test_runner.gst >/dev/null
+    rg -n -F 'next_test_idx < len(tests)' tests/test_runner.gst >/dev/null
+    spawn_count="$(rg -n -F 'std.Spawn(test_worker_task' tests/test_runner.gst | wc -l | tr -d '[:space:]')"
+    if [ "$spawn_count" != "2" ]; then
+      echo "Expected exactly two bounded test-worker spawn sites, found $spawn_count."
+      rg -n -F 'std.Spawn(test_worker_task' tests/test_runner.gst || true
+      exit 1
+    fi
+    if rg -n -F 'while i < len(tests)' tests/test_runner.gst >/dev/null; then
+      echo "Self-hosted test runner must not spawn one worker per test before receiving results."
+      exit 1
+    fi
+    echo "✅ Self-hosted test runner bounded concurrency surface guard passed."
+
 guard-mir-lower-tiny-function-surface:
     #!/usr/bin/env bash
     set -euo pipefail
