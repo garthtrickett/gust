@@ -98,6 +98,9 @@ guard-mir-to-c-entry-smoke:
 guard-mir-to-c-function-shell-smoke:
     just guard compiler/mir_to_c_function_shell_smoke_test_entry.gst
 
+guard-mir-to-c-return-int-literal-smoke:
+    just guard compiler/mir_to_c_return_int_literal_smoke_test_entry.gst
+
 guard-mir-lower-tiny-function-surface:
     #!/usr/bin/env bash
     set -euo pipefail
