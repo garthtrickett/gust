@@ -470,6 +470,52 @@ func mir_lower_return_int_literal_fixture(ctx: &Arena) MirProgram[ctx] {
     return program;
 }
 
+func mir_lower_conditional_branch_fixture(ctx: &Arena) MirProgram[ctx] {
+    // Phase 6 fixture-only conditional branch lowering.
+    //
+    // This represents the constrained MIR shape:
+    //
+    //   block0: branch true-ish condition ? block1 : block2
+    //   block1: return 1
+    //   block2: return 2
+    //
+    // It is intentionally not wired into parser, typechecker, verifier,
+    // normal C emission, native backend emission, or the production compiler path.
+    mut span := mir_make_empty_span();
+    mut program := mir_make_program(ctx);
+
+    mut condition_value := mir_make_value_int_literal(1, "bool", span, ctx);
+    mut condition_value_idx := mir_alloc_value(condition_value, ctx);
+    mut branch_terminator := mir_make_terminator_branch(condition_value_idx, 1, 2, span);
+    mut branch_terminator_idx := mir_alloc_terminator(branch_terminator, ctx);
+    mut entry_block := mir_make_block(0, branch_terminator_idx, span, ctx);
+
+    mut then_return_value := mir_make_value_int_literal(1, "int", span, ctx);
+    mut then_return_value_idx := mir_alloc_value(then_return_value, ctx);
+    mut then_terminator := mir_make_terminator_return(then_return_value_idx, span);
+    mut then_terminator_idx := mir_alloc_terminator(then_terminator, ctx);
+    mut then_block := mir_make_block(1, then_terminator_idx, span, ctx);
+
+    mut else_return_value := mir_make_value_int_literal(2, "int", span, ctx);
+    mut else_return_value_idx := mir_alloc_value(else_return_value, ctx);
+    mut else_terminator := mir_make_terminator_return(else_return_value_idx, span);
+    mut else_terminator_idx := mir_alloc_terminator(else_terminator, ctx);
+    mut else_block := mir_make_block(2, else_terminator_idx, span, ctx);
+
+    mut function := mir_make_function("tiny_conditional_branch", "int", span, ctx);
+    mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+    blocks.Push(entry_block);
+    blocks.Push(then_block);
+    blocks.Push(else_block);
+    ctx.Set(function.blocks, blocks);
+
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    functions.Push(function);
+    ctx.Set(program.functions, functions);
+
+    return program;
+}
+
 func mir_lower_block_jump_fixture(ctx: &Arena) MirProgram[ctx] {
     // Phase 6 fixture-only unconditional block-jump lowering.
     //
