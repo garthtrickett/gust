@@ -743,6 +743,69 @@ func mir_lower_block_jump_fixture(ctx: &Arena) MirProgram[ctx] {
     return program;
 }
 
+func mir_lower_resource_metadata_fixture(ctx: &Arena) MirProgram[ctx] {
+    // Phase 7 fixture-only resource metadata lowering.
+    //
+    // This represents the constrained MIR metadata shape:
+    //
+    //   func tiny_resource_metadata_local() int {
+    //       mut value := 2;
+    //       return value;
+    //   }
+    //
+    // plus one side-table resource metadata record:
+    //
+    //   local_id: 0
+    //   resource_kind: LinearResource
+    //   resource_state: Owned
+    //
+    // It is intentionally not wired into parser, typechecker, verifier,
+    // MIR-to-C emission, native backend emission, or production compiler paths.
+    mut span := mir_make_empty_span();
+    mut program := mir_make_program(ctx);
+
+    mut initial_value := mir_make_value_int_literal(2, "int", span, ctx);
+    mut initial_value_idx := mir_alloc_value(initial_value, ctx);
+    mut local_set := mir_make_stmt_local_set(0, initial_value_idx, span);
+
+    mut local_read := mir_make_value_local_read(0, "int", span, ctx);
+    mut local_read_idx := mir_alloc_value(local_read, ctx);
+    mut return_terminator := mir_make_terminator_return(local_read_idx, span);
+    mut return_terminator_idx := mir_alloc_terminator(return_terminator, ctx);
+    mut entry_block := mir_make_block(0, return_terminator_idx, span, ctx);
+
+    mut statements: std.Vector[MirStmt[ctx], ctx] := ctx[entry_block.statements];
+    statements.Push(local_set);
+    ctx.Set(entry_block.statements, statements);
+
+    mut function := mir_make_function("tiny_resource_metadata_local", "int", span, ctx);
+    mut local := mir_make_local(0, "value", "int", span, ctx);
+    mut locals: std.Vector[MirLocal[ctx], ctx] := ctx[function.locals];
+    locals.Push(local);
+    ctx.Set(function.locals, locals);
+
+    mut blocks: std.Vector[MirBlock[ctx], ctx] := ctx[function.blocks];
+    blocks.Push(entry_block);
+    ctx.Set(function.blocks, blocks);
+
+    mut linear_resource_kind: MirResourceKind;
+    mut owned_resource_state: MirResourceState;
+    unsafe {
+        linear_resource_kind.tag = 1;
+        owned_resource_state.tag = 1;
+    }
+    mut resource_metadata := mir_make_resource_metadata(local.id, linear_resource_kind, owned_resource_state, span);
+    mut resource_metadata_records: std.Vector[MirResourceMetadata[ctx], ctx] := ctx[program.resource_metadata];
+    resource_metadata_records.Push(resource_metadata);
+    ctx.Set(program.resource_metadata, resource_metadata_records);
+
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    functions.Push(function);
+    ctx.Set(program.functions, functions);
+
+    return program;
+}
+
 func mir_lower_local_binding_read_fixture(ctx: &Arena) MirProgram[ctx] {
     // Phase 5 feature-migration fixture-only local binding/read lowering.
     //
