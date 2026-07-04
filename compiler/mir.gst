@@ -469,3 +469,13 @@ func mir_lower_return_int_literal_fixture(ctx: &Arena) MirProgram[ctx] {
 
     return program;
 }
+
+func mir_to_c_tiny_fixture(program: MirProgram[ctx], ctx: &Arena) str {
+    // Phase 4 fixture-only MIR-to-C entry point.
+    //
+    // This is intentionally inert and is not wired into parser, typechecker,
+    // verifier, normal C emission, native backend emission, or the production
+    // compiler path. Step 1 only establishes the MIR-to-C lane and returns a
+    // stable banner string. Later Phase 4 steps may emit the tiny MIR subset.
+    return "/* gust MIR-to-C tiny fixture */";
+}
