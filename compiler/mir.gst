@@ -410,3 +410,13 @@ func mir_debug_print_terminator(terminator: MirTerminator[ctx]) {
     os.LogStr("mir.terminator");
     os.LogStr(mir_debug_terminator_kind(terminator));
 }
+
+func mir_lower_tiny_function_fixture(ctx: &Arena) MirProgram[ctx] {
+    // Phase 3 fixture-only lowering entry point.
+    //
+    // This is intentionally inert and is not wired into parser, typechecker,
+    // verifier, C emission, Cranelift, or the production compiler path.
+    // Step 1 only establishes the lowering lane and returns an empty MIR
+    // program. Later Phase 3 steps may populate one tiny function shape here.
+    return mir_make_program(ctx);
+}

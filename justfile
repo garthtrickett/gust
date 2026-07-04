@@ -83,6 +83,9 @@ guard-mir-debug-printer-surface:
     rg -n -F 'guard-mir-debug-printer-smoke' justfile >/dev/null
     echo "✅ MIR debug printer surface guard passed."
 
+guard-mir-lower-tiny-function-fixture-smoke:
+    just guard compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst
+
 guard_step52_resource_use_after_move_enforcement:
     #!/usr/bin/env bash
     set -euo pipefail
