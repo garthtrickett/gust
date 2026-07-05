@@ -23,7 +23,7 @@ The Cranelift backend experiment now has fixture-only return-int and local-bindi
 - No Cranelift codegen entry point exists yet.
 - No Cranelift Cargo dependency is allowed yet.
 - No production compiler path may route to Cranelift yet.
-- No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, and `guard-cranelift-local-binding-native-smoke`.
+- No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, and `guard-cranelift-local-binding-read-native-smoke`.
 - `guard-mir-to-c-boring-surface` remains the prerequisite gate before backend implementation work starts.
 
 ## Allowed Step 4 surface
