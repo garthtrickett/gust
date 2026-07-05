@@ -55,6 +55,7 @@ jobs:
         shard:
           - cranelift-return-int
           - cranelift-local-binding
+          - cranelift-branch
           - mir-to-c-return-int
           - routed-return-int
           - migration-suite

@@ -54,6 +54,11 @@ guard-pr-fast-shard shard:
         just guard-cranelift-backend-surface
         just guard-cranelift-local-binding-read-native-smoke
         ;;
+      cranelift-branch)
+        just guard-cranelift-experiment-manifest-surface
+        just guard-cranelift-backend-surface
+        just guard-cranelift-conditional-branch-native-smoke
+        ;;
       mir-to-c-return-int)
         just guard-mir-to-c-return-int-literal-native-smoke
         ;;
@@ -65,7 +70,7 @@ guard-pr-fast-shard shard:
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, mir-to-c-return-int, routed-return-int, migration-suite"
+        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, mir-to-c-return-int, routed-return-int, migration-suite"
         exit 1
         ;;
     esac
@@ -824,9 +829,9 @@ guard-mir-to-c-boring-surface:
       exit 1
     fi
 
-    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' || true)"
+    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
-      echo "MIR-to-C boring gate allows only manifest, inert backend, return-int, and local-binding Cranelift surface guards before backend implementation expands."
+      echo "MIR-to-C boring gate allows only manifest, inert backend, return-int, local-binding, and branch Cranelift surface guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
       exit 1
     fi
@@ -842,7 +847,7 @@ guard-mir-to-c-boring-surface:
     just guard-mir-to-c-local-binding-read-native-smoke
     just guard-mir-to-c-conditional-branch-native-smoke
     just guard-mir-to-c-provenance-metadata-native-smoke
-    echo "✅ MIR-to-C boring surface passed: all Phase 8 entries are retired, suite routing is MIR-owned, and only return-int/local-binding Cranelift experiment lanes are allowed."
+    echo "✅ MIR-to-C boring surface passed: all Phase 8 entries are retired, suite routing is MIR-owned, and only return-int/local-binding/branch Cranelift experiment lanes are allowed."
 
 guard-cranelift-experiment-manifest-surface:
     #!/usr/bin/env bash
@@ -854,40 +859,43 @@ guard-cranelift-experiment-manifest-surface:
       exit 1
     fi
     rg -n -F 'CRANELIFT_EXPERIMENT_MANIFEST_VERSION: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-local-binding-native-smoke-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: local_binding_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-branch-native-smoke-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: branch_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_and_local_binding_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: local_binding_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_and_branch_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: branch_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD: guard-cranelift-experiment-manifest-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SURFACE_GUARD: guard-cranelift-backend-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-binding-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'Cranelift is disabled by default.' "$manifest_doc" >/dev/null
     rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No Cranelift Cargo dependency is allowed yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
-    rg -n -F 'No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, and `guard-cranelift-local-binding-read-native-smoke`.' "$manifest_doc" >/dev/null
+    rg -n -F 'No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, and `guard-cranelift-branch-native-smoke`.' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_manifest: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_guard: guard-cranelift-experiment-manifest-surface' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_backend_surface_guard: guard-cranelift-backend-surface' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_return_int_native_guard: guard-cranelift-return-int-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_local_binding_native_guard: guard-cranelift-local-binding-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_status: local_binding_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_codegen_status: return_int_and_local_binding_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_backend_surface_status: local_binding_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_branch_native_guard: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_status: branch_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_codegen_status: return_int_local_binding_and_branch_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_backend_surface_status: branch_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_primary_route: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_return_int_fixture: tiny_cranelift_return_int' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_local_binding_fixture: tiny_cranelift_local_binding_read' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_branch_fixture: tiny_cranelift_conditional_branch' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_codegen_status: implemented' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_default_enabled: true' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_dependency: cranelift' "$manifest_doc" >/dev/null
-    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' || true)"
+    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
-      echo "Phase 9 Step 4 allows only the Cranelift experiment manifest, inert backend surface, return-int native smoke, and local-binding native smoke guards, found additional Cranelift recipes:"
+      echo "Phase 9 Step 5 allows only the Cranelift experiment manifest, inert backend surface, return-int native smoke, local-binding native smoke, and branch native smoke guards, found additional Cranelift recipes:"
       echo "$cranelift_recipe_wiring"
       exit 1
     fi
@@ -897,7 +905,7 @@ guard-cranelift-experiment-manifest-surface:
       echo "$cranelift_refs"
       exit 1
     fi
-    echo "✅ Cranelift experiment manifest surface passed: return-int/local-binding native smoke lanes, disabled by default, and no production codegen exists yet."
+    echo "✅ Cranelift experiment manifest surface passed: return-int/local-binding/branch native smoke lanes, disabled by default, and no production codegen exists yet."
 
 guard-cranelift-backend-surface:
     #!/usr/bin/env bash
@@ -905,34 +913,36 @@ guard-cranelift-backend-surface:
     echo "🔒 Checking Cranelift backend surface..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-experiment-manifest-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-local-binding-native-smoke-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: local_binding_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_and_local_binding_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: local_binding_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-branch-native-smoke-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: branch_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_and_branch_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: branch_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SURFACE_GUARD: guard-cranelift-backend-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-binding-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'guard-cranelift-local-binding-read-native-smoke' justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'guard-cranelift-branch-native-smoke' justfile >/dev/null
     rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No Cranelift Cargo dependency is allowed yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_backend_codegen_entry: cranelift_codegen' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
-    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' || true)"
+    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' || true)"
     unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' || true)"
     if [ -n "$unexpected_cranelift_recipes" ]; then
-      echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 4 fixture-only lanes yet:"
+      echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 5 fixture-only lanes yet:"
       echo "$unexpected_cranelift_recipes"
       exit 1
     fi
-    implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend|guard-cranelift-conditional' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true)"
+    implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true)"
     if [ -n "$implementation_refs" ]; then
       echo "Cranelift backend surface must not include expanded codegen, deps, or non-return native smoke implementation refs yet:"
       echo "$implementation_refs"
       exit 1
     fi
-    echo "✅ Cranelift backend surface passed: return-int/local-binding native smokes are allowed, but production codegen/deps/routes are still absent."
+    echo "✅ Cranelift backend surface passed: return-int/local-binding/branch native smokes are allowed, but production codegen/deps/routes are still absent."
 
 guard-cranelift-return-int-native-smoke:
     #!/usr/bin/env bash
@@ -940,9 +950,9 @@ guard-cranelift-return-int-native-smoke:
     echo "🔒 Native compiling experimental Cranelift return-int smoke..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-local-binding-native-smoke-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: local_binding_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_and_local_binding_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-branch-native-smoke-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: branch_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_and_branch_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_return_int_fixture: tiny_cranelift_return_int' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_return_int_native
@@ -972,9 +982,9 @@ guard-cranelift-local-binding-native-smoke:
     echo "🔒 Native compiling experimental Cranelift local-binding smoke."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-local-binding-native-smoke-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: local_binding_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_and_local_binding_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-branch-native-smoke-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: branch_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_and_branch_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-binding-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_local_binding_fixture: tiny_cranelift_local_binding_read' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_local_binding_native
@@ -994,6 +1004,38 @@ guard-cranelift-local-binding-native-smoke:
       exit 1
     fi
     echo "✅ Experimental Cranelift local-binding native smoke passed."
+
+guard-cranelift-branch-native-smoke:
+    just guard-cranelift-conditional-branch-native-smoke
+
+guard-cranelift-conditional-branch-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling experimental Cranelift conditional-branch smoke."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-branch-native-smoke-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: branch_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_and_branch_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_branch_fixture: tiny_cranelift_conditional_branch' "$manifest_doc" >/dev/null
+    mkdir -p build/guards/cranelift_conditional_branch_native
+    generated_c="build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.c"
+    binary="build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch_bin"
+    printf '%s\n' 'int tiny_cranelift_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' > "$generated_c"
+    printf '%s\n' 'int main(void) { return tiny_cranelift_conditional_branch(); }' >> "$generated_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$generated_c" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "1" ]; then
+      echo "Expected experimental Cranelift conditional-branch native smoke to exit with status 1, got $status"
+      exit 1
+    fi
+    echo "✅ Experimental Cranelift conditional-branch native smoke passed."
 
 guard-mir-feature-return-int-preservation:
     #!/usr/bin/env bash
