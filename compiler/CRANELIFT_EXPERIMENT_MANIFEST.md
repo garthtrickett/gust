@@ -7,6 +7,22 @@ allowed_codegen_status: return_int_local_binding_branch_object_smoke
 allowed_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs
 allowed_branch_object_artifact: build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.o
 
+# Step 12 real-object contract hardening.
+CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_real_object_smoke
+allowed_codegen_status: return_int_local_binding_branch_real_object_smoke
+CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression
+allowed_no_fixture_regression_guard: guard-cranelift-no-fixture-regression
+The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, and conditional-branch object emission.
+No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, `guard-cranelift-differential-native-smoke`, and `guard-cranelift-no-fixture-regression`.
+real_cranelift_object_smoke: return_int
+real_cranelift_object_smoke: local_binding_read
+real_cranelift_object_smoke: conditional_branch
+oracle_backend: mir_to_c
+production_route: mir_to_c
+forbidden_cranelift_fixture_definition: int tiny_cranelift_return_int(void) {
+forbidden_cranelift_fixture_definition: int tiny_cranelift_local_binding_read(void) {
+forbidden_cranelift_fixture_definition: int tiny_cranelift_conditional_branch(void) {
+
 CRANELIFT_EXPERIMENT_MANIFEST_VERSION: 1
 CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry
 CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke

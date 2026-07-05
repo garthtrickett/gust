@@ -1668,6 +1668,7 @@ guard-cranelift-experimental-backend-suite:
     just guard-cranelift-dependency-beachhead
     just guard-cranelift-experiment-manifest-surface
     just guard-cranelift-backend-surface
+    just guard-cranelift-no-fixture-regression
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite' "$manifest_doc" >/dev/null
     just guard-cranelift-return-int-native-smoke
