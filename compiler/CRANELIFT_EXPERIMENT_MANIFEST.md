@@ -25,9 +25,9 @@ The Cranelift backend experiment now has fixture-only return-int, local-binding,
 
 - Cranelift is disabled by default.
 - No Cranelift codegen entry point exists yet.
-No root Cranelift Cargo dependency is allowed yet. Cranelift dependencies are allowed only under compiler/experiments/cranelift/.
+- No root Cranelift Cargo dependency is allowed yet. Cranelift dependencies are allowed only under compiler/experiments/cranelift/.
 - No production compiler path may route to Cranelift yet.
-- No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.
+No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.
 - `guard-mir-to-c-boring-surface` remains the prerequisite gate before backend implementation work starts.
 
 ## Allowed Step 5 surface
