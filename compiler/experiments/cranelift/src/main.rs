@@ -238,3 +238,15 @@ fn build_identity_i32_body(builder: &mut FunctionBuilder<'_>) {
     let argument_value = builder.block_params(entry_block)[0];
     builder.ins().return_(&[argument_value]);
 }
+
+fn build_add_i32_body(builder: &mut FunctionBuilder<'_>) {
+    let entry_block = builder.create_block();
+    builder.append_block_params_for_function_params(entry_block);
+    builder.switch_to_block(entry_block);
+
+    let block_params = builder.block_params(entry_block);
+    let lhs = block_params[0];
+    let rhs = block_params[1];
+    let sum = builder.ins().iadd(lhs, rhs);
+    builder.ins().return_(&[sum]);
+}

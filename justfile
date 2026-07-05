@@ -1749,6 +1749,7 @@ guard-cranelift-experimental-backend-suite:
     just guard-cranelift-local-binding-read-native-smoke
     just guard-cranelift-conditional-branch-native-smoke
     just guard-cranelift-identity-i32-native-smoke
+    just guard-cranelift-add-i32-native-smoke
     just guard-cranelift-mir-to-c-differential-native-smoke
     echo "✅ Explicit experimental Cranelift backend suite passed."
 guard-mir-feature-return-int-preservation:
