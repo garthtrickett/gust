@@ -1310,6 +1310,7 @@ guard-cranelift-experiment-manifest-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-add-i32-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-predicate-branch-i32-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-return-int-native-smoke' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-local-binding-read-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "Phase 9 Step 12 allows only the Cranelift experiment manifest, inert backend surface, dependency beachhead, explicit backend suite, no-fixture regression guard, real return-int/local-binding/branch object smokes, and differential native smoke guards, found additional Cranelift recipes:"
       echo "$cranelift_recipe_wiring"
