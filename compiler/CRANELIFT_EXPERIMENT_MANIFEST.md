@@ -12,6 +12,13 @@ CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_real_object
 allowed_codegen_status: return_int_local_binding_branch_real_object_smoke
 CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression
 allowed_no_fixture_regression_guard: guard-cranelift-no-fixture-regression
+
+# Step 13 identity-i32 parameter object smoke.
+CRANELIFT_EXPERIMENT_ALLOWED_IDENTITY_I32_NATIVE_GUARD: guard-cranelift-identity-i32-native-smoke
+allowed_identity_i32_native_guard: guard-cranelift-identity-i32-native-smoke
+allowed_identity_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs
+allowed_identity_i32_object_artifact: build/guards/cranelift_identity_i32_native/tiny_cranelift_identity_i32.o
+real_cranelift_object_smoke: identity_i32
 The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, and conditional-branch object emission.
 No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, `guard-cranelift-differential-native-smoke`, and `guard-cranelift-no-fixture-regression`.
 real_cranelift_object_smoke: return_int
