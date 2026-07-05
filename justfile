@@ -905,21 +905,24 @@ guard-cranelift-backend-surface:
     echo "🔒 Checking Cranelift backend surface..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-experiment-manifest-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-return-int-native-smoke-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: return_int_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: return_int_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-local-binding-native-smoke-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: local_binding_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_and_local_binding_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: local_binding_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SURFACE_GUARD: guard-cranelift-backend-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-binding-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'guard-cranelift-local-binding-read-native-smoke' justfile >/dev/null
     rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No Cranelift Cargo dependency is allowed yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_backend_codegen_entry: cranelift_codegen' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
     unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' || true)"
+    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' || true)"
     if [ -n "$unexpected_cranelift_recipes" ]; then
-      echo "Cranelift backend surface allows no extra Cranelift recipes yet:"
+      echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 4 fixture-only lanes yet:"
       echo "$unexpected_cranelift_recipes"
       exit 1
     fi
