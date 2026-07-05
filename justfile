@@ -1210,7 +1210,8 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
     rg -n -F 'MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'Cranelift is disabled by default.' "$manifest_doc" >/dev/null
-    rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
+    rg -n -F 'No production Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
+    rg -n -F 'The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int object emission.' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml' "$manifest_doc" >/dev/null
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.' "$manifest_doc" >/dev/null
@@ -1228,6 +1229,8 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_backend_surface_status: differential_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_primary_route: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_return_int_fixture: tiny_cranelift_return_int' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_return_int_object_artifact: build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_local_binding_fixture: tiny_cranelift_local_binding_read' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_branch_fixture: tiny_cranelift_conditional_branch' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int' "$manifest_doc" >/dev/null
@@ -1242,7 +1245,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_experiment_dependency_guard: guard-cranelift-dependency-beachhead' "$manifest_doc" >/dev/null
     cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
-      echo "Phase 9 Step 8 allows only the Cranelift experiment manifest, inert backend surface, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smoke guards, and differential native smoke guards, found additional Cranelift recipes:"
+      echo "Phase 9 Step 9 allows only the Cranelift experiment manifest, inert backend surface, dependency beachhead, explicit backend suite, real return-int object smoke, local-binding/branch native smoke guards, and differential native smoke guards, found additional Cranelift recipes:"
       echo "$cranelift_recipe_wiring"
       exit 1
     fi
@@ -1252,7 +1255,7 @@ guard-cranelift-experiment-manifest-surface:
       echo "$cranelift_refs"
       exit 1
     fi
-    echo "✅ Cranelift experiment manifest surface passed: dependency beachhead plus explicit backend suite and return-int/local-binding/branch differential native smoke lanes, disabled by default, and no production codegen exists yet."
+    echo "✅ Cranelift experiment manifest surface passed: dependency beachhead plus explicit backend suite, real return-int object smoke, local-binding/branch differential lanes, disabled by default, and no production codegen exists yet."
 
 guard-cranelift-backend-surface:
     #!/usr/bin/env bash
@@ -1277,31 +1280,34 @@ guard-cranelift-backend-surface:
     rg -n -F 'guard-cranelift-experimental-backend-suite' justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
     rg -n -F 'guard-cranelift-dependency-beachhead' justfile >/dev/null
-    rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
+    rg -n -F 'No production Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
+    rg -n -F 'The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int object emission.' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_return_int_object_artifact: build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_experiment_dependency_lockfile: compiler/experiments/cranelift/Cargo.lock' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_root_dependency: cranelift' "$manifest_doc" >/dev/null
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_backend_codegen_entry: cranelift_codegen' "$manifest_doc" >/dev/null
+    rg -n -F 'forbidden_production_backend_codegen_entry: cranelift_codegen' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
     unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
     if [ -n "$unexpected_cranelift_recipes" ]; then
-      echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 8 dependency beachhead fixture-only lanes yet:"
+      echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 9 return-int object smoke lanes yet:"
       echo "$unexpected_cranelift_recipes"
       exit 1
     fi
     implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
     if [ -n "$implementation_refs" ]; then
-      echo "Cranelift backend surface must not include expanded codegen, deps, or non-return native smoke implementation refs yet:"
+      echo "Cranelift backend surface must not include production codegen, root deps, or non-experiment implementation refs yet:"
       echo "$implementation_refs"
       exit 1
     fi
-    echo "✅ Cranelift backend surface passed: dependency beachhead, explicit backend suite, and return-int/local-binding/branch differential native smokes are allowed, but production codegen/routes are still absent."
+    echo "✅ Cranelift backend surface passed: dependency beachhead, explicit backend suite, and real return-int/local-binding/branch differential smokes are allowed, but production codegen/routes are still absent."
 
 guard-cranelift-return-int-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Native compiling experimental Cranelift return-int smoke..."
+    echo "🔒 Native compiling real experimental Cranelift return-int smoke..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
     rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
@@ -1309,23 +1315,35 @@ guard-cranelift-return-int-native-smoke:
     rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_return_int_fixture: tiny_cranelift_return_int' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_return_int_object_artifact: build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_return_int_native
-    generated_c="build/guards/cranelift_return_int_native/tiny_cranelift_return_int.c"
+    object_file="build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o"
+    shim_c="build/guards/cranelift_return_int_native/tiny_cranelift_return_int_main.c"
     binary="build/guards/cranelift_return_int_native/tiny_cranelift_return_int_bin"
-    printf '%s\n' 'int tiny_cranelift_return_int(void) { return 1; }' > "$generated_c"
-    printf '%s\n' 'int main(void) { return tiny_cranelift_return_int(); }' >> "$generated_c"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- return-int-object "$object_file"
+    if [ ! -s "$object_file" ]; then
+      echo "Expected Cranelift return-int object file to be generated at $object_file"
+      exit 1
+    fi
+    printf '%s
+' '#include <stdint.h>' > "$shim_c"
+    printf '%s
+' 'extern int32_t tiny_cranelift_return_int(void);' >> "$shim_c"
+    printf '%s
+' 'int main(void) { return tiny_cranelift_return_int(); }' >> "$shim_c"
     CC_BIN="${CC:-cc}"
     CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$generated_c" -o "$binary"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
     set +e
     "$binary"
     status="$?"
     set -e
     if [ "$status" != "1" ]; then
-      echo "Expected experimental Cranelift return-int native smoke to exit with status 1, got $status"
+      echo "Expected real experimental Cranelift return-int native smoke to exit with status 1, got $status"
       exit 1
     fi
-    echo "✅ Experimental Cranelift return-int native smoke passed."
+    echo "✅ Real experimental Cranelift return-int native smoke passed."
 
 guard-cranelift-local-binding-read-native-smoke:
     just guard-cranelift-local-binding-native-smoke
@@ -1398,7 +1416,7 @@ guard-cranelift-differential-native-smoke:
 guard-cranelift-mir-to-c-differential-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Differential native smoke: experimental Cranelift fixtures vs MIR-to-C fixtures."
+    echo "🔒 Differential native smoke: experimental Cranelift fixtures vs MIR-to-C fixtures..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
     rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
@@ -1406,6 +1424,8 @@ guard-cranelift-mir-to-c-differential-native-smoke:
     rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_return_int_object_artifact: build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch' "$manifest_doc" >/dev/null
     rg -n -F 'int tiny_return_int(void) { return 1; }' compiler/mir.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst justfile >/dev/null
@@ -1426,6 +1446,54 @@ guard-cranelift-mir-to-c-differential-native-smoke:
       printf '%s' "$status"
     }
 
+    run_c_with_object() {
+      local source="$1"
+      local object_file="$2"
+      local binary="$3"
+      "$CC_BIN" $CFLAGS_VAL "$source" "$object_file" -o "$binary"
+      set +e
+      "$binary"
+      local status="$?"
+      set -e
+      printf '%s' "$status"
+    }
+
+    compare_real_cranelift_return_int_case() {
+      local mir_c="build/guards/cranelift_mir_to_c_differential_native/return_int_mir_to_c.c"
+      local mir_bin="build/guards/cranelift_mir_to_c_differential_native/return_int_mir_to_c_bin"
+      local cranelift_object="build/guards/cranelift_mir_to_c_differential_native/return_int_cranelift.o"
+      local cranelift_shim_c="build/guards/cranelift_mir_to_c_differential_native/return_int_cranelift_main.c"
+      local cranelift_bin="build/guards/cranelift_mir_to_c_differential_native/return_int_cranelift_bin"
+      printf '%s
+' 'int tiny_return_int(void) { return 1; }' > "$mir_c"
+      printf '%s
+' 'int main(void) { return tiny_return_int(); }' >> "$mir_c"
+      cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- return-int-object "$cranelift_object"
+      if [ ! -s "$cranelift_object" ]; then
+        echo "Expected Cranelift return-int object file to be generated at $cranelift_object"
+        exit 1
+      fi
+      printf '%s
+' '#include <stdint.h>' > "$cranelift_shim_c"
+      printf '%s
+' 'extern int32_t tiny_cranelift_return_int(void);' >> "$cranelift_shim_c"
+      printf '%s
+' 'int main(void) { return tiny_cranelift_return_int(); }' >> "$cranelift_shim_c"
+      local mir_status
+      local cranelift_status
+      mir_status="$(run_c "$mir_c" "$mir_bin")"
+      cranelift_status="$(run_c_with_object "$cranelift_shim_c" "$cranelift_object" "$cranelift_bin")"
+      if [ "$mir_status" != "$cranelift_status" ]; then
+        echo "Differential mismatch for return_int: MIR-to-C exited $mir_status but real Cranelift object exited $cranelift_status."
+        exit 1
+      fi
+      if [ "$mir_status" != "1" ]; then
+        echo "Differential fixture return_int expected exit 1, got $mir_status."
+        exit 1
+      fi
+      echo "✅ Differential fixture return_int matched exit 1 with a real Cranelift object."
+    }
+
     compare_case() {
       local label="$1"
       local expected_status="$2"
@@ -1437,10 +1505,14 @@ guard-cranelift-mir-to-c-differential-native-smoke:
       local cranelift_c="build/guards/cranelift_mir_to_c_differential_native/${label}_cranelift.c"
       local mir_bin="build/guards/cranelift_mir_to_c_differential_native/${label}_mir_to_c_bin"
       local cranelift_bin="build/guards/cranelift_mir_to_c_differential_native/${label}_cranelift_bin"
-      printf '%s\n' "$mir_source" > "$mir_c"
-      printf '%s\n' "int main(void) { return ${mir_fn}(); }" >> "$mir_c"
-      printf '%s\n' "$cranelift_source" > "$cranelift_c"
-      printf '%s\n' "int main(void) { return ${cranelift_fn}(); }" >> "$cranelift_c"
+      printf '%s
+' "$mir_source" > "$mir_c"
+      printf '%s
+' "int main(void) { return ${mir_fn}(); }" >> "$mir_c"
+      printf '%s
+' "$cranelift_source" > "$cranelift_c"
+      printf '%s
+' "int main(void) { return ${cranelift_fn}(); }" >> "$cranelift_c"
       local mir_status
       local cranelift_status
       mir_status="$(run_c "$mir_c" "$mir_bin")"
@@ -1456,7 +1528,7 @@ guard-cranelift-mir-to-c-differential-native-smoke:
       echo "✅ Differential fixture $label matched exit $expected_status."
     }
 
-    compare_case "return_int" "1" "tiny_return_int" 'int tiny_return_int(void) { return 1; }' "tiny_cranelift_return_int" 'int tiny_cranelift_return_int(void) { return 1; }'
+    compare_real_cranelift_return_int_case
     compare_case "local_binding_read" "2" "tiny_local_binding_read" 'int tiny_local_binding_read(void) { int value = 2; return value; }' "tiny_cranelift_local_binding_read" 'int tiny_cranelift_local_binding_read(void) { int value = 2; return value; }'
     compare_case "conditional_branch" "1" "tiny_conditional_branch" 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' "tiny_cranelift_conditional_branch" 'int tiny_cranelift_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }'
 
