@@ -1172,6 +1172,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-call-i32-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-add-i32-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-predicate-branch-i32-native-smoke' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-return-int-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -1238,6 +1239,12 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_extern_predicate_branch_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_extern_predicate_branch_i32_object_artifact: build/guards/cranelift_extern_predicate_branch_i32_native/tiny_cranelift_extern_predicate_branch_i32.o' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_extern_predicate_branch_i32_host_symbol: tiny_host_is_positive_i32' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_RETURN_INT_NATIVE_GUARD: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_return_int_native_guard: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_object_artifact: build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_symbol: tiny_cranelift_mir_return_int' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_lowering_scaffold: TinyMirFunction' "$manifest_doc" >/dev/null
     rg -n -F 'MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'Cranelift is disabled by default.' "$manifest_doc" >/dev/null
     rg -n -F 'No production Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
@@ -1295,6 +1302,7 @@ guard-cranelift-experiment-manifest-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-call-i32-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-add-i32-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-predicate-branch-i32-native-smoke' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-return-int-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "Phase 9 Step 12 allows only the Cranelift experiment manifest, inert backend surface, dependency beachhead, explicit backend suite, no-fixture regression guard, real return-int/local-binding/branch object smokes, and differential native smoke guards, found additional Cranelift recipes:"
       echo "$cranelift_recipe_wiring"
@@ -1362,6 +1370,13 @@ guard-cranelift-backend-surface:
     rg -n -F 'allowed_extern_predicate_branch_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_extern_predicate_branch_i32_object_artifact: build/guards/cranelift_extern_predicate_branch_i32_native/tiny_cranelift_extern_predicate_branch_i32.o' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_extern_predicate_branch_i32_host_symbol: tiny_host_is_positive_i32' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_RETURN_INT_NATIVE_GUARD: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'guard-cranelift-mir-return-int-native-smoke' justfile >/dev/null
+    rg -n -F 'allowed_mir_return_int_native_guard: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_object_artifact: build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_symbol: tiny_cranelift_mir_return_int' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_lowering_scaffold: TinyMirFunction' "$manifest_doc" >/dev/null
     rg -n -F 'No production Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
     rg -n -F 'The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int and local-binding/read object emission.' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
@@ -1382,6 +1397,7 @@ guard-cranelift-backend-surface:
     unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-extern-call-i32-native-smoke' || true)"
     unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-extern-add-i32-native-smoke' || true)"
     unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-extern-predicate-branch-i32-native-smoke' || true)"
+    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-return-int-native-smoke' || true)"
     if [ -n "$unexpected_cranelift_recipes" ]; then
       echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 10 return-int/local-binding object smoke lanes yet:"
       echo "$unexpected_cranelift_recipes"
@@ -1873,6 +1889,45 @@ guard-cranelift-extern-predicate-branch-i32-native-smoke:
     fi
     echo "✅ Real experimental Cranelift extern-predicate-branch-i32 native smoke passed."
 
+guard-cranelift-mir-return-int-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling MIR-shaped Cranelift return-int lowering smoke..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_RETURN_INT_NATIVE_GUARD: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_return_int_native_guard: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_object_artifact: build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_symbol: tiny_cranelift_mir_return_int' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_return_int_lowering_scaffold: TinyMirFunction' "$manifest_doc" >/dev/null
+    mkdir -p build/guards/cranelift_mir_return_int_native
+    object_file="build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int.o"
+    shim_c="build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int_main.c"
+    binary="build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int_bin"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- mir-return-int-object "$object_file"
+    if [ ! -s "$object_file" ]; then
+      echo "Expected MIR-shaped Cranelift return-int object file to be generated at $object_file"
+      exit 1
+    fi
+    printf '%s\n' '#include <stdint.h>' > "$shim_c"
+    printf '%s\n' 'extern int32_t tiny_cranelift_mir_return_int(void);' >> "$shim_c"
+    printf '%s\n' 'int main(void) { return tiny_cranelift_mir_return_int(); }' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "1" ]; then
+      echo "Expected MIR-shaped Cranelift return-int native smoke to exit with status 1, got $status"
+      exit 1
+    fi
+    echo "✅ MIR-shaped Cranelift return-int native smoke passed."
+
 guard-cranelift-differential-native-smoke:
     just guard-cranelift-mir-to-c-differential-native-smoke
 
@@ -2113,6 +2168,7 @@ guard-cranelift-no-fixture-regression:
     rg -n -F 'real_cranelift_object_smoke: return_int' "$manifest_doc" >/dev/null
     rg -n -F 'real_cranelift_object_smoke: local_binding_read' "$manifest_doc" >/dev/null
     rg -n -F 'real_cranelift_object_smoke: conditional_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'real_cranelift_object_smoke: mir_return_int' "$manifest_doc" >/dev/null
     rg -n -F 'oracle_backend: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'production_route: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'identity-i32-object' justfile >/dev/null
@@ -2133,6 +2189,7 @@ guard-cranelift-no-fixture-regression:
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'extern-call-i32-object' >/dev/null
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'extern-add-i32-object' >/dev/null
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'extern-predicate-branch-i32-object' >/dev/null
+    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-return-int-object' >/dev/null
     echo "✅ Cranelift no-fixture regression guard passed."
 
 guard-cranelift-experimental-backend-suite:
@@ -2157,6 +2214,7 @@ guard-cranelift-experimental-backend-suite:
     just guard-cranelift-extern-call-i32-native-smoke
     just guard-cranelift-extern-add-i32-native-smoke
     just guard-cranelift-extern-predicate-branch-i32-native-smoke
+    just guard-cranelift-mir-return-int-native-smoke
     just guard-cranelift-mir-to-c-differential-native-smoke
     echo "✅ Explicit experimental Cranelift backend suite passed."
 guard-mir-feature-return-int-preservation:
