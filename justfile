@@ -1283,7 +1283,7 @@ guard-cranelift-backend-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
     rg -n -F 'guard-cranelift-dependency-beachhead' justfile >/dev/null
     rg -n -F 'No production Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
-    rg -n -F 'The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int object emission.' "$manifest_doc" >/dev/null
+    rg -n -F 'The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int and local-binding/read object emission.' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_return_int_object_artifact: build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_local_binding_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null

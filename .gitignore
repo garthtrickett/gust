@@ -57,3 +57,10 @@ yarn-error.log*
 /a.txt
 /current_response.json
 *.log
+# Isolated Cranelift experiment outputs.
+/compiler/experiments/cranelift/target/
+/compiler/experiments/cranelift/src/main.rs.bak.*
+/build/guards/cranelift_return_int_native/
+/build/guards/cranelift_local_binding_native/
+/build/guards/cranelift_mir_to_c_differential_native/
+
