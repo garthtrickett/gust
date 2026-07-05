@@ -55,7 +55,10 @@ jobs:
           - cranelift-branch
           - mir-to-c-return-int
           - routed-return-int
-          - migration-suite
+          - migration-return-int
+          - migration-local-binding
+          - migration-if-else
+          - migration-provenance
 
     steps:
       - name: Checkout

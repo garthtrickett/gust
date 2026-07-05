@@ -65,12 +65,25 @@ guard-pr-fast-shard shard:
       routed-return-int)
         just guard-mir-feature-return-int-routed-execution
         ;;
-      migration-suite)
-        just guard-mir-feature-migration-suite
+      migration-return-int)
+        just guard-mir-owned-return-int-literal-validation
+        just guard-mir-feature-return-int-routed-execution
+        ;;
+      migration-local-binding)
+        just guard-mir-owned-local-binding-read-validation
+        just guard-mir-feature-local-binding-read-routed-execution
+        ;;
+      migration-if-else)
+        just guard-mir-owned-if-else-return-int-validation
+        just guard-mir-feature-if-else-return-int-routed-execution
+        ;;
+      migration-provenance)
+        just guard-mir-owned-local-binding-read-provenance-metadata-validation
+        just guard-mir-feature-local-binding-read-provenance-metadata-routed-execution
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, mir-to-c-return-int, routed-return-int, migration-suite"
+        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
         exit 1
         ;;
     esac
@@ -109,7 +122,10 @@ guard-pr-fast-ci-surface:
     rg -n -F 'cranelift-branch' "$workflow" justfile >/dev/null
     rg -n -F 'mir-to-c-return-int' "$workflow" justfile >/dev/null
     rg -n -F 'routed-return-int' "$workflow" justfile >/dev/null
-    rg -n -F 'migration-suite' "$workflow" justfile >/dev/null
+    rg -n -F 'migration-return-int' "$workflow" justfile >/dev/null
+    rg -n -F 'migration-local-binding' "$workflow" justfile >/dev/null
+    rg -n -F 'migration-if-else' "$workflow" justfile >/dev/null
+    rg -n -F 'migration-provenance' "$workflow" justfile >/dev/null
 
     rg -n -F 'guard-pr-fast-shard shard:' justfile >/dev/null
     rg -n -F 'just guard-pr-fast-shard' "$workflow" >/dev/null
@@ -134,6 +150,10 @@ guard-pr-fast-ci-surface:
       echo "Cloud setup Step 3 forbids CI cache wiring. Add cache only in a later explicit step."
       exit 1
     fi
+    if rg -n -F 'migration-suite' "$workflow" >/dev/null; then
+      echo "PR fast CI must split the slow migration-suite aggregate into focused migration-* shards."
+      exit 1
+    fi
     if rg -n -F 'apt-get install -y build-essential just ripgrep' "$workflow" >/dev/null; then
       echo "PR fast CI must not install just from apt; apt just is too old for this justfile."
       exit 1
@@ -148,8 +168,8 @@ guard-pr-fast-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "6" ]; then
-      echo "Expected exactly 6 PR fast matrix shards, found $shard_count."
+    if [ "$shard_count" != "9" ]; then
+      echo "Expected exactly 9 PR fast matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
