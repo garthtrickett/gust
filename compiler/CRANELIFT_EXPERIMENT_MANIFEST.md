@@ -1,17 +1,18 @@
 # Cranelift Experiment Manifest
 
 CRANELIFT_EXPERIMENT_MANIFEST_VERSION: 1
-CRANELIFT_EXPERIMENT_PHASE: phase9-branch-native-smoke-entry
-CRANELIFT_EXPERIMENT_STATUS: branch_native_smoke
+CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry
+CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke
 CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false
-CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_and_branch_fixture_only
-CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: branch_native_smoke
+CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only
+CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: differential_native_smoke
 CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c
 CRANELIFT_EXPERIMENT_ALLOWED_GUARD: guard-cranelift-experiment-manifest-surface
 CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SURFACE_GUARD: guard-cranelift-backend-surface
 CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int-native-smoke
 CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-binding-native-smoke
 CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke
+CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke
 MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface
 
 This manifest starts Phase 9 without adding Cranelift code generation.
@@ -24,7 +25,7 @@ The Cranelift backend experiment now has fixture-only return-int, local-binding,
 - No Cranelift codegen entry point exists yet.
 - No Cranelift Cargo dependency is allowed yet.
 - No production compiler path may route to Cranelift yet.
-- No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, and `guard-cranelift-branch-native-smoke`.
+No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.
 - `guard-mir-to-c-boring-surface` remains the prerequisite gate before backend implementation work starts.
 
 ## Allowed Step 5 surface
@@ -35,13 +36,17 @@ allowed_backend_surface_guard: guard-cranelift-backend-surface
 allowed_return_int_native_guard: guard-cranelift-return-int-native-smoke
 allowed_local_binding_native_guard: guard-cranelift-local-binding-native-smoke
 allowed_branch_native_guard: guard-cranelift-conditional-branch-native-smoke
-allowed_status: branch_native_smoke
-allowed_codegen_status: return_int_local_binding_and_branch_fixture_only
-allowed_backend_surface_status: branch_native_smoke
+allowed_differential_native_guard: guard-cranelift-mir-to-c-differential-native-smoke
+allowed_status: mir_to_c_differential_native_smoke
+allowed_codegen_status: return_int_local_binding_branch_differential_fixture_only
+allowed_backend_surface_status: differential_native_smoke
 allowed_primary_route: mir_to_c
 allowed_return_int_fixture: tiny_cranelift_return_int
 allowed_local_binding_fixture: tiny_cranelift_local_binding_read
 allowed_branch_fixture: tiny_cranelift_conditional_branch
+allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int
+allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read
+allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch
 allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int
 allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read
 allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch
