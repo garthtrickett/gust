@@ -37,6 +37,31 @@ gt-one-gst file:
 guard file:
     bash scripts/run-gust-file.sh "{{file}}"
 
+guard-pr-fast-shard shard:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{shard}}" in
+      cranelift-return-int)
+        just guard-cranelift-experiment-manifest-surface
+        just guard-cranelift-backend-surface
+        just guard-cranelift-return-int-native-smoke
+        ;;
+      mir-to-c-return-int)
+        just guard-mir-to-c-return-int-literal-native-smoke
+        ;;
+      routed-return-int)
+        just guard-mir-feature-return-int-routed-execution
+        ;;
+      migration-suite)
+        just guard-mir-feature-migration-suite
+        ;;
+      *)
+        echo "unknown PR fast shard: {{shard}}"
+        echo "expected one of: cranelift-return-int, mir-to-c-return-int, routed-return-int, migration-suite"
+        exit 1
+        ;;
+    esac
+
 guard-step51-hashmap-get-value:
     just guard compiler/typechecker_hashmap_get_value_provenance_test_entry.gst
 
