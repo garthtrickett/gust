@@ -125,12 +125,10 @@ guard-pr-fast-ci-surface:
     rg -n -F 'chmod +x ./gust' "$workflow" >/dev/null
 
     rg -n -F 'sudo apt-get install -y build-essential curl ripgrep' "$workflow" >/dev/null
-    rg -n -F 'cargo install just --locked' "$workflow" >/dev/null
+    rg -n -F 'https://just.systems/install.sh' "$workflow" >/dev/null
+    rg -n -F 'bash -s -- --to "$HOME/.local/bin"' "$workflow" >/dev/null
     rg -n -F 'GITHUB_PATH' "$workflow" >/dev/null
-    if ! rg -n -F 'just --version' "$workflow" >/dev/null && ! rg -n -F 'just" --version' "$workflow" >/dev/null; then
-      echo "PR fast CI must print the installed just version after installing modern just."
-      exit 1
-    fi
+    rg -n -F '"$HOME/.local/bin/just" --version' "$workflow" >/dev/null
 
     if rg -n -F 'actions/cache' "$workflow" >/dev/null; then
       echo "Cloud setup Step 3 forbids CI cache wiring. Add cache only in a later explicit step."
@@ -138,6 +136,14 @@ guard-pr-fast-ci-surface:
     fi
     if rg -n -F 'apt-get install -y build-essential just ripgrep' "$workflow" >/dev/null; then
       echo "PR fast CI must not install just from apt; apt just is too old for this justfile."
+      exit 1
+    fi
+    if rg -n -F 'cargo install just --locked' "$workflow" >/dev/null; then
+      echo "PR fast CI must not compile just from source; use the prebuilt just.systems installer."
+      exit 1
+    fi
+    if rg -n -F 'https://sh.rustup.rs' "$workflow" >/dev/null; then
+      echo "PR fast CI must not install Rust just to compile just; use the prebuilt just.systems installer."
       exit 1
     fi
 
