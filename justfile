@@ -59,6 +59,11 @@ guard-pr-fast-shard shard:
         just guard-cranelift-backend-surface
         just guard-cranelift-conditional-branch-native-smoke
         ;;
+      cranelift-differential)
+        just guard-cranelift-experiment-manifest-surface
+        just guard-cranelift-backend-surface
+        just guard-cranelift-mir-to-c-differential-native-smoke
+        ;;
       mir-to-c-return-int)
         just guard-mir-to-c-return-int-literal-native-smoke
         ;;
@@ -83,7 +88,7 @@ guard-pr-fast-shard shard:
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
+        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
         exit 1
         ;;
     esac
@@ -131,6 +136,9 @@ guard-pr-fast-ci-surface:
     rg -n -F 'migration-provenance' "$workflow" justfile >/dev/null
 
     rg -n -F 'guard-pr-fast-shard shard:' justfile >/dev/null
+    pr_fast_dispatcher_body="$(sed -n '/^guard-pr-fast-shard shard:/,/^guard-pr-fast-ci-surface:/p' justfile)"
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-differential)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-c-differential-native-smoke' >/dev/null
     rg -n -F 'just guard-pr-fast-shard' "$workflow" >/dev/null
     rg -n -F 'matrix.shard' "$workflow" >/dev/null
 
