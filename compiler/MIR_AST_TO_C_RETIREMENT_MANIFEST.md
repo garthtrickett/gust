@@ -1,7 +1,7 @@
 # MIR AST-to-C Retirement Manifest
 
 MIR_AST_TO_C_RETIREMENT_MANIFEST_VERSION: 1
-MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-if-else-return-int-ast-to-c-retired-entry
+MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-provenance-metadata-ast-to-c-retired-entry
 MIR_AST_TO_C_RETIREMENT_MANIFEST_ENTRY_COUNT: 4
 MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md
 
@@ -86,5 +86,8 @@ old_behavior_guard: guard-mir-feature-local-binding-read-provenance-metadata-pre
 mir_lowering_guard: guard-mir-lower-provenance-metadata-smoke
 mir_to_c_guard: guard-mir-to-c-provenance-metadata-smoke
 native_execution_guard: guard-mir-to-c-provenance-metadata-native-smoke
-ast_to_c_status: still_required
-retirement_note: Phase 8 has not added MIR-preferred routing for this metadata-preservation feature yet.
+mir_owned_validation_guard: guard-mir-owned-local-binding-read-provenance-metadata-validation
+preferred_codegen_route: mir_to_c
+routed_execution_guard: guard-mir-feature-local-binding-read-provenance-metadata-routed-execution
+ast_to_c_status: retired
+retirement_note: Phase 8 has retired local_binding_read_provenance_metadata from primary AST-to-C validation because MIR-preferred routed execution passes; the legacy old_behavior_guard remains available for manual compatibility checks.
