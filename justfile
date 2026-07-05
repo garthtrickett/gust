@@ -712,6 +712,105 @@ guard-mir-feature-registry-surface:
     rg -n -F 'guard-mir-to-c-provenance-metadata-native-smoke' "$registry_doc" justfile >/dev/null
     echo "✅ MIR feature migration registry surface guard passed."
 
+guard-mir-to-c-boring-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR-to-C boring surface before Cranelift..."
+    manifest_doc="compiler/MIR_AST_TO_C_RETIREMENT_MANIFEST.md"
+    registry_doc="compiler/MIR_FEATURE_MIGRATION_REGISTRY.md"
+    just guard-mir-ast-to-c-retirement-manifest-surface
+
+    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-provenance-metadata-ast-to-c-retired-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_ENTRY_COUNT: 4' "$manifest_doc" >/dev/null
+
+    still_required_count="$( (rg -n -F 'ast_to_c_status: still_required' "$manifest_doc" || true) | wc -l | tr -d '[:space:]')"
+    if [ "$still_required_count" != "0" ]; then
+      echo "MIR-to-C boring gate requires zero still_required manifest entries, found $still_required_count."
+      rg -n -F 'ast_to_c_status:' "$manifest_doc" || true
+      exit 1
+    fi
+
+    candidate_entries="$(rg -n -F 'ast_to_c_status: retirement_candidate' "$manifest_doc" || true)"
+    if [ -n "$candidate_entries" ]; then
+      echo "MIR-to-C boring gate requires zero retirement_candidate manifest entries:"
+      echo "$candidate_entries"
+      exit 1
+    fi
+
+    retired_count="$(rg -n -F 'ast_to_c_status: retired' "$manifest_doc" | wc -l | tr -d '[:space:]')"
+    if [ "$retired_count" != "4" ]; then
+      echo "MIR-to-C boring gate requires exactly four retired manifest entries, found $retired_count."
+      rg -n -F 'ast_to_c_status:' "$manifest_doc" || true
+      exit 1
+    fi
+
+    rg -n -F 'feature_name: return_int_literal' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'feature_name: local_binding_read' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'feature_name: if_else_return_int' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'feature_name: local_binding_read_provenance_metadata' "$manifest_doc" "$registry_doc" >/dev/null
+
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-return-int-literal-validation' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-local-binding-read-validation' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-if-else-return-int-validation' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-local-binding-read-provenance-metadata-validation' "$manifest_doc" justfile >/dev/null
+
+    rg -n -F 'routed_execution_guard: guard-mir-feature-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'routed_execution_guard: guard-mir-feature-local-binding-read-routed-execution' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'routed_execution_guard: guard-mir-feature-if-else-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'routed_execution_guard: guard-mir-feature-local-binding-read-provenance-metadata-routed-execution' "$manifest_doc" justfile >/dev/null
+
+    rg -n -F 'guard-mir-feature-return-int-preservation:' justfile >/dev/null
+    rg -n -F 'guard-mir-feature-local-binding-read-preservation:' justfile >/dev/null
+    rg -n -F 'guard-mir-feature-if-else-return-int-preservation:' justfile >/dev/null
+    rg -n -F 'guard-mir-feature-local-binding-read-provenance-metadata-preservation:' justfile >/dev/null
+
+    suite_body="$(sed -n '/^guard-mir-feature-migration-suite:/,/^guard-test-runner-bounded-concurrency-surface:/p' justfile)"
+    printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-owned-return-int-literal-validation' >/dev/null
+    printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-return-int-routed-execution' >/dev/null
+    printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-owned-local-binding-read-validation' >/dev/null
+    printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-local-binding-read-routed-execution' >/dev/null
+    printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-owned-if-else-return-int-validation' >/dev/null
+    printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-if-else-return-int-routed-execution' >/dev/null
+    printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-owned-local-binding-read-provenance-metadata-validation' >/dev/null
+    printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-local-binding-read-provenance-metadata-routed-execution' >/dev/null
+
+    if printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-return-int-preservation' >/dev/null; then
+      echo "MIR-to-C boring gate forbids return_int_literal AST-to-C preservation in the primary migration suite."
+      exit 1
+    fi
+    if printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-local-binding-read-preservation' >/dev/null; then
+      echo "MIR-to-C boring gate forbids local_binding_read AST-to-C preservation in the primary migration suite."
+      exit 1
+    fi
+    if printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-if-else-return-int-preservation' >/dev/null; then
+      echo "MIR-to-C boring gate forbids if_else_return_int AST-to-C preservation in the primary migration suite."
+      exit 1
+    fi
+    if printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-local-binding-read-provenance-metadata-preservation' >/dev/null; then
+      echo "MIR-to-C boring gate forbids local_binding_read_provenance_metadata AST-to-C preservation in the primary migration suite."
+      exit 1
+    fi
+
+    justfile_without_boring="$(awk '/^guard-mir-to-c-boring-surface:/{flag=1} /^guard-mir-feature-return-int-preservation:/{flag=0} !flag{print}' justfile)"
+    if printf '%s\n' "$justfile_without_boring" | rg -n -i -F 'cranelift' >/dev/null; then
+      echo "MIR-to-C boring gate must run before Cranelift justfile wiring exists."
+      printf '%s\n' "$justfile_without_boring" | rg -n -i -F 'cranelift' || true
+      exit 1
+    fi
+
+    cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null || true)"
+    if [ -n "$cranelift_refs" ]; then
+      echo "MIR-to-C boring gate must run before Cranelift implementation references exist:"
+      echo "$cranelift_refs"
+      exit 1
+    fi
+
+    just guard-mir-to-c-return-int-literal-native-smoke
+    just guard-mir-to-c-local-binding-read-native-smoke
+    just guard-mir-to-c-conditional-branch-native-smoke
+    just guard-mir-to-c-provenance-metadata-native-smoke
+    echo "✅ MIR-to-C boring surface passed: all Phase 8 entries are retired, suite routing is MIR-owned, and Cranelift has not started."
+
 guard-mir-feature-return-int-preservation:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -875,6 +974,7 @@ guard-mir-feature-migration-suite:
     just guard-mir-feature-harness-surface
     just guard-mir-feature-migration-registry
     just guard-mir-ast-to-c-retirement-manifest-surface
+    just guard-mir-to-c-boring-surface
     just guard-mir-owned-return-int-literal-validation
     just guard-mir-feature-return-int-routed-execution
     just guard-mir-owned-local-binding-read-validation
