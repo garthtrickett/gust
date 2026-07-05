@@ -791,9 +791,9 @@ guard-mir-to-c-boring-surface:
       exit 1
     fi
 
-    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' || true)"
+    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
-      echo "MIR-to-C boring gate allows only the manifest-only Cranelift experiment guard before backend recipes exist."
+      echo "MIR-to-C boring gate allows only manifest and inert backend Cranelift surface guards before backend implementation exists."
       echo "$cranelift_recipe_wiring"
       exit 1
     fi
@@ -809,7 +809,7 @@ guard-mir-to-c-boring-surface:
     just guard-mir-to-c-local-binding-read-native-smoke
     just guard-mir-to-c-conditional-branch-native-smoke
     just guard-mir-to-c-provenance-metadata-native-smoke
-    echo "✅ MIR-to-C boring surface passed: all Phase 8 entries are retired, suite routing is MIR-owned, and only manifest-only Cranelift experiment docs are allowed."
+    echo "✅ MIR-to-C boring surface passed: all Phase 8 entries are retired, suite routing is MIR-owned, and only inert Cranelift experiment surface docs/guards are allowed."
 
 guard-cranelift-experiment-manifest-surface:
     #!/usr/bin/env bash
@@ -821,29 +821,33 @@ guard-cranelift-experiment-manifest-surface:
       exit 1
     fi
     rg -n -F 'CRANELIFT_EXPERIMENT_MANIFEST_VERSION: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-experiment-manifest-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: manifest_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-inert-backend-surface-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: inert_backend_surface' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: none' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: inert' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD: guard-cranelift-experiment-manifest-surface' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SURFACE_GUARD: guard-cranelift-backend-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'Cranelift is disabled by default.' "$manifest_doc" >/dev/null
     rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No Cranelift Cargo dependency is allowed yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
-    rg -n -F 'No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`.' "$manifest_doc" >/dev/null
+    rg -n -F 'No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface` and `guard-cranelift-backend-surface`.' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_manifest: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_guard: guard-cranelift-experiment-manifest-surface' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_status: manifest_only' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_backend_surface_guard: guard-cranelift-backend-surface' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_status: inert_backend_surface' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_backend_surface_status: inert' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_primary_route: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_codegen_status: implemented' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_default_enabled: true' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_dependency: cranelift' "$manifest_doc" >/dev/null
-    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' || true)"
+    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
-      echo "Phase 9 Step 1 allows only the Cranelift experiment manifest guard, found additional Cranelift recipes:"
+      echo "Phase 9 Step 2 allows only the Cranelift experiment manifest and inert backend surface guards, found additional Cranelift recipes:"
       echo "$cranelift_recipe_wiring"
       exit 1
     fi
@@ -853,7 +857,38 @@ guard-cranelift-experiment-manifest-surface:
       echo "$cranelift_refs"
       exit 1
     fi
-    echo "✅ Cranelift experiment manifest surface passed: manifest-only, disabled by default, and no codegen exists yet."
+    echo "✅ Cranelift experiment manifest surface passed: inert backend surface, disabled by default, and no codegen exists yet."
+
+guard-cranelift-backend-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking inert Cranelift backend surface..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-experiment-manifest-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-inert-backend-surface-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: inert_backend_surface' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: none' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: inert' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SURFACE_GUARD: guard-cranelift-backend-surface' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
+    rg -n -F 'No Cranelift Cargo dependency is allowed yet.' "$manifest_doc" >/dev/null
+    rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
+    rg -n -F 'forbidden_backend_codegen_entry: cranelift_codegen' "$manifest_doc" >/dev/null
+    rg -n -F 'forbidden_native_smoke_prefix: guard-cranelift-return' "$manifest_doc" >/dev/null
+    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' || true)"
+    if [ -n "$unexpected_cranelift_recipes" ]; then
+      echo "Inert Cranelift backend surface allows no extra Cranelift recipes yet:"
+      echo "$unexpected_cranelift_recipes"
+      exit 1
+    fi
+    implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend|guard-cranelift-return|guard-cranelift-local|guard-cranelift-conditional' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null || true)"
+    if [ -n "$implementation_refs" ]; then
+      echo "Inert Cranelift backend surface must not include codegen, deps, or native smoke implementation refs yet:"
+      echo "$implementation_refs"
+      exit 1
+    fi
+    echo "✅ Inert Cranelift backend surface passed: guard exists, manifest allows it, and no codegen/deps/native smokes exist yet."
 
 guard-mir-feature-return-int-preservation:
     #!/usr/bin/env bash
@@ -1020,6 +1055,7 @@ guard-mir-feature-migration-suite:
     just guard-mir-ast-to-c-retirement-manifest-surface
     just guard-mir-to-c-boring-surface
     just guard-cranelift-experiment-manifest-surface
+    just guard-cranelift-backend-surface
     just guard-mir-owned-return-int-literal-validation
     just guard-mir-feature-return-int-routed-execution
     just guard-mir-owned-local-binding-read-validation
