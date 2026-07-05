@@ -1326,12 +1326,9 @@ guard-cranelift-return-int-native-smoke:
       echo "Expected Cranelift return-int object file to be generated at $object_file"
       exit 1
     fi
-    printf '%s
-' '#include <stdint.h>' > "$shim_c"
-    printf '%s
-' 'extern int32_t tiny_cranelift_return_int(void);' >> "$shim_c"
-    printf '%s
-' 'int main(void) { return tiny_cranelift_return_int(); }' >> "$shim_c"
+    printf '%s\n' '#include <stdint.h>' > "$shim_c"
+    printf '%s\n' 'extern int32_t tiny_cranelift_return_int(void);' >> "$shim_c"
+    printf '%s\n' 'int main(void) { return tiny_cranelift_return_int(); }' >> "$shim_c"
     CC_BIN="${CC:-cc}"
     CFLAGS_VAL="${CFLAGS:--O0 -w}"
     "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
@@ -1464,21 +1461,16 @@ guard-cranelift-mir-to-c-differential-native-smoke:
       local cranelift_object="build/guards/cranelift_mir_to_c_differential_native/return_int_cranelift.o"
       local cranelift_shim_c="build/guards/cranelift_mir_to_c_differential_native/return_int_cranelift_main.c"
       local cranelift_bin="build/guards/cranelift_mir_to_c_differential_native/return_int_cranelift_bin"
-      printf '%s
-' 'int tiny_return_int(void) { return 1; }' > "$mir_c"
-      printf '%s
-' 'int main(void) { return tiny_return_int(); }' >> "$mir_c"
+      printf '%s\n' 'int tiny_return_int(void) { return 1; }' > "$mir_c"
+      printf '%s\n' 'int main(void) { return tiny_return_int(); }' >> "$mir_c"
       cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- return-int-object "$cranelift_object"
       if [ ! -s "$cranelift_object" ]; then
         echo "Expected Cranelift return-int object file to be generated at $cranelift_object"
         exit 1
       fi
-      printf '%s
-' '#include <stdint.h>' > "$cranelift_shim_c"
-      printf '%s
-' 'extern int32_t tiny_cranelift_return_int(void);' >> "$cranelift_shim_c"
-      printf '%s
-' 'int main(void) { return tiny_cranelift_return_int(); }' >> "$cranelift_shim_c"
+      printf '%s\n' '#include <stdint.h>' > "$cranelift_shim_c"
+      printf '%s\n' 'extern int32_t tiny_cranelift_return_int(void);' >> "$cranelift_shim_c"
+      printf '%s\n' 'int main(void) { return tiny_cranelift_return_int(); }' >> "$cranelift_shim_c"
       local mir_status
       local cranelift_status
       mir_status="$(run_c "$mir_c" "$mir_bin")"
@@ -1505,14 +1497,10 @@ guard-cranelift-mir-to-c-differential-native-smoke:
       local cranelift_c="build/guards/cranelift_mir_to_c_differential_native/${label}_cranelift.c"
       local mir_bin="build/guards/cranelift_mir_to_c_differential_native/${label}_mir_to_c_bin"
       local cranelift_bin="build/guards/cranelift_mir_to_c_differential_native/${label}_cranelift_bin"
-      printf '%s
-' "$mir_source" > "$mir_c"
-      printf '%s
-' "int main(void) { return ${mir_fn}(); }" >> "$mir_c"
-      printf '%s
-' "$cranelift_source" > "$cranelift_c"
-      printf '%s
-' "int main(void) { return ${cranelift_fn}(); }" >> "$cranelift_c"
+      printf '%s\n' "$mir_source" > "$mir_c"
+      printf '%s\n' "int main(void) { return ${mir_fn}(); }" >> "$mir_c"
+      printf '%s\n' "$cranelift_source" > "$cranelift_c"
+      printf '%s\n' "int main(void) { return ${cranelift_fn}(); }" >> "$cranelift_c"
       local mir_status
       local cranelift_status
       mir_status="$(run_c "$mir_c" "$mir_bin")"
