@@ -24,7 +24,7 @@ The Cranelift backend experiment now has fixture-only return-int, local-binding,
 ## Step 5 constraints
 
 - Cranelift is disabled by default.
-- No production Cranelift codegen entry point exists yet. The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int object emission.
+- No production Cranelift codegen entry point exists yet. The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int and local-binding/read object emission
 - No root Cranelift Cargo dependency is allowed yet. Cranelift dependencies are allowed only under compiler/experiments/cranelift/.
 - No production compiler path may route to Cranelift yet.
 - No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.
@@ -48,6 +48,8 @@ allowed_primary_route: mir_to_c
 allowed_return_int_fixture: tiny_cranelift_return_int
 allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs
 allowed_return_int_object_artifact: build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o
+allowed_local_binding_codegen_entry: compiler/experiments/cranelift/src/main.rs
+allowed_local_binding_object_artifact: build/guards/cranelift_local_binding_native/tiny_cranelift_local_binding_read.o
 allowed_local_binding_fixture: tiny_cranelift_local_binding_read
 allowed_branch_fixture: tiny_cranelift_conditional_branch
 allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int
