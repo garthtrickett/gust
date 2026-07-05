@@ -38,6 +38,7 @@ CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-br
 CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke
 CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite
 CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead
+CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression
 MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface
 
 This manifest starts Phase 9 without adding Cranelift code generation.
@@ -64,6 +65,7 @@ allowed_branch_native_guard: guard-cranelift-conditional-branch-native-smoke
 allowed_differential_native_guard: guard-cranelift-mir-to-c-differential-native-smoke
 allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite
 allowed_dependency_beachhead_guard: guard-cranelift-dependency-beachhead
+allowed_no_fixture_regression_guard: guard-cranelift-no-fixture-regression
 allowed_status: mir_to_c_differential_native_smoke
 allowed_codegen_status: return_int_local_binding_branch_differential_fixture_only
 allowed_backend_surface_status: differential_native_smoke
@@ -78,6 +80,11 @@ allowed_branch_fixture: tiny_cranelift_conditional_branch
 allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int
 allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read
 allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch
+real_cranelift_object_smoke: return_int
+real_cranelift_object_smoke: local_binding_read
+real_cranelift_object_smoke: conditional_branch
+oracle_backend: mir_to_c
+production_route: mir_to_c
 allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int
 allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read
 allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch
@@ -119,7 +126,7 @@ Cranelift is disabled by default.
 No production Cranelift codegen entry point exists yet.
 The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int and local-binding/read object emission.
 No production compiler path may route to Cranelift yet.
-No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.
+No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-no-fixture-regression`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.
 
 allowed_manifest: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md
 allowed_guard: guard-cranelift-experiment-manifest-surface

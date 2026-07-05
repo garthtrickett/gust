@@ -1164,7 +1164,7 @@ guard-mir-to-c-boring-surface:
       exit 1
     fi
 
-    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
+    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-no-fixture-regression' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -1208,13 +1208,14 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression' "$manifest_doc" justfile >/dev/null
     rg -n -F 'MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'Cranelift is disabled by default.' "$manifest_doc" >/dev/null
     rg -n -F 'No production Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
     rg -n -F 'The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int and local-binding/read object emission.' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml' "$manifest_doc" >/dev/null
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
-    rg -n -F 'No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.' "$manifest_doc" >/dev/null
+    rg -n -F 'No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-no-fixture-regression`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_manifest: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_guard: guard-cranelift-experiment-manifest-surface' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_backend_surface_guard: guard-cranelift-backend-surface' "$manifest_doc" >/dev/null
@@ -1224,6 +1225,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_differential_native_guard: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_dependency_beachhead_guard: guard-cranelift-dependency-beachhead' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_no_fixture_regression_guard: guard-cranelift-no-fixture-regression' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_status: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_codegen_status: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_backend_surface_status: differential_native_smoke' "$manifest_doc" >/dev/null
@@ -1284,6 +1286,8 @@ guard-cranelift-backend-surface:
     rg -n -F 'guard-cranelift-experimental-backend-suite' justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
     rg -n -F 'guard-cranelift-dependency-beachhead' justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'guard-cranelift-no-fixture-regression' justfile >/dev/null
     rg -n -F 'No production Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
     rg -n -F 'The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int and local-binding/read object emission.' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
@@ -1296,7 +1300,7 @@ guard-cranelift-backend-surface:
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_backend_codegen_entry: cranelift_codegen' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
-    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
+    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-no-fixture-regression' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
     if [ -n "$unexpected_cranelift_recipes" ]; then
       echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 10 return-int/local-binding object smoke lanes yet:"
       echo "$unexpected_cranelift_recipes"
@@ -1659,6 +1663,31 @@ guard-cranelift-dependency-beachhead:
     cargo metadata --manifest-path "$manifest" --locked --format-version 1 >/dev/null
     cargo check --manifest-path "$manifest" --locked --all-targets
     echo "✅ Cranelift dependency beachhead passed: deps are isolated, locked, and production routing remains MIR-to-C."
+
+guard-cranelift-no-fixture-regression:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Cranelift real-object smoke no-fixture regression..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_no_fixture_regression_guard: guard-cranelift-no-fixture-regression' "$manifest_doc" >/dev/null
+    rg -n -F 'real_cranelift_object_smoke: return_int' "$manifest_doc" >/dev/null
+    rg -n -F 'real_cranelift_object_smoke: local_binding_read' "$manifest_doc" >/dev/null
+    rg -n -F 'real_cranelift_object_smoke: conditional_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'oracle_backend: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'production_route: mir_to_c' "$manifest_doc" >/dev/null
+    cranelift_native_bodies="$(sed -n '/^guard-cranelift-return-int-native-smoke:/,/^guard-cranelift-local-binding-read-native-smoke:/p' justfile; sed -n '/^guard-cranelift-local-binding-native-smoke:/,/^guard-cranelift-conditional-branch-native-smoke:/p' justfile; sed -n '/^guard-cranelift-conditional-branch-native-smoke:/,/^guard-cranelift-mir-to-c-differential-native-smoke:/p' justfile)"
+    forbidden_fixture_defs="$(printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'int tiny_cranelift_' || true)"
+    if [ -n "$forbidden_fixture_defs" ]; then
+      echo "Migrated Cranelift native smoke lanes must not regress to C fixture function definitions:"
+      echo "$forbidden_fixture_defs"
+      exit 1
+    fi
+    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'return-int-object' >/dev/null
+    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'local-binding-read-object' >/dev/null
+    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'conditional-branch-object' >/dev/null
+    echo "✅ Cranelift no-fixture regression guard passed."
 
 guard-cranelift-experimental-backend-suite:
     #!/usr/bin/env bash
