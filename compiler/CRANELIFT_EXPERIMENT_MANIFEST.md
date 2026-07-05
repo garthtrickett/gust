@@ -45,6 +45,14 @@ allowed_call_helper_i32_native_guard: guard-cranelift-call-helper-i32-native-smo
 allowed_call_helper_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs
 allowed_call_helper_i32_object_artifact: build/guards/cranelift_call_helper_i32_native/tiny_cranelift_call_helper_i32.o
 real_cranelift_object_smoke: call_helper_i32
+
+# Step 18 extern-call-i32 imported host call smoke.
+CRANELIFT_EXPERIMENT_ALLOWED_EXTERN_CALL_I32_NATIVE_GUARD: guard-cranelift-extern-call-i32-native-smoke
+allowed_extern_call_i32_native_guard: guard-cranelift-extern-call-i32-native-smoke
+allowed_extern_call_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs
+allowed_extern_call_i32_object_artifact: build/guards/cranelift_extern_call_i32_native/tiny_cranelift_extern_call_i32.o
+allowed_extern_call_i32_host_symbol: tiny_host_add_one_i32
+real_cranelift_object_smoke: extern_call_i32
 The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, and conditional-branch object emission.
 No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, `guard-cranelift-differential-native-smoke`, and `guard-cranelift-no-fixture-regression`.
 real_cranelift_object_smoke: return_int
