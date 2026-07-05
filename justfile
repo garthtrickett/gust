@@ -791,10 +791,10 @@ guard-mir-to-c-boring-surface:
       exit 1
     fi
 
-    justfile_without_boring="$(awk '/^guard-mir-to-c-boring-surface:/{flag=1} /^guard-mir-feature-return-int-preservation:/{flag=0} !flag{print}' justfile)"
-    if printf '%s\n' "$justfile_without_boring" | rg -n -i -F 'cranelift' >/dev/null; then
+    cranelift_just_wiring="$(rg -n -i '^(guard-.*cranelift|cranelift[-_:]|import .*cranelift)|just guard-.*cranelift' justfile || true)"
+    if [ -n "$cranelift_just_wiring" ]; then
       echo "MIR-to-C boring gate must run before Cranelift justfile wiring exists."
-      printf '%s\n' "$justfile_without_boring" | rg -n -i -F 'cranelift' || true
+      echo "$cranelift_just_wiring"
       exit 1
     fi
 
