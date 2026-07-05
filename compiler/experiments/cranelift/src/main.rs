@@ -12,6 +12,7 @@ use cranelift_object::{ObjectBuilder, ObjectModule};
 
 const RETURN_INT_SYMBOL: &str = "tiny_cranelift_return_int";
 const LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_local_binding_read";
+const CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_conditional_branch";
 
 fn main() {
     if let Err(error) = run() {
@@ -45,6 +46,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_local_binding_read_object(Path::new(&output_path))
         }
+        "conditional-branch-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_conditional_branch_object(Path::new(&output_path))
+        }
         _ => Err(usage_error().into()),
     }
 }
@@ -52,7 +62,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object> <output.o>",
     )
 }
 
@@ -71,6 +81,15 @@ fn emit_local_binding_read_object(output_path: &Path) -> Result<(), Box<dyn Erro
         "gust_cranelift_local_binding_read",
         LOCAL_BINDING_READ_SYMBOL,
         build_local_binding_read_body,
+    )
+}
+
+fn emit_conditional_branch_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    emit_zero_arg_i32_object(
+        output_path,
+        "gust_cranelift_conditional_branch",
+        CONDITIONAL_BRANCH_SYMBOL,
+        build_conditional_branch_body,
     )
 }
 
@@ -130,4 +149,25 @@ fn build_local_binding_read_body(builder: &mut FunctionBuilder<'_>) {
     builder.def_var(value_slot, assigned_value);
     let read_value = builder.use_var(value_slot);
     builder.ins().return_(&[read_value]);
+}
+
+fn build_conditional_branch_body(builder: &mut FunctionBuilder<'_>) {
+    let entry_block = builder.create_block();
+    let then_block = builder.create_block();
+    let else_block = builder.create_block();
+
+    builder.switch_to_block(entry_block);
+    builder.append_block_params_for_function_params(entry_block);
+    let condition = builder.ins().iconst(types::I32, 1);
+    builder
+        .ins()
+        .brif(condition, then_block, &[], else_block, &[]);
+
+    builder.switch_to_block(then_block);
+    let then_value = builder.ins().iconst(types::I32, 1);
+    builder.ins().return_(&[then_value]);
+
+    builder.switch_to_block(else_block);
+    let else_value = builder.ins().iconst(types::I32, 2);
+    builder.ins().return_(&[else_value]);
 }

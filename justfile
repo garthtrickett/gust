@@ -1235,6 +1235,8 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_local_binding_object_artifact: build/guards/cranelift_local_binding_native/tiny_cranelift_local_binding_read.o' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_local_binding_fixture: tiny_cranelift_local_binding_read' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_branch_fixture: tiny_cranelift_conditional_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_branch_object_artifact: build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.o' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch' "$manifest_doc" >/dev/null
@@ -1393,31 +1395,40 @@ guard-cranelift-branch-native-smoke:
 guard-cranelift-conditional-branch-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Native compiling experimental Cranelift conditional-branch smoke."
+    echo "🔒 Native compiling real experimental Cranelift conditional-branch smoke..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
     rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_object_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_branch_fixture: tiny_cranelift_conditional_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_branch_object_artifact: build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.o' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_conditional_branch_native
-    generated_c="build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.c"
+    object_file="build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.o"
+    shim_c="build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch_main.c"
     binary="build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch_bin"
-    printf '%s\n' 'int tiny_cranelift_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' > "$generated_c"
-    printf '%s\n' 'int main(void) { return tiny_cranelift_conditional_branch(); }' >> "$generated_c"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- conditional-branch-object "$object_file"
+    if [ ! -s "$object_file" ]; then
+      echo "Expected Cranelift conditional-branch object file to be generated at $object_file"
+      exit 1
+    fi
+    printf '%s\n' '#include <stdint.h>' > "$shim_c"
+    printf '%s\n' 'extern int32_t tiny_cranelift_conditional_branch(void);' >> "$shim_c"
+    printf '%s\n' 'int main(void) { return tiny_cranelift_conditional_branch(); }' >> "$shim_c"
     CC_BIN="${CC:-cc}"
     CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$generated_c" -o "$binary"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
     set +e
     "$binary"
     status="$?"
     set -e
     if [ "$status" != "1" ]; then
-      echo "Expected experimental Cranelift conditional-branch native smoke to exit with status 1, got $status"
+      echo "Expected real experimental Cranelift conditional-branch native smoke to exit with status 1, got $status"
       exit 1
     fi
-    echo "✅ Experimental Cranelift conditional-branch native smoke passed."
+    echo "✅ Real experimental Cranelift conditional-branch native smoke passed."
 
 
 guard-cranelift-differential-native-smoke:
@@ -1440,6 +1451,8 @@ guard-cranelift-mir-to-c-differential-native-smoke:
     rg -n -F 'allowed_local_binding_object_artifact: build/guards/cranelift_local_binding_native/tiny_cranelift_local_binding_read.o' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_branch_object_artifact: build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.o' "$manifest_doc" >/dev/null
     rg -n -F 'int tiny_return_int(void) { return 1; }' compiler/mir.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst justfile >/dev/null
     rg -n -F 'int tiny_local_binding_read(void) { int value = 2; return value; }' compiler/mir.gst compiler/mir_to_c_local_binding_read_smoke_test_entry.gst justfile >/dev/null
     rg -n -F 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' compiler/mir.gst compiler/mir_to_c_conditional_branch_smoke_test_entry.gst justfile >/dev/null
@@ -1560,7 +1573,32 @@ guard-cranelift-mir-to-c-differential-native-smoke:
     fi
     echo "✅ Differential fixture local_binding_read matched exit 2 with a real Cranelift object."
 
-    compare_case "conditional_branch" "1" "tiny_conditional_branch" 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' "tiny_cranelift_conditional_branch" 'int tiny_cranelift_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }'
+    branch_mir_c="build/guards/cranelift_mir_to_c_differential_native/conditional_branch_mir_to_c.c"
+    branch_mir_bin="build/guards/cranelift_mir_to_c_differential_native/conditional_branch_mir_to_c_bin"
+    branch_cranelift_object="build/guards/cranelift_mir_to_c_differential_native/conditional_branch_cranelift.o"
+    branch_cranelift_shim_c="build/guards/cranelift_mir_to_c_differential_native/conditional_branch_cranelift_main.c"
+    branch_cranelift_bin="build/guards/cranelift_mir_to_c_differential_native/conditional_branch_cranelift_bin"
+    printf '%s\n' 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' > "$branch_mir_c"
+    printf '%s\n' 'int main(void) { return tiny_conditional_branch(); }' >> "$branch_mir_c"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- conditional-branch-object "$branch_cranelift_object"
+    if [ ! -s "$branch_cranelift_object" ]; then
+      echo "Expected Cranelift conditional-branch object file to be generated at $branch_cranelift_object"
+      exit 1
+    fi
+    printf '%s\n' '#include <stdint.h>' > "$branch_cranelift_shim_c"
+    printf '%s\n' 'extern int32_t tiny_cranelift_conditional_branch(void);' >> "$branch_cranelift_shim_c"
+    printf '%s\n' 'int main(void) { return tiny_cranelift_conditional_branch(); }' >> "$branch_cranelift_shim_c"
+    branch_mir_status="$(run_c "$branch_mir_c" "$branch_mir_bin")"
+    branch_cranelift_status="$(run_c_with_object "$branch_cranelift_shim_c" "$branch_cranelift_object" "$branch_cranelift_bin")"
+    if [ "$branch_mir_status" != "$branch_cranelift_status" ]; then
+      echo "Differential mismatch for conditional_branch: MIR-to-C exited $branch_mir_status but real Cranelift object exited $branch_cranelift_status."
+      exit 1
+    fi
+    if [ "$branch_mir_status" != "1" ]; then
+      echo "Differential fixture conditional_branch expected exit 1, got $branch_mir_status."
+      exit 1
+    fi
+    echo "✅ Differential fixture conditional_branch matched exit 1 with a real Cranelift object."
 
     echo "✅ Cranelift/MIR-to-C differential native smoke passed."
 

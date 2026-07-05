@@ -1,5 +1,12 @@
 # Cranelift Experiment Manifest
 
+<!-- Step 11 real conditional-branch object smoke sync tokens. -->
+CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_object_smoke
+The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, and conditional-branch object emission.
+allowed_codegen_status: return_int_local_binding_branch_object_smoke
+allowed_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs
+allowed_branch_object_artifact: build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.o
+
 CRANELIFT_EXPERIMENT_MANIFEST_VERSION: 1
 CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry
 CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke
