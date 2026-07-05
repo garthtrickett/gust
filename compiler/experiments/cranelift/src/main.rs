@@ -17,6 +17,8 @@ const IDENTITY_I32_SYMBOL: &str = "tiny_cranelift_identity_i32";
 const ADD_I32_SYMBOL: &str = "tiny_cranelift_add_i32";
 const POSITIVE_I32_BRANCH_SYMBOL: &str = "tiny_cranelift_positive_i32_branch";
 const INCREMENT_LOCAL_I32_SYMBOL: &str = "tiny_cranelift_increment_local_i32";
+const CALL_HELPER_I32_SYMBOL: &str = "tiny_cranelift_call_helper_i32";
+const ADD_ONE_HELPER_I32_SYMBOL: &str = "tiny_cranelift_add_one_helper_i32";
 
 fn main() {
     if let Err(error) = run() {
@@ -95,6 +97,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_increment_local_i32_object(Path::new(&output_path))
         }
+        "call-helper-i32-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_call_helper_i32_object(Path::new(&output_path))
+        }
         _ => Err(usage_error().into()),
     }
 }
@@ -102,7 +113,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object> <output.o>",
     )
 }
 
