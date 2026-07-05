@@ -1549,19 +1549,17 @@ guard-cranelift-positive-i32-branch-native-smoke:
       echo "Expected Cranelift positive-i32 branch object file to be generated at $object_file"
       exit 1
     fi
-    cat > "$shim_c" <<'EOF'
-#include <stdint.h>
-extern int32_t tiny_cranelift_positive_i32_branch(int32_t value);
-int main(void) {
-  if (tiny_cranelift_positive_i32_branch(1) != 7) {
-    return 1;
-  }
-  if (tiny_cranelift_positive_i32_branch(0) != 9) {
-    return 2;
-  }
-  return 5;
-}
-EOF
+    printf '%s\n' '#include <stdint.h>' > "$shim_c"
+    printf '%s\n' 'extern int32_t tiny_cranelift_positive_i32_branch(int32_t value);' >> "$shim_c"
+    printf '%s\n' 'int main(void) {' >> "$shim_c"
+    printf '%s\n' '  if (tiny_cranelift_positive_i32_branch(1) != 7) {' >> "$shim_c"
+    printf '%s\n' '    return 1;' >> "$shim_c"
+    printf '%s\n' '  }' >> "$shim_c"
+    printf '%s\n' '  if (tiny_cranelift_positive_i32_branch(0) != 9) {' >> "$shim_c"
+    printf '%s\n' '    return 2;' >> "$shim_c"
+    printf '%s\n' '  }' >> "$shim_c"
+    printf '%s\n' '  return 5;' >> "$shim_c"
+    printf '%s\n' '}' >> "$shim_c"
     CC_BIN="${CC:-cc}"
     CFLAGS_VAL="${CFLAGS:--O0 -w}"
     "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
