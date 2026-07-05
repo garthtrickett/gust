@@ -40,6 +40,9 @@ guard file:
 guard-pr-fast-shard shard:
     #!/usr/bin/env bash
     set -euo pipefail
+    echo "🔀 Running PR fast shard: {{shard}}"
+    rm -rf build/guards
+    rm -f to.log
     case "{{shard}}" in
       cranelift-return-int)
         just guard-cranelift-experiment-manifest-surface
