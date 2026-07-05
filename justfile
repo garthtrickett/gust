@@ -75,6 +75,78 @@ guard-pr-fast-shard shard:
         ;;
     esac
 
+guard-pr-fast-ci-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking PR fast CI surface..."
+    workflow=".github/workflows/pr-fast.yml"
+    if [ ! -f "$workflow" ]; then
+      echo "Missing $workflow. Cloud setup Step 2 must add the PR fast workflow before Step 3 can guard it."
+      exit 1
+    fi
+
+    rg -n -F 'name: PR Fast' "$workflow" >/dev/null
+    rg -n -F 'pull_request:' "$workflow" >/dev/null
+    rg -n -F 'push:' "$workflow" >/dev/null
+    rg -n -F 'workflow_dispatch:' "$workflow" >/dev/null
+    rg -n -F 'permissions:' "$workflow" >/dev/null
+    rg -n -F 'contents: read' "$workflow" >/dev/null
+
+    rg -n -F 'jobs:' "$workflow" >/dev/null
+    rg -n -F 'build:' "$workflow" >/dev/null
+    rg -n -F 'guard:' "$workflow" >/dev/null
+    rg -n -F 'final:' "$workflow" >/dev/null
+    rg -n -F 'needs: build' "$workflow" >/dev/null
+    rg -n -F 'needs: guard' "$workflow" >/dev/null
+
+    rg -n -F 'strategy:' "$workflow" >/dev/null
+    rg -n -F 'fail-fast: false' "$workflow" >/dev/null
+    rg -n -F 'matrix:' "$workflow" >/dev/null
+    rg -n -F 'shard:' "$workflow" >/dev/null
+
+    rg -n -F 'cranelift-return-int' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-local-binding' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-branch' "$workflow" justfile >/dev/null
+    rg -n -F 'mir-to-c-return-int' "$workflow" justfile >/dev/null
+    rg -n -F 'routed-return-int' "$workflow" justfile >/dev/null
+    rg -n -F 'migration-suite' "$workflow" justfile >/dev/null
+
+    rg -n -F 'guard-pr-fast-shard shard:' justfile >/dev/null
+    rg -n -F 'just guard-pr-fast-shard' "$workflow" >/dev/null
+    rg -n -F 'matrix.shard' "$workflow" >/dev/null
+
+    rg -n -F 'actions/checkout@v4' "$workflow" >/dev/null
+    rg -n -F 'actions/upload-artifact@v4' "$workflow" >/dev/null
+    rg -n -F 'actions/download-artifact@v4' "$workflow" >/dev/null
+    rg -n -F 'name: gust-build' "$workflow" >/dev/null
+    rg -n -F 'if-no-files-found: error' "$workflow" >/dev/null
+    rg -n -F './gust' "$workflow" >/dev/null
+    rg -n -F 'build/' "$workflow" >/dev/null
+    rg -n -F 'chmod +x ./gust' "$workflow" >/dev/null
+
+    rg -n -F 'sudo apt-get install -y build-essential curl ripgrep' "$workflow" >/dev/null
+    rg -n -F 'cargo install just --locked' "$workflow" >/dev/null
+    rg -n -F 'GITHUB_PATH' "$workflow" >/dev/null
+    rg -n -F 'just --version' "$workflow" >/dev/null
+
+    if rg -n -F 'actions/cache' "$workflow" >/dev/null; then
+      echo "Cloud setup Step 3 forbids CI cache wiring. Add cache only in a later explicit step."
+      exit 1
+    fi
+    if rg -n -F 'apt-get install -y build-essential just ripgrep' "$workflow" >/dev/null; then
+      echo "PR fast CI must not install just from apt; apt just is too old for this justfile."
+      exit 1
+    fi
+
+    shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
+    if [ "$shard_count" != "6" ]; then
+      echo "Expected exactly 6 PR fast matrix shards, found $shard_count."
+      awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
+      exit 1
+    fi
+
+    echo "✅ PR fast CI surface guard passed."
+
 guard-step51-hashmap-get-value:
     just guard compiler/typechecker_hashmap_get_value_provenance_test_entry.gst
 
