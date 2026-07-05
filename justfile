@@ -233,15 +233,10 @@ guard-mir-feature-local-binding-read-routed-execution:
     echo "🔀 Checking MIR-preferred routed execution: local binding/read..."
     manifest_doc="compiler/MIR_AST_TO_C_RETIREMENT_MANIFEST.md"
     rg -n -F 'feature_name: local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'feature_name: if_else_return_int' "$manifest_doc" >/dev/null
     rg -n -F 'ast_to_c_status: retired' "$manifest_doc" >/dev/null
     rg -n -F 'preferred_codegen_route: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'routed_execution_guard: guard-mir-feature-local-binding-read-routed-execution' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'routed_execution_guard: guard-mir-feature-if-else-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'routed_execution_guard: guard-mir-feature-if-else-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
     rg -n -F 'mir_owned_validation_guard: guard-mir-owned-local-binding-read-validation' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-if-else-return-int-validation' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-if-else-return-int-validation' "$manifest_doc" justfile >/dev/null
     just guard-mir-owned-local-binding-read-validation
     echo "✅ MIR-preferred routed execution passed: local_binding_read uses MIR-owned validation as its primary routed path."
 
@@ -521,9 +516,11 @@ guard-mir-ast-to-c-retirement-manifest-surface:
     rg -n -F 'routed_execution_guard' "$manifest_doc" >/dev/null
     rg -n -F 'mir_owned_validation_guard: guard-mir-owned-return-int-literal-validation' "$manifest_doc" justfile >/dev/null
     rg -n -F 'mir_owned_validation_guard: guard-mir-owned-local-binding-read-validation' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-if-else-return-int-validation' "$manifest_doc" justfile >/dev/null
     rg -n -F 'preferred_codegen_route: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'routed_execution_guard: guard-mir-feature-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
     rg -n -F 'routed_execution_guard: guard-mir-feature-local-binding-read-routed-execution' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'routed_execution_guard: guard-mir-feature-if-else-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
     rg -n -F 'feature_name: return_int_literal' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'feature_name: local_binding_read' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'feature_name: if_else_return_int' "$manifest_doc" "$registry_doc" >/dev/null
@@ -565,15 +562,32 @@ guard-mir-ast-to-c-retirement-manifest-surface:
     fi
     rg -n -F 'feature_name: return_int_literal' "$manifest_doc" >/dev/null
     rg -n -F 'feature_name: local_binding_read' "$manifest_doc" >/dev/null
+    rg -n -F 'feature_name: if_else_return_int' "$manifest_doc" >/dev/null
     rg -n -F 'mir_owned_validation_guard: guard-mir-owned-return-int-literal-validation' "$manifest_doc" justfile >/dev/null
     rg -n -F 'mir_owned_validation_guard: guard-mir-owned-local-binding-read-validation' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-if-else-return-int-validation' "$manifest_doc" justfile >/dev/null
     rg -n -F 'preferred_codegen_route: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'routed_execution_guard: guard-mir-feature-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
     rg -n -F 'routed_execution_guard: guard-mir-feature-local-binding-read-routed-execution' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'routed_execution_guard: guard-mir-feature-if-else-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
     rg -n -F 'ast_to_c_status: retired' "$manifest_doc" >/dev/null
     rg -n -F 'retired this feature from primary AST-to-C validation' "$manifest_doc" >/dev/null
     rg -n -F 'retired local_binding_read from primary AST-to-C validation' "$manifest_doc" >/dev/null
     rg -n -F 'retired if_else_return_int from primary AST-to-C validation' "$manifest_doc" >/dev/null
+    local_binding_routed_body="$(awk '/^guard-mir-feature-local-binding-read-routed-execution:/{flag=1} /^guard-mir-owned-if-else-return-int-validation:/{flag=0} flag{print}' justfile)"
+    if printf '%s\n' "$local_binding_routed_body" | rg -n -F 'if_else_return_int' >/dev/null; then
+      echo "local_binding_read routed guard must not check if_else_return_int manifest fields."
+      exit 1
+    fi
+    if printf '%s\n' "$local_binding_routed_body" | rg -n -F 'guard-mir-feature-if-else-return-int-routed-execution' >/dev/null; then
+      echo "local_binding_read routed guard must not reference the if_else_return_int routed guard."
+      exit 1
+    fi
+    if printf '%s\n' "$local_binding_routed_body" | rg -n -F 'guard-mir-owned-if-else-return-int-validation' >/dev/null; then
+      echo "local_binding_read routed guard must not reference the if_else_return_int MIR-owned guard."
+      exit 1
+    fi
+
     suite_body="$(sed -n '/^guard-mir-feature-migration-suite:/,/^guard-test-runner-bounded-concurrency-surface:/p' justfile)"
     printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-return-int-routed-execution' >/dev/null
     printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-local-binding-read-routed-execution' >/dev/null
