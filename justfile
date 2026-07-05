@@ -1677,7 +1677,8 @@ guard-cranelift-no-fixture-regression:
     rg -n -F 'real_cranelift_object_smoke: conditional_branch' "$manifest_doc" >/dev/null
     rg -n -F 'oracle_backend: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'production_route: mir_to_c' "$manifest_doc" >/dev/null
-    cranelift_native_bodies="$(sed -n '/^guard-cranelift-return-int-native-smoke:/,/^guard-cranelift-local-binding-read-native-smoke:/p' justfile; sed -n '/^guard-cranelift-local-binding-native-smoke:/,/^guard-cranelift-conditional-branch-native-smoke:/p' justfile; sed -n '/^guard-cranelift-conditional-branch-native-smoke:/,/^guard-cranelift-mir-to-c-differential-native-smoke:/p' justfile)"
+    rg -n -F 'identity-i32-object' justfile >/dev/null
+    cranelift_native_bodies="$(sed -n '/^guard-cranelift-return-int-native-smoke:/,/^guard-cranelift-local-binding-read-native-smoke:/p' justfile; sed -n '/^guard-cranelift-local-binding-native-smoke:/,/^guard-cranelift-conditional-branch-native-smoke:/p' justfile; sed -n '/^guard-cranelift-conditional-branch-native-smoke:/,/^guard-cranelift-mir-to-c-differential-native-smoke:/p' justfile; sed -n '/^guard-cranelift-identity-i32-native-smoke:/,/^guard-cranelift-differential-native-smoke:/p' justfile)"
     forbidden_fixture_defs="$(printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'int tiny_cranelift_' || true)"
     if [ -n "$forbidden_fixture_defs" ]; then
       echo "Migrated Cranelift native smoke lanes must not regress to C fixture function definitions:"
@@ -1703,6 +1704,7 @@ guard-cranelift-experimental-backend-suite:
     just guard-cranelift-return-int-native-smoke
     just guard-cranelift-local-binding-read-native-smoke
     just guard-cranelift-conditional-branch-native-smoke
+    just guard-cranelift-identity-i32-native-smoke
     just guard-cranelift-mir-to-c-differential-native-smoke
     echo "✅ Explicit experimental Cranelift backend suite passed."
 guard-mir-feature-return-int-preservation:
