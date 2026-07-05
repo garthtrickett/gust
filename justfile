@@ -176,6 +176,220 @@ guard-pr-fast-ci-surface:
 
     echo "✅ PR fast CI surface guard passed."
 
+guard-cloud-heavy-shard shard:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔀 Running cloud heavy shard: {{shard}}"
+    export CC="${CC:-cc}"
+    export CFLAGS="${CFLAGS:--O0 -w -pthread}"
+    rm -rf build/guards
+    rm -f to.log
+    case "{{shard}}" in
+      phase9-branch)
+        just guard-cranelift-conditional-branch-native-smoke
+        ;;
+      mir-branch)
+        just guard-mir-to-c-conditional-branch-native-smoke
+        just guard-mir-feature-if-else-return-int-routed-execution
+        ;;
+      migration-surfaces)
+        just guard-mir-feature-harness-surface
+        just guard-mir-feature-registry-surface
+        just guard-mir-ast-to-c-retirement-manifest-surface
+        ;;
+      migration-return-int)
+        just guard-mir-owned-return-int-literal-validation
+        just guard-mir-feature-return-int-routed-execution
+        ;;
+      migration-local-binding)
+        just guard-mir-owned-local-binding-read-validation
+        just guard-mir-feature-local-binding-read-routed-execution
+        ;;
+      migration-if-else)
+        just guard-mir-owned-if-else-return-int-validation
+        just guard-mir-feature-if-else-return-int-routed-execution
+        ;;
+      migration-provenance)
+        just guard-mir-owned-local-binding-read-provenance-metadata-validation
+        just guard-mir-feature-local-binding-read-provenance-metadata-routed-execution
+        ;;
+      step51-policy)
+        just guard_step51_report_only_lanes_not_in_test
+        just guard_step51g_default_guard_wiring
+        just guard_step51g_aggregate_surface_wiring
+        just guard_step51g_address_origin_legacy_wrapper_surface
+        just guard_step51g_expression_provenance_legacy_wrapper_surface
+        just guard_step51_provenance_origin_spine
+        ;;
+      step52-registration)
+        just guard_step52_report_only_lanes_not_in_test
+        just guard_step52_no_post_closure_report_churn
+        just guard_step52_resource_declaration_auto_registration
+        just guard_step52_resource_assignment_auto_registration
+        just guard_step52_resource_move_assignment_transfer
+        just guard_step52_resource_reassignment_terminal_required
+        just guard_step52_resource_decl_assignment_tracking
+        just guard_step52_resource_move_assignment_tracking
+        ;;
+      step52-lifetime-diagnostics)
+        just guard_step52_resource_destructor_call_tracking
+        just guard_step52_resource_double_close_enforcement
+        just guard_step52_resource_close_after_move_enforcement
+        just guard_step52_resource_destructor_scheduled_enforcement
+        just guard_step52_resource_missing_cleanup_diagnostic
+        just guard_step52_resource_missing_cleanup_first_report
+        just guard_step52_resource_use_after_move_enforcement
+        ;;
+      step52-cleanup-boundary)
+        just guard_step52_resource_cleanup_boundary_validation
+        just guard_step52_resource_cleanup_boundary_terminal_states
+        just guard_step52_resource_cleanup_boundary_mixed_states
+        just guard_step52_resource_scope_exit_cleanup_boundary
+        just guard_step52_resource_function_exit_cleanup_integration
+        just guard_step52_resource_return_cleanup_integration
+        just guard_step52_resource_missing_cleanup_dedup
+        just guard_step52_resource_return_cleanup_dedup_integration
+        ;;
+      step52-terminal-states)
+        just guard_step52_resource_return_cleanup_terminal_states
+        just guard_step52_resource_return_cleanup_moved_terminal_states
+        just guard_step52_resource_function_exit_terminal_states
+        just guard_step52_resource_function_exit_moved_terminal_states
+        just guard_step52_resource_return_cleanup_mixed_terminal_states
+        just guard_step52_resource_function_exit_mixed_terminal_states
+        just guard_step52_resource_return_cleanup_scheduled_terminal_states
+        just guard_step52_resource_scope_exit_scheduled_terminal_states
+        just guard_step52_resource_return_cleanup_mixed_scheduled_terminal_states
+        just guard_step52_resource_scope_exit_mixed_scheduled_terminal_states
+        ;;
+      step52-transfer-defer)
+        just guard_step52_transfer_state_surface_inventory
+        just guard_step52_transfer_state_transition_table
+        just guard_step52_transfer_state_real_path_move
+        just guard_step52_transfer_state_matrix
+        just guard_step52_defer_canonical_syntax_surface
+        just guard_step52_defer_destructor_candidate_recognizer
+        just guard_step52_defer_real_path_scheduling
+        just guard_step52_defer_close_manual_interaction
+        just guard_step52_defer_function_body_scheduled_terminal
+        ;;
+      step52-directory)
+        just guard_step52_open_directories_legacy_freeze
+        just guard_step52_directory_resource_parity_metadata
+        just guard_step52_directory_resource_shadow_tracking
+        just guard_step52_directory_resource_cleanup_boundary_routing
+        just guard_step52_directory_resource_close_diagnostics_routing
+        just guard_step52_directory_resource_source_of_truth_flip
+        just guard_step52_directory_resource_no_open_directories_enforcement_reads
+        ;;
+      runner-surface)
+        just guard-test-runner-bounded-concurrency-surface
+        ;;
+      parser-raw-casts)
+        just guard_parser_high_level_raw_casts
+        just guard_step44_no_high_level_raw_collection_casts
+        ;;
+      *)
+        echo "unknown cloud heavy shard: {{shard}}"
+        echo "expected one of: phase9-branch, mir-branch, migration-surfaces, migration-return-int, migration-local-binding, migration-if-else, migration-provenance, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
+        exit 1
+        ;;
+    esac
+
+guard-cloud-heavy-ci-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking cloud heavy CI surface..."
+    workflow=".github/workflows/heavy-guards.yml"
+    if [ ! -f "$workflow" ]; then
+      echo "Missing $workflow. Heavy guard cloud workflow must exist."
+      exit 1
+    fi
+
+    rg -n -F 'name: Heavy Guards' "$workflow" >/dev/null
+    rg -n -F 'pull_request:' "$workflow" >/dev/null
+    rg -n -F 'push:' "$workflow" >/dev/null
+    rg -n -F 'workflow_dispatch:' "$workflow" >/dev/null
+    rg -n -F 'permissions:' "$workflow" >/dev/null
+    rg -n -F 'contents: read' "$workflow" >/dev/null
+
+    rg -n -F 'jobs:' "$workflow" >/dev/null
+    rg -n -F 'build:' "$workflow" >/dev/null
+    rg -n -F 'guard:' "$workflow" >/dev/null
+    rg -n -F 'final:' "$workflow" >/dev/null
+    rg -n -F 'needs: build' "$workflow" >/dev/null
+    rg -n -F 'needs: guard' "$workflow" >/dev/null
+    rg -n -F 'strategy:' "$workflow" >/dev/null
+    rg -n -F 'fail-fast: false' "$workflow" >/dev/null
+    rg -n -F 'matrix:' "$workflow" >/dev/null
+    rg -n -F 'shard:' "$workflow" >/dev/null
+
+    rg -n -F 'phase9-branch' "$workflow" justfile >/dev/null
+    rg -n -F 'mir-branch' "$workflow" justfile >/dev/null
+    rg -n -F 'migration-surfaces' "$workflow" justfile >/dev/null
+    rg -n -F 'migration-return-int' "$workflow" justfile >/dev/null
+    rg -n -F 'migration-local-binding' "$workflow" justfile >/dev/null
+    rg -n -F 'migration-if-else' "$workflow" justfile >/dev/null
+    rg -n -F 'migration-provenance' "$workflow" justfile >/dev/null
+    rg -n -F 'step51-policy' "$workflow" justfile >/dev/null
+    rg -n -F 'step52-registration' "$workflow" justfile >/dev/null
+    rg -n -F 'step52-lifetime-diagnostics' "$workflow" justfile >/dev/null
+    rg -n -F 'step52-cleanup-boundary' "$workflow" justfile >/dev/null
+    rg -n -F 'step52-terminal-states' "$workflow" justfile >/dev/null
+    rg -n -F 'step52-transfer-defer' "$workflow" justfile >/dev/null
+    rg -n -F 'step52-directory' "$workflow" justfile >/dev/null
+    rg -n -F 'runner-surface' "$workflow" justfile >/dev/null
+    rg -n -F 'parser-raw-casts' "$workflow" justfile >/dev/null
+
+    rg -n -F 'guard-cloud-heavy-shard shard:' justfile >/dev/null
+    rg -n -F 'just guard-cloud-heavy-shard' "$workflow" >/dev/null
+    rg -n -F 'matrix.shard' "$workflow" >/dev/null
+
+    rg -n -F 'actions/checkout@v4' "$workflow" >/dev/null
+    rg -n -F 'actions/upload-artifact@v4' "$workflow" >/dev/null
+    rg -n -F 'actions/download-artifact@v4' "$workflow" >/dev/null
+    rg -n -F 'name: gust-build' "$workflow" >/dev/null
+    rg -n -F 'if-no-files-found: error' "$workflow" >/dev/null
+    rg -n -F './gust' "$workflow" >/dev/null
+    rg -n -F 'build/' "$workflow" >/dev/null
+    rg -n -F 'chmod +x ./gust' "$workflow" >/dev/null
+
+    rg -n -F 'sudo apt-get install -y build-essential curl ripgrep' "$workflow" >/dev/null
+    rg -n -F 'https://just.systems/install.sh' "$workflow" >/dev/null
+    rg -n -F 'bash -s -- --to "$HOME/.local/bin"' "$workflow" >/dev/null
+    rg -n -F 'GITHUB_PATH' "$workflow" >/dev/null
+    rg -n -F '"$HOME/.local/bin/just" --version' "$workflow" >/dev/null
+
+    if rg -n -F 'actions/cache' "$workflow" >/dev/null; then
+      echo "Cloud heavy guard workflow must not enable cache yet."
+      exit 1
+    fi
+    if rg -n -F 'make-test-guards-fast-c' "$workflow" >/dev/null; then
+      echo "Cloud heavy guard workflow must split make-test-guards-fast-c into focused matrix shards."
+      exit 1
+    fi
+    if rg -n -F 'guard-mir-feature-migration-suite' "$workflow" >/dev/null; then
+      echo "Cloud heavy guard workflow must split guard-mir-feature-migration-suite into focused matrix shards."
+      exit 1
+    fi
+    if rg -n -F 'cargo install just --locked' "$workflow" >/dev/null; then
+      echo "Cloud heavy guard workflow must not compile just from source; use the prebuilt just.systems installer."
+      exit 1
+    fi
+    if rg -n -F 'https://sh.rustup.rs' "$workflow" >/dev/null; then
+      echo "Cloud heavy guard workflow must not install Rust just to compile just."
+      exit 1
+    fi
+
+    shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
+    if [ "$shard_count" != "16" ]; then
+      echo "Expected exactly 16 cloud heavy matrix shards, found $shard_count."
+      awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
+      exit 1
+    fi
+
+    echo "✅ Cloud heavy CI surface guard passed."
+
 guard-step51-hashmap-get-value:
     just guard compiler/typechecker_hashmap_get_value_provenance_test_entry.gst
 
