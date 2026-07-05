@@ -1,7 +1,7 @@
 # MIR AST-to-C Retirement Manifest
 
 MIR_AST_TO_C_RETIREMENT_MANIFEST_VERSION: 1
-MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-return-int-mir-preferred-routing-entry
+MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-return-int-ast-to-c-retired-entry
 MIR_AST_TO_C_RETIREMENT_MANIFEST_ENTRY_COUNT: 4
 MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md
 
@@ -47,8 +47,8 @@ native_execution_guard: guard-mir-to-c-return-int-literal-native-smoke
 mir_owned_validation_guard: guard-mir-owned-return-int-literal-validation
 preferred_codegen_route: mir_to_c
 routed_execution_guard: guard-mir-feature-return-int-routed-execution
-ast_to_c_status: retirement_candidate
-retirement_note: Phase 8 now routes this feature's primary validation execution through MIR-to-C; legacy AST-to-C behavior validation remains required until the feature is explicitly retired.
+ast_to_c_status: retired
+retirement_note: Phase 8 has retired this feature from primary AST-to-C validation because MIR-preferred routed execution passes; the legacy old_behavior_guard remains available for manual compatibility checks.
 
 ### local_binding_read
 
