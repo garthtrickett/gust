@@ -142,7 +142,7 @@ guard-pr-fast-ci-surface:
 
     rg -n -F 'sudo apt-get install -y build-essential curl ripgrep' "$workflow" >/dev/null
     rg -n -F 'https://just.systems/install.sh' "$workflow" >/dev/null
-    rg -n -F 'bash -s -- --to "$HOME/.local/bin"' "$workflow" >/dev/null
+    rg -n -F 'bash -s -- --tag 1.55.1 --to "$HOME/.local/bin"' "$workflow" >/dev/null
     rg -n -F 'GITHUB_PATH' "$workflow" >/dev/null
     rg -n -F '"$HOME/.local/bin/just" --version' "$workflow" >/dev/null
 
@@ -356,7 +356,7 @@ guard-cloud-heavy-ci-surface:
 
     rg -n -F 'sudo apt-get install -y build-essential curl ripgrep' "$workflow" >/dev/null
     rg -n -F 'https://just.systems/install.sh' "$workflow" >/dev/null
-    rg -n -F 'bash -s -- --to "$HOME/.local/bin"' "$workflow" >/dev/null
+    rg -n -F 'bash -s -- --tag 1.55.1 --to "$HOME/.local/bin"' "$workflow" >/dev/null
     rg -n -F 'GITHUB_PATH' "$workflow" >/dev/null
     rg -n -F '"$HOME/.local/bin/just" --version' "$workflow" >/dev/null
 
