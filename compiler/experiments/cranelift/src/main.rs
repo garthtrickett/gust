@@ -14,6 +14,7 @@ const RETURN_INT_SYMBOL: &str = "tiny_cranelift_return_int";
 const LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_local_binding_read";
 const CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_conditional_branch";
 const IDENTITY_I32_SYMBOL: &str = "tiny_cranelift_identity_i32";
+const ADD_I32_SYMBOL: &str = "tiny_cranelift_add_i32";
 
 fn main() {
     if let Err(error) = run() {
@@ -65,6 +66,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_identity_i32_object(Path::new(&output_path))
         }
+        "add-i32-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_add_i32_object(Path::new(&output_path))
+        }
         _ => Err(usage_error().into()),
     }
 }
@@ -72,7 +82,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object> <output.o>",
     )
 }
 
@@ -129,7 +139,7 @@ fn emit_add_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
     signature.params.push(AbiParam::new(types::I32));
     signature.returns.push(AbiParam::new(types::I32));
 
-    let function_id = module.declare_function("tiny_cranelift_add_i32", Linkage::Export, &signature)?;
+    let function_id = module.declare_function(ADD_I32_SYMBOL, Linkage::Export, &signature)?;
     let mut context = module.make_context();
     context.func.signature = signature;
 

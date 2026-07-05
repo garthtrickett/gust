@@ -1165,6 +1165,7 @@ guard-mir-to-c-boring-surface:
     fi
 
     cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-no-fixture-regression' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-identity-i32-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-add-i32-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -1254,6 +1255,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_experiment_dependency_lockfile: compiler/experiments/cranelift/Cargo.lock' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_experiment_dependency_guard: guard-cranelift-dependency-beachhead' "$manifest_doc" >/dev/null
     cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-no-fixture-regression' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-identity-i32-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-add-i32-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "Phase 9 Step 12 allows only the Cranelift experiment manifest, inert backend surface, dependency beachhead, explicit backend suite, no-fixture regression guard, real return-int/local-binding/branch object smokes, and differential native smoke guards, found additional Cranelift recipes:"
       echo "$cranelift_recipe_wiring"
@@ -1307,6 +1309,7 @@ guard-cranelift-backend-surface:
     rg -n -F 'forbidden_production_backend_codegen_entry: cranelift_codegen' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
     unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-no-fixture-regression' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-identity-i32-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
+    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-add-i32-native-smoke' || true)"
     if [ -n "$unexpected_cranelift_recipes" ]; then
       echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 10 return-int/local-binding object smoke lanes yet:"
       echo "$unexpected_cranelift_recipes"
@@ -1478,6 +1481,43 @@ guard-cranelift-identity-i32-native-smoke:
     fi
     echo "✅ Real experimental Cranelift identity-i32 native smoke passed."
 
+
+guard-cranelift-add-i32-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling real experimental Cranelift add-i32 smoke..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_ADD_I32_NATIVE_GUARD: guard-cranelift-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_add_i32_native_guard: guard-cranelift-add-i32-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_add_i32_object_artifact: build/guards/cranelift_add_i32_native/tiny_cranelift_add_i32.o' "$manifest_doc" >/dev/null
+    mkdir -p build/guards/cranelift_add_i32_native
+    object_file="build/guards/cranelift_add_i32_native/tiny_cranelift_add_i32.o"
+    shim_c="build/guards/cranelift_add_i32_native/tiny_cranelift_add_i32_main.c"
+    binary="build/guards/cranelift_add_i32_native/tiny_cranelift_add_i32_bin"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- add-i32-object "$object_file"
+    if [ ! -s "$object_file" ]; then
+      echo "Expected Cranelift add-i32 object file to be generated at $object_file"
+      exit 1
+    fi
+    printf '%s\n' '#include <stdint.h>' > "$shim_c"
+    printf '%s\n' 'extern int32_t tiny_cranelift_add_i32(int32_t lhs, int32_t rhs);' >> "$shim_c"
+    printf '%s\n' 'int main(void) { return tiny_cranelift_add_i32(2, 3); }' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "5" ]; then
+      echo "Expected real experimental Cranelift add-i32 native smoke to exit with status 5, got $status"
+      exit 1
+    fi
+    echo "✅ Real experimental Cranelift add-i32 native smoke passed."
 
 guard-cranelift-differential-native-smoke:
     just guard-cranelift-mir-to-c-differential-native-smoke
