@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 use std::error::Error;
 use std::fs;
@@ -6,7 +7,7 @@ use std::path::Path;
 
 use cranelift_codegen::ir::{AbiParam, InstBuilder, Type, condcodes::IntCC, types};
 use cranelift_codegen::settings;
-use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
+use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 use cranelift_object::{ObjectBuilder, ObjectModule};
 
@@ -26,6 +27,7 @@ const HOST_ADD_I32_SYMBOL: &str = "tiny_host_add_i32";
 const EXTERN_PREDICATE_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_extern_predicate_branch_i32";
 const HOST_IS_POSITIVE_I32_SYMBOL: &str = "tiny_host_is_positive_i32";
 const MIR_RETURN_INT_SYMBOL: &str = "tiny_cranelift_mir_return_int";
+const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -33,8 +35,20 @@ enum TinyMirType {
 }
 
 #[derive(Clone, Copy)]
+struct TinyMirLocal {
+    name: &'static str,
+    ty: TinyMirType,
+}
+
+#[derive(Clone, Copy)]
+enum TinyMirStatement {
+    LocalI32Set { name: &'static str, value: i32 },
+}
+
+#[derive(Clone, Copy)]
 enum TinyMirTerminator {
     ReturnI32(i32),
+    ReturnLocalI32(&'static str),
 }
 
 struct TinyMirFunction {
@@ -42,8 +56,21 @@ struct TinyMirFunction {
     symbol: &'static str,
     params: &'static [TinyMirType],
     return_type: TinyMirType,
+    locals: &'static [TinyMirLocal],
+    statements: &'static [TinyMirStatement],
     terminator: TinyMirTerminator,
 }
+
+static MIR_LOCAL_BINDING_READ_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
+    name: "value",
+    ty: TinyMirType::I32,
+}];
+
+static MIR_LOCAL_BINDING_READ_STATEMENTS: [TinyMirStatement; 1] =
+    [TinyMirStatement::LocalI32Set {
+        name: "value",
+        value: 2,
+    }];
 
 fn main() {
     if let Err(error) = run() {
@@ -76,6 +103,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_mir_return_int_object(Path::new(&output_path))
+        }
+        "mir-local-binding-read-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_local_binding_read_object(Path::new(&output_path))
         }
         "local-binding-read-object" => {
             let Some(output_path) = args.next() else {
@@ -174,7 +210,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -193,7 +229,23 @@ fn emit_mir_return_int_object(output_path: &Path) -> Result<(), Box<dyn Error>> 
         symbol: MIR_RETURN_INT_SYMBOL,
         params: &[],
         return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
         terminator: TinyMirTerminator::ReturnI32(1),
+    };
+
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn emit_mir_local_binding_read_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    let mir_function = TinyMirFunction {
+        object_name: "gust_cranelift_mir_local_binding_read",
+        symbol: MIR_LOCAL_BINDING_READ_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::I32,
+        locals: &MIR_LOCAL_BINDING_READ_LOCALS,
+        statements: &MIR_LOCAL_BINDING_READ_STATEMENTS,
+        terminator: TinyMirTerminator::ReturnLocalI32("value"),
     };
 
     lower_tiny_mir_function_to_object(output_path, &mir_function)
@@ -575,7 +627,7 @@ fn lower_tiny_mir_function_to_object(
 
     let mut builder_context = FunctionBuilderContext::new();
     let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
-    build_tiny_mir_body(&mut builder, mir_function.terminator);
+    build_tiny_mir_body(&mut builder, mir_function)?;
     builder.seal_all_blocks();
     builder.finalize();
 
@@ -587,17 +639,53 @@ fn lower_tiny_mir_function_to_object(
     Ok(())
 }
 
-fn build_tiny_mir_body(builder: &mut FunctionBuilder<'_>, terminator: TinyMirTerminator) {
+fn build_tiny_mir_body(
+    builder: &mut FunctionBuilder<'_>,
+    mir_function: &TinyMirFunction,
+) -> Result<(), Box<dyn Error>> {
     let entry_block = builder.create_block();
     builder.append_block_params_for_function_params(entry_block);
     builder.switch_to_block(entry_block);
 
-    match terminator {
+    let mut local_slots: HashMap<&'static str, Variable> = HashMap::new();
+    for local in mir_function.locals {
+        let slot = builder.declare_var(tiny_mir_type_to_cranelift_type(local.ty));
+        local_slots.insert(local.name, slot);
+    }
+
+    for statement in mir_function.statements {
+        match *statement {
+            TinyMirStatement::LocalI32Set { name, value } => {
+                let local_slot = *local_slots.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR local binding: {name}"),
+                    )
+                })?;
+                let local_value = builder.ins().iconst(types::I32, i64::from(value));
+                builder.def_var(local_slot, local_value);
+            }
+        }
+    }
+
+    match mir_function.terminator {
         TinyMirTerminator::ReturnI32(value) => {
             let return_value = builder.ins().iconst(types::I32, i64::from(value));
             builder.ins().return_(&[return_value]);
         }
+        TinyMirTerminator::ReturnLocalI32(name) => {
+            let local_slot = *local_slots.get(name).ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown tiny MIR return local: {name}"),
+                )
+            })?;
+            let return_value = builder.use_var(local_slot);
+            builder.ins().return_(&[return_value]);
+        }
     }
+
+    Ok(())
 }
 
 fn emit_zero_arg_i32_object(
