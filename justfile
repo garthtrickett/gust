@@ -127,7 +127,10 @@ guard-pr-fast-ci-surface:
     rg -n -F 'sudo apt-get install -y build-essential curl ripgrep' "$workflow" >/dev/null
     rg -n -F 'cargo install just --locked' "$workflow" >/dev/null
     rg -n -F 'GITHUB_PATH' "$workflow" >/dev/null
-    rg -n -F 'just --version' "$workflow" >/dev/null
+    if ! rg -n -F 'just --version' "$workflow" >/dev/null && ! rg -n -F 'just" --version' "$workflow" >/dev/null; then
+      echo "PR fast CI must print the installed just version after installing modern just."
+      exit 1
+    fi
 
     if rg -n -F 'actions/cache' "$workflow" >/dev/null; then
       echo "Cloud setup Step 3 forbids CI cache wiring. Add cache only in a later explicit step."
