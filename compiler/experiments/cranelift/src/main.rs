@@ -4,7 +4,7 @@ use std::fs;
 use std::io::{Error as IoError, ErrorKind};
 use std::path::Path;
 
-use cranelift_codegen::ir::{AbiParam, InstBuilder, types};
+use cranelift_codegen::ir::{AbiParam, InstBuilder, condcodes::IntCC, types};
 use cranelift_codegen::settings;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{Linkage, Module, default_libcall_names};
@@ -15,6 +15,7 @@ const LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_local_binding_read";
 const CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_conditional_branch";
 const IDENTITY_I32_SYMBOL: &str = "tiny_cranelift_identity_i32";
 const ADD_I32_SYMBOL: &str = "tiny_cranelift_add_i32";
+const POSITIVE_I32_BRANCH_SYMBOL: &str = "tiny_cranelift_positive_i32_branch";
 
 fn main() {
     if let Err(error) = run() {
@@ -75,6 +76,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_add_i32_object(Path::new(&output_path))
         }
+        "positive-i32-branch-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_positive_i32_branch_object(Path::new(&output_path))
+        }
         _ => Err(usage_error().into()),
     }
 }
@@ -82,7 +92,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object> <output.o>",
     )
 }
 
@@ -155,6 +165,15 @@ fn emit_add_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
     let object_product = module.finish();
     fs::write(output_path, object_product.emit()?)?;
     Ok(())
+}
+
+fn emit_positive_i32_branch_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    emit_one_i32_arg_i32_object(
+        output_path,
+        "gust_cranelift_positive_i32_branch",
+        POSITIVE_I32_BRANCH_SYMBOL,
+        build_positive_i32_branch_body,
+    )
 }
 
 fn emit_zero_arg_i32_object(
@@ -294,4 +313,28 @@ fn build_add_i32_body(builder: &mut FunctionBuilder<'_>) {
     let rhs = block_params[1];
     let sum = builder.ins().iadd(lhs, rhs);
     builder.ins().return_(&[sum]);
+}
+
+fn build_positive_i32_branch_body(builder: &mut FunctionBuilder<'_>) {
+    let entry_block = builder.create_block();
+    let then_block = builder.create_block();
+    let else_block = builder.create_block();
+
+    builder.append_block_params_for_function_params(entry_block);
+    builder.switch_to_block(entry_block);
+    let argument_value = builder.block_params(entry_block)[0];
+    let is_positive = builder
+        .ins()
+        .icmp_imm(IntCC::SignedGreaterThan, argument_value, 0);
+    builder
+        .ins()
+        .brif(is_positive, then_block, &[], else_block, &[]);
+
+    builder.switch_to_block(then_block);
+    let then_value = builder.ins().iconst(types::I32, 7);
+    builder.ins().return_(&[then_value]);
+
+    builder.switch_to_block(else_block);
+    let else_value = builder.ins().iconst(types::I32, 9);
+    builder.ins().return_(&[else_value]);
 }
