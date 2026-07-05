@@ -1720,34 +1720,20 @@ guard-cranelift-extern-call-i32-native-smoke:
       echo "Expected Cranelift extern-call-i32 object file to be generated at $object_file"
       exit 1
     fi
-    printf '%s
-' '#include <stdint.h>' > "$shim_c"
-    printf '%s
-' 'int32_t tiny_host_add_one_i32(int32_t value) {' >> "$shim_c"
-    printf '%s
-' '  return value + 1;' >> "$shim_c"
-    printf '%s
-' '}' >> "$shim_c"
-    printf '%s
-' 'extern int32_t tiny_cranelift_extern_call_i32(int32_t value);' >> "$shim_c"
-    printf '%s
-' 'int main(void) {' >> "$shim_c"
-    printf '%s
-' '  if (tiny_cranelift_extern_call_i32(4) != 5) {' >> "$shim_c"
-    printf '%s
-' '    return 1;' >> "$shim_c"
-    printf '%s
-' '  }' >> "$shim_c"
-    printf '%s
-' '  if (tiny_cranelift_extern_call_i32(0) != 1) {' >> "$shim_c"
-    printf '%s
-' '    return 2;' >> "$shim_c"
-    printf '%s
-' '  }' >> "$shim_c"
-    printf '%s
-' '  return 8;' >> "$shim_c"
-    printf '%s
-' '}' >> "$shim_c"
+    printf '%s\n' '#include <stdint.h>' > "$shim_c"
+    printf '%s\n' 'int32_t tiny_host_add_one_i32(int32_t value) {' >> "$shim_c"
+    printf '%s\n' '  return value + 1;' >> "$shim_c"
+    printf '%s\n' '}' >> "$shim_c"
+    printf '%s\n' 'extern int32_t tiny_cranelift_extern_call_i32(int32_t value);' >> "$shim_c"
+    printf '%s\n' 'int main(void) {' >> "$shim_c"
+    printf '%s\n' '  if (tiny_cranelift_extern_call_i32(4) != 5) {' >> "$shim_c"
+    printf '%s\n' '    return 1;' >> "$shim_c"
+    printf '%s\n' '  }' >> "$shim_c"
+    printf '%s\n' '  if (tiny_cranelift_extern_call_i32(0) != 1) {' >> "$shim_c"
+    printf '%s\n' '    return 2;' >> "$shim_c"
+    printf '%s\n' '  }' >> "$shim_c"
+    printf '%s\n' '  return 8;' >> "$shim_c"
+    printf '%s\n' '}' >> "$shim_c"
     CC_BIN="${CC:-cc}"
     CFLAGS_VAL="${CFLAGS:--O0 -w}"
     "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
