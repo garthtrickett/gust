@@ -13,6 +13,7 @@ CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int
 CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-binding-native-smoke
 CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke
 CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke
+CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite
 MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface
 
 This manifest starts Phase 9 without adding Cranelift code generation.
@@ -37,6 +38,7 @@ allowed_return_int_native_guard: guard-cranelift-return-int-native-smoke
 allowed_local_binding_native_guard: guard-cranelift-local-binding-native-smoke
 allowed_branch_native_guard: guard-cranelift-conditional-branch-native-smoke
 allowed_differential_native_guard: guard-cranelift-mir-to-c-differential-native-smoke
+allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite
 allowed_status: mir_to_c_differential_native_smoke
 allowed_codegen_status: return_int_local_binding_branch_differential_fixture_only
 allowed_backend_surface_status: differential_native_smoke

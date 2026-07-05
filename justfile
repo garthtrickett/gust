@@ -64,6 +64,9 @@ guard-pr-fast-shard shard:
         just guard-cranelift-backend-surface
         just guard-cranelift-mir-to-c-differential-native-smoke
         ;;
+      cranelift-backend-suite)
+        just guard-cranelift-experimental-backend-suite
+        ;;
       mir-to-c-return-int)
         just guard-mir-to-c-return-int-literal-native-smoke
         ;;
@@ -88,7 +91,7 @@ guard-pr-fast-shard shard:
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
+        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-backend-suite, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
         exit 1
         ;;
     esac
@@ -128,6 +131,7 @@ guard-pr-fast-ci-surface:
     rg -n -F 'cranelift-local-binding' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-branch' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-differential' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-backend-suite' "$workflow" justfile >/dev/null
     rg -n -F 'mir-to-c-return-int' "$workflow" justfile >/dev/null
     rg -n -F 'routed-return-int' "$workflow" justfile >/dev/null
     rg -n -F 'migration-return-int' "$workflow" justfile >/dev/null
@@ -139,6 +143,8 @@ guard-pr-fast-ci-surface:
     pr_fast_dispatcher_body="$(sed -n '/^guard-pr-fast-shard shard:/,/^guard-pr-fast-ci-surface:/p' justfile)"
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-differential)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-c-differential-native-smoke' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite' >/dev/null
     rg -n -F 'just guard-pr-fast-shard' "$workflow" >/dev/null
     rg -n -F 'matrix.shard' "$workflow" >/dev/null
 
@@ -179,8 +185,8 @@ guard-pr-fast-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "10" ]; then
-      echo "Expected exactly 10 PR fast matrix shards, found $shard_count."
+    if [ "$shard_count" != "11" ]; then
+      echo "Expected exactly 11 PR fast matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
@@ -197,7 +203,7 @@ guard-cloud-heavy-shard shard:
     rm -f to.log
     case "{{shard}}" in
       phase9-branch)
-        just guard-cranelift-conditional-branch-native-smoke
+        just guard-cranelift-experimental-backend-suite
         ;;
       mir-branch)
         just guard-mir-to-c-conditional-branch-native-smoke
@@ -353,6 +359,9 @@ guard-cloud-heavy-ci-surface:
     rg -n -F 'parser-raw-casts' "$workflow" justfile >/dev/null
 
     rg -n -F 'guard-cloud-heavy-shard shard:' justfile >/dev/null
+    cloud_heavy_dispatcher_body="$(sed -n '/^guard-cloud-heavy-shard shard:/,/^guard-cloud-heavy-ci-surface:/p' justfile)"
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite' >/dev/null
     rg -n -F 'just guard-cloud-heavy-shard' "$workflow" >/dev/null
     rg -n -F 'matrix.shard' "$workflow" >/dev/null
 
@@ -1197,6 +1206,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-binding-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
     rg -n -F 'MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'Cranelift is disabled by default.' "$manifest_doc" >/dev/null
     rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
@@ -1210,6 +1220,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_local_binding_native_guard: guard-cranelift-local-binding-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_branch_native_guard: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_differential_native_guard: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_status: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_codegen_status: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_backend_surface_status: differential_native_smoke' "$manifest_doc" >/dev/null
@@ -1224,9 +1235,9 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'forbidden_default_enabled: true' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_dependency: cranelift' "$manifest_doc" >/dev/null
-    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
+    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)" 
     if [ -n "$cranelift_recipe_wiring" ]; then
-      echo "Phase 9 Step 6 allows only the Cranelift experiment manifest, inert backend surface, return-int/local-binding/branch native smoke guards, and differential native smoke guards, found additional Cranelift recipes:"
+      echo "Phase 9 Step 7 allows only the Cranelift experiment manifest, inert backend surface, explicit backend suite, return-int/local-binding/branch native smoke guards, and differential native smoke guards, found additional Cranelift recipes:"
       echo "$cranelift_recipe_wiring"
       exit 1
     fi
@@ -1236,7 +1247,7 @@ guard-cranelift-experiment-manifest-surface:
       echo "$cranelift_refs"
       exit 1
     fi
-    echo "✅ Cranelift experiment manifest surface passed: return-int/local-binding/branch differential native smoke lanes, disabled by default, and no production codegen exists yet."
+    echo "✅ Cranelift experiment manifest surface passed: explicit backend suite plus return-int/local-binding/branch differential native smoke lanes, disabled by default, and no production codegen exists yet."
 
 guard-cranelift-backend-surface:
     #!/usr/bin/env bash
@@ -1257,14 +1268,16 @@ guard-cranelift-backend-surface:
     rg -n -F 'guard-cranelift-branch-native-smoke' justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'guard-cranelift-differential-native-smoke' justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'guard-cranelift-experimental-backend-suite' justfile >/dev/null
     rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No Cranelift Cargo dependency is allowed yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_backend_codegen_entry: cranelift_codegen' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
-    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
+    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)" 
     if [ -n "$unexpected_cranelift_recipes" ]; then
-      echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 6 differential fixture-only lanes yet:"
+      echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 7 explicit suite fixture-only lanes yet:"
       echo "$unexpected_cranelift_recipes"
       exit 1
     fi
@@ -1274,7 +1287,7 @@ guard-cranelift-backend-surface:
       echo "$implementation_refs"
       exit 1
     fi
-    echo "✅ Cranelift backend surface passed: return-int/local-binding/branch differential native smokes are allowed, but production codegen/deps/routes are still absent."
+    echo "✅ Cranelift backend surface passed: explicit backend suite and return-int/local-binding/branch differential native smokes are allowed, but production codegen/deps/routes are still absent."
 
 guard-cranelift-return-int-native-smoke:
     #!/usr/bin/env bash
@@ -1439,6 +1452,21 @@ guard-cranelift-mir-to-c-differential-native-smoke:
     compare_case "conditional_branch" "1" "tiny_conditional_branch" 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' "tiny_cranelift_conditional_branch" 'int tiny_cranelift_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }'
 
     echo "✅ Cranelift/MIR-to-C differential native smoke passed."
+
+guard-cranelift-experimental-backend-suite:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Running explicit experimental Cranelift backend suite..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-experiment-manifest-surface
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite' "$manifest_doc" >/dev/null
+    just guard-cranelift-return-int-native-smoke
+    just guard-cranelift-local-binding-read-native-smoke
+    just guard-cranelift-conditional-branch-native-smoke
+    just guard-cranelift-mir-to-c-differential-native-smoke
+    echo "✅ Explicit experimental Cranelift backend suite passed."
 guard-mir-feature-return-int-preservation:
     #!/usr/bin/env bash
     set -euo pipefail
