@@ -18,7 +18,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install guard tools
-        run: sudo apt-get update && sudo apt-get install -y build-essential just ripgrep
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl ripgrep
+          if ! command -v cargo >/dev/null 2>&1; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+            . "$HOME/.cargo/env"
+          fi
+          cargo install just --locked
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/just" --version
 
       - name: Diff check
         run: git diff --check
@@ -55,7 +64,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install guard tools
-        run: sudo apt-get update && sudo apt-get install -y build-essential just ripgrep
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl ripgrep
+          if ! command -v cargo >/dev/null 2>&1; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+            . "$HOME/.cargo/env"
+          fi
+          cargo install just --locked
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/just" --version
 
       - name: Download Gust build outputs
         uses: actions/download-artifact@v4
