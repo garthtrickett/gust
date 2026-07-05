@@ -1732,6 +1732,7 @@ guard-cranelift-no-fixture-regression:
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'return-int-object' >/dev/null
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'local-binding-read-object' >/dev/null
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'conditional-branch-object' >/dev/null
+    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'add-i32-object' >/dev/null
     echo "✅ Cranelift no-fixture regression guard passed."
 
 guard-cranelift-experimental-backend-suite:

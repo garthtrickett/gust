@@ -112,6 +112,41 @@ fn emit_identity_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
     )
 }
 
+fn emit_add_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder = cranelift_native::builder()
+        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder = ObjectBuilder::new(isa, "gust_cranelift_add_i32", default_libcall_names())?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut signature = module.make_signature();
+    signature.params.push(AbiParam::new(types::I32));
+    signature.params.push(AbiParam::new(types::I32));
+    signature.returns.push(AbiParam::new(types::I32));
+
+    let function_id = module.declare_function("tiny_cranelift_add_i32", Linkage::Export, &signature)?;
+    let mut context = module.make_context();
+    context.func.signature = signature;
+
+    let mut builder_context = FunctionBuilderContext::new();
+    let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
+    build_add_i32_body(&mut builder);
+    builder.seal_all_blocks();
+    builder.finalize();
+
+    module.define_function(function_id, &mut context)?;
+    module.clear_context(&mut context);
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
 fn emit_zero_arg_i32_object(
     output_path: &Path,
     object_name: &str,
