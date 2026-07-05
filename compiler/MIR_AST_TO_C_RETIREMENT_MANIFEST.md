@@ -1,7 +1,7 @@
 # MIR AST-to-C Retirement Manifest
 
 MIR_AST_TO_C_RETIREMENT_MANIFEST_VERSION: 1
-MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-local-binding-read-ast-to-c-retired-entry
+MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-if-else-return-int-ast-to-c-retired-entry
 MIR_AST_TO_C_RETIREMENT_MANIFEST_ENTRY_COUNT: 4
 MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md
 
@@ -72,8 +72,11 @@ old_behavior_guard: guard-mir-feature-if-else-return-int-preservation
 mir_lowering_guard: guard-mir-lower-conditional-branch-smoke
 mir_to_c_guard: guard-mir-to-c-conditional-branch-smoke
 native_execution_guard: guard-mir-to-c-conditional-branch-native-smoke
-ast_to_c_status: still_required
-retirement_note: Phase 8 has not added MIR-preferred routing for this feature yet.
+mir_owned_validation_guard: guard-mir-owned-if-else-return-int-validation
+preferred_codegen_route: mir_to_c
+routed_execution_guard: guard-mir-feature-if-else-return-int-routed-execution
+ast_to_c_status: retired
+retirement_note: Phase 8 has retired if_else_return_int from primary AST-to-C validation because MIR-preferred routed execution passes; the legacy old_behavior_guard remains available for manual compatibility checks.
 
 ### local_binding_read_provenance_metadata
 

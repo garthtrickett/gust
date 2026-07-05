@@ -233,12 +233,39 @@ guard-mir-feature-local-binding-read-routed-execution:
     echo "🔀 Checking MIR-preferred routed execution: local binding/read..."
     manifest_doc="compiler/MIR_AST_TO_C_RETIREMENT_MANIFEST.md"
     rg -n -F 'feature_name: local_binding_read' "$manifest_doc" >/dev/null
+    rg -n -F 'feature_name: if_else_return_int' "$manifest_doc" >/dev/null
     rg -n -F 'ast_to_c_status: retired' "$manifest_doc" >/dev/null
     rg -n -F 'preferred_codegen_route: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'routed_execution_guard: guard-mir-feature-local-binding-read-routed-execution' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'routed_execution_guard: guard-mir-feature-if-else-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'routed_execution_guard: guard-mir-feature-if-else-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
     rg -n -F 'mir_owned_validation_guard: guard-mir-owned-local-binding-read-validation' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-if-else-return-int-validation' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-if-else-return-int-validation' "$manifest_doc" justfile >/dev/null
     just guard-mir-owned-local-binding-read-validation
     echo "✅ MIR-preferred routed execution passed: local_binding_read uses MIR-owned validation as its primary routed path."
+
+guard-mir-owned-if-else-return-int-validation:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking MIR-owned validation: if/else return int..."
+    just guard-mir-lower-conditional-branch-smoke
+    just guard-mir-to-c-conditional-branch-smoke
+    just guard-mir-to-c-conditional-branch-native-smoke
+    echo "✅ MIR-owned validation passed: if_else_return_int lowers, emits C, and executes natively through MIR."
+
+guard-mir-feature-if-else-return-int-routed-execution:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔀 Checking MIR-preferred routed execution: if/else return int..."
+    manifest_doc="compiler/MIR_AST_TO_C_RETIREMENT_MANIFEST.md"
+    rg -n -F 'feature_name: if_else_return_int' "$manifest_doc" >/dev/null
+    rg -n -F 'ast_to_c_status: retired' "$manifest_doc" >/dev/null
+    rg -n -F 'preferred_codegen_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'routed_execution_guard: guard-mir-feature-if-else-return-int-routed-execution' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'mir_owned_validation_guard: guard-mir-owned-if-else-return-int-validation' "$manifest_doc" justfile >/dev/null
+    just guard-mir-owned-if-else-return-int-validation
+    echo "✅ MIR-preferred routed execution passed: if_else_return_int uses MIR-owned validation as its primary routed path."
 
 guard-mir-to-c-block-jump-native-smoke:
     #!/usr/bin/env bash
@@ -481,7 +508,7 @@ guard-mir-ast-to-c-retirement-manifest-surface:
       exit 1
     fi
     rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_VERSION: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-local-binding-read-ast-to-c-retired-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_PHASE: phase8-if-else-return-int-ast-to-c-retired-entry' "$manifest_doc" >/dev/null
     rg -n -F 'MIR_AST_TO_C_RETIREMENT_MANIFEST_ENTRY_COUNT: 4' "$manifest_doc" >/dev/null
     rg -n -F 'MIR_FEATURE_MIGRATION_REGISTRY: compiler/MIR_FEATURE_MIGRATION_REGISTRY.md' "$manifest_doc" >/dev/null
     rg -n -F 'still_required' "$manifest_doc" >/dev/null
@@ -514,22 +541,25 @@ guard-mir-ast-to-c-retirement-manifest-surface:
     rg -n -F 'mir_to_c_guard: guard-mir-to-c-local-binding-read-smoke' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'native_execution_guard: guard-mir-to-c-local-binding-read-native-smoke' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'old_behavior_guard: guard-mir-feature-if-else-return-int-preservation' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'mir_lowering_guard: guard-mir-lower-conditional-branch-smoke' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'mir_to_c_guard: guard-mir-to-c-conditional-branch-smoke' "$manifest_doc" "$registry_doc" >/dev/null
+    rg -n -F 'native_execution_guard: guard-mir-to-c-conditional-branch-native-smoke' "$manifest_doc" "$registry_doc" >/dev/null
     rg -n -F 'old_behavior_guard: guard-mir-feature-local-binding-read-provenance-metadata-preservation' "$manifest_doc" "$registry_doc" >/dev/null
     status_count="$(rg -n -F 'ast_to_c_status: still_required' "$manifest_doc" | wc -l | tr -d '[:space:]')"
-    if [ "$status_count" != "2" ]; then
-      echo "Expected exactly two still_required AST-to-C retirement manifest entries after retiring return_int_literal and local_binding_read, found $status_count."
+    if [ "$status_count" != "1" ]; then
+      echo "Expected exactly one still_required AST-to-C retirement manifest entry after retiring return_int_literal, local_binding_read, and if_else_return_int, found $status_count."
       rg -n -F 'ast_to_c_status:' "$manifest_doc" || true
       exit 1
     fi
     candidate_entries="$(rg -n -F 'ast_to_c_status: retirement_candidate' "$manifest_doc" || true)"
     if [ -n "$candidate_entries" ]; then
-      echo "Phase 8 Step 6 must not leave entries as retirement_candidate:"
+      echo "Phase 8 Step 7 must not leave entries as retirement_candidate:"
       echo "$candidate_entries"
       exit 1
     fi
     retired_count="$(rg -n -F 'ast_to_c_status: retired' "$manifest_doc" | wc -l | tr -d '[:space:]')"
-    if [ "$retired_count" != "2" ]; then
-      echo "Expected exactly two retired AST-to-C retirement manifest entries, found $retired_count."
+    if [ "$retired_count" != "3" ]; then
+      echo "Expected exactly three retired AST-to-C retirement manifest entries, found $retired_count."
       rg -n -F 'ast_to_c_status:' "$manifest_doc" || true
       exit 1
     fi
@@ -543,15 +573,21 @@ guard-mir-ast-to-c-retirement-manifest-surface:
     rg -n -F 'ast_to_c_status: retired' "$manifest_doc" >/dev/null
     rg -n -F 'retired this feature from primary AST-to-C validation' "$manifest_doc" >/dev/null
     rg -n -F 'retired local_binding_read from primary AST-to-C validation' "$manifest_doc" >/dev/null
+    rg -n -F 'retired if_else_return_int from primary AST-to-C validation' "$manifest_doc" >/dev/null
     suite_body="$(sed -n '/^guard-mir-feature-migration-suite:/,/^guard-test-runner-bounded-concurrency-surface:/p' justfile)"
     printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-return-int-routed-execution' >/dev/null
     printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-local-binding-read-routed-execution' >/dev/null
+    printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-if-else-return-int-routed-execution' >/dev/null
     if printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-return-int-preservation' >/dev/null; then
       echo "return_int_literal old AST-to-C preservation guard must be retired from the primary migration suite."
       exit 1
     fi
     if printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-local-binding-read-preservation' >/dev/null; then
       echo "local_binding_read old AST-to-C preservation guard must be retired from the primary migration suite."
+      exit 1
+    fi
+    if printf '%s\n' "$suite_body" | rg -n -F 'just guard-mir-feature-if-else-return-int-preservation' >/dev/null; then
+      echo "if_else_return_int old AST-to-C preservation guard must be retired from the primary migration suite."
       exit 1
     fi
     echo "✅ MIR AST-to-C retirement manifest surface guard passed."
@@ -795,7 +831,8 @@ guard-mir-feature-migration-suite:
     just guard-mir-feature-return-int-routed-execution
     just guard-mir-owned-local-binding-read-validation
     just guard-mir-feature-local-binding-read-routed-execution
-    just guard-mir-feature-if-else-return-int-preservation
+    just guard-mir-owned-if-else-return-int-validation
+    just guard-mir-feature-if-else-return-int-routed-execution
     just guard-mir-feature-local-binding-read-provenance-metadata-preservation
     echo "✅ MIR feature migration suite passed."
 
