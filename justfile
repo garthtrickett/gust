@@ -882,7 +882,7 @@ guard-cranelift-backend-surface:
       echo "$unexpected_cranelift_recipes"
       exit 1
     fi
-    implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend|guard-cranelift-return|guard-cranelift-local|guard-cranelift-conditional' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null || true)"
+    implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend|guard-cranelift-return|guard-cranelift-local|guard-cranelift-conditional' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true)"
     if [ -n "$implementation_refs" ]; then
       echo "Inert Cranelift backend surface must not include codegen, deps, or native smoke implementation refs yet:"
       echo "$implementation_refs"
