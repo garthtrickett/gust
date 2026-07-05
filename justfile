@@ -111,6 +111,8 @@ guard-pr-fast-ci-surface:
     rg -n -F 'final:' "$workflow" >/dev/null
     rg -n -F 'needs: build' "$workflow" >/dev/null
     rg -n -F 'needs: guard' "$workflow" >/dev/null
+    rg -n -F 'PR fast CI surface guard' "$workflow" >/dev/null
+    rg -n -F 'just guard-pr-fast-ci-surface' "$workflow" >/dev/null
 
     rg -n -F 'strategy:' "$workflow" >/dev/null
     rg -n -F 'fail-fast: false' "$workflow" >/dev/null

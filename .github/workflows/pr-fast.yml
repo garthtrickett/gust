@@ -29,6 +29,9 @@ jobs:
       - name: Diff check
         run: git diff --check
 
+      - name: PR fast CI surface guard
+        run: just guard-pr-fast-ci-surface
+
       - name: Build Gust
         run: make gust
 
