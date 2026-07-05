@@ -122,6 +122,7 @@ guard-pr-fast-ci-surface:
     rg -n -F 'cranelift-return-int' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-local-binding' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-branch' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-differential' "$workflow" justfile >/dev/null
     rg -n -F 'mir-to-c-return-int' "$workflow" justfile >/dev/null
     rg -n -F 'routed-return-int' "$workflow" justfile >/dev/null
     rg -n -F 'migration-return-int' "$workflow" justfile >/dev/null
@@ -170,8 +171,8 @@ guard-pr-fast-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "9" ]; then
-      echo "Expected exactly 9 PR fast matrix shards, found $shard_count."
+    if [ "$shard_count" != "10" ]; then
+      echo "Expected exactly 10 PR fast matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
