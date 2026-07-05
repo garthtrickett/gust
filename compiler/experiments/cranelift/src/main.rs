@@ -16,6 +16,7 @@ const CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_conditional_branch";
 const IDENTITY_I32_SYMBOL: &str = "tiny_cranelift_identity_i32";
 const ADD_I32_SYMBOL: &str = "tiny_cranelift_add_i32";
 const POSITIVE_I32_BRANCH_SYMBOL: &str = "tiny_cranelift_positive_i32_branch";
+const INCREMENT_LOCAL_I32_SYMBOL: &str = "tiny_cranelift_increment_local_i32";
 
 fn main() {
     if let Err(error) = run() {
@@ -85,6 +86,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_positive_i32_branch_object(Path::new(&output_path))
         }
+        "increment-local-i32-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_increment_local_i32_object(Path::new(&output_path))
+        }
         _ => Err(usage_error().into()),
     }
 }
@@ -92,7 +102,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object> <output.o>",
     )
 }
 
@@ -173,6 +183,15 @@ fn emit_positive_i32_branch_object(output_path: &Path) -> Result<(), Box<dyn Err
         "gust_cranelift_positive_i32_branch",
         POSITIVE_I32_BRANCH_SYMBOL,
         build_positive_i32_branch_body,
+    )
+}
+
+fn emit_increment_local_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    emit_one_i32_arg_i32_object(
+        output_path,
+        "gust_cranelift_increment_local_i32",
+        INCREMENT_LOCAL_I32_SYMBOL,
+        build_increment_local_i32_body,
     )
 }
 
@@ -337,4 +356,22 @@ fn build_positive_i32_branch_body(builder: &mut FunctionBuilder<'_>) {
     builder.switch_to_block(else_block);
     let else_value = builder.ins().iconst(types::I32, 9);
     builder.ins().return_(&[else_value]);
+}
+
+fn build_increment_local_i32_body(builder: &mut FunctionBuilder<'_>) {
+    let entry_block = builder.create_block();
+    builder.append_block_params_for_function_params(entry_block);
+    builder.switch_to_block(entry_block);
+
+    let argument_value = builder.block_params(entry_block)[0];
+    let value_slot = builder.declare_var(types::I32);
+    builder.def_var(value_slot, argument_value);
+
+    let current_value = builder.use_var(value_slot);
+    let one = builder.ins().iconst(types::I32, 1);
+    let incremented_value = builder.ins().iadd(current_value, one);
+    builder.def_var(value_slot, incremented_value);
+
+    let return_value = builder.use_var(value_slot);
+    builder.ins().return_(&[return_value]);
 }
