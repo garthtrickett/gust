@@ -940,9 +940,9 @@ guard-cranelift-return-int-native-smoke:
     echo "🔒 Native compiling experimental Cranelift return-int smoke..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-return-int-native-smoke-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: return_int_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-local-binding-native-smoke-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: local_binding_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_and_local_binding_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_return_int_fixture: tiny_cranelift_return_int' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_return_int_native
