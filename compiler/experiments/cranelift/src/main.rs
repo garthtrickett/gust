@@ -23,6 +23,8 @@ const EXTERN_CALL_I32_SYMBOL: &str = "tiny_cranelift_extern_call_i32";
 const HOST_ADD_ONE_I32_SYMBOL: &str = "tiny_host_add_one_i32";
 const EXTERN_ADD_I32_SYMBOL: &str = "tiny_cranelift_extern_add_i32";
 const HOST_ADD_I32_SYMBOL: &str = "tiny_host_add_i32";
+const EXTERN_PREDICATE_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_extern_predicate_branch_i32";
+const HOST_IS_POSITIVE_I32_SYMBOL: &str = "tiny_host_is_positive_i32";
 
 fn main() {
     if let Err(error) = run() {
@@ -128,6 +130,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_extern_add_i32_object(Path::new(&output_path))
         }
+        "extern-predicate-branch-i32-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_extern_predicate_branch_i32_object(Path::new(&output_path))
+        }
         _ => Err(usage_error().into()),
     }
 }
@@ -135,7 +146,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -394,6 +405,85 @@ fn emit_extern_add_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> 
         .call(host_function_ref, &[argument_value, three]);
     let return_value = caller_builder.inst_results(call_inst)[0];
     caller_builder.ins().return_(&[return_value]);
+
+    caller_builder.seal_all_blocks();
+    caller_builder.finalize();
+
+    module.define_function(caller_function_id, &mut caller_context)?;
+    module.clear_context(&mut caller_context);
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn emit_extern_predicate_branch_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder = cranelift_native::builder()
+        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_extern_predicate_branch_i32",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut host_signature = module.make_signature();
+    host_signature.params.push(AbiParam::new(types::I32));
+    host_signature.returns.push(AbiParam::new(types::I32));
+
+    let host_function_id = module.declare_function(
+        HOST_IS_POSITIVE_I32_SYMBOL,
+        Linkage::Import,
+        &host_signature,
+    )?;
+
+    let mut caller_signature = module.make_signature();
+    caller_signature.params.push(AbiParam::new(types::I32));
+    caller_signature.returns.push(AbiParam::new(types::I32));
+
+    let caller_function_id = module.declare_function(
+        EXTERN_PREDICATE_BRANCH_I32_SYMBOL,
+        Linkage::Export,
+        &caller_signature,
+    )?;
+    let mut caller_context = module.make_context();
+    caller_context.func.signature = caller_signature;
+
+    let mut caller_builder_context = FunctionBuilderContext::new();
+    let mut caller_builder =
+        FunctionBuilder::new(&mut caller_context.func, &mut caller_builder_context);
+
+    let entry_block = caller_builder.create_block();
+    let then_block = caller_builder.create_block();
+    let else_block = caller_builder.create_block();
+
+    caller_builder.append_block_params_for_function_params(entry_block);
+    caller_builder.switch_to_block(entry_block);
+
+    let argument_value = caller_builder.block_params(entry_block)[0];
+    let host_function_ref = module.declare_func_in_func(host_function_id, caller_builder.func);
+    let call_inst = caller_builder.ins().call(host_function_ref, &[argument_value]);
+    let predicate_value = caller_builder.inst_results(call_inst)[0];
+    let is_nonzero = caller_builder
+        .ins()
+        .icmp_imm(IntCC::NotEqual, predicate_value, 0);
+    caller_builder
+        .ins()
+        .brif(is_nonzero, then_block, &[], else_block, &[]);
+
+    caller_builder.switch_to_block(then_block);
+    let then_value = caller_builder.ins().iconst(types::I32, 11);
+    caller_builder.ins().return_(&[then_value]);
+
+    caller_builder.switch_to_block(else_block);
+    let else_value = caller_builder.ins().iconst(types::I32, 13);
+    caller_builder.ins().return_(&[else_value]);
 
     caller_builder.seal_all_blocks();
     caller_builder.finalize();
