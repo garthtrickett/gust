@@ -375,3 +375,14 @@ fn build_increment_local_i32_body(builder: &mut FunctionBuilder<'_>) {
     let return_value = builder.use_var(value_slot);
     builder.ins().return_(&[return_value]);
 }
+
+fn build_add_one_helper_i32_body(builder: &mut FunctionBuilder<'_>) {
+    let entry_block = builder.create_block();
+    builder.append_block_params_for_function_params(entry_block);
+    builder.switch_to_block(entry_block);
+
+    let argument_value = builder.block_params(entry_block)[0];
+    let one = builder.ins().iconst(types::I32, 1);
+    let return_value = builder.ins().iadd(argument_value, one);
+    builder.ins().return_(&[return_value]);
+}

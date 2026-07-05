@@ -1903,6 +1903,7 @@ guard-cranelift-experimental-backend-suite:
     just guard-cranelift-add-i32-native-smoke
     just guard-cranelift-positive-i32-branch-native-smoke
     just guard-cranelift-increment-local-i32-native-smoke
+    just guard-cranelift-call-helper-i32-native-smoke
     just guard-cranelift-mir-to-c-differential-native-smoke
     echo "✅ Explicit experimental Cranelift backend suite passed."
 guard-mir-feature-return-int-preservation:
