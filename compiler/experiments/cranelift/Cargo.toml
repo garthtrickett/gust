@@ -1,0 +1,13 @@
+[package]
+name = "gust-cranelift-experiment"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.94.0"
+publish = false
+
+[dependencies]
+cranelift-codegen = "=0.131.0"
+cranelift-frontend = "=0.131.0"
+cranelift-module = "=0.131.0"
+cranelift-native = "=0.131.0"
+cranelift-object = "=0.131.0"

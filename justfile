@@ -1164,16 +1164,16 @@ guard-mir-to-c-boring-surface:
       exit 1
     fi
 
-    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' || true)"
+    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
-      echo "MIR-to-C boring gate allows only manifest, inert backend, return-int, local-binding, and branch Cranelift surface guards before backend implementation expands."
+      echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
       exit 1
     fi
 
-    cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true)"
+    cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
     if [ -n "$cranelift_refs" ]; then
-      echo "MIR-to-C boring gate allows only the manifest-only Cranelift experiment document before implementation references exist:"
+      echo "MIR-to-C boring gate allows only the manifest and isolated experimental Cranelift crate before production implementation references exist:"
       echo "$cranelift_refs"
       exit 1
     fi
@@ -1182,7 +1182,7 @@ guard-mir-to-c-boring-surface:
     just guard-mir-to-c-local-binding-read-native-smoke
     just guard-mir-to-c-conditional-branch-native-smoke
     just guard-mir-to-c-provenance-metadata-native-smoke
-    echo "✅ MIR-to-C boring surface passed: all Phase 8 entries are retired, suite routing is MIR-owned, and only return-int/local-binding/branch Cranelift experiment lanes are allowed."
+    echo "✅ MIR-to-C boring surface passed: all Phase 8 entries are retired, suite routing is MIR-owned, and only isolated Cranelift experiment lanes are allowed."
 
 guard-cranelift-experiment-manifest-surface:
     #!/usr/bin/env bash
@@ -1207,10 +1207,11 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
     rg -n -F 'MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'Cranelift is disabled by default.' "$manifest_doc" >/dev/null
     rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
-    rg -n -F 'No Cranelift Cargo dependency is allowed yet.' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml' "$manifest_doc" >/dev/null
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_manifest: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
@@ -1221,6 +1222,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_branch_native_guard: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_differential_native_guard: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_dependency_beachhead_guard: guard-cranelift-dependency-beachhead' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_status: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_codegen_status: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_backend_surface_status: differential_native_smoke' "$manifest_doc" >/dev/null
@@ -1234,20 +1236,23 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'forbidden_codegen_status: implemented' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_default_enabled: true' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_dependency: cranelift' "$manifest_doc" >/dev/null
-    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)" 
+    rg -n -F 'forbidden_root_dependency: cranelift' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_experiment_dependency_lockfile: compiler/experiments/cranelift/Cargo.lock' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_experiment_dependency_guard: guard-cranelift-dependency-beachhead' "$manifest_doc" >/dev/null
+	    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
-      echo "Phase 9 Step 7 allows only the Cranelift experiment manifest, inert backend surface, explicit backend suite, return-int/local-binding/branch native smoke guards, and differential native smoke guards, found additional Cranelift recipes:"
+      echo "Phase 9 Step 8 allows only the Cranelift experiment manifest, inert backend surface, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smoke guards, and differential native smoke guards, found additional Cranelift recipes:"
       echo "$cranelift_recipe_wiring"
       exit 1
     fi
-    cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true)"
+    cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
     if [ -n "$cranelift_refs" ]; then
       echo "Phase 9 Step 1 must not add Cranelift implementation references:"
       echo "$cranelift_refs"
       exit 1
     fi
-    echo "✅ Cranelift experiment manifest surface passed: explicit backend suite plus return-int/local-binding/branch differential native smoke lanes, disabled by default, and no production codegen exists yet."
+    echo "✅ Cranelift experiment manifest surface passed: dependency beachhead plus explicit backend suite and return-int/local-binding/branch differential native smoke lanes, disabled by default, and no production codegen exists yet."
 
 guard-cranelift-backend-surface:
     #!/usr/bin/env bash
@@ -1270,24 +1275,26 @@ guard-cranelift-backend-surface:
     rg -n -F 'guard-cranelift-differential-native-smoke' justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
     rg -n -F 'guard-cranelift-experimental-backend-suite' justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'guard-cranelift-dependency-beachhead' justfile >/dev/null
     rg -n -F 'No Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No Cranelift Cargo dependency is allowed yet.' "$manifest_doc" >/dev/null
     rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_backend_codegen_entry: cranelift_codegen' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
-    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)" 
+	    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
     if [ -n "$unexpected_cranelift_recipes" ]; then
-      echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 7 explicit suite fixture-only lanes yet:"
+      echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 8 dependency beachhead fixture-only lanes yet:"
       echo "$unexpected_cranelift_recipes"
       exit 1
     fi
-    implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true)"
+    implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
     if [ -n "$implementation_refs" ]; then
       echo "Cranelift backend surface must not include expanded codegen, deps, or non-return native smoke implementation refs yet:"
       echo "$implementation_refs"
       exit 1
     fi
-    echo "✅ Cranelift backend surface passed: explicit backend suite and return-int/local-binding/branch differential native smokes are allowed, but production codegen/deps/routes are still absent."
+    echo "✅ Cranelift backend surface passed: dependency beachhead, explicit backend suite, and return-int/local-binding/branch differential native smokes are allowed, but production codegen/routes are still absent."
 
 guard-cranelift-return-int-native-smoke:
     #!/usr/bin/env bash
@@ -1453,11 +1460,70 @@ guard-cranelift-mir-to-c-differential-native-smoke:
 
     echo "✅ Cranelift/MIR-to-C differential native smoke passed."
 
+guard-cranelift-dependency-beachhead:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Cranelift dependency beachhead..."
+    experiment_dir="compiler/experiments/cranelift"
+    manifest="$experiment_dir/Cargo.toml"
+    lockfile="$experiment_dir/Cargo.lock"
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+
+    if [ ! -f "$manifest" ]; then
+      echo "Missing $manifest. Step 8 must keep Cranelift dependencies in an isolated experimental crate."
+      exit 1
+    fi
+    if [ ! -f "$lockfile" ]; then
+      echo "Missing $lockfile. Generate and commit it with:"
+      echo "  cargo generate-lockfile --manifest-path $manifest"
+      exit 1
+    fi
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_dependency_beachhead_guard: guard-cranelift-dependency-beachhead' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_experiment_dependency_lockfile: compiler/experiments/cranelift/Cargo.lock' "$manifest_doc" >/dev/null
+    rg -n -F 'forbidden_root_dependency: cranelift' "$manifest_doc" >/dev/null
+
+    rg -n -F 'name = "gust-cranelift-experiment"' "$manifest" >/dev/null
+    rg -n -F 'publish = false' "$manifest" >/dev/null
+    rg -n -F 'cranelift-codegen = "=0.131.0"' "$manifest" >/dev/null
+    rg -n -F 'cranelift-frontend = "=0.131.0"' "$manifest" >/dev/null
+    rg -n -F 'cranelift-module = "=0.131.0"' "$manifest" >/dev/null
+    rg -n -F 'cranelift-native = "=0.131.0"' "$manifest" >/dev/null
+    rg -n -F 'cranelift-object = "=0.131.0"' "$manifest" >/dev/null
+
+    rg -n -F 'name = "cranelift-codegen"' "$lockfile" >/dev/null
+    rg -n -F 'name = "cranelift-frontend"' "$lockfile" >/dev/null
+    rg -n -F 'name = "cranelift-module"' "$lockfile" >/dev/null
+    rg -n -F 'name = "cranelift-native"' "$lockfile" >/dev/null
+    rg -n -F 'name = "cranelift-object"' "$lockfile" >/dev/null
+    rg -n -F 'version = "0.131.0"' "$lockfile" >/dev/null
+
+    root_dependency_refs="$(rg -n -i -F 'cranelift' Cargo.toml Cargo.lock 2>/dev/null || true)"
+    if [ -n "$root_dependency_refs" ]; then
+      echo "Root compiler Cargo manifests must not depend on Cranelift yet:"
+      echo "$root_dependency_refs"
+      exit 1
+    fi
+
+    production_refs="$(rg -n -i 'cranelift_codegen|cranelift_frontend|cranelift_module|cranelift_native|cranelift_object|CraneliftBackend|backend[[:space:]]*[:=][[:space:]]*cranelift|--backend[=[:space:]]*cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/experiments/cranelift/' | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true)"
+    if [ -n "$production_refs" ]; then
+      echo "Cranelift dependency beachhead must not add production codegen routes or imports yet:"
+      echo "$production_refs"
+      exit 1
+    fi
+
+    cargo metadata --manifest-path "$manifest" --locked --format-version 1 >/dev/null
+    cargo check --manifest-path "$manifest" --locked --all-targets
+    echo "✅ Cranelift dependency beachhead passed: deps are isolated, locked, and production routing remains MIR-to-C."
+
 guard-cranelift-experimental-backend-suite:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Running explicit experimental Cranelift backend suite..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-dependency-beachhead
     just guard-cranelift-experiment-manifest-surface
     just guard-cranelift-backend-surface
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null

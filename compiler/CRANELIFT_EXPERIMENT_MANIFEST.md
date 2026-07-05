@@ -14,6 +14,7 @@ CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-b
 CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke
 CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke
 CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite
+CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead
 MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface
 
 This manifest starts Phase 9 without adding Cranelift code generation.
@@ -24,7 +25,7 @@ The Cranelift backend experiment now has fixture-only return-int, local-binding,
 
 - Cranelift is disabled by default.
 - No Cranelift codegen entry point exists yet.
-- No Cranelift Cargo dependency is allowed yet.
+No root Cranelift Cargo dependency is allowed yet. Cranelift dependencies are allowed only under compiler/experiments/cranelift/.
 - No production compiler path may route to Cranelift yet.
 - No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.
 - `guard-mir-to-c-boring-surface` remains the prerequisite gate before backend implementation work starts.
@@ -39,6 +40,7 @@ allowed_local_binding_native_guard: guard-cranelift-local-binding-native-smoke
 allowed_branch_native_guard: guard-cranelift-conditional-branch-native-smoke
 allowed_differential_native_guard: guard-cranelift-mir-to-c-differential-native-smoke
 allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite
+allowed_dependency_beachhead_guard: guard-cranelift-dependency-beachhead
 allowed_status: mir_to_c_differential_native_smoke
 allowed_codegen_status: return_int_local_binding_branch_differential_fixture_only
 allowed_backend_surface_status: differential_native_smoke
@@ -58,6 +60,9 @@ allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_cond
 forbidden_codegen_status: implemented
 forbidden_default_enabled: true
 forbidden_production_route: cranelift
-forbidden_dependency: cranelift
+forbidden_root_dependency: cranelift
+allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml
+allowed_experiment_dependency_lockfile: compiler/experiments/cranelift/Cargo.lock
+allowed_experiment_dependency_guard: guard-cranelift-dependency-beachhead
 forbidden_backend_codegen_entry: cranelift_codegen
 forbidden_production_route: cranelift
