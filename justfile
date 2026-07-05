@@ -1328,9 +1328,9 @@ guard-cranelift-conditional-branch-native-smoke:
     echo "🔒 Native compiling experimental Cranelift conditional-branch smoke."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-branch-native-smoke-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: branch_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_and_branch_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_branch_fixture: tiny_cranelift_conditional_branch' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_conditional_branch_native
@@ -1351,6 +1351,76 @@ guard-cranelift-conditional-branch-native-smoke:
     fi
     echo "✅ Experimental Cranelift conditional-branch native smoke passed."
 
+
+guard-cranelift-differential-native-smoke:
+    just guard-cranelift-mir-to-c-differential-native-smoke
+
+guard-cranelift-mir-to-c-differential-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Differential native smoke: experimental Cranelift fixtures vs MIR-to-C fixtures."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'int tiny_return_int(void) { return 1; }' compiler/mir.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst justfile >/dev/null
+    rg -n -F 'int tiny_local_binding_read(void) { int value = 2; return value; }' compiler/mir.gst compiler/mir_to_c_local_binding_read_smoke_test_entry.gst justfile >/dev/null
+    rg -n -F 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' compiler/mir.gst compiler/mir_to_c_conditional_branch_smoke_test_entry.gst justfile >/dev/null
+    mkdir -p build/guards/cranelift_mir_to_c_differential_native
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+
+    run_c() {
+      local source="$1"
+      local binary="$2"
+      "$CC_BIN" $CFLAGS_VAL "$source" -o "$binary"
+      set +e
+      "$binary"
+      local status="$?"
+      set -e
+      printf '%s' "$status"
+    }
+
+    compare_case() {
+      local label="$1"
+      local expected_status="$2"
+      local mir_fn="$3"
+      local mir_source="$4"
+      local cranelift_fn="$5"
+      local cranelift_source="$6"
+      local mir_c="build/guards/cranelift_mir_to_c_differential_native/${label}_mir_to_c.c"
+      local cranelift_c="build/guards/cranelift_mir_to_c_differential_native/${label}_cranelift.c"
+      local mir_bin="build/guards/cranelift_mir_to_c_differential_native/${label}_mir_to_c_bin"
+      local cranelift_bin="build/guards/cranelift_mir_to_c_differential_native/${label}_cranelift_bin"
+      printf '%s\n' "$mir_source" > "$mir_c"
+      printf '%s\n' "int main(void) { return ${mir_fn}(); }" >> "$mir_c"
+      printf '%s\n' "$cranelift_source" > "$cranelift_c"
+      printf '%s\n' "int main(void) { return ${cranelift_fn}(); }" >> "$cranelift_c"
+      local mir_status
+      local cranelift_status
+      mir_status="$(run_c "$mir_c" "$mir_bin")"
+      cranelift_status="$(run_c "$cranelift_c" "$cranelift_bin")"
+      if [ "$mir_status" != "$cranelift_status" ]; then
+        echo "Differential mismatch for $label: MIR-to-C exited $mir_status but Cranelift fixture exited $cranelift_status."
+        exit 1
+      fi
+      if [ "$mir_status" != "$expected_status" ]; then
+        echo "Differential fixture $label expected exit $expected_status, got $mir_status."
+        exit 1
+      fi
+      echo "✅ Differential fixture $label matched exit $expected_status."
+    }
+
+    compare_case "return_int" "1" "tiny_return_int" 'int tiny_return_int(void) { return 1; }' "tiny_cranelift_return_int" 'int tiny_cranelift_return_int(void) { return 1; }'
+    compare_case "local_binding_read" "2" "tiny_local_binding_read" 'int tiny_local_binding_read(void) { int value = 2; return value; }' "tiny_cranelift_local_binding_read" 'int tiny_cranelift_local_binding_read(void) { int value = 2; return value; }'
+    compare_case "conditional_branch" "1" "tiny_conditional_branch" 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' "tiny_cranelift_conditional_branch" 'int tiny_cranelift_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }'
+
+    echo "✅ Cranelift/MIR-to-C differential native smoke passed."
 guard-mir-feature-return-int-preservation:
     #!/usr/bin/env bash
     set -euo pipefail

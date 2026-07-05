@@ -53,6 +53,7 @@ jobs:
           - cranelift-return-int
           - cranelift-local-binding
           - cranelift-branch
+          - cranelift-differential
           - mir-to-c-return-int
           - routed-return-int
           - migration-return-int

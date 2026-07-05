@@ -24,7 +24,7 @@ The Cranelift backend experiment now has fixture-only return-int, local-binding,
 - No Cranelift codegen entry point exists yet.
 - No Cranelift Cargo dependency is allowed yet.
 - No production compiler path may route to Cranelift yet.
-- No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, and `guard-cranelift-branch-native-smoke`.
+No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, and `guard-cranelift-branch-native-smoke`.
 - `guard-mir-to-c-boring-surface` remains the prerequisite gate before backend implementation work starts.
 
 ## Allowed Step 5 surface
@@ -42,6 +42,9 @@ allowed_primary_route: mir_to_c
 allowed_return_int_fixture: tiny_cranelift_return_int
 allowed_local_binding_fixture: tiny_cranelift_local_binding_read
 allowed_branch_fixture: tiny_cranelift_conditional_branch
+allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int
+allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read
+allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch
 
 ## Forbidden Step 5 surface
 
