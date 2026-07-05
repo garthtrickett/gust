@@ -791,10 +791,10 @@ guard-mir-to-c-boring-surface:
       exit 1
     fi
 
-    cranelift_just_wiring="$(rg -n -i '^(guard-.*cranelift|cranelift[-_:]|import .*cranelift)|just guard-.*cranelift' justfile || true)"
-    if [ -n "$cranelift_just_wiring" ]; then
-      echo "MIR-to-C boring gate must run before Cranelift justfile wiring exists."
-      echo "$cranelift_just_wiring"
+    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' || true)"
+    if [ -n "$cranelift_recipe_wiring" ]; then
+      echo "MIR-to-C boring gate must run before Cranelift justfile recipes exist."
+      echo "$cranelift_recipe_wiring"
       exit 1
     fi
 
