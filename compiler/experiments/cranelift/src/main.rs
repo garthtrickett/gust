@@ -195,6 +195,72 @@ fn emit_increment_local_i32_object(output_path: &Path) -> Result<(), Box<dyn Err
     )
 }
 
+fn emit_call_helper_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder = cranelift_native::builder()
+        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder =
+        ObjectBuilder::new(isa, "gust_cranelift_call_helper_i32", default_libcall_names())?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut helper_signature = module.make_signature();
+    helper_signature.params.push(AbiParam::new(types::I32));
+    helper_signature.returns.push(AbiParam::new(types::I32));
+
+    let helper_function_id =
+        module.declare_function(ADD_ONE_HELPER_I32_SYMBOL, Linkage::Local, &helper_signature)?;
+    let mut helper_context = module.make_context();
+    helper_context.func.signature = helper_signature;
+
+    let mut helper_builder_context = FunctionBuilderContext::new();
+    let mut helper_builder =
+        FunctionBuilder::new(&mut helper_context.func, &mut helper_builder_context);
+    build_add_one_helper_i32_body(&mut helper_builder);
+    helper_builder.seal_all_blocks();
+    helper_builder.finalize();
+
+    module.define_function(helper_function_id, &mut helper_context)?;
+    module.clear_context(&mut helper_context);
+
+    let mut caller_signature = module.make_signature();
+    caller_signature.params.push(AbiParam::new(types::I32));
+    caller_signature.returns.push(AbiParam::new(types::I32));
+
+    let caller_function_id =
+        module.declare_function(CALL_HELPER_I32_SYMBOL, Linkage::Export, &caller_signature)?;
+    let mut caller_context = module.make_context();
+    caller_context.func.signature = caller_signature;
+
+    let mut caller_builder_context = FunctionBuilderContext::new();
+    let mut caller_builder =
+        FunctionBuilder::new(&mut caller_context.func, &mut caller_builder_context);
+
+    let entry_block = caller_builder.create_block();
+    caller_builder.append_block_params_for_function_params(entry_block);
+    caller_builder.switch_to_block(entry_block);
+
+    let argument_value = caller_builder.block_params(entry_block)[0];
+    let helper_function_ref = module.declare_func_in_func(helper_function_id, caller_builder.func);
+    let call_inst = caller_builder.ins().call(helper_function_ref, &[argument_value]);
+    let return_value = caller_builder.inst_results(call_inst)[0];
+    caller_builder.ins().return_(&[return_value]);
+
+    caller_builder.seal_all_blocks();
+    caller_builder.finalize();
+
+    module.define_function(caller_function_id, &mut caller_context)?;
+    module.clear_context(&mut caller_context);
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
 fn emit_zero_arg_i32_object(
     output_path: &Path,
     object_name: &str,

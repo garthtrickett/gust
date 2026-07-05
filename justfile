@@ -1883,6 +1883,7 @@ guard-cranelift-no-fixture-regression:
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'add-i32-object' >/dev/null
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'positive-i32-branch-object' >/dev/null
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'increment-local-i32-object' >/dev/null
+    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'call-helper-i32-object' >/dev/null
     echo "✅ Cranelift no-fixture regression guard passed."
 
 guard-cranelift-experimental-backend-suite:
