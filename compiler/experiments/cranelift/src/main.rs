@@ -49,6 +49,10 @@ const MIR_BLOCK_GRAPH_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_mir_block_graph_
 const MIR_BLOCK_GRAPH_LOCAL_READ_I32_SYMBOL: &str = "tiny_cranelift_mir_block_graph_local_read_i32";
 const MIR_BLOCK_GRAPH_LOCAL_BRANCH_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_local_branch_i32";
+const MIR_BLOCK_GRAPH_LOCAL_UPDATE_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_local_update_i32";
+const MIR_BLOCK_GRAPH_LOCAL_UPDATE_BRANCH_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_local_update_branch_i32";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -143,6 +147,7 @@ enum TinyMirTerminator {
 enum TinyMirBlockStatement {
     LocalI32Set { name: &'static str, value: i32 },
     LocalI32SetParam { name: &'static str, param: usize },
+    LocalI32AddI32Literal { name: &'static str, value: i32 },
 }
 
 #[derive(Clone, Copy)]
@@ -305,6 +310,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_mir_block_graph_local_i32_bundle_object(Path::new(&output_path))
         }
+        "mir-block-graph-local-update-i32-bundle-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_block_graph_local_update_i32_bundle_object(Path::new(&output_path))
+        }
         "mir-positive-i32-branch-object" => {
             let Some(output_path) = args.next() else {
                 return Err(usage_error().into());
@@ -456,7 +470,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-comparison-branch-i32-bundle-object|mir-block-graph-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-comparison-branch-i32-bundle-object|mir-block-graph-i32-bundle-object|mir-block-graph-local-i32-bundle-object|mir-block-graph-local-update-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -859,6 +873,120 @@ fn emit_mir_block_graph_local_i32_bundle_object(output_path: &Path) -> Result<()
 
     define_tiny_mir_block_graph_exported_function(&mut module, &local_read_function)?;
     define_tiny_mir_block_graph_exported_function(&mut module, &local_branch_function)?;
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn emit_mir_block_graph_local_update_i32_bundle_object(
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    static MIR_BLOCK_GRAPH_LOCAL_UPDATE_I32_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static MIR_BLOCK_GRAPH_LOCAL_UPDATE_I32_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
+        name: "value",
+        ty: TinyMirType::I32,
+    }];
+    static MIR_BLOCK_GRAPH_LOCAL_UPDATE_ENTRY_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32Set {
+            name: "value",
+            value: 40,
+        }];
+    static MIR_BLOCK_GRAPH_LOCAL_UPDATE_STEP_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32AddI32Literal {
+            name: "value",
+            value: 5,
+        }];
+    static MIR_BLOCK_GRAPH_LOCAL_UPDATE_BRANCH_ENTRY_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32SetParam {
+            name: "value",
+            param: 0,
+        }];
+    static MIR_BLOCK_GRAPH_LOCAL_UPDATE_BRANCH_STEP_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32AddI32Literal {
+            name: "value",
+            value: 2,
+        }];
+    static MIR_BLOCK_GRAPH_LOCAL_UPDATE_BLOCKS: [TinyMirBlock; 3] = [
+        TinyMirBlock {
+            label: "entry",
+            statements: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_ENTRY_STATEMENTS,
+            terminator: TinyMirBlockTerminator::Jump { target: "increment" },
+        },
+        TinyMirBlock {
+            label: "increment",
+            statements: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_STEP_STATEMENTS,
+            terminator: TinyMirBlockTerminator::Jump { target: "return" },
+        },
+        TinyMirBlock {
+            label: "return",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::ReturnLocalI32("value"),
+        },
+    ];
+    static MIR_BLOCK_GRAPH_LOCAL_UPDATE_BRANCH_BLOCKS: [TinyMirBlock; 4] = [
+        TinyMirBlock {
+            label: "entry",
+            statements: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_BRANCH_ENTRY_STATEMENTS,
+            terminator: TinyMirBlockTerminator::Jump { target: "increment" },
+        },
+        TinyMirBlock {
+            label: "increment",
+            statements: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_BRANCH_STEP_STATEMENTS,
+            terminator: TinyMirBlockTerminator::BranchLocalI32Positive {
+                name: "value",
+                then_block: "positive",
+                else_block: "non_positive",
+            },
+        },
+        TinyMirBlock {
+            label: "positive",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::ReturnI32(53),
+        },
+        TinyMirBlock {
+            label: "non_positive",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::ReturnI32(59),
+        },
+    ];
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_mir_block_graph_local_update_i32_bundle",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let local_update_function = TinyMirBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_local_update_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_LOCAL_UPDATE_I32_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::I32,
+        locals: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_I32_LOCALS,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_BLOCKS,
+    };
+    let local_update_branch_function = TinyMirBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_local_update_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_LOCAL_UPDATE_BRANCH_I32_SYMBOL,
+        params: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_I32_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_I32_LOCALS,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_BRANCH_BLOCKS,
+    };
+
+    define_tiny_mir_block_graph_exported_function(&mut module, &local_update_function)?;
+    define_tiny_mir_block_graph_exported_function(&mut module, &local_update_branch_function)?;
 
     let object_product = module.finish();
     fs::write(output_path, object_product.emit()?)?;
@@ -1788,6 +1916,18 @@ fn build_tiny_mir_block_graph_body(
                         })?
                     };
                     builder.def_var(slot, param_value);
+                }
+                TinyMirBlockStatement::LocalI32AddI32Literal { name, value } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR block graph add-literal local: {name}"),
+                        )
+                    })?;
+                    let current_value = builder.use_var(slot);
+                    let literal_value = builder.ins().iconst(types::I32, i64::from(value));
+                    let updated_value = builder.ins().iadd(current_value, literal_value);
+                    builder.def_var(slot, updated_value);
                 }
             }
         }

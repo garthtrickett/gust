@@ -2439,6 +2439,52 @@ guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke:
     fi
     echo "✅ MIR-shaped Cranelift block graph local i32 bundle native smoke passed."
 
+guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling MIR-shaped Cranelift block graph local update i32 bundle smoke..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_LOCAL_UPDATE_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_native_guard: guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_local_update_i32_bundle_native/tiny_cranelift_mir_block_graph_local_update_i32_bundle.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_local_update_symbol: tiny_cranelift_mir_block_graph_local_update_i32' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_local_update_branch_symbol: tiny_cranelift_mir_block_graph_local_update_branch_i32' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_lowering_scaffold: TinyMirBlockStatement::LocalI32AddI32Literal' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::Jump' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::ReturnLocalI32' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::BranchLocalI32Positive' "$manifest_doc" >/dev/null
+    build_dir="build/guards/cranelift_mir_block_graph_local_update_i32_bundle_native"
+    object_file="$build_dir/tiny_cranelift_mir_block_graph_local_update_i32_bundle.o"
+    shim_c="$build_dir/tiny_cranelift_mir_block_graph_local_update_i32_bundle_main.c"
+    binary="$build_dir/tiny_cranelift_mir_block_graph_local_update_i32_bundle_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- mir-block-graph-local-update-i32-bundle-object "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'extern int32_t tiny_cranelift_mir_block_graph_local_update_i32(void);' >> "$shim_c"
+    echo 'extern int32_t tiny_cranelift_mir_block_graph_local_update_branch_i32(int32_t value);' >> "$shim_c"
+    echo 'int main(void) {' >> "$shim_c"
+    echo '  if (tiny_cranelift_mir_block_graph_local_update_i32() != 45) return 1;' >> "$shim_c"
+    echo '  if (tiny_cranelift_mir_block_graph_local_update_branch_i32(-3) != 59) return 2;' >> "$shim_c"
+    echo '  if (tiny_cranelift_mir_block_graph_local_update_branch_i32(-1) != 53) return 3;' >> "$shim_c"
+    echo '  if (tiny_cranelift_mir_block_graph_local_update_branch_i32(0) != 53) return 4;' >> "$shim_c"
+    echo '  return 19;' >> "$shim_c"
+    echo '}' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "19" ]; then
+      echo "Expected MIR-shaped Cranelift block graph local update i32 bundle native smoke to exit with status 19, got $status"
+      exit 1
+    fi
+    echo "✅ MIR-shaped Cranelift block graph local update i32 bundle native smoke passed."
+
 guard-cranelift-mir-to-c-differential-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
