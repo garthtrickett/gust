@@ -2091,8 +2091,6 @@ guard-cranelift-mir-add-i32-native-smoke:
     echo "✅ MIR-shaped Cranelift add-i32 native smoke passed."
 
 guard-cranelift-differential-native-smoke:
-
-guard-cranelift-differential-native-smoke:
     just guard-cranelift-mir-to-c-differential-native-smoke
 
 guard-cranelift-mir-to-c-differential-native-smoke:
