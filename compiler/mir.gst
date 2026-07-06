@@ -661,6 +661,38 @@ func mir_lower_return_int_literal_fixture(ctx: &Arena) MirProgram[ctx] {
     return program;
 }
 
+func mir_emit_native_backend_return_int_ingestion_fixture(ctx: &Arena) str {
+    // Step 45 fixture-only native-backend ingestion seam.
+    //
+    // This gives the isolated native backend experiment a compiler-owned,
+    // serialized MIR artifact for the existing return-int fixture without
+    // routing production codegen away from MIR-to-C. It is intentionally
+    // narrow: one function, one entry block, one Return(IntLiteral(1:int))
+    // terminator.
+    mut program := mir_lower_return_int_literal_fixture(ctx);
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    if len(functions) != 1 {
+        return "format: invalid\n";
+    }
+
+    mut fixture := "format: gust.compiler_mir_ingestion.return_int.v1\n";
+    fixture = std.Concat(fixture, "producer: compiler/mir.gst\n");
+    fixture = std.Concat(fixture, "producer_entry: mir_emit_native_backend_return_int_ingestion_fixture\n");
+    fixture = std.Concat(fixture, "source_fixture: compiler/mir_feature_return_int_preservation_source.gst\n");
+    fixture = std.Concat(fixture, "lowering_entry: mir_lower_return_int_literal_fixture\n");
+    fixture = std.Concat(fixture, "function: tiny_return_int\n");
+    fixture = std.Concat(fixture, "return_type: int\n");
+    fixture = std.Concat(fixture, "entry_block: 0\n");
+    fixture = std.Concat(fixture, "block_count: 1\n");
+    fixture = std.Concat(fixture, "terminator: Return\n");
+    fixture = std.Concat(fixture, "return_value_kind: IntLiteral\n");
+    fixture = std.Concat(fixture, "return_value: 1\n");
+    fixture = std.Concat(fixture, "return_value_type: int\n");
+    fixture = std.Concat(fixture, "backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int\n");
+    fixture = std.Concat(fixture, "expected_exit: 1\n");
+    return fixture;
+}
+
 func mir_lower_conditional_branch_fixture(ctx: &Arena) MirProgram[ctx] {
     // Phase 6 fixture-only conditional branch lowering.
     //

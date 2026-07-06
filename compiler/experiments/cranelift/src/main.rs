@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashMap;
 use std::env;
 use std::error::Error;
 use std::fs;
@@ -28,6 +29,7 @@ const HOST_ADD_I32_SYMBOL: &str = "tiny_host_add_i32";
 const EXTERN_PREDICATE_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_extern_predicate_branch_i32";
 const HOST_IS_POSITIVE_I32_SYMBOL: &str = "tiny_host_is_positive_i32";
 const MIR_RETURN_INT_SYMBOL: &str = "tiny_cranelift_mir_return_int";
+const COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL: &str = "tiny_native_backend_compiler_mir_ingested_return_int";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
@@ -314,6 +316,10 @@ struct TinyMirFunction {
     terminator: TinyMirTerminator,
 }
 
+struct CompilerMirReturnIntIngestionFixture {
+    return_value: i32,
+}
+
 static MIR_LOCAL_BINDING_READ_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
     name: "value",
     ty: TinyMirType::I32,
@@ -346,6 +352,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_return_int_object(Path::new(&output_path))
+        }
+        "compiler-mir-return-int-ingestion-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_return_int_ingestion_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
         }
         "mir-return-int-object" => {
             let Some(output_path) = args.next() else {
@@ -651,7 +672,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-comparison-branch-i32-bundle-object|mir-block-graph-i32-bundle-object|mir-block-graph-local-i32-bundle-object|mir-block-graph-local-update-i32-bundle-object|mir-block-graph-param-i32-bundle-object|mir-block-graph-param-call-i32-bundle-object|mir-block-graph-param-extern-i32-bundle-object|mir-block-graph-param-extern-add-i32-bundle-object|mir-block-graph-param-extern-predicate-i32-bundle-object|mir-block-graph-param-merge-i32-bundle-object|mir-block-graph-param-merge-call-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|compiler-mir-return-int-ingestion-object <input.mir> <output.o>|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-comparison-branch-i32-bundle-object|mir-block-graph-i32-bundle-object|mir-block-graph-local-i32-bundle-object|mir-block-graph-local-update-i32-bundle-object|mir-block-graph-param-i32-bundle-object|mir-block-graph-param-call-i32-bundle-object|mir-block-graph-param-extern-i32-bundle-object|mir-block-graph-param-extern-add-i32-bundle-object|mir-block-graph-param-extern-predicate-i32-bundle-object|mir-block-graph-param-merge-i32-bundle-object|mir-block-graph-param-merge-call-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -662,6 +683,119 @@ fn emit_return_int_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
         RETURN_INT_SYMBOL,
         build_return_int_body,
     )
+}
+
+fn emit_compiler_mir_return_int_ingestion_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    let fixture = parse_compiler_mir_return_int_ingestion_fixture(&contents)?;
+    let mir_function = TinyMirFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_return_int",
+        symbol: COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnI32(fixture.return_value),
+    };
+
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn parse_compiler_mir_return_int_ingestion_fixture(
+    contents: &str,
+) -> Result<CompilerMirReturnIntIngestionFixture, Box<dyn Error>> {
+    let mut fields: HashMap<&str, &str> = HashMap::new();
+    for raw_line in contents.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let Some((key, value)) = line.split_once(':') else {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!("invalid compiler MIR ingestion fixture line: {line}"),
+            )
+            .into());
+        };
+        fields.insert(key.trim(), value.trim());
+    }
+
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "format",
+        "gust.compiler_mir_ingestion.return_int.v1",
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "producer", "compiler/mir.gst")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "producer_entry",
+        "mir_emit_native_backend_return_int_ingestion_fixture",
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "mir_lower_return_int_literal_fixture")?;
+    require_compiler_mir_ingestion_field(&fields, "function", "tiny_return_int")?;
+    require_compiler_mir_ingestion_field(&fields, "return_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "entry_block", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "terminator", "Return")?;
+    require_compiler_mir_ingestion_field(&fields, "return_value_kind", "IntLiteral")?;
+    require_compiler_mir_ingestion_field(&fields, "return_value_type", "int")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "backend_symbol",
+        COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL,
+    )?;
+
+    let return_value = required_compiler_mir_ingestion_field(&fields, "return_value")?
+        .parse::<i32>()
+        .map_err(|_| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                "compiler MIR ingestion fixture return_value must be an i32",
+            )
+        })?;
+    if return_value != 1 {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "compiler MIR ingestion fixture currently admits only tiny_return_int returning 1",
+        )
+        .into());
+    }
+
+    Ok(CompilerMirReturnIntIngestionFixture { return_value })
+}
+
+fn required_compiler_mir_ingestion_field<'a>(
+    fields: &'a HashMap<&str, &str>,
+    key: &str,
+) -> Result<&'a str, Box<dyn Error>> {
+    fields.get(key).copied().ok_or_else(|| {
+        IoError::new(
+            ErrorKind::InvalidInput,
+            format!("missing compiler MIR ingestion fixture field: {key}"),
+        )
+        .into()
+    })
+}
+
+fn require_compiler_mir_ingestion_field(
+    fields: &HashMap<&str, &str>,
+    key: &str,
+    expected: &str,
+) -> Result<(), Box<dyn Error>> {
+    let actual = required_compiler_mir_ingestion_field(fields, key)?;
+    if actual != expected {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "compiler MIR ingestion fixture field {key} expected {expected}, got {actual}"
+            ),
+        )
+        .into());
+    }
+    Ok(())
 }
 
 fn emit_mir_return_int_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
