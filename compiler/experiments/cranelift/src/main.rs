@@ -36,6 +36,8 @@ const COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_conditional_branch";
 const COMPILER_MIR_INGESTED_ADD_I32_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_add_i32";
+const COMPILER_MIR_INGESTED_PROVENANCE_METADATA_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_provenance_metadata";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
@@ -414,6 +416,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_add_i32_ingestion_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-provenance-metadata-ingestion-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_provenance_metadata_ingestion_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -1044,6 +1061,79 @@ fn parse_compiler_mir_add_i32_ingestion_fixture(contents: &str) -> Result<(), Bo
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_lhs", "0")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_rhs", "4")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "4")?;
+    Ok(())
+}
+
+fn emit_compiler_mir_provenance_metadata_ingestion_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_provenance_metadata_ingestion_fixture(&contents)?;
+    let mir_function = TinyMirFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_provenance_metadata",
+        symbol: COMPILER_MIR_INGESTED_PROVENANCE_METADATA_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::I32,
+        locals: &MIR_LOCAL_BINDING_READ_LOCALS,
+        statements: &MIR_LOCAL_BINDING_READ_STATEMENTS,
+        terminator: TinyMirTerminator::ReturnLocalI32("value"),
+    };
+
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn parse_compiler_mir_provenance_metadata_ingestion_fixture(
+    contents: &str,
+) -> Result<(), Box<dyn Error>> {
+    let fields = parse_compiler_mir_ingestion_fields(contents)?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "format",
+        "gust.compiler_mir_ingestion.provenance_metadata.v1",
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "producer", "compiler/mir.gst")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "producer_entry",
+        "mir_emit_native_backend_provenance_metadata_ingestion_fixture",
+    )?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "source_fixture",
+        "compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst",
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "mir_lower_provenance_metadata_fixture")?;
+    require_compiler_mir_ingestion_field(&fields, "function", "tiny_provenance_metadata_local_read")?;
+    require_compiler_mir_ingestion_field(&fields, "return_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "entry_block", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "local_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "local_0_name", "value")?;
+    require_compiler_mir_ingestion_field(&fields, "local_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "statement_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "statement_0_kind", "LocalI32Set")?;
+    require_compiler_mir_ingestion_field(&fields, "statement_0_local", "value")?;
+    require_compiler_mir_ingestion_field(&fields, "statement_0_value", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "terminator", "ReturnLocal")?;
+    require_compiler_mir_ingestion_field(&fields, "return_local", "value")?;
+    require_compiler_mir_ingestion_field(&fields, "return_value_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "provenance_metadata_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "provenance_0_kind", "LocalBinding")?;
+    require_compiler_mir_ingestion_field(&fields, "provenance_0_local", "value")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "provenance_0_origin",
+        "compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst",
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "resource_metadata_count", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "native_boundary_metadata_count", "0")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "backend_symbol",
+        COMPILER_MIR_INGESTED_PROVENANCE_METADATA_SYMBOL,
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "expected_exit", "2")?;
     Ok(())
 }
 

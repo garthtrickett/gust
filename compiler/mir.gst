@@ -730,6 +730,49 @@ func mir_emit_native_backend_local_binding_read_ingestion_fixture(ctx: &Arena) s
     return std.Clone(ctx, fixture);
 }
 
+func mir_emit_native_backend_provenance_metadata_ingestion_fixture(ctx: &Arena) str {
+    // Fixture-only native-backend ingestion seam for MIR provenance metadata.
+    //
+    // This keeps metadata visible in the compiler-owned serialized MIR artifact
+    // while preserving the same tiny local-binding/read native behavior. It is
+    // intentionally not a production backend route and not a general MIR
+    // interchange format.
+    mut program := mir_lower_provenance_metadata_fixture(ctx);
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    if len(functions) != 1 {
+        return "format: invalid\n";
+    }
+
+    mut fixture := "format: gust.compiler_mir_ingestion.provenance_metadata.v1\n";
+    fixture = std.Concat(fixture, "producer: compiler/mir.gst\n");
+    fixture = std.Concat(fixture, "producer_entry: mir_emit_native_backend_provenance_metadata_ingestion_fixture\n");
+    fixture = std.Concat(fixture, "source_fixture: compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst\n");
+    fixture = std.Concat(fixture, "lowering_entry: mir_lower_provenance_metadata_fixture\n");
+    fixture = std.Concat(fixture, "function: tiny_provenance_metadata_local_read\n");
+    fixture = std.Concat(fixture, "return_type: int\n");
+    fixture = std.Concat(fixture, "entry_block: 0\n");
+    fixture = std.Concat(fixture, "block_count: 1\n");
+    fixture = std.Concat(fixture, "local_count: 1\n");
+    fixture = std.Concat(fixture, "local_0_name: value\n");
+    fixture = std.Concat(fixture, "local_0_type: int\n");
+    fixture = std.Concat(fixture, "statement_count: 1\n");
+    fixture = std.Concat(fixture, "statement_0_kind: LocalI32Set\n");
+    fixture = std.Concat(fixture, "statement_0_local: value\n");
+    fixture = std.Concat(fixture, "statement_0_value: 2\n");
+    fixture = std.Concat(fixture, "terminator: ReturnLocal\n");
+    fixture = std.Concat(fixture, "return_local: value\n");
+    fixture = std.Concat(fixture, "return_value_type: int\n");
+    fixture = std.Concat(fixture, "provenance_metadata_count: 1\n");
+    fixture = std.Concat(fixture, "provenance_0_kind: LocalBinding\n");
+    fixture = std.Concat(fixture, "provenance_0_local: value\n");
+    fixture = std.Concat(fixture, "provenance_0_origin: compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst\n");
+    fixture = std.Concat(fixture, "resource_metadata_count: 0\n");
+    fixture = std.Concat(fixture, "native_boundary_metadata_count: 0\n");
+    fixture = std.Concat(fixture, "backend_symbol: tiny_native_backend_compiler_mir_ingested_provenance_metadata\n");
+    fixture = std.Concat(fixture, "expected_exit: 2\n");
+    return std.Clone(ctx, fixture);
+}
+
 func mir_emit_native_backend_add_i32_ingestion_fixture(ctx: &Arena) str {
     // Step 50 fixture-only native-backend ingestion seam.
     //

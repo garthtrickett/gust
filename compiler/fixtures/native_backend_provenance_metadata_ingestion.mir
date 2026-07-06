@@ -1,0 +1,30 @@
+# Compiler-owned MIR ingestion fixture for native backend provenance metadata.
+# This is a narrow serialized seam for mir_lower_provenance_metadata_fixture,
+# not a production backend route and not a general MIR interchange format.
+format: gust.compiler_mir_ingestion.provenance_metadata.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_provenance_metadata_ingestion_fixture
+source_fixture: compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst
+lowering_entry: mir_lower_provenance_metadata_fixture
+function: tiny_provenance_metadata_local_read
+return_type: int
+entry_block: 0
+block_count: 1
+local_count: 1
+local_0_name: value
+local_0_type: int
+statement_count: 1
+statement_0_kind: LocalI32Set
+statement_0_local: value
+statement_0_value: 2
+terminator: ReturnLocal
+return_local: value
+return_value_type: int
+provenance_metadata_count: 1
+provenance_0_kind: LocalBinding
+provenance_0_local: value
+provenance_0_origin: compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst
+resource_metadata_count: 0
+native_boundary_metadata_count: 0
+backend_symbol: tiny_native_backend_compiler_mir_ingested_provenance_metadata
+expected_exit: 2
