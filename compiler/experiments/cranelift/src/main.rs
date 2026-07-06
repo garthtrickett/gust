@@ -32,6 +32,8 @@ const COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_return_int";
 const COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_local_binding_read";
+const COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_conditional_branch";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
@@ -380,6 +382,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_local_binding_read_ingestion_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-conditional-branch-ingestion-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_conditional_branch_ingestion_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -886,6 +903,88 @@ fn parse_compiler_mir_local_binding_read_ingestion_fixture(
         COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL,
     )?;
     require_compiler_mir_ingestion_field(&fields, "expected_exit", "2")?;
+
+    Ok(())
+}
+
+fn emit_compiler_mir_conditional_branch_ingestion_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_conditional_branch_ingestion_fixture(&contents)?;
+    let mir_function = TinyMirFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_conditional_branch",
+        symbol: COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::BranchI32Literal {
+            condition: 1,
+            then_return: 1,
+            else_return: 2,
+        },
+    };
+
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn parse_compiler_mir_conditional_branch_ingestion_fixture(
+    contents: &str,
+) -> Result<(), Box<dyn Error>> {
+    let mut fields: HashMap<&str, &str> = HashMap::new();
+    for raw_line in contents.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let Some((key, value)) = line.split_once(':') else {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!("invalid compiler MIR ingestion fixture line: {line}"),
+            )
+            .into());
+        };
+        fields.insert(key.trim(), value.trim());
+    }
+
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "format",
+        "gust.compiler_mir_ingestion.conditional_branch.v1",
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "producer", "compiler/mir.gst")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "producer_entry",
+        "mir_emit_native_backend_conditional_branch_ingestion_fixture",
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "mir_lower_conditional_branch_fixture")?;
+    require_compiler_mir_ingestion_field(&fields, "function", "tiny_conditional_branch")?;
+    require_compiler_mir_ingestion_field(&fields, "return_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "entry_block", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_count", "3")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_terminator", "Branch")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_condition_kind", "IntLiteral")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_condition_value", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_condition_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_then_block", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_else_block", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_terminator", "Return")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_return_value_kind", "IntLiteral")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_return_value", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_return_value_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_terminator", "Return")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_return_value_kind", "IntLiteral")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_return_value", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_return_value_type", "int")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "backend_symbol",
+        COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL,
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "expected_exit", "1")?;
 
     Ok(())
 }
