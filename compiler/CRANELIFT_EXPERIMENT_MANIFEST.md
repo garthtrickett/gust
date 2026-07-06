@@ -316,6 +316,20 @@ allowed_mir_block_graph_param_merge_i32_bundle_lowering_scaffold: TinyMirParamBl
 allowed_mir_block_graph_param_merge_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::ReturnBlockParamI32
 real_cranelift_object_smoke: mir_block_graph_param_merge_i32_bundle
 
+# Step 44 MIR-shaped block graph parameter merge call i32 bundle smoke.
+CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke
+allowed_mir_block_graph_param_merge_call_i32_bundle_native_guard: guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke
+allowed_mir_block_graph_param_merge_call_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs
+allowed_mir_block_graph_param_merge_call_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_param_merge_call_i32_bundle_native/tiny_cranelift_mir_block_graph_param_merge_call_i32_bundle.o
+allowed_mir_block_graph_param_merge_call_i32_bundle_param_merge_call_symbol: tiny_cranelift_mir_block_graph_param_merge_call_i32
+allowed_mir_block_graph_param_merge_call_i32_bundle_param_merge_call_branch_symbol: tiny_cranelift_mir_block_graph_param_merge_call_branch_i32
+allowed_mir_block_graph_param_merge_call_i32_bundle_helper_symbol: tiny_cranelift_mir_block_graph_param_merge_add_one_helper_i32
+allowed_mir_block_graph_param_merge_call_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals
+allowed_mir_block_graph_param_merge_call_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal
+allowed_mir_block_graph_param_merge_call_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::ReturnBlockParamLocalFunctionI32Call
+allowed_mir_block_graph_param_merge_call_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamLocalFunctionI32CallPositive
+real_cranelift_object_smoke: mir_block_graph_param_merge_call_i32_bundle
+
 The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, conditional-branch, and add-i32 object emission.
 No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, `guard-cranelift-differential-native-smoke`, and `guard-cranelift-no-fixture-regression`.
 real_cranelift_object_smoke: return_int

@@ -80,6 +80,12 @@ const MIR_BLOCK_GRAPH_PARAM_MERGE_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_merge_i32";
 const MIR_BLOCK_GRAPH_PARAM_MERGE_UPDATE_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_merge_update_i32";
+const MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_param_merge_call_i32";
+const MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_BRANCH_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_param_merge_call_branch_i32";
+const MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_HELPER_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_param_merge_add_one_helper_i32";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -485,6 +491,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_mir_block_graph_param_merge_i32_bundle_object(Path::new(&output_path))
         }
+        "mir-block-graph-param-merge-call-i32-bundle-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_block_graph_param_merge_call_i32_bundle_object(Path::new(&output_path))
+        }
         "mir-positive-i32-branch-object" => {
             let Some(output_path) = args.next() else {
                 return Err(usage_error().into());
@@ -636,7 +651,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-comparison-branch-i32-bundle-object|mir-block-graph-i32-bundle-object|mir-block-graph-local-i32-bundle-object|mir-block-graph-local-update-i32-bundle-object|mir-block-graph-param-i32-bundle-object|mir-block-graph-param-call-i32-bundle-object|mir-block-graph-param-extern-i32-bundle-object|mir-block-graph-param-extern-add-i32-bundle-object|mir-block-graph-param-extern-predicate-i32-bundle-object|mir-block-graph-param-merge-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-comparison-branch-i32-bundle-object|mir-block-graph-i32-bundle-object|mir-block-graph-local-i32-bundle-object|mir-block-graph-local-update-i32-bundle-object|mir-block-graph-param-i32-bundle-object|mir-block-graph-param-call-i32-bundle-object|mir-block-graph-param-extern-i32-bundle-object|mir-block-graph-param-extern-add-i32-bundle-object|mir-block-graph-param-extern-predicate-i32-bundle-object|mir-block-graph-param-merge-i32-bundle-object|mir-block-graph-param-merge-call-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -1926,6 +1941,214 @@ fn emit_mir_block_graph_param_merge_i32_bundle_object(
     define_tiny_mir_param_block_graph_exported_function(
         &mut module,
         &param_merge_update_function,
+        &local_function_ids,
+    )?;
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn emit_mir_block_graph_param_merge_call_i32_bundle_object(
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    static MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_FUNCTION_PARAMS: [TinyMirType; 1] =
+        [TinyMirType::I32];
+    static MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS: [TinyMirType; 1] =
+        [TinyMirType::I32];
+
+    static MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_BLOCKS: [TinyMirParamBlock; 4] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
+                param: 0,
+                then_block: "then_value",
+                then_value: 197,
+                else_block: "else_value",
+                else_value: 199,
+            },
+        },
+        TinyMirParamBlock {
+            label: "then_value",
+            params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "join",
+                param: 0,
+                value: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "else_value",
+            params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "join",
+                param: 0,
+                value: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "join",
+            params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::ReturnBlockParamLocalFunctionI32Call {
+                function_symbol: MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_HELPER_I32_SYMBOL,
+                param: 0,
+            },
+        },
+    ];
+
+    static MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_BRANCH_BLOCKS: [TinyMirParamBlock; 8] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "adjust",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "adjust",
+            params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "branch",
+                param: 0,
+                value: -2,
+            },
+        },
+        TinyMirParamBlock {
+            label: "branch",
+            params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
+                param: 0,
+                then_block: "then_value",
+                then_value: 11,
+                else_block: "else_value",
+                else_value: -2,
+            },
+        },
+        TinyMirParamBlock {
+            label: "then_value",
+            params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "join",
+                param: 0,
+                value: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "else_value",
+            params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "join",
+                param: 0,
+                value: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "join",
+            params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamLocalFunctionI32CallPositive {
+                function_symbol: MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_HELPER_I32_SYMBOL,
+                param: 0,
+                then_block: "positive",
+                else_block: "non_positive",
+            },
+        },
+        TinyMirParamBlock {
+            label: "positive",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::ReturnI32(227),
+        },
+        TinyMirParamBlock {
+            label: "non_positive",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::ReturnI32(229),
+        },
+    ];
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_mir_block_graph_param_merge_call_i32_bundle",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let helper_mir_function = TinyMirFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_merge_call_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_HELPER_I32_SYMBOL,
+        params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnParamI32AddLiteral { param: 0, value: 1 },
+    };
+
+    let mut helper_signature = module.make_signature();
+    helper_signature.params.push(AbiParam::new(types::I32));
+    helper_signature.returns.push(AbiParam::new(types::I32));
+
+    let helper_function_id = module.declare_function(
+        helper_mir_function.symbol,
+        Linkage::Local,
+        &helper_signature,
+    )?;
+    let mut helper_context = module.make_context();
+    helper_context.func.signature = helper_signature;
+
+    let mut helper_builder_context = FunctionBuilderContext::new();
+    let mut helper_builder =
+        FunctionBuilder::new(&mut helper_context.func, &mut helper_builder_context);
+    let helper_function_refs: HashMap<&'static str, FuncRef> = HashMap::new();
+    build_tiny_mir_body(
+        &mut helper_builder,
+        &helper_mir_function,
+        &helper_function_refs,
+    )?;
+    helper_builder.seal_all_blocks();
+    helper_builder.finalize();
+
+    module.define_function(helper_function_id, &mut helper_context)?;
+    module.clear_context(&mut helper_context);
+
+    let mut local_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
+    local_function_ids.insert(
+        MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_HELPER_I32_SYMBOL,
+        helper_function_id,
+    );
+
+    let param_merge_call_function = TinyMirParamBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_merge_call_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_SYMBOL,
+        params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_BLOCKS,
+    };
+    let param_merge_call_branch_function = TinyMirParamBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_merge_call_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_BRANCH_I32_SYMBOL,
+        params: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_BRANCH_BLOCKS,
+    };
+
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &param_merge_call_function,
+        &local_function_ids,
+    )?;
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &param_merge_call_branch_function,
         &local_function_ids,
     )?;
 
