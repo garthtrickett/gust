@@ -1316,6 +1316,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     valid_block_local_branch="compiler/fixtures/native_backend_block_local_branch_ingestion.mir"
     valid_block_local_update_branch="compiler/fixtures/native_backend_block_local_update_branch_ingestion.mir"
     valid_block_two_local_update_branch="compiler/fixtures/native_backend_block_two_local_update_branch_ingestion.mir"
+    valid_block_local_branch_join="compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir"
     invalid_return="compiler/fixtures/native_backend_return_int_ingestion_invalid.mir"
     invalid_local="compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir"
     invalid_branch="compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir"
@@ -1328,25 +1329,28 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     invalid_block_local_branch="compiler/fixtures/native_backend_block_local_branch_ingestion_invalid.mir"
     invalid_block_local_update_branch="compiler/fixtures/native_backend_block_local_update_branch_ingestion_invalid.mir"
     invalid_block_two_local_update_branch="compiler/fixtures/native_backend_block_two_local_update_branch_ingestion_invalid.mir"
+    invalid_block_local_branch_join="compiler/fixtures/native_backend_block_local_branch_join_ingestion_invalid.mir"
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_surface_guard: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 12' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 12' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 13' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 13' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixtures: compiler/fixtures/native_backend_return_int_ingestion.mir, compiler/fixtures/native_backend_local_binding_read_ingestion.mir, compiler/fixtures/native_backend_conditional_branch_ingestion.mir, compiler/fixtures/native_backend_add_i32_ingestion.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_jump_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_local_branch_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_local_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_two_local_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixtures: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir, compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir, compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir, compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_jump_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_local_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_local_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_two_local_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'compiler/fixtures/native_backend_block_local_branch_join_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_status: positive_and_negative_compiler_owned_fixture_inventory' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_suite_wiring: manifest_derived_native_guard_inventory' "$manifest_doc" >/dev/null
 
-    for fixture in "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$valid_positive_branch" "$valid_block_jump" "$valid_block_local_branch" "$valid_block_local_update_branch" "$valid_block_two_local_update_branch" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" "$invalid_positive_branch" "$invalid_block_jump" "$invalid_block_local_branch" "$invalid_block_local_update_branch" "$invalid_block_two_local_update_branch"; do
+    for fixture in "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$valid_positive_branch" "$valid_block_jump" "$valid_block_local_branch" "$valid_block_local_update_branch" "$valid_block_two_local_update_branch" "$valid_block_local_branch_join" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" "$invalid_positive_branch" "$invalid_block_jump" "$invalid_block_local_branch" "$invalid_block_local_update_branch" "$invalid_block_two_local_update_branch" "$invalid_block_local_branch_join"; do
       if [ ! -f "$fixture" ]; then
         echo "Missing compiler-owned MIR ingestion corpus fixture: $fixture"
         exit 1
@@ -1365,11 +1369,13 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'format: gust.compiler_mir_ingestion.block_local_branch.v1' "$valid_block_local_branch" "$invalid_block_local_branch" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_local_update_branch.v1' "$valid_block_local_update_branch" "$invalid_block_local_update_branch" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_two_local_update_branch.v1' "$valid_block_two_local_update_branch" "$invalid_block_two_local_update_branch" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.block_local_branch_join.v1' "$valid_block_local_branch_join" "$invalid_block_local_branch_join" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_block_jump" "$invalid_block_jump" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_block_local_branch" "$invalid_block_local_branch" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_block_local_update_branch" "$invalid_block_local_update_branch" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_block_two_local_update_branch" "$invalid_block_two_local_update_branch" >/dev/null
+    rg -n -F 'producer: compiler/mir.gst' "$valid_block_local_branch_join" "$invalid_block_local_branch_join" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int' "$valid_return" "$invalid_return" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read' "$valid_local" "$invalid_local" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_conditional_branch' "$valid_branch" "$invalid_branch" >/dev/null
@@ -1382,6 +1388,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_block_local_branch' "$valid_block_local_branch" "$invalid_block_local_branch" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_block_local_update_branch' "$valid_block_local_update_branch" "$invalid_block_local_update_branch" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_block_two_local_update_branch' "$valid_block_two_local_update_branch" "$invalid_block_two_local_update_branch" >/dev/null
+    rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_block_local_branch_join' "$valid_block_local_branch_join" "$invalid_block_local_branch_join" >/dev/null
 
     rg -n -F 'return_value: 1' "$valid_return" >/dev/null
     rg -n -F 'return_value: 9' "$invalid_return" >/dev/null
@@ -1425,6 +1432,14 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'block_2_return_value: 61' "$valid_block_two_local_update_branch" >/dev/null
     rg -n -F 'block_2_return_value: 62' "$invalid_block_two_local_update_branch" >/dev/null
     rg -n -F 'block_3_return_value: 67' "$valid_block_two_local_update_branch" "$invalid_block_two_local_update_branch" >/dev/null
+    rg -n -F 'block_0_terminator: BranchLocalPositive' "$valid_block_local_branch_join" "$invalid_block_local_branch_join" >/dev/null
+    rg -n -F 'block_1_statement_0_value: 4' "$valid_block_local_branch_join" >/dev/null
+    rg -n -F 'block_1_statement_0_value: 5' "$invalid_block_local_branch_join" >/dev/null
+    rg -n -F 'block_1_target: join' "$valid_block_local_branch_join" "$invalid_block_local_branch_join" >/dev/null
+    rg -n -F 'block_2_statement_0_value: 8' "$valid_block_local_branch_join" "$invalid_block_local_branch_join" >/dev/null
+    rg -n -F 'block_2_target: join' "$valid_block_local_branch_join" "$invalid_block_local_branch_join" >/dev/null
+    rg -n -F 'block_3_return_value_kind: LocalRead' "$valid_block_local_branch_join" "$invalid_block_local_branch_join" >/dev/null
+    rg -n -F 'block_3_return_local: value' "$valid_block_local_branch_join" "$invalid_block_local_branch_join" >/dev/null
     rg -n -F 'expected_case_0_result: 6' "$invalid_add" >/dev/null
 
     for guard_recipe in \
@@ -1440,6 +1455,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
       guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke \
       guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke \
       guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smoke \
+      guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke \
       guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection
     do
       rg -n -F "$guard_recipe" "$manifest_doc" justfile >/dev/null
@@ -1450,7 +1466,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     printf '%s\n' "$suite_body" | rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-' >/dev/null
     printf '%s\n' "$suite_body" | rg -n -F 'just "$guard_recipe"' >/dev/null
 
-    fixture_cranelift_refs="$(rg -n -i -F 'cranelift' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$valid_positive_branch" "$valid_block_jump" "$valid_block_local_branch" "$valid_block_local_update_branch" "$valid_block_two_local_update_branch" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" "$invalid_positive_branch" "$invalid_block_jump" "$invalid_block_local_branch" "$invalid_block_local_update_branch" "$invalid_block_two_local_update_branch" || true)"
+    fixture_cranelift_refs="$(rg -n -i -F 'cranelift' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$valid_positive_branch" "$valid_block_jump" "$valid_block_local_branch" "$valid_block_local_update_branch" "$valid_block_two_local_update_branch" "$valid_block_local_branch_join" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" "$invalid_positive_branch" "$invalid_block_jump" "$invalid_block_local_branch" "$invalid_block_local_update_branch" "$invalid_block_two_local_update_branch" "$invalid_block_local_branch_join" || true)"
     if [ -n "$fixture_cranelift_refs" ]; then
       echo "Compiler-owned MIR ingestion fixtures must not mention Cranelift; backend coupling stays manifest/experiment-only:"
       echo "$fixture_cranelift_refs"
@@ -3714,6 +3730,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     block_local_branch_invalid="compiler/fixtures/native_backend_block_local_branch_ingestion_invalid.mir"
     block_local_update_branch_invalid="compiler/fixtures/native_backend_block_local_update_branch_ingestion_invalid.mir"
     block_two_local_update_branch_invalid="compiler/fixtures/native_backend_block_two_local_update_branch_ingestion_invalid.mir"
+    block_local_branch_join_invalid="compiler/fixtures/native_backend_block_local_branch_join_ingestion_invalid.mir"
     build_dir="build/guards/cranelift_compiler_mir_ingestion_invalid_fixture_rejection"
     mkdir -p "$build_dir"
     just guard-cranelift-backend-surface
@@ -3731,6 +3748,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_local_branch_fixture: compiler/fixtures/native_backend_block_local_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_local_update_branch_fixture: compiler/fixtures/native_backend_block_local_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_two_local_update_branch_fixture: compiler/fixtures/native_backend_block_two_local_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_local_branch_join_fixture: compiler/fixtures/native_backend_block_local_branch_join_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_status: malformed_compiler_owned_fixtures_rejected_before_object_emission' "$manifest_doc" >/dev/null
     rg -n -F 'return_value: 9' "$return_invalid" >/dev/null
@@ -3754,6 +3772,8 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     rg -n -F 'block_2_return_value: 54' "$block_local_update_branch_invalid" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_two_local_update_branch.v1' "$block_two_local_update_branch_invalid" >/dev/null
     rg -n -F 'block_2_return_value: 62' "$block_two_local_update_branch_invalid" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.block_local_branch_join.v1' "$block_local_branch_join_invalid" >/dev/null
+    rg -n -F 'block_1_statement_0_value: 5' "$block_local_branch_join_invalid" >/dev/null
     check_rejected() {
       command="$1"
       fixture="$2"
@@ -3790,6 +3810,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     check_rejected compiler-mir-block-local-branch-ingestion-object "$block_local_branch_invalid" block_local_branch_invalid
     check_rejected compiler-mir-block-local-update-branch-ingestion-object "$block_local_update_branch_invalid" block_local_update_branch_invalid
     check_rejected compiler-mir-block-two-local-update-branch-ingestion-object "$block_two_local_update_branch_invalid" block_two_local_update_branch_invalid
+    check_rejected compiler-mir-block-local-branch-join-ingestion-object "$block_local_branch_join_invalid" block_local_branch_join_invalid
     echo "✅ Invalid compiler-owned MIR ingestion fixtures were rejected before object emission."
 
 guard-cranelift-mir-to-c-differential-native-smoke:
