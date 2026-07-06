@@ -2479,7 +2479,7 @@ guard-cranelift-no-fixture-regression:
     done <<< "$native_guard_tokens"
     cranelift_native_bodies="$(sed -n '/^guard-cranelift-return-int-native-smoke:/,/^guard-cranelift-mir-to-c-differential-native-smoke:/p' justfile)"
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked --' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F '-object' >/dev/null
+    printf '%s\n' "$cranelift_native_bodies" | rg -n -F -- '-object' >/dev/null
     echo "✅ Cranelift no-fixture regression guard passed."
 
 guard-cranelift-experimental-backend-suite:
