@@ -64,6 +64,10 @@ const MIR_BLOCK_GRAPH_PARAM_CALL_BRANCH_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_call_branch_i32";
 const MIR_BLOCK_GRAPH_PARAM_CALL_HELPER_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_add_one_helper_i32";
+const MIR_BLOCK_GRAPH_PARAM_EXTERN_CALL_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_param_extern_call_i32";
+const MIR_BLOCK_GRAPH_PARAM_EXTERN_CALL_BRANCH_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_param_extern_call_branch_i32";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -222,6 +226,16 @@ enum TinyMirParamBlockTerminator {
         param: usize,
     },
     BranchBlockParamLocalFunctionI32CallPositive {
+        function_symbol: &'static str,
+        param: usize,
+        then_block: &'static str,
+        else_block: &'static str,
+    },
+    ReturnBlockParamImportedFunctionI32Call {
+        function_symbol: &'static str,
+        param: usize,
+    },
+    BranchBlockParamImportedFunctionI32CallPositive {
         function_symbol: &'static str,
         param: usize,
         then_block: &'static str,
@@ -397,6 +411,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_mir_block_graph_param_call_i32_bundle_object(Path::new(&output_path))
+        }
+        "mir-block-graph-param-extern-i32-bundle-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_block_graph_param_extern_i32_bundle_object(Path::new(&output_path))
         }
         "mir-positive-i32-branch-object" => {
             let Some(output_path) = args.next() else {
@@ -1317,6 +1340,122 @@ fn emit_mir_block_graph_param_call_i32_bundle_object(
         &mut module,
         &param_call_branch_function,
         &local_function_ids,
+    )?;
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn emit_mir_block_graph_param_extern_i32_bundle_object(
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    static MIR_BLOCK_GRAPH_PARAM_EXTERN_I32_FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static MIR_BLOCK_GRAPH_PARAM_EXTERN_I32_BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+
+    static MIR_BLOCK_GRAPH_PARAM_EXTERN_CALL_BLOCKS: [TinyMirParamBlock; 2] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "extern_call",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "extern_call",
+            params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32Call {
+                function_symbol: HOST_ADD_ONE_I32_SYMBOL,
+                param: 0,
+            },
+        },
+    ];
+
+    static MIR_BLOCK_GRAPH_PARAM_EXTERN_CALL_BRANCH_BLOCKS: [TinyMirParamBlock; 4] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "extern_call",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "extern_call",
+            params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallPositive {
+                function_symbol: HOST_ADD_ONE_I32_SYMBOL,
+                param: 0,
+                then_block: "positive",
+                else_block: "non_positive",
+            },
+        },
+        TinyMirParamBlock {
+            label: "positive",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::ReturnI32(101),
+        },
+        TinyMirParamBlock {
+            label: "non_positive",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::ReturnI32(103),
+        },
+    ];
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_mir_block_graph_param_extern_i32_bundle",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut host_add_one_signature = module.make_signature();
+    host_add_one_signature.params.push(AbiParam::new(types::I32));
+    host_add_one_signature.returns.push(AbiParam::new(types::I32));
+    let host_add_one_function_id = module.declare_function(
+        HOST_ADD_ONE_I32_SYMBOL,
+        Linkage::Import,
+        &host_add_one_signature,
+    )?;
+
+    let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
+    imported_function_ids.insert(HOST_ADD_ONE_I32_SYMBOL, host_add_one_function_id);
+
+    let param_extern_call_function = TinyMirParamBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_extern_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_EXTERN_CALL_I32_SYMBOL,
+        params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_I32_FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_PARAM_EXTERN_CALL_BLOCKS,
+    };
+    let param_extern_call_branch_function = TinyMirParamBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_extern_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_EXTERN_CALL_BRANCH_I32_SYMBOL,
+        params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_I32_FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_PARAM_EXTERN_CALL_BRANCH_BLOCKS,
+    };
+
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &param_extern_call_function,
+        &imported_function_ids,
+    )?;
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &param_extern_call_branch_function,
+        &imported_function_ids,
     )?;
 
     let object_product = module.finish();
@@ -2371,6 +2510,76 @@ fn build_tiny_mir_param_block_graph_body(
                     IoError::new(
                         ErrorKind::InvalidInput,
                         format!("unknown tiny MIR param call else block: {else_block}"),
+                    )
+                })?;
+                let call_inst = builder.ins().call(function_ref, &[argument_value]);
+                let call_value = builder.inst_results(call_inst)[0];
+                let branch_condition =
+                    builder
+                        .ins()
+                        .icmp_imm(IntCC::SignedGreaterThan, call_value, 0);
+                builder.ins().brif(
+                    branch_condition,
+                    then_cranelift_block,
+                    &[],
+                    else_cranelift_block,
+                    &[],
+                );
+            }
+            TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32Call {
+                function_symbol,
+                param,
+            } => {
+                let argument_value = {
+                    let block_params = builder.block_params(current_block);
+                    block_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR param extern call return block param index: {param}"),
+                        )
+                    })?
+                };
+                let function_ref = *local_function_refs.get(function_symbol).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param block imported function: {function_symbol}"),
+                    )
+                })?;
+                let call_inst = builder.ins().call(function_ref, &[argument_value]);
+                let return_value = builder.inst_results(call_inst)[0];
+                builder.ins().return_(&[return_value]);
+            }
+            TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallPositive {
+                function_symbol,
+                param,
+                then_block,
+                else_block,
+            } => {
+                let argument_value = {
+                    let block_params = builder.block_params(current_block);
+                    block_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR param extern call branch block param index: {param}"),
+                        )
+                    })?
+                };
+                let function_ref = *local_function_refs.get(function_symbol).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param block branch imported function: {function_symbol}"),
+                    )
+                })?;
+                let then_cranelift_block = *cranelift_blocks.get(then_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param extern call then block: {then_block}"),
+                    )
+                })?;
+                let else_cranelift_block = *cranelift_blocks.get(else_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param extern call else block: {else_block}"),
                     )
                 })?;
                 let call_inst = builder.ins().call(function_ref, &[argument_value]);

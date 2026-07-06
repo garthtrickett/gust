@@ -2578,6 +2578,52 @@ guard-cranelift-mir-block-graph-param-call-i32-bundle-native-smoke:
     fi
     echo "✅ MIR-shaped Cranelift block graph parameter call i32 bundle native smoke passed."
 
+guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling MIR-shaped Cranelift block graph parameter extern i32 bundle smoke..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_PARAM_EXTERN_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_native_guard: guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_param_extern_i32_bundle_native/tiny_cranelift_mir_block_graph_param_extern_i32_bundle.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_param_extern_call_symbol: tiny_cranelift_mir_block_graph_param_extern_call_i32' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_param_extern_call_branch_symbol: tiny_cranelift_mir_block_graph_param_extern_call_branch_i32' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_host_symbol: tiny_host_add_one_i32' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32Call' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallPositive' "$manifest_doc" >/dev/null
+    build_dir="build/guards/cranelift_mir_block_graph_param_extern_i32_bundle_native"
+    object_file="$build_dir/tiny_cranelift_mir_block_graph_param_extern_i32_bundle.o"
+    shim_c="$build_dir/tiny_cranelift_mir_block_graph_param_extern_i32_bundle_main.c"
+    binary="$build_dir/tiny_cranelift_mir_block_graph_param_extern_i32_bundle_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- mir-block-graph-param-extern-i32-bundle-object "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'int32_t tiny_host_add_one_i32(int32_t value) { return value + 1; }' >> "$shim_c"
+    echo 'extern int32_t tiny_cranelift_mir_block_graph_param_extern_call_i32(int32_t value);' >> "$shim_c"
+    echo 'extern int32_t tiny_cranelift_mir_block_graph_param_extern_call_branch_i32(int32_t value);' >> "$shim_c"
+    echo 'int main(void) {' >> "$shim_c"
+    echo '  if (tiny_cranelift_mir_block_graph_param_extern_call_i32(70) != 71) return 1;' >> "$shim_c"
+    echo '  if (tiny_cranelift_mir_block_graph_param_extern_call_i32(-2) != -1) return 2;' >> "$shim_c"
+    echo '  if (tiny_cranelift_mir_block_graph_param_extern_call_branch_i32(0) != 101) return 3;' >> "$shim_c"
+    echo '  if (tiny_cranelift_mir_block_graph_param_extern_call_branch_i32(-2) != 103) return 4;' >> "$shim_c"
+    echo '  return 97;' >> "$shim_c"
+    echo '}' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "97" ]; then
+      echo "Expected MIR-shaped Cranelift block graph parameter extern i32 bundle native smoke to exit with status 97, got $status"
+      exit 1
+    fi
+    echo "✅ MIR-shaped Cranelift block graph parameter extern i32 bundle native smoke passed."
+
 guard-cranelift-mir-to-c-differential-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
