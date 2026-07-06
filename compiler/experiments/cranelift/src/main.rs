@@ -28,6 +28,7 @@ const EXTERN_PREDICATE_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_extern_predicat
 const HOST_IS_POSITIVE_I32_SYMBOL: &str = "tiny_host_is_positive_i32";
 const MIR_RETURN_INT_SYMBOL: &str = "tiny_cranelift_mir_return_int";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
+const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -49,6 +50,11 @@ enum TinyMirStatement {
 enum TinyMirTerminator {
     ReturnI32(i32),
     ReturnLocalI32(&'static str),
+    BranchI32Literal {
+        condition: i32,
+        then_return: i32,
+        else_return: i32,
+    },
 }
 
 struct TinyMirFunction {
@@ -112,6 +118,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_mir_local_binding_read_object(Path::new(&output_path))
+        }
+        "mir-conditional-branch-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_conditional_branch_object(Path::new(&output_path))
         }
         "local-binding-read-object" => {
             let Some(output_path) = args.next() else {
@@ -210,7 +225,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -246,6 +261,24 @@ fn emit_mir_local_binding_read_object(output_path: &Path) -> Result<(), Box<dyn 
         locals: &MIR_LOCAL_BINDING_READ_LOCALS,
         statements: &MIR_LOCAL_BINDING_READ_STATEMENTS,
         terminator: TinyMirTerminator::ReturnLocalI32("value"),
+    };
+
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn emit_mir_conditional_branch_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    let mir_function = TinyMirFunction {
+        object_name: "gust_cranelift_mir_conditional_branch",
+        symbol: MIR_CONDITIONAL_BRANCH_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::BranchI32Literal {
+            condition: 1,
+            then_return: 1,
+            else_return: 2,
+        },
     };
 
     lower_tiny_mir_function_to_object(output_path, &mir_function)
@@ -682,6 +715,29 @@ fn build_tiny_mir_body(
             })?;
             let return_value = builder.use_var(local_slot);
             builder.ins().return_(&[return_value]);
+        }
+        TinyMirTerminator::BranchI32Literal {
+            condition,
+            then_return,
+            else_return,
+        } => {
+            let then_block = builder.create_block();
+            let else_block = builder.create_block();
+            let condition_value = builder.ins().iconst(types::I32, i64::from(condition));
+            let branch_condition = builder
+                .ins()
+                .icmp_imm(IntCC::NotEqual, condition_value, 0);
+            builder
+                .ins()
+                .brif(branch_condition, then_block, &[], else_block, &[]);
+
+            builder.switch_to_block(then_block);
+            let then_value = builder.ins().iconst(types::I32, i64::from(then_return));
+            builder.ins().return_(&[then_value]);
+
+            builder.switch_to_block(else_block);
+            let else_value = builder.ins().iconst(types::I32, i64::from(else_return));
+            builder.ins().return_(&[else_value]);
         }
     }
 
