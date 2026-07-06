@@ -3,6 +3,8 @@
 # ==============================================================================
 /target/
 /temp_gust_e2e_dir/
+/compiler/experiments/cranelift/target/debug/gust-cranelift-experiment
+/compiler/experiments/cranelift/target/
 
 # ==============================================================================
 # C Transpiler & Native Binaries (Root Volatiles)
