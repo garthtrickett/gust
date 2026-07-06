@@ -3482,6 +3482,64 @@ guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke:
     "$binary"
     echo "✅ Compiler-owned MIR block-local branch ingestion seam native smoke passed."
 
+guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling compiler-owned MIR block-local update branch ingestion seam smoke."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    fixture="compiler/fixtures/native_backend_block_local_update_branch_ingestion.mir"
+    source_fixture="compiler/mir_feature_block_local_update_branch_preservation_source.gst"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_fixture: compiler/fixtures/native_backend_block_local_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_local_update_branch_ingestion_fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_local_update_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_local_update_branch.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_local_update_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_source_fixture: compiler/mir_feature_block_local_update_branch_preservation_source.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_lowering_entry: fixture_only_block_local_update_branch_serialization' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
+    rg -n -F 'func mir_emit_native_backend_block_local_update_branch_ingestion_fixture' compiler/mir.gst >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.block_local_update_branch.v1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'producer_entry: mir_emit_native_backend_block_local_update_branch_ingestion_fixture' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_0_statement_0_kind: LocalI32SetParam' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_1_statement_0_kind: LocalI32AddI32Literal' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_1_statement_0_value: 2' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_1_terminator: BranchLocalPositive' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_2_return_value: 53' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_3_return_value: 59' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_block_local_update_branch' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'func tiny_block_local_update_branch(input: int) int' "$source_fixture" >/dev/null
+    rg -n -F 'mut value := input + 2;' "$source_fixture" >/dev/null
+    rg -n -F 'if value > 0' "$source_fixture" >/dev/null
+    rg -n -F 'compiler-mir-block-local-update-branch-ingestion-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'parse_compiler_mir_block_local_update_branch_ingestion_fixture' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'COMPILER_MIR_INGESTED_BLOCK_LOCAL_UPDATE_BRANCH_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'TinyMirBlockStatement::LocalI32AddI32Literal' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'TinyMirBlockTerminator::BranchLocalI32Positive' compiler/experiments/cranelift/src/main.rs >/dev/null
+    build_dir="build/guards/cranelift_compiler_mir_block_local_update_branch_ingestion_native"
+    object_file="$build_dir/tiny_native_backend_compiler_mir_ingested_block_local_update_branch.o"
+    shim_c="$build_dir/tiny_native_backend_compiler_mir_ingested_block_local_update_branch_main.c"
+    binary="$build_dir/tiny_native_backend_compiler_mir_ingested_block_local_update_branch_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-block-local-update-branch-ingestion-object "$fixture" "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'extern int32_t tiny_native_backend_compiler_mir_ingested_block_local_update_branch(int32_t input);' >> "$shim_c"
+    echo 'int main(void) {' >> "$shim_c"
+    echo '  if (tiny_native_backend_compiler_mir_ingested_block_local_update_branch(5) != 53) return 1;' >> "$shim_c"
+    echo '  if (tiny_native_backend_compiler_mir_ingested_block_local_update_branch(0) != 53) return 2;' >> "$shim_c"
+    echo '  if (tiny_native_backend_compiler_mir_ingested_block_local_update_branch(-3) != 59) return 3;' >> "$shim_c"
+    echo '  return 0;' >> "$shim_c"
+    echo '}' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    "$binary"
+    echo "✅ Compiler-owned MIR block-local update branch ingestion seam native smoke passed."
+
 guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     #!/usr/bin/env bash
     set -euo pipefail
