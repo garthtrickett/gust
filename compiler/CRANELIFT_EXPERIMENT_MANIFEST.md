@@ -382,6 +382,16 @@ allowed_compiler_mir_ingestion_invalid_rejection_codegen_entry: compiler/experim
 allowed_compiler_mir_ingestion_invalid_rejection_status: malformed_compiler_owned_fixtures_rejected_before_object_emission
 real_cranelift_object_smoke: compiler_mir_ingestion_invalid_fixture_rejection
 
+# Step 49 compiler-owned MIR ingestion corpus surface.
+CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface
+allowed_compiler_mir_ingestion_corpus_surface_guard: guard-cranelift-compiler-mir-ingestion-corpus-surface
+allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 3
+allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 3
+allowed_compiler_mir_ingestion_corpus_valid_fixtures: compiler/fixtures/native_backend_return_int_ingestion.mir, compiler/fixtures/native_backend_local_binding_read_ingestion.mir, compiler/fixtures/native_backend_conditional_branch_ingestion.mir
+allowed_compiler_mir_ingestion_corpus_invalid_fixtures: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir, compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir, compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir
+allowed_compiler_mir_ingestion_corpus_status: positive_and_negative_compiler_owned_fixture_inventory
+allowed_compiler_mir_ingestion_corpus_suite_wiring: manifest_derived_native_guard_inventory
+
 The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for isolated object emission, including compiler-owned MIR ingestion seams.
 The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, conditional-branch, and add-i32 object emission.
 No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, `guard-cranelift-differential-native-smoke`, and `guard-cranelift-no-fixture-regression`.

@@ -1186,6 +1186,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-ingestion-corpus-surface' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -1278,6 +1279,8 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD_WIRING_SURFACE: guard-cranelift-experiment-guard-wiring-surface' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
+    just guard-cranelift-compiler-mir-ingestion-corpus-surface
     just guard-cranelift-experiment-guard-wiring-surface
     cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
     if [ -n "$cranelift_refs" ]; then
@@ -1286,6 +1289,72 @@ guard-cranelift-experiment-manifest-surface:
       exit 1
     fi
     echo "✅ Cranelift experiment manifest surface passed: dependency beachhead plus explicit backend suite, manifest-derived guard wiring, disabled by default, and no production codegen exists yet."
+
+guard-cranelift-compiler-mir-ingestion-corpus-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking compiler-owned MIR ingestion corpus surface..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    valid_return="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    valid_local="compiler/fixtures/native_backend_local_binding_read_ingestion.mir"
+    valid_branch="compiler/fixtures/native_backend_conditional_branch_ingestion.mir"
+    invalid_return="compiler/fixtures/native_backend_return_int_ingestion_invalid.mir"
+    invalid_local="compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir"
+    invalid_branch="compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir"
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_surface_guard: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 3' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 3' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixtures: compiler/fixtures/native_backend_return_int_ingestion.mir, compiler/fixtures/native_backend_local_binding_read_ingestion.mir, compiler/fixtures/native_backend_conditional_branch_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixtures: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir, compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir, compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_status: positive_and_negative_compiler_owned_fixture_inventory' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_suite_wiring: manifest_derived_native_guard_inventory' "$manifest_doc" >/dev/null
+
+    for fixture in "$valid_return" "$valid_local" "$valid_branch" "$invalid_return" "$invalid_local" "$invalid_branch"; do
+      if [ ! -f "$fixture" ]; then
+        echo "Missing compiler-owned MIR ingestion corpus fixture: $fixture"
+        exit 1
+      fi
+    done
+
+    rg -n -F 'format: gust.compiler_mir_ingestion.return_int.v1' "$valid_return" "$invalid_return" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.local_binding_read.v1' "$valid_local" "$invalid_local" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.conditional_branch.v1' "$valid_branch" "$invalid_branch" >/dev/null
+    rg -n -F 'producer: compiler/mir.gst' "$valid_return" "$valid_local" "$valid_branch" "$invalid_return" "$invalid_local" "$invalid_branch" >/dev/null
+    rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int' "$valid_return" "$invalid_return" >/dev/null
+    rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read' "$valid_local" "$invalid_local" >/dev/null
+    rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_conditional_branch' "$valid_branch" "$invalid_branch" >/dev/null
+
+    rg -n -F 'return_value: 1' "$valid_return" >/dev/null
+    rg -n -F 'return_value: 9' "$invalid_return" >/dev/null
+    rg -n -F 'statement_0_value: 2' "$valid_local" >/dev/null
+    rg -n -F 'statement_0_value: 9' "$invalid_local" >/dev/null
+    rg -n -F 'branch_condition_value: 1' "$valid_branch" >/dev/null
+    rg -n -F 'branch_condition_value: 0' "$invalid_branch" >/dev/null
+
+    for guard_recipe in \
+      guard-cranelift-compiler-mir-return-int-ingestion-native-smoke \
+      guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke \
+      guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke \
+      guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection
+    do
+      rg -n -F "$guard_recipe" "$manifest_doc" justfile >/dev/null
+    done
+
+    suite_body="$(sed -n '/^guard-cranelift-experimental-backend-suite:/,/^guard-mir-feature-return-int-preservation:/p' justfile)"
+    printf '%s\n' "$suite_body" | rg -n -F 'suite_native_guards="$(awk' >/dev/null
+    printf '%s\n' "$suite_body" | rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-' >/dev/null
+    printf '%s\n' "$suite_body" | rg -n -F 'just "$guard_recipe"' >/dev/null
+
+    fixture_cranelift_refs="$(rg -n -i -F 'cranelift' "$valid_return" "$valid_local" "$valid_branch" "$invalid_return" "$invalid_local" "$invalid_branch" || true)"
+    if [ -n "$fixture_cranelift_refs" ]; then
+      echo "Compiler-owned MIR ingestion fixtures must not mention Cranelift; backend coupling stays manifest/experiment-only:"
+      echo "$fixture_cranelift_refs"
+      exit 1
+    fi
+
+    echo "✅ Compiler-owned MIR ingestion corpus surface passed."
 
 guard-cranelift-backend-surface:
     #!/usr/bin/env bash
