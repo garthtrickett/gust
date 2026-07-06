@@ -96,7 +96,16 @@ allowed_mir_conditional_branch_object_artifact: build/guards/cranelift_mir_condi
 allowed_mir_conditional_branch_symbol: tiny_cranelift_mir_conditional_branch
 allowed_mir_conditional_branch_lowering_scaffold: TinyMirTerminator::BranchI32Literal
 real_cranelift_object_smoke: mir_conditional_branch
-The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, and conditional-branch object emission.
+
+# Step 24 MIR-shaped add-i32 lowering scaffold smoke.
+CRANELIFT_EXPERIMENT_ALLOWED_MIR_ADD_I32_NATIVE_GUARD: guard-cranelift-mir-add-i32-native-smoke
+allowed_mir_add_i32_native_guard: guard-cranelift-mir-add-i32-native-smoke
+allowed_mir_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs
+allowed_mir_add_i32_object_artifact: build/guards/cranelift_mir_add_i32_native/tiny_cranelift_mir_add_i32.o
+allowed_mir_add_i32_symbol: tiny_cranelift_mir_add_i32
+allowed_mir_add_i32_lowering_scaffold: TinyMirTerminator::ReturnParamI32Add
+real_cranelift_object_smoke: mir_add_i32
+The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, conditional-branch, and add-i32 object emission.
 No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, `guard-cranelift-differential-native-smoke`, and `guard-cranelift-no-fixture-regression`.
 real_cranelift_object_smoke: return_int
 real_cranelift_object_smoke: local_binding_read
