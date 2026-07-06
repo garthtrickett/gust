@@ -42,6 +42,8 @@ const MIR_ARITHMETIC_SUB_I32_SYMBOL: &str = "tiny_cranelift_mir_arithmetic_sub_i
 const MIR_ARITHMETIC_MUL_I32_SYMBOL: &str = "tiny_cranelift_mir_arithmetic_mul_i32";
 const MIR_COMPARISON_EQ_I32_SYMBOL: &str = "tiny_cranelift_mir_comparison_eq_i32";
 const MIR_COMPARISON_SGT_I32_SYMBOL: &str = "tiny_cranelift_mir_comparison_sgt_i32";
+const MIR_COMPARISON_BRANCH_EQ_I32_SYMBOL: &str = "tiny_cranelift_mir_comparison_branch_eq_i32";
+const MIR_COMPARISON_BRANCH_SGT_I32_SYMBOL: &str = "tiny_cranelift_mir_comparison_branch_sgt_i32";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -89,6 +91,18 @@ enum TinyMirTerminator {
     ReturnParamI32SignedGreaterThanPredicate {
         lhs_param: usize,
         rhs_param: usize,
+    },
+    BranchParamI32Eq {
+        lhs_param: usize,
+        rhs_param: usize,
+        then_return: i32,
+        else_return: i32,
+    },
+    BranchParamI32SignedGreaterThan {
+        lhs_param: usize,
+        rhs_param: usize,
+        then_return: i32,
+        else_return: i32,
     },
     ReturnParamI32AddLiteral {
         param: usize,
@@ -217,6 +231,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_mir_comparison_i32_bundle_object(Path::new(&output_path))
+        }
+        "mir-comparison-branch-i32-bundle-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_comparison_branch_i32_bundle_object(Path::new(&output_path))
         }
         "mir-positive-i32-branch-object" => {
             let Some(output_path) = args.next() else {
@@ -369,7 +392,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-comparison-branch-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -545,6 +568,63 @@ fn emit_mir_comparison_i32_bundle_object(output_path: &Path) -> Result<(), Box<d
         },
     };
     define_tiny_mir_exported_function(&mut module, &sgt_function, &local_function_refs)?;
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn emit_mir_comparison_branch_i32_bundle_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    static MIR_COMPARISON_BRANCH_I32_PARAMS: [TinyMirType; 2] =
+        [TinyMirType::I32, TinyMirType::I32];
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder = cranelift_native::builder()
+        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_mir_comparison_branch_i32_bundle",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+    let local_function_refs: HashMap<&'static str, FuncRef> = HashMap::new();
+
+    let eq_branch_function = TinyMirFunction {
+        object_name: "gust_cranelift_mir_comparison_branch_i32_bundle",
+        symbol: MIR_COMPARISON_BRANCH_EQ_I32_SYMBOL,
+        params: &MIR_COMPARISON_BRANCH_I32_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::BranchParamI32Eq {
+            lhs_param: 0,
+            rhs_param: 1,
+            then_return: 21,
+            else_return: 22,
+        },
+    };
+    define_tiny_mir_exported_function(&mut module, &eq_branch_function, &local_function_refs)?;
+
+    let sgt_branch_function = TinyMirFunction {
+        object_name: "gust_cranelift_mir_comparison_branch_i32_bundle",
+        symbol: MIR_COMPARISON_BRANCH_SGT_I32_SYMBOL,
+        params: &MIR_COMPARISON_BRANCH_I32_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::BranchParamI32SignedGreaterThan {
+            lhs_param: 0,
+            rhs_param: 1,
+            then_return: 23,
+            else_return: 24,
+        },
+    };
+    define_tiny_mir_exported_function(&mut module, &sgt_branch_function, &local_function_refs)?;
 
     let object_product = module.finish();
     fs::write(output_path, object_product.emit()?)?;
@@ -1568,6 +1648,74 @@ fn build_tiny_mir_body(
             builder.switch_to_block(else_block);
             let false_value = builder.ins().iconst(types::I32, 0);
             builder.ins().return_(&[false_value]);
+        }
+        TinyMirTerminator::BranchParamI32Eq {
+            lhs_param,
+            rhs_param,
+            then_return,
+            else_return,
+        } => {
+            let block_params = builder.block_params(entry_block);
+            let lhs = block_params.get(lhs_param).copied().ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown tiny MIR eq-branch lhs param index: {lhs_param}"),
+                )
+            })?;
+            let rhs = block_params.get(rhs_param).copied().ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown tiny MIR eq-branch rhs param index: {rhs_param}"),
+                )
+            })?;
+            let branch_condition = builder.ins().icmp(IntCC::Equal, lhs, rhs);
+            let then_block = builder.create_block();
+            let else_block = builder.create_block();
+            builder
+                .ins()
+                .brif(branch_condition, then_block, &[], else_block, &[]);
+
+            builder.switch_to_block(then_block);
+            let then_value = builder.ins().iconst(types::I32, i64::from(then_return));
+            builder.ins().return_(&[then_value]);
+
+            builder.switch_to_block(else_block);
+            let else_value = builder.ins().iconst(types::I32, i64::from(else_return));
+            builder.ins().return_(&[else_value]);
+        }
+        TinyMirTerminator::BranchParamI32SignedGreaterThan {
+            lhs_param,
+            rhs_param,
+            then_return,
+            else_return,
+        } => {
+            let block_params = builder.block_params(entry_block);
+            let lhs = block_params.get(lhs_param).copied().ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown tiny MIR signed-greater-than-branch lhs param index: {lhs_param}"),
+                )
+            })?;
+            let rhs = block_params.get(rhs_param).copied().ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown tiny MIR signed-greater-than-branch rhs param index: {rhs_param}"),
+                )
+            })?;
+            let branch_condition = builder.ins().icmp(IntCC::SignedGreaterThan, lhs, rhs);
+            let then_block = builder.create_block();
+            let else_block = builder.create_block();
+            builder
+                .ins()
+                .brif(branch_condition, then_block, &[], else_block, &[]);
+
+            builder.switch_to_block(then_block);
+            let then_value = builder.ins().iconst(types::I32, i64::from(then_return));
+            builder.ins().return_(&[then_value]);
+
+            builder.switch_to_block(else_block);
+            let else_value = builder.ins().iconst(types::I32, i64::from(else_return));
+            builder.ins().return_(&[else_value]);
         }
         TinyMirTerminator::ReturnParamI32AddLiteral { param, value } => {
             let block_params = builder.block_params(entry_block);
