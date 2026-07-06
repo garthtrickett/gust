@@ -730,6 +730,42 @@ func mir_emit_native_backend_local_binding_read_ingestion_fixture(ctx: &Arena) s
     return std.Clone(ctx, fixture);
 }
 
+func mir_emit_native_backend_block_jump_ingestion_fixture(ctx: &Arena) str {
+    // Fixture-only native-backend ingestion seam for an explicit block jump.
+    //
+    // This extends the compiler-owned serialized MIR artifact corpus to a
+    // two-block Jump -> Return graph without routing production codegen away
+    // from MIR-to-C.
+    mut program := mir_lower_block_jump_fixture(ctx);
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    if len(functions) != 1 {
+        return "format: invalid\n";
+    }
+
+    mut fixture := "format: gust.compiler_mir_ingestion.block_jump.v1\n";
+    fixture = std.Concat(fixture, "producer: compiler/mir.gst\n");
+    fixture = std.Concat(fixture, "producer_entry: mir_emit_native_backend_block_jump_ingestion_fixture\n");
+    fixture = std.Concat(fixture, "source_fixture: compiler/mir_lower_block_jump_smoke_test_entry.gst\n");
+    fixture = std.Concat(fixture, "lowering_entry: mir_lower_block_jump_fixture\n");
+    fixture = std.Concat(fixture, "function: tiny_block_jump\n");
+    fixture = std.Concat(fixture, "return_type: int\n");
+    fixture = std.Concat(fixture, "entry_block: entry\n");
+    fixture = std.Concat(fixture, "block_count: 2\n");
+    fixture = std.Concat(fixture, "block_0_label: entry\n");
+    fixture = std.Concat(fixture, "block_0_statement_count: 0\n");
+    fixture = std.Concat(fixture, "block_0_terminator: Jump\n");
+    fixture = std.Concat(fixture, "block_0_target: return\n");
+    fixture = std.Concat(fixture, "block_1_label: return\n");
+    fixture = std.Concat(fixture, "block_1_statement_count: 0\n");
+    fixture = std.Concat(fixture, "block_1_terminator: Return\n");
+    fixture = std.Concat(fixture, "block_1_return_value_kind: IntLiteral\n");
+    fixture = std.Concat(fixture, "block_1_return_value: 1\n");
+    fixture = std.Concat(fixture, "block_1_return_value_type: int\n");
+    fixture = std.Concat(fixture, "backend_symbol: tiny_native_backend_compiler_mir_ingested_block_jump\n");
+    fixture = std.Concat(fixture, "expected_exit: 1\n");
+    return std.Clone(ctx, fixture);
+}
+
 func mir_emit_native_backend_positive_i32_branch_ingestion_fixture(ctx: &Arena) str {
     // Fixture-only native-backend ingestion seam for a parameter-dependent branch.
     //
