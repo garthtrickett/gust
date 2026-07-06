@@ -690,7 +690,7 @@ func mir_emit_native_backend_return_int_ingestion_fixture(ctx: &Arena) str {
     fixture = std.Concat(fixture, "return_value_type: int\n");
     fixture = std.Concat(fixture, "backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int\n");
     fixture = std.Concat(fixture, "expected_exit: 1\n");
-    return fixture;
+    return std.Clone(ctx, fixture);
 }
 
 func mir_lower_conditional_branch_fixture(ctx: &Arena) MirProgram[ctx] {
