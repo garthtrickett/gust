@@ -1185,6 +1185,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-return-int-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -2980,6 +2981,56 @@ guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke:
       exit 1
     fi
     echo "✅ Compiler-owned MIR conditional-branch ingestion seam native smoke passed."
+
+guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking compiler-owned MIR ingestion rejects invalid fixtures..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    return_invalid="compiler/fixtures/native_backend_return_int_ingestion_invalid.mir"
+    local_invalid="compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir"
+    branch_invalid="compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir"
+    build_dir="build/guards/cranelift_compiler_mir_ingestion_invalid_fixture_rejection"
+    mkdir -p "$build_dir"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_INVALID_FIXTURES_NATIVE_GUARD: guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_fixtures_native_guard: guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_return_int_fixture: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_local_binding_read_fixture: compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_conditional_branch_fixture: compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_status: malformed_compiler_owned_fixtures_rejected_before_object_emission' "$manifest_doc" >/dev/null
+    rg -n -F 'return_value: 9' "$return_invalid" >/dev/null
+    rg -n -F 'statement_0_value: 9' "$local_invalid" >/dev/null
+    rg -n -F 'branch_condition_value: 0' "$branch_invalid" >/dev/null
+    check_rejected() {
+      command="$1"
+      fixture="$2"
+      label="$3"
+      object_file="$build_dir/${label}.o"
+      log_file="$build_dir/${label}.log"
+      rm -f "$object_file" "$log_file"
+      set +e
+      cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- "$command" "$fixture" "$object_file" >"$log_file" 2>&1
+      status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Expected invalid compiler-owned MIR fixture to be rejected for $label, but command succeeded."
+        cat "$log_file"
+        exit 1
+      fi
+      rg -n -F 'compiler MIR ingestion fixture' "$log_file" >/dev/null
+      if [ -s "$object_file" ]; then
+        echo "Invalid compiler-owned MIR fixture unexpectedly emitted a non-empty object for $label."
+        ls -l "$object_file"
+        cat "$log_file"
+        exit 1
+      fi
+    }
+    check_rejected compiler-mir-return-int-ingestion-object "$return_invalid" return_int_invalid
+    check_rejected compiler-mir-local-binding-read-ingestion-object "$local_invalid" local_binding_read_invalid
+    check_rejected compiler-mir-conditional-branch-ingestion-object "$branch_invalid" conditional_branch_invalid
+    echo "✅ Invalid compiler-owned MIR ingestion fixtures were rejected before object emission."
 
 guard-cranelift-mir-to-c-differential-native-smoke:
     #!/usr/bin/env bash

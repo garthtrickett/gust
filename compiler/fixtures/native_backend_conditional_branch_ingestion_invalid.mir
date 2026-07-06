@@ -1,0 +1,27 @@
+# Invalid compiler-owned MIR ingestion fixture for native backend rejection guard.
+# The branch_condition_value deliberately disagrees with the admitted Step 47 fixture.
+format: gust.compiler_mir_ingestion.conditional_branch.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_conditional_branch_ingestion_fixture
+source_fixture: compiler/mir_feature_if_else_return_int_preservation_source.gst
+lowering_entry: mir_lower_conditional_branch_fixture
+function: tiny_conditional_branch
+return_type: int
+entry_block: 0
+block_count: 3
+block_0_terminator: Branch
+branch_condition_kind: IntLiteral
+branch_condition_value: 0
+branch_condition_type: int
+branch_then_block: 1
+branch_else_block: 2
+block_1_terminator: Return
+block_1_return_value_kind: IntLiteral
+block_1_return_value: 1
+block_1_return_value_type: int
+block_2_terminator: Return
+block_2_return_value_kind: IntLiteral
+block_2_return_value: 2
+block_2_return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_conditional_branch
+expected_exit: 1

@@ -875,7 +875,11 @@ fn parse_compiler_mir_local_binding_read_ingestion_fixture(
         "producer_entry",
         "mir_emit_native_backend_local_binding_read_ingestion_fixture",
     )?;
-    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "mir_lower_local_binding_read_fixture")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "lowering_entry",
+        "mir_lower_local_binding_read_fixture",
+    )?;
     require_compiler_mir_ingestion_field(&fields, "function", "tiny_local_binding_read")?;
     require_compiler_mir_ingestion_field(&fields, "return_type", "int")?;
     require_compiler_mir_ingestion_field(&fields, "entry_block", "0")?;
@@ -939,7 +943,11 @@ fn parse_compiler_mir_conditional_branch_ingestion_fixture(
         "producer_entry",
         "mir_emit_native_backend_conditional_branch_ingestion_fixture",
     )?;
-    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "mir_lower_conditional_branch_fixture")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "lowering_entry",
+        "mir_lower_conditional_branch_fixture",
+    )?;
     require_compiler_mir_ingestion_field(&fields, "function", "tiny_conditional_branch")?;
     require_compiler_mir_ingestion_field(&fields, "return_type", "int")?;
     require_compiler_mir_ingestion_field(&fields, "entry_block", "0")?;

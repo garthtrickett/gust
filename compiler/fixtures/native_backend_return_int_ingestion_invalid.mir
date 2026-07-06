@@ -1,0 +1,17 @@
+# Invalid compiler-owned MIR ingestion fixture for native backend rejection guard.
+# The return_value deliberately disagrees with the admitted Step 45 fixture.
+format: gust.compiler_mir_ingestion.return_int.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
+source_fixture: compiler/mir_feature_return_int_preservation_source.gst
+lowering_entry: mir_lower_return_int_literal_fixture
+function: tiny_return_int
+return_type: int
+entry_block: 0
+block_count: 1
+terminator: Return
+return_value_kind: IntLiteral
+return_value: 9
+return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
+expected_exit: 1
