@@ -1046,6 +1046,105 @@ fn emit_mir_block_graph_local_update_i32_bundle_object(
     Ok(())
 }
 
+fn emit_mir_block_graph_param_i32_bundle_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    static MIR_BLOCK_GRAPH_PARAM_I32_FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static MIR_BLOCK_GRAPH_PARAM_I32_BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+
+    static MIR_BLOCK_GRAPH_PARAM_FORWARD_BLOCKS: [TinyMirParamBlock; 2] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpI32Literal {
+                target: "return",
+                value: 53,
+            },
+        },
+        TinyMirParamBlock {
+            label: "return",
+            params: &MIR_BLOCK_GRAPH_PARAM_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::ReturnBlockParamI32(0),
+        },
+    ];
+
+    static MIR_BLOCK_GRAPH_PARAM_UPDATE_BRANCH_BLOCKS: [TinyMirParamBlock; 5] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "increment",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "increment",
+            params: &MIR_BLOCK_GRAPH_PARAM_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "branch",
+                param: 0,
+                value: 4,
+            },
+        },
+        TinyMirParamBlock {
+            label: "branch",
+            params: &MIR_BLOCK_GRAPH_PARAM_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32Positive {
+                param: 0,
+                then_block: "positive",
+                else_block: "non_positive",
+            },
+        },
+        TinyMirParamBlock {
+            label: "positive",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::ReturnI32(67),
+        },
+        TinyMirParamBlock {
+            label: "non_positive",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::ReturnI32(71),
+        },
+    ];
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_mir_block_graph_param_i32_bundle",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let param_forward_function = TinyMirParamBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_FORWARD_I32_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_PARAM_FORWARD_BLOCKS,
+    };
+    let param_update_branch_function = TinyMirParamBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_UPDATE_BRANCH_I32_SYMBOL,
+        params: &MIR_BLOCK_GRAPH_PARAM_I32_FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_PARAM_UPDATE_BRANCH_BLOCKS,
+    };
+
+    define_tiny_mir_param_block_graph_exported_function(&mut module, &param_forward_function)?;
+    define_tiny_mir_param_block_graph_exported_function(&mut module, &param_update_branch_function)?;
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
 fn emit_mir_positive_i32_branch_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
     static MIR_POSITIVE_I32_BRANCH_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
 
@@ -1856,6 +1955,198 @@ fn define_tiny_mir_exported_function(
 
     module.define_function(function_id, &mut context)?;
     module.clear_context(&mut context);
+    Ok(())
+}
+
+fn define_tiny_mir_param_block_graph_exported_function(
+    module: &mut ObjectModule,
+    mir_function: &TinyMirParamBlockFunction,
+) -> Result<(), Box<dyn Error>> {
+    let mut signature = module.make_signature();
+    for param in mir_function.params {
+        signature
+            .params
+            .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
+    }
+    signature
+        .returns
+        .push(AbiParam::new(tiny_mir_type_to_cranelift_type(
+            mir_function.return_type,
+        )));
+
+    let function_id = module.declare_function(mir_function.symbol, Linkage::Export, &signature)?;
+    let mut context = module.make_context();
+    context.func.signature = signature;
+
+    let mut builder_context = FunctionBuilderContext::new();
+    let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
+    build_tiny_mir_param_block_graph_body(&mut builder, mir_function)?;
+    builder.seal_all_blocks();
+    builder.finalize();
+
+    module.define_function(function_id, &mut context)?;
+    module.clear_context(&mut context);
+    Ok(())
+}
+
+fn build_tiny_mir_param_block_graph_body(
+    builder: &mut FunctionBuilder<'_>,
+    mir_function: &TinyMirParamBlockFunction,
+) -> Result<(), Box<dyn Error>> {
+    let mut cranelift_blocks: HashMap<&'static str, Block> = HashMap::new();
+    for block in mir_function.blocks {
+        let cranelift_block = builder.create_block();
+        if cranelift_blocks
+            .insert(block.label, cranelift_block)
+            .is_some()
+        {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!("duplicate tiny MIR param block label: {}", block.label),
+            )
+            .into());
+        }
+
+        for param in block.params {
+            builder.append_block_param(cranelift_block, tiny_mir_type_to_cranelift_type(*param));
+        }
+    }
+
+    let entry_block = *cranelift_blocks
+        .get(mir_function.entry_block)
+        .ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "unknown tiny MIR param block entry block: {}",
+                    mir_function.entry_block
+                ),
+            )
+        })?;
+    builder.append_block_params_for_function_params(entry_block);
+
+    for block in mir_function.blocks {
+        let current_block = *cranelift_blocks.get(block.label).ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "unknown tiny MIR param block during lowering: {}",
+                    block.label
+                ),
+            )
+        })?;
+        builder.switch_to_block(current_block);
+
+        match block.terminator {
+            TinyMirParamBlockTerminator::JumpI32Literal { target, value } => {
+                let target_block = *cranelift_blocks.get(target).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param jump target block: {target}"),
+                    )
+                })?;
+                let jump_value = builder.ins().iconst(types::I32, i64::from(value));
+                builder.ins().jump(target_block, &[jump_value]);
+            }
+            TinyMirParamBlockTerminator::JumpFunctionParamI32 { target, param } => {
+                let target_block = *cranelift_blocks.get(target).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param function jump target block: {target}"),
+                    )
+                })?;
+                let argument_value = {
+                    let entry_params = builder.block_params(entry_block);
+                    entry_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR param function param index: {param}"),
+                        )
+                    })?
+                };
+                builder.ins().jump(target_block, &[argument_value]);
+            }
+            TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target,
+                param,
+                value,
+            } => {
+                let target_block = *cranelift_blocks.get(target).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param add jump target block: {target}"),
+                    )
+                })?;
+                let block_value = {
+                    let block_params = builder.block_params(current_block);
+                    block_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR block param add index: {param}"),
+                        )
+                    })?
+                };
+                let literal_value = builder.ins().iconst(types::I32, i64::from(value));
+                let updated_value = builder.ins().iadd(block_value, literal_value);
+                builder.ins().jump(target_block, &[updated_value]);
+            }
+            TinyMirParamBlockTerminator::BranchBlockParamI32Positive {
+                param,
+                then_block,
+                else_block,
+            } => {
+                let condition_value = {
+                    let block_params = builder.block_params(current_block);
+                    block_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR branch block param index: {param}"),
+                        )
+                    })?
+                };
+                let then_cranelift_block = *cranelift_blocks.get(then_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param then block: {then_block}"),
+                    )
+                })?;
+                let else_cranelift_block = *cranelift_blocks.get(else_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param else block: {else_block}"),
+                    )
+                })?;
+                let branch_condition =
+                    builder
+                        .ins()
+                        .icmp_imm(IntCC::SignedGreaterThan, condition_value, 0);
+                builder.ins().brif(
+                    branch_condition,
+                    then_cranelift_block,
+                    &[],
+                    else_cranelift_block,
+                    &[],
+                );
+            }
+            TinyMirParamBlockTerminator::ReturnI32(value) => {
+                let return_value = builder.ins().iconst(types::I32, i64::from(value));
+                builder.ins().return_(&[return_value]);
+            }
+            TinyMirParamBlockTerminator::ReturnBlockParamI32(param) => {
+                let return_value = {
+                    let block_params = builder.block_params(current_block);
+                    block_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR return block param index: {param}"),
+                        )
+                    })?
+                };
+                builder.ins().return_(&[return_value]);
+            }
+        }
+    }
+
     Ok(())
 }
 
