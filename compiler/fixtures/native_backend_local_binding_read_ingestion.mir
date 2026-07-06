@@ -1,0 +1,24 @@
+# Compiler-owned MIR ingestion fixture for native backend Step 46.
+# This is a narrow serialized seam for mir_lower_local_binding_read_fixture,
+# not a production backend route and not a general MIR interchange format.
+format: gust.compiler_mir_ingestion.local_binding_read.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_local_binding_read_ingestion_fixture
+source_fixture: compiler/mir_feature_local_binding_read_preservation_source.gst
+lowering_entry: mir_lower_local_binding_read_fixture
+function: tiny_local_binding_read
+return_type: int
+entry_block: 0
+block_count: 1
+local_count: 1
+local_0_name: value
+local_0_type: int
+statement_count: 1
+statement_0_kind: LocalI32Set
+statement_0_local: value
+statement_0_value: 2
+terminator: ReturnLocal
+return_local: value
+return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read
+expected_exit: 2

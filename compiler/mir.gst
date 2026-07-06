@@ -693,6 +693,43 @@ func mir_emit_native_backend_return_int_ingestion_fixture(ctx: &Arena) str {
     return std.Clone(ctx, fixture);
 }
 
+func mir_emit_native_backend_local_binding_read_ingestion_fixture(ctx: &Arena) str {
+    // Step 46 fixture-only native-backend ingestion seam.
+    //
+    // This extends the Step 45 compiler-owned serialized MIR artifact pattern
+    // from return-int to local binding/read without routing production codegen
+    // away from MIR-to-C. It is intentionally narrow: one function, one local,
+    // one LocalI32Set statement, and one ReturnLocal terminator.
+    mut program := mir_lower_local_binding_read_fixture(ctx);
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    if len(functions) != 1 {
+        return "format: invalid\n";
+    }
+
+    mut fixture := "format: gust.compiler_mir_ingestion.local_binding_read.v1\n";
+    fixture = std.Concat(fixture, "producer: compiler/mir.gst\n");
+    fixture = std.Concat(fixture, "producer_entry: mir_emit_native_backend_local_binding_read_ingestion_fixture\n");
+    fixture = std.Concat(fixture, "source_fixture: compiler/mir_feature_local_binding_read_preservation_source.gst\n");
+    fixture = std.Concat(fixture, "lowering_entry: mir_lower_local_binding_read_fixture\n");
+    fixture = std.Concat(fixture, "function: tiny_local_binding_read\n");
+    fixture = std.Concat(fixture, "return_type: int\n");
+    fixture = std.Concat(fixture, "entry_block: 0\n");
+    fixture = std.Concat(fixture, "block_count: 1\n");
+    fixture = std.Concat(fixture, "local_count: 1\n");
+    fixture = std.Concat(fixture, "local_0_name: value\n");
+    fixture = std.Concat(fixture, "local_0_type: int\n");
+    fixture = std.Concat(fixture, "statement_count: 1\n");
+    fixture = std.Concat(fixture, "statement_0_kind: LocalI32Set\n");
+    fixture = std.Concat(fixture, "statement_0_local: value\n");
+    fixture = std.Concat(fixture, "statement_0_value: 2\n");
+    fixture = std.Concat(fixture, "terminator: ReturnLocal\n");
+    fixture = std.Concat(fixture, "return_local: value\n");
+    fixture = std.Concat(fixture, "return_value_type: int\n");
+    fixture = std.Concat(fixture, "backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read\n");
+    fixture = std.Concat(fixture, "expected_exit: 2\n");
+    return std.Clone(ctx, fixture);
+}
+
 func mir_lower_conditional_branch_fixture(ctx: &Arena) MirProgram[ctx] {
     // Phase 6 fixture-only conditional branch lowering.
     //

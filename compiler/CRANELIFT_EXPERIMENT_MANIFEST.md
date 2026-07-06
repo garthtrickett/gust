@@ -344,7 +344,21 @@ allowed_compiler_mir_return_int_ingestion_lowering_entry: mir_lower_return_int_l
 allowed_compiler_mir_return_int_ingestion_seam_status: compiler_owned_fixture_to_experiment_only
 real_cranelift_object_smoke: compiler_mir_return_int_ingestion
 
-The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for isolated object emission, including the Step 45 compiler-owned MIR ingestion seam.
+# Step 46 compiler-owned MIR local-binding/read ingestion seam smoke.
+CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_LOCAL_BINDING_READ_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke
+allowed_compiler_mir_local_binding_read_ingestion_native_guard: guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke
+allowed_compiler_mir_local_binding_read_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs
+allowed_compiler_mir_local_binding_read_ingestion_fixture: compiler/fixtures/native_backend_local_binding_read_ingestion.mir
+allowed_compiler_mir_local_binding_read_ingestion_fixture_producer: compiler/mir.gst
+allowed_compiler_mir_local_binding_read_ingestion_fixture_producer_entry: mir_emit_native_backend_local_binding_read_ingestion_fixture
+allowed_compiler_mir_local_binding_read_ingestion_object_artifact: build/guards/cranelift_compiler_mir_local_binding_read_ingestion_native/tiny_native_backend_compiler_mir_ingested_local_binding_read.o
+allowed_compiler_mir_local_binding_read_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read
+allowed_compiler_mir_local_binding_read_ingestion_source_fixture: compiler/mir_feature_local_binding_read_preservation_source.gst
+allowed_compiler_mir_local_binding_read_ingestion_lowering_entry: mir_lower_local_binding_read_fixture
+allowed_compiler_mir_local_binding_read_ingestion_seam_status: compiler_owned_fixture_to_experiment_only
+real_cranelift_object_smoke: compiler_mir_local_binding_read_ingestion
+
+The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for isolated object emission, including compiler-owned MIR ingestion seams.
 The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, conditional-branch, and add-i32 object emission.
 No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, `guard-cranelift-differential-native-smoke`, and `guard-cranelift-no-fixture-regression`.
 real_cranelift_object_smoke: return_int
