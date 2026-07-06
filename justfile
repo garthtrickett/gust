@@ -1306,17 +1306,18 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     invalid_local="compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir"
     invalid_branch="compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir"
     invalid_add="compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir"
+    invalid_provenance="compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir"
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_surface_guard: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 5' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 4' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 5' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixtures: compiler/fixtures/native_backend_return_int_ingestion.mir, compiler/fixtures/native_backend_local_binding_read_ingestion.mir, compiler/fixtures/native_backend_conditional_branch_ingestion.mir, compiler/fixtures/native_backend_add_i32_ingestion.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixtures: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir, compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir, compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir, compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixtures: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir, compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir, compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir, compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_status: positive_and_negative_compiler_owned_fixture_inventory' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_suite_wiring: manifest_derived_native_guard_inventory' "$manifest_doc" >/dev/null
 
-    for fixture in "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add"; do
+    for fixture in "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance"; do
       if [ ! -f "$fixture" ]; then
         echo "Missing compiler-owned MIR ingestion corpus fixture: $fixture"
         exit 1
@@ -1327,13 +1328,13 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'format: gust.compiler_mir_ingestion.local_binding_read.v1' "$valid_local" "$invalid_local" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.conditional_branch.v1' "$valid_branch" "$invalid_branch" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.add_i32.v1' "$valid_add" "$invalid_add" >/dev/null
-    rg -n -F 'format: gust.compiler_mir_ingestion.provenance_metadata.v1' "$valid_provenance" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.provenance_metadata.v1' "$valid_provenance" "$invalid_provenance" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int' "$valid_return" "$invalid_return" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read' "$valid_local" "$invalid_local" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_conditional_branch' "$valid_branch" "$invalid_branch" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_add_i32' "$valid_add" "$invalid_add" >/dev/null
-    rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_provenance_metadata' "$valid_provenance" >/dev/null
+    rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_provenance_metadata' "$valid_provenance" "$invalid_provenance" >/dev/null
 
     rg -n -F 'return_value: 1' "$valid_return" >/dev/null
     rg -n -F 'return_value: 9' "$invalid_return" >/dev/null
@@ -1342,7 +1343,9 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'branch_condition_value: 1' "$valid_branch" >/dev/null
     rg -n -F 'branch_condition_value: 0' "$invalid_branch" >/dev/null
     rg -n -F 'expected_case_0_result: 5' "$valid_add" >/dev/null
-    rg -n -F 'provenance_metadata_count: 1' "$valid_provenance" >/dev/null
+    rg -n -F 'provenance_metadata_count: 1' "$valid_provenance" "$invalid_provenance" >/dev/null
+    rg -n -F 'provenance_0_kind: LocalBinding' "$valid_provenance" >/dev/null
+    rg -n -F 'provenance_0_kind: NativeBoundary' "$invalid_provenance" >/dev/null
     rg -n -F 'expected_case_0_result: 6' "$invalid_add" >/dev/null
 
     for guard_recipe in \
@@ -1361,7 +1364,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     printf '%s\n' "$suite_body" | rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-' >/dev/null
     printf '%s\n' "$suite_body" | rg -n -F 'just "$guard_recipe"' >/dev/null
 
-    fixture_cranelift_refs="$(rg -n -i -F 'cranelift' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" || true)"
+    fixture_cranelift_refs="$(rg -n -i -F 'cranelift' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" || true)"
     if [ -n "$fixture_cranelift_refs" ]; then
       echo "Compiler-owned MIR ingestion fixtures must not mention Cranelift; backend coupling stays manifest/experiment-only:"
       echo "$fixture_cranelift_refs"
@@ -3174,6 +3177,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     local_invalid="compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir"
     branch_invalid="compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir"
     add_invalid="compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir"
+    provenance_invalid="compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir"
     build_dir="build/guards/cranelift_compiler_mir_ingestion_invalid_fixture_rejection"
     mkdir -p "$build_dir"
     just guard-cranelift-backend-surface
@@ -3183,6 +3187,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_local_binding_read_fixture: compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_conditional_branch_fixture: compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_add_i32_fixture: compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_provenance_metadata_fixture: compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_status: malformed_compiler_owned_fixtures_rejected_before_object_emission' "$manifest_doc" >/dev/null
     rg -n -F 'return_value: 9' "$return_invalid" >/dev/null
@@ -3190,6 +3195,8 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     rg -n -F 'branch_condition_value: 0' "$branch_invalid" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.add_i32.v1' "$add_invalid" >/dev/null
     rg -n -F 'expected_case_0_result: 6' "$add_invalid" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.provenance_metadata.v1' "$provenance_invalid" >/dev/null
+    rg -n -F 'provenance_0_kind: NativeBoundary' "$provenance_invalid" >/dev/null
     check_rejected() {
       command="$1"
       fixture="$2"
@@ -3218,6 +3225,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     check_rejected compiler-mir-local-binding-read-ingestion-object "$local_invalid" local_binding_read_invalid
     check_rejected compiler-mir-conditional-branch-ingestion-object "$branch_invalid" conditional_branch_invalid
     check_rejected compiler-mir-add-i32-ingestion-object "$add_invalid" add_i32_invalid
+    check_rejected compiler-mir-provenance-metadata-ingestion-object "$provenance_invalid" provenance_metadata_invalid
     echo "✅ Invalid compiler-owned MIR ingestion fixtures were rejected before object emission."
 
 guard-cranelift-mir-to-c-differential-native-smoke:
