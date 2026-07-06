@@ -2047,6 +2047,9 @@ guard-cranelift-mir-conditional-branch-native-smoke:
     status="$?"
     set -e
     if [ "$status" != "1" ]; then
+      echo "Expected MIR-shaped Cranelift conditional-branch native smoke to exit with status 1, got $status"
+      exit 1
+    fi
     echo "✅ MIR-shaped Cranelift conditional-branch native smoke passed."
 
 guard-cranelift-mir-add-i32-native-smoke:
