@@ -1312,9 +1312,11 @@ guard-cranelift-backend-surface:
       echo "$unexpected_object_artifacts"
       exit 1
     fi
-    if rg -n -F -- '--backend cranelift' compiler src tests Makefile Cargo.toml Cargo.lock justfile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' >/dev/null; then
-      echo "Production --backend cranelift routing must not exist yet."
-      rg -n -F -- '--backend cranelift' compiler src tests Makefile Cargo.toml Cargo.lock justfile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true
+    backend_route_flag="$(printf '%s %s' '--backend' 'cranelift')"
+    backend_route_refs="$(rg -n -F -- "$backend_route_flag" compiler src tests Makefile Cargo.toml Cargo.lock justfile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true)"
+    if [ -n "$backend_route_refs" ]; then
+      echo "Production Cranelift backend routing must not exist yet."
+      echo "$backend_route_refs"
       exit 1
     fi
     implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
