@@ -31,6 +31,7 @@ const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_re
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
 const MIR_POSITIVE_I32_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_positive_i32_branch";
+const MIR_INCREMENT_LOCAL_I32_SYMBOL: &str = "tiny_cranelift_mir_increment_local_i32";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -46,6 +47,8 @@ struct TinyMirLocal {
 #[derive(Clone, Copy)]
 enum TinyMirStatement {
     LocalI32Set { name: &'static str, value: i32 },
+    LocalI32SetParam { name: &'static str, param: usize },
+    LocalI32AddI32Literal { name: &'static str, value: i32 },
 }
 
 #[derive(Clone, Copy)]
@@ -157,6 +160,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_mir_positive_i32_branch_object(Path::new(&output_path))
         }
+        "mir-increment-local-i32-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_increment_local_i32_object(Path::new(&output_path))
+        }
         "local-binding-read-object" => {
             let Some(output_path) = args.next() else {
                 return Err(usage_error().into());
@@ -254,7 +266,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-positive-i32-branch-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -347,6 +359,36 @@ fn emit_mir_positive_i32_branch_object(output_path: &Path) -> Result<(), Box<dyn
             then_return: 7,
             else_return: 9,
         },
+    };
+
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn emit_mir_increment_local_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    static MIR_INCREMENT_LOCAL_I32_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static MIR_INCREMENT_LOCAL_I32_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
+        name: "value",
+        ty: TinyMirType::I32,
+    }];
+    static MIR_INCREMENT_LOCAL_I32_STATEMENTS: [TinyMirStatement; 2] = [
+        TinyMirStatement::LocalI32SetParam {
+            name: "value",
+            param: 0,
+        },
+        TinyMirStatement::LocalI32AddI32Literal {
+            name: "value",
+            value: 1,
+        },
+    ];
+
+    let mir_function = TinyMirFunction {
+        object_name: "gust_cranelift_mir_increment_local_i32",
+        symbol: MIR_INCREMENT_LOCAL_I32_SYMBOL,
+        params: &MIR_INCREMENT_LOCAL_I32_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &MIR_INCREMENT_LOCAL_I32_LOCALS,
+        statements: &MIR_INCREMENT_LOCAL_I32_STATEMENTS,
+        terminator: TinyMirTerminator::ReturnLocalI32("value"),
     };
 
     lower_tiny_mir_function_to_object(output_path, &mir_function)
@@ -765,6 +807,36 @@ fn build_tiny_mir_body(
                 })?;
                 let local_value = builder.ins().iconst(types::I32, i64::from(value));
                 builder.def_var(local_slot, local_value);
+            }
+            TinyMirStatement::LocalI32SetParam { name, param } => {
+                let local_slot = *local_slots.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR set-param local binding: {name}"),
+                    )
+                })?;
+                let param_value = {
+                    let block_params = builder.block_params(entry_block);
+                    block_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR set-param index: {param}"),
+                        )
+                    })?
+                };
+                builder.def_var(local_slot, param_value);
+            }
+            TinyMirStatement::LocalI32AddI32Literal { name, value } => {
+                let local_slot = *local_slots.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR add-literal local binding: {name}"),
+                    )
+                })?;
+                let current_value = builder.use_var(local_slot);
+                let literal_value = builder.ins().iconst(types::I32, i64::from(value));
+                let updated_value = builder.ins().iadd(current_value, literal_value);
+                builder.def_var(local_slot, updated_value);
             }
         }
     }
