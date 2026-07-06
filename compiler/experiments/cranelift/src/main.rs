@@ -1,13 +1,12 @@
 use std::collections::HashMap;
-use std::collections::HashMap;
 use std::env;
 use std::error::Error;
 use std::fs;
 use std::io::{Error as IoError, ErrorKind};
 use std::path::Path;
 
-use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, Type, condcodes::IntCC, types};
 use cranelift_codegen::ir::instructions::BlockArg;
+use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, Type, condcodes::IntCC, types};
 use cranelift_codegen::settings;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{FuncId, Linkage, Module, default_libcall_names};
@@ -29,7 +28,8 @@ const HOST_ADD_I32_SYMBOL: &str = "tiny_host_add_i32";
 const EXTERN_PREDICATE_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_extern_predicate_branch_i32";
 const HOST_IS_POSITIVE_I32_SYMBOL: &str = "tiny_host_is_positive_i32";
 const MIR_RETURN_INT_SYMBOL: &str = "tiny_cranelift_mir_return_int";
-const COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL: &str = "tiny_native_backend_compiler_mir_ingested_return_int";
+const COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_return_int";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
@@ -60,8 +60,7 @@ const MIR_BLOCK_GRAPH_PARAM_FORWARD_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_forward_i32";
 const MIR_BLOCK_GRAPH_PARAM_UPDATE_BRANCH_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_update_branch_i32";
-const MIR_BLOCK_GRAPH_PARAM_CALL_I32_SYMBOL: &str =
-    "tiny_cranelift_mir_block_graph_param_call_i32";
+const MIR_BLOCK_GRAPH_PARAM_CALL_I32_SYMBOL: &str = "tiny_cranelift_mir_block_graph_param_call_i32";
 const MIR_BLOCK_GRAPH_PARAM_CALL_BRANCH_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_call_branch_i32";
 const MIR_BLOCK_GRAPH_PARAM_CALL_HELPER_I32_SYMBOL: &str =
@@ -734,7 +733,11 @@ fn parse_compiler_mir_return_int_ingestion_fixture(
         "producer_entry",
         "mir_emit_native_backend_return_int_ingestion_fixture",
     )?;
-    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "mir_lower_return_int_literal_fixture")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "lowering_entry",
+        "mir_lower_return_int_literal_fixture",
+    )?;
     require_compiler_mir_ingestion_field(&fields, "function", "tiny_return_int")?;
     require_compiler_mir_ingestion_field(&fields, "return_type", "int")?;
     require_compiler_mir_ingestion_field(&fields, "entry_block", "0")?;
@@ -789,9 +792,7 @@ fn require_compiler_mir_ingestion_field(
     if actual != expected {
         return Err(IoError::new(
             ErrorKind::InvalidInput,
-            format!(
-                "compiler MIR ingestion fixture field {key} expected {expected}, got {actual}"
-            ),
+            format!("compiler MIR ingestion fixture field {key} expected {expected}, got {actual}"),
         )
         .into());
     }
@@ -1226,7 +1227,9 @@ fn emit_mir_block_graph_local_update_i32_bundle_object(
         TinyMirBlock {
             label: "entry",
             statements: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_ENTRY_STATEMENTS,
-            terminator: TinyMirBlockTerminator::Jump { target: "increment" },
+            terminator: TinyMirBlockTerminator::Jump {
+                target: "increment",
+            },
         },
         TinyMirBlock {
             label: "increment",
@@ -1243,7 +1246,9 @@ fn emit_mir_block_graph_local_update_i32_bundle_object(
         TinyMirBlock {
             label: "entry",
             statements: &MIR_BLOCK_GRAPH_LOCAL_UPDATE_BRANCH_ENTRY_STATEMENTS,
-            terminator: TinyMirBlockTerminator::Jump { target: "increment" },
+            terminator: TinyMirBlockTerminator::Jump {
+                target: "increment",
+            },
         },
         TinyMirBlock {
             label: "increment",
@@ -1525,7 +1530,10 @@ fn emit_mir_block_graph_param_call_i32_bundle_object(
     module.clear_context(&mut helper_context);
 
     let mut local_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    local_function_ids.insert(MIR_BLOCK_GRAPH_PARAM_CALL_HELPER_I32_SYMBOL, helper_function_id);
+    local_function_ids.insert(
+        MIR_BLOCK_GRAPH_PARAM_CALL_HELPER_I32_SYMBOL,
+        helper_function_id,
+    );
 
     let param_call_function = TinyMirParamBlockFunction {
         object_name: "gust_cranelift_mir_block_graph_param_call_i32_bundle",
@@ -1597,12 +1605,13 @@ fn emit_mir_block_graph_param_extern_i32_bundle_object(
         TinyMirParamBlock {
             label: "extern_call",
             params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_I32_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallPositive {
-                function_symbol: HOST_ADD_ONE_I32_SYMBOL,
-                param: 0,
-                then_block: "positive",
-                else_block: "non_positive",
-            },
+            terminator:
+                TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallPositive {
+                    function_symbol: HOST_ADD_ONE_I32_SYMBOL,
+                    param: 0,
+                    then_block: "positive",
+                    else_block: "non_positive",
+                },
         },
         TinyMirParamBlock {
             label: "positive",
@@ -1632,8 +1641,12 @@ fn emit_mir_block_graph_param_extern_i32_bundle_object(
     let mut module = ObjectModule::new(object_builder);
 
     let mut host_add_one_signature = module.make_signature();
-    host_add_one_signature.params.push(AbiParam::new(types::I32));
-    host_add_one_signature.returns.push(AbiParam::new(types::I32));
+    host_add_one_signature
+        .params
+        .push(AbiParam::new(types::I32));
+    host_add_one_signature
+        .returns
+        .push(AbiParam::new(types::I32));
     let host_add_one_function_id = module.declare_function(
         HOST_ADD_ONE_I32_SYMBOL,
         Linkage::Import,
@@ -1681,8 +1694,7 @@ fn emit_mir_block_graph_param_extern_add_i32_bundle_object(
 ) -> Result<(), Box<dyn Error>> {
     static MIR_BLOCK_GRAPH_PARAM_EXTERN_ADD_I32_FUNCTION_PARAMS: [TinyMirType; 1] =
         [TinyMirType::I32];
-    static MIR_BLOCK_GRAPH_PARAM_EXTERN_ADD_I32_BLOCK_PARAMS: [TinyMirType; 1] =
-        [TinyMirType::I32];
+    static MIR_BLOCK_GRAPH_PARAM_EXTERN_ADD_I32_BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
 
     static MIR_BLOCK_GRAPH_PARAM_EXTERN_ADD_BLOCKS: [TinyMirParamBlock; 2] = [
         TinyMirParamBlock {
@@ -1696,11 +1708,12 @@ fn emit_mir_block_graph_param_extern_add_i32_bundle_object(
         TinyMirParamBlock {
             label: "extern_add",
             params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_ADD_I32_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal {
-                function_symbol: HOST_ADD_I32_SYMBOL,
-                param: 0,
-                value: 5,
-            },
+            terminator:
+                TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal {
+                    function_symbol: HOST_ADD_I32_SYMBOL,
+                    param: 0,
+                    value: 5,
+                },
         },
     ];
 
@@ -1755,11 +1768,8 @@ fn emit_mir_block_graph_param_extern_add_i32_bundle_object(
     host_add_signature.params.push(AbiParam::new(types::I32));
     host_add_signature.params.push(AbiParam::new(types::I32));
     host_add_signature.returns.push(AbiParam::new(types::I32));
-    let host_add_function_id = module.declare_function(
-        HOST_ADD_I32_SYMBOL,
-        Linkage::Import,
-        &host_add_signature,
-    )?;
+    let host_add_function_id =
+        module.declare_function(HOST_ADD_I32_SYMBOL, Linkage::Import, &host_add_signature)?;
 
     let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
     imported_function_ids.insert(HOST_ADD_I32_SYMBOL, host_add_function_id);
@@ -1796,7 +1806,6 @@ fn emit_mir_block_graph_param_extern_add_i32_bundle_object(
     fs::write(output_path, object_product.emit()?)?;
     Ok(())
 }
-
 
 fn emit_mir_block_graph_param_extern_predicate_i32_bundle_object(
     output_path: &Path,
@@ -1893,8 +1902,12 @@ fn emit_mir_block_graph_param_extern_predicate_i32_bundle_object(
     let mut module = ObjectModule::new(object_builder);
 
     let mut host_predicate_signature = module.make_signature();
-    host_predicate_signature.params.push(AbiParam::new(types::I32));
-    host_predicate_signature.returns.push(AbiParam::new(types::I32));
+    host_predicate_signature
+        .params
+        .push(AbiParam::new(types::I32));
+    host_predicate_signature
+        .returns
+        .push(AbiParam::new(types::I32));
     let host_predicate_function_id = module.declare_function(
         HOST_IS_POSITIVE_I32_SYMBOL,
         Linkage::Import,
@@ -2088,8 +2101,7 @@ fn emit_mir_block_graph_param_merge_call_i32_bundle_object(
 ) -> Result<(), Box<dyn Error>> {
     static MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_FUNCTION_PARAMS: [TinyMirType; 1] =
         [TinyMirType::I32];
-    static MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS: [TinyMirType; 1] =
-        [TinyMirType::I32];
+    static MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
 
     static MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_BLOCKS: [TinyMirParamBlock; 4] = [
         TinyMirParamBlock {
