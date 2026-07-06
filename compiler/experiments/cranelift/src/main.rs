@@ -740,21 +740,7 @@ fn emit_compiler_mir_return_int_ingestion_object(
 fn parse_compiler_mir_return_int_ingestion_fixture(
     contents: &str,
 ) -> Result<CompilerMirReturnIntIngestionFixture, Box<dyn Error>> {
-    let mut fields: HashMap<&str, &str> = HashMap::new();
-    for raw_line in contents.lines() {
-        let line = raw_line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let Some((key, value)) = line.split_once(':') else {
-            return Err(IoError::new(
-                ErrorKind::InvalidInput,
-                format!("invalid compiler MIR ingestion fixture line: {line}"),
-            )
-            .into());
-        };
-        fields.insert(key.trim(), value.trim());
-    }
+    let fields = parse_compiler_mir_ingestion_fields(contents)?;
 
     require_compiler_mir_ingestion_field(
         &fields,
@@ -802,6 +788,27 @@ fn parse_compiler_mir_return_int_ingestion_fixture(
     }
 
     Ok(CompilerMirReturnIntIngestionFixture { return_value })
+}
+
+fn parse_compiler_mir_ingestion_fields(
+    contents: &str,
+) -> Result<HashMap<&str, &str>, Box<dyn Error>> {
+    let mut fields: HashMap<&str, &str> = HashMap::new();
+    for raw_line in contents.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let Some((key, value)) = line.split_once(':') else {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!("invalid compiler MIR ingestion fixture line: {line}"),
+            )
+            .into());
+        };
+        fields.insert(key.trim(), value.trim());
+    }
+    Ok(fields)
 }
 
 fn required_compiler_mir_ingestion_field<'a>(
@@ -855,21 +862,7 @@ fn emit_compiler_mir_local_binding_read_ingestion_object(
 fn parse_compiler_mir_local_binding_read_ingestion_fixture(
     contents: &str,
 ) -> Result<(), Box<dyn Error>> {
-    let mut fields: HashMap<&str, &str> = HashMap::new();
-    for raw_line in contents.lines() {
-        let line = raw_line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let Some((key, value)) = line.split_once(':') else {
-            return Err(IoError::new(
-                ErrorKind::InvalidInput,
-                format!("invalid compiler MIR ingestion fixture line: {line}"),
-            )
-            .into());
-        };
-        fields.insert(key.trim(), value.trim());
-    }
+    let fields = parse_compiler_mir_ingestion_fields(contents)?;
 
     require_compiler_mir_ingestion_field(
         &fields,
@@ -933,21 +926,7 @@ fn emit_compiler_mir_conditional_branch_ingestion_object(
 fn parse_compiler_mir_conditional_branch_ingestion_fixture(
     contents: &str,
 ) -> Result<(), Box<dyn Error>> {
-    let mut fields: HashMap<&str, &str> = HashMap::new();
-    for raw_line in contents.lines() {
-        let line = raw_line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let Some((key, value)) = line.split_once(':') else {
-            return Err(IoError::new(
-                ErrorKind::InvalidInput,
-                format!("invalid compiler MIR ingestion fixture line: {line}"),
-            )
-            .into());
-        };
-        fields.insert(key.trim(), value.trim());
-    }
+    let fields = parse_compiler_mir_ingestion_fields(contents)?;
 
     require_compiler_mir_ingestion_field(
         &fields,
