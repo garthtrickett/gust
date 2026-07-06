@@ -38,6 +38,8 @@ const MIR_EXTERN_CALL_I32_SYMBOL: &str = "tiny_cranelift_mir_extern_call_i32";
 const MIR_EXTERN_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_extern_add_i32";
 const MIR_EXTERN_PREDICATE_BRANCH_I32_SYMBOL: &str =
     "tiny_cranelift_mir_extern_predicate_branch_i32";
+const MIR_ARITHMETIC_SUB_I32_SYMBOL: &str = "tiny_cranelift_mir_arithmetic_sub_i32";
+const MIR_ARITHMETIC_MUL_I32_SYMBOL: &str = "tiny_cranelift_mir_arithmetic_mul_i32";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -67,6 +69,14 @@ enum TinyMirTerminator {
         else_return: i32,
     },
     ReturnParamI32Add {
+        lhs_param: usize,
+        rhs_param: usize,
+    },
+    ReturnParamI32Sub {
+        lhs_param: usize,
+        rhs_param: usize,
+    },
+    ReturnParamI32Mul {
         lhs_param: usize,
         rhs_param: usize,
     },
@@ -179,6 +189,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_mir_add_i32_object(Path::new(&output_path))
+        }
+        "mir-arithmetic-i32-bundle-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_arithmetic_i32_bundle_object(Path::new(&output_path))
         }
         "mir-positive-i32-branch-object" => {
             let Some(output_path) = args.next() else {
@@ -331,7 +350,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -407,6 +426,58 @@ fn emit_mir_add_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
     };
 
     lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn emit_mir_arithmetic_i32_bundle_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    static MIR_ARITHMETIC_I32_PARAMS: [TinyMirType; 2] = [TinyMirType::I32, TinyMirType::I32];
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder = cranelift_native::builder()
+        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_mir_arithmetic_i32_bundle",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+    let local_function_refs: HashMap<&'static str, FuncRef> = HashMap::new();
+
+    let sub_function = TinyMirFunction {
+        object_name: "gust_cranelift_mir_arithmetic_i32_bundle",
+        symbol: MIR_ARITHMETIC_SUB_I32_SYMBOL,
+        params: &MIR_ARITHMETIC_I32_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnParamI32Sub {
+            lhs_param: 0,
+            rhs_param: 1,
+        },
+    };
+    define_tiny_mir_exported_function(&mut module, &sub_function, &local_function_refs)?;
+
+    let mul_function = TinyMirFunction {
+        object_name: "gust_cranelift_mir_arithmetic_i32_bundle",
+        symbol: MIR_ARITHMETIC_MUL_I32_SYMBOL,
+        params: &MIR_ARITHMETIC_I32_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnParamI32Mul {
+            lhs_param: 0,
+            rhs_param: 1,
+        },
+    };
+    define_tiny_mir_exported_function(&mut module, &mul_function, &local_function_refs)?;
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
 }
 
 fn emit_mir_positive_i32_branch_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
@@ -1173,6 +1244,38 @@ fn lower_tiny_mir_function_to_object(
     Ok(())
 }
 
+fn define_tiny_mir_exported_function(
+    module: &mut ObjectModule,
+    mir_function: &TinyMirFunction,
+    local_function_refs: &HashMap<&'static str, FuncRef>,
+) -> Result<(), Box<dyn Error>> {
+    let mut signature = module.make_signature();
+    for param in mir_function.params {
+        signature
+            .params
+            .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
+    }
+    signature
+        .returns
+        .push(AbiParam::new(tiny_mir_type_to_cranelift_type(
+            mir_function.return_type,
+        )));
+
+    let function_id = module.declare_function(mir_function.symbol, Linkage::Export, &signature)?;
+    let mut context = module.make_context();
+    context.func.signature = signature;
+
+    let mut builder_context = FunctionBuilderContext::new();
+    let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
+    build_tiny_mir_body(&mut builder, mir_function, local_function_refs)?;
+    builder.seal_all_blocks();
+    builder.finalize();
+
+    module.define_function(function_id, &mut context)?;
+    module.clear_context(&mut context);
+    Ok(())
+}
+
 fn build_tiny_mir_body(
     builder: &mut FunctionBuilder<'_>,
     mir_function: &TinyMirFunction,
@@ -1290,6 +1393,46 @@ fn build_tiny_mir_body(
             })?;
             let sum = builder.ins().iadd(lhs, rhs);
             builder.ins().return_(&[sum]);
+        }
+        TinyMirTerminator::ReturnParamI32Sub {
+            lhs_param,
+            rhs_param,
+        } => {
+            let block_params = builder.block_params(entry_block);
+            let lhs = block_params.get(lhs_param).copied().ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown tiny MIR sub lhs param index: {lhs_param}"),
+                )
+            })?;
+            let rhs = block_params.get(rhs_param).copied().ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown tiny MIR sub rhs param index: {rhs_param}"),
+                )
+            })?;
+            let difference = builder.ins().isub(lhs, rhs);
+            builder.ins().return_(&[difference]);
+        }
+        TinyMirTerminator::ReturnParamI32Mul {
+            lhs_param,
+            rhs_param,
+        } => {
+            let block_params = builder.block_params(entry_block);
+            let lhs = block_params.get(lhs_param).copied().ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown tiny MIR mul lhs param index: {lhs_param}"),
+                )
+            })?;
+            let rhs = block_params.get(rhs_param).copied().ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown tiny MIR mul rhs param index: {rhs_param}"),
+                )
+            })?;
+            let product = builder.ins().imul(lhs, rhs);
+            builder.ins().return_(&[product]);
         }
         TinyMirTerminator::ReturnParamI32AddLiteral { param, value } => {
             let block_params = builder.block_params(entry_block);

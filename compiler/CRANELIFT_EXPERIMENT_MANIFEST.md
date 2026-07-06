@@ -170,6 +170,18 @@ allowed_guard_wiring_inventory_source: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md
 allowed_guard_wiring_recipe_inventory: just --summary
 allowed_guard_wiring_native_suite_source: CRANELIFT_EXPERIMENT_ALLOWED_*_NATIVE_GUARD
 allowed_guard_wiring_policy: manifest_derived_guard_inventory
+
+# Step 32 MIR-shaped arithmetic i32 bundle smoke.
+CRANELIFT_EXPERIMENT_ALLOWED_MIR_ARITHMETIC_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-arithmetic-i32-bundle-native-smoke
+allowed_mir_arithmetic_i32_bundle_native_guard: guard-cranelift-mir-arithmetic-i32-bundle-native-smoke
+allowed_mir_arithmetic_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs
+allowed_mir_arithmetic_i32_bundle_object_artifact: build/guards/cranelift_mir_arithmetic_i32_bundle_native/tiny_cranelift_mir_arithmetic_i32_bundle.o
+allowed_mir_arithmetic_i32_bundle_sub_symbol: tiny_cranelift_mir_arithmetic_sub_i32
+allowed_mir_arithmetic_i32_bundle_mul_symbol: tiny_cranelift_mir_arithmetic_mul_i32
+allowed_mir_arithmetic_i32_bundle_lowering_scaffold: TinyMirTerminator::ReturnParamI32Sub
+allowed_mir_arithmetic_i32_bundle_lowering_scaffold: TinyMirTerminator::ReturnParamI32Mul
+real_cranelift_object_smoke: mir_arithmetic_i32_bundle
+
 The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, conditional-branch, and add-i32 object emission.
 No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, `guard-cranelift-differential-native-smoke`, and `guard-cranelift-no-fixture-regression`.
 real_cranelift_object_smoke: return_int
