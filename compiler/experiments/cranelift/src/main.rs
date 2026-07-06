@@ -53,6 +53,10 @@ const MIR_BLOCK_GRAPH_LOCAL_UPDATE_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_local_update_i32";
 const MIR_BLOCK_GRAPH_LOCAL_UPDATE_BRANCH_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_local_update_branch_i32";
+const MIR_BLOCK_GRAPH_PARAM_FORWARD_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_param_forward_i32";
+const MIR_BLOCK_GRAPH_PARAM_UPDATE_BRANCH_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_param_update_branch_i32";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -184,6 +188,46 @@ struct TinyMirBlockFunction {
     locals: &'static [TinyMirLocal],
     entry_block: &'static str,
     blocks: &'static [TinyMirBlock],
+}
+
+#[derive(Clone, Copy)]
+enum TinyMirParamBlockTerminator {
+    JumpI32Literal {
+        target: &'static str,
+        value: i32,
+    },
+    JumpFunctionParamI32 {
+        target: &'static str,
+        param: usize,
+    },
+    JumpBlockParamI32AddI32Literal {
+        target: &'static str,
+        param: usize,
+        value: i32,
+    },
+    BranchBlockParamI32Positive {
+        param: usize,
+        then_block: &'static str,
+        else_block: &'static str,
+    },
+    ReturnI32(i32),
+    ReturnBlockParamI32(usize),
+}
+
+#[derive(Clone, Copy)]
+struct TinyMirParamBlock {
+    label: &'static str,
+    params: &'static [TinyMirType],
+    terminator: TinyMirParamBlockTerminator,
+}
+
+struct TinyMirParamBlockFunction {
+    object_name: &'static str,
+    symbol: &'static str,
+    params: &'static [TinyMirType],
+    return_type: TinyMirType,
+    entry_block: &'static str,
+    blocks: &'static [TinyMirParamBlock],
 }
 
 struct TinyMirFunction {
@@ -318,6 +362,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_mir_block_graph_local_update_i32_bundle_object(Path::new(&output_path))
+        }
+        "mir-block-graph-param-i32-bundle-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_block_graph_param_i32_bundle_object(Path::new(&output_path))
         }
         "mir-positive-i32-branch-object" => {
             let Some(output_path) = args.next() else {
