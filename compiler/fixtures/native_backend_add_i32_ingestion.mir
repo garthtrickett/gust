@@ -1,0 +1,29 @@
+# Compiler-owned MIR ingestion fixture for native backend Step 50.
+# This is a narrow serialized seam for a tiny add-i32 parameter fixture,
+# not a production backend route and not a general MIR interchange format.
+format: gust.compiler_mir_ingestion.add_i32.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_add_i32_ingestion_fixture
+source_fixture: compiler/mir_feature_add_i32_preservation_source.gst
+lowering_entry: fixture_only_param_add_i32_serialization
+function: tiny_add_i32
+return_type: int
+param_count: 2
+param_0_name: lhs
+param_0_type: int
+param_1_name: rhs
+param_1_type: int
+entry_block: 0
+block_count: 1
+terminator: ReturnParamAdd
+lhs_param: 0
+rhs_param: 1
+return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_add_i32
+expected_case_count: 2
+expected_case_0_lhs: 2
+expected_case_0_rhs: 3
+expected_case_0_result: 5
+expected_case_1_lhs: 0
+expected_case_1_rhs: 4
+expected_case_1_result: 4

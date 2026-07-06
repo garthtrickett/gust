@@ -34,6 +34,8 @@ const COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_local_binding_read";
 const COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_conditional_branch";
+const COMPILER_MIR_INGESTED_ADD_I32_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_add_i32";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
@@ -397,6 +399,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_conditional_branch_ingestion_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-add-i32-ingestion-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_add_i32_ingestion_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -973,6 +990,60 @@ fn parse_compiler_mir_conditional_branch_ingestion_fixture(
     )?;
     require_compiler_mir_ingestion_field(&fields, "expected_exit", "1")?;
 
+    Ok(())
+}
+
+fn emit_compiler_mir_add_i32_ingestion_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_add_i32_ingestion_fixture(&contents)?;
+    static COMPILER_MIR_ADD_I32_PARAMS: [TinyMirType; 2] = [TinyMirType::I32, TinyMirType::I32];
+    let mir_function = TinyMirFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_add_i32",
+        symbol: COMPILER_MIR_INGESTED_ADD_I32_SYMBOL,
+        params: &COMPILER_MIR_ADD_I32_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnParamI32Add {
+            lhs_param: 0,
+            rhs_param: 1,
+        },
+    };
+
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn parse_compiler_mir_add_i32_ingestion_fixture(contents: &str) -> Result<(), Box<dyn Error>> {
+    let fields = parse_compiler_mir_ingestion_fields(contents)?;
+    require_compiler_mir_ingestion_field(&fields, "format", "gust.compiler_mir_ingestion.add_i32.v1")?;
+    require_compiler_mir_ingestion_field(&fields, "producer", "compiler/mir.gst")?;
+    require_compiler_mir_ingestion_field(&fields, "producer_entry", "mir_emit_native_backend_add_i32_ingestion_fixture")?;
+    require_compiler_mir_ingestion_field(&fields, "source_fixture", "compiler/mir_feature_add_i32_preservation_source.gst")?;
+    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "fixture_only_param_add_i32_serialization")?;
+    require_compiler_mir_ingestion_field(&fields, "function", "tiny_add_i32")?;
+    require_compiler_mir_ingestion_field(&fields, "return_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "param_count", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "param_0_name", "lhs")?;
+    require_compiler_mir_ingestion_field(&fields, "param_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "param_1_name", "rhs")?;
+    require_compiler_mir_ingestion_field(&fields, "param_1_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "entry_block", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "terminator", "ReturnParamAdd")?;
+    require_compiler_mir_ingestion_field(&fields, "lhs_param", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "rhs_param", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "return_value_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "backend_symbol", COMPILER_MIR_INGESTED_ADD_I32_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_count", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_0_lhs", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_0_rhs", "3")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_0_result", "5")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_1_lhs", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_1_rhs", "4")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "4")?;
     Ok(())
 }
 

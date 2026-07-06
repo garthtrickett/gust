@@ -730,6 +730,42 @@ func mir_emit_native_backend_local_binding_read_ingestion_fixture(ctx: &Arena) s
     return std.Clone(ctx, fixture);
 }
 
+func mir_emit_native_backend_add_i32_ingestion_fixture(ctx: &Arena) str {
+    // Step 50 fixture-only native-backend ingestion seam.
+    //
+    // This extends the compiler-owned serialized MIR artifact pattern to a
+    // tiny parameter arithmetic fixture without routing production codegen away
+    // from MIR-to-C. It is intentionally narrow: two int params and one
+    // ReturnParamAdd terminator.
+    mut fixture := "format: gust.compiler_mir_ingestion.add_i32.v1\n";
+    fixture = std.Concat(fixture, "producer: compiler/mir.gst\n");
+    fixture = std.Concat(fixture, "producer_entry: mir_emit_native_backend_add_i32_ingestion_fixture\n");
+    fixture = std.Concat(fixture, "source_fixture: compiler/mir_feature_add_i32_preservation_source.gst\n");
+    fixture = std.Concat(fixture, "lowering_entry: fixture_only_param_add_i32_serialization\n");
+    fixture = std.Concat(fixture, "function: tiny_add_i32\n");
+    fixture = std.Concat(fixture, "return_type: int\n");
+    fixture = std.Concat(fixture, "param_count: 2\n");
+    fixture = std.Concat(fixture, "param_0_name: lhs\n");
+    fixture = std.Concat(fixture, "param_0_type: int\n");
+    fixture = std.Concat(fixture, "param_1_name: rhs\n");
+    fixture = std.Concat(fixture, "param_1_type: int\n");
+    fixture = std.Concat(fixture, "entry_block: 0\n");
+    fixture = std.Concat(fixture, "block_count: 1\n");
+    fixture = std.Concat(fixture, "terminator: ReturnParamAdd\n");
+    fixture = std.Concat(fixture, "lhs_param: 0\n");
+    fixture = std.Concat(fixture, "rhs_param: 1\n");
+    fixture = std.Concat(fixture, "return_value_type: int\n");
+    fixture = std.Concat(fixture, "backend_symbol: tiny_native_backend_compiler_mir_ingested_add_i32\n");
+    fixture = std.Concat(fixture, "expected_case_count: 2\n");
+    fixture = std.Concat(fixture, "expected_case_0_lhs: 2\n");
+    fixture = std.Concat(fixture, "expected_case_0_rhs: 3\n");
+    fixture = std.Concat(fixture, "expected_case_0_result: 5\n");
+    fixture = std.Concat(fixture, "expected_case_1_lhs: 0\n");
+    fixture = std.Concat(fixture, "expected_case_1_rhs: 4\n");
+    fixture = std.Concat(fixture, "expected_case_1_result: 4\n");
+    return std.Clone(ctx, fixture);
+}
+
 func mir_emit_native_backend_conditional_branch_ingestion_fixture(ctx: &Arena) str {
     // Step 47 fixture-only native-backend ingestion seam.
     //
