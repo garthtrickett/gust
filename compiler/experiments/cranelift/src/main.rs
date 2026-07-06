@@ -30,6 +30,7 @@ const MIR_RETURN_INT_SYMBOL: &str = "tiny_cranelift_mir_return_int";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
+const MIR_POSITIVE_I32_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_positive_i32_branch";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -59,6 +60,11 @@ enum TinyMirTerminator {
     ReturnParamI32Add {
         lhs_param: usize,
         rhs_param: usize,
+    },
+    BranchParamI32Positive {
+        param: usize,
+        then_return: i32,
+        else_return: i32,
     },
 }
 
@@ -141,6 +147,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_mir_add_i32_object(Path::new(&output_path))
+        }
+        "mir-positive-i32-branch-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_positive_i32_branch_object(Path::new(&output_path))
         }
         "local-binding-read-object" => {
             let Some(output_path) = args.next() else {
@@ -239,7 +254,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-positive-i32-branch-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -311,6 +326,26 @@ fn emit_mir_add_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
         terminator: TinyMirTerminator::ReturnParamI32Add {
             lhs_param: 0,
             rhs_param: 1,
+        },
+    };
+
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn emit_mir_positive_i32_branch_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    static MIR_POSITIVE_I32_BRANCH_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+
+    let mir_function = TinyMirFunction {
+        object_name: "gust_cranelift_mir_positive_i32_branch",
+        symbol: MIR_POSITIVE_I32_BRANCH_SYMBOL,
+        params: &MIR_POSITIVE_I32_BRANCH_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::BranchParamI32Positive {
+            param: 0,
+            then_return: 7,
+            else_return: 9,
         },
     };
 
@@ -791,6 +826,35 @@ fn build_tiny_mir_body(
             })?;
             let sum = builder.ins().iadd(lhs, rhs);
             builder.ins().return_(&[sum]);
+        }
+        TinyMirTerminator::BranchParamI32Positive {
+            param,
+            then_return,
+            else_return,
+        } => {
+            let block_params = builder.block_params(entry_block);
+            let condition_param = block_params.get(param).copied().ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown tiny MIR positive branch param index: {param}"),
+                )
+            })?;
+            let then_block = builder.create_block();
+            let else_block = builder.create_block();
+            let branch_condition = builder
+                .ins()
+                .icmp_imm(IntCC::SignedGreaterThan, condition_param, 0);
+            builder
+                .ins()
+                .brif(branch_condition, then_block, &[], else_block, &[]);
+
+            builder.switch_to_block(then_block);
+            let then_value = builder.ins().iconst(types::I32, i64::from(then_return));
+            builder.ins().return_(&[then_value]);
+
+            builder.switch_to_block(else_block);
+            let else_value = builder.ins().iconst(types::I32, i64::from(else_return));
+            builder.ins().return_(&[else_value]);
         }
     }
 
