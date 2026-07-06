@@ -1201,6 +1201,57 @@ guard-mir-to-c-boring-surface:
     just guard-mir-to-c-provenance-metadata-native-smoke
     echo "✅ MIR-to-C boring surface passed: all Phase 8 entries are retired, suite routing is MIR-owned, and only isolated Cranelift experiment lanes are allowed."
 
+guard-cranelift-experiment-guard-wiring-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Cranelift experiment guard wiring inventory..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    if [ ! -f "$manifest_doc" ]; then
+      echo "Missing $manifest_doc. Phase 9 requires the Cranelift experiment manifest before guard wiring can be checked."
+      exit 1
+    fi
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD_WIRING_SURFACE: guard-cranelift-experiment-guard-wiring-surface' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_guard_wiring_inventory_source: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_guard_wiring_recipe_inventory: just --summary' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_guard_wiring_native_suite_source: CRANELIFT_EXPERIMENT_ALLOWED_*_NATIVE_GUARD' "$manifest_doc" >/dev/null
+    tmpdir="$(mktemp -d)"
+    trap 'rm -rf "$tmpdir"' EXIT
+    just --summary | tr ' ' '\n' | rg '^guard-cranelift-' | sort -u > "$tmpdir/defined"
+    rg --no-line-number -o 'guard-cranelift-[A-Za-z0-9_-]+' "$manifest_doc" | sort -u > "$tmpdir/manifest"
+    {
+      printf '%s\n' 'guard-cranelift-experiment-guard-wiring-surface'
+      printf '%s\n' 'guard-cranelift-experiment-manifest-surface'
+      printf '%s\n' 'guard-cranelift-backend-surface'
+      printf '%s\n' 'guard-cranelift-dependency-beachhead'
+      printf '%s\n' 'guard-cranelift-experimental-backend-suite'
+      printf '%s\n' 'guard-cranelift-no-fixture-regression'
+    } | sort -u > "$tmpdir/core"
+    cat "$tmpdir/core" "$tmpdir/manifest" | sort -u > "$tmpdir/allowed"
+    missing_manifest_recipes="$(comm -23 "$tmpdir/manifest" "$tmpdir/defined" || true)"
+    if [ -n "$missing_manifest_recipes" ]; then
+      echo "Cranelift manifest names guard recipes that are not defined in justfile:"
+      echo "$missing_manifest_recipes"
+      exit 1
+    fi
+    unexpected_cranelift_recipes="$(comm -23 "$tmpdir/defined" "$tmpdir/allowed" || true)"
+    if [ -n "$unexpected_cranelift_recipes" ]; then
+      echo "Cranelift guard recipes must be listed in compiler/CRANELIFT_EXPERIMENT_MANIFEST.md or be core surface guards:"
+      echo "$unexpected_cranelift_recipes"
+      exit 1
+    fi
+    native_guard_tokens="$(awk '/^CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-/ { print $2 }' "$manifest_doc" | awk '!seen[$0]++')"
+    if [ -z "$native_guard_tokens" ]; then
+      echo "Expected at least one CRANELIFT_EXPERIMENT_ALLOWED_*_NATIVE_GUARD token in $manifest_doc."
+      exit 1
+    fi
+    while IFS= read -r guard_recipe; do
+      if [ -z "$guard_recipe" ]; then
+        continue
+      fi
+      rg -n -F "$guard_recipe:" justfile >/dev/null
+    done <<< "$native_guard_tokens"
+    echo "✅ Cranelift experiment guard wiring inventory passed."
+
 guard-cranelift-experiment-manifest-surface:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -1219,178 +1270,18 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD: guard-cranelift-experiment-manifest-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SURFACE_GUARD: guard-cranelift-backend-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-binding-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_IDENTITY_I32_NATIVE_GUARD: guard-cranelift-identity-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_POSITIVE_I32_BRANCH_NATIVE_GUARD: guard-cranelift-positive-i32-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_INCREMENT_LOCAL_I32_NATIVE_GUARD: guard-cranelift-increment-local-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_CALL_HELPER_I32_NATIVE_GUARD: guard-cranelift-call-helper-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_call_helper_i32_native_guard: guard-cranelift-call-helper-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_call_helper_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_call_helper_i32_object_artifact: build/guards/cranelift_call_helper_i32_native/tiny_cranelift_call_helper_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_EXTERN_CALL_I32_NATIVE_GUARD: guard-cranelift-extern-call-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_extern_call_i32_native_guard: guard-cranelift-extern-call-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_call_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_call_i32_object_artifact: build/guards/cranelift_extern_call_i32_native/tiny_cranelift_extern_call_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_call_i32_host_symbol: tiny_host_add_one_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_EXTERN_ADD_I32_NATIVE_GUARD: guard-cranelift-extern-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_extern_add_i32_native_guard: guard-cranelift-extern-add-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_add_i32_object_artifact: build/guards/cranelift_extern_add_i32_native/tiny_cranelift_extern_add_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_add_i32_host_symbol: tiny_host_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_EXTERN_PREDICATE_BRANCH_I32_NATIVE_GUARD: guard-cranelift-extern-predicate-branch-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_native_guard: guard-cranelift-extern-predicate-branch-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_object_artifact: build/guards/cranelift_extern_predicate_branch_i32_native/tiny_cranelift_extern_predicate_branch_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_host_symbol: tiny_host_is_positive_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_RETURN_INT_NATIVE_GUARD: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_return_int_native_guard: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_object_artifact: build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_symbol: tiny_cranelift_mir_return_int' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_lowering_scaffold: TinyMirFunction' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_LOCAL_BINDING_READ_NATIVE_GUARD: guard-cranelift-mir-local-binding-read-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_native_guard: guard-cranelift-mir-local-binding-read-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_object_artifact: build/guards/cranelift_mir_local_binding_read_native/tiny_cranelift_mir_local_binding_read.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_symbol: tiny_cranelift_mir_local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_lowering_scaffold: TinyMirStatement::LocalI32Set' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_CONDITIONAL_BRANCH_NATIVE_GUARD: guard-cranelift-mir-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_native_guard: guard-cranelift-mir-conditional-branch-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_object_artifact: build/guards/cranelift_mir_conditional_branch_native/tiny_cranelift_mir_conditional_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_symbol: tiny_cranelift_mir_conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_lowering_scaffold: TinyMirTerminator::BranchI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_ADD_I32_NATIVE_GUARD: guard-cranelift-mir-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_add_i32_native_guard: guard-cranelift-mir-add-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_object_artifact: build/guards/cranelift_mir_add_i32_native/tiny_cranelift_mir_add_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_symbol: tiny_cranelift_mir_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_lowering_scaffold: TinyMirTerminator::ReturnParamI32Add' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_POSITIVE_I32_BRANCH_NATIVE_GUARD: guard-cranelift-mir-positive-i32-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_native_guard: guard-cranelift-mir-positive-i32-branch-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_object_artifact: build/guards/cranelift_mir_positive_i32_branch_native/tiny_cranelift_mir_positive_i32_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_symbol: tiny_cranelift_mir_positive_i32_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_lowering_scaffold: TinyMirTerminator::BranchParamI32Positive' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_INCREMENT_LOCAL_I32_NATIVE_GUARD: guard-cranelift-mir-increment-local-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_native_guard: guard-cranelift-mir-increment-local-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_object_artifact: build/guards/cranelift_mir_increment_local_i32_native/tiny_cranelift_mir_increment_local_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_symbol: tiny_cranelift_mir_increment_local_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_lowering_scaffold: TinyMirStatement::LocalI32SetParam+TinyMirStatement::LocalI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_CALL_HELPER_I32_NATIVE_GUARD: guard-cranelift-mir-call-helper-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_native_guard: guard-cranelift-mir-call-helper-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_object_artifact: build/guards/cranelift_mir_call_helper_i32_native/tiny_cranelift_mir_call_helper_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_symbol: tiny_cranelift_mir_call_helper_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_helper_symbol: tiny_cranelift_mir_add_one_helper_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_lowering_scaffold: TinyMirTerminator::ReturnLocalFunctionI32Call' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_EXTERN_CALL_I32_NATIVE_GUARD: guard-cranelift-mir-extern-call-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_native_guard: guard-cranelift-mir-extern-call-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_object_artifact: build/guards/cranelift_mir_extern_call_i32_native/tiny_cranelift_mir_extern_call_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_symbol: tiny_cranelift_mir_extern_call_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_host_symbol: tiny_host_add_one_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_lowering_scaffold: TinyMirTerminator::ReturnImportedFunctionI32Call' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_EXTERN_ADD_I32_NATIVE_GUARD: guard-cranelift-mir-extern-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_native_guard: guard-cranelift-mir-extern-add-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_object_artifact: build/guards/cranelift_mir_extern_add_i32_native/tiny_cranelift_mir_extern_add_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_symbol: tiny_cranelift_mir_extern_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_host_symbol: tiny_host_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_lowering_scaffold: TinyMirTerminator::ReturnImportedFunctionI32CallParamLiteral' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_EXTERN_PREDICATE_BRANCH_I32_NATIVE_GUARD: guard-cranelift-mir-extern-predicate-branch-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_native_guard: guard-cranelift-mir-extern-predicate-branch-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_object_artifact: build/guards/cranelift_mir_extern_predicate_branch_i32_native/tiny_cranelift_mir_extern_predicate_branch_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_symbol: tiny_cranelift_mir_extern_predicate_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_host_symbol: tiny_host_is_positive_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_lowering_scaffold: TinyMirTerminator::BranchImportedFunctionI32Predicate' "$manifest_doc" >/dev/null
-    rg -n -F 'Cranelift is disabled by default.' "$manifest_doc" >/dev/null
-    rg -n -F 'No production Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
-    rg -n -F 'The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, conditional-branch, and add-i32 object emission.' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml' "$manifest_doc" >/dev/null
-    rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
-    rg -n -F 'No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-no-fixture-regression`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, and `guard-cranelift-differential-native-smoke`.' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_manifest: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_guard: guard-cranelift-experiment-manifest-surface' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_backend_surface_guard: guard-cranelift-backend-surface' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_return_int_native_guard: guard-cranelift-return-int-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_local_binding_native_guard: guard-cranelift-local-binding-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_branch_native_guard: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_differential_native_guard: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_dependency_beachhead_guard: guard-cranelift-dependency-beachhead' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_no_fixture_regression_guard: guard-cranelift-no-fixture-regression' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_identity_i32_native_guard: guard-cranelift-identity-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_identity_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_identity_i32_object_artifact: build/guards/cranelift_identity_i32_native/tiny_cranelift_identity_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_positive_i32_branch_native_guard: guard-cranelift-positive-i32-branch-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_positive_i32_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_positive_i32_branch_object_artifact: build/guards/cranelift_positive_i32_branch_native/tiny_cranelift_positive_i32_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_increment_local_i32_native_guard: guard-cranelift-increment-local-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_increment_local_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_increment_local_i32_object_artifact: build/guards/cranelift_increment_local_i32_native/tiny_cranelift_increment_local_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_status: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_codegen_status: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_backend_surface_status: differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_return_int_fixture: tiny_cranelift_return_int' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_return_int_object_artifact: build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_local_binding_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_local_binding_object_artifact: build/guards/cranelift_local_binding_native/tiny_cranelift_local_binding_read.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_local_binding_fixture: tiny_cranelift_local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_branch_fixture: tiny_cranelift_conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_branch_object_artifact: build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_codegen_status: implemented' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_default_enabled: true' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_root_dependency: cranelift' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_experiment_dependency_lockfile: compiler/experiments/cranelift/Cargo.lock' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_experiment_dependency_guard: guard-cranelift-dependency-beachhead' "$manifest_doc" >/dev/null
-    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-no-fixture-regression' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-identity-i32-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-add-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-positive-i32-branch-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-increment-local-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-call-helper-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-call-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-add-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-predicate-branch-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-return-int-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-local-binding-read-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-conditional-branch-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-add-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-positive-i32-branch-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-increment-local-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-call-helper-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-extern-call-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-extern-add-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-extern-predicate-branch-i32-native-smoke' || true)"
-    if [ -n "$cranelift_recipe_wiring" ]; then
-      echo "Phase 9 Step 12 allows only the Cranelift experiment manifest, inert backend surface, dependency beachhead, explicit backend suite, no-fixture regression guard, real return-int/local-binding/branch object smokes, and differential native smoke guards, found additional Cranelift recipes:"
-      echo "$cranelift_recipe_wiring"
-      exit 1
-    fi
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD_WIRING_SURFACE: guard-cranelift-experiment-guard-wiring-surface' "$manifest_doc" justfile >/dev/null
+    just guard-cranelift-experiment-guard-wiring-surface
     cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
     if [ -n "$cranelift_refs" ]; then
       echo "Phase 9 Step 1 must not add Cranelift implementation references:"
       echo "$cranelift_refs"
       exit 1
     fi
-    echo "✅ Cranelift experiment manifest surface passed: dependency beachhead plus explicit backend suite, real return-int/local-binding object smokes, branch differential lane, disabled by default, and no production codegen exists yet."
+    echo "✅ Cranelift experiment manifest surface passed: dependency beachhead plus explicit backend suite, manifest-derived guard wiring, disabled by default, and no production codegen exists yet."
 
 guard-cranelift-backend-surface:
     #!/usr/bin/env bash
@@ -1398,161 +1289,32 @@ guard-cranelift-backend-surface:
     echo "🔒 Checking Cranelift backend surface..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-experiment-manifest-surface
+    just guard-cranelift-experiment-guard-wiring-surface
     rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: differential_native_smoke' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SURFACE_GUARD: guard-cranelift-backend-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-binding-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-local-binding-read-native-smoke' justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-branch-native-smoke' justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-differential-native-smoke' justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-experimental-backend-suite' justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-dependency-beachhead' justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-no-fixture-regression' justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_IDENTITY_I32_NATIVE_GUARD: guard-cranelift-identity-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-identity-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_POSITIVE_I32_BRANCH_NATIVE_GUARD: guard-cranelift-positive-i32-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-positive-i32-branch-native-smoke' justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_INCREMENT_LOCAL_I32_NATIVE_GUARD: guard-cranelift-increment-local-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-increment-local-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_CALL_HELPER_I32_NATIVE_GUARD: guard-cranelift-call-helper-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-call-helper-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_call_helper_i32_native_guard: guard-cranelift-call-helper-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_call_helper_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_call_helper_i32_object_artifact: build/guards/cranelift_call_helper_i32_native/tiny_cranelift_call_helper_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_EXTERN_CALL_I32_NATIVE_GUARD: guard-cranelift-extern-call-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-extern-call-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_extern_call_i32_native_guard: guard-cranelift-extern-call-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_call_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_call_i32_object_artifact: build/guards/cranelift_extern_call_i32_native/tiny_cranelift_extern_call_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_call_i32_host_symbol: tiny_host_add_one_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_EXTERN_ADD_I32_NATIVE_GUARD: guard-cranelift-extern-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-extern-add-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_extern_add_i32_native_guard: guard-cranelift-extern-add-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_add_i32_object_artifact: build/guards/cranelift_extern_add_i32_native/tiny_cranelift_extern_add_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_add_i32_host_symbol: tiny_host_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_EXTERN_PREDICATE_BRANCH_I32_NATIVE_GUARD: guard-cranelift-extern-predicate-branch-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-extern-predicate-branch-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_native_guard: guard-cranelift-extern-predicate-branch-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_object_artifact: build/guards/cranelift_extern_predicate_branch_i32_native/tiny_cranelift_extern_predicate_branch_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_host_symbol: tiny_host_is_positive_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_RETURN_INT_NATIVE_GUARD: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-mir-return-int-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_mir_return_int_native_guard: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_object_artifact: build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_symbol: tiny_cranelift_mir_return_int' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_lowering_scaffold: TinyMirFunction' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_LOCAL_BINDING_READ_NATIVE_GUARD: guard-cranelift-mir-local-binding-read-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-mir-local-binding-read-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_native_guard: guard-cranelift-mir-local-binding-read-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_object_artifact: build/guards/cranelift_mir_local_binding_read_native/tiny_cranelift_mir_local_binding_read.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_symbol: tiny_cranelift_mir_local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_lowering_scaffold: TinyMirStatement::LocalI32Set' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_CONDITIONAL_BRANCH_NATIVE_GUARD: guard-cranelift-mir-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-mir-conditional-branch-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_native_guard: guard-cranelift-mir-conditional-branch-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_object_artifact: build/guards/cranelift_mir_conditional_branch_native/tiny_cranelift_mir_conditional_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_symbol: tiny_cranelift_mir_conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_lowering_scaffold: TinyMirTerminator::BranchI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_ADD_I32_NATIVE_GUARD: guard-cranelift-mir-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-mir-add-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_mir_add_i32_native_guard: guard-cranelift-mir-add-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_object_artifact: build/guards/cranelift_mir_add_i32_native/tiny_cranelift_mir_add_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_symbol: tiny_cranelift_mir_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_lowering_scaffold: TinyMirTerminator::ReturnParamI32Add' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_POSITIVE_I32_BRANCH_NATIVE_GUARD: guard-cranelift-mir-positive-i32-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-mir-positive-i32-branch-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_native_guard: guard-cranelift-mir-positive-i32-branch-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_object_artifact: build/guards/cranelift_mir_positive_i32_branch_native/tiny_cranelift_mir_positive_i32_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_symbol: tiny_cranelift_mir_positive_i32_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_lowering_scaffold: TinyMirTerminator::BranchParamI32Positive' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_INCREMENT_LOCAL_I32_NATIVE_GUARD: guard-cranelift-mir-increment-local-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-mir-increment-local-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_native_guard: guard-cranelift-mir-increment-local-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_object_artifact: build/guards/cranelift_mir_increment_local_i32_native/tiny_cranelift_mir_increment_local_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_symbol: tiny_cranelift_mir_increment_local_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_lowering_scaffold: TinyMirStatement::LocalI32SetParam+TinyMirStatement::LocalI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_CALL_HELPER_I32_NATIVE_GUARD: guard-cranelift-mir-call-helper-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-mir-call-helper-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_native_guard: guard-cranelift-mir-call-helper-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_object_artifact: build/guards/cranelift_mir_call_helper_i32_native/tiny_cranelift_mir_call_helper_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_symbol: tiny_cranelift_mir_call_helper_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_helper_symbol: tiny_cranelift_mir_add_one_helper_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_lowering_scaffold: TinyMirTerminator::ReturnLocalFunctionI32Call' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_EXTERN_CALL_I32_NATIVE_GUARD: guard-cranelift-mir-extern-call-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-mir-extern-call-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_native_guard: guard-cranelift-mir-extern-call-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_object_artifact: build/guards/cranelift_mir_extern_call_i32_native/tiny_cranelift_mir_extern_call_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_symbol: tiny_cranelift_mir_extern_call_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_host_symbol: tiny_host_add_one_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_lowering_scaffold: TinyMirTerminator::ReturnImportedFunctionI32Call' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_EXTERN_ADD_I32_NATIVE_GUARD: guard-cranelift-mir-extern-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-mir-extern-add-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_native_guard: guard-cranelift-mir-extern-add-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_object_artifact: build/guards/cranelift_mir_extern_add_i32_native/tiny_cranelift_mir_extern_add_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_symbol: tiny_cranelift_mir_extern_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_host_symbol: tiny_host_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_lowering_scaffold: TinyMirTerminator::ReturnImportedFunctionI32CallParamLiteral' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_EXTERN_PREDICATE_BRANCH_I32_NATIVE_GUARD: guard-cranelift-mir-extern-predicate-branch-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'guard-cranelift-mir-extern-predicate-branch-i32-native-smoke' justfile >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_native_guard: guard-cranelift-mir-extern-predicate-branch-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_object_artifact: build/guards/cranelift_mir_extern_predicate_branch_i32_native/tiny_cranelift_mir_extern_predicate_branch_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_symbol: tiny_cranelift_mir_extern_predicate_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_host_symbol: tiny_host_is_positive_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_lowering_scaffold: TinyMirTerminator::BranchImportedFunctionI32Predicate' "$manifest_doc" >/dev/null
-    rg -n -F 'No production Cranelift codegen entry point exists yet.' "$manifest_doc" >/dev/null
-    rg -n -F 'The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, conditional-branch, and add-i32 object emission.' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_return_int_object_artifact: build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_local_binding_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_local_binding_object_artifact: build/guards/cranelift_local_binding_native/tiny_cranelift_local_binding_read.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_experiment_dependency_lockfile: compiler/experiments/cranelift/Cargo.lock' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_root_dependency: cranelift' "$manifest_doc" >/dev/null
-    rg -n -F 'No production compiler path may route to Cranelift yet.' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_backend_codegen_entry: cranelift_codegen' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
-    unexpected_cranelift_recipes="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-no-fixture-regression' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-identity-i32-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-add-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-positive-i32-branch-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-increment-local-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-call-helper-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-extern-call-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-extern-add-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-extern-predicate-branch-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-return-int-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-local-binding-read-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-conditional-branch-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-add-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-positive-i32-branch-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-increment-local-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-call-helper-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-extern-call-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-extern-add-i32-native-smoke' || true)"
-    unexpected_cranelift_recipes="$(printf '%s\n' "$unexpected_cranelift_recipes" | rg -v -F 'guard-cranelift-mir-extern-predicate-branch-i32-native-smoke' || true)"
-    if [ -n "$unexpected_cranelift_recipes" ]; then
-      echo "Cranelift backend surface allows no extra Cranelift recipes beyond the Step 10 return-int/local-binding object smoke lanes yet:"
-      echo "$unexpected_cranelift_recipes"
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD_WIRING_SURFACE: guard-cranelift-experiment-guard-wiring-surface' "$manifest_doc" justfile >/dev/null
+    codegen_entry_refs="$(rg -n '^allowed_.*_codegen_entry:' "$manifest_doc" || true)"
+    unexpected_codegen_entries="$(printf '%s\n' "$codegen_entry_refs" | rg -v -F 'compiler/experiments/cranelift/src/main.rs' || true)"
+    if [ -n "$unexpected_codegen_entries" ]; then
+      echo "Cranelift experiment codegen entries must stay isolated under compiler/experiments/cranelift/src/main.rs:"
+      echo "$unexpected_codegen_entries"
+      exit 1
+    fi
+    object_artifact_refs="$(rg -n '^allowed_.*_object_artifact:' "$manifest_doc" || true)"
+    unexpected_object_artifacts="$(printf '%s\n' "$object_artifact_refs" | rg -v -F 'build/guards/cranelift' || true)"
+    if [ -n "$unexpected_object_artifacts" ]; then
+      echo "Cranelift object artifacts must stay under build/guards/cranelift*:"
+      echo "$unexpected_object_artifacts"
+      exit 1
+    fi
+    if rg -n -F -- '--backend cranelift' compiler src tests Makefile Cargo.toml Cargo.lock justfile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' >/dev/null; then
+      echo "Production --backend cranelift routing must not exist yet."
+      rg -n -F -- '--backend cranelift' compiler src tests Makefile Cargo.toml Cargo.lock justfile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true
       exit 1
     fi
     implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
@@ -1561,7 +1323,7 @@ guard-cranelift-backend-surface:
       echo "$implementation_refs"
       exit 1
     fi
-    echo "✅ Cranelift backend surface passed: dependency beachhead, explicit backend suite, real return-int/local-binding object smokes, and branch differential smoke are allowed, but production codegen/routes are still absent."
+    echo "✅ Cranelift backend surface passed: guard inventory is manifest-derived, Cranelift remains isolated, and production codegen/routes are still absent."
 
 guard-cranelift-return-int-native-smoke:
     #!/usr/bin/env bash
@@ -2684,49 +2446,38 @@ guard-cranelift-no-fixture-regression:
     just guard-cranelift-backend-surface
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_no_fixture_regression_guard: guard-cranelift-no-fixture-regression' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: return_int' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: mir_return_int' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: mir_local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: mir_conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: mir_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: mir_positive_i32_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: mir_increment_local_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: mir_call_helper_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: mir_extern_call_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: mir_extern_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'real_cranelift_object_smoke: mir_extern_predicate_branch_i32' "$manifest_doc" >/dev/null
     rg -n -F 'oracle_backend: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'production_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'identity-i32-object' justfile >/dev/null
-    cranelift_native_bodies="$(sed -n '/^guard-cranelift-return-int-native-smoke:/,/^guard-cranelift-local-binding-read-native-smoke:/p' justfile; sed -n '/^guard-cranelift-local-binding-native-smoke:/,/^guard-cranelift-conditional-branch-native-smoke:/p' justfile; sed -n '/^guard-cranelift-conditional-branch-native-smoke:/,/^guard-cranelift-mir-to-c-differential-native-smoke:/p' justfile; sed -n '/^guard-cranelift-identity-i32-native-smoke:/,/^guard-cranelift-differential-native-smoke:/p' justfile)"
-    forbidden_fixture_defs="$(printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'int tiny_cranelift_' || true)"
-    if [ -n "$forbidden_fixture_defs" ]; then
-      echo "Migrated Cranelift native smoke lanes must not regress to C fixture function definitions:"
-      echo "$forbidden_fixture_defs"
+    smoke_count="$(rg -n '^real_cranelift_object_smoke: ' "$manifest_doc" | wc -l | tr -d '[:space:]')"
+    if [ "$smoke_count" -lt "3" ]; then
+      echo "Expected real Cranelift object smoke inventory in $manifest_doc, found $smoke_count entries."
       exit 1
     fi
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'return-int-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'local-binding-read-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'conditional-branch-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'add-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'positive-i32-branch-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'increment-local-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'call-helper-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'extern-call-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'extern-add-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'extern-predicate-branch-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-return-int-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-local-binding-read-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-conditional-branch-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-add-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-positive-i32-branch-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-increment-local-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-call-helper-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-extern-call-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-extern-add-i32-object' >/dev/null
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'mir-extern-predicate-branch-i32-object' >/dev/null
+    while IFS= read -r forbidden_line; do
+      if [ -z "$forbidden_line" ]; then
+        continue
+      fi
+      forbidden_pattern="${forbidden_line#*: }"
+      if rg -n -F "$forbidden_pattern" compiler/experiments/cranelift/src/main.rs >/dev/null; then
+        echo "Cranelift experiment regressed to a forbidden fixture-style definition instead of object emission:"
+        echo "$forbidden_pattern"
+        exit 1
+      fi
+    done < <(rg --no-line-number -F 'forbidden_cranelift_fixture_definition:' "$manifest_doc" || true)
+    native_guard_tokens="$(awk '/^CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-/ { print $2 }' "$manifest_doc" | awk '!seen[$0]++')"
+    if [ -z "$native_guard_tokens" ]; then
+      echo "Expected CRANELIFT_EXPERIMENT_ALLOWED_*_NATIVE_GUARD inventory in $manifest_doc."
+      exit 1
+    fi
+    while IFS= read -r guard_recipe; do
+      if [ -z "$guard_recipe" ]; then
+        continue
+      fi
+      rg -n -F "$guard_recipe:" justfile >/dev/null
+    done <<< "$native_guard_tokens"
+    cranelift_native_bodies="$(sed -n '/^guard-cranelift-return-int-native-smoke:/,/^guard-cranelift-mir-to-c-differential-native-smoke:/p' justfile)"
+    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked --' >/dev/null
+    printf '%s\n' "$cranelift_native_bodies" | rg -n -F '-object' >/dev/null
     echo "✅ Cranelift no-fixture regression guard passed."
 
 guard-cranelift-experimental-backend-suite:
@@ -2740,28 +2491,19 @@ guard-cranelift-experimental-backend-suite:
     just guard-cranelift-no-fixture-regression
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite' "$manifest_doc" >/dev/null
-    just guard-cranelift-return-int-native-smoke
-    just guard-cranelift-local-binding-read-native-smoke
-    just guard-cranelift-conditional-branch-native-smoke
-    just guard-cranelift-identity-i32-native-smoke
-    just guard-cranelift-add-i32-native-smoke
-    just guard-cranelift-positive-i32-branch-native-smoke
-    just guard-cranelift-increment-local-i32-native-smoke
-    just guard-cranelift-call-helper-i32-native-smoke
-    just guard-cranelift-extern-call-i32-native-smoke
-    just guard-cranelift-extern-add-i32-native-smoke
-    just guard-cranelift-extern-predicate-branch-i32-native-smoke
-    just guard-cranelift-mir-return-int-native-smoke
-    just guard-cranelift-mir-local-binding-read-native-smoke
-    just guard-cranelift-mir-conditional-branch-native-smoke
-    just guard-cranelift-mir-add-i32-native-smoke
-    just guard-cranelift-mir-positive-i32-branch-native-smoke
-    just guard-cranelift-mir-increment-local-i32-native-smoke
-    just guard-cranelift-mir-call-helper-i32-native-smoke
-    just guard-cranelift-mir-extern-call-i32-native-smoke
-    just guard-cranelift-mir-extern-add-i32-native-smoke
-    just guard-cranelift-mir-extern-predicate-branch-i32-native-smoke
-    just guard-cranelift-mir-to-c-differential-native-smoke
+    suite_native_guards="$(awk '/^CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-/ { print $2 }' "$manifest_doc" | awk '!seen[$0]++')"
+    if [ -z "$suite_native_guards" ]; then
+      echo "Expected native Cranelift guard inventory in $manifest_doc."
+      exit 1
+    fi
+    printf '%s\n' "$suite_native_guards" | rg -n -F 'guard-cranelift-mir-to-c-differential-native-smoke' >/dev/null
+    while IFS= read -r guard_recipe; do
+      if [ -z "$guard_recipe" ]; then
+        continue
+      fi
+      echo "▶ $guard_recipe"
+      just "$guard_recipe"
+    done <<< "$suite_native_guards"
     echo "✅ Explicit experimental Cranelift backend suite passed."
 guard-mir-feature-return-int-preservation:
     #!/usr/bin/env bash

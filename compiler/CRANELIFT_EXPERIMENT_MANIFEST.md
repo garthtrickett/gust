@@ -163,6 +163,13 @@ allowed_mir_extern_predicate_branch_i32_symbol: tiny_cranelift_mir_extern_predic
 allowed_mir_extern_predicate_branch_i32_host_symbol: tiny_host_is_positive_i32
 allowed_mir_extern_predicate_branch_i32_lowering_scaffold: TinyMirTerminator::BranchImportedFunctionI32Predicate
 real_cranelift_object_smoke: mir_extern_predicate_branch_i32
+
+# Step 31 Cranelift experiment guard wiring normalization.
+CRANELIFT_EXPERIMENT_ALLOWED_GUARD_WIRING_SURFACE: guard-cranelift-experiment-guard-wiring-surface
+allowed_guard_wiring_inventory_source: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md
+allowed_guard_wiring_recipe_inventory: just --summary
+allowed_guard_wiring_native_suite_source: CRANELIFT_EXPERIMENT_ALLOWED_*_NATIVE_GUARD
+allowed_guard_wiring_policy: manifest_derived_guard_inventory
 The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, conditional-branch, and add-i32 object emission.
 No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, `guard-cranelift-differential-native-smoke`, and `guard-cranelift-no-fixture-regression`.
 real_cranelift_object_smoke: return_int
