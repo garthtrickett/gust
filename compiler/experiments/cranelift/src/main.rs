@@ -48,6 +48,8 @@ const COMPILER_MIR_INGESTED_BLOCK_JUMP_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_block_jump";
 const COMPILER_MIR_INGESTED_BLOCK_LOCAL_BRANCH_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_block_local_branch";
+const COMPILER_MIR_INGESTED_BLOCK_LOCAL_UPDATE_BRANCH_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_block_local_update_branch";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
@@ -518,6 +520,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_block_local_branch_ingestion_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-block-local-update-branch-ingestion-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_block_local_update_branch_ingestion_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -1631,6 +1648,143 @@ fn parse_compiler_mir_block_local_branch_ingestion_fixture(
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "47")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_2_value", "-2")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_2_result", "47")?;
+    Ok(())
+}
+
+fn emit_compiler_mir_block_local_update_branch_ingestion_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_block_local_update_branch_ingestion_fixture(&contents)?;
+    static COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
+        name: "value",
+        ty: TinyMirType::I32,
+    }];
+    static COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_ENTRY_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32SetParam {
+            name: "value",
+            param: 0,
+        }];
+    static COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_INCREMENT_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32AddI32Literal {
+            name: "value",
+            value: 2,
+        }];
+    static COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_BLOCKS: [TinyMirBlock; 4] = [
+        TinyMirBlock {
+            label: "entry",
+            statements: &COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_ENTRY_STATEMENTS,
+            terminator: TinyMirBlockTerminator::Jump {
+                target: "increment",
+            },
+        },
+        TinyMirBlock {
+            label: "increment",
+            statements: &COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_INCREMENT_STATEMENTS,
+            terminator: TinyMirBlockTerminator::BranchLocalI32Positive {
+                name: "value",
+                then_block: "positive",
+                else_block: "non_positive",
+            },
+        },
+        TinyMirBlock {
+            label: "positive",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::ReturnI32(53),
+        },
+        TinyMirBlock {
+            label: "non_positive",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::ReturnI32(59),
+        },
+    ];
+    let mir_function = TinyMirBlockFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_block_local_update_branch",
+        symbol: COMPILER_MIR_INGESTED_BLOCK_LOCAL_UPDATE_BRANCH_SYMBOL,
+        params: &COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_LOCALS,
+        entry_block: "entry",
+        blocks: &COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_BLOCKS,
+    };
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_native_backend_compiler_mir_ingested_block_local_update_branch",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+    define_tiny_mir_block_graph_exported_function(&mut module, &mir_function)?;
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn parse_compiler_mir_block_local_update_branch_ingestion_fixture(
+    contents: &str,
+) -> Result<(), Box<dyn Error>> {
+    let fields = parse_compiler_mir_ingestion_fields(contents)?;
+    require_compiler_mir_ingestion_field(&fields, "format", "gust.compiler_mir_ingestion.block_local_update_branch.v1")?;
+    require_compiler_mir_ingestion_field(&fields, "producer", "compiler/mir.gst")?;
+    require_compiler_mir_ingestion_field(&fields, "producer_entry", "mir_emit_native_backend_block_local_update_branch_ingestion_fixture")?;
+    require_compiler_mir_ingestion_field(&fields, "source_fixture", "compiler/mir_feature_block_local_update_branch_preservation_source.gst")?;
+    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "fixture_only_block_local_update_branch_serialization")?;
+    require_compiler_mir_ingestion_field(&fields, "function", "tiny_block_local_update_branch")?;
+    require_compiler_mir_ingestion_field(&fields, "return_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "param_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "param_0_name", "input")?;
+    require_compiler_mir_ingestion_field(&fields, "param_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "local_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "local_0_name", "value")?;
+    require_compiler_mir_ingestion_field(&fields, "local_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "entry_block", "entry")?;
+    require_compiler_mir_ingestion_field(&fields, "block_count", "4")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_label", "entry")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_statement_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_statement_0_kind", "LocalI32SetParam")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_statement_0_local", "value")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_statement_0_param", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_terminator", "Jump")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_target", "increment")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_label", "increment")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_statement_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_statement_0_kind", "LocalI32AddI32Literal")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_statement_0_local", "value")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_statement_0_value", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_terminator", "BranchLocalPositive")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_branch_local", "value")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_condition", "greater_than_zero")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_then_block", "positive")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_else_block", "non_positive")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_label", "positive")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_statement_count", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_terminator", "Return")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_return_value_kind", "IntLiteral")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_return_value", "53")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_return_value_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_label", "non_positive")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_statement_count", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_terminator", "Return")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_return_value_kind", "IntLiteral")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_return_value", "59")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_return_value_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "backend_symbol", COMPILER_MIR_INGESTED_BLOCK_LOCAL_UPDATE_BRANCH_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_count", "3")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_0_value", "5")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_0_result", "53")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_1_value", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "53")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_2_value", "-3")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_2_result", "59")?;
     Ok(())
 }
 
