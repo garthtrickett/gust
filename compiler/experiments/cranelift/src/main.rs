@@ -6,6 +6,7 @@ use std::io::{Error as IoError, ErrorKind};
 use std::path::Path;
 
 use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, Type, condcodes::IntCC, types};
+use cranelift_codegen::ir::instructions::BlockArg;
 use cranelift_codegen::settings;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{Linkage, Module, default_libcall_names};
@@ -2046,7 +2047,8 @@ fn build_tiny_mir_param_block_graph_body(
                     )
                 })?;
                 let jump_value = builder.ins().iconst(types::I32, i64::from(value));
-                builder.ins().jump(target_block, &[jump_value]);
+                let jump_arguments = [BlockArg::Value(jump_value)];
+                builder.ins().jump(target_block, &jump_arguments);
             }
             TinyMirParamBlockTerminator::JumpFunctionParamI32 { target, param } => {
                 let target_block = *cranelift_blocks.get(target).ok_or_else(|| {
@@ -2064,7 +2066,8 @@ fn build_tiny_mir_param_block_graph_body(
                         )
                     })?
                 };
-                builder.ins().jump(target_block, &[argument_value]);
+                let jump_arguments = [BlockArg::Value(argument_value)];
+                builder.ins().jump(target_block, &jump_arguments);
             }
             TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
                 target,
@@ -2088,7 +2091,8 @@ fn build_tiny_mir_param_block_graph_body(
                 };
                 let literal_value = builder.ins().iconst(types::I32, i64::from(value));
                 let updated_value = builder.ins().iadd(block_value, literal_value);
-                builder.ins().jump(target_block, &[updated_value]);
+                let jump_arguments = [BlockArg::Value(updated_value)];
+                builder.ins().jump(target_block, &jump_arguments);
             }
             TinyMirParamBlockTerminator::BranchBlockParamI32Positive {
                 param,
