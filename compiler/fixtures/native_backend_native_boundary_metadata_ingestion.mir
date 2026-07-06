@@ -1,0 +1,22 @@
+# Compiler-owned MIR ingestion fixture for native backend native-boundary metadata.
+# This is a narrow serialized seam for mir_lower_native_boundary_metadata_fixture,
+# not a production backend route and not a general MIR interchange format.
+format: gust.compiler_mir_ingestion.native_boundary_metadata.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_native_boundary_metadata_ingestion_fixture
+source_fixture: compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst
+lowering_entry: mir_lower_native_boundary_metadata_fixture
+function: tiny_native_boundary_metadata_function
+return_type: void
+entry_block: 0
+block_count: 1
+statement_count: 0
+terminator: ReturnVoid
+resource_metadata_count: 0
+provenance_metadata_count: 0
+native_boundary_metadata_count: 1
+native_boundary_0_kind: RuntimeCall
+native_boundary_0_symbol: tiny_runtime_boundary
+native_boundary_0_origin: compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst
+backend_symbol: tiny_native_backend_compiler_mir_ingested_native_boundary_metadata
+expected_exit: 0

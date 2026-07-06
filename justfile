@@ -1190,6 +1190,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -1304,23 +1305,25 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     valid_add="compiler/fixtures/native_backend_add_i32_ingestion.mir"
     valid_provenance="compiler/fixtures/native_backend_provenance_metadata_ingestion.mir"
     valid_resource="compiler/fixtures/native_backend_resource_metadata_ingestion.mir"
+    valid_native_boundary="compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir"
     invalid_return="compiler/fixtures/native_backend_return_int_ingestion_invalid.mir"
     invalid_local="compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir"
     invalid_branch="compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir"
     invalid_add="compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir"
     invalid_provenance="compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir"
     invalid_resource="compiler/fixtures/native_backend_resource_metadata_ingestion_invalid.mir"
+    invalid_native_boundary="compiler/fixtures/native_backend_native_boundary_metadata_ingestion_invalid.mir"
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_surface_guard: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 6' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 6' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 7' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 7' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixtures: compiler/fixtures/native_backend_return_int_ingestion.mir, compiler/fixtures/native_backend_local_binding_read_ingestion.mir, compiler/fixtures/native_backend_conditional_branch_ingestion.mir, compiler/fixtures/native_backend_add_i32_ingestion.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixtures: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir, compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir, compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir, compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_status: positive_and_negative_compiler_owned_fixture_inventory' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_suite_wiring: manifest_derived_native_guard_inventory' "$manifest_doc" >/dev/null
 
-    for fixture in "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource"; do
+    for fixture in "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary"; do
       if [ ! -f "$fixture" ]; then
         echo "Missing compiler-owned MIR ingestion corpus fixture: $fixture"
         exit 1
@@ -1333,6 +1336,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'format: gust.compiler_mir_ingestion.add_i32.v1' "$valid_add" "$invalid_add" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.provenance_metadata.v1' "$valid_provenance" "$invalid_provenance" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.resource_metadata.v1' "$valid_resource" "$invalid_resource" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.native_boundary_metadata.v1' "$valid_native_boundary" "$invalid_native_boundary" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int' "$valid_return" "$invalid_return" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read' "$valid_local" "$invalid_local" >/dev/null
@@ -1340,6 +1344,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_add_i32' "$valid_add" "$invalid_add" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_provenance_metadata' "$valid_provenance" "$invalid_provenance" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_resource_metadata' "$valid_resource" "$invalid_resource" >/dev/null
+    rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_native_boundary_metadata' "$valid_native_boundary" "$invalid_native_boundary" >/dev/null
 
     rg -n -F 'return_value: 1' "$valid_return" >/dev/null
     rg -n -F 'return_value: 9' "$invalid_return" >/dev/null
@@ -1354,6 +1359,9 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'resource_metadata_count: 1' "$valid_resource" "$invalid_resource" >/dev/null
     rg -n -F 'resource_0_state: Live' "$valid_resource" >/dev/null
     rg -n -F 'resource_0_state: Moved' "$invalid_resource" >/dev/null
+    rg -n -F 'native_boundary_metadata_count: 1' "$valid_native_boundary" "$invalid_native_boundary" >/dev/null
+    rg -n -F 'native_boundary_0_kind: RuntimeCall' "$valid_native_boundary" >/dev/null
+    rg -n -F 'native_boundary_0_kind: LayoutSensitiveCall' "$invalid_native_boundary" >/dev/null
     rg -n -F 'expected_case_0_result: 6' "$invalid_add" >/dev/null
 
     for guard_recipe in \
@@ -1363,6 +1371,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
       guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke \
       guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke \
       guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke \
+      guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke \
       guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection
     do
       rg -n -F "$guard_recipe" "$manifest_doc" justfile >/dev/null
@@ -1373,7 +1382,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     printf '%s\n' "$suite_body" | rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-' >/dev/null
     printf '%s\n' "$suite_body" | rg -n -F 'just "$guard_recipe"' >/dev/null
 
-    fixture_cranelift_refs="$(rg -n -i -F 'cranelift' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" || true)"
+    fixture_cranelift_refs="$(rg -n -i -F 'cranelift' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" || true)"
     if [ -n "$fixture_cranelift_refs" ]; then
       echo "Compiler-owned MIR ingestion fixtures must not mention Cranelift; backend coupling stays manifest/experiment-only:"
       echo "$fixture_cranelift_refs"
@@ -3229,6 +3238,51 @@ guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke:
     fi
     echo "✅ Compiler-owned MIR resource metadata ingestion seam native smoke passed."
 
+guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling compiler-owned MIR native-boundary metadata ingestion seam smoke."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    fixture="compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_NATIVE_BOUNDARY_METADATA_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_native_guard: guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_fixture_producer_entry: mir_emit_native_backend_native_boundary_metadata_ingestion_fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_object_artifact: build/guards/cranelift_compiler_mir_native_boundary_metadata_ingestion_native/tiny_native_backend_compiler_mir_ingested_native_boundary_metadata.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_native_boundary_metadata' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_source_fixture: compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_lowering_entry: mir_lower_native_boundary_metadata_fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
+    rg -n -F 'func mir_emit_native_backend_native_boundary_metadata_ingestion_fixture' compiler/mir.gst >/dev/null
+    rg -n -F 'mir_lower_native_boundary_metadata_fixture(ctx)' compiler/mir.gst >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.native_boundary_metadata.v1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'producer_entry: mir_emit_native_backend_native_boundary_metadata_ingestion_fixture' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'return_type: void' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'terminator: ReturnVoid' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'native_boundary_metadata_count: 1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'native_boundary_0_kind: RuntimeCall' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_native_boundary_metadata' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'compiler-mir-native-boundary-metadata-ingestion-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'parse_compiler_mir_native_boundary_metadata_ingestion_fixture' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'COMPILER_MIR_INGESTED_NATIVE_BOUNDARY_METADATA_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
+    build_dir="build/guards/cranelift_compiler_mir_native_boundary_metadata_ingestion_native"
+    object_file="$build_dir/tiny_native_backend_compiler_mir_ingested_native_boundary_metadata.o"
+    shim_c="$build_dir/tiny_native_backend_compiler_mir_ingested_native_boundary_metadata_main.c"
+    binary="$build_dir/tiny_native_backend_compiler_mir_ingested_native_boundary_metadata_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-native-boundary-metadata-ingestion-object "$fixture" "$object_file"
+    test -s "$object_file"
+    echo 'void tiny_native_backend_compiler_mir_ingested_native_boundary_metadata(void);' > "$shim_c"
+    echo 'int main(void) { tiny_native_backend_compiler_mir_ingested_native_boundary_metadata(); return 0; }' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    "$binary"
+    echo "✅ Compiler-owned MIR native-boundary metadata ingestion seam native smoke passed."
+
 guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -3240,6 +3294,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     add_invalid="compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir"
     provenance_invalid="compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir"
     resource_invalid="compiler/fixtures/native_backend_resource_metadata_ingestion_invalid.mir"
+    native_boundary_invalid="compiler/fixtures/native_backend_native_boundary_metadata_ingestion_invalid.mir"
     build_dir="build/guards/cranelift_compiler_mir_ingestion_invalid_fixture_rejection"
     mkdir -p "$build_dir"
     just guard-cranelift-backend-surface
@@ -3251,6 +3306,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_add_i32_fixture: compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_provenance_metadata_fixture: compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_resource_metadata_fixture: compiler/fixtures/native_backend_resource_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_native_boundary_metadata_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_status: malformed_compiler_owned_fixtures_rejected_before_object_emission' "$manifest_doc" >/dev/null
     rg -n -F 'return_value: 9' "$return_invalid" >/dev/null
@@ -3262,6 +3318,8 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     rg -n -F 'provenance_0_kind: NativeBoundary' "$provenance_invalid" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.resource_metadata.v1' "$resource_invalid" >/dev/null
     rg -n -F 'resource_0_state: Moved' "$resource_invalid" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.native_boundary_metadata.v1' "$native_boundary_invalid" >/dev/null
+    rg -n -F 'native_boundary_0_kind: LayoutSensitiveCall' "$native_boundary_invalid" >/dev/null
     check_rejected() {
       command="$1"
       fixture="$2"
@@ -3292,6 +3350,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     check_rejected compiler-mir-add-i32-ingestion-object "$add_invalid" add_i32_invalid
     check_rejected compiler-mir-provenance-metadata-ingestion-object "$provenance_invalid" provenance_metadata_invalid
     check_rejected compiler-mir-resource-metadata-ingestion-object "$resource_invalid" resource_metadata_invalid
+    check_rejected compiler-mir-native-boundary-metadata-ingestion-object "$native_boundary_invalid" native_boundary_metadata_invalid
     echo "✅ Invalid compiler-owned MIR ingestion fixtures were rejected before object emission."
 
 guard-cranelift-mir-to-c-differential-native-smoke:

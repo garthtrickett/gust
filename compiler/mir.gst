@@ -730,6 +730,41 @@ func mir_emit_native_backend_local_binding_read_ingestion_fixture(ctx: &Arena) s
     return std.Clone(ctx, fixture);
 }
 
+func mir_emit_native_backend_native_boundary_metadata_ingestion_fixture(ctx: &Arena) str {
+    // Fixture-only native-backend ingestion seam for MIR native-boundary metadata.
+    //
+    // This keeps native boundary metadata visible in the compiler-owned serialized
+    // MIR artifact while preserving the same tiny void function behavior. It is
+    // intentionally not a production backend route and not a general MIR
+    // interchange format.
+    mut program := mir_lower_native_boundary_metadata_fixture(ctx);
+    mut functions: std.Vector[MirFunction[ctx], ctx] := ctx[program.functions];
+    if len(functions) != 1 {
+        return "format: invalid\n";
+    }
+
+    mut fixture := "format: gust.compiler_mir_ingestion.native_boundary_metadata.v1\n";
+    fixture = std.Concat(fixture, "producer: compiler/mir.gst\n");
+    fixture = std.Concat(fixture, "producer_entry: mir_emit_native_backend_native_boundary_metadata_ingestion_fixture\n");
+    fixture = std.Concat(fixture, "source_fixture: compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst\n");
+    fixture = std.Concat(fixture, "lowering_entry: mir_lower_native_boundary_metadata_fixture\n");
+    fixture = std.Concat(fixture, "function: tiny_native_boundary_metadata_function\n");
+    fixture = std.Concat(fixture, "return_type: void\n");
+    fixture = std.Concat(fixture, "entry_block: 0\n");
+    fixture = std.Concat(fixture, "block_count: 1\n");
+    fixture = std.Concat(fixture, "statement_count: 0\n");
+    fixture = std.Concat(fixture, "terminator: ReturnVoid\n");
+    fixture = std.Concat(fixture, "resource_metadata_count: 0\n");
+    fixture = std.Concat(fixture, "provenance_metadata_count: 0\n");
+    fixture = std.Concat(fixture, "native_boundary_metadata_count: 1\n");
+    fixture = std.Concat(fixture, "native_boundary_0_kind: RuntimeCall\n");
+    fixture = std.Concat(fixture, "native_boundary_0_symbol: tiny_runtime_boundary\n");
+    fixture = std.Concat(fixture, "native_boundary_0_origin: compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst\n");
+    fixture = std.Concat(fixture, "backend_symbol: tiny_native_backend_compiler_mir_ingested_native_boundary_metadata\n");
+    fixture = std.Concat(fixture, "expected_exit: 0\n");
+    return std.Clone(ctx, fixture);
+}
+
 func mir_emit_native_backend_resource_metadata_ingestion_fixture(ctx: &Arena) str {
     // Fixture-only native-backend ingestion seam for MIR resource metadata.
     //

@@ -40,6 +40,8 @@ const COMPILER_MIR_INGESTED_PROVENANCE_METADATA_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_provenance_metadata";
 const COMPILER_MIR_INGESTED_RESOURCE_METADATA_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_resource_metadata";
+const COMPILER_MIR_INGESTED_NATIVE_BOUNDARY_METADATA_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_native_boundary_metadata";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
@@ -101,6 +103,7 @@ const MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_HELPER_I32_SYMBOL: &str =
 #[derive(Clone, Copy)]
 enum TinyMirType {
     I32,
+    Void,
 }
 
 #[derive(Clone, Copy)]
@@ -118,6 +121,7 @@ enum TinyMirStatement {
 
 #[derive(Clone, Copy)]
 enum TinyMirTerminator {
+    ReturnVoid,
     ReturnI32(i32),
     ReturnLocalI32(&'static str),
     BranchI32Literal {
@@ -448,6 +452,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_resource_metadata_ingestion_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-native-boundary-metadata-ingestion-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_native_boundary_metadata_ingestion_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -1221,6 +1240,71 @@ fn parse_compiler_mir_resource_metadata_ingestion_fixture(
         COMPILER_MIR_INGESTED_RESOURCE_METADATA_SYMBOL,
     )?;
     require_compiler_mir_ingestion_field(&fields, "expected_exit", "2")?;
+    Ok(())
+}
+
+fn emit_compiler_mir_native_boundary_metadata_ingestion_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_native_boundary_metadata_ingestion_fixture(&contents)?;
+    let mir_function = TinyMirFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_native_boundary_metadata",
+        symbol: COMPILER_MIR_INGESTED_NATIVE_BOUNDARY_METADATA_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::Void,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnVoid,
+    };
+
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn parse_compiler_mir_native_boundary_metadata_ingestion_fixture(
+    contents: &str,
+) -> Result<(), Box<dyn Error>> {
+    let fields = parse_compiler_mir_ingestion_fields(contents)?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "format",
+        "gust.compiler_mir_ingestion.native_boundary_metadata.v1",
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "producer", "compiler/mir.gst")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "producer_entry",
+        "mir_emit_native_backend_native_boundary_metadata_ingestion_fixture",
+    )?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "source_fixture",
+        "compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst",
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "mir_lower_native_boundary_metadata_fixture")?;
+    require_compiler_mir_ingestion_field(&fields, "function", "tiny_native_boundary_metadata_function")?;
+    require_compiler_mir_ingestion_field(&fields, "return_type", "void")?;
+    require_compiler_mir_ingestion_field(&fields, "entry_block", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "statement_count", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "terminator", "ReturnVoid")?;
+    require_compiler_mir_ingestion_field(&fields, "resource_metadata_count", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "provenance_metadata_count", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "native_boundary_metadata_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "native_boundary_0_kind", "RuntimeCall")?;
+    require_compiler_mir_ingestion_field(&fields, "native_boundary_0_symbol", "tiny_runtime_boundary")?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "native_boundary_0_origin",
+        "compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst",
+    )?;
+    require_compiler_mir_ingestion_field(
+        &fields,
+        "backend_symbol",
+        COMPILER_MIR_INGESTED_NATIVE_BOUNDARY_METADATA_SYMBOL,
+    )?;
+    require_compiler_mir_ingestion_field(&fields, "expected_exit", "0")?;
     Ok(())
 }
 
@@ -3459,6 +3543,7 @@ fn emit_extern_predicate_branch_i32_object(output_path: &Path) -> Result<(), Box
 fn tiny_mir_type_to_cranelift_type(mir_type: TinyMirType) -> Type {
     match mir_type {
         TinyMirType::I32 => types::I32,
+        TinyMirType::Void => panic!("void tiny MIR type has no Cranelift value representation"),
     }
 }
 
@@ -3484,11 +3569,10 @@ fn lower_tiny_mir_function_to_object(
             .params
             .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
     }
-    signature
-        .returns
-        .push(AbiParam::new(tiny_mir_type_to_cranelift_type(
-            mir_function.return_type,
-        )));
+    match mir_function.return_type {
+        TinyMirType::I32 => signature.returns.push(AbiParam::new(types::I32)),
+        TinyMirType::Void => {}
+    }
 
     let function_id = module.declare_function(mir_function.symbol, Linkage::Export, &signature)?;
     let mut context = module.make_context();
@@ -3520,11 +3604,10 @@ fn define_tiny_mir_exported_function(
             .params
             .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
     }
-    signature
-        .returns
-        .push(AbiParam::new(tiny_mir_type_to_cranelift_type(
-            mir_function.return_type,
-        )));
+    match mir_function.return_type {
+        TinyMirType::I32 => signature.returns.push(AbiParam::new(types::I32)),
+        TinyMirType::Void => {}
+    }
 
     let function_id = module.declare_function(mir_function.symbol, Linkage::Export, &signature)?;
     let mut context = module.make_context();
@@ -4336,6 +4419,9 @@ fn build_tiny_mir_body(
     }
 
     match mir_function.terminator {
+        TinyMirTerminator::ReturnVoid => {
+            builder.ins().return_(&[]);
+        }
         TinyMirTerminator::ReturnI32(value) => {
             let return_value = builder.ins().iconst(types::I32, i64::from(value));
             builder.ins().return_(&[return_value]);
