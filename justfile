@@ -2258,6 +2258,51 @@ guard-cranelift-mir-arithmetic-i32-bundle-native-smoke:
     fi
     echo "✅ MIR-shaped Cranelift arithmetic i32 bundle native smoke passed."
 
+guard-cranelift-mir-comparison-i32-bundle-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling MIR-shaped Cranelift comparison i32 bundle smoke..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_COMPARISON_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-comparison-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_comparison_i32_bundle_native_guard: guard-cranelift-mir-comparison-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_comparison_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_comparison_i32_bundle_object_artifact: build/guards/cranelift_mir_comparison_i32_bundle_native/tiny_cranelift_mir_comparison_i32_bundle.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_comparison_i32_bundle_eq_symbol: tiny_cranelift_mir_comparison_eq_i32' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_comparison_i32_bundle_sgt_symbol: tiny_cranelift_mir_comparison_sgt_i32' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_comparison_i32_bundle_lowering_scaffold: TinyMirTerminator::ReturnParamI32EqPredicate' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_comparison_i32_bundle_lowering_scaffold: TinyMirTerminator::ReturnParamI32SignedGreaterThanPredicate' "$manifest_doc" >/dev/null
+    build_dir="build/guards/cranelift_mir_comparison_i32_bundle_native"
+    object_file="$build_dir/tiny_cranelift_mir_comparison_i32_bundle.o"
+    shim_c="$build_dir/tiny_cranelift_mir_comparison_i32_bundle_main.c"
+    binary="$build_dir/tiny_cranelift_mir_comparison_i32_bundle_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- mir-comparison-i32-bundle-object "$object_file"
+    test -s "$object_file"
+    printf '%s\\n' '#include <stdint.h>' > "$shim_c"
+    printf '%s\\n' 'extern int32_t tiny_cranelift_mir_comparison_eq_i32(int32_t lhs, int32_t rhs);' >> "$shim_c"
+    printf '%s\\n' 'extern int32_t tiny_cranelift_mir_comparison_sgt_i32(int32_t lhs, int32_t rhs);' >> "$shim_c"
+    printf '%s\\n' 'int main(void) {' >> "$shim_c"
+    printf '%s\\n' '  if (tiny_cranelift_mir_comparison_eq_i32(4, 4) != 1) return 1;' >> "$shim_c"
+    printf '%s\\n' '  if (tiny_cranelift_mir_comparison_eq_i32(4, 5) != 0) return 2;' >> "$shim_c"
+    printf '%s\\n' '  if (tiny_cranelift_mir_comparison_sgt_i32(7, 2) != 1) return 3;' >> "$shim_c"
+    printf '%s\\n' '  if (tiny_cranelift_mir_comparison_sgt_i32(2, 7) != 0) return 4;' >> "$shim_c"
+    printf '%s\\n' '  if (tiny_cranelift_mir_comparison_sgt_i32(-2, -7) != 1) return 5;' >> "$shim_c"
+    printf '%s\\n' '  return 15;' >> "$shim_c"
+    printf '%s\\n' '}' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "15" ]; then
+      echo "Expected MIR-shaped Cranelift comparison i32 bundle native smoke to exit with status 15, got $status"
+      exit 1
+    fi
+    echo "✅ MIR-shaped Cranelift comparison i32 bundle native smoke passed."
+
 guard-cranelift-mir-to-c-differential-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
