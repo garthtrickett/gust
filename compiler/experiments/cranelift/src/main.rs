@@ -72,6 +72,10 @@ const MIR_BLOCK_GRAPH_PARAM_EXTERN_ADD_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_extern_add_i32";
 const MIR_BLOCK_GRAPH_PARAM_EXTERN_ADD_BRANCH_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_extern_add_branch_i32";
+const MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_param_extern_predicate_i32";
+const MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_UPDATE_BRANCH_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_param_extern_predicate_update_branch_i32";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -254,6 +258,12 @@ enum TinyMirParamBlockTerminator {
         function_symbol: &'static str,
         param: usize,
         value: i32,
+        then_block: &'static str,
+        else_block: &'static str,
+    },
+    BranchBlockParamImportedFunctionI32Predicate {
+        function_symbol: &'static str,
+        param: usize,
         then_block: &'static str,
         else_block: &'static str,
     },
@@ -446,6 +456,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_mir_block_graph_param_extern_add_i32_bundle_object(Path::new(&output_path))
         }
+        "mir-block-graph-param-extern-predicate-i32-bundle-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_block_graph_param_extern_predicate_i32_bundle_object(Path::new(&output_path))
+        }
         "mir-positive-i32-branch-object" => {
             let Some(output_path) = args.next() else {
                 return Err(usage_error().into());
@@ -597,7 +616,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-comparison-branch-i32-bundle-object|mir-block-graph-i32-bundle-object|mir-block-graph-local-i32-bundle-object|mir-block-graph-local-update-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        "usage: gust-cranelift-experiment <return-int-object|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-comparison-branch-i32-bundle-object|mir-block-graph-i32-bundle-object|mir-block-graph-local-i32-bundle-object|mir-block-graph-local-update-i32-bundle-object|mir-block-graph-param-i32-bundle-object|mir-block-graph-param-call-i32-bundle-object|mir-block-graph-param-extern-i32-bundle-object|mir-block-graph-param-extern-add-i32-bundle-object|mir-block-graph-param-extern-predicate-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
     )
 }
 
@@ -1609,6 +1628,145 @@ fn emit_mir_block_graph_param_extern_add_i32_bundle_object(
     Ok(())
 }
 
+
+fn emit_mir_block_graph_param_extern_predicate_i32_bundle_object(
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    static MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_I32_FUNCTION_PARAMS: [TinyMirType; 1] =
+        [TinyMirType::I32];
+    static MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_I32_BLOCK_PARAMS: [TinyMirType; 1] =
+        [TinyMirType::I32];
+
+    static MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_BLOCKS: [TinyMirParamBlock; 4] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "predicate",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "predicate",
+            params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32Predicate {
+                function_symbol: HOST_IS_POSITIVE_I32_SYMBOL,
+                param: 0,
+                then_block: "positive",
+                else_block: "non_positive",
+            },
+        },
+        TinyMirParamBlock {
+            label: "positive",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::ReturnI32(149),
+        },
+        TinyMirParamBlock {
+            label: "non_positive",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::ReturnI32(151),
+        },
+    ];
+
+    static MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_UPDATE_BRANCH_BLOCKS: [TinyMirParamBlock; 5] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "adjust",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "adjust",
+            params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "predicate",
+                param: 0,
+                value: -4,
+            },
+        },
+        TinyMirParamBlock {
+            label: "predicate",
+            params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_I32_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32Predicate {
+                function_symbol: HOST_IS_POSITIVE_I32_SYMBOL,
+                param: 0,
+                then_block: "positive",
+                else_block: "non_positive",
+            },
+        },
+        TinyMirParamBlock {
+            label: "positive",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::ReturnI32(157),
+        },
+        TinyMirParamBlock {
+            label: "non_positive",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::ReturnI32(163),
+        },
+    ];
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_mir_block_graph_param_extern_predicate_i32_bundle",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut host_predicate_signature = module.make_signature();
+    host_predicate_signature.params.push(AbiParam::new(types::I32));
+    host_predicate_signature.returns.push(AbiParam::new(types::I32));
+    let host_predicate_function_id = module.declare_function(
+        HOST_IS_POSITIVE_I32_SYMBOL,
+        Linkage::Import,
+        &host_predicate_signature,
+    )?;
+
+    let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
+    imported_function_ids.insert(HOST_IS_POSITIVE_I32_SYMBOL, host_predicate_function_id);
+
+    let param_extern_predicate_function = TinyMirParamBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_extern_predicate_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_I32_SYMBOL,
+        params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_I32_FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_BLOCKS,
+    };
+    let param_extern_predicate_update_branch_function = TinyMirParamBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_extern_predicate_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_UPDATE_BRANCH_I32_SYMBOL,
+        params: &MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_I32_FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_UPDATE_BRANCH_BLOCKS,
+    };
+
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &param_extern_predicate_function,
+        &imported_function_ids,
+    )?;
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &param_extern_predicate_update_branch_function,
+        &imported_function_ids,
+    )?;
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
 
 fn emit_mir_positive_i32_branch_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
     static MIR_POSITIVE_I32_BRANCH_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
@@ -2809,6 +2967,50 @@ fn build_tiny_mir_param_block_graph_body(
                     builder
                         .ins()
                         .icmp_imm(IntCC::SignedGreaterThan, call_value, 0);
+                builder.ins().brif(
+                    branch_condition,
+                    then_cranelift_block,
+                    &[],
+                    else_cranelift_block,
+                    &[],
+                );
+            }
+            TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32Predicate {
+                function_symbol,
+                param,
+                then_block,
+                else_block,
+            } => {
+                let argument_value = {
+                    let block_params = builder.block_params(current_block);
+                    block_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR param extern predicate branch block param index: {param}"),
+                        )
+                    })?
+                };
+                let function_ref = *local_function_refs.get(function_symbol).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param block branch imported predicate function: {function_symbol}"),
+                    )
+                })?;
+                let then_cranelift_block = *cranelift_blocks.get(then_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param extern predicate then block: {then_block}"),
+                    )
+                })?;
+                let else_cranelift_block = *cranelift_blocks.get(else_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param extern predicate else block: {else_block}"),
+                    )
+                })?;
+                let call_inst = builder.ins().call(function_ref, &[argument_value]);
+                let predicate_value = builder.inst_results(call_inst)[0];
+                let branch_condition = builder.ins().icmp_imm(IntCC::NotEqual, predicate_value, 0);
                 builder.ins().brif(
                     branch_condition,
                     then_cranelift_block,
