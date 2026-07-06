@@ -216,6 +216,19 @@ allowed_mir_block_graph_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::Ju
 allowed_mir_block_graph_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::BranchParamI32Positive
 real_cranelift_object_smoke: mir_block_graph_i32_bundle
 
+# Step 36 MIR-shaped block graph local i32 bundle smoke.
+CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_LOCAL_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke
+allowed_mir_block_graph_local_i32_bundle_native_guard: guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke
+allowed_mir_block_graph_local_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs
+allowed_mir_block_graph_local_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_local_i32_bundle_native/tiny_cranelift_mir_block_graph_local_i32_bundle.o
+allowed_mir_block_graph_local_i32_bundle_local_read_symbol: tiny_cranelift_mir_block_graph_local_read_i32
+allowed_mir_block_graph_local_i32_bundle_local_branch_symbol: tiny_cranelift_mir_block_graph_local_branch_i32
+allowed_mir_block_graph_local_i32_bundle_lowering_scaffold: TinyMirBlockStatement::LocalI32Set
+allowed_mir_block_graph_local_i32_bundle_lowering_scaffold: TinyMirBlockStatement::LocalI32SetParam
+allowed_mir_block_graph_local_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::ReturnLocalI32
+allowed_mir_block_graph_local_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::BranchLocalI32Positive
+real_cranelift_object_smoke: mir_block_graph_local_i32_bundle
+
 The only allowed real Cranelift codegen entry point is compiler/experiments/cranelift/src/main.rs for return-int, local-binding/read, conditional-branch, and add-i32 object emission.
 No `guard-cranelift-*` recipe is allowed except `guard-cranelift-experiment-manifest-surface`, `guard-cranelift-backend-surface`, `guard-cranelift-dependency-beachhead`, `guard-cranelift-experimental-backend-suite`, `guard-cranelift-return-int-native-smoke`, `guard-cranelift-local-binding-native-smoke`, `guard-cranelift-local-binding-read-native-smoke`, `guard-cranelift-conditional-branch-native-smoke`, `guard-cranelift-branch-native-smoke`, `guard-cranelift-mir-to-c-differential-native-smoke`, `guard-cranelift-differential-native-smoke`, and `guard-cranelift-no-fixture-regression`.
 real_cranelift_object_smoke: return_int

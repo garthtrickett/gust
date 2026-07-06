@@ -46,6 +46,9 @@ const MIR_COMPARISON_BRANCH_EQ_I32_SYMBOL: &str = "tiny_cranelift_mir_comparison
 const MIR_COMPARISON_BRANCH_SGT_I32_SYMBOL: &str = "tiny_cranelift_mir_comparison_branch_sgt_i32";
 const MIR_BLOCK_GRAPH_JUMP_I32_SYMBOL: &str = "tiny_cranelift_mir_block_graph_jump_i32";
 const MIR_BLOCK_GRAPH_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_mir_block_graph_branch_i32";
+const MIR_BLOCK_GRAPH_LOCAL_READ_I32_SYMBOL: &str = "tiny_cranelift_mir_block_graph_local_read_i32";
+const MIR_BLOCK_GRAPH_LOCAL_BRANCH_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_local_branch_i32";
 
 #[derive(Clone, Copy)]
 enum TinyMirType {
@@ -137,19 +140,34 @@ enum TinyMirTerminator {
 }
 
 #[derive(Clone, Copy)]
+enum TinyMirBlockStatement {
+    LocalI32Set { name: &'static str, value: i32 },
+    LocalI32SetParam { name: &'static str, param: usize },
+}
+
+#[derive(Clone, Copy)]
 enum TinyMirBlockTerminator {
-    Jump { target: &'static str },
+    Jump {
+        target: &'static str,
+    },
     BranchParamI32Positive {
         param: usize,
         then_block: &'static str,
         else_block: &'static str,
     },
+    BranchLocalI32Positive {
+        name: &'static str,
+        then_block: &'static str,
+        else_block: &'static str,
+    },
     ReturnI32(i32),
+    ReturnLocalI32(&'static str),
 }
 
 #[derive(Clone, Copy)]
 struct TinyMirBlock {
     label: &'static str,
+    statements: &'static [TinyMirBlockStatement],
     terminator: TinyMirBlockTerminator,
 }
 
@@ -158,6 +176,7 @@ struct TinyMirBlockFunction {
     symbol: &'static str,
     params: &'static [TinyMirType],
     return_type: TinyMirType,
+    locals: &'static [TinyMirLocal],
     entry_block: &'static str,
     blocks: &'static [TinyMirBlock],
 }
@@ -177,11 +196,10 @@ static MIR_LOCAL_BINDING_READ_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
     ty: TinyMirType::I32,
 }];
 
-static MIR_LOCAL_BINDING_READ_STATEMENTS: [TinyMirStatement; 1] =
-    [TinyMirStatement::LocalI32Set {
-        name: "value",
-        value: 2,
-    }];
+static MIR_LOCAL_BINDING_READ_STATEMENTS: [TinyMirStatement; 1] = [TinyMirStatement::LocalI32Set {
+    name: "value",
+    value: 2,
+}];
 
 fn main() {
     if let Err(error) = run() {
@@ -277,6 +295,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_mir_block_graph_i32_bundle_object(Path::new(&output_path))
+        }
+        "mir-block-graph-local-i32-bundle-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_block_graph_local_i32_bundle_object(Path::new(&output_path))
         }
         "mir-positive-i32-branch-object" => {
             let Some(output_path) = args.next() else {
@@ -514,8 +541,8 @@ fn emit_mir_arithmetic_i32_bundle_object(output_path: &Path) -> Result<(), Box<d
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
     let object_builder = ObjectBuilder::new(
@@ -566,8 +593,8 @@ fn emit_mir_comparison_i32_bundle_object(output_path: &Path) -> Result<(), Box<d
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
     let object_builder = ObjectBuilder::new(
@@ -619,8 +646,8 @@ fn emit_mir_comparison_branch_i32_bundle_object(output_path: &Path) -> Result<()
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
     let object_builder = ObjectBuilder::new(
@@ -673,16 +700,19 @@ fn emit_mir_block_graph_i32_bundle_object(output_path: &Path) -> Result<(), Box<
     static MIR_BLOCK_GRAPH_JUMP_BLOCKS: [TinyMirBlock; 2] = [
         TinyMirBlock {
             label: "entry",
+            statements: &[],
             terminator: TinyMirBlockTerminator::Jump { target: "return" },
         },
         TinyMirBlock {
             label: "return",
+            statements: &[],
             terminator: TinyMirBlockTerminator::ReturnI32(29),
         },
     ];
     static MIR_BLOCK_GRAPH_BRANCH_BLOCKS: [TinyMirBlock; 3] = [
         TinyMirBlock {
             label: "entry",
+            statements: &[],
             terminator: TinyMirBlockTerminator::BranchParamI32Positive {
                 param: 0,
                 then_block: "positive",
@@ -691,10 +721,12 @@ fn emit_mir_block_graph_i32_bundle_object(output_path: &Path) -> Result<(), Box<
         },
         TinyMirBlock {
             label: "positive",
+            statements: &[],
             terminator: TinyMirBlockTerminator::ReturnI32(31),
         },
         TinyMirBlock {
             label: "non_positive",
+            statements: &[],
             terminator: TinyMirBlockTerminator::ReturnI32(37),
         },
     ];
@@ -703,8 +735,8 @@ fn emit_mir_block_graph_i32_bundle_object(output_path: &Path) -> Result<(), Box<
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
     let object_builder = ObjectBuilder::new(
@@ -719,6 +751,7 @@ fn emit_mir_block_graph_i32_bundle_object(output_path: &Path) -> Result<(), Box<
         symbol: MIR_BLOCK_GRAPH_JUMP_I32_SYMBOL,
         params: &[],
         return_type: TinyMirType::I32,
+        locals: &[],
         entry_block: "entry",
         blocks: &MIR_BLOCK_GRAPH_JUMP_BLOCKS,
     };
@@ -727,12 +760,105 @@ fn emit_mir_block_graph_i32_bundle_object(output_path: &Path) -> Result<(), Box<
         symbol: MIR_BLOCK_GRAPH_BRANCH_I32_SYMBOL,
         params: &MIR_BLOCK_GRAPH_BRANCH_I32_PARAMS,
         return_type: TinyMirType::I32,
+        locals: &[],
         entry_block: "entry",
         blocks: &MIR_BLOCK_GRAPH_BRANCH_BLOCKS,
     };
 
     define_tiny_mir_block_graph_exported_function(&mut module, &jump_function)?;
     define_tiny_mir_block_graph_exported_function(&mut module, &branch_function)?;
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn emit_mir_block_graph_local_i32_bundle_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
+    static MIR_BLOCK_GRAPH_LOCAL_I32_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static MIR_BLOCK_GRAPH_LOCAL_I32_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
+        name: "value",
+        ty: TinyMirType::I32,
+    }];
+    static MIR_BLOCK_GRAPH_LOCAL_SET_READ_ENTRY_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32Set {
+            name: "value",
+            value: 41,
+        }];
+    static MIR_BLOCK_GRAPH_LOCAL_BRANCH_ENTRY_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32SetParam {
+            name: "value",
+            param: 0,
+        }];
+    static MIR_BLOCK_GRAPH_LOCAL_SET_READ_BLOCKS: [TinyMirBlock; 2] = [
+        TinyMirBlock {
+            label: "entry",
+            statements: &MIR_BLOCK_GRAPH_LOCAL_SET_READ_ENTRY_STATEMENTS,
+            terminator: TinyMirBlockTerminator::Jump { target: "return" },
+        },
+        TinyMirBlock {
+            label: "return",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::ReturnLocalI32("value"),
+        },
+    ];
+    static MIR_BLOCK_GRAPH_LOCAL_BRANCH_BLOCKS: [TinyMirBlock; 3] = [
+        TinyMirBlock {
+            label: "entry",
+            statements: &MIR_BLOCK_GRAPH_LOCAL_BRANCH_ENTRY_STATEMENTS,
+            terminator: TinyMirBlockTerminator::BranchLocalI32Positive {
+                name: "value",
+                then_block: "positive",
+                else_block: "non_positive",
+            },
+        },
+        TinyMirBlock {
+            label: "positive",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::ReturnI32(43),
+        },
+        TinyMirBlock {
+            label: "non_positive",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::ReturnI32(47),
+        },
+    ];
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_mir_block_graph_local_i32_bundle",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let local_read_function = TinyMirBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_local_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_LOCAL_READ_I32_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::I32,
+        locals: &MIR_BLOCK_GRAPH_LOCAL_I32_LOCALS,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_LOCAL_SET_READ_BLOCKS,
+    };
+    let local_branch_function = TinyMirBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_local_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_LOCAL_BRANCH_I32_SYMBOL,
+        params: &MIR_BLOCK_GRAPH_LOCAL_I32_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &MIR_BLOCK_GRAPH_LOCAL_I32_LOCALS,
+        entry_block: "entry",
+        blocks: &MIR_BLOCK_GRAPH_LOCAL_BRANCH_BLOCKS,
+    };
+
+    define_tiny_mir_block_graph_exported_function(&mut module, &local_read_function)?;
+    define_tiny_mir_block_graph_exported_function(&mut module, &local_branch_function)?;
 
     let object_product = module.finish();
     fs::write(output_path, object_product.emit()?)?;
@@ -796,8 +922,8 @@ fn emit_mir_call_helper_i32_object(output_path: &Path) -> Result<(), Box<dyn Err
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
     let object_builder = ObjectBuilder::new(
@@ -898,8 +1024,8 @@ fn emit_mir_extern_call_i32_object(output_path: &Path) -> Result<(), Box<dyn Err
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
     let object_builder = ObjectBuilder::new(
@@ -970,8 +1096,8 @@ fn emit_mir_extern_add_i32_object(output_path: &Path) -> Result<(), Box<dyn Erro
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
     let object_builder = ObjectBuilder::new(
@@ -1044,8 +1170,8 @@ fn emit_mir_extern_predicate_branch_i32_object(output_path: &Path) -> Result<(),
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
     let object_builder = ObjectBuilder::new(
@@ -1146,11 +1272,12 @@ fn emit_add_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
-    let object_builder = ObjectBuilder::new(isa, "gust_cranelift_add_i32", default_libcall_names())?;
+    let object_builder =
+        ObjectBuilder::new(isa, "gust_cranelift_add_i32", default_libcall_names())?;
     let mut module = ObjectModule::new(object_builder);
 
     let mut signature = module.make_signature();
@@ -1199,12 +1326,15 @@ fn emit_call_helper_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>>
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
-    let object_builder =
-        ObjectBuilder::new(isa, "gust_cranelift_call_helper_i32", default_libcall_names())?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_call_helper_i32",
+        default_libcall_names(),
+    )?;
     let mut module = ObjectModule::new(object_builder);
 
     let mut helper_signature = module.make_signature();
@@ -1245,7 +1375,9 @@ fn emit_call_helper_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>>
 
     let argument_value = caller_builder.block_params(entry_block)[0];
     let helper_function_ref = module.declare_func_in_func(helper_function_id, caller_builder.func);
-    let call_inst = caller_builder.ins().call(helper_function_ref, &[argument_value]);
+    let call_inst = caller_builder
+        .ins()
+        .call(helper_function_ref, &[argument_value]);
     let return_value = caller_builder.inst_results(call_inst)[0];
     caller_builder.ins().return_(&[return_value]);
 
@@ -1265,12 +1397,15 @@ fn emit_extern_call_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>>
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
-    let object_builder =
-        ObjectBuilder::new(isa, "gust_cranelift_extern_call_i32", default_libcall_names())?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_extern_call_i32",
+        default_libcall_names(),
+    )?;
     let mut module = ObjectModule::new(object_builder);
 
     let mut host_signature = module.make_signature();
@@ -1299,7 +1434,9 @@ fn emit_extern_call_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>>
 
     let argument_value = caller_builder.block_params(entry_block)[0];
     let host_function_ref = module.declare_func_in_func(host_function_id, caller_builder.func);
-    let call_inst = caller_builder.ins().call(host_function_ref, &[argument_value]);
+    let call_inst = caller_builder
+        .ins()
+        .call(host_function_ref, &[argument_value]);
     let return_value = caller_builder.inst_results(call_inst)[0];
     caller_builder.ins().return_(&[return_value]);
 
@@ -1319,12 +1456,15 @@ fn emit_extern_add_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>> 
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
-    let object_builder =
-        ObjectBuilder::new(isa, "gust_cranelift_extern_add_i32", default_libcall_names())?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_extern_add_i32",
+        default_libcall_names(),
+    )?;
     let mut module = ObjectModule::new(object_builder);
 
     let mut host_signature = module.make_signature();
@@ -1377,8 +1517,8 @@ fn emit_extern_predicate_branch_i32_object(output_path: &Path) -> Result<(), Box
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
     let object_builder = ObjectBuilder::new(
@@ -1423,7 +1563,9 @@ fn emit_extern_predicate_branch_i32_object(output_path: &Path) -> Result<(), Box
 
     let argument_value = caller_builder.block_params(entry_block)[0];
     let host_function_ref = module.declare_func_in_func(host_function_id, caller_builder.func);
-    let call_inst = caller_builder.ins().call(host_function_ref, &[argument_value]);
+    let call_inst = caller_builder
+        .ins()
+        .call(host_function_ref, &[argument_value]);
     let predicate_value = caller_builder.inst_results(call_inst)[0];
     let is_nonzero = caller_builder
         .ins()
@@ -1465,11 +1607,12 @@ fn lower_tiny_mir_function_to_object(
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
-    let object_builder = ObjectBuilder::new(isa, mir_function.object_name, default_libcall_names())?;
+    let object_builder =
+        ObjectBuilder::new(isa, mir_function.object_name, default_libcall_names())?;
     let mut module = ObjectModule::new(object_builder);
 
     let mut signature = module.make_signature();
@@ -1595,6 +1738,18 @@ fn build_tiny_mir_block_graph_body(
         })?;
     builder.append_block_params_for_function_params(entry_block);
 
+    let mut local_slots: HashMap<&'static str, Variable> = HashMap::new();
+    for local in mir_function.locals {
+        let slot = builder.declare_var(tiny_mir_type_to_cranelift_type(local.ty));
+        if local_slots.insert(local.name, slot).is_some() {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!("duplicate tiny MIR block graph local: {}", local.name),
+            )
+            .into());
+        }
+    }
+
     for block in mir_function.blocks {
         let current_block = *cranelift_blocks.get(block.label).ok_or_else(|| {
             IoError::new(
@@ -1603,6 +1758,39 @@ fn build_tiny_mir_block_graph_body(
             )
         })?;
         builder.switch_to_block(current_block);
+
+        for statement in block.statements {
+            match *statement {
+                TinyMirBlockStatement::LocalI32Set { name, value } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR block graph local set target: {name}"),
+                        )
+                    })?;
+                    let literal_value = builder.ins().iconst(types::I32, i64::from(value));
+                    builder.def_var(slot, literal_value);
+                }
+                TinyMirBlockStatement::LocalI32SetParam { name, param } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR block graph param set target: {name}"),
+                        )
+                    })?;
+                    let param_value = {
+                        let block_params = builder.block_params(entry_block);
+                        block_params.get(param).copied().ok_or_else(|| {
+                            IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!("unknown tiny MIR block graph local param index: {param}"),
+                            )
+                        })?
+                    };
+                    builder.def_var(slot, param_value);
+                }
+            }
+        }
 
         match block.terminator {
             TinyMirBlockTerminator::Jump { target } => {
@@ -1640,9 +1828,46 @@ fn build_tiny_mir_block_graph_body(
                         format!("unknown tiny MIR else block: {else_block}"),
                     )
                 })?;
-                let branch_condition = builder
-                    .ins()
-                    .icmp_imm(IntCC::SignedGreaterThan, condition_value, 0);
+                let branch_condition =
+                    builder
+                        .ins()
+                        .icmp_imm(IntCC::SignedGreaterThan, condition_value, 0);
+                builder.ins().brif(
+                    branch_condition,
+                    then_cranelift_block,
+                    &[],
+                    else_cranelift_block,
+                    &[],
+                );
+            }
+            TinyMirBlockTerminator::BranchLocalI32Positive {
+                name,
+                then_block,
+                else_block,
+            } => {
+                let slot = *local_slots.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR block graph branch local: {name}"),
+                    )
+                })?;
+                let condition_value = builder.use_var(slot);
+                let then_cranelift_block = *cranelift_blocks.get(then_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR then block: {then_block}"),
+                    )
+                })?;
+                let else_cranelift_block = *cranelift_blocks.get(else_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR else block: {else_block}"),
+                    )
+                })?;
+                let branch_condition =
+                    builder
+                        .ins()
+                        .icmp_imm(IntCC::SignedGreaterThan, condition_value, 0);
                 builder.ins().brif(
                     branch_condition,
                     then_cranelift_block,
@@ -1653,6 +1878,16 @@ fn build_tiny_mir_block_graph_body(
             }
             TinyMirBlockTerminator::ReturnI32(value) => {
                 let return_value = builder.ins().iconst(types::I32, i64::from(value));
+                builder.ins().return_(&[return_value]);
+            }
+            TinyMirBlockTerminator::ReturnLocalI32(name) => {
+                let slot = *local_slots.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR block graph return local: {name}"),
+                    )
+                })?;
+                let return_value = builder.use_var(slot);
                 builder.ins().return_(&[return_value]);
             }
         }
@@ -1744,9 +1979,7 @@ fn build_tiny_mir_body(
             let then_block = builder.create_block();
             let else_block = builder.create_block();
             let condition_value = builder.ins().iconst(types::I32, i64::from(condition));
-            let branch_condition = builder
-                .ins()
-                .icmp_imm(IntCC::NotEqual, condition_value, 0);
+            let branch_condition = builder.ins().icmp_imm(IntCC::NotEqual, condition_value, 0);
             builder
                 .ins()
                 .brif(branch_condition, then_block, &[], else_block, &[]);
@@ -1927,13 +2160,17 @@ fn build_tiny_mir_body(
             let lhs = block_params.get(lhs_param).copied().ok_or_else(|| {
                 IoError::new(
                     ErrorKind::InvalidInput,
-                    format!("unknown tiny MIR signed-greater-than-branch lhs param index: {lhs_param}"),
+                    format!(
+                        "unknown tiny MIR signed-greater-than-branch lhs param index: {lhs_param}"
+                    ),
                 )
             })?;
             let rhs = block_params.get(rhs_param).copied().ok_or_else(|| {
                 IoError::new(
                     ErrorKind::InvalidInput,
-                    format!("unknown tiny MIR signed-greater-than-branch rhs param index: {rhs_param}"),
+                    format!(
+                        "unknown tiny MIR signed-greater-than-branch rhs param index: {rhs_param}"
+                    ),
                 )
             })?;
             let branch_condition = builder.ins().icmp(IntCC::SignedGreaterThan, lhs, rhs);
@@ -2051,9 +2288,7 @@ fn build_tiny_mir_body(
             })?;
             let call_inst = builder.ins().call(function_ref, &[argument_value]);
             let predicate_value = builder.inst_results(call_inst)[0];
-            let branch_condition = builder
-                .ins()
-                .icmp_imm(IntCC::NotEqual, predicate_value, 0);
+            let branch_condition = builder.ins().icmp_imm(IntCC::NotEqual, predicate_value, 0);
             let then_block = builder.create_block();
             let else_block = builder.create_block();
             builder
@@ -2082,9 +2317,10 @@ fn build_tiny_mir_body(
             })?;
             let then_block = builder.create_block();
             let else_block = builder.create_block();
-            let branch_condition = builder
-                .ins()
-                .icmp_imm(IntCC::SignedGreaterThan, condition_param, 0);
+            let branch_condition =
+                builder
+                    .ins()
+                    .icmp_imm(IntCC::SignedGreaterThan, condition_param, 0);
             builder
                 .ins()
                 .brif(branch_condition, then_block, &[], else_block, &[]);
@@ -2150,8 +2386,8 @@ fn emit_one_i32_arg_i32_object(
         fs::create_dir_all(parent)?;
     }
 
-    let isa_builder = cranelift_native::builder()
-        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
 
     let object_builder = ObjectBuilder::new(isa, object_name, default_libcall_names())?;
