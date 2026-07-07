@@ -975,6 +975,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             emit_mir_block_graph_param_extern_materialize_i32_bundle_object(Path::new(&output_path))
         }
+        "mir-block-graph-param-extern-materialize-return-i32-bundle-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_block_graph_param_extern_materialize_return_i32_bundle_object(Path::new(&output_path))
+        }
         "mir-block-graph-param-extern-predicate-i32-bundle-object" => {
             let Some(output_path) = args.next() else {
                 return Err(usage_error().into());
@@ -4520,6 +4529,94 @@ fn parse_compiler_mir_block_param_imported_materialize_branch_ingestion_fixture(
     require_compiler_mir_ingestion_field(&fields, "expected_case_0_result", "271")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "283")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_2_result", "283")?;
+    Ok(())
+}
+
+fn emit_mir_block_graph_param_extern_materialize_return_i32_bundle_object(
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    static FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static BLOCKS: [TinyMirParamBlock; 4] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "materialize_imported_call",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "materialize_imported_call",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamImportedFunctionI32CallI32Literal {
+                target: "branch_on_materialized_call",
+                function_symbol: HOST_ADD_I32_SYMBOL,
+                param: 0,
+                value: -5,
+            },
+        },
+        TinyMirParamBlock {
+            label: "branch_on_materialized_call",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
+                param: 0,
+                then_block: "result",
+                then_value: 331,
+                else_block: "result",
+                else_value: 347,
+            },
+        },
+        TinyMirParamBlock {
+            label: "result",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal {
+                function_symbol: HOST_ADD_I32_SYMBOL,
+                param: 0,
+                value: 13,
+            },
+        },
+    ];
+    let mir_function = TinyMirParamBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_extern_materialize_return_i32_bundle",
+        symbol: "tiny_cranelift_mir_block_graph_param_extern_materialize_return_i32",
+        params: &FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &BLOCKS,
+    };
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_mir_block_graph_param_extern_materialize_return_i32_bundle",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut host_add_signature = module.make_signature();
+    host_add_signature.params.push(AbiParam::new(types::I32));
+    host_add_signature.params.push(AbiParam::new(types::I32));
+    host_add_signature.returns.push(AbiParam::new(types::I32));
+    let host_add_function_id =
+        module.declare_function(HOST_ADD_I32_SYMBOL, Linkage::Import, &host_add_signature)?;
+
+    let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
+    imported_function_ids.insert(HOST_ADD_I32_SYMBOL, host_add_function_id);
+
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &mir_function,
+        &imported_function_ids,
+    )?;
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
     Ok(())
 }
 
