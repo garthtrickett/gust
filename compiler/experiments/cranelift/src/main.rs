@@ -133,6 +133,8 @@ const MIR_BLOCK_GRAPH_PARAM_UPDATE_BRANCH_I32_SYMBOL: &str =
 const MIR_BLOCK_GRAPH_PARAM_CALL_I32_SYMBOL: &str = "tiny_cranelift_mir_block_graph_param_call_i32";
 const MIR_BLOCK_GRAPH_PARAM_CALL_BRANCH_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_call_branch_i32";
+const MIR_BLOCK_GRAPH_PARAM_CALL_MATERIALIZE_I32_SYMBOL: &str =
+    "tiny_cranelift_mir_block_graph_param_call_materialize_i32";
 const MIR_BLOCK_GRAPH_PARAM_CALL_HELPER_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_add_one_helper_i32";
 const MIR_BLOCK_GRAPH_PARAM_EXTERN_CALL_I32_SYMBOL: &str =
@@ -321,6 +323,11 @@ enum TinyMirParamBlockTerminator {
         param: usize,
         then_block: &'static str,
         else_block: &'static str,
+    },
+    JumpBlockParamLocalFunctionI32Call {
+        target: &'static str,
+        function_symbol: &'static str,
+        param: usize,
     },
     ReturnBlockParamImportedFunctionI32Call {
         function_symbol: &'static str,
@@ -912,6 +919,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_mir_block_graph_param_call_i32_bundle_object(Path::new(&output_path))
+        }
+        "mir-block-graph-param-call-materialize-i32-bundle-object" => {
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_mir_block_graph_param_call_materialize_i32_bundle_object(Path::new(&output_path))
         }
         "mir-block-graph-param-extern-i32-bundle-object" => {
             let Some(output_path) = args.next() else {
@@ -5199,6 +5215,124 @@ fn emit_mir_block_graph_param_call_i32_bundle_object(
     Ok(())
 }
 
+fn emit_mir_block_graph_param_call_materialize_i32_bundle_object(
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    static FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static BLOCKS: [TinyMirParamBlock; 4] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "materialize_local_call",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "materialize_local_call",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamLocalFunctionI32Call {
+                target: "branch_on_materialized_call",
+                function_symbol: MIR_BLOCK_GRAPH_PARAM_CALL_HELPER_I32_SYMBOL,
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "branch_on_materialized_call",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
+                param: 0,
+                then_block: "result",
+                then_value: 293,
+                else_block: "result",
+                else_value: 307,
+            },
+        },
+        TinyMirParamBlock {
+            label: "result",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::ReturnBlockParamI32(0),
+        },
+    ];
+
+    let helper_mir_function = TinyMirFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_call_materialize_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_CALL_HELPER_I32_SYMBOL,
+        params: &FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnParamI32AddLiteral { param: 0, value: 1 },
+    };
+
+    let materialize_function = TinyMirParamBlockFunction {
+        object_name: "gust_cranelift_mir_block_graph_param_call_materialize_i32_bundle",
+        symbol: MIR_BLOCK_GRAPH_PARAM_CALL_MATERIALIZE_I32_SYMBOL,
+        params: &FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &BLOCKS,
+    };
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_cranelift_mir_block_graph_param_call_materialize_i32_bundle",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut helper_signature = module.make_signature();
+    helper_signature.params.push(AbiParam::new(types::I32));
+    helper_signature.returns.push(AbiParam::new(types::I32));
+
+    let helper_function_id = module.declare_function(
+        helper_mir_function.symbol,
+        Linkage::Local,
+        &helper_signature,
+    )?;
+    let mut helper_context = module.make_context();
+    helper_context.func.signature = helper_signature;
+
+    let mut helper_builder_context = FunctionBuilderContext::new();
+    let mut helper_builder =
+        FunctionBuilder::new(&mut helper_context.func, &mut helper_builder_context);
+    let helper_function_refs: HashMap<&'static str, FuncRef> = HashMap::new();
+    build_tiny_mir_body(
+        &mut helper_builder,
+        &helper_mir_function,
+        &helper_function_refs,
+    )?;
+    helper_builder.seal_all_blocks();
+    helper_builder.finalize();
+
+    module.define_function(helper_function_id, &mut helper_context)?;
+    module.clear_context(&mut helper_context);
+
+    let mut local_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
+    local_function_ids.insert(
+        MIR_BLOCK_GRAPH_PARAM_CALL_HELPER_I32_SYMBOL,
+        helper_function_id,
+    );
+
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &materialize_function,
+        &local_function_ids,
+    )?;
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
 fn emit_mir_block_graph_param_extern_i32_bundle_object(
     output_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
@@ -6948,6 +7082,37 @@ fn build_tiny_mir_param_block_graph_body(
                 let call_inst = builder.ins().call(function_ref, &[argument_value]);
                 let return_value = builder.inst_results(call_inst)[0];
                 builder.ins().return_(&[return_value]);
+            }
+            TinyMirParamBlockTerminator::JumpBlockParamLocalFunctionI32Call {
+                target,
+                function_symbol,
+                param,
+            } => {
+                let target_block = *cranelift_blocks.get(target).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param local call materialize jump target block: {target}"),
+                    )
+                })?;
+                let argument_value = {
+                    let block_params = builder.block_params(current_block);
+                    block_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown tiny MIR param local call materialize block param index: {param}"),
+                        )
+                    })?
+                };
+                let function_ref = *local_function_refs.get(function_symbol).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown tiny MIR param block local call materialize function: {function_symbol}"),
+                    )
+                })?;
+                let call_inst = builder.ins().call(function_ref, &[argument_value]);
+                let call_value = builder.inst_results(call_inst)[0];
+                let jump_arguments = [BlockArg::Value(call_value)];
+                builder.ins().jump(target_block, &jump_arguments);
             }
             TinyMirParamBlockTerminator::BranchBlockParamLocalFunctionI32CallPositive {
                 function_symbol,
