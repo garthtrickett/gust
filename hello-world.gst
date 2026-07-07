@@ -1,4 +1,4 @@
 func main()
 {
-    os.LogStr("hello world")
+    os.LogStr("hello world");
 }
