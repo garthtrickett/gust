@@ -128,6 +128,14 @@ const COMPILER_MIR_INGESTED_BLOCK_PARAM_TRIPLE_MATERIALIZE_RETURN_EXIT_HELPER_SY
     "tiny_native_backend_compiler_mir_ingested_block_param_triple_materialize_return_exit_helper";
 const COMPILER_MIR_INGESTED_BLOCK_PARAM_TRIPLE_MATERIALIZE_RETURN_HOST_ADD_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_block_param_triple_materialize_return_host_add";
+const COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_block_param_quad_materialize_return";
+const COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HELPER_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_block_param_quad_materialize_return_helper";
+const COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_SECOND_HELPER_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_block_param_quad_materialize_return_second_helper";
+const COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HOST_ADD_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_block_param_quad_materialize_return_host_add";
 const COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_RETURN_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_return";
 const COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_RETURN_HOST_ADD_SYMBOL: &str =
@@ -930,6 +938,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_block_param_triple_materialize_return_ingestion_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-block-param-quad-materialize-return-ingestion-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_block_param_quad_materialize_return_ingestion_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -4369,6 +4392,238 @@ fn parse_compiler_mir_block_param_merge_dual_imported_joined_return_ingestion_fi
     require_compiler_mir_ingestion_field(&fields, "expected_case_0_result", "255")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "245")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_2_result", "245")?;
+    Ok(())
+}
+
+fn emit_compiler_mir_block_param_quad_materialize_return_ingestion_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_block_param_quad_materialize_return_ingestion_fixture(&contents)?;
+    static FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static BLOCKS: [TinyMirParamBlock; 7] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "materialize_local_call_first",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "materialize_local_call_first",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamLocalFunctionI32Call {
+                target: "materialize_imported_call_first",
+                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HELPER_SYMBOL,
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "materialize_imported_call_first",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamImportedFunctionI32CallI32Literal {
+                target: "materialize_local_call_second",
+                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
+                param: 0,
+                value: -3,
+            },
+        },
+        TinyMirParamBlock {
+            label: "materialize_local_call_second",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamLocalFunctionI32Call {
+                target: "materialize_imported_call_second",
+                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_SECOND_HELPER_SYMBOL,
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "materialize_imported_call_second",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamImportedFunctionI32CallI32Literal {
+                target: "branch_on_quad_materialized_call",
+                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
+                param: 0,
+                value: -5,
+            },
+        },
+        TinyMirParamBlock {
+            label: "branch_on_quad_materialized_call",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
+                param: 0,
+                then_block: "result",
+                then_value: 811,
+                else_block: "result",
+                else_value: 853,
+            },
+        },
+        TinyMirParamBlock {
+            label: "result",
+            params: &BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal {
+                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
+                param: 0,
+                value: 19,
+            },
+        },
+    ];
+
+    let helper_mir_function = TinyMirFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_block_param_quad_materialize_return",
+        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HELPER_SYMBOL,
+        params: &FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnParamI32AddLiteral { param: 0, value: 2 },
+    };
+    let second_helper_mir_function = TinyMirFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_block_param_quad_materialize_return",
+        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_SECOND_HELPER_SYMBOL,
+        params: &FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnParamI32AddLiteral { param: 0, value: 4 },
+    };
+
+    let mir_function = TinyMirParamBlockFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_block_param_quad_materialize_return",
+        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_SYMBOL,
+        params: &FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &BLOCKS,
+    };
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder = cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_native_backend_compiler_mir_ingested_block_param_quad_materialize_return",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut helper_signature = module.make_signature();
+    helper_signature.params.push(AbiParam::new(types::I32));
+    helper_signature.returns.push(AbiParam::new(types::I32));
+    let helper_function_id = module.declare_function(
+        helper_mir_function.symbol,
+        Linkage::Local,
+        &helper_signature,
+    )?;
+    let mut helper_context = module.make_context();
+    helper_context.func.signature = helper_signature;
+    let mut helper_builder_context = FunctionBuilderContext::new();
+    let mut helper_builder = FunctionBuilder::new(&mut helper_context.func, &mut helper_builder_context);
+    let helper_function_refs: HashMap<&'static str, FuncRef> = HashMap::new();
+    build_tiny_mir_body(&mut helper_builder, &helper_mir_function, &helper_function_refs)?;
+    helper_builder.seal_all_blocks();
+    helper_builder.finalize();
+    module.define_function(helper_function_id, &mut helper_context)?;
+    module.clear_context(&mut helper_context);
+
+    let mut second_helper_signature = module.make_signature();
+    second_helper_signature.params.push(AbiParam::new(types::I32));
+    second_helper_signature.returns.push(AbiParam::new(types::I32));
+    let second_helper_function_id = module.declare_function(
+        second_helper_mir_function.symbol,
+        Linkage::Local,
+        &second_helper_signature,
+    )?;
+    let mut second_helper_context = module.make_context();
+    second_helper_context.func.signature = second_helper_signature;
+    let mut second_helper_builder_context = FunctionBuilderContext::new();
+    let mut second_helper_builder = FunctionBuilder::new(&mut second_helper_context.func, &mut second_helper_builder_context);
+    let second_helper_function_refs: HashMap<&'static str, FuncRef> = HashMap::new();
+    build_tiny_mir_body(&mut second_helper_builder, &second_helper_mir_function, &second_helper_function_refs)?;
+    second_helper_builder.seal_all_blocks();
+    second_helper_builder.finalize();
+    module.define_function(second_helper_function_id, &mut second_helper_context)?;
+    module.clear_context(&mut second_helper_context);
+
+    let mut host_add_signature = module.make_signature();
+    host_add_signature.params.push(AbiParam::new(types::I32));
+    host_add_signature.params.push(AbiParam::new(types::I32));
+    host_add_signature.returns.push(AbiParam::new(types::I32));
+    let host_add_function_id = module.declare_function(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
+        Linkage::Import,
+        &host_add_signature,
+    )?;
+
+    let mut function_ids: HashMap<&'static str, FuncId> = HashMap::new();
+    function_ids.insert(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HELPER_SYMBOL,
+        helper_function_id,
+    );
+    function_ids.insert(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_SECOND_HELPER_SYMBOL,
+        second_helper_function_id,
+    );
+    function_ids.insert(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
+        host_add_function_id,
+    );
+
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &mir_function,
+        &function_ids,
+    )?;
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn parse_compiler_mir_block_param_quad_materialize_return_ingestion_fixture(
+    contents: &str,
+) -> Result<(), Box<dyn Error>> {
+    let fields = parse_compiler_mir_ingestion_fields(contents)?;
+    require_compiler_mir_ingestion_field(&fields, "format", "gust.compiler_mir_ingestion.block_param_quad_materialize_return.v1")?;
+    require_compiler_mir_ingestion_field(&fields, "producer", "compiler/mir.gst")?;
+    require_compiler_mir_ingestion_field(&fields, "producer_entry", "mir_emit_native_backend_block_param_quad_materialize_return_ingestion_fixture")?;
+    require_compiler_mir_ingestion_field(&fields, "source_fixture", "compiler/mir_feature_block_param_quad_materialize_return_preservation_source.gst")?;
+    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "fixture_only_block_param_quad_materialize_return_serialization")?;
+    require_compiler_mir_ingestion_field(&fields, "function", "tiny_block_param_quad_materialize_return")?;
+    require_compiler_mir_ingestion_field(&fields, "helper_function", "tiny_block_param_quad_materialize_return_helper")?;
+    require_compiler_mir_ingestion_field(&fields, "second_helper_function", "tiny_block_param_quad_materialize_return_second_helper")?;
+    require_compiler_mir_ingestion_field(&fields, "param_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "local_function_count", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "local_function_0_symbol", COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HELPER_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "local_function_0_add_value", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "local_function_1_symbol", COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_SECOND_HELPER_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "local_function_1_add_value", "4")?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_0_symbol", COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_HOST_ADD_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_0_operation", "HostAddI32")?;
+    require_compiler_mir_ingestion_field(&fields, "block_count", "7")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_terminator", "JumpBlockParamLocalFunctionCall")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_target", "materialize_imported_call_first")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_terminator", "JumpBlockParamImportedFunctionCallI32Literal")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_call_literal", "-3")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_terminator", "JumpBlockParamLocalFunctionCall")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_target", "materialize_imported_call_second")?;
+    require_compiler_mir_ingestion_field(&fields, "block_4_terminator", "JumpBlockParamImportedFunctionCallI32Literal")?;
+    require_compiler_mir_ingestion_field(&fields, "block_4_call_literal", "-5")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_terminator", "BranchBlockParamPositiveToI32Literals")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_then_value", "811")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_else_value", "853")?;
+    require_compiler_mir_ingestion_field(&fields, "block_6_terminator", "ReturnBlockParamImportedFunctionCallI32Literal")?;
+    require_compiler_mir_ingestion_field(&fields, "block_6_call_literal", "19")?;
+    require_compiler_mir_ingestion_field(&fields, "backend_symbol", COMPILER_MIR_INGESTED_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_0_result", "830")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "872")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_2_result", "872")?;
     Ok(())
 }
 
