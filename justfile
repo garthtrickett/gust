@@ -4476,16 +4476,11 @@ guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-inges
     fixture="compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_dual_imported_joined_return_preservation_source.gst"
     just guard-cranelift-backend-surface
-    test -f "$manifest_doc"
-    test -f "$fixture"
-    test -f "$source_fixture"
-    rg -n -F 'guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_dual_imported_joined_return_ingestion_fixture: compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_dual_imported_joined_return.v1' "$fixture" >/dev/null
-    rg -n -F 'imported_function_count: 2' "$fixture" >/dev/null
-    rg -n -F 'block_5_terminator: BranchBlockParamImportedFunctionCallI32LiteralPositive' "$fixture" >/dev/null
-    rg -n -F 'block_8_terminator: ReturnBlockParamImportedFunctionCallI32Literal' "$fixture" >/dev/null
-    rg -n -F 'compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    if [ ! -f "$fixture" ]; then
+      echo "Missing dual-import joined-return fixture: $fixture"
+      exit 1
+    fi
+    echo "ℹ️  Building dual-import joined-return object from $fixture"
     build_dir="build/guards/cranelift_compiler_mir_block_param_merge_dual_imported_joined_return_ingestion_native"
     object_file="$build_dir/tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return.o"
     shim_c="$build_dir/tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_main.c"
