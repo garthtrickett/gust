@@ -730,6 +730,90 @@ func mir_emit_native_backend_local_binding_read_ingestion_fixture(ctx: &Arena) s
     return std.Clone(ctx, fixture);
 }
 
+func mir_emit_native_backend_block_param_merge_arm_update_imported_call_return_ingestion_fixture(ctx: &Arena) str {
+    // Fixture-only native-backend ingestion seam for a param-block merge arm-update imported-call return.
+    //
+    // This extends the compiler-owned serialized MIR artifact corpus to an
+    // explicit param-block graph that updates a function parameter, branches to
+    // distinct literal-valued arms, applies distinct arm-local block-param
+    // updates, joins both arms through a block parameter, and returns the joined
+    // value through an imported host helper without routing production codegen
+    // away from MIR-to-C.
+    mut fixture := "format: gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_return.v1\n";
+    fixture = std.Concat(fixture, "producer: compiler/mir.gst\n");
+    fixture = std.Concat(fixture, "producer_entry: mir_emit_native_backend_block_param_merge_arm_update_imported_call_return_ingestion_fixture\n");
+    fixture = std.Concat(fixture, "source_fixture: compiler/mir_feature_block_param_merge_arm_update_imported_call_return_preservation_source.gst\n");
+    fixture = std.Concat(fixture, "lowering_entry: fixture_only_block_param_merge_arm_update_imported_call_return_serialization\n");
+    fixture = std.Concat(fixture, "function: tiny_block_param_merge_arm_update_imported_call_return\n");
+    fixture = std.Concat(fixture, "return_type: int\n");
+    fixture = std.Concat(fixture, "param_count: 1\n");
+    fixture = std.Concat(fixture, "param_0_name: input\n");
+    fixture = std.Concat(fixture, "param_0_type: int\n");
+    fixture = std.Concat(fixture, "imported_function_count: 1\n");
+    fixture = std.Concat(fixture, "imported_function_0_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return_host_add\n");
+    fixture = std.Concat(fixture, "imported_function_0_param_count: 2\n");
+    fixture = std.Concat(fixture, "imported_function_0_param_0_type: int\n");
+    fixture = std.Concat(fixture, "imported_function_0_param_1_type: int\n");
+    fixture = std.Concat(fixture, "imported_function_0_return_type: int\n");
+    fixture = std.Concat(fixture, "imported_function_0_operation: HostAddI32\n");
+    fixture = std.Concat(fixture, "entry_block: entry\n");
+    fixture = std.Concat(fixture, "block_count: 6\n");
+    fixture = std.Concat(fixture, "block_0_label: entry\n");
+    fixture = std.Concat(fixture, "block_0_param_count: 0\n");
+    fixture = std.Concat(fixture, "block_0_terminator: JumpFunctionParam\n");
+    fixture = std.Concat(fixture, "block_0_target: adjust\n");
+    fixture = std.Concat(fixture, "block_0_param: 0\n");
+    fixture = std.Concat(fixture, "block_1_label: adjust\n");
+    fixture = std.Concat(fixture, "block_1_param_count: 1\n");
+    fixture = std.Concat(fixture, "block_1_param_0_type: int\n");
+    fixture = std.Concat(fixture, "block_1_terminator: JumpBlockParamAddI32Literal\n");
+    fixture = std.Concat(fixture, "block_1_target: branch\n");
+    fixture = std.Concat(fixture, "block_1_param: 0\n");
+    fixture = std.Concat(fixture, "block_1_add_value: 4\n");
+    fixture = std.Concat(fixture, "block_2_label: branch\n");
+    fixture = std.Concat(fixture, "block_2_param_count: 1\n");
+    fixture = std.Concat(fixture, "block_2_param_0_type: int\n");
+    fixture = std.Concat(fixture, "block_2_terminator: BranchBlockParamPositiveToI32Literals\n");
+    fixture = std.Concat(fixture, "block_2_branch_param: 0\n");
+    fixture = std.Concat(fixture, "branch_condition: greater_than_zero\n");
+    fixture = std.Concat(fixture, "branch_then_block: then_value\n");
+    fixture = std.Concat(fixture, "branch_then_value: 211\n");
+    fixture = std.Concat(fixture, "branch_else_block: else_value\n");
+    fixture = std.Concat(fixture, "branch_else_value: 223\n");
+    fixture = std.Concat(fixture, "block_3_label: then_value\n");
+    fixture = std.Concat(fixture, "block_3_param_count: 1\n");
+    fixture = std.Concat(fixture, "block_3_param_0_type: int\n");
+    fixture = std.Concat(fixture, "block_3_terminator: JumpBlockParamAddI32Literal\n");
+    fixture = std.Concat(fixture, "block_3_target: join\n");
+    fixture = std.Concat(fixture, "block_3_param: 0\n");
+    fixture = std.Concat(fixture, "block_3_add_value: 7\n");
+    fixture = std.Concat(fixture, "block_4_label: else_value\n");
+    fixture = std.Concat(fixture, "block_4_param_count: 1\n");
+    fixture = std.Concat(fixture, "block_4_param_0_type: int\n");
+    fixture = std.Concat(fixture, "block_4_terminator: JumpBlockParamAddI32Literal\n");
+    fixture = std.Concat(fixture, "block_4_target: join\n");
+    fixture = std.Concat(fixture, "block_4_param: 0\n");
+    fixture = std.Concat(fixture, "block_4_add_value: 9\n");
+    fixture = std.Concat(fixture, "block_5_label: join\n");
+    fixture = std.Concat(fixture, "block_5_param_count: 1\n");
+    fixture = std.Concat(fixture, "block_5_param_0_type: int\n");
+    fixture = std.Concat(fixture, "block_5_terminator: ReturnBlockParamImportedFunctionCallI32Literal\n");
+    fixture = std.Concat(fixture, "block_5_imported_function_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return_host_add\n");
+    fixture = std.Concat(fixture, "block_5_return_param: 0\n");
+    fixture = std.Concat(fixture, "block_5_call_literal: 5\n");
+    fixture = std.Concat(fixture, "block_5_return_value_kind: ImportedCall\n");
+    fixture = std.Concat(fixture, "block_5_return_value_type: int\n");
+    fixture = std.Concat(fixture, "backend_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return\n");
+    fixture = std.Concat(fixture, "expected_case_count: 3\n");
+    fixture = std.Concat(fixture, "expected_case_0_value: 1\n");
+    fixture = std.Concat(fixture, "expected_case_0_result: 223\n");
+    fixture = std.Concat(fixture, "expected_case_1_value: -4\n");
+    fixture = std.Concat(fixture, "expected_case_1_result: 237\n");
+    fixture = std.Concat(fixture, "expected_case_2_value: -9\n");
+    fixture = std.Concat(fixture, "expected_case_2_result: 237\n");
+    return std.Clone(ctx, fixture);
+}
+
 func mir_emit_native_backend_block_param_merge_imported_call_return_ingestion_fixture(ctx: &Arena) str {
     // Fixture-only native-backend ingestion seam for a param-block merge imported-call return.
     //

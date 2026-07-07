@@ -78,6 +78,10 @@ const COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_SYMBOL: &str 
     "tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_call_return";
 const COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_call_return_host_add";
+const COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return";
+const COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return_host_add";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
@@ -698,6 +702,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_block_param_merge_imported_call_return_ingestion_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -3348,6 +3367,200 @@ fn parse_compiler_mir_block_param_merge_imported_call_return_ingestion_fixture(
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "228")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_2_value", "-9")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_2_result", "228")?;
+    Ok(())
+}
+
+fn emit_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_fixture(&contents)?;
+    static COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_FUNCTION_PARAMS: [TinyMirType; 1] =
+        [TinyMirType::I32];
+    static COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS: [TinyMirType; 1] =
+        [TinyMirType::I32];
+    static COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCKS: [TinyMirParamBlock; 6] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "adjust",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "adjust",
+            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "branch",
+                param: 0,
+                value: 4,
+            },
+        },
+        TinyMirParamBlock {
+            label: "branch",
+            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
+                param: 0,
+                then_block: "then_value",
+                then_value: 211,
+                else_block: "else_value",
+                else_value: 223,
+            },
+        },
+        TinyMirParamBlock {
+            label: "then_value",
+            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "join",
+                param: 0,
+                value: 7,
+            },
+        },
+        TinyMirParamBlock {
+            label: "else_value",
+            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "join",
+                param: 0,
+                value: 9,
+            },
+        },
+        TinyMirParamBlock {
+            label: "join",
+            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal {
+                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL,
+                param: 0,
+                value: 5,
+            },
+        },
+    ];
+    let mir_function = TinyMirParamBlockFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return",
+        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_SYMBOL,
+        params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCKS,
+    };
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut imported_add_signature = module.make_signature();
+    imported_add_signature.params.push(AbiParam::new(types::I32));
+    imported_add_signature.params.push(AbiParam::new(types::I32));
+    imported_add_signature.returns.push(AbiParam::new(types::I32));
+    let imported_add_function_id = module.declare_function(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL,
+        Linkage::Import,
+        &imported_add_signature,
+    )?;
+    let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
+    imported_function_ids.insert(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL,
+        imported_add_function_id,
+    );
+
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &mir_function,
+        &imported_function_ids,
+    )?;
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn parse_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_fixture(
+    contents: &str,
+) -> Result<(), Box<dyn Error>> {
+    let fields = parse_compiler_mir_ingestion_fields(contents)?;
+    require_compiler_mir_ingestion_field(&fields, "format", "gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_return.v1")?;
+    require_compiler_mir_ingestion_field(&fields, "producer", "compiler/mir.gst")?;
+    require_compiler_mir_ingestion_field(&fields, "producer_entry", "mir_emit_native_backend_block_param_merge_arm_update_imported_call_return_ingestion_fixture")?;
+    require_compiler_mir_ingestion_field(&fields, "source_fixture", "compiler/mir_feature_block_param_merge_arm_update_imported_call_return_preservation_source.gst")?;
+    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "fixture_only_block_param_merge_arm_update_imported_call_return_serialization")?;
+    require_compiler_mir_ingestion_field(&fields, "function", "tiny_block_param_merge_arm_update_imported_call_return")?;
+    require_compiler_mir_ingestion_field(&fields, "return_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "param_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "param_0_name", "input")?;
+    require_compiler_mir_ingestion_field(&fields, "param_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_0_symbol", COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_0_param_count", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_0_param_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_0_param_1_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_0_return_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_0_operation", "HostAddI32")?;
+    require_compiler_mir_ingestion_field(&fields, "entry_block", "entry")?;
+    require_compiler_mir_ingestion_field(&fields, "block_count", "6")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_label", "entry")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_param_count", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_terminator", "JumpFunctionParam")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_target", "adjust")?;
+    require_compiler_mir_ingestion_field(&fields, "block_0_param", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_label", "adjust")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_param_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_param_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_terminator", "JumpBlockParamAddI32Literal")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_target", "branch")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_param", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_1_add_value", "4")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_label", "branch")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_param_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_param_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_terminator", "BranchBlockParamPositiveToI32Literals")?;
+    require_compiler_mir_ingestion_field(&fields, "block_2_branch_param", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_condition", "greater_than_zero")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_then_block", "then_value")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_then_value", "211")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_else_block", "else_value")?;
+    require_compiler_mir_ingestion_field(&fields, "branch_else_value", "223")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_label", "then_value")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_param_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_param_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_terminator", "JumpBlockParamAddI32Literal")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_target", "join")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_param", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_add_value", "7")?;
+    require_compiler_mir_ingestion_field(&fields, "block_4_label", "else_value")?;
+    require_compiler_mir_ingestion_field(&fields, "block_4_param_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "block_4_param_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "block_4_terminator", "JumpBlockParamAddI32Literal")?;
+    require_compiler_mir_ingestion_field(&fields, "block_4_target", "join")?;
+    require_compiler_mir_ingestion_field(&fields, "block_4_param", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_4_add_value", "9")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_label", "join")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_param_count", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_param_0_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_terminator", "ReturnBlockParamImportedFunctionCallI32Literal")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_imported_function_symbol", COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_return_param", "0")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_call_literal", "5")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_return_value_kind", "ImportedCall")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_return_value_type", "int")?;
+    require_compiler_mir_ingestion_field(&fields, "backend_symbol", COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_count", "3")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_0_value", "1")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_0_result", "223")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_1_value", "-4")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "237")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_2_value", "-9")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_2_result", "237")?;
     Ok(())
 }
 
