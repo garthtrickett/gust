@@ -4504,6 +4504,45 @@ guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-inges
     "$binary"
     echo "✅ Compiler-owned MIR block-param merge dual-import joined-return ingestion seam native smoke passed."
 
+guard-cranelift-compiler-mir-block-param-imported-materialize-branch-ingestion-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling compiler-owned MIR block-param imported materialize branch ingestion seam smoke."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    fixture="compiler/fixtures/native_backend_block_param_imported_materialize_branch_ingestion.mir"
+    source_fixture="compiler/mir_feature_block_param_imported_materialize_branch_preservation_source.gst"
+    just guard-cranelift-backend-surface
+    test -f "$manifest_doc"
+    test -f "$fixture"
+    test -f "$source_fixture"
+    rg -n -F 'guard-cranelift-compiler-mir-block-param-imported-materialize-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.block_param_imported_materialize_branch.v1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_1_terminator: JumpBlockParamImportedFunctionCallI32Literal' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_1_call_literal: -5' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_2_terminator: BranchBlockParamPositiveToI32Literals' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'compiler-mir-block-param-imported-materialize-branch-ingestion-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    build_dir="build/guards/cranelift_compiler_mir_block_param_imported_materialize_branch_ingestion_native"
+    object_file="$build_dir/tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch.o"
+    shim_c="$build_dir/tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch_main.c"
+    binary="$build_dir/tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-block-param-imported-materialize-branch-ingestion-object "$fixture" "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'int32_t tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch_host_add(int32_t lhs, int32_t rhs) { return lhs + rhs; }' >> "$shim_c"
+    echo 'extern int32_t tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch(int32_t input);' >> "$shim_c"
+    echo 'int main(void) {' >> "$shim_c"
+    echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch(8) != 271) return 1;' >> "$shim_c"
+    echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch(5) != 283) return 2;' >> "$shim_c"
+    echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch(-2) != 283) return 3;' >> "$shim_c"
+    echo '  return 0;' >> "$shim_c"
+    echo '}' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    "$binary"
+    echo "✅ Compiler-owned MIR block-param imported materialize branch ingestion seam native smoke passed."
+
 guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     #!/usr/bin/env bash
     set -euo pipefail
