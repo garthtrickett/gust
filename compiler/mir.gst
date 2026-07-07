@@ -730,6 +730,58 @@ func mir_emit_native_backend_local_binding_read_ingestion_fixture(ctx: &Arena) s
     return std.Clone(ctx, fixture);
 }
 
+func mir_emit_native_backend_block_param_imported_call_return_ingestion_fixture(ctx: &Arena) str {
+    // Fixture-only native-backend ingestion seam for a param-block imported-call return.
+    //
+    // This extends the compiler-owned serialized MIR artifact corpus to an
+    // explicit param-block graph that forwards a function parameter into a block
+    // parameter, calls an imported host helper with that block parameter and an
+    // i32 literal, and returns the host-call result without routing production
+    // codegen away from MIR-to-C.
+    mut fixture := "format: gust.compiler_mir_ingestion.block_param_imported_call_return.v1\n";
+    fixture = std.Concat(fixture, "producer: compiler/mir.gst\n");
+    fixture = std.Concat(fixture, "producer_entry: mir_emit_native_backend_block_param_imported_call_return_ingestion_fixture\n");
+    fixture = std.Concat(fixture, "source_fixture: compiler/mir_feature_block_param_imported_call_return_preservation_source.gst\n");
+    fixture = std.Concat(fixture, "lowering_entry: fixture_only_block_param_imported_call_return_serialization\n");
+    fixture = std.Concat(fixture, "function: tiny_block_param_imported_call_return\n");
+    fixture = std.Concat(fixture, "return_type: int\n");
+    fixture = std.Concat(fixture, "param_count: 1\n");
+    fixture = std.Concat(fixture, "param_0_name: input\n");
+    fixture = std.Concat(fixture, "param_0_type: int\n");
+    fixture = std.Concat(fixture, "imported_function_count: 1\n");
+    fixture = std.Concat(fixture, "imported_function_0_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_call_return_host_add\n");
+    fixture = std.Concat(fixture, "imported_function_0_param_count: 2\n");
+    fixture = std.Concat(fixture, "imported_function_0_param_0_type: int\n");
+    fixture = std.Concat(fixture, "imported_function_0_param_1_type: int\n");
+    fixture = std.Concat(fixture, "imported_function_0_return_type: int\n");
+    fixture = std.Concat(fixture, "imported_function_0_operation: HostAddI32\n");
+    fixture = std.Concat(fixture, "entry_block: entry\n");
+    fixture = std.Concat(fixture, "block_count: 2\n");
+    fixture = std.Concat(fixture, "block_0_label: entry\n");
+    fixture = std.Concat(fixture, "block_0_param_count: 0\n");
+    fixture = std.Concat(fixture, "block_0_terminator: JumpFunctionParam\n");
+    fixture = std.Concat(fixture, "block_0_target: return_imported\n");
+    fixture = std.Concat(fixture, "block_0_param: 0\n");
+    fixture = std.Concat(fixture, "block_1_label: return_imported\n");
+    fixture = std.Concat(fixture, "block_1_param_count: 1\n");
+    fixture = std.Concat(fixture, "block_1_param_0_type: int\n");
+    fixture = std.Concat(fixture, "block_1_terminator: ReturnBlockParamImportedFunctionCallI32Literal\n");
+    fixture = std.Concat(fixture, "block_1_imported_function_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_call_return_host_add\n");
+    fixture = std.Concat(fixture, "block_1_return_param: 0\n");
+    fixture = std.Concat(fixture, "block_1_call_literal: 11\n");
+    fixture = std.Concat(fixture, "block_1_return_value_kind: ImportedCall\n");
+    fixture = std.Concat(fixture, "block_1_return_value_type: int\n");
+    fixture = std.Concat(fixture, "backend_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_call_return\n");
+    fixture = std.Concat(fixture, "expected_case_count: 3\n");
+    fixture = std.Concat(fixture, "expected_case_0_value: 5\n");
+    fixture = std.Concat(fixture, "expected_case_0_result: 16\n");
+    fixture = std.Concat(fixture, "expected_case_1_value: 0\n");
+    fixture = std.Concat(fixture, "expected_case_1_result: 11\n");
+    fixture = std.Concat(fixture, "expected_case_2_value: -12\n");
+    fixture = std.Concat(fixture, "expected_case_2_result: -1\n");
+    return std.Clone(ctx, fixture);
+}
+
 func mir_emit_native_backend_block_param_imported_call_branch_ingestion_fixture(ctx: &Arena) str {
     // Fixture-only native-backend ingestion seam for a param-block imported-call branch.
     //
