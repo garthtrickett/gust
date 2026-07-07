@@ -1343,6 +1343,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     valid_block_param_imported_materialize_return="compiler/fixtures/native_backend_block_param_imported_materialize_return_ingestion.mir"
     valid_block_param_local_materialize_return="compiler/fixtures/native_backend_block_param_local_materialize_return_ingestion.mir"
     valid_block_param_dual_materialize_return="compiler/fixtures/native_backend_block_param_dual_materialize_return_ingestion.mir"
+    valid_block_param_local_first_dual_materialize_return="compiler/fixtures/native_backend_block_param_local_first_dual_materialize_return_ingestion.mir"
     invalid_return="compiler/fixtures/native_backend_return_int_ingestion_invalid.mir"
     invalid_local="compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir"
     invalid_branch="compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir"
@@ -1372,11 +1373,12 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     invalid_block_param_imported_materialize_return="compiler/fixtures/native_backend_block_param_imported_materialize_return_ingestion_invalid.mir"
     invalid_block_param_local_materialize_return="compiler/fixtures/native_backend_block_param_local_materialize_return_ingestion_invalid.mir"
     invalid_block_param_dual_materialize_return="compiler/fixtures/native_backend_block_param_dual_materialize_return_ingestion_invalid.mir"
+    invalid_block_param_local_first_dual_materialize_return="compiler/fixtures/native_backend_block_param_local_first_dual_materialize_return_ingestion_invalid.mir"
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_surface_guard: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 29' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 29' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 30' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 30' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixtures: compiler/fixtures/native_backend_return_int_ingestion.mir, compiler/fixtures/native_backend_local_binding_read_ingestion.mir, compiler/fixtures/native_backend_conditional_branch_ingestion.mir, compiler/fixtures/native_backend_add_i32_ingestion.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_jump_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_local_branch_ingestion.mir' "$manifest_doc" >/dev/null
@@ -1399,6 +1401,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'compiler/fixtures/native_backend_block_param_imported_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_param_local_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_param_dual_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'compiler/fixtures/native_backend_block_param_local_first_dual_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixtures: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir, compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir, compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir, compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_jump_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_local_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
@@ -1421,6 +1424,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'compiler/fixtures/native_backend_block_param_imported_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_param_local_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_param_dual_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'compiler/fixtures/native_backend_block_param_local_first_dual_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_status: positive_and_negative_compiler_owned_fixture_inventory' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_suite_wiring: manifest_derived_native_guard_inventory' "$manifest_doc" >/dev/null
 
@@ -1647,6 +1651,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
       guard-cranelift-compiler-mir-block-param-imported-materialize-return-ingestion-native-smoke \
       guard-cranelift-compiler-mir-block-param-local-materialize-return-ingestion-native-smoke \
       guard-cranelift-compiler-mir-block-param-dual-materialize-return-ingestion-native-smoke \
+      guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ingestion-native-smoke \
       guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection
     do
       rg -n -F "$guard_recipe" "$manifest_doc" justfile >/dev/null
@@ -4802,6 +4807,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     block_param_imported_materialize_return_invalid="compiler/fixtures/native_backend_block_param_imported_materialize_return_ingestion_invalid.mir"
     block_param_local_materialize_return_invalid="compiler/fixtures/native_backend_block_param_local_materialize_return_ingestion_invalid.mir"
     block_param_dual_materialize_return_invalid="compiler/fixtures/native_backend_block_param_dual_materialize_return_ingestion_invalid.mir"
+    block_param_local_first_dual_materialize_return_invalid="compiler/fixtures/native_backend_block_param_local_first_dual_materialize_return_ingestion_invalid.mir"
     build_dir="build/guards/cranelift_compiler_mir_ingestion_invalid_fixture_rejection"
     mkdir -p "$build_dir"
     just guard-cranelift-backend-surface
@@ -4836,6 +4842,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_imported_materialize_return_fixture: compiler/fixtures/native_backend_block_param_imported_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_local_materialize_return_fixture: compiler/fixtures/native_backend_block_param_local_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_dual_materialize_return_fixture: compiler/fixtures/native_backend_block_param_dual_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_local_first_dual_materialize_return_fixture: compiler/fixtures/native_backend_block_param_local_first_dual_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_status: malformed_compiler_owned_fixtures_rejected_before_object_emission' "$manifest_doc" >/dev/null
     rg -n -F 'return_value: 9' "$return_invalid" >/dev/null
@@ -4885,6 +4892,8 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     rg -n -F 'local_function_0_add_value: 3' "$block_param_local_materialize_return_invalid" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_dual_materialize_return.v1' "$block_param_dual_materialize_return_invalid" >/dev/null
     rg -n -F 'local_function_0_add_value: 4' "$block_param_dual_materialize_return_invalid" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.block_param_local_first_dual_materialize_return.v1' "$block_param_local_first_dual_materialize_return_invalid" >/dev/null
+    rg -n -F 'block_2_call_literal: -6' "$block_param_local_first_dual_materialize_return_invalid" >/dev/null
     check_rejected() {
       command="$1"
       fixture="$2"
@@ -4938,6 +4947,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     check_rejected compiler-mir-block-param-imported-materialize-return-ingestion-object "$block_param_imported_materialize_return_invalid" block_param_imported_materialize_return_invalid
     check_rejected compiler-mir-block-param-local-materialize-return-ingestion-object "$block_param_local_materialize_return_invalid" block_param_local_materialize_return_invalid
     check_rejected compiler-mir-block-param-dual-materialize-return-ingestion-object "$block_param_dual_materialize_return_invalid" block_param_dual_materialize_return_invalid
+    check_rejected compiler-mir-block-param-local-first-dual-materialize-return-ingestion-object "$block_param_local_first_dual_materialize_return_invalid" block_param_local_first_dual_materialize_return_invalid
     echo "✅ Invalid compiler-owned MIR ingestion fixtures were rejected before object emission."
 
 guard-cranelift-mir-to-c-differential-native-smoke:
