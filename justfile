@@ -1204,6 +1204,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -1333,6 +1334,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     valid_block_param_merge_update_branch="compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion.mir"
     valid_block_param_merge_imported_call_return="compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion.mir"
     valid_block_param_merge_arm_update_imported_call_return="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion.mir"
+    valid_block_param_merge_arm_update_imported_call_branch="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion.mir"
     invalid_return="compiler/fixtures/native_backend_return_int_ingestion_invalid.mir"
     invalid_local="compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir"
     invalid_branch="compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir"
@@ -1354,11 +1356,12 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     invalid_block_param_merge_update_branch="compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion_invalid.mir"
     invalid_block_param_merge_imported_call_return="compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion_invalid.mir"
     invalid_block_param_merge_arm_update_imported_call_return="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion_invalid.mir"
+    invalid_block_param_merge_arm_update_imported_call_branch="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion_invalid.mir"
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_surface_guard: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 21' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 21' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 22' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 22' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixtures: compiler/fixtures/native_backend_return_int_ingestion.mir, compiler/fixtures/native_backend_local_binding_read_ingestion.mir, compiler/fixtures/native_backend_conditional_branch_ingestion.mir, compiler/fixtures/native_backend_add_i32_ingestion.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_jump_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_local_branch_ingestion.mir' "$manifest_doc" >/dev/null
@@ -1373,6 +1376,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixtures: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir, compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir, compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir, compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_jump_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_local_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
@@ -1387,10 +1391,11 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_status: positive_and_negative_compiler_owned_fixture_inventory' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_corpus_suite_wiring: manifest_derived_native_guard_inventory' "$manifest_doc" >/dev/null
 
-    for fixture in "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$valid_positive_branch" "$valid_block_jump" "$valid_block_local_branch" "$valid_block_local_update_branch" "$valid_block_two_local_update_branch" "$valid_block_local_branch_join" "$valid_block_param_update_branch" "$valid_block_param_local_call_branch" "$valid_block_param_imported_call_branch" "$valid_block_param_imported_call_return" "$valid_block_param_imported_predicate_update_branch" "$valid_block_param_merge_update_branch" "$valid_block_param_merge_imported_call_return" "$valid_block_param_merge_arm_update_imported_call_return" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" "$invalid_positive_branch" "$invalid_block_jump" "$invalid_block_local_branch" "$invalid_block_local_update_branch" "$invalid_block_two_local_update_branch" "$invalid_block_local_branch_join" "$invalid_block_param_update_branch" "$invalid_block_param_local_call_branch" "$invalid_block_param_imported_call_branch" "$invalid_block_param_imported_call_return" "$invalid_block_param_imported_predicate_update_branch" "$invalid_block_param_merge_update_branch" "$invalid_block_param_merge_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return"; do
+    for fixture in "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$valid_positive_branch" "$valid_block_jump" "$valid_block_local_branch" "$valid_block_local_update_branch" "$valid_block_two_local_update_branch" "$valid_block_local_branch_join" "$valid_block_param_update_branch" "$valid_block_param_local_call_branch" "$valid_block_param_imported_call_branch" "$valid_block_param_imported_call_return" "$valid_block_param_imported_predicate_update_branch" "$valid_block_param_merge_update_branch" "$valid_block_param_merge_imported_call_return" "$valid_block_param_merge_arm_update_imported_call_return" "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" "$invalid_positive_branch" "$invalid_block_jump" "$invalid_block_local_branch" "$invalid_block_local_update_branch" "$invalid_block_two_local_update_branch" "$invalid_block_local_branch_join" "$invalid_block_param_update_branch" "$invalid_block_param_local_call_branch" "$invalid_block_param_imported_call_branch" "$invalid_block_param_imported_call_return" "$invalid_block_param_imported_predicate_update_branch" "$invalid_block_param_merge_update_branch" "$invalid_block_param_merge_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_branch"; do
       if [ ! -f "$fixture" ]; then
         echo "Missing compiler-owned MIR ingestion corpus fixture: $fixture"
         exit 1
@@ -1418,6 +1423,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_update_branch.v1' "$valid_block_param_merge_update_branch" "$invalid_block_param_merge_update_branch" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_imported_call_return.v1' "$valid_block_param_merge_imported_call_return" "$invalid_block_param_merge_imported_call_return" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_return.v1' "$valid_block_param_merge_arm_update_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_branch.v1' "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_arm_update_imported_call_branch" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_block_jump" "$invalid_block_jump" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_block_local_branch" "$invalid_block_local_branch" >/dev/null
@@ -1432,6 +1438,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'producer: compiler/mir.gst' "$valid_block_param_merge_update_branch" "$invalid_block_param_merge_update_branch" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_block_param_merge_imported_call_return" "$invalid_block_param_merge_imported_call_return" >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$valid_block_param_merge_arm_update_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" >/dev/null
+    rg -n -F 'producer: compiler/mir.gst' "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_arm_update_imported_call_branch" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int' "$valid_return" "$invalid_return" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read' "$valid_local" "$invalid_local" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_conditional_branch' "$valid_branch" "$invalid_branch" >/dev/null
@@ -1453,6 +1460,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_update_branch' "$valid_block_param_merge_update_branch" "$invalid_block_param_merge_update_branch" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_call_return' "$valid_block_param_merge_imported_call_return" "$invalid_block_param_merge_imported_call_return" >/dev/null
     rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return' "$valid_block_param_merge_arm_update_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" >/dev/null
+    rg -n -F 'backend_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch' "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_arm_update_imported_call_branch" >/dev/null
 
     rg -n -F 'return_value: 1' "$valid_return" >/dev/null
     rg -n -F 'return_value: 9' "$invalid_return" >/dev/null
@@ -1560,6 +1568,14 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'block_5_call_literal: 5' "$valid_block_param_merge_arm_update_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" >/dev/null
     rg -n -F 'expected_case_0_result: 223' "$valid_block_param_merge_arm_update_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" >/dev/null
     rg -n -F 'expected_case_1_result: 237' "$valid_block_param_merge_arm_update_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" >/dev/null
+    rg -n -F 'block_5_terminator: BranchBlockParamImportedFunctionCallI32LiteralPositive' "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_arm_update_imported_call_branch" >/dev/null
+    rg -n -F 'block_5_call_literal: -220' "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_arm_update_imported_call_branch" >/dev/null
+    rg -n -F 'block_6_return_value: 241' "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_arm_update_imported_call_branch" >/dev/null
+    rg -n -F 'block_7_return_value: 251' "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_arm_update_imported_call_branch" >/dev/null
+    rg -n -F 'block_3_add_value: 7' "$valid_block_param_merge_arm_update_imported_call_branch" >/dev/null
+    rg -n -F 'block_3_add_value: 8' "$invalid_block_param_merge_arm_update_imported_call_branch" >/dev/null
+    rg -n -F 'expected_case_0_result: 251' "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_arm_update_imported_call_branch" >/dev/null
+    rg -n -F 'expected_case_1_result: 241' "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_arm_update_imported_call_branch" >/dev/null
     rg -n -F 'expected_case_0_result: 6' "$invalid_add" >/dev/null
 
     for guard_recipe in \
@@ -1584,6 +1600,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
       guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-smoke \
       guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke \
       guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke \
+      guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke \
       guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection
     do
       rg -n -F "$guard_recipe" "$manifest_doc" justfile >/dev/null
@@ -1594,7 +1611,7 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     printf '%s\n' "$suite_body" | rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-' >/dev/null
     printf '%s\n' "$suite_body" | rg -n -F 'just "$guard_recipe"' >/dev/null
 
-    fixture_cranelift_refs="$(rg -n -i -F 'cranelift' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$valid_positive_branch" "$valid_block_jump" "$valid_block_local_branch" "$valid_block_local_update_branch" "$valid_block_two_local_update_branch" "$valid_block_local_branch_join" "$valid_block_param_update_branch" "$valid_block_param_local_call_branch" "$valid_block_param_imported_call_branch" "$valid_block_param_imported_call_return" "$valid_block_param_imported_predicate_update_branch" "$valid_block_param_merge_update_branch" "$valid_block_param_merge_imported_call_return" "$valid_block_param_merge_arm_update_imported_call_return" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" "$invalid_positive_branch" "$invalid_block_jump" "$invalid_block_local_branch" "$invalid_block_local_update_branch" "$invalid_block_two_local_update_branch" "$invalid_block_local_branch_join" "$invalid_block_param_update_branch" "$invalid_block_param_local_call_branch" "$invalid_block_param_imported_call_branch" "$invalid_block_param_imported_call_return" "$invalid_block_param_imported_predicate_update_branch" "$invalid_block_param_merge_update_branch" "$invalid_block_param_merge_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" || true)"
+    fixture_cranelift_refs="$(rg -n -i -F 'cranelift' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$valid_positive_branch" "$valid_block_jump" "$valid_block_local_branch" "$valid_block_local_update_branch" "$valid_block_two_local_update_branch" "$valid_block_local_branch_join" "$valid_block_param_update_branch" "$valid_block_param_local_call_branch" "$valid_block_param_imported_call_branch" "$valid_block_param_imported_call_return" "$valid_block_param_imported_predicate_update_branch" "$valid_block_param_merge_update_branch" "$valid_block_param_merge_imported_call_return" "$valid_block_param_merge_arm_update_imported_call_return" "$valid_block_param_merge_arm_update_imported_call_branch" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" "$invalid_positive_branch" "$invalid_block_jump" "$invalid_block_local_branch" "$invalid_block_local_update_branch" "$invalid_block_two_local_update_branch" "$invalid_block_local_branch_join" "$invalid_block_param_update_branch" "$invalid_block_param_local_call_branch" "$invalid_block_param_imported_call_branch" "$invalid_block_param_imported_call_return" "$invalid_block_param_imported_predicate_update_branch" "$invalid_block_param_merge_update_branch" "$invalid_block_param_merge_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_branch" || true)"
     if [ -n "$fixture_cranelift_refs" ]; then
       echo "Compiler-owned MIR ingestion fixtures must not mention Cranelift; backend coupling stays manifest/experiment-only:"
       echo "$fixture_cranelift_refs"
@@ -4314,6 +4331,68 @@ guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-i
     "$binary"
     echo "✅ Compiler-owned MIR block-param merge arm-update imported-call return ingestion seam native smoke passed."
 
+guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling compiler-owned MIR block-param merge arm-update imported-call branch ingestion seam smoke."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    fixture="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion.mir"
+    source_fixture="compiler/mir_feature_block_param_merge_arm_update_imported_call_branch_preservation_source.gst"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_fixture: compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_merge_arm_update_imported_call_branch_ingestion_fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch_host_add' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_source_fixture: compiler/mir_feature_block_param_merge_arm_update_imported_call_branch_preservation_source.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_lowering_entry: fixture_only_block_param_merge_arm_update_imported_call_branch_serialization' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
+    rg -n -F 'func mir_emit_native_backend_block_param_merge_arm_update_imported_call_branch_ingestion_fixture' compiler/mir.gst >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_branch.v1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'imported_function_0_operation: HostAddI32' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_2_terminator: BranchBlockParamPositiveToI32Literals' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'branch_then_value: 211' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'branch_else_value: 223' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_3_add_value: 7' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_4_add_value: 9' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_5_terminator: BranchBlockParamImportedFunctionCallI32LiteralPositive' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_5_call_literal: -220' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_6_return_value: 241' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_7_return_value: 251' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'func tiny_block_param_merge_arm_update_imported_call_branch(input: int) int' "$source_fixture" >/dev/null
+    rg -n -F 'mut probed := merged - 220;' "$source_fixture" >/dev/null
+    rg -n -F 'compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'parse_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_fixture' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_HOST_ADD_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallI32LiteralPositive' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'Linkage::Import' compiler/experiments/cranelift/src/main.rs >/dev/null
+    build_dir="build/guards/cranelift_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_native"
+    object_file="$build_dir/tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch.o"
+    shim_c="$build_dir/tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch_main.c"
+    binary="$build_dir/tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-object "$fixture" "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'int32_t tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch_host_add(int32_t lhs, int32_t rhs) { return lhs + rhs; }' >> "$shim_c"
+    echo 'extern int32_t tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch(int32_t input);' >> "$shim_c"
+    echo 'int main(void) {' >> "$shim_c"
+    echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch(1) != 251) return 1;' >> "$shim_c"
+    echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch(-4) != 241) return 2;' >> "$shim_c"
+    echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch(-9) != 241) return 3;' >> "$shim_c"
+    echo '  return 0;' >> "$shim_c"
+    echo '}' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    "$binary"
+    echo "✅ Compiler-owned MIR block-param merge arm-update imported-call branch ingestion seam native smoke passed."
+
 guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -4340,6 +4419,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     block_param_merge_update_branch_invalid="compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion_invalid.mir"
     block_param_merge_imported_call_return_invalid="compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion_invalid.mir"
     block_param_merge_arm_update_imported_call_return_invalid="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion_invalid.mir"
+    block_param_merge_arm_update_imported_call_branch_invalid="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion_invalid.mir"
     build_dir="build/guards/cranelift_compiler_mir_ingestion_invalid_fixture_rejection"
     mkdir -p "$build_dir"
     just guard-cranelift-backend-surface
@@ -4366,6 +4446,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_merge_update_branch_fixture: compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_merge_imported_call_return_fixture: compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_merge_arm_update_imported_call_return_fixture: compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_merge_arm_update_imported_call_branch_fixture: compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_status: malformed_compiler_owned_fixtures_rejected_before_object_emission' "$manifest_doc" >/dev/null
     rg -n -F 'return_value: 9' "$return_invalid" >/dev/null
@@ -4407,6 +4488,8 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     rg -n -F 'branch_then_value: 212' "$block_param_merge_imported_call_return_invalid" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_return.v1' "$block_param_merge_arm_update_imported_call_return_invalid" >/dev/null
     rg -n -F 'block_3_add_value: 8' "$block_param_merge_arm_update_imported_call_return_invalid" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_branch.v1' "$block_param_merge_arm_update_imported_call_branch_invalid" >/dev/null
+    rg -n -F 'block_3_add_value: 8' "$block_param_merge_arm_update_imported_call_branch_invalid" >/dev/null
     check_rejected() {
       command="$1"
       fixture="$2"
@@ -4452,6 +4535,7 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     check_rejected compiler-mir-block-param-merge-update-branch-ingestion-object "$block_param_merge_update_branch_invalid" block_param_merge_update_branch_invalid
     check_rejected compiler-mir-block-param-merge-imported-call-return-ingestion-object "$block_param_merge_imported_call_return_invalid" block_param_merge_imported_call_return_invalid
     check_rejected compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-object "$block_param_merge_arm_update_imported_call_return_invalid" block_param_merge_arm_update_imported_call_return_invalid
+    check_rejected compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-object "$block_param_merge_arm_update_imported_call_branch_invalid" block_param_merge_arm_update_imported_call_branch_invalid
     echo "✅ Invalid compiler-owned MIR ingestion fixtures were rejected before object emission."
 
 guard-cranelift-mir-to-c-differential-native-smoke:
