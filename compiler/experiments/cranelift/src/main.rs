@@ -90,6 +90,12 @@ const COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_IMPORTED_BRANCH_JOINED_RETURN_SYMB
     "tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_branch_joined_return";
 const COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_IMPORTED_BRANCH_JOINED_RETURN_HOST_ADD_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_branch_joined_return_host_add";
+const COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return";
+const COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_BRANCH_HOST_ADD_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_branch_host_add";
+const COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_RETURN_HOST_ADD_SYMBOL: &str =
+    "tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_return_host_add";
 const MIR_LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_mir_local_binding_read";
 const MIR_CONDITIONAL_BRANCH_SYMBOL: &str = "tiny_cranelift_mir_conditional_branch";
 const MIR_ADD_I32_SYMBOL: &str = "tiny_cranelift_mir_add_i32";
@@ -755,6 +761,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_block_param_merge_dual_imported_joined_return_ingestion_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -4059,6 +4080,114 @@ fn parse_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "244")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_2_value", "-9")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_2_result", "244")?;
+    Ok(())
+}
+
+fn emit_compiler_mir_block_param_merge_dual_imported_joined_return_ingestion_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_block_param_merge_dual_imported_joined_return_ingestion_fixture(&contents)?;
+    static FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static BLOCKS: [TinyMirParamBlock; 9] = [
+        TinyMirParamBlock { label: "entry", params: &[], terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 { target: "adjust", param: 0 } },
+        TinyMirParamBlock { label: "adjust", params: &BLOCK_PARAMS, terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal { target: "branch", param: 0, value: 4 } },
+        TinyMirParamBlock { label: "branch", params: &BLOCK_PARAMS, terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals { param: 0, then_block: "then_value", then_value: 211, else_block: "else_value", else_value: 223 } },
+        TinyMirParamBlock { label: "then_value", params: &BLOCK_PARAMS, terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal { target: "join", param: 0, value: 7 } },
+        TinyMirParamBlock { label: "else_value", params: &BLOCK_PARAMS, terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal { target: "join", param: 0, value: 9 } },
+        TinyMirParamBlock { label: "join", params: &BLOCK_PARAMS, terminator: TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallI32LiteralPositive { function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_BRANCH_HOST_ADD_SYMBOL, param: 0, value: -220, then_block: "positive_value", else_block: "non_positive_value" } },
+        TinyMirParamBlock { label: "positive_value", params: &[], terminator: TinyMirParamBlockTerminator::JumpI32Literal { target: "return_join", value: 241 } },
+        TinyMirParamBlock { label: "non_positive_value", params: &[], terminator: TinyMirParamBlockTerminator::JumpI32Literal { target: "return_join", value: 251 } },
+        TinyMirParamBlock { label: "return_join", params: &BLOCK_PARAMS, terminator: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal { function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_RETURN_HOST_ADD_SYMBOL, param: 0, value: 4 } },
+    ];
+    let mir_function = TinyMirParamBlockFunction {
+        object_name: "gust_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return",
+        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_SYMBOL,
+        params: &FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &BLOCKS,
+    };
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder = cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut branch_signature = module.make_signature();
+    branch_signature.params.push(AbiParam::new(types::I32));
+    branch_signature.params.push(AbiParam::new(types::I32));
+    branch_signature.returns.push(AbiParam::new(types::I32));
+    let branch_id = module.declare_function(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_BRANCH_HOST_ADD_SYMBOL,
+        Linkage::Import,
+        &branch_signature,
+    )?;
+
+    let mut return_signature = module.make_signature();
+    return_signature.params.push(AbiParam::new(types::I32));
+    return_signature.params.push(AbiParam::new(types::I32));
+    return_signature.returns.push(AbiParam::new(types::I32));
+    let return_id = module.declare_function(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_RETURN_HOST_ADD_SYMBOL,
+        Linkage::Import,
+        &return_signature,
+    )?;
+
+    let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
+    imported_function_ids.insert(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_BRANCH_HOST_ADD_SYMBOL,
+        branch_id,
+    );
+    imported_function_ids.insert(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_RETURN_HOST_ADD_SYMBOL,
+        return_id,
+    );
+
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &mir_function,
+        &imported_function_ids,
+    )?;
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn parse_compiler_mir_block_param_merge_dual_imported_joined_return_ingestion_fixture(
+    contents: &str,
+) -> Result<(), Box<dyn Error>> {
+    let fields = parse_compiler_mir_ingestion_fields(contents)?;
+    require_compiler_mir_ingestion_field(&fields, "format", "gust.compiler_mir_ingestion.block_param_merge_dual_imported_joined_return.v1")?;
+    require_compiler_mir_ingestion_field(&fields, "producer", "compiler/mir.gst")?;
+    require_compiler_mir_ingestion_field(&fields, "producer_entry", "mir_emit_native_backend_block_param_merge_dual_imported_joined_return_ingestion_fixture")?;
+    require_compiler_mir_ingestion_field(&fields, "source_fixture", "compiler/mir_feature_block_param_merge_dual_imported_joined_return_preservation_source.gst")?;
+    require_compiler_mir_ingestion_field(&fields, "lowering_entry", "fixture_only_block_param_merge_dual_imported_joined_return_serialization")?;
+    require_compiler_mir_ingestion_field(&fields, "function", "tiny_block_param_merge_dual_imported_joined_return")?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_count", "2")?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_0_symbol", COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_BRANCH_HOST_ADD_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "imported_function_1_symbol", COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_RETURN_HOST_ADD_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "block_count", "9")?;
+    require_compiler_mir_ingestion_field(&fields, "block_3_add_value", "7")?;
+    require_compiler_mir_ingestion_field(&fields, "block_4_add_value", "9")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_terminator", "BranchBlockParamImportedFunctionCallI32LiteralPositive")?;
+    require_compiler_mir_ingestion_field(&fields, "block_5_call_literal", "-220")?;
+    require_compiler_mir_ingestion_field(&fields, "block_8_terminator", "ReturnBlockParamImportedFunctionCallI32Literal")?;
+    require_compiler_mir_ingestion_field(&fields, "block_8_call_literal", "4")?;
+    require_compiler_mir_ingestion_field(&fields, "backend_symbol", COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_SYMBOL)?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_0_result", "255")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "245")?;
+    require_compiler_mir_ingestion_field(&fields, "expected_case_2_result", "245")?;
     Ok(())
 }
 
