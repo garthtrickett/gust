@@ -705,6 +705,30 @@ guard-mir-to-c-conditional-branch-native-smoke:
     fi
     echo "✅ Tiny MIR-to-C conditional branch native smoke passed."
 
+guard-mir-to-c-resource-metadata-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling tiny MIR-to-C resource metadata fixture..."
+    mkdir -p build/guards/mir_to_c_resource_metadata_native
+    just guard compiler/mir_to_c_resource_metadata_smoke_test_entry.gst
+    generated_c="build/guards/mir_to_c_resource_metadata_native/tiny_resource_metadata_local.c"
+    binary="build/guards/mir_to_c_resource_metadata_native/tiny_resource_metadata_local_bin"
+    rg -n -F 'int tiny_resource_metadata_local(void) { int value = 2; return value; }' to.log >/dev/null
+    printf '%s\n' 'int tiny_resource_metadata_local(void) { int value = 2; return value; }' > "$generated_c"
+    printf '%s\n' 'int main(void) { return tiny_resource_metadata_local(); }' >> "$generated_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$generated_c" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "2" ]; then
+      echo "Expected tiny MIR-to-C resource metadata native binary to exit with status 2, got $status"
+      exit 1
+    fi
+    echo "✅ Tiny MIR-to-C resource metadata native smoke passed."
+
 guard-mir-to-c-provenance-metadata-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -3463,6 +3487,97 @@ guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke:
     fi
     echo "✅ MIR-to-Cranelift block-jump translator seed native smoke passed."
 
+guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling MIR-to-Cranelift provenance-metadata translator seed..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    fixture="compiler/fixtures/native_backend_provenance_metadata_ingestion.mir"
+    just guard-cranelift-backend-surface
+    just guard-mir-to-c-provenance-metadata-native-smoke
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_PROVENANCE_METADATA_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_provenance_metadata_translator_native_guard: guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_provenance_metadata_translator_command: compiler-mir-to-cranelift-provenance-metadata-translator-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_provenance_metadata_translator_translation_entry: translate_compiler_mir_provenance_metadata_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_provenance_metadata_translator_symbol: tiny_native_backend_mir_to_cranelift_provenance_metadata_translator' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_provenance_metadata_translator_metadata_policy: metadata_validated_at_fixture_boundary_preserved_through_translation' "$manifest_doc" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.provenance_metadata.v1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'provenance_metadata_count: 1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'provenance_0_kind: LocalBinding' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'statement_0_kind: LocalI32Set' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'statement_0_value: 2' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'return_local: value' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'compiler-mir-to-cranelift-provenance-metadata-translator-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'translate_compiler_mir_provenance_metadata_fixture_to_tiny_mir_function' compiler/experiments/cranelift/src/main.rs >/dev/null
+    build_dir="build/guards/cranelift_mir_to_cranelift_provenance_metadata_translator_native"
+    object_file="$build_dir/tiny_native_backend_mir_to_cranelift_provenance_metadata_translator.o"
+    shim_c="$build_dir/tiny_native_backend_mir_to_cranelift_provenance_metadata_translator_main.c"
+    binary="$build_dir/tiny_native_backend_mir_to_cranelift_provenance_metadata_translator_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-to-cranelift-provenance-metadata-translator-object "$fixture" "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'extern int32_t tiny_native_backend_mir_to_cranelift_provenance_metadata_translator(void);' >> "$shim_c"
+    echo 'int main(void) { return tiny_native_backend_mir_to_cranelift_provenance_metadata_translator(); }' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "2" ]; then
+      echo "Expected MIR-to-Cranelift provenance-metadata translator seed native smoke to exit with status 2, got $status"
+      exit 1
+    fi
+    echo "✅ MIR-to-Cranelift provenance-metadata translator seed native smoke passed."
+
+guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling MIR-to-Cranelift resource-metadata translator seed..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    fixture="compiler/fixtures/native_backend_resource_metadata_ingestion.mir"
+    just guard-cranelift-backend-surface
+    just guard-mir-to-c-resource-metadata-native-smoke
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_RESOURCE_METADATA_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_resource_metadata_translator_native_guard: guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_resource_metadata_translator_command: compiler-mir-to-cranelift-resource-metadata-translator-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_resource_metadata_translator_translation_entry: translate_compiler_mir_resource_metadata_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_resource_metadata_translator_symbol: tiny_native_backend_mir_to_cranelift_resource_metadata_translator' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_resource_metadata_translator_metadata_policy: metadata_validated_at_fixture_boundary_preserved_through_translation' "$manifest_doc" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.resource_metadata.v1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'resource_metadata_count: 1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'resource_0_kind: LinearResource' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'resource_0_state: Live' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'statement_0_kind: LocalI32Set' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'statement_0_value: 2' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'return_local: value' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'compiler-mir-to-cranelift-resource-metadata-translator-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'translate_compiler_mir_resource_metadata_fixture_to_tiny_mir_function' compiler/experiments/cranelift/src/main.rs >/dev/null
+    build_dir="build/guards/cranelift_mir_to_cranelift_resource_metadata_translator_native"
+    object_file="$build_dir/tiny_native_backend_mir_to_cranelift_resource_metadata_translator.o"
+    shim_c="$build_dir/tiny_native_backend_mir_to_cranelift_resource_metadata_translator_main.c"
+    binary="$build_dir/tiny_native_backend_mir_to_cranelift_resource_metadata_translator_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-to-cranelift-resource-metadata-translator-object "$fixture" "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'extern int32_t tiny_native_backend_mir_to_cranelift_resource_metadata_translator(void);' >> "$shim_c"
+    echo 'int main(void) { return tiny_native_backend_mir_to_cranelift_resource_metadata_translator(); }' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "2" ]; then
+      echo "Expected MIR-to-Cranelift resource-metadata translator seed native smoke to exit with status 2, got $status"
+      exit 1
+    fi
+    echo "✅ MIR-to-Cranelift resource-metadata translator seed native smoke passed."
+
 guard-cranelift-mir-to-cranelift-translator-seed-suite:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -3472,17 +3587,21 @@ guard-cranelift-mir-to-cranelift-translator-seed-suite:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_TRANSLATOR_SEED_SUITE_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_native_guard: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_status: phase9b_translator_seed_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 4' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 6' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_return_int_guard: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_local_binding_read_guard: guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_conditional_branch_guard: guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_jump_guard: guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_provenance_metadata_guard: guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_resource_metadata_guard: guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_native_guards_remain_oracle' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
     just guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke
+    just guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke
+    just guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke
     echo "✅ MIR-to-Cranelift translator seed suite passed."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
