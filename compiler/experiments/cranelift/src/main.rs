@@ -54,6 +54,8 @@ const COMPILER_MIR_TO_CRANELIFT_BLOCK_PARAM_UPDATE_BRANCH_TRANSLATOR_SYMBOL: &st
     "tiny_native_backend_mir_to_cranelift_block_param_update_branch_translator";
 const COMPILER_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_UPDATE_BRANCH_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_block_param_merge_update_branch_translator";
+const COMPILER_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_TRANSLATOR_SYMBOL: &str =
+    "tiny_native_backend_mir_to_cranelift_block_param_merge_imported_call_return_translator";
 const COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_local_binding_read";
 const COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL: &str =
@@ -706,6 +708,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_to_cranelift_block_param_merge_update_branch_translator_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-to-cranelift-block-param-merge-imported-call-return-translator-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_to_cranelift_block_param_merge_imported_call_return_translator_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -2003,6 +2020,128 @@ fn translate_compiler_mir_block_local_branch_join_fixture_to_tiny_mir_block_func
         locals: &MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_LOCALS,
         entry_block: "entry",
         blocks: &MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_BLOCKS,
+    }
+}
+
+fn emit_compiler_mir_to_cranelift_block_param_merge_imported_call_return_translator_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_block_param_merge_imported_call_return_ingestion_fixture(&contents)?;
+    let mir_function =
+        translate_compiler_mir_block_param_merge_imported_call_return_fixture_to_tiny_mir_param_block_function();
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_native_backend_mir_to_cranelift_block_param_merge_imported_call_return_translator",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut imported_add_signature = module.make_signature();
+    imported_add_signature.params.push(AbiParam::new(types::I32));
+    imported_add_signature.params.push(AbiParam::new(types::I32));
+    imported_add_signature.returns.push(AbiParam::new(types::I32));
+    let imported_add_function_id = module.declare_function(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL,
+        Linkage::Import,
+        &imported_add_signature,
+    )?;
+    let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
+    imported_function_ids.insert(
+        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL,
+        imported_add_function_id,
+    );
+
+    define_tiny_mir_param_block_graph_exported_function(
+        &mut module,
+        &mir_function,
+        &imported_function_ids,
+    )?;
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn translate_compiler_mir_block_param_merge_imported_call_return_fixture_to_tiny_mir_param_block_function(
+) -> TinyMirParamBlockFunction {
+    static MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_FUNCTION_PARAMS: [TinyMirType; 1] =
+        [TinyMirType::I32];
+    static MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_BLOCK_PARAMS: [TinyMirType; 1] =
+        [TinyMirType::I32];
+    static MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_BLOCKS: [TinyMirParamBlock; 6] = [
+        TinyMirParamBlock {
+            label: "entry",
+            params: &[],
+            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
+                target: "adjust",
+                param: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "adjust",
+            params: &MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "branch",
+                param: 0,
+                value: 4,
+            },
+        },
+        TinyMirParamBlock {
+            label: "branch",
+            params: &MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
+                param: 0,
+                then_block: "then_value",
+                then_value: 211,
+                else_block: "else_value",
+                else_value: 223,
+            },
+        },
+        TinyMirParamBlock {
+            label: "then_value",
+            params: &MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "join",
+                param: 0,
+                value: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "else_value",
+            params: &MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
+                target: "join",
+                param: 0,
+                value: 0,
+            },
+        },
+        TinyMirParamBlock {
+            label: "join",
+            params: &MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
+            terminator: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal {
+                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL,
+                param: 0,
+                value: 5,
+            },
+        },
+    ];
+
+    TinyMirParamBlockFunction {
+        object_name: "gust_native_backend_mir_to_cranelift_block_param_merge_imported_call_return_translator",
+        symbol: COMPILER_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_TRANSLATOR_SYMBOL,
+        params: &MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_FUNCTION_PARAMS,
+        return_type: TinyMirType::I32,
+        entry_block: "entry",
+        blocks: &MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_BLOCKS,
     }
 }
 
