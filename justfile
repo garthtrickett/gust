@@ -3383,10 +3383,10 @@ guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke:
     rg -n -F 'allowed_mir_to_cranelift_conditional_branch_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.conditional_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_count: 3' "$fixture" compiler/mir.gst >/dev/null
-    rg -n -F 'entry_terminator: BranchI32Literal' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_0_terminator: Branch' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'branch_condition_value: 1' "$fixture" compiler/mir.gst >/dev/null
-    rg -n -F 'then_return_value: 1' "$fixture" compiler/mir.gst >/dev/null
-    rg -n -F 'else_return_value: 2' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_1_return_value: 1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_2_return_value: 2' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'compiler-mir-to-cranelift-conditional-branch-translator-object' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'translate_compiler_mir_conditional_branch_fixture_to_tiny_mir_function' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'COMPILER_MIR_TO_CRANELIFT_CONDITIONAL_BRANCH_TRANSLATOR_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
