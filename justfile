@@ -5913,6 +5913,123 @@ guard-cranelift-experimental-backend-suite:
       just "$guard_recipe"
     done <<< "$suite_native_guards"
     echo "✅ Explicit experimental Cranelift backend suite passed."
+
+guard-cranelift-experimental-backend-suite-shard shard:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔀 Running experimental Cranelift backend suite shard: {{shard}}"
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_SHARD_GUARD: guard-cranelift-experimental-backend-suite-shard' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_backend_suite_shard_guard: guard-cranelift-experimental-backend-suite-shard' "$manifest_doc" >/dev/null
+    suite_native_guards="$(awk '/^CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-/ { print $2 }' "$manifest_doc" | awk '!seen[$0]++')"
+    if [ -z "$suite_native_guards" ]; then
+      echo "Expected native Cranelift guard inventory in $manifest_doc."
+      exit 1
+    fi
+    case "{{shard}}" in
+      core)
+        shard_guards="$(printf '%s\n' "$suite_native_guards" | rg -v '^guard-cranelift-compiler-mir-' | rg -v '^guard-cranelift-mir-to-cranelift-' || true)"
+        ;;
+      compiler-mir-basic)
+        shard_guards="$(printf '%s\n' "$suite_native_guards" | rg '^guard-cranelift-compiler-mir-' | rg -v '^guard-cranelift-compiler-mir-block-' || true)"
+        ;;
+      compiler-mir-blocks)
+        shard_guards="$(printf '%s\n' "$suite_native_guards" | rg '^guard-cranelift-compiler-mir-block-' || true)"
+        ;;
+      translators)
+        printf '%s\n' "$suite_native_guards" | rg -n -F 'guard-cranelift-mir-to-cranelift-translator-seed-suite' >/dev/null
+        shard_guards="guard-cranelift-mir-to-cranelift-translator-seed-suite"
+        ;;
+      *)
+        echo "unknown Cranelift backend suite shard: {{shard}}"
+        echo "expected one of: core, compiler-mir-basic, compiler-mir-blocks, translators"
+        exit 1
+        ;;
+    esac
+    if [ -z "$shard_guards" ]; then
+      echo "Shard {{shard}} matched no Cranelift native guards."
+      exit 1
+    fi
+    while IFS= read -r guard_recipe; do
+      if [ -z "$guard_recipe" ]; then
+        continue
+      fi
+      echo "▶ [{{shard}}] $guard_recipe"
+      just "$guard_recipe"
+    done <<< "$shard_guards"
+    echo "✅ Experimental Cranelift backend suite shard passed: {{shard}}"
+
+guard-cranelift-experimental-backend-suite-parallel:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚡ Running experimental Cranelift backend suite in parallel shards..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-dependency-beachhead
+    just guard-cranelift-experiment-manifest-surface
+    just guard-cranelift-backend-surface
+    just guard-cranelift-no-fixture-regression
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_PARALLEL_GUARD: guard-cranelift-experimental-backend-suite-parallel' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_SHARD_GUARD: guard-cranelift-experimental-backend-suite-shard' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_backend_suite_parallel_guard: guard-cranelift-experimental-backend-suite-parallel' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_backend_suite_parallel_isolation: git_worktree_per_shard_to_avoid_to_log_collisions' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_backend_suite_parallel_shards: core, compiler-mir-basic, compiler-mir-blocks, translators' "$manifest_doc" >/dev/null
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      echo "Parallel Cranelift suite requires a git worktree so each shard can isolate to.log."
+      exit 1
+    fi
+    root_dir="$(pwd)"
+    log_dir="$root_dir/build/guards/cranelift_experimental_backend_suite_parallel"
+    tmp_root="$(mktemp -d)"
+    worktree_root="$tmp_root/worktrees"
+    mkdir -p "$worktree_root"
+    rm -rf "$log_dir"
+    mkdir -p "$log_dir"
+    cleanup() {
+      if [ -d "$worktree_root" ]; then
+        for worktree_path in "$worktree_root"/*; do
+          if [ -d "$worktree_path" ]; then
+            git worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+          fi
+        done
+      fi
+      rm -rf "$tmp_root"
+    }
+    trap cleanup EXIT
+    shards=(core compiler-mir-basic compiler-mir-blocks translators)
+    pids=()
+    for shard in "${shards[@]}"; do
+      worktree_path="$worktree_root/$shard"
+      echo "  ↳ starting shard $shard"
+      git worktree add --detach "$worktree_path" HEAD >/dev/null
+      (
+        cd "$worktree_path"
+        export CARGO_TARGET_DIR="$root_dir/compiler/experiments/cranelift/target"
+        just guard-cranelift-experimental-backend-suite-shard "$shard"
+      ) > "$log_dir/$shard.log" 2>&1 &
+      pids+=("$!")
+    done
+    status=0
+    failed_shards=()
+    for index in "${!pids[@]}"; do
+      shard="${shards[$index]}"
+      if wait "${pids[$index]}"; then
+        echo "✅ shard passed: $shard"
+      else
+        echo "❌ shard failed: $shard"
+        status=1
+        failed_shards+=("$shard")
+      fi
+    done
+    if [ "$status" -ne 0 ]; then
+      for shard in "${failed_shards[@]}"; do
+        echo "----- $shard log tail -----"
+        tail -n 200 "$log_dir/$shard.log" || true
+      done
+      echo "Full shard logs are in $log_dir"
+      exit "$status"
+    fi
+    echo "✅ Parallel experimental Cranelift backend suite passed. Logs: $log_dir"
+
 guard-mir-feature-return-int-preservation:
     #!/usr/bin/env bash
     set -euo pipefail

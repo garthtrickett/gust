@@ -1075,6 +1075,8 @@ CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-b
 CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke
 CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke
 CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite
+CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_PARALLEL_GUARD: guard-cranelift-experimental-backend-suite-parallel
+CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_SHARD_GUARD: guard-cranelift-experimental-backend-suite-shard
 CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead
 CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression
 MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface
@@ -1102,6 +1104,10 @@ allowed_local_binding_native_guard: guard-cranelift-local-binding-native-smoke
 allowed_branch_native_guard: guard-cranelift-conditional-branch-native-smoke
 allowed_differential_native_guard: guard-cranelift-mir-to-c-differential-native-smoke
 allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite
+allowed_backend_suite_parallel_guard: guard-cranelift-experimental-backend-suite-parallel
+allowed_backend_suite_shard_guard: guard-cranelift-experimental-backend-suite-shard
+allowed_backend_suite_parallel_isolation: git_worktree_per_shard_to_avoid_to_log_collisions
+allowed_backend_suite_parallel_shards: core, compiler-mir-basic, compiler-mir-blocks, translators
 allowed_dependency_beachhead_guard: guard-cranelift-dependency-beachhead
 allowed_no_fixture_regression_guard: guard-cranelift-no-fixture-regression
 allowed_status: mir_to_c_differential_native_smoke
