@@ -3267,6 +3267,54 @@ guard-cranelift-compiler-mir-return-int-ingestion-native-smoke:
     fi
     echo "✅ Compiler-owned MIR return-int ingestion seam native smoke passed."
 
+guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling MIR-to-Cranelift return-int translator seed..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    just guard-cranelift-backend-surface
+    just guard-mir-to-c-return-int-literal-native-smoke
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_native_guard: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_command: compiler-mir-to-cranelift-return-int-translator-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_input_fixture: compiler/fixtures/native_backend_return_int_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_oracle_guard: guard-mir-to-c-return-int-literal-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_translation_entry: translate_compiler_mir_return_int_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_return_int_translator_native/tiny_native_backend_mir_to_cranelift_return_int_translator.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_symbol: tiny_native_backend_mir_to_cranelift_return_int_translator' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.return_int.v1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'terminator: Return' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'return_value_kind: IntLiteral' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'return_value: 1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'compiler-mir-to-cranelift-return-int-translator-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'translate_compiler_mir_return_int_fixture_to_tiny_mir_function' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'COMPILER_MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
+    build_dir="build/guards/cranelift_mir_to_cranelift_return_int_translator_native"
+    object_file="$build_dir/tiny_native_backend_mir_to_cranelift_return_int_translator.o"
+    shim_c="$build_dir/tiny_native_backend_mir_to_cranelift_return_int_translator_main.c"
+    binary="$build_dir/tiny_native_backend_mir_to_cranelift_return_int_translator_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-to-cranelift-return-int-translator-object "$fixture" "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'extern int32_t tiny_native_backend_mir_to_cranelift_return_int_translator(void);' >> "$shim_c"
+    echo 'int main(void) { return tiny_native_backend_mir_to_cranelift_return_int_translator(); }' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "1" ]; then
+      echo "Expected MIR-to-Cranelift return-int translator seed native smoke to exit with status 1, got $status"
+      exit 1
+    fi
+    echo "✅ MIR-to-Cranelift return-int translator seed native smoke passed."
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail

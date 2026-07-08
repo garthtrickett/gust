@@ -30,6 +30,8 @@ const HOST_IS_POSITIVE_I32_SYMBOL: &str = "tiny_host_is_positive_i32";
 const MIR_RETURN_INT_SYMBOL: &str = "tiny_cranelift_mir_return_int";
 const COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_return_int";
+const COMPILER_MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_SYMBOL: &str =
+    "tiny_native_backend_mir_to_cranelift_return_int_translator";
 const COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_local_binding_read";
 const COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL: &str =
@@ -454,6 +456,10 @@ struct CompilerMirReturnIntIngestionFixture {
     return_value: i32,
 }
 
+static MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_EMPTY_PARAMS: [TinyMirType; 0] = [];
+static MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_EMPTY_LOCALS: [TinyMirLocal; 0] = [];
+static MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_EMPTY_STATEMENTS: [TinyMirStatement; 0] = [];
+
 static MIR_LOCAL_BINDING_READ_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
     name: "value",
     ty: TinyMirType::I32,
@@ -498,6 +504,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_return_int_ingestion_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-to-cranelift-return-int-translator-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_to_cranelift_return_int_translator_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -1343,6 +1364,30 @@ fn emit_compiler_mir_return_int_ingestion_object(
     };
 
     lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn emit_compiler_mir_to_cranelift_return_int_translator_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    let fixture = parse_compiler_mir_return_int_ingestion_fixture(&contents)?;
+    let mir_function = translate_compiler_mir_return_int_fixture_to_tiny_mir_function(&fixture);
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn translate_compiler_mir_return_int_fixture_to_tiny_mir_function(
+    fixture: &CompilerMirReturnIntIngestionFixture,
+) -> TinyMirFunction {
+    TinyMirFunction {
+        object_name: "gust_native_backend_mir_to_cranelift_return_int_translator",
+        symbol: COMPILER_MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_SYMBOL,
+        params: &MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_EMPTY_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_EMPTY_LOCALS,
+        statements: &MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_EMPTY_STATEMENTS,
+        terminator: TinyMirTerminator::ReturnI32(fixture.return_value),
+    }
 }
 
 fn parse_compiler_mir_return_int_ingestion_fixture(
