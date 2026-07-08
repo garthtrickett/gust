@@ -48,6 +48,8 @@ const COMPILER_MIR_TO_CRANELIFT_ADD_I32_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_add_i32_translator";
 const COMPILER_MIR_TO_CRANELIFT_POSITIVE_I32_BRANCH_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_positive_i32_branch_translator";
+const COMPILER_MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_TRANSLATOR_SYMBOL: &str =
+    "tiny_native_backend_mir_to_cranelift_block_local_branch_join_translator";
 const COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_local_binding_read";
 const COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL: &str =
@@ -655,6 +657,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_to_cranelift_positive_i32_branch_translator_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-to-cranelift-block-local-branch-join-translator-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_to_cranelift_block_local_branch_join_translator_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -1865,6 +1882,94 @@ fn parse_compiler_mir_add_i32_ingestion_fixture(contents: &str) -> Result<(), Bo
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_rhs", "4")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "4")?;
     Ok(())
+}
+
+fn emit_compiler_mir_to_cranelift_block_local_branch_join_translator_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_block_local_branch_join_ingestion_fixture(&contents)?;
+    let mir_function =
+        translate_compiler_mir_block_local_branch_join_fixture_to_tiny_mir_block_function();
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_native_backend_mir_to_cranelift_block_local_branch_join_translator",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+    define_tiny_mir_block_graph_exported_function(&mut module, &mir_function)?;
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn translate_compiler_mir_block_local_branch_join_fixture_to_tiny_mir_block_function(
+) -> TinyMirBlockFunction {
+    static MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
+    static MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
+        name: "value",
+        ty: TinyMirType::I32,
+    }];
+    static MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_ENTRY_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32SetParam {
+            name: "value",
+            param: 0,
+        }];
+    static MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_POSITIVE_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32AddI32Literal {
+            name: "value",
+            value: 4,
+        }];
+    static MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_NON_POSITIVE_STATEMENTS: [TinyMirBlockStatement; 1] =
+        [TinyMirBlockStatement::LocalI32AddI32Literal {
+            name: "value",
+            value: 8,
+        }];
+    static MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_BLOCKS: [TinyMirBlock; 4] = [
+        TinyMirBlock {
+            label: "entry",
+            statements: &MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_ENTRY_STATEMENTS,
+            terminator: TinyMirBlockTerminator::BranchLocalI32Positive {
+                name: "value",
+                then_block: "positive",
+                else_block: "non_positive",
+            },
+        },
+        TinyMirBlock {
+            label: "positive",
+            statements: &MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_POSITIVE_STATEMENTS,
+            terminator: TinyMirBlockTerminator::Jump { target: "join" },
+        },
+        TinyMirBlock {
+            label: "non_positive",
+            statements: &MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_NON_POSITIVE_STATEMENTS,
+            terminator: TinyMirBlockTerminator::Jump { target: "join" },
+        },
+        TinyMirBlock {
+            label: "join",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::ReturnLocalI32("value"),
+        },
+    ];
+
+    TinyMirBlockFunction {
+        object_name: "gust_native_backend_mir_to_cranelift_block_local_branch_join_translator",
+        symbol: COMPILER_MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_TRANSLATOR_SYMBOL,
+        params: &MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_LOCALS,
+        entry_block: "entry",
+        blocks: &MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_BLOCKS,
+    }
 }
 
 fn emit_compiler_mir_to_cranelift_positive_i32_branch_translator_object(
