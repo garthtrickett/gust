@@ -4233,6 +4233,88 @@ guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return
     "$binary"
     echo "✅ MIR-to-Cranelift block-param merge imported-branch joined-return translator seed native smoke passed."
 
+guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling MIR-to-Cranelift block-param merge dual-import joined-return translator seed..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    fixture="compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion.mir"
+    source_fixture="compiler/mir_feature_block_param_merge_dual_imported_joined_return_preservation_source.gst"
+    just guard-cranelift-backend-surface
+    just guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-native-smoke
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_native_guard: guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_command: compiler-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_input_fixture: compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_oracle_guard: guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_translation_entry: translate_compiler_mir_block_param_merge_dual_imported_joined_return_fixture_to_tiny_mir_param_block_function' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_native/tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_symbol: tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_branch_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_branch_host_add' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_return_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_return_host_add' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_expected_case_count: 3' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_expected_status: 0' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_dual_imported_joined_return.v1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'imported_function_count: 2' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'imported_function_0_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_branch_host_add' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'imported_function_0_operation: HostAddI32' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'imported_function_1_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_return_host_add' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'imported_function_1_operation: HostAddI32' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_2_terminator: BranchBlockParamPositiveToI32Literals' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'branch_then_value: 211' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'branch_else_value: 223' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_3_add_value: 7' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_4_add_value: 9' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_5_terminator: BranchBlockParamImportedFunctionCallI32LiteralPositive' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_5_call_literal: -220' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_6_terminator: JumpI32Literal' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_6_value: 241' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_7_terminator: JumpI32Literal' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_7_value: 251' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_8_terminator: ReturnBlockParamImportedFunctionCallI32Literal' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_8_call_literal: 4' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_0_value: 1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_0_result: 255' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_1_value: -4' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_1_result: 245' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_2_value: -9' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_2_result: 245' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'func tiny_block_param_merge_dual_imported_joined_return(input: int) int' "$source_fixture" >/dev/null
+    rg -n -F 'mut probed := merged - 220;' "$source_fixture" >/dev/null
+    rg -n -F 'compiler-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'translate_compiler_mir_block_param_merge_dual_imported_joined_return_fixture_to_tiny_mir_param_block_function' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'COMPILER_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_TRANSLATOR_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_BRANCH_HOST_ADD_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_RETURN_HOST_ADD_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallI32LiteralPositive' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'TinyMirParamBlockTerminator::JumpI32Literal' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'Linkage::Import' compiler/experiments/cranelift/src/main.rs >/dev/null
+    build_dir="build/guards/cranelift_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_native"
+    object_file="$build_dir/tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator.o"
+    shim_c="$build_dir/tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_main.c"
+    binary="$build_dir/tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-object "$fixture" "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'int32_t tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_branch_host_add(int32_t lhs, int32_t rhs) { return lhs + rhs; }' >> "$shim_c"
+    echo 'int32_t tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_return_host_add(int32_t lhs, int32_t rhs) { return lhs + rhs; }' >> "$shim_c"
+    echo 'extern int32_t tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator(int32_t input);' >> "$shim_c"
+    echo 'int main(void) {' >> "$shim_c"
+    echo '  if (tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator(1) != 255) return 1;' >> "$shim_c"
+    echo '  if (tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator(-4) != 245) return 2;' >> "$shim_c"
+    echo '  if (tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator(-9) != 245) return 3;' >> "$shim_c"
+    echo '  return 0;' >> "$shim_c"
+    echo '}' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    "$binary"
+    echo "✅ MIR-to-Cranelift block-param merge dual-import joined-return translator seed native smoke passed."
+
 guard-cranelift-mir-to-cranelift-translator-seed-suite:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -4242,7 +4324,7 @@ guard-cranelift-mir-to-cranelift-translator-seed-suite:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_TRANSLATOR_SEED_SUITE_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_native_guard: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_status: phase9b_translator_seed_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 16' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 17' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_return_int_guard: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_local_binding_read_guard: guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_conditional_branch_guard: guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke' "$manifest_doc" >/dev/null
@@ -4259,6 +4341,7 @@ guard-cranelift-mir-to-cranelift-translator-seed-suite:
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_merge_arm_update_imported_call_return_guard: guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_merge_arm_update_imported_call_branch_guard: guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_merge_imported_branch_joined_return_guard: guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_merge_dual_imported_joined_return_guard: guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_or_compiler_owned_fixture_native_guards_remain_oracle' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
     just guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
@@ -4277,6 +4360,7 @@ guard-cranelift-mir-to-cranelift-translator-seed-suite:
     just guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke
+    just guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke
     echo "✅ MIR-to-Cranelift translator seed suite passed."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
