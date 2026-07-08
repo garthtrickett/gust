@@ -34,6 +34,8 @@ const COMPILER_MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_return_int_translator";
 const COMPILER_MIR_TO_CRANELIFT_LOCAL_BINDING_READ_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_local_binding_read_translator";
+const COMPILER_MIR_TO_CRANELIFT_CONDITIONAL_BRANCH_TRANSLATOR_SYMBOL: &str =
+    "tiny_native_backend_mir_to_cranelift_conditional_branch_translator";
 const COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_local_binding_read";
 const COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL: &str =
@@ -536,6 +538,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_to_cranelift_local_binding_read_translator_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-to-cranelift-conditional-branch-translator-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_to_cranelift_conditional_branch_translator_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -1594,6 +1611,32 @@ fn parse_compiler_mir_local_binding_read_ingestion_fixture(
     require_compiler_mir_ingestion_field(&fields, "expected_exit", "2")?;
 
     Ok(())
+}
+
+fn emit_compiler_mir_to_cranelift_conditional_branch_translator_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_conditional_branch_ingestion_fixture(&contents)?;
+    let mir_function = translate_compiler_mir_conditional_branch_fixture_to_tiny_mir_function();
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn translate_compiler_mir_conditional_branch_fixture_to_tiny_mir_function() -> TinyMirFunction {
+    TinyMirFunction {
+        object_name: "gust_native_backend_mir_to_cranelift_conditional_branch_translator",
+        symbol: COMPILER_MIR_TO_CRANELIFT_CONDITIONAL_BRANCH_TRANSLATOR_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::BranchI32Literal {
+            condition: 1,
+            then_return: 1,
+            else_return: 2,
+        },
+    }
 }
 
 fn emit_compiler_mir_conditional_branch_ingestion_object(
