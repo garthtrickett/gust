@@ -44,6 +44,8 @@ const COMPILER_MIR_TO_CRANELIFT_RESOURCE_METADATA_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_resource_metadata_translator";
 const COMPILER_MIR_TO_CRANELIFT_NATIVE_BOUNDARY_METADATA_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_native_boundary_metadata_translator";
+const COMPILER_MIR_TO_CRANELIFT_ADD_I32_TRANSLATOR_SYMBOL: &str =
+    "tiny_native_backend_mir_to_cranelift_add_i32_translator";
 const COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_local_binding_read";
 const COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL: &str =
@@ -621,6 +623,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_to_cranelift_native_boundary_metadata_translator_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-to-cranelift-add-i32-translator-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_to_cranelift_add_i32_translator_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -1831,6 +1848,34 @@ fn parse_compiler_mir_add_i32_ingestion_fixture(contents: &str) -> Result<(), Bo
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_rhs", "4")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_1_result", "4")?;
     Ok(())
+}
+
+fn emit_compiler_mir_to_cranelift_add_i32_translator_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_add_i32_ingestion_fixture(&contents)?;
+    let mir_function = translate_compiler_mir_add_i32_fixture_to_tiny_mir_function();
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn translate_compiler_mir_add_i32_fixture_to_tiny_mir_function() -> TinyMirFunction {
+    static MIR_TO_CRANELIFT_ADD_I32_TRANSLATOR_PARAMS: [TinyMirType; 2] =
+        [TinyMirType::I32, TinyMirType::I32];
+
+    TinyMirFunction {
+        object_name: "gust_native_backend_mir_to_cranelift_add_i32_translator",
+        symbol: COMPILER_MIR_TO_CRANELIFT_ADD_I32_TRANSLATOR_SYMBOL,
+        params: &MIR_TO_CRANELIFT_ADD_I32_TRANSLATOR_PARAMS,
+        return_type: TinyMirType::I32,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnParamI32Add {
+            lhs_param: 0,
+            rhs_param: 1,
+        },
+    }
 }
 
 fn emit_compiler_mir_to_cranelift_provenance_metadata_translator_object(

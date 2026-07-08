@@ -3639,6 +3639,59 @@ guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smok
     "$binary"
     echo "✅ MIR-to-Cranelift native-boundary metadata translator seed native smoke passed."
 
+guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling MIR-to-Cranelift add-i32 translator seed..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    fixture="compiler/fixtures/native_backend_add_i32_ingestion.mir"
+    just guard-cranelift-backend-surface
+    just guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_ADD_I32_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_native_guard: guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_command: compiler-mir-to-cranelift-add-i32-translator-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_input_fixture: compiler/fixtures/native_backend_add_i32_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_oracle_guard: guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_translation_entry: translate_compiler_mir_add_i32_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_add_i32_translator_native/tiny_native_backend_mir_to_cranelift_add_i32_translator.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_symbol: tiny_native_backend_mir_to_cranelift_add_i32_translator' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_expected_case_count: 2' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_expected_status: 0' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.add_i32.v1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'terminator: ReturnParamAdd' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'lhs_param: 0' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'rhs_param: 1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_0_lhs: 2' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_0_rhs: 3' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_0_result: 5' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_1_lhs: 0' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_1_rhs: 4' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'expected_case_1_result: 4' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'compiler-mir-to-cranelift-add-i32-translator-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'translate_compiler_mir_add_i32_fixture_to_tiny_mir_function' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'COMPILER_MIR_TO_CRANELIFT_ADD_I32_TRANSLATOR_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
+    build_dir="build/guards/cranelift_mir_to_cranelift_add_i32_translator_native"
+    object_file="$build_dir/tiny_native_backend_mir_to_cranelift_add_i32_translator.o"
+    shim_c="$build_dir/tiny_native_backend_mir_to_cranelift_add_i32_translator_main.c"
+    binary="$build_dir/tiny_native_backend_mir_to_cranelift_add_i32_translator_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-to-cranelift-add-i32-translator-object "$fixture" "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'extern int32_t tiny_native_backend_mir_to_cranelift_add_i32_translator(int32_t lhs, int32_t rhs);' >> "$shim_c"
+    echo 'int main(void) {' >> "$shim_c"
+    echo '  if (tiny_native_backend_mir_to_cranelift_add_i32_translator(2, 3) != 5) return 1;' >> "$shim_c"
+    echo '  if (tiny_native_backend_mir_to_cranelift_add_i32_translator(0, 4) != 4) return 2;' >> "$shim_c"
+    echo '  return 0;' >> "$shim_c"
+    echo '}' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    "$binary"
+    echo "✅ MIR-to-Cranelift add-i32 translator seed native smoke passed."
+
 guard-cranelift-mir-to-cranelift-translator-seed-suite:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -3648,7 +3701,7 @@ guard-cranelift-mir-to-cranelift-translator-seed-suite:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_TRANSLATOR_SEED_SUITE_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_native_guard: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_status: phase9b_translator_seed_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 7' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 8' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_return_int_guard: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_local_binding_read_guard: guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_conditional_branch_guard: guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke' "$manifest_doc" >/dev/null
@@ -3656,7 +3709,8 @@ guard-cranelift-mir-to-cranelift-translator-seed-suite:
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_provenance_metadata_guard: guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_resource_metadata_guard: guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_native_boundary_metadata_guard: guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_native_guards_remain_oracle' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_add_i32_guard: guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_or_compiler_owned_fixture_native_guards_remain_oracle' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
     just guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke
@@ -3665,6 +3719,7 @@ guard-cranelift-mir-to-cranelift-translator-seed-suite:
     just guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke
+    just guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke
     echo "✅ MIR-to-Cranelift translator seed suite passed."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
