@@ -3413,6 +3413,56 @@ guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke:
     fi
     echo "✅ MIR-to-Cranelift conditional-branch translator seed native smoke passed."
 
+guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Native compiling MIR-to-Cranelift block-jump translator seed..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    fixture="compiler/fixtures/native_backend_block_jump_ingestion.mir"
+    just guard-cranelift-backend-surface
+    just guard-mir-to-c-block-jump-native-smoke
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_JUMP_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_native_guard: guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_command: compiler-mir-to-cranelift-block-jump-translator-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_input_fixture: compiler/fixtures/native_backend_block_jump_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_oracle_guard: guard-mir-to-c-block-jump-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_translation_entry: translate_compiler_mir_block_jump_fixture_to_tiny_mir_block_function' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_jump_translator_native/tiny_native_backend_mir_to_cranelift_block_jump_translator.o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_symbol: tiny_native_backend_mir_to_cranelift_block_jump_translator' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.block_jump.v1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_count: 2' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_0_terminator: Jump' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_0_target: return' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_1_terminator: Return' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'block_1_return_value: 1' "$fixture" compiler/mir.gst >/dev/null
+    rg -n -F 'compiler-mir-to-cranelift-block-jump-translator-object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'translate_compiler_mir_block_jump_fixture_to_tiny_mir_block_function' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'COMPILER_MIR_TO_CRANELIFT_BLOCK_JUMP_TRANSLATOR_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
+    build_dir="build/guards/cranelift_mir_to_cranelift_block_jump_translator_native"
+    object_file="$build_dir/tiny_native_backend_mir_to_cranelift_block_jump_translator.o"
+    shim_c="$build_dir/tiny_native_backend_mir_to_cranelift_block_jump_translator_main.c"
+    binary="$build_dir/tiny_native_backend_mir_to_cranelift_block_jump_translator_bin"
+    mkdir -p "$build_dir"
+    cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-to-cranelift-block-jump-translator-object "$fixture" "$object_file"
+    test -s "$object_file"
+    echo '#include <stdint.h>' > "$shim_c"
+    echo 'extern int32_t tiny_native_backend_mir_to_cranelift_block_jump_translator(void);' >> "$shim_c"
+    echo 'int main(void) { return tiny_native_backend_mir_to_cranelift_block_jump_translator(); }' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "1" ]; then
+      echo "Expected MIR-to-Cranelift block-jump translator seed native smoke to exit with status 1, got $status"
+      exit 1
+    fi
+    echo "✅ MIR-to-Cranelift block-jump translator seed native smoke passed."
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail

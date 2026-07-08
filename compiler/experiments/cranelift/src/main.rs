@@ -36,6 +36,8 @@ const COMPILER_MIR_TO_CRANELIFT_LOCAL_BINDING_READ_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_local_binding_read_translator";
 const COMPILER_MIR_TO_CRANELIFT_CONDITIONAL_BRANCH_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_conditional_branch_translator";
+const COMPILER_MIR_TO_CRANELIFT_BLOCK_JUMP_TRANSLATOR_SYMBOL: &str =
+    "tiny_native_backend_mir_to_cranelift_block_jump_translator";
 const COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_local_binding_read";
 const COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL: &str =
@@ -553,6 +555,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_to_cranelift_conditional_branch_translator_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-to-cranelift-block-jump-translator-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_to_cranelift_block_jump_translator_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -2055,6 +2072,61 @@ fn parse_compiler_mir_positive_i32_branch_ingestion_fixture(
     require_compiler_mir_ingestion_field(&fields, "expected_case_2_value", "-4")?;
     require_compiler_mir_ingestion_field(&fields, "expected_case_2_result", "9")?;
     Ok(())
+}
+
+fn emit_compiler_mir_to_cranelift_block_jump_translator_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_block_jump_ingestion_fixture(&contents)?;
+    static MIR_TO_CRANELIFT_BLOCK_JUMP_BLOCKS: [TinyMirBlock; 2] = [
+        TinyMirBlock {
+            label: "entry",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::Jump { target: "return" },
+        },
+        TinyMirBlock {
+            label: "return",
+            statements: &[],
+            terminator: TinyMirBlockTerminator::ReturnI32(1),
+        },
+    ];
+    let mir_function = translate_compiler_mir_block_jump_fixture_to_tiny_mir_block_function(
+        &MIR_TO_CRANELIFT_BLOCK_JUMP_BLOCKS,
+    );
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_native_backend_mir_to_cranelift_block_jump_translator",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+    define_tiny_mir_block_graph_exported_function(&mut module, &mir_function)?;
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn translate_compiler_mir_block_jump_fixture_to_tiny_mir_block_function(
+    blocks: &'static [TinyMirBlock],
+) -> TinyMirBlockFunction {
+    TinyMirBlockFunction {
+        object_name: "gust_native_backend_mir_to_cranelift_block_jump_translator",
+        symbol: COMPILER_MIR_TO_CRANELIFT_BLOCK_JUMP_TRANSLATOR_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::I32,
+        locals: &[],
+        entry_block: "entry",
+        blocks,
+    }
 }
 
 fn emit_compiler_mir_block_jump_ingestion_object(
