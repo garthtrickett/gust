@@ -42,6 +42,8 @@ const COMPILER_MIR_TO_CRANELIFT_PROVENANCE_METADATA_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_provenance_metadata_translator";
 const COMPILER_MIR_TO_CRANELIFT_RESOURCE_METADATA_TRANSLATOR_SYMBOL: &str =
     "tiny_native_backend_mir_to_cranelift_resource_metadata_translator";
+const COMPILER_MIR_TO_CRANELIFT_NATIVE_BOUNDARY_METADATA_TRANSLATOR_SYMBOL: &str =
+    "tiny_native_backend_mir_to_cranelift_native_boundary_metadata_translator";
 const COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_local_binding_read";
 const COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL: &str =
@@ -604,6 +606,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             emit_compiler_mir_to_cranelift_resource_metadata_translator_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
+        "compiler-mir-to-cranelift-native-boundary-metadata-translator-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_to_cranelift_native_boundary_metadata_translator_object(
                 Path::new(&input_path),
                 Path::new(&output_path),
             )
@@ -1857,6 +1874,30 @@ fn translate_compiler_mir_resource_metadata_fixture_to_tiny_mir_function() -> Ti
         locals: &MIR_LOCAL_BINDING_READ_LOCALS,
         statements: &MIR_LOCAL_BINDING_READ_STATEMENTS,
         terminator: TinyMirTerminator::ReturnLocalI32("value"),
+    }
+}
+
+fn emit_compiler_mir_to_cranelift_native_boundary_metadata_translator_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    parse_compiler_mir_native_boundary_metadata_ingestion_fixture(&contents)?;
+    let mir_function =
+        translate_compiler_mir_native_boundary_metadata_fixture_to_tiny_mir_function();
+    lower_tiny_mir_function_to_object(output_path, &mir_function)
+}
+
+fn translate_compiler_mir_native_boundary_metadata_fixture_to_tiny_mir_function(
+) -> TinyMirFunction {
+    TinyMirFunction {
+        object_name: "gust_native_backend_mir_to_cranelift_native_boundary_metadata_translator",
+        symbol: COMPILER_MIR_TO_CRANELIFT_NATIVE_BOUNDARY_METADATA_TRANSLATOR_SYMBOL,
+        params: &[],
+        return_type: TinyMirType::Void,
+        locals: &[],
+        statements: &[],
+        terminator: TinyMirTerminator::ReturnVoid,
     }
 }
 
