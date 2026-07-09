@@ -4467,6 +4467,38 @@ guard-cranelift-phase9b-close:
     just guard-cranelift-mir-to-cranelift-translator-seed-suite
     echo "✅ Phase 9B close passed: translator seed inventory is frozen at 17, aggregate guard is green, and Cranelift remains experiment-only with no production routing."
 
+guard-cranelift-phase9c-differential-ladder-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9C differential ladder surface..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_status: phase9b_translator_seed_inventory' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 17' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_close_status: phase9b_closed_seed_inventory_frozen' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_next_phase: phase9c_differential_validation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_or_compiler_owned_fixture_native_guards_remain_oracle' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
+
+    rg -n -F 'guard-mir-to-c-return-int-literal-native-smoke' justfile >/dev/null
+    rg -n -F 'guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke' justfile "$manifest_doc" >/dev/null
+    rg -n -F 'guard-mir-to-c-local-binding-read-native-smoke' justfile >/dev/null
+    rg -n -F 'guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke' justfile "$manifest_doc" >/dev/null
+    rg -n -F 'guard-mir-to-c-conditional-branch-native-smoke' justfile >/dev/null
+    rg -n -F 'guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke' justfile "$manifest_doc" >/dev/null
+    rg -n -F 'guard-mir-to-c-block-jump-native-smoke' justfile >/dev/null
+    rg -n -F 'guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke' justfile "$manifest_doc" >/dev/null
+
+    phase9c_initial_ladder_oracle_count="4"
+    phase9c_initial_ladder_translator_count="4"
+    if [ "$phase9c_initial_ladder_oracle_count" != "$phase9c_initial_ladder_translator_count" ]; then
+      echo "Phase 9C initial ladder oracle/translator count mismatch."
+      exit 1
+    fi
+    echo "✅ Phase 9C differential ladder surface passed: 4 frozen Phase 9B seeds are ready for MIR-to-C oracle vs Cranelift translator comparison without production routing."
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
