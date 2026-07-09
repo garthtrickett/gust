@@ -63,7 +63,8 @@ jobs:
           - cranelift-backend-suite-core-mir-basic
           - cranelift-backend-suite-core-mir-bundles
           - cranelift-backend-suite-core-mir-block-graphs
-          - cranelift-backend-suite-compiler-mir-basic
+          - cranelift-backend-suite-compiler-mir-scalars
+          - cranelift-backend-suite-compiler-mir-metadata
           - cranelift-backend-suite-compiler-mir-blocks
           - cranelift-backend-suite-translators
           - mir-to-c-return-int
