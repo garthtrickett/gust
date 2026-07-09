@@ -53,7 +53,10 @@ jobs:
       fail-fast: false
       matrix:
         shard:
-          - phase9-branch
+                      - phase9-branch-core
+                      - phase9-branch-compiler-mir-basic
+                      - phase9-branch-compiler-mir-blocks
+                      - phase9-branch-translators
           - mir-branch
           - migration-surfaces
           - migration-return-int
