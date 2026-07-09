@@ -246,6 +246,9 @@ guard-cloud-heavy-shard shard:
       phase9-branch-translators)
         just guard-cranelift-experimental-backend-suite-shard translators
         ;;
+      phase9c-differential-ladder-native)
+        just guard-cranelift-phase9c-differential-ladder-native-smoke
+        ;;
       mir-branch)
         just guard-mir-to-c-conditional-branch-native-smoke
         just guard-mir-feature-if-else-return-int-routed-execution
@@ -349,7 +352,7 @@ guard-cloud-heavy-shard shard:
         ;;
       *)
         echo "unknown cloud heavy shard: {{shard}}"
-        echo "expected one of: phase9-branch-core, phase9-branch-compiler-mir-basic, phase9-branch-compiler-mir-blocks, phase9-branch-translators, mir-branch, migration-surfaces, migration-return-int, migration-local-binding, migration-if-else, migration-provenance, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
+        echo "expected one of: phase9-branch-core, phase9-branch-compiler-mir-basic, phase9-branch-compiler-mir-blocks, phase9-branch-translators, phase9c-differential-ladder-native, mir-branch, migration-surfaces, migration-return-int, migration-local-binding, migration-if-else, migration-provenance, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
         exit 1
         ;;
     esac
@@ -386,6 +389,7 @@ guard-cloud-heavy-ci-surface:
     rg -n -F 'phase9-branch-compiler-mir-basic' "$workflow" justfile >/dev/null
     rg -n -F 'phase9-branch-compiler-mir-blocks' "$workflow" justfile >/dev/null
     rg -n -F 'phase9-branch-translators' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9c-differential-ladder-native' "$workflow" justfile >/dev/null
     rg -n -F 'mir-branch' "$workflow" justfile >/dev/null
     rg -n -F 'migration-surfaces' "$workflow" justfile >/dev/null
     rg -n -F 'migration-return-int' "$workflow" justfile >/dev/null
@@ -412,6 +416,8 @@ guard-cloud-heavy-ci-surface:
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard compiler-mir-blocks' >/dev/null
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-translators)' >/dev/null
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard translators' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9c-differential-ladder-native)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-native-smoke' >/dev/null
     if printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch)' >/dev/null; then
       echo "Cloud heavy CI must split phase9-branch into focused Cranelift backend suite shards."
       exit 1
@@ -460,8 +466,8 @@ guard-cloud-heavy-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "19" ]; then
-      echo "Expected exactly 19 cloud heavy matrix shards, found $shard_count."
+    if [ "$shard_count" != "20" ]; then
+      echo "Expected exactly 20 cloud heavy matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
