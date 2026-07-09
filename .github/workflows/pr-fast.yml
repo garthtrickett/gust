@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     name: build gust
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
       - name: Checkout
@@ -46,7 +46,7 @@ jobs:
 
   guard:
     name: guard / ${{ matrix.shard }}
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: build
 
     strategy:
@@ -101,7 +101,7 @@ jobs:
 
   final:
     name: final diff check
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: guard
 
     steps:
