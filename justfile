@@ -1340,6 +1340,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD_WIRING_SURFACE: guard-cranelift-experiment-guard-wiring-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9B_CLOSE_GUARD: guard-cranelift-phase9b-close' "$manifest_doc" justfile >/dev/null
     just guard-cranelift-compiler-mir-ingestion-corpus-surface
     just guard-cranelift-experiment-guard-wiring-surface
     cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
@@ -4362,6 +4363,51 @@ guard-cranelift-mir-to-cranelift-translator-seed-suite:
     just guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke
     echo "✅ MIR-to-Cranelift translator seed suite passed."
+
+guard-cranelift-phase9b-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 9B: frozen MIR-to-Cranelift translator seed inventory..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9B_CLOSE_GUARD: guard-cranelift-phase9b-close' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_TRANSLATOR_SEED_SUITE_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_native_guard: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_status: phase9b_translator_seed_inventory' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 17' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_close_guard: guard-cranelift-phase9b-close' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_close_status: phase9b_closed_seed_inventory_frozen' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_freeze_policy: phase9b_closed_no_new_seed_lanes_without_new_translator_abstraction_gap' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_next_phase: phase9c_differential_validation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_or_compiler_owned_fixture_native_guards_remain_oracle' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
+
+    seed_suite_feature_guard_count="$(rg -n '^allowed_mir_to_cranelift_translator_seed_suite_.*_guard:' "$manifest_doc" | rg -v '_native_guard:' | rg -v '_close_guard:' | wc -l | tr -d '[:space:]')"
+    if [ "$seed_suite_feature_guard_count" != "17" ]; then
+      echo "Expected exactly 17 Phase 9B translator seed suite feature guards, found $seed_suite_feature_guard_count."
+      rg -n '^allowed_mir_to_cranelift_translator_seed_suite_.*_guard:' "$manifest_doc" || true
+      exit 1
+    fi
+
+    translator_seed_seam_count="$(rg -n '^allowed_mir_to_cranelift_.*_translator_seam_status: phase9b_translator_seed_experiment_only$' "$manifest_doc" | wc -l | tr -d '[:space:]')"
+    if [ "$translator_seed_seam_count" != "17" ]; then
+      echo "Expected exactly 17 experiment-only Phase 9B translator seed seams, found $translator_seed_seam_count."
+      rg -n '^allowed_mir_to_cranelift_.*_translator_seam_status:' "$manifest_doc" || true
+      exit 1
+    fi
+
+    suite_body="$(sed -n '/^guard-cranelift-mir-to-cranelift-translator-seed-suite:/,/^guard-cranelift-phase9b-close:/p' justfile)"
+    aggregate_call_count="$(printf '%s\n' "$suite_body" | rg -n '^    just guard-cranelift-mir-to-cranelift-.*-translator-native-smoke$' | wc -l | tr -d '[:space:]')"
+    if [ "$aggregate_call_count" != "17" ]; then
+      echo "Expected aggregate translator seed suite to invoke exactly 17 translator native smoke guards, found $aggregate_call_count."
+      printf '%s\n' "$suite_body" | rg -n 'guard-cranelift-mir-to-cranelift-.*-translator-native-smoke' || true
+      exit 1
+    fi
+
+    just guard-cranelift-mir-to-cranelift-translator-seed-suite
+    echo "✅ Phase 9B close passed: translator seed inventory is frozen at 17, aggregate guard is green, and Cranelift remains experiment-only with no production routing."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
