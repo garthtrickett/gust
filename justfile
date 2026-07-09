@@ -140,6 +140,7 @@ guard-pr-fast-ci-surface:
     rg -n -F 'cranelift-local-binding' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-branch' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-differential' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-phase9c-differential-ladder' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-core' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-compiler-mir-basic' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-compiler-mir-blocks' "$workflow" justfile >/dev/null
@@ -155,6 +156,8 @@ guard-pr-fast-ci-surface:
     pr_fast_dispatcher_body="$(sed -n '/^guard-pr-fast-shard shard:/,/^guard-pr-fast-ci-surface:/p' justfile)"
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-differential)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-c-differential-native-smoke' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9c-differential-ladder)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-surface' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-compiler-mir-basic)' >/dev/null
@@ -211,8 +214,8 @@ guard-pr-fast-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "14" ]; then
-      echo "Expected exactly 14 PR fast matrix shards, found $shard_count."
+    if [ "$shard_count" != "15" ]; then
+      echo "Expected exactly 15 PR fast matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
