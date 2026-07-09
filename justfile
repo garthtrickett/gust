@@ -64,6 +64,9 @@ guard-pr-fast-shard shard:
         just guard-cranelift-backend-surface
         just guard-cranelift-mir-to-c-differential-native-smoke
         ;;
+      cranelift-phase9c-differential-ladder)
+        just guard-cranelift-phase9c-differential-ladder-surface
+        ;;
       cranelift-backend-suite-core)
         just guard-cranelift-experimental-backend-suite-shard core
         ;;
@@ -100,7 +103,7 @@ guard-pr-fast-shard shard:
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-backend-suite-core, cranelift-backend-suite-compiler-mir-basic, cranelift-backend-suite-compiler-mir-blocks, cranelift-backend-suite-translators, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
+        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9c-differential-ladder, cranelift-backend-suite-core, cranelift-backend-suite-compiler-mir-basic, cranelift-backend-suite-compiler-mir-blocks, cranelift-backend-suite-translators, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
         exit 1
         ;;
     esac
