@@ -43,7 +43,11 @@ jobs:
       fail-fast: false
       matrix:
         shard:
-          - phase9-branch-core
+          - phase9-branch-core-baseline
+          - phase9-branch-core-legacy
+          - phase9-branch-core-mir-basic
+          - phase9-branch-core-mir-bundles
+          - phase9-branch-core-mir-block-graphs
           - phase9-branch-compiler-mir-basic
           - phase9-branch-compiler-mir-blocks
           - phase9-branch-translators
