@@ -1400,6 +1400,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9B_CLOSE_GUARD: guard-cranelift-phase9b-close' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_SURFACE_GUARD: guard-cranelift-phase9c-differential-ladder-surface' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
     just guard-cranelift-compiler-mir-ingestion-corpus-surface
     just guard-cranelift-experiment-guard-wiring-surface
     cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
@@ -4499,6 +4500,29 @@ guard-cranelift-phase9c-differential-ladder-surface:
       exit 1
     fi
     echo "✅ Phase 9C differential ladder surface passed: 4 frozen Phase 9B seeds are ready for MIR-to-C oracle vs Cranelift translator comparison without production routing."
+
+guard-cranelift-phase9c-differential-ladder-native-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Running Phase 9C initial native differential ladder..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-phase9c-differential-ladder-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_native_guard: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_initial_four_lane_native_oracle_comparison' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 4' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_oracle_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_candidate_route: mir_to_cranelift_experiment_only' "$manifest_doc" >/dev/null
+
+    just guard-mir-to-c-return-int-literal-native-smoke
+    just guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
+    just guard-mir-to-c-local-binding-read-native-smoke
+    just guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke
+    just guard-mir-to-c-conditional-branch-native-smoke
+    just guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke
+    just guard-mir-to-c-block-jump-native-smoke
+    just guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke
+    echo "✅ Phase 9C initial native differential ladder passed: 4 MIR-to-C oracle lanes and 4 Cranelift translator candidate lanes execute with matching expected native statuses."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
