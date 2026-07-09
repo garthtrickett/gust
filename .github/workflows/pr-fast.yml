@@ -56,7 +56,8 @@ jobs:
           - cranelift-return-int
           - cranelift-local-binding
           - cranelift-branch
-          - cranelift-differential
+                      - cranelift-differential
+                      - cranelift-phase9c-differential-ladder
                       - cranelift-backend-suite-core
                       - cranelift-backend-suite-compiler-mir-basic
                       - cranelift-backend-suite-compiler-mir-blocks
