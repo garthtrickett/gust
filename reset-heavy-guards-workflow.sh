@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cat > .github/workflows/heavy-guards.yml <<'YAML'
 name: Heavy Guards
 
 on:
@@ -101,3 +105,6 @@ jobs:
       - name: Heavy guard CI surface
         run: |
           just guard-cloud-heavy-ci-surface
+YAML
+
+echo "✅ Rewrote .github/workflows/heavy-guards.yml with a valid 19-shard heavy guard workflow."
