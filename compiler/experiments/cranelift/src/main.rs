@@ -1661,6 +1661,7 @@ fn emit_compiler_mir_return_int_ingestion_object(
     let mir_function = CompilerMirLoweringFunction {
         object_name: "gust_native_backend_compiler_mir_ingested_return_int",
         symbol: COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL,
+        params: vec![],
         locals: vec![],
         entry_block: "entry",
         blocks: vec![CompilerMirLoweringBlock {
@@ -1831,6 +1832,7 @@ fn emit_compiler_mir_local_binding_read_ingestion_object(
     let mir_function = CompilerMirLoweringFunction {
         object_name: "gust_native_backend_compiler_mir_ingested_local_binding_read",
         symbol: COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL,
+        params: vec![],
         locals: vec![TinyMirLocal {
             name: "value",
             ty: TinyMirType::I32,
@@ -1929,6 +1931,7 @@ fn emit_compiler_mir_conditional_branch_ingestion_object(
     let mir_function = CompilerMirLoweringFunction {
         object_name: "gust_native_backend_compiler_mir_ingested_conditional_branch",
         symbol: COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL,
+        params: vec![],
         locals: vec![],
         entry_block: "entry",
         blocks: vec![
@@ -3556,6 +3559,7 @@ fn emit_compiler_mir_block_jump_ingestion_object(
     let mir_function = CompilerMirLoweringFunction {
         object_name: "gust_native_backend_compiler_mir_ingested_block_jump",
         symbol: COMPILER_MIR_INGESTED_BLOCK_JUMP_SYMBOL,
+        params: vec![],
         locals: vec![],
         entry_block: "entry",
         blocks: vec![
@@ -4014,79 +4018,53 @@ fn emit_compiler_mir_block_local_branch_join_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_local_branch_join_ingestion_fixture(&contents)?;
-    static COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
-        name: "value",
-        ty: TinyMirType::I32,
-    }];
-    static COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_ENTRY_STATEMENTS: [TinyMirBlockStatement; 1] =
-        [TinyMirBlockStatement::LocalI32SetParam {
-            name: "value",
-            param: 0,
-        }];
-    static COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_POSITIVE_STATEMENTS: [TinyMirBlockStatement; 1] =
-        [TinyMirBlockStatement::LocalI32AddI32Literal {
-            name: "value",
-            value: 4,
-        }];
-    static COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_NON_POSITIVE_STATEMENTS: [TinyMirBlockStatement; 1] =
-        [TinyMirBlockStatement::LocalI32AddI32Literal {
-            name: "value",
-            value: 8,
-        }];
-    static COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_BLOCKS: [TinyMirBlock; 4] = [
-        TinyMirBlock {
-            label: "entry",
-            statements: &COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_ENTRY_STATEMENTS,
-            terminator: TinyMirBlockTerminator::BranchLocalI32Positive {
-                name: "value",
-                then_block: "positive",
-                else_block: "non_positive",
-            },
-        },
-        TinyMirBlock {
-            label: "positive",
-            statements: &COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_POSITIVE_STATEMENTS,
-            terminator: TinyMirBlockTerminator::Jump { target: "join" },
-        },
-        TinyMirBlock {
-            label: "non_positive",
-            statements: &COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_NON_POSITIVE_STATEMENTS,
-            terminator: TinyMirBlockTerminator::Jump { target: "join" },
-        },
-        TinyMirBlock {
-            label: "join",
-            statements: &[],
-            terminator: TinyMirBlockTerminator::ReturnLocalI32("value"),
-        },
-    ];
-    let mir_function = TinyMirBlockFunction {
+    let mir_function = CompilerMirLoweringFunction {
         object_name: "gust_native_backend_compiler_mir_ingested_block_local_branch_join",
         symbol: COMPILER_MIR_INGESTED_BLOCK_LOCAL_BRANCH_JOIN_SYMBOL,
-        params: &COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_PARAMS,
-        return_type: TinyMirType::I32,
-        locals: &COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_LOCALS,
+        params: vec![TinyMirType::I32],
+        locals: vec![TinyMirLocal {
+            name: "value",
+            ty: TinyMirType::I32,
+        }],
         entry_block: "entry",
-        blocks: &COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_BLOCKS,
+        blocks: vec![
+            CompilerMirLoweringBlock {
+                label: "entry",
+                statements: vec![CompilerMirLoweringStatement::LocalI32SetParam {
+                    name: "value",
+                    param: 0,
+                }],
+                terminator: CompilerMirLoweringTerminator::BranchLocalI32Positive {
+                    name: "value",
+                    then_block: "positive",
+                    else_block: "non_positive",
+                },
+            },
+            CompilerMirLoweringBlock {
+                label: "positive",
+                statements: vec![CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                    name: "value",
+                    value: 4,
+                }],
+                terminator: CompilerMirLoweringTerminator::Jump { target: "join" },
+            },
+            CompilerMirLoweringBlock {
+                label: "non_positive",
+                statements: vec![CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                    name: "value",
+                    value: 8,
+                }],
+                terminator: CompilerMirLoweringTerminator::Jump { target: "join" },
+            },
+            CompilerMirLoweringBlock {
+                label: "join",
+                statements: vec![],
+                terminator: CompilerMirLoweringTerminator::ReturnLocalI32("value"),
+            },
+        ],
     };
 
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_local_branch_join",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-    define_tiny_mir_block_graph_exported_function(&mut module, &mir_function)?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
+    lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)
 }
 
 fn parse_compiler_mir_block_local_branch_join_ingestion_fixture(
@@ -10192,6 +10170,11 @@ fn define_compiler_mir_ingestion_exported_function(
     mir_function: &CompilerMirLoweringFunction,
 ) -> Result<(), Box<dyn Error>> {
     let mut signature = module.make_signature();
+    for param in &mir_function.params {
+        signature
+            .params
+            .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
+    }
     signature.returns.push(AbiParam::new(types::I32));
 
     let function_id = module.declare_function(mir_function.symbol, Linkage::Export, &signature)?;
@@ -10240,6 +10223,7 @@ fn build_compiler_mir_ingestion_body(
             )
         })?;
     builder.append_block_params_for_function_params(entry_block);
+    let function_params = builder.block_params(entry_block).to_vec();
 
     let mut local_slots: HashMap<&'static str, Variable> = HashMap::new();
     for local in &mir_function.locals {
@@ -10283,6 +10267,32 @@ fn build_compiler_mir_ingestion_body(
                     })?;
                     let literal_value = builder.ins().iconst(types::I32, i64::from(value));
                     builder.def_var(slot, literal_value);
+                }
+                CompilerMirLoweringStatement::LocalI32SetParam { name, param } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering local set target: {name}"),
+                        )
+                    })?;
+                    let param_value = function_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering function parameter: {param}"),
+                        )
+                    })?;
+                    builder.def_var(slot, param_value);
+                }
+                CompilerMirLoweringStatement::LocalI32AddI32Literal { name, value } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering local add target: {name}"),
+                        )
+                    })?;
+                    let current_value = builder.use_var(slot);
+                    let updated_value = builder.ins().iadd_imm(current_value, i64::from(value));
+                    builder.def_var(slot, updated_value);
                 }
             }
         }
@@ -10333,6 +10343,42 @@ fn build_compiler_mir_ingestion_body(
                     builder
                         .ins()
                         .icmp_imm(IntCC::NotEqual, condition_value, 0);
+                builder.ins().brif(
+                    branch_condition,
+                    then_cranelift_block,
+                    &[],
+                    else_cranelift_block,
+                    &[],
+                );
+            }
+            CompilerMirLoweringTerminator::BranchLocalI32Positive {
+                name,
+                then_block,
+                else_block,
+            } => {
+                let slot = *local_slots.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown compiler MIR lowering branch local: {name}"),
+                    )
+                })?;
+                let then_cranelift_block = *cranelift_blocks.get(then_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown compiler MIR lowering then block: {then_block}"),
+                    )
+                })?;
+                let else_cranelift_block = *cranelift_blocks.get(else_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown compiler MIR lowering else block: {else_block}"),
+                    )
+                })?;
+                let condition_value = builder.use_var(slot);
+                let branch_condition =
+                    builder
+                        .ins()
+                        .icmp_imm(IntCC::SignedGreaterThan, condition_value, 0);
                 builder.ins().brif(
                     branch_condition,
                     then_cranelift_block,
