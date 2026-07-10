@@ -4885,10 +4885,16 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'fn lower_compiler_mir_ingestion_function_to_object' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'fn define_compiler_mir_ingestion_exported_function' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'fn build_compiler_mir_ingestion_body' compiler/experiments/cranelift/src/main.rs >/dev/null
-    for lowering_entry in       emit_compiler_mir_return_int_ingestion_object       emit_compiler_mir_local_binding_read_ingestion_object       emit_compiler_mir_block_jump_ingestion_object       emit_compiler_mir_conditional_branch_ingestion_object       emit_compiler_mir_block_local_branch_join_ingestion_object; do
-      lowering_body="$(sed -n "/^fn ${lowering_entry}(/,/^}/p" compiler/experiments/cranelift/src/main.rs)"
-      printf '%s\n' "$lowering_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
+    for adapter_entry in \
+      emit_compiler_mir_return_int_ingestion_object \
+      emit_compiler_mir_local_binding_read_ingestion_object \
+      emit_compiler_mir_block_jump_ingestion_object \
+      emit_compiler_mir_conditional_branch_ingestion_object; do
+      adapter_body="$(sed -n "/^fn ${adapter_entry}(/,/^}/p" compiler/experiments/cranelift/src/main.rs)"
+      printf '%s\n' "$adapter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
     done
+    shared_cfg_body="$(sed -n '/^fn emit_compiler_mir_block_local_branch_join_ingestion_object(/,/^}/p' compiler/experiments/cranelift/src/main.rs)"
+    printf '%s\n' "$shared_cfg_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
 
