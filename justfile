@@ -280,7 +280,7 @@ guard-pr-fast-ci-surface:
 guard-cranelift-core-mir-basic-suite-shard shard:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔀 Running PR fast core MIR basic shard: {{shard}}"
+    echo "🔀 Running focused core MIR basic shard: {{shard}}"
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_SHARD_GUARD: guard-cranelift-experimental-backend-suite-shard' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_backend_suite_shard_guard: guard-cranelift-experimental-backend-suite-shard' "$manifest_doc" >/dev/null
@@ -290,20 +290,26 @@ guard-cranelift-core-mir-basic-suite-shard shard:
       exit 1
     fi
     case "{{shard}}" in
+      scalars)
+        shard_guards="$(printf '%s\n' "$suite_native_guards" | rg '^guard-cranelift-mir-(return-int|local-binding-read|conditional-branch|add-i32|positive-i32-branch|increment-local-i32)-native-smoke$' || true)"
+        ;;
       arithmetic)
         shard_guards="$(printf '%s\n' "$suite_native_guards" | rg '^guard-cranelift-mir-(add-i32|positive-i32-branch|increment-local-i32)-native-smoke$' || true)"
         ;;
       calls)
         shard_guards="$(printf '%s\n' "$suite_native_guards" | rg '^guard-cranelift-mir-(call-helper-i32|extern-call-i32|extern-add-i32|extern-predicate-branch-i32)-native-smoke$' || true)"
         ;;
+      differential)
+        shard_guards="$(printf '%s\n' "$suite_native_guards" | rg '^guard-cranelift-mir-to-c-differential-native-smoke$' || true)"
+        ;;
       *)
-        echo "unknown PR fast core MIR basic shard: {{shard}}"
-        echo "expected one of: arithmetic, calls"
+        echo "unknown focused core MIR basic shard: {{shard}}"
+        echo "expected one of: scalars, arithmetic, calls, differential"
         exit 1
         ;;
     esac
     if [ -z "$shard_guards" ]; then
-      echo "PR fast core MIR basic shard {{shard}} matched no Cranelift native guards."
+      echo "Focused core MIR basic shard {{shard}} matched no Cranelift native guards."
       exit 1
     fi
     while IFS= read -r guard_recipe; do
@@ -313,7 +319,7 @@ guard-cranelift-core-mir-basic-suite-shard shard:
       echo "▶ [core-mir-basic/{{shard}}] $guard_recipe"
       just "$guard_recipe"
     done <<< "$shard_guards"
-    echo "✅ PR fast core MIR basic shard passed: {{shard}}"
+    echo "✅ Focused core MIR basic shard passed: {{shard}}"
 
 guard-cranelift-mir-to-cranelift-translator-seed-suite-shard shard:
     #!/usr/bin/env bash
@@ -416,8 +422,14 @@ guard-cloud-heavy-shard shard:
       phase9-branch-core-legacy)
         just guard-cranelift-experimental-backend-suite-shard core-legacy
         ;;
-      phase9-branch-core-mir-basic)
-        just guard-cranelift-experimental-backend-suite-shard core-mir-basic
+      phase9-branch-core-mir-basic-scalars)
+        just guard-cranelift-core-mir-basic-suite-shard scalars
+        ;;
+      phase9-branch-core-mir-basic-calls)
+        just guard-cranelift-core-mir-basic-suite-shard calls
+        ;;
+      phase9-branch-core-mir-basic-differential)
+        just guard-cranelift-core-mir-basic-suite-shard differential
         ;;
       phase9-branch-core-mir-bundles)
         just guard-cranelift-experimental-backend-suite-shard core-mir-bundles
@@ -561,7 +573,7 @@ guard-cloud-heavy-shard shard:
         ;;
       *)
         echo "unknown cloud heavy shard: {{shard}}"
-        echo "expected one of: phase9-branch-core-baseline, phase9-branch-core-legacy, phase9-branch-core-mir-basic, phase9-branch-core-mir-bundles, phase9-branch-core-mir-block-graphs, phase9-branch-compiler-mir-scalars, phase9-branch-compiler-mir-metadata, phase9-branch-compiler-mir-blocks, phase9-branch-translator-scalar, phase9-branch-translator-cfg, phase9-branch-translator-metadata, phase9-branch-translator-imports, phase9c-native-diff-return-local, phase9c-native-diff-cfg, phase9c-native-diff-metadata, phase9c-native-diff-boundary, mir-branch, migration-surfaces, migration-return-int, migration-local-binding, migration-if-else, migration-provenance, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
+        echo "expected one of: phase9-branch-core-baseline, phase9-branch-core-legacy, phase9-branch-core-mir-basic-scalars, phase9-branch-core-mir-basic-calls, phase9-branch-core-mir-basic-differential, phase9-branch-core-mir-bundles, phase9-branch-core-mir-block-graphs, phase9-branch-compiler-mir-scalars, phase9-branch-compiler-mir-metadata, phase9-branch-compiler-mir-blocks, phase9-branch-translator-scalar, phase9-branch-translator-cfg, phase9-branch-translator-metadata, phase9-branch-translator-imports, phase9c-native-diff-return-local, phase9c-native-diff-cfg, phase9c-native-diff-metadata, phase9c-native-diff-boundary, mir-branch, migration-surfaces, migration-return-int, migration-local-binding, migration-if-else, migration-provenance, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
         exit 1
         ;;
     esac
@@ -596,7 +608,9 @@ guard-cloud-heavy-ci-surface:
 
     rg -n -F 'phase9-branch-core-baseline' "$workflow" justfile >/dev/null
     rg -n -F 'phase9-branch-core-legacy' "$workflow" justfile >/dev/null
-    rg -n -F 'phase9-branch-core-mir-basic' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9-branch-core-mir-basic-scalars' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9-branch-core-mir-basic-calls' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9-branch-core-mir-basic-differential' "$workflow" justfile >/dev/null
     rg -n -F 'phase9-branch-core-mir-bundles' "$workflow" justfile >/dev/null
     rg -n -F 'phase9-branch-core-mir-block-graphs' "$workflow" justfile >/dev/null
     rg -n -F 'phase9-branch-compiler-mir-scalars' "$workflow" justfile >/dev/null
@@ -632,8 +646,16 @@ guard-cloud-heavy-ci-surface:
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-core-legacy)' >/dev/null
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-legacy' >/dev/null
-    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-core-mir-basic)' >/dev/null
-    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-mir-basic' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-core-mir-basic-scalars)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-core-mir-basic-suite-shard scalars' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-core-mir-basic-calls)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-core-mir-basic-suite-shard calls' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-core-mir-basic-differential)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-core-mir-basic-suite-shard differential' >/dev/null
+    if printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-core-mir-basic)' >/dev/null; then
+      echo "Cloud heavy CI must split phase9-branch-core-mir-basic into focused core MIR basic shards."
+      exit 1
+    fi
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-core-mir-bundles)' >/dev/null
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-mir-bundles' >/dev/null
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-core-mir-block-graphs)' >/dev/null
@@ -706,6 +728,10 @@ guard-cloud-heavy-ci-surface:
       echo "Cloud heavy guard workflow must split phase9-branch-core into focused core shards."
       exit 1
     fi
+    if rg -n '^[[:space:]]*-[[:space:]]*phase9-branch-core-mir-basic$' "$workflow" >/dev/null; then
+      echo "Cloud heavy guard workflow must split phase9-branch-core-mir-basic into focused core MIR basic shards."
+      exit 1
+    fi
     if rg -n '^[[:space:]]*-[[:space:]]*phase9-branch-compiler-mir-basic$' "$workflow" >/dev/null; then
       echo "Cloud heavy guard workflow must split phase9-branch-compiler-mir-basic into focused compiler MIR shards."
       exit 1
@@ -732,8 +758,8 @@ guard-cloud-heavy-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "31" ]; then
-      echo "Expected exactly 31 cloud heavy matrix shards, found $shard_count."
+    if [ "$shard_count" != "33" ]; then
+      echo "Expected exactly 33 cloud heavy matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
