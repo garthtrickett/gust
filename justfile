@@ -4523,6 +4523,13 @@ guard-cranelift-phase9b-close:
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_next_phase: phase9c_differential_validation' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_or_compiler_owned_fixture_native_guards_remain_oracle' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_initial_seven_lane_native_oracle_comparison' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 7' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_scope: phase9c_initial_scope_frozen' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_scope_policy: phase9c_initial_scope_is_exactly_seven_lanes_no_expansion_without_new_phase_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_names: return_int_literal,local_binding_read,conditional_branch,block_jump,provenance_metadata,resource_metadata,native_boundary_metadata' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_completion_policy: surface_and_native_ladders_green_with_no_production_routing' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
 
@@ -4587,7 +4594,7 @@ guard-cranelift-phase9c-differential-ladder-surface:
       echo "Phase 9C initial ladder oracle/translator count mismatch."
       exit 1
     fi
-    echo "✅ Phase 9C differential ladder surface passed: 7 frozen Phase 9B seeds are ready for MIR-to-C oracle vs Cranelift translator comparison without production routing."
+    echo "✅ Phase 9C differential ladder surface passed: initial seven-lane baseline is frozen for MIR-to-C oracle vs Cranelift translator comparison without production routing."
 
 guard-cranelift-phase9c-differential-ladder-native-smoke:
     #!/usr/bin/env bash
