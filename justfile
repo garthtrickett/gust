@@ -4829,6 +4829,28 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_candidate_shape: compiler_owned_mir_ingestion' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_ingestion_candidate_count: 7' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_translator_candidate_count: 0' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_status: phase9c_reusable_ingestion_lowering_core' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_object_entry: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_definition_entry: define_compiler_mir_ingestion_exported_function' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_body_entry: build_compiler_mir_ingestion_body' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_lane_count: 4' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_lanes: return_int_literal,local_binding_read,block_jump,conditional_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_value_scope: i32_constants_and_local_set_read' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_terminator_scope: return_jump_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_function_scope: one_function_one_exported_object_symbol' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_excluded_scope: calls_resources_strings_structs_arrays_runtime' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
+    rg -n -F 'enum CompilerMirLoweringStatement' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'enum CompilerMirLoweringTerminator' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'struct CompilerMirLoweringFunction' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'fn lower_compiler_mir_ingestion_function_to_object' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'fn define_compiler_mir_ingestion_exported_function' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'fn build_compiler_mir_ingestion_body' compiler/experiments/cranelift/src/main.rs >/dev/null
+    for lowering_entry in       emit_compiler_mir_return_int_ingestion_object       emit_compiler_mir_local_binding_read_ingestion_object       emit_compiler_mir_block_jump_ingestion_object       emit_compiler_mir_conditional_branch_ingestion_object; do
+      lowering_body="$(sed -n "/^fn ${lowering_entry}(/,/^}/p" compiler/experiments/cranelift/src/main.rs)"
+      printf '%s
+' "$lowering_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
+    done
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
 

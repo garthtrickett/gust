@@ -379,6 +379,39 @@ struct TinyMirBlockFunction {
 }
 
 #[derive(Clone, Copy)]
+enum CompilerMirLoweringStatement {
+    LocalI32Set { name: &'static str, value: i32 },
+}
+
+#[derive(Clone, Copy)]
+enum CompilerMirLoweringTerminator {
+    ReturnI32(i32),
+    ReturnLocalI32(&'static str),
+    Jump {
+        target: &'static str,
+    },
+    BranchI32Literal {
+        condition: i32,
+        then_block: &'static str,
+        else_block: &'static str,
+    },
+}
+
+struct CompilerMirLoweringBlock {
+    label: &'static str,
+    statements: Vec<CompilerMirLoweringStatement>,
+    terminator: CompilerMirLoweringTerminator,
+}
+
+struct CompilerMirLoweringFunction {
+    object_name: &'static str,
+    symbol: &'static str,
+    locals: Vec<TinyMirLocal>,
+    entry_block: &'static str,
+    blocks: Vec<CompilerMirLoweringBlock>,
+}
+
+#[derive(Clone, Copy)]
 enum TinyMirParamBlockTerminator {
     JumpI32Literal {
         target: &'static str,
@@ -1625,17 +1658,19 @@ fn emit_compiler_mir_return_int_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     let fixture = parse_compiler_mir_return_int_ingestion_fixture(&contents)?;
-    let mir_function = TinyMirFunction {
+    let mir_function = CompilerMirLoweringFunction {
         object_name: "gust_native_backend_compiler_mir_ingested_return_int",
         symbol: COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL,
-        params: &[],
-        return_type: TinyMirType::I32,
-        locals: &[],
-        statements: &[],
-        terminator: TinyMirTerminator::ReturnI32(fixture.return_value),
+        locals: vec![],
+        entry_block: "entry",
+        blocks: vec![CompilerMirLoweringBlock {
+            label: "entry",
+            statements: vec![],
+            terminator: CompilerMirLoweringTerminator::ReturnI32(fixture.return_value),
+        }],
     };
 
-    lower_tiny_mir_function_to_object(output_path, &mir_function)
+    lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)
 }
 
 fn emit_compiler_mir_to_cranelift_return_int_translator_object(
@@ -1793,17 +1828,25 @@ fn emit_compiler_mir_local_binding_read_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_local_binding_read_ingestion_fixture(&contents)?;
-    let mir_function = TinyMirFunction {
+    let mir_function = CompilerMirLoweringFunction {
         object_name: "gust_native_backend_compiler_mir_ingested_local_binding_read",
         symbol: COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL,
-        params: &[],
-        return_type: TinyMirType::I32,
-        locals: &MIR_LOCAL_BINDING_READ_LOCALS,
-        statements: &MIR_LOCAL_BINDING_READ_STATEMENTS,
-        terminator: TinyMirTerminator::ReturnLocalI32("value"),
+        locals: vec![TinyMirLocal {
+            name: "value",
+            ty: TinyMirType::I32,
+        }],
+        entry_block: "entry",
+        blocks: vec![CompilerMirLoweringBlock {
+            label: "entry",
+            statements: vec![CompilerMirLoweringStatement::LocalI32Set {
+                name: "value",
+                value: 2,
+            }],
+            terminator: CompilerMirLoweringTerminator::ReturnLocalI32("value"),
+        }],
     };
 
-    lower_tiny_mir_function_to_object(output_path, &mir_function)
+    lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)
 }
 
 fn parse_compiler_mir_local_binding_read_ingestion_fixture(
@@ -1883,21 +1926,35 @@ fn emit_compiler_mir_conditional_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_conditional_branch_ingestion_fixture(&contents)?;
-    let mir_function = TinyMirFunction {
+    let mir_function = CompilerMirLoweringFunction {
         object_name: "gust_native_backend_compiler_mir_ingested_conditional_branch",
         symbol: COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL,
-        params: &[],
-        return_type: TinyMirType::I32,
-        locals: &[],
-        statements: &[],
-        terminator: TinyMirTerminator::BranchI32Literal {
-            condition: 1,
-            then_return: 1,
-            else_return: 2,
-        },
+        locals: vec![],
+        entry_block: "entry",
+        blocks: vec![
+            CompilerMirLoweringBlock {
+                label: "entry",
+                statements: vec![],
+                terminator: CompilerMirLoweringTerminator::BranchI32Literal {
+                    condition: 1,
+                    then_block: "then",
+                    else_block: "else",
+                },
+            },
+            CompilerMirLoweringBlock {
+                label: "then",
+                statements: vec![],
+                terminator: CompilerMirLoweringTerminator::ReturnI32(1),
+            },
+            CompilerMirLoweringBlock {
+                label: "else",
+                statements: vec![],
+                terminator: CompilerMirLoweringTerminator::ReturnI32(2),
+            },
+        ],
     };
 
-    lower_tiny_mir_function_to_object(output_path, &mir_function)
+    lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)
 }
 
 fn parse_compiler_mir_conditional_branch_ingestion_fixture(
@@ -3458,45 +3515,26 @@ fn emit_compiler_mir_block_jump_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_jump_ingestion_fixture(&contents)?;
-    static COMPILER_MIR_BLOCK_JUMP_BLOCKS: [TinyMirBlock; 2] = [
-        TinyMirBlock {
-            label: "entry",
-            statements: &[],
-            terminator: TinyMirBlockTerminator::Jump { target: "return" },
-        },
-        TinyMirBlock {
-            label: "return",
-            statements: &[],
-            terminator: TinyMirBlockTerminator::ReturnI32(1),
-        },
-    ];
-    let mir_function = TinyMirBlockFunction {
+    let mir_function = CompilerMirLoweringFunction {
         object_name: "gust_native_backend_compiler_mir_ingested_block_jump",
         symbol: COMPILER_MIR_INGESTED_BLOCK_JUMP_SYMBOL,
-        params: &[],
-        return_type: TinyMirType::I32,
-        locals: &[],
+        locals: vec![],
         entry_block: "entry",
-        blocks: &COMPILER_MIR_BLOCK_JUMP_BLOCKS,
+        blocks: vec![
+            CompilerMirLoweringBlock {
+                label: "entry",
+                statements: vec![],
+                terminator: CompilerMirLoweringTerminator::Jump { target: "return" },
+            },
+            CompilerMirLoweringBlock {
+                label: "return",
+                statements: vec![],
+                terminator: CompilerMirLoweringTerminator::ReturnI32(1),
+            },
+        ],
     };
 
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_jump",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-    define_tiny_mir_block_graph_exported_function(&mut module, &mir_function)?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
+    lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)
 }
 
 fn parse_compiler_mir_block_jump_ingestion_fixture(contents: &str) -> Result<(), Box<dyn Error>> {
@@ -10087,6 +10125,188 @@ fn tiny_mir_type_to_cranelift_type(mir_type: TinyMirType) -> Type {
         TinyMirType::I32 => types::I32,
         TinyMirType::Void => panic!("void tiny MIR type has no Cranelift value representation"),
     }
+}
+
+fn lower_compiler_mir_ingestion_function_to_object(
+    output_path: &Path,
+    mir_function: &CompilerMirLoweringFunction,
+) -> Result<(), Box<dyn Error>> {
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder =
+        ObjectBuilder::new(isa, mir_function.object_name, default_libcall_names())?;
+    let mut module = ObjectModule::new(object_builder);
+
+    define_compiler_mir_ingestion_exported_function(&mut module, mir_function)?;
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn define_compiler_mir_ingestion_exported_function(
+    module: &mut ObjectModule,
+    mir_function: &CompilerMirLoweringFunction,
+) -> Result<(), Box<dyn Error>> {
+    let mut signature = module.make_signature();
+    signature.returns.push(AbiParam::new(types::I32));
+
+    let function_id = module.declare_function(mir_function.symbol, Linkage::Export, &signature)?;
+    let mut context = module.make_context();
+    context.func.signature = signature;
+
+    let mut builder_context = FunctionBuilderContext::new();
+    let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
+    build_compiler_mir_ingestion_body(&mut builder, mir_function)?;
+    builder.seal_all_blocks();
+    builder.finalize();
+
+    module.define_function(function_id, &mut context)?;
+    module.clear_context(&mut context);
+    Ok(())
+}
+
+fn build_compiler_mir_ingestion_body(
+    builder: &mut FunctionBuilder<'_>,
+    mir_function: &CompilerMirLoweringFunction,
+) -> Result<(), Box<dyn Error>> {
+    let mut cranelift_blocks: HashMap<&'static str, Block> = HashMap::new();
+    for block in &mir_function.blocks {
+        let cranelift_block = builder.create_block();
+        if cranelift_blocks
+            .insert(block.label, cranelift_block)
+            .is_some()
+        {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!("duplicate compiler MIR lowering block label: {}", block.label),
+            )
+            .into());
+        }
+    }
+
+    let entry_block = *cranelift_blocks
+        .get(mir_function.entry_block)
+        .ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "unknown compiler MIR lowering entry block: {}",
+                    mir_function.entry_block
+                ),
+            )
+        })?;
+    builder.append_block_params_for_function_params(entry_block);
+
+    let mut local_slots: HashMap<&'static str, Variable> = HashMap::new();
+    for local in &mir_function.locals {
+        let local_type = match local.ty {
+            TinyMirType::I32 => types::I32,
+            TinyMirType::Void => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unsupported compiler MIR lowering local type: {}", local.name),
+                )
+                .into());
+            }
+        };
+        let slot = builder.declare_var(local_type);
+        if local_slots.insert(local.name, slot).is_some() {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!("duplicate compiler MIR lowering local: {}", local.name),
+            )
+            .into());
+        }
+    }
+
+    for block in &mir_function.blocks {
+        let current_block = *cranelift_blocks.get(block.label).ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                format!("unknown compiler MIR lowering block: {}", block.label),
+            )
+        })?;
+        builder.switch_to_block(current_block);
+
+        for statement in &block.statements {
+            match *statement {
+                CompilerMirLoweringStatement::LocalI32Set { name, value } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering local set target: {name}"),
+                        )
+                    })?;
+                    let literal_value = builder.ins().iconst(types::I32, i64::from(value));
+                    builder.def_var(slot, literal_value);
+                }
+            }
+        }
+
+        match block.terminator {
+            CompilerMirLoweringTerminator::ReturnI32(value) => {
+                let return_value = builder.ins().iconst(types::I32, i64::from(value));
+                builder.ins().return_(&[return_value]);
+            }
+            CompilerMirLoweringTerminator::ReturnLocalI32(name) => {
+                let slot = *local_slots.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown compiler MIR lowering return local: {name}"),
+                    )
+                })?;
+                let return_value = builder.use_var(slot);
+                builder.ins().return_(&[return_value]);
+            }
+            CompilerMirLoweringTerminator::Jump { target } => {
+                let target_block = *cranelift_blocks.get(target).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown compiler MIR lowering jump target: {target}"),
+                    )
+                })?;
+                builder.ins().jump(target_block, &[]);
+            }
+            CompilerMirLoweringTerminator::BranchI32Literal {
+                condition,
+                then_block,
+                else_block,
+            } => {
+                let then_cranelift_block = *cranelift_blocks.get(then_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown compiler MIR lowering then block: {then_block}"),
+                    )
+                })?;
+                let else_cranelift_block = *cranelift_blocks.get(else_block).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown compiler MIR lowering else block: {else_block}"),
+                    )
+                })?;
+                let condition_value = builder.ins().iconst(types::I32, i64::from(condition));
+                let branch_condition =
+                    builder
+                        .ins()
+                        .icmp_imm(IntCC::NotEqual, condition_value, 0);
+                builder.ins().brif(
+                    branch_condition,
+                    then_cranelift_block,
+                    &[],
+                    else_cranelift_block,
+                    &[],
+                );
+            }
+        }
+    }
+
+    Ok(())
 }
 
 fn lower_tiny_mir_function_to_object(

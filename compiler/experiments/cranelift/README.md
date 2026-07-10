@@ -20,6 +20,12 @@ that seam: return-int literal, local-binding/read, conditional branch, block
 jump, provenance metadata, resource metadata, and native-boundary metadata.
 The Phase 9B translator seeds remain frozen historical experiment coverage.
 
+The first reusable compiler-MIR lowering core is intentionally narrow. Return
+int, local-binding/read, block-jump, and conditional-branch ingestion now share
+one object-emission and body-lowering path for i32 constants, local set/read,
+return, jump, and branch. Calls, resources, strings, structs, arrays, and runtime
+integration remain outside this core until later explicit milestones.
+
 The checked-in lockfile for this crate is owned by:
 
 ```bash
