@@ -1686,9 +1686,50 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn usage_error() -> IoError {
     IoError::new(
         ErrorKind::InvalidInput,
-        "usage: gust-cranelift-experiment <compiler-mir-validate-fixture <input.mir>|return-int-object|compiler-mir-return-int-ingestion-object <input.mir> <output.o>|mir-return-int-object|mir-local-binding-read-object|mir-conditional-branch-object|mir-add-i32-object|mir-arithmetic-i32-bundle-object|mir-comparison-i32-bundle-object|mir-comparison-branch-i32-bundle-object|mir-block-graph-i32-bundle-object|mir-block-graph-local-i32-bundle-object|mir-block-graph-local-update-i32-bundle-object|mir-block-graph-param-i32-bundle-object|mir-block-graph-param-call-i32-bundle-object|mir-block-graph-param-extern-i32-bundle-object|mir-block-graph-param-extern-add-i32-bundle-object|mir-block-graph-param-extern-predicate-i32-bundle-object|mir-block-graph-param-merge-i32-bundle-object|mir-block-graph-param-merge-call-i32-bundle-object|mir-positive-i32-branch-object|mir-increment-local-i32-object|mir-call-helper-i32-object|mir-extern-call-i32-object|mir-extern-add-i32-object|mir-extern-predicate-branch-i32-object|local-binding-read-object|conditional-branch-object|identity-i32-object|add-i32-object|positive-i32-branch-object|increment-local-i32-object|call-helper-i32-object|extern-call-i32-object|extern-add-i32-object|extern-predicate-branch-i32-object> <output.o>",
+        concat!(
+            "usage:\n",
+            "  gust-cranelift-experiment compiler-mir-validate-fixture <input.mir>\n",
+            "  gust-cranelift-experiment compiler-mir-return-int-ingestion-object <input.mir> <output.o>\n",
+            "  gust-cranelift-experiment ",
+            "<return-int-object|",
+            "mir-return-int-object|",
+            "mir-local-binding-read-object|",
+            "mir-conditional-branch-object|",
+            "mir-add-i32-object|",
+            "mir-arithmetic-i32-bundle-object|",
+            "mir-comparison-i32-bundle-object|",
+            "mir-comparison-branch-i32-bundle-object|",
+            "mir-block-graph-i32-bundle-object|",
+            "mir-block-graph-local-i32-bundle-object|",
+            "mir-block-graph-local-update-i32-bundle-object|",
+            "mir-block-graph-param-i32-bundle-object|",
+            "mir-block-graph-param-call-i32-bundle-object|",
+            "mir-block-graph-param-extern-i32-bundle-object|",
+            "mir-block-graph-param-extern-add-i32-bundle-object|",
+            "mir-block-graph-param-extern-predicate-i32-bundle-object|",
+            "mir-block-graph-param-merge-i32-bundle-object|",
+            "mir-block-graph-param-merge-call-i32-bundle-object|",
+            "mir-positive-i32-branch-object|",
+            "mir-increment-local-i32-object|",
+            "mir-call-helper-i32-object|",
+            "mir-extern-call-i32-object|",
+            "mir-extern-add-i32-object|",
+            "mir-extern-predicate-branch-i32-object|",
+            "local-binding-read-object|",
+            "conditional-branch-object|",
+            "identity-i32-object|",
+            "add-i32-object|",
+            "positive-i32-branch-object|",
+            "increment-local-i32-object|",
+            "call-helper-i32-object|",
+            "extern-call-i32-object|",
+            "extern-add-i32-object|",
+            "extern-predicate-branch-i32-object> ",
+            "<output.o>",
+        ),
     )
 }
+
 
 fn emit_return_int_object(output_path: &Path) -> Result<(), Box<dyn Error>> {
     emit_zero_arg_i32_object(
