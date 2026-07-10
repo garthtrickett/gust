@@ -401,7 +401,7 @@ guard-cranelift-phase9c-differential-ladder-native-shard shard:
     just guard-cranelift-phase9c-differential-ladder-surface
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_native_guard: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_initial_seven_lane_native_oracle_comparison' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 7' "$manifest_doc" >/dev/null
     case "{{shard}}" in
       return-local)
@@ -1726,6 +1726,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9B_CLOSE_GUARD: guard-cranelift-phase9b-close' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_SURFACE_GUARD: guard-cranelift-phase9c-differential-ladder-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_CLOSE_GUARD: guard-cranelift-phase9c-close' "$manifest_doc" justfile >/dev/null
     just guard-cranelift-compiler-mir-ingestion-corpus-surface
     just guard-cranelift-experiment-guard-wiring-surface
     cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
@@ -4766,7 +4767,7 @@ guard-cranelift-phase9b-close:
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_next_phase: phase9c_differential_validation' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_or_compiler_owned_fixture_native_guards_remain_oracle' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_initial_seven_lane_native_oracle_comparison' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 7' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_scope: phase9c_initial_scope_frozen' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_scope_policy: phase9c_initial_scope_is_exactly_seven_lanes_no_expansion_without_new_phase_contract' "$manifest_doc" >/dev/null
@@ -4816,17 +4817,23 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_next_phase: phase9c_differential_validation' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_or_compiler_owned_fixture_native_guards_remain_oracle' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_initial_seven_lane_native_oracle_comparison' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_CLOSE_GUARD: guard-cranelift-phase9c-close' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 7' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_scope: phase9c_initial_scope_frozen' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_scope_policy: phase9c_initial_scope_is_exactly_seven_lanes_no_expansion_without_new_phase_contract' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_names: return_int_literal,local_binding_read,conditional_branch,block_jump,provenance_metadata,resource_metadata,native_boundary_metadata' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_completion_policy: surface_and_native_ladders_green_with_no_production_routing' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_completion_policy: fixture_backed_differential_and_shared_cfg_join_green_with_strict_rejection_and_no_production_routing' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_close_guard: guard-cranelift-phase9c-close' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_close_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_closure_basis: mir_to_c_oracle_vs_compiler_owned_mir_fixture_ingested_by_cranelift' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_freeze_policy: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_next_phase: phase9d_compiler_owned_mir_ingestion_canonicalization' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_ledger: compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_result_policy: per_lane_oracle_candidate_expected_status_must_be_registered' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_failure_policy: failed_lane_must_identify_oracle_candidate_or_divergence' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_future_lane_policy: prefer_compiler_owned_mir_ingestion_before_new_bespoke_translator_lanes' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_future_lane_policy: new_lanes_require_new_phase_contract_and_compiler_owned_mir_ingestion' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_candidate_shape: compiler_owned_mir_ingestion' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_ingestion_candidate_count: 7' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_translator_candidate_count: 0' "$manifest_doc" >/dev/null
@@ -4834,13 +4841,20 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_object_entry: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_definition_entry: define_compiler_mir_ingestion_exported_function' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_body_entry: build_compiler_mir_ingestion_body' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_lane_count: 4' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_lanes: return_int_literal,local_binding_read,block_jump,conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_value_scope: i32_constants_and_local_set_read' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_terminator_scope: return_jump_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_function_scope: one_function_one_exported_object_symbol' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_lane_count: 5' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_lanes: return_int_literal,local_binding_read,block_jump,conditional_branch,block_local_branch_join' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_value_scope: i32_constants_function_params_local_set_read_and_add' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_terminator_scope: return_jump_literal_branch_and_local_positive_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_function_scope: one_function_one_exported_object_symbol_with_i32_params' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_excluded_scope: calls_resources_strings_structs_arrays_runtime' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_status: phase9c_first_shared_cfg_join_milestone' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_lane: block_local_branch_join' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_fixture: compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_guard: guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_shape: entry_branch_two_successors_join_return_joined_local' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_lowering_entry: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_guard: guard-cranelift-compiler-mir-ingestion-strict-rejection-contract' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_status: phase9c_invalid_fixtures_fail_before_object_emission' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_case_count: 8' "$manifest_doc" >/dev/null
@@ -4857,15 +4871,20 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'fn lower_compiler_mir_ingestion_function_to_object' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'fn define_compiler_mir_ingestion_exported_function' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'fn build_compiler_mir_ingestion_body' compiler/experiments/cranelift/src/main.rs >/dev/null
-    for lowering_entry in       emit_compiler_mir_return_int_ingestion_object       emit_compiler_mir_local_binding_read_ingestion_object       emit_compiler_mir_block_jump_ingestion_object       emit_compiler_mir_conditional_branch_ingestion_object; do
+    for lowering_entry in       emit_compiler_mir_return_int_ingestion_object       emit_compiler_mir_local_binding_read_ingestion_object       emit_compiler_mir_block_jump_ingestion_object       emit_compiler_mir_conditional_branch_ingestion_object       emit_compiler_mir_block_local_branch_join_ingestion_object; do
       lowering_body="$(sed -n "/^fn ${lowering_entry}(/,/^}/p" compiler/experiments/cranelift/src/main.rs)"
       printf '%s\n' "$lowering_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
     done
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
 
-    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_VERSION: 1' "$ledger_doc" >/dev/null
-    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_seven_lane_ingestion_backed' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_VERSION: 2' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_closed_fixture_backed_differential' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_CLOSE_STATUS: phase9c_closed_fixture_backed_differential' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_CLOSE_GUARD: guard-cranelift-phase9c-close' "$ledger_doc" justfile >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_CLOSURE_BASIS: mir_to_c_oracle_vs_compiler_owned_mir_fixture_ingested_by_cranelift' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FREEZE_POLICY: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_NEXT_PHASE: phase9d_compiler_owned_mir_ingestion_canonicalization' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_LANE_COUNT: 7' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_ORACLE_ROUTE: mir_to_c' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_CANDIDATE_ROUTE: mir_to_cranelift_experiment_only' "$ledger_doc" >/dev/null
@@ -4874,11 +4893,16 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_TRANSLATOR_CANDIDATE_COUNT: 0' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_ROUTE_POLICY: experiment_only_no_default_backend_flip' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_RESULT_POLICY: each_lane_records_oracle_candidate_expected_status_and_divergence_owner' "$ledger_doc" >/dev/null
-    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FUTURE_LANE_POLICY: prefer_compiler_owned_mir_ingestion_before_new_bespoke_translator_lanes' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FUTURE_LANE_POLICY: new_lanes_require_new_phase_contract_and_compiler_owned_mir_ingestion' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STRICT_REJECTION_POLICY: invalid_compiler_owned_mir_fixtures_fail_before_object_emission' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STRICT_REJECTION_CASES: unknown_fixture_format,missing_entry_block,missing_return_terminator,bad_local_name,mismatched_return_type,branch_to_unknown_block,duplicate_block_label,unsupported_statement_kind' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_METADATA_POLICY: preservation_and_recognition_not_runtime_semantics' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_METADATA_UNSUPPORTED_POLICY: explicit_diagnostic_or_ignored_with_proof' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_SHARED_CFG_JOIN_STATUS: first_compiler_owned_fixture_shared_lowering_milestone' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_SHARED_CFG_JOIN_FIXTURE: compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_SHARED_CFG_JOIN_GUARD: guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke' "$ledger_doc" justfile >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_SHARED_CFG_JOIN_SHAPE: entry_branch_two_successors_join_return_joined_local' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_SHARED_CFG_JOIN_ROUTE_POLICY: experiment_only_no_default_backend_flip' "$ledger_doc" >/dev/null
 
     rg -n -F 'lane: return_int_literal' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-return-int-literal-native-smoke' "$ledger_doc" >/dev/null
@@ -4940,7 +4964,7 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'failure_owner_policy: oracle_candidate_or_divergence_must_be_identified' "$ledger_doc" >/dev/null
-    rg -n -F 'current_result: ingestion_backed_candidate_registered' "$ledger_doc" >/dev/null
+    rg -n -F 'current_result: fixture_backed_differential_closed' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_shape: compiler_owned_mir_ingestion' "$ledger_doc" >/dev/null
     rg -n -F 'promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route' "$ledger_doc" >/dev/null
     rg -n -F 'semantic_scope: metadata_preservation_recognition_without_claiming_full_resource_semantics' "$ledger_doc" >/dev/null
@@ -4976,6 +5000,7 @@ guard-cranelift-phase9c-differential-ladder-surface:
     phase9c_initial_ladder_expected_status_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_expected_status:' "$manifest_doc" | wc -l | tr -d '[:space:]')"
     phase9c_ledger_lane_count="$(rg -n '^lane: ' "$ledger_doc" | wc -l | tr -d '[:space:]')"
     phase9c_ledger_fixture_count="$(rg -n '^candidate_fixture: compiler/fixtures/native_backend_.*_ingestion\.mir$' "$ledger_doc" | wc -l | tr -d '[:space:]')"
+    phase9c_ledger_closed_result_count="$(rg -n '^current_result: fixture_backed_differential_closed$' "$ledger_doc" | wc -l | tr -d '[:space:]')"
     if [ "$phase9c_initial_ladder_oracle_count" != "7" ]; then
       echo "Expected exactly 7 Phase 9C oracle guards, found $phase9c_initial_ladder_oracle_count."
       rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_oracle_guard:' "$manifest_doc" || true
@@ -5011,17 +5036,22 @@ guard-cranelift-phase9c-differential-ladder-surface:
       rg -n '^candidate_fixture:' "$ledger_doc" || true
       exit 1
     fi
-    echo "✅ Phase 9C differential ladder surface passed: all seven frozen semantic lanes use compiler-owned MIR ingestion candidates and production routing is unchanged."
+    if [ "$phase9c_ledger_closed_result_count" != "7" ]; then
+      echo "Expected exactly 7 closed Phase 9C fixture-backed results, found $phase9c_ledger_closed_result_count."
+      rg -n '^current_result:' "$ledger_doc" || true
+      exit 1
+    fi
+    echo "✅ Phase 9C closure surface passed: seven fixture-backed differential lanes, strict rejection, metadata preservation, and the shared CFG join are frozen with production routing unchanged."
 
 guard-cranelift-phase9c-differential-ladder-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Running Phase 9C ingestion-backed native differential ladder..."
+    echo "🔒 Running closed Phase 9C fixture-backed native differential ladder..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-phase9c-differential-ladder-surface
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_native_guard: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_initial_seven_lane_native_oracle_comparison' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 7' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_oracle_route: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_candidate_route: mir_to_cranelift_experiment_only' "$manifest_doc" >/dev/null
@@ -5040,8 +5070,26 @@ guard-cranelift-phase9c-differential-ladder-native-smoke:
     just guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke
     just guard-mir-to-c-native-boundary-metadata-native-smoke
     just guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke
-    echo "✅ Phase 9C native differential ladder passed: 7 MIR-to-C oracle lanes and 7 compiler-owned MIR ingestion candidates execute with matching expected native statuses.
-    echo "✅ Phase 9C native differential ladder passed: 7 MIR-to-C oracle lanes, 3 compiler-owned MIR ingestion candidates, and 4 frozen translator candidates execute with matching expected native statuses."
+    echo "✅ Closed Phase 9C native differential ladder passed: 7 MIR-to-C oracle lanes and 7 compiler-owned MIR ingestion candidates match their expected native statuses."
+
+guard-cranelift-phase9c-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 9C on fixture-backed differential evidence..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    ledger_doc="compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md"
+    just guard-cranelift-phase9c-differential-ladder-surface
+    just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract
+    just guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke
+    just guard-cranelift-phase9c-differential-ladder-native-smoke
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_CLOSE_GUARD: guard-cranelift-phase9c-close' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_close_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_closure_basis: mir_to_c_oracle_vs_compiler_owned_mir_fixture_ingested_by_cranelift' "$manifest_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_CLOSE_STATUS: phase9c_closed_fixture_backed_differential' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_CLOSURE_BASIS: mir_to_c_oracle_vs_compiler_owned_mir_fixture_ingested_by_cranelift' "$ledger_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
+    echo "✅ Phase 9C closed: the frozen seven-lane differential compares MIR-to-C with compiler-owned MIR fixtures ingested by Cranelift, while Cranelift remains experiment-only."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
@@ -5657,8 +5705,9 @@ guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke:
     rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_local_branch_join_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_local_branch_join.o' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_local_branch_join' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_source_fixture: compiler/mir_feature_block_local_branch_join_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_lowering_entry: fixture_only_block_local_branch_join_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_fixture_lowering_entry: fixture_only_block_local_branch_join_serialization' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_shared_lowering_entry: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_seam_status: compiler_owned_fixture_shared_cfg_join_lowering_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_local_branch_join_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_local_branch_join.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'producer_entry: mir_emit_native_backend_block_local_branch_join_ingestion_fixture' "$fixture" compiler/mir.gst >/dev/null

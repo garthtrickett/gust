@@ -1,7 +1,12 @@
 # Cranelift Phase 9C Differential Ledger
 
-PHASE9C_DIFFERENTIAL_LEDGER_VERSION: 1
-PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_seven_lane_ingestion_backed
+PHASE9C_DIFFERENTIAL_LEDGER_VERSION: 2
+PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_closed_fixture_backed_differential
+PHASE9C_DIFFERENTIAL_LEDGER_CLOSE_STATUS: phase9c_closed_fixture_backed_differential
+PHASE9C_DIFFERENTIAL_LEDGER_CLOSE_GUARD: guard-cranelift-phase9c-close
+PHASE9C_DIFFERENTIAL_LEDGER_CLOSURE_BASIS: mir_to_c_oracle_vs_compiler_owned_mir_fixture_ingested_by_cranelift
+PHASE9C_DIFFERENTIAL_LEDGER_FREEZE_POLICY: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract
+PHASE9C_DIFFERENTIAL_LEDGER_NEXT_PHASE: phase9d_compiler_owned_mir_ingestion_canonicalization
 PHASE9C_DIFFERENTIAL_LEDGER_LANE_COUNT: 7
 PHASE9C_DIFFERENTIAL_LEDGER_ORACLE_ROUTE: mir_to_c
 PHASE9C_DIFFERENTIAL_LEDGER_CANDIDATE_ROUTE: mir_to_cranelift_experiment_only
@@ -10,13 +15,18 @@ PHASE9C_DIFFERENTIAL_LEDGER_INGESTION_CANDIDATE_COUNT: 7
 PHASE9C_DIFFERENTIAL_LEDGER_TRANSLATOR_CANDIDATE_COUNT: 0
 PHASE9C_DIFFERENTIAL_LEDGER_ROUTE_POLICY: experiment_only_no_default_backend_flip
 PHASE9C_DIFFERENTIAL_LEDGER_RESULT_POLICY: each_lane_records_oracle_candidate_expected_status_and_divergence_owner
-PHASE9C_DIFFERENTIAL_LEDGER_FUTURE_LANE_POLICY: prefer_compiler_owned_mir_ingestion_before_new_bespoke_translator_lanes
+PHASE9C_DIFFERENTIAL_LEDGER_FUTURE_LANE_POLICY: new_lanes_require_new_phase_contract_and_compiler_owned_mir_ingestion
 PHASE9C_DIFFERENTIAL_LEDGER_STRICT_REJECTION_POLICY: invalid_compiler_owned_mir_fixtures_fail_before_object_emission
 PHASE9C_DIFFERENTIAL_LEDGER_STRICT_REJECTION_CASES: unknown_fixture_format,missing_entry_block,missing_return_terminator,bad_local_name,mismatched_return_type,branch_to_unknown_block,duplicate_block_label,unsupported_statement_kind
 PHASE9C_DIFFERENTIAL_LEDGER_METADATA_POLICY: preservation_and_recognition_not_runtime_semantics
 PHASE9C_DIFFERENTIAL_LEDGER_METADATA_UNSUPPORTED_POLICY: explicit_diagnostic_or_ignored_with_proof
+PHASE9C_DIFFERENTIAL_LEDGER_SHARED_CFG_JOIN_STATUS: first_compiler_owned_fixture_shared_lowering_milestone
+PHASE9C_DIFFERENTIAL_LEDGER_SHARED_CFG_JOIN_FIXTURE: compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir
+PHASE9C_DIFFERENTIAL_LEDGER_SHARED_CFG_JOIN_GUARD: guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke
+PHASE9C_DIFFERENTIAL_LEDGER_SHARED_CFG_JOIN_SHAPE: entry_branch_two_successors_join_return_joined_local
+PHASE9C_DIFFERENTIAL_LEDGER_SHARED_CFG_JOIN_ROUTE_POLICY: experiment_only_no_default_backend_flip
 
-This ledger freezes the Phase 9C semantic comparison set. It is deliberately an audit surface, not a backend route flip. MIR-to-C remains the oracle and Cranelift remains experiment-only. All seven candidates now consume compiler-owned MIR fixtures, emit objects through the isolated Cranelift experiment, link with native shims, and validate their expected exit statuses. Invalid compiler-owned MIR fixtures must fail before object emission, and metadata lanes prove preservation and recognition rather than claiming full resource or runtime-boundary semantics. The frozen Phase 9B translator seeds remain historical experiment coverage, but they are no longer the Phase 9C differential candidates.
+Phase 9C is closed on a fixture-backed differential basis. MIR-to-C remains the oracle, every one of the seven frozen candidates consumes a compiler-owned MIR fixture through the isolated Cranelift experiment, and production routing remains unchanged. The closure also records strict pre-emission rejection, metadata preservation/recognition without false runtime-semantic claims, and the first shared-CFG join lowered through the reusable core. The frozen Phase 9B translator seeds remain historical experiment coverage and are not Phase 9C candidates.
 
 ## Lanes
 
@@ -27,7 +37,7 @@ oracle_guard: guard-mir-to-c-return-int-literal-native-smoke
 candidate_guard: guard-cranelift-compiler-mir-return-int-ingestion-native-smoke
 candidate_fixture: compiler/fixtures/native_backend_return_int_ingestion.mir
 expected_native_status: 1
-current_result: ingestion_backed_candidate_registered
+current_result: fixture_backed_differential_closed
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
 candidate_shape: compiler_owned_mir_ingestion
 promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
@@ -39,7 +49,7 @@ oracle_guard: guard-mir-to-c-local-binding-read-native-smoke
 candidate_guard: guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke
 candidate_fixture: compiler/fixtures/native_backend_local_binding_read_ingestion.mir
 expected_native_status: 2
-current_result: ingestion_backed_candidate_registered
+current_result: fixture_backed_differential_closed
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
 candidate_shape: compiler_owned_mir_ingestion
 promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
@@ -51,7 +61,7 @@ oracle_guard: guard-mir-to-c-conditional-branch-native-smoke
 candidate_guard: guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke
 candidate_fixture: compiler/fixtures/native_backend_conditional_branch_ingestion.mir
 expected_native_status: 1
-current_result: ingestion_backed_candidate_registered
+current_result: fixture_backed_differential_closed
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
 candidate_shape: compiler_owned_mir_ingestion
 promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
@@ -63,7 +73,7 @@ oracle_guard: guard-mir-to-c-block-jump-native-smoke
 candidate_guard: guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke
 candidate_fixture: compiler/fixtures/native_backend_block_jump_ingestion.mir
 expected_native_status: 1
-current_result: ingestion_backed_candidate_registered
+current_result: fixture_backed_differential_closed
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
 candidate_shape: compiler_owned_mir_ingestion
 promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
@@ -75,7 +85,7 @@ oracle_guard: guard-mir-to-c-provenance-metadata-native-smoke
 candidate_guard: guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke
 candidate_fixture: compiler/fixtures/native_backend_provenance_metadata_ingestion.mir
 expected_native_status: 2
-current_result: ingestion_backed_candidate_registered
+current_result: fixture_backed_differential_closed
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
 candidate_shape: compiler_owned_mir_ingestion
 semantic_scope: metadata_preservation_recognition_without_claiming_full_resource_semantics
@@ -90,7 +100,7 @@ oracle_guard: guard-mir-to-c-resource-metadata-native-smoke
 candidate_guard: guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke
 candidate_fixture: compiler/fixtures/native_backend_resource_metadata_ingestion.mir
 expected_native_status: 2
-current_result: ingestion_backed_candidate_registered
+current_result: fixture_backed_differential_closed
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
 candidate_shape: compiler_owned_mir_ingestion
 semantic_scope: metadata_preservation_recognition_without_claiming_full_resource_semantics
@@ -105,7 +115,7 @@ oracle_guard: guard-mir-to-c-native-boundary-metadata-native-smoke
 candidate_guard: guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke
 candidate_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir
 expected_native_status: 0
-current_result: ingestion_backed_candidate_registered
+current_result: fixture_backed_differential_closed
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
 candidate_shape: compiler_owned_mir_ingestion
 semantic_scope: metadata_preservation_recognition_without_claiming_full_runtime_boundary_lowering
@@ -113,6 +123,6 @@ metadata_preservation_policy: fixture_fields_survive_ingestion_and_are_recognize
 metadata_execution_policy: no_runtime_boundary_lowering_claimed
 promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
 
-## Phase 9C+ roadmap
+## Phase 9D handoff
 
-All seven Phase 9C lanes now use the preferred compiler-owned MIR ingestion shape: compiler MIR fixture -> Cranelift ingestion -> object -> native result. New Phase 9C+ lanes should preserve this seam instead of adding bespoke translator seeds. A lane may stay in this ledger only if it remains experiment-only, records its MIR-to-C oracle guard, records its Cranelift candidate guard, records its expected native status, and keeps production routing unchanged.
+Phase 9C is frozen at seven fixture-backed differential lanes. Phase 9D may make compiler-owned MIR ingestion the canonical experimental backend-development seam, but it must preserve MIR-to-C as the production route until a later explicit backend-routing phase. Any new lane belongs to a new phase contract and must retain strict ingestion rejection, explicit metadata policy, registered oracle/candidate status, and experiment-only routing.

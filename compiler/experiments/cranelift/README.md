@@ -11,20 +11,22 @@ Step 9 adds the first real Cranelift object emission smoke: a tiny exported
 object with a C shim only to execute the native smoke; the function body itself
 is emitted by Cranelift.
 
-The Phase 9C+ roadmap promotes compiler-owned MIR ingestion to the main
-experimental seam. New lanes should prefer a fixture produced by
-`compiler/mir.gst`, consumed by this crate, emitted as an object, linked with a
-native shim, and checked for its expected result instead of adding another
-bespoke translator seed. All seven Phase 9C differential candidates now use
-that seam: return-int literal, local-binding/read, conditional branch, block
-jump, provenance metadata, resource metadata, and native-boundary metadata.
-The Phase 9B translator seeds remain frozen historical experiment coverage.
+Phase 9C is closed as a fixture-backed differential backend-development lane.
+Its frozen seven candidates consume fixtures produced by `compiler/mir.gst`,
+enter this isolated Cranelift crate, emit objects, link with native shims, and
+match their MIR-to-C oracle statuses. Strict invalid-fixture rejection happens
+before object emission, while provenance, resource, and native-boundary lanes
+prove metadata preservation and recognition rather than claiming runtime
+semantics. The Phase 9B translator seeds remain frozen historical coverage.
 
-The first reusable compiler-MIR lowering core is intentionally narrow. Return
-int, local-binding/read, block-jump, and conditional-branch ingestion now share
-one object-emission and body-lowering path for i32 constants, local set/read,
-return, jump, and branch. Calls, resources, strings, structs, arrays, and runtime
-integration remain outside this core until later explicit milestones.
+The reusable compiler-MIR lowering core remains intentionally narrow. Return
+int, local-binding/read, block-jump, conditional-branch, and the first shared
+CFG join use one object-emission and body-lowering path. The CFG milestone
+branches from an entry block, updates one local in each successor, joins both
+arms, and returns the joined local. Calls, resources, strings, structs, arrays,
+runtime integration, and production routing remain outside this closed phase.
+Phase 9D may canonicalize compiler-owned MIR ingestion for further experimental
+backend development without changing MIR-to-C as the production route.
 
 The checked-in lockfile for this crate is owned by:
 
