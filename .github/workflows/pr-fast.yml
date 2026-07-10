@@ -67,7 +67,10 @@ jobs:
           - cranelift-backend-suite-compiler-mir-scalars
           - cranelift-backend-suite-compiler-mir-metadata
           - cranelift-backend-suite-compiler-mir-blocks
-          - cranelift-backend-suite-translators
+          - cranelift-backend-suite-translator-scalar
+          - cranelift-backend-suite-translator-cfg
+          - cranelift-backend-suite-translator-metadata
+          - cranelift-backend-suite-translator-imports
           - mir-to-c-return-int
           - routed-return-int
           - migration-return-int

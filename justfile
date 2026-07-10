@@ -94,8 +94,17 @@ guard-pr-fast-shard shard:
       cranelift-backend-suite-compiler-mir-blocks)
         just guard-cranelift-experimental-backend-suite-shard compiler-mir-blocks
         ;;
-      cranelift-backend-suite-translators)
-        just guard-cranelift-experimental-backend-suite-shard translators
+      cranelift-backend-suite-translator-scalar)
+        just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard scalar
+        ;;
+      cranelift-backend-suite-translator-cfg)
+        just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard cfg
+        ;;
+      cranelift-backend-suite-translator-metadata)
+        just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard metadata
+        ;;
+      cranelift-backend-suite-translator-imports)
+        just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard imports
         ;;
       mir-to-c-return-int)
         just guard-mir-to-c-return-int-literal-native-smoke
@@ -121,7 +130,7 @@ guard-pr-fast-shard shard:
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9c-differential-ladder, cranelift-backend-suite-core-baseline, cranelift-backend-suite-core-legacy, cranelift-backend-suite-core-mir-basic-arithmetic, cranelift-backend-suite-core-mir-basic-calls, cranelift-backend-suite-core-mir-bundles, cranelift-backend-suite-core-mir-block-graphs, cranelift-backend-suite-compiler-mir-scalars, cranelift-backend-suite-compiler-mir-metadata, cranelift-backend-suite-compiler-mir-blocks, cranelift-backend-suite-translators, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
+        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9c-differential-ladder, cranelift-backend-suite-core-baseline, cranelift-backend-suite-core-legacy, cranelift-backend-suite-core-mir-basic-arithmetic, cranelift-backend-suite-core-mir-basic-calls, cranelift-backend-suite-core-mir-bundles, cranelift-backend-suite-core-mir-block-graphs, cranelift-backend-suite-compiler-mir-scalars, cranelift-backend-suite-compiler-mir-metadata, cranelift-backend-suite-compiler-mir-blocks, cranelift-backend-suite-translator-scalar, cranelift-backend-suite-translator-cfg, cranelift-backend-suite-translator-metadata, cranelift-backend-suite-translator-imports, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
         exit 1
         ;;
     esac
@@ -171,7 +180,10 @@ guard-pr-fast-ci-surface:
     rg -n -F 'cranelift-backend-suite-compiler-mir-scalars' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-compiler-mir-metadata' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-compiler-mir-blocks' "$workflow" justfile >/dev/null
-    rg -n -F 'cranelift-backend-suite-translators' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-backend-suite-translator-scalar' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-backend-suite-translator-cfg' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-backend-suite-translator-metadata' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-backend-suite-translator-imports' "$workflow" justfile >/dev/null
     rg -n -F 'mir-to-c-return-int' "$workflow" justfile >/dev/null
     rg -n -F 'routed-return-int' "$workflow" justfile >/dev/null
     rg -n -F 'migration-return-int' "$workflow" justfile >/dev/null
@@ -207,8 +219,18 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard compiler-mir-metadata' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-compiler-mir-blocks)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard compiler-mir-blocks' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-translators)' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard translators' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-translator-scalar)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard scalar' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-translator-cfg)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard cfg' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-translator-metadata)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard metadata' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-translator-imports)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard imports' >/dev/null
+    if printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-translators)' >/dev/null; then
+      echo "PR fast CI must split cranelift-backend-suite-translators into focused translator shards."
+      exit 1
+    fi
     if printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite)' >/dev/null; then
       echo "PR fast CI must split cranelift-backend-suite into focused backend suite shards."
       exit 1
@@ -251,6 +273,10 @@ guard-pr-fast-ci-surface:
       echo "PR fast CI must split cranelift-backend-suite-core-mir-basic into focused core MIR basic shards."
       exit 1
     fi
+    if rg -n '^[[:space:]]*-[[:space:]]*cranelift-backend-suite-translators$' "$workflow" >/dev/null; then
+      echo "PR fast CI must split cranelift-backend-suite-translators into focused translator shards."
+      exit 1
+    fi
     if rg -n '^[[:space:]]*-[[:space:]]*cranelift-backend-suite-compiler-mir-basic$' "$workflow" >/dev/null; then
       echo "PR fast CI must split cranelift-backend-suite-compiler-mir-basic into focused compiler MIR shards."
       exit 1
@@ -269,8 +295,8 @@ guard-pr-fast-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "21" ]; then
-      echo "Expected exactly 21 PR fast matrix shards, found $shard_count."
+    if [ "$shard_count" != "24" ]; then
+      echo "Expected exactly 24 PR fast matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
