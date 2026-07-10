@@ -11,8 +11,12 @@ PHASE9C_DIFFERENTIAL_LEDGER_TRANSLATOR_CANDIDATE_COUNT: 0
 PHASE9C_DIFFERENTIAL_LEDGER_ROUTE_POLICY: experiment_only_no_default_backend_flip
 PHASE9C_DIFFERENTIAL_LEDGER_RESULT_POLICY: each_lane_records_oracle_candidate_expected_status_and_divergence_owner
 PHASE9C_DIFFERENTIAL_LEDGER_FUTURE_LANE_POLICY: prefer_compiler_owned_mir_ingestion_before_new_bespoke_translator_lanes
+PHASE9C_DIFFERENTIAL_LEDGER_STRICT_REJECTION_POLICY: invalid_compiler_owned_mir_fixtures_fail_before_object_emission
+PHASE9C_DIFFERENTIAL_LEDGER_STRICT_REJECTION_CASES: unknown_fixture_format,missing_entry_block,missing_return_terminator,bad_local_name,mismatched_return_type,branch_to_unknown_block,duplicate_block_label,unsupported_statement_kind
+PHASE9C_DIFFERENTIAL_LEDGER_METADATA_POLICY: preservation_and_recognition_not_runtime_semantics
+PHASE9C_DIFFERENTIAL_LEDGER_METADATA_UNSUPPORTED_POLICY: explicit_diagnostic_or_ignored_with_proof
 
-This ledger freezes the Phase 9C semantic comparison set. It is deliberately an audit surface, not a backend route flip. MIR-to-C remains the oracle and Cranelift remains experiment-only. All seven candidates now consume compiler-owned MIR fixtures, emit objects through the isolated Cranelift experiment, link with native shims, and validate their expected exit statuses. The frozen Phase 9B translator seeds remain historical experiment coverage, but they are no longer the Phase 9C differential candidates.
+This ledger freezes the Phase 9C semantic comparison set. It is deliberately an audit surface, not a backend route flip. MIR-to-C remains the oracle and Cranelift remains experiment-only. All seven candidates now consume compiler-owned MIR fixtures, emit objects through the isolated Cranelift experiment, link with native shims, and validate their expected exit statuses. Invalid compiler-owned MIR fixtures must fail before object emission, and metadata lanes prove preservation and recognition rather than claiming full resource or runtime-boundary semantics. The frozen Phase 9B translator seeds remain historical experiment coverage, but they are no longer the Phase 9C differential candidates.
 
 ## Lanes
 
@@ -75,6 +79,8 @@ current_result: ingestion_backed_candidate_registered
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
 candidate_shape: compiler_owned_mir_ingestion
 semantic_scope: metadata_preservation_recognition_without_claiming_full_resource_semantics
+metadata_preservation_policy: fixture_fields_survive_ingestion_and_are_recognized_before_scalar_lowering
+metadata_execution_policy: no_resource_or_runtime_semantics_claimed
 promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
 
 ### resource_metadata
@@ -88,6 +94,8 @@ current_result: ingestion_backed_candidate_registered
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
 candidate_shape: compiler_owned_mir_ingestion
 semantic_scope: metadata_preservation_recognition_without_claiming_full_resource_semantics
+metadata_preservation_policy: fixture_fields_survive_ingestion_and_are_recognized_before_scalar_lowering
+metadata_execution_policy: no_resource_or_runtime_semantics_claimed
 promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
 
 ### native_boundary_metadata
@@ -101,6 +109,8 @@ current_result: ingestion_backed_candidate_registered
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
 candidate_shape: compiler_owned_mir_ingestion
 semantic_scope: metadata_preservation_recognition_without_claiming_full_runtime_boundary_lowering
+metadata_preservation_policy: fixture_fields_survive_ingestion_and_are_recognized_before_void_lowering
+metadata_execution_policy: no_runtime_boundary_lowering_claimed
 promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
 
 ## Phase 9C+ roadmap

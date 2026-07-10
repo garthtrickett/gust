@@ -3226,6 +3226,7 @@ fn parse_compiler_mir_provenance_metadata_ingestion_fixture(
     )?;
     require_compiler_mir_ingestion_field(&fields, "resource_metadata_count", "0")?;
     require_compiler_mir_ingestion_field(&fields, "native_boundary_metadata_count", "0")?;
+    recognize_compiler_mir_metadata_preservation_contract(&fields, "provenance_metadata")?;
     require_compiler_mir_ingestion_field(
         &fields,
         "backend_symbol",
@@ -3296,6 +3297,7 @@ fn parse_compiler_mir_resource_metadata_ingestion_fixture(
     require_compiler_mir_ingestion_field(&fields, "resource_0_cleanup_required", "false")?;
     require_compiler_mir_ingestion_field(&fields, "provenance_metadata_count", "0")?;
     require_compiler_mir_ingestion_field(&fields, "native_boundary_metadata_count", "0")?;
+    recognize_compiler_mir_metadata_preservation_contract(&fields, "resource_metadata")?;
     require_compiler_mir_ingestion_field(
         &fields,
         "backend_symbol",
@@ -3361,12 +3363,48 @@ fn parse_compiler_mir_native_boundary_metadata_ingestion_fixture(
         "native_boundary_0_origin",
         "compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst",
     )?;
+    recognize_compiler_mir_metadata_preservation_contract(&fields, "native_boundary_metadata")?;
     require_compiler_mir_ingestion_field(
         &fields,
         "backend_symbol",
         COMPILER_MIR_INGESTED_NATIVE_BOUNDARY_METADATA_SYMBOL,
     )?;
     require_compiler_mir_ingestion_field(&fields, "expected_exit", "0")?;
+    Ok(())
+}
+
+fn recognize_compiler_mir_metadata_preservation_contract(
+    fields: &HashMap<&str, &str>,
+    lane: &str,
+) -> Result<(), Box<dyn Error>> {
+    match lane {
+        "provenance_metadata" => {
+            require_compiler_mir_ingestion_field(fields, "provenance_metadata_count", "1")?;
+            require_compiler_mir_ingestion_field(fields, "provenance_0_kind", "LocalBinding")?;
+            require_compiler_mir_ingestion_field(fields, "resource_metadata_count", "0")?;
+            require_compiler_mir_ingestion_field(fields, "native_boundary_metadata_count", "0")?;
+        }
+        "resource_metadata" => {
+            require_compiler_mir_ingestion_field(fields, "resource_metadata_count", "1")?;
+            require_compiler_mir_ingestion_field(fields, "resource_0_kind", "LinearResource")?;
+            require_compiler_mir_ingestion_field(fields, "resource_0_state", "Live")?;
+            require_compiler_mir_ingestion_field(fields, "provenance_metadata_count", "0")?;
+            require_compiler_mir_ingestion_field(fields, "native_boundary_metadata_count", "0")?;
+        }
+        "native_boundary_metadata" => {
+            require_compiler_mir_ingestion_field(fields, "native_boundary_metadata_count", "1")?;
+            require_compiler_mir_ingestion_field(fields, "native_boundary_0_kind", "RuntimeCall")?;
+            require_compiler_mir_ingestion_field(fields, "resource_metadata_count", "0")?;
+            require_compiler_mir_ingestion_field(fields, "provenance_metadata_count", "0")?;
+        }
+        other => {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!("unsupported compiler MIR metadata preservation lane: {other}"),
+            )
+            .into());
+        }
+    }
     Ok(())
 }
 

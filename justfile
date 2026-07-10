@@ -66,6 +66,7 @@ guard-pr-fast-shard shard:
         ;;
       cranelift-phase9c-differential-ladder)
         just guard-cranelift-phase9c-differential-ladder-surface
+        just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -4840,6 +4841,16 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_function_scope: one_function_one_exported_object_symbol' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_excluded_scope: calls_resources_strings_structs_arrays_runtime' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_guard: guard-cranelift-compiler-mir-ingestion-strict-rejection-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_status: phase9c_invalid_fixtures_fail_before_object_emission' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_case_count: 8' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_cases: unknown_fixture_format,missing_entry_block,missing_return_terminator,bad_local_name,mismatched_return_type,branch_to_unknown_block,duplicate_block_label,unsupported_statement_kind' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_route_policy: reject_before_cranelift_object_emission' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_metadata_preservation_policy_status: phase9c_metadata_preservation_recognition_not_runtime_semantics' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_metadata_preservation_lanes: provenance_metadata,resource_metadata,native_boundary_metadata' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_metadata_preservation_fixture_policy: metadata_survives_fixture_production_and_ingestion' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_metadata_preservation_lowering_policy: metadata_is_recognized_before_scalar_lowering_and_must_not_perturb_scalar_result' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_metadata_preservation_unsupported_policy: unsupported_metadata_requires_explicit_diagnostic_or_ignored_with_proof' "$manifest_doc" >/dev/null
     rg -n -F 'enum CompilerMirLoweringStatement' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'enum CompilerMirLoweringTerminator' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'struct CompilerMirLoweringFunction' compiler/experiments/cranelift/src/main.rs >/dev/null
@@ -4864,6 +4875,10 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_ROUTE_POLICY: experiment_only_no_default_backend_flip' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_RESULT_POLICY: each_lane_records_oracle_candidate_expected_status_and_divergence_owner' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FUTURE_LANE_POLICY: prefer_compiler_owned_mir_ingestion_before_new_bespoke_translator_lanes' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STRICT_REJECTION_POLICY: invalid_compiler_owned_mir_fixtures_fail_before_object_emission' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STRICT_REJECTION_CASES: unknown_fixture_format,missing_entry_block,missing_return_terminator,bad_local_name,mismatched_return_type,branch_to_unknown_block,duplicate_block_label,unsupported_statement_kind' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_METADATA_POLICY: preservation_and_recognition_not_runtime_semantics' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_METADATA_UNSUPPORTED_POLICY: explicit_diagnostic_or_ignored_with_proof' "$ledger_doc" >/dev/null
 
     rg -n -F 'lane: return_int_literal' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-return-int-literal-native-smoke' "$ledger_doc" >/dev/null
@@ -4930,6 +4945,14 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route' "$ledger_doc" >/dev/null
     rg -n -F 'semantic_scope: metadata_preservation_recognition_without_claiming_full_resource_semantics' "$ledger_doc" >/dev/null
     rg -n -F 'semantic_scope: metadata_preservation_recognition_without_claiming_full_runtime_boundary_lowering' "$ledger_doc" >/dev/null
+    rg -n -F 'metadata_preservation_policy: fixture_fields_survive_ingestion_and_are_recognized_before_scalar_lowering' "$ledger_doc" >/dev/null
+    rg -n -F 'metadata_preservation_policy: fixture_fields_survive_ingestion_and_are_recognized_before_void_lowering' "$ledger_doc" >/dev/null
+    rg -n -F 'metadata_execution_policy: no_resource_or_runtime_semantics_claimed' "$ledger_doc" >/dev/null
+    rg -n -F 'metadata_execution_policy: no_runtime_boundary_lowering_claimed' "$ledger_doc" >/dev/null
+    rg -n -F 'fn recognize_compiler_mir_metadata_preservation_contract' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'recognize_compiler_mir_metadata_preservation_contract(&fields, "provenance_metadata")?' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'recognize_compiler_mir_metadata_preservation_contract(&fields, "resource_metadata")?' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'recognize_compiler_mir_metadata_preservation_contract(&fields, "native_boundary_metadata")?' compiler/experiments/cranelift/src/main.rs >/dev/null
 
     rg -n -F 'guard-mir-to-c-return-int-literal-native-smoke' justfile "$ledger_doc" >/dev/null
     rg -n -F 'guard-cranelift-compiler-mir-return-int-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
@@ -6663,6 +6686,225 @@ guard-cranelift-compiler-mir-block-param-quint-materialize-return-ingestion-nati
     "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param quint materialize return ingestion seam native smoke passed."
+
+guard-cranelift-compiler-mir-ingestion-strict-rejection-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking strict compiler-owned MIR ingestion rejection contract..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    build_dir="build/guards/cranelift_compiler_mir_ingestion_strict_rejection_contract"
+    mkdir -p "$build_dir"
+    just guard-cranelift-backend-surface
+    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_guard: guard-cranelift-compiler-mir-ingestion-strict-rejection-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_status: phase9c_invalid_fixtures_fail_before_object_emission' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_case_count: 8' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_cases: unknown_fixture_format,missing_entry_block,missing_return_terminator,bad_local_name,mismatched_return_type,branch_to_unknown_block,duplicate_block_label,unsupported_statement_kind' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_route_policy: reject_before_cranelift_object_emission' "$manifest_doc" >/dev/null
+    check_rejected() {
+      command="$1"
+      fixture="$2"
+      label="$3"
+      object_file="$build_dir/${label}.o"
+      log_file="$build_dir/${label}.log"
+      rm -f "$object_file" "$log_file"
+      set +e
+      cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- "$command" "$fixture" "$object_file" >"$log_file" 2>&1
+      status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Expected strict compiler-owned MIR rejection case to fail before object emission: $label"
+        cat "$log_file"
+        exit 1
+      fi
+      rg -n -F 'compiler MIR ingestion fixture' "$log_file" >/dev/null
+      if [ -e "$object_file" ]; then
+        echo "Strict compiler-owned MIR rejection case emitted an object before failing: $label"
+        ls -l "$object_file"
+        cat "$log_file"
+        exit 1
+      fi
+    }
+
+    unknown_format_fixture="$build_dir/unknown_fixture_format.mir"
+    cat > "$unknown_format_fixture" <<'MIR'
+format: gust.compiler_mir_ingestion.unknown.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
+lowering_entry: mir_lower_return_int_literal_fixture
+function: tiny_return_int
+return_type: int
+entry_block: 0
+block_count: 1
+terminator: Return
+return_value_kind: IntLiteral
+return_value: 1
+return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
+expected_exit: 1
+MIR
+
+    missing_entry_fixture="$build_dir/missing_entry_block.mir"
+    cat > "$missing_entry_fixture" <<'MIR'
+format: gust.compiler_mir_ingestion.return_int.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
+lowering_entry: mir_lower_return_int_literal_fixture
+function: tiny_return_int
+return_type: int
+block_count: 1
+terminator: Return
+return_value_kind: IntLiteral
+return_value: 1
+return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
+expected_exit: 1
+MIR
+
+    missing_terminator_fixture="$build_dir/missing_return_terminator.mir"
+    cat > "$missing_terminator_fixture" <<'MIR'
+format: gust.compiler_mir_ingestion.return_int.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
+lowering_entry: mir_lower_return_int_literal_fixture
+function: tiny_return_int
+return_type: int
+entry_block: 0
+block_count: 1
+return_value_kind: IntLiteral
+return_value: 1
+return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
+expected_exit: 1
+MIR
+
+    bad_local_fixture="$build_dir/bad_local_name.mir"
+    cat > "$bad_local_fixture" <<'MIR'
+format: gust.compiler_mir_ingestion.local_binding_read.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_local_binding_read_ingestion_fixture
+lowering_entry: mir_lower_local_binding_read_fixture
+function: tiny_local_binding_read
+return_type: int
+entry_block: 0
+block_count: 1
+local_count: 1
+local_0_name: not_value
+local_0_type: int
+statement_count: 1
+statement_0_kind: LocalI32Set
+statement_0_local: value
+statement_0_value: 2
+terminator: ReturnLocal
+return_local: value
+return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read
+expected_exit: 2
+MIR
+
+    mismatched_return_fixture="$build_dir/mismatched_return_type.mir"
+    cat > "$mismatched_return_fixture" <<'MIR'
+format: gust.compiler_mir_ingestion.return_int.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
+lowering_entry: mir_lower_return_int_literal_fixture
+function: tiny_return_int
+return_type: void
+entry_block: 0
+block_count: 1
+terminator: Return
+return_value_kind: IntLiteral
+return_value: 1
+return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
+expected_exit: 1
+MIR
+
+    unknown_branch_fixture="$build_dir/branch_to_unknown_block.mir"
+    cat > "$unknown_branch_fixture" <<'MIR'
+format: gust.compiler_mir_ingestion.conditional_branch.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_conditional_branch_ingestion_fixture
+lowering_entry: mir_lower_conditional_branch_fixture
+function: tiny_conditional_branch
+return_type: int
+entry_block: 0
+block_count: 3
+block_0_terminator: Branch
+branch_condition_kind: IntLiteral
+branch_condition_value: 1
+branch_condition_type: int
+branch_then_block: missing
+branch_else_block: 2
+block_1_terminator: Return
+block_1_return_value_kind: IntLiteral
+block_1_return_value: 1
+block_1_return_value_type: int
+block_2_terminator: Return
+block_2_return_value_kind: IntLiteral
+block_2_return_value: 2
+block_2_return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_conditional_branch
+expected_exit: 1
+MIR
+
+    duplicate_label_fixture="$build_dir/duplicate_block_label.mir"
+    cat > "$duplicate_label_fixture" <<'MIR'
+format: gust.compiler_mir_ingestion.block_jump.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_block_jump_ingestion_fixture
+source_fixture: compiler/mir_lower_block_jump_smoke_test_entry.gst
+lowering_entry: mir_lower_block_jump_fixture
+function: tiny_block_jump
+return_type: int
+entry_block: entry
+block_count: 2
+block_0_label: entry
+block_0_statement_count: 0
+block_0_terminator: Jump
+block_0_target: return
+block_1_label: entry
+block_1_statement_count: 0
+block_1_terminator: Return
+block_1_return_value_kind: IntLiteral
+block_1_return_value: 1
+block_1_return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_block_jump
+expected_exit: 1
+MIR
+
+    unsupported_statement_fixture="$build_dir/unsupported_statement_kind.mir"
+    cat > "$unsupported_statement_fixture" <<'MIR'
+format: gust.compiler_mir_ingestion.local_binding_read.v1
+producer: compiler/mir.gst
+producer_entry: mir_emit_native_backend_local_binding_read_ingestion_fixture
+lowering_entry: mir_lower_local_binding_read_fixture
+function: tiny_local_binding_read
+return_type: int
+entry_block: 0
+block_count: 1
+local_count: 1
+local_0_name: value
+local_0_type: int
+statement_count: 1
+statement_0_kind: RuntimeCall
+statement_0_local: value
+statement_0_value: 2
+terminator: ReturnLocal
+return_local: value
+return_value_type: int
+backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read
+expected_exit: 2
+MIR
+
+    check_rejected compiler-mir-return-int-ingestion-object "$unknown_format_fixture" unknown_fixture_format
+    check_rejected compiler-mir-return-int-ingestion-object "$missing_entry_fixture" missing_entry_block
+    check_rejected compiler-mir-return-int-ingestion-object "$missing_terminator_fixture" missing_return_terminator
+    check_rejected compiler-mir-local-binding-read-ingestion-object "$bad_local_fixture" bad_local_name
+    check_rejected compiler-mir-return-int-ingestion-object "$mismatched_return_fixture" mismatched_return_type
+    check_rejected compiler-mir-conditional-branch-ingestion-object "$unknown_branch_fixture" branch_to_unknown_block
+    check_rejected compiler-mir-block-jump-ingestion-object "$duplicate_label_fixture" duplicate_block_label
+    check_rejected compiler-mir-local-binding-read-ingestion-object "$unsupported_statement_fixture" unsupported_statement_kind
+    echo "✅ Strict compiler-owned MIR ingestion rejection contract passed."
 
 guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     #!/usr/bin/env bash
