@@ -59,13 +59,22 @@ entry reachability, reachable return behavior, metadata attachment/policy, and
 native exit range before any Cranelift module or object can be created.
 
 `compiler-mir-validate-fixture` exercises this boundary without emitting an
-object. Existing Phase 9C lane-specific formats and parsers remain temporary
-compatibility scaffolding until the later rebase milestone; this step does not
-pretend they already consume the canonical schema. Existing `TinyMir*` and
-lane-owned `ObjectModule` paths remain classified noncanonical and may not
-receive new semantic work. CI still requires every ingestion emitter or
-translator seed to enter the inventory. The next milestone is the generic
-ingestion command.
+object. The generic `compiler-mir-ingestion-object <input.mir> <output.o>`
+command now reads the canonical schema, parses and validates it, then passes
+the validated `CompilerMirLoweringFunction` through the shared body lowerer and
+object emitter. Validation failure happens before output-directory or object
+creation. Nonempty metadata is rejected explicitly at this object-emission
+boundary until the Phase 9D metadata canonicalization milestone, so the generic
+command cannot silently discard recognized metadata.
+
+The generic command adds no semantic lane and leaves the 33-seam inventory
+unchanged. Existing Phase 9C lane-specific formats and commands remain
+temporary compatibility scaffolding until the rebase milestone; existing
+`TinyMir*` and lane-owned `ObjectModule` paths remain classified noncanonical
+and may not receive new semantic work. CI still requires every ingestion
+emitter or translator seed to enter the inventory. The next milestone is to
+rebase the frozen Phase 9C lanes onto the generic path and canonicalize
+metadata representation and policy.
 
 The checked-in lockfile for this crate is owned by:
 

@@ -581,6 +581,21 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "compiler-mir-ingestion-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_compiler_mir_fixture_object(
+                Path::new(&input_path),
+                Path::new(&output_path),
+            )
+        }
         "compiler-mir-validate-fixture" => {
             let Some(input_path) = args.next() else {
                 return Err(usage_error().into());
@@ -1688,6 +1703,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment compiler-mir-ingestion-object <input.mir> <output.o>\n",
             "  gust-cranelift-experiment compiler-mir-validate-fixture <input.mir>\n",
             "  gust-cranelift-experiment compiler-mir-return-int-ingestion-object <input.mir> <output.o>\n",
             "  gust-cranelift-experiment ",
@@ -2712,6 +2728,23 @@ fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn E
         fixture.function.object_name, fixture.function.symbol
     );
     Ok(())
+}
+
+fn emit_compiler_mir_fixture_object(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(input_path)?;
+    let fixture = parse_compiler_mir_fixture(&contents)?;
+    validate_compiler_mir_fixture(&fixture)?;
+    if !fixture.metadata.is_empty() {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "canonical compiler MIR generic object emission currently requires metadata_count: 0; metadata lowering is deferred to the Phase 9D metadata canonicalization milestone",
+        )
+        .into());
+    }
+    lower_compiler_mir_ingestion_function_to_object(output_path, &fixture.function)
 }
 
 fn parse_compiler_mir_ingestion_fields(

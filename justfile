@@ -70,6 +70,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9d-opening-contract
         just guard-cranelift-phase9d-ingestion-inventory-architecture
         just guard-cranelift-phase9d-schema-parser-validator
+        just guard-cranelift-phase9d-generic-ingestion-command
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -204,6 +205,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-opening-contract' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-ingestion-inventory-architecture' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-schema-parser-validator' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-generic-ingestion-command' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -5419,6 +5421,160 @@ guard-cranelift-phase9d-schema-parser-validator:
     fi
 
     echo "✅ Phase 9D canonical fixture schema, parser, and validator passed with strict structural and semantic rejection before object emission."
+
+guard-cranelift-phase9d-generic-ingestion-command:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9D generic compiler MIR ingestion command..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    build_dir="build/guards/cranelift_phase9d_generic_ingestion_command"
+    fixture="$build_dir/generic_shared_cfg.mir"
+    object_file="$build_dir/generic_shared_cfg.o"
+    shim_c="$build_dir/generic_shared_cfg_main.c"
+    binary="$build_dir/generic_shared_cfg_bin"
+    if [ ! -f "$manifest_doc" ] || [ ! -f "$source_file" ]; then
+      echo "Phase 9D generic command guard requires the Cranelift manifest and experiment source."
+      exit 1
+    fi
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_GENERIC_INGESTION_COMMAND_GUARD: guard-cranelift-phase9d-generic-ingestion-command' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_third_milestone: add_generic_ingestion_command' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_third_milestone_status: complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_fourth_milestone: rebase_phase9c_lanes_and_canonicalize_metadata' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_next_milestone: phase9c_rebase_and_metadata_canonicalization' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_status: phase9d_generic_ingestion_command_complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_name: compiler-mir-ingestion-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_entry: emit_compiler_mir_fixture_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_parser: parse_compiler_mir_fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_validator: validate_compiler_mir_fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_rust_model: CompilerMirLoweringFunction' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_body_lowerer: build_compiler_mir_ingestion_body' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_object_emitter: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_stage_order: read_then_parse_then_validate_then_shared_lowering_then_object_emission' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_validation_failure_policy: reject_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_metadata_policy: reject_nonempty_metadata_until_phase9d_metadata_canonicalization' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_inventory_policy: generic_command_adds_no_semantic_lane_and_preserves_33_seam_inventory' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_next_milestone: rebase_phase9c_lanes_and_canonicalize_metadata' "$manifest_doc" >/dev/null
+
+    rg -n -F '"compiler-mir-ingestion-object" => {' "$source_file" >/dev/null
+    rg -n '^fn emit_compiler_mir_fixture_object\(' "$source_file" >/dev/null
+    generic_body="$(sed -n '/^fn emit_compiler_mir_fixture_object(/,/^}/p' "$source_file")"
+    printf '%s\n' "$generic_body" | rg -n -F 'let fixture = parse_compiler_mir_fixture(&contents)?;' >/dev/null
+    printf '%s\n' "$generic_body" | rg -n -F 'validate_compiler_mir_fixture(&fixture)?;' >/dev/null
+    printf '%s\n' "$generic_body" | rg -n -F 'if !fixture.metadata.is_empty() {' >/dev/null
+    printf '%s\n' "$generic_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &fixture.function)' >/dev/null
+    if printf '%s\n' "$generic_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|build_compiler_mir_ingestion_body' >/dev/null; then
+      echo "The generic command must delegate to the shared object emitter instead of owning Cranelift construction."
+      exit 1
+    fi
+
+    cat > "$fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9d_generic_shared_cfg
+    backend_symbol: tiny_phase9d_generic_shared_cfg
+    parameter_count: 1
+    parameter_0_type: int
+    return_type: int
+    local_count: 1
+    local_0_name: value
+    local_0_type: int
+    entry_block: entry
+    block_count: 4
+    block_0_label: entry
+    block_0_statement_count: 1
+    block_0_statement_0_kind: LocalI32SetParam
+    block_0_statement_0_local: value
+    block_0_statement_0_param: 0
+    block_0_terminator_kind: BranchLocalI32Positive
+    block_0_terminator_local: value
+    block_0_terminator_then: positive
+    block_0_terminator_else: non_positive
+    block_1_label: positive
+    block_1_statement_count: 1
+    block_1_statement_0_kind: LocalI32AddI32Literal
+    block_1_statement_0_local: value
+    block_1_statement_0_value: 4
+    block_1_terminator_kind: Jump
+    block_1_terminator_target: join
+    block_2_label: non_positive
+    block_2_statement_count: 1
+    block_2_statement_0_kind: LocalI32AddI32Literal
+    block_2_statement_0_local: value
+    block_2_statement_0_value: 8
+    block_2_terminator_kind: Jump
+    block_2_terminator_target: join
+    block_3_label: join
+    block_3_statement_count: 0
+    block_3_terminator_kind: ReturnLocalI32
+    block_3_terminator_local: value
+    metadata_count: 0
+    expected_exit: 9
+    MIR
+
+    cargo_cmd=(cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-ingestion-object)
+    "${cargo_cmd[@]}" "$fixture" "$object_file"
+    test -s "$object_file"
+
+    printf '%s\n' '#include <stdint.h>' > "$shim_c"
+    printf '%s\n' 'extern int32_t tiny_phase9d_generic_shared_cfg(int32_t);' >> "$shim_c"
+    printf '%s\n' 'int main(void) { return tiny_phase9d_generic_shared_cfg(5); }' >> "$shim_c"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    set +e
+    "$binary"
+    status="$?"
+    set -e
+    if [ "$status" != "9" ]; then
+      echo "Expected Phase 9D generic shared-CFG binary to exit with status 9, got $status"
+      exit 1
+    fi
+
+    invalid_fixture="$build_dir/invalid_target.mir"
+    invalid_object="$build_dir/invalid/should_not_exist.o"
+    sed 's/block_1_terminator_target: join/block_1_terminator_target: missing/' "$fixture" > "$invalid_fixture"
+    set +e
+    "${cargo_cmd[@]}" "$invalid_fixture" "$invalid_object" > "$build_dir/invalid.log" 2>&1
+    invalid_status="$?"
+    set -e
+    if [ "$invalid_status" = "0" ]; then
+      echo "Expected the generic command to reject an unknown block target."
+      exit 1
+    fi
+    rg -n -F 'unknown canonical compiler MIR jump target missing' "$build_dir/invalid.log" >/dev/null
+    if [ -e "$invalid_object" ] || [ -d "$(dirname "$invalid_object")" ]; then
+      echo "Validation failure must happen before output-directory or object creation."
+      exit 1
+    fi
+
+    metadata_fixture="$build_dir/nonempty_metadata.mir"
+    metadata_object="$build_dir/metadata/should_not_exist.o"
+    sed 's/metadata_count: 0/metadata_count: 1/' "$fixture" > "$metadata_fixture"
+    cat >> "$metadata_fixture" <<'MIR'
+    metadata_0_kind: provenance
+    metadata_0_attachment: function
+    metadata_0_policy: recognized_preserved
+    metadata_0_payload: local_binding
+    MIR
+    set +e
+    "${cargo_cmd[@]}" "$metadata_fixture" "$metadata_object" > "$build_dir/metadata.log" 2>&1
+    metadata_status="$?"
+    set -e
+    if [ "$metadata_status" = "0" ]; then
+      echo "Expected generic object emission to reject nonempty metadata before the metadata canonicalization milestone."
+      exit 1
+    fi
+    rg -n -F 'generic object emission currently requires metadata_count: 0' "$build_dir/metadata.log" >/dev/null
+    if [ -e "$metadata_object" ] || [ -d "$(dirname "$metadata_object")" ]; then
+      echo "Metadata rejection must happen before output-directory or object creation."
+      exit 1
+    fi
+
+    echo "✅ Phase 9D generic ingestion command parsed, validated, lowered, emitted, linked, and executed one canonical shared-CFG fixture without adding a semantic lane."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
