@@ -67,6 +67,7 @@ guard-pr-fast-shard shard:
       cranelift-phase9c-differential-ladder)
         just guard-cranelift-phase9c-differential-ladder-surface
         just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract
+        just guard-cranelift-phase9d-opening-contract
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -198,6 +199,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-c-differential-native-smoke' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9c-differential-ladder)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-surface' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-opening-contract' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -1630,6 +1632,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9d-opening-contract' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -1727,6 +1730,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_SURFACE_GUARD: guard-cranelift-phase9c-differential-ladder-surface' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_CLOSE_GUARD: guard-cranelift-phase9c-close' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_OPENING_CONTRACT_GUARD: guard-cranelift-phase9d-opening-contract' "$manifest_doc" justfile >/dev/null
     just guard-cranelift-compiler-mir-ingestion-corpus-surface
     just guard-cranelift-experiment-guard-wiring-surface
     cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
@@ -5090,6 +5094,45 @@ guard-cranelift-phase9c-close:
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     echo "✅ Phase 9C closed: the frozen seven-lane differential compares MIR-to-C with compiler-owned MIR fixtures ingested by Cranelift, while Cranelift remains experiment-only."
+
+guard-cranelift-phase9d-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9D compiler-owned MIR ingestion opening contract..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    phase9c_ledger="compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    if [ ! -f "$manifest_doc" ] || [ ! -f "$phase9c_ledger" ] || [ ! -f "$readme_doc" ]; then
+      echo "Phase 9D opening requires the Cranelift manifest, frozen Phase 9C ledger, and experiment README."
+      exit 1
+    fi
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_OPENING_CONTRACT_GUARD: guard-cranelift-phase9d-opening-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_status: phase9d_open_compiler_owned_mir_ingestion_canonicalization' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_registry: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_readme: compiler/experiments/cranelift/README.md' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_predecessor_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_predecessor_ledger: compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_predecessor_ledger_policy: phase9c_ledger_is_frozen_historical_evidence' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_goal: compiler_owned_mir_ingestion_is_canonical_experimental_cranelift_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_canonical_pipeline: compiler_mir_producer_to_versioned_fixture_to_parser_to_validated_rust_mir_model_to_shared_lowering_to_object_emission' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_allowed_scope: ingestion_inventory_architecture_contract_fixture_schema_parser_validator_generic_command_phase9c_rebase_metadata_canonicalization_bounded_scalar_cfg_migration_bypass_freeze' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_excluded_scope: production_backend_route_default_backend_flip_c_backend_retirement_full_calls_runtime_imports_strings_structs_arrays_resource_execution_semantics_complete_block_param_coverage' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_new_work_policy: new_cranelift_semantic_work_requires_compiler_owned_mir_ingestion' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_compatibility_policy: historical_commands_may_remain_thin_wrappers_only' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_translator_policy: no_new_translator_seed_lane_without_explicit_abstraction_gap_exception' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_primary_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_closure_guard_policy: phase9d_close_guard_added_only_in_phase9d_closure_step' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_next_phase: phase9e_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_first_milestone: complete_ingestion_seam_inventory_and_freeze_canonical_architecture' "$manifest_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_closed_fixture_backed_differential' "$phase9c_ledger" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FREEZE_POLICY: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract' "$phase9c_ledger" >/dev/null
+    rg -n -F 'Phase 9D is open as `phase9d_compiler_owned_mir_ingestion_canonicalization`.' "$readme_doc" >/dev/null
+    rg -n -F 'compiler-owned MIR ingestion the required architecture' "$readme_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
+    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
+    echo "✅ Phase 9D opened: compiler-owned MIR ingestion is the canonical experimental Cranelift architecture, with MIR-to-C still primary and no production route change."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
