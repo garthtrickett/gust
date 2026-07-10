@@ -263,6 +263,92 @@ guard-pr-fast-ci-surface:
 
     echo "✅ PR fast CI surface guard passed."
 
+guard-cranelift-mir-to-cranelift-translator-seed-suite-shard shard:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔀 Running MIR-to-Cranelift translator seed suite shard: {{shard}}"
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-backend-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_TRANSLATOR_SEED_SUITE_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_native_guard: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_status: phase9b_translator_seed_inventory' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 17' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
+    case "{{shard}}" in
+      scalar)
+        just guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke
+        ;;
+      cfg)
+        just guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-native-smoke
+        ;;
+      metadata)
+        just guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke
+        ;;
+      imports)
+        just guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke
+        just guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke
+        ;;
+      *)
+        echo "unknown MIR-to-Cranelift translator seed suite shard: {{shard}}"
+        echo "expected one of: scalar, cfg, metadata, imports"
+        exit 1
+        ;;
+    esac
+    echo "✅ MIR-to-Cranelift translator seed suite shard passed: {{shard}}"
+
+guard-cranelift-phase9c-differential-ladder-native-shard shard:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔀 Running Phase 9C native differential ladder shard: {{shard}}"
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    just guard-cranelift-phase9c-differential-ladder-surface
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_native_guard: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_initial_seven_lane_native_oracle_comparison' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 7' "$manifest_doc" >/dev/null
+    case "{{shard}}" in
+      return-local)
+        just guard-mir-to-c-return-int-literal-native-smoke
+        just guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
+        just guard-mir-to-c-local-binding-read-native-smoke
+        just guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke
+        ;;
+      cfg)
+        just guard-mir-to-c-conditional-branch-native-smoke
+        just guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke
+        just guard-mir-to-c-block-jump-native-smoke
+        just guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke
+        ;;
+      metadata)
+        just guard-mir-to-c-provenance-metadata-native-smoke
+        just guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke
+        just guard-mir-to-c-resource-metadata-native-smoke
+        just guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke
+        ;;
+      boundary)
+        just guard-mir-to-c-native-boundary-metadata-native-smoke
+        just guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke
+        ;;
+      *)
+        echo "unknown Phase 9C native differential ladder shard: {{shard}}"
+        echo "expected one of: return-local, cfg, metadata, boundary"
+        exit 1
+        ;;
+    esac
+    echo "✅ Phase 9C native differential ladder shard passed: {{shard}}"
+
 guard-cloud-heavy-shard shard:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -296,11 +382,29 @@ guard-cloud-heavy-shard shard:
       phase9-branch-compiler-mir-blocks)
         just guard-cranelift-experimental-backend-suite-shard compiler-mir-blocks
         ;;
-      phase9-branch-translators)
-        just guard-cranelift-experimental-backend-suite-shard translators
+      phase9-branch-translator-scalar)
+        just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard scalar
         ;;
-      phase9c-differential-ladder-native)
-        just guard-cranelift-phase9c-differential-ladder-native-smoke
+      phase9-branch-translator-cfg)
+        just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard cfg
+        ;;
+      phase9-branch-translator-metadata)
+        just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard metadata
+        ;;
+      phase9-branch-translator-imports)
+        just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard imports
+        ;;
+      phase9c-native-diff-return-local)
+        just guard-cranelift-phase9c-differential-ladder-native-shard return-local
+        ;;
+      phase9c-native-diff-cfg)
+        just guard-cranelift-phase9c-differential-ladder-native-shard cfg
+        ;;
+      phase9c-native-diff-metadata)
+        just guard-cranelift-phase9c-differential-ladder-native-shard metadata
+        ;;
+      phase9c-native-diff-boundary)
+        just guard-cranelift-phase9c-differential-ladder-native-shard boundary
         ;;
       mir-branch)
         just guard-mir-to-c-conditional-branch-native-smoke
@@ -405,7 +509,7 @@ guard-cloud-heavy-shard shard:
         ;;
       *)
         echo "unknown cloud heavy shard: {{shard}}"
-        echo "expected one of: phase9-branch-core-baseline, phase9-branch-core-legacy, phase9-branch-core-mir-basic, phase9-branch-core-mir-bundles, phase9-branch-core-mir-block-graphs, phase9-branch-compiler-mir-scalars, phase9-branch-compiler-mir-metadata, phase9-branch-compiler-mir-blocks, phase9-branch-translators, phase9c-differential-ladder-native, mir-branch, migration-surfaces, migration-return-int, migration-local-binding, migration-if-else, migration-provenance, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
+        echo "expected one of: phase9-branch-core-baseline, phase9-branch-core-legacy, phase9-branch-core-mir-basic, phase9-branch-core-mir-bundles, phase9-branch-core-mir-block-graphs, phase9-branch-compiler-mir-scalars, phase9-branch-compiler-mir-metadata, phase9-branch-compiler-mir-blocks, phase9-branch-translator-scalar, phase9-branch-translator-cfg, phase9-branch-translator-metadata, phase9-branch-translator-imports, phase9c-native-diff-return-local, phase9c-native-diff-cfg, phase9c-native-diff-metadata, phase9c-native-diff-boundary, mir-branch, migration-surfaces, migration-return-int, migration-local-binding, migration-if-else, migration-provenance, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
         exit 1
         ;;
     esac
@@ -446,8 +550,14 @@ guard-cloud-heavy-ci-surface:
     rg -n -F 'phase9-branch-compiler-mir-scalars' "$workflow" justfile >/dev/null
     rg -n -F 'phase9-branch-compiler-mir-metadata' "$workflow" justfile >/dev/null
     rg -n -F 'phase9-branch-compiler-mir-blocks' "$workflow" justfile >/dev/null
-    rg -n -F 'phase9-branch-translators' "$workflow" justfile >/dev/null
-    rg -n -F 'phase9c-differential-ladder-native' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9-branch-translator-scalar' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9-branch-translator-cfg' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9-branch-translator-metadata' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9-branch-translator-imports' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9c-native-diff-return-local' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9c-native-diff-cfg' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9c-native-diff-metadata' "$workflow" justfile >/dev/null
+    rg -n -F 'phase9c-native-diff-boundary' "$workflow" justfile >/dev/null
     rg -n -F 'mir-branch' "$workflow" justfile >/dev/null
     rg -n -F 'migration-surfaces' "$workflow" justfile >/dev/null
     rg -n -F 'migration-return-int' "$workflow" justfile >/dev/null
@@ -482,10 +592,30 @@ guard-cloud-heavy-ci-surface:
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard compiler-mir-metadata' >/dev/null
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-compiler-mir-blocks)' >/dev/null
     printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard compiler-mir-blocks' >/dev/null
-    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-translators)' >/dev/null
-    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard translators' >/dev/null
-    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9c-differential-ladder-native)' >/dev/null
-    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-native-smoke' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-translator-scalar)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard scalar' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-translator-cfg)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard cfg' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-translator-metadata)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard metadata' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-translator-imports)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-cranelift-translator-seed-suite-shard imports' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9c-native-diff-return-local)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-native-shard return-local' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9c-native-diff-cfg)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-native-shard cfg' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9c-native-diff-metadata)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-native-shard metadata' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9c-native-diff-boundary)' >/dev/null
+    printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-native-shard boundary' >/dev/null
+    if printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch-translators)' >/dev/null; then
+      echo "Cloud heavy CI must split phase9-branch-translators into focused translator shards."
+      exit 1
+    fi
+    if printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9c-differential-ladder-native)' >/dev/null; then
+      echo "Cloud heavy CI must split phase9c-differential-ladder-native into focused differential shards."
+      exit 1
+    fi
     if printf '%s\n' "$cloud_heavy_dispatcher_body" | rg -n -F 'phase9-branch)' >/dev/null; then
       echo "Cloud heavy CI must split phase9-branch into focused Cranelift backend suite shards."
       exit 1
@@ -528,6 +658,14 @@ guard-cloud-heavy-ci-surface:
       echo "Cloud heavy guard workflow must split phase9-branch-compiler-mir-basic into focused compiler MIR shards."
       exit 1
     fi
+    if rg -n '^[[:space:]]*-[[:space:]]*phase9-branch-translators$' "$workflow" >/dev/null; then
+      echo "Cloud heavy guard workflow must split phase9-branch-translators into focused translator shards."
+      exit 1
+    fi
+    if rg -n '^[[:space:]]*-[[:space:]]*phase9c-differential-ladder-native$' "$workflow" >/dev/null; then
+      echo "Cloud heavy guard workflow must split phase9c-differential-ladder-native into focused differential shards."
+      exit 1
+    fi
     if rg -n -F 'guard-mir-feature-migration-suite' "$workflow" >/dev/null; then
       echo "Cloud heavy guard workflow must split guard-mir-feature-migration-suite into focused matrix shards."
       exit 1
@@ -542,8 +680,8 @@ guard-cloud-heavy-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "25" ]; then
-      echo "Expected exactly 25 cloud heavy matrix shards, found $shard_count."
+    if [ "$shard_count" != "31" ]; then
+      echo "Expected exactly 31 cloud heavy matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi

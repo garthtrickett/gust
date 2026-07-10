@@ -51,8 +51,14 @@ jobs:
           - phase9-branch-compiler-mir-scalars
           - phase9-branch-compiler-mir-metadata
           - phase9-branch-compiler-mir-blocks
-          - phase9-branch-translators
-          - phase9c-differential-ladder-native
+          - phase9-branch-translator-scalar
+          - phase9-branch-translator-cfg
+          - phase9-branch-translator-metadata
+          - phase9-branch-translator-imports
+          - phase9c-native-diff-return-local
+          - phase9c-native-diff-cfg
+          - phase9c-native-diff-metadata
+          - phase9c-native-diff-boundary
           - mir-branch
           - migration-surfaces
           - migration-return-int
