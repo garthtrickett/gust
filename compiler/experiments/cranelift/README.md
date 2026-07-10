@@ -25,16 +25,17 @@ CFG join use one object-emission and body-lowering path. The CFG milestone
 branches from an entry block, updates one local in each successor, joins both
 arms, and returns the joined local. Calls, resources, strings, structs, arrays,
 runtime integration, and production routing remain outside this closed phase.
-Phase 9D is open as `phase9d_compiler_owned_mir_ingestion_canonicalization`.
-Its contract makes compiler-owned MIR ingestion the required architecture for
-new experimental Cranelift semantic work: compiler MIR producer -> versioned
-fixture -> parser -> validated Rust MIR model -> shared lowering -> object
-emission. Historical commands may remain as thin wrappers, while new
-translator-seed lanes require an explicit abstraction-gap exception.
-Production routing, default-backend changes, C-backend retirement, full calls
-and runtime imports, strings, structs, arrays, resource execution semantics,
-and complete block-parameter coverage remain outside Phase 9D. MIR-to-C stays
-primary and Cranelift stays disabled by default.
+Phase 9D is closed as
+`phase9d_closed_compiler_owned_mir_ingestion_canonicalized`. Compiler-owned MIR
+ingestion is now the required architecture for new experimental Cranelift
+semantic work: compiler MIR producer -> versioned fixture -> parser ->
+validated Rust MIR model -> shared lowering -> object emission. Historical
+commands may remain only as thin wrappers, while new translator-seed lanes
+require an explicit abstraction-gap exception. Production routing,
+default-backend changes, C-backend retirement, full calls and runtime imports,
+strings, structs, arrays, resource execution semantics, and complete
+block-parameter coverage remained outside Phase 9D. MIR-to-C stays primary and
+Cranelift stays disabled by default.
 
 The inventory and architecture milestones remain complete. The manifest still
 tracks all 33 compiler-owned ingestion emitters and all seventeen frozen Phase
@@ -78,12 +79,20 @@ historical inputs and immediately enter canonical fixture parsing, validation,
 model construction, shared lowering, and object emission. Their lane commands
 no longer construct an `ObjectModule` or invoke a `TinyMir` lowerer.
 
-The bypass freeze is now active. Every canonical inventory seam must use
-`CompilerMirLoweringFunction` and shared object emission; lane-owned
+The bypass freeze remains active after closure. Every canonical inventory seam
+must use `CompilerMirLoweringFunction` and shared object emission; lane-owned
 `ObjectModule` construction, new unregistered ingestion emitters, and new
 translator seeds without an explicit abstraction-gap exception are rejected by
-the Phase 9D guard. Existing bespoke paths remain frozen migration candidates,
-not extension points. The next milestone is Phase 9D closure review.
+the Phase 9D guards. Existing bespoke paths remain frozen migration candidates,
+not extension points.
+
+Phase 9D closes with 33 registered ingestion seams: ten canonical shared
+lowering seams, twenty-three frozen bespoke seams, no metadata-only seam, and
+seventeen frozen translator seeds. The seven Phase 9C lanes remain rebased,
+the two-lane post-9C scalar cohort remains canonical, invalid MIR is rejected
+before object creation, and metadata policy is explicit. Phase 9E may expand
+CFG and block-parameter completeness only through this canonical ingestion
+architecture. It does not change production routing.
 
 The checked-in lockfile for this crate is owned by:
 

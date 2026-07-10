@@ -1743,6 +1743,7 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_CLOSE_GUARD: guard-cranelift-phase9c-close' "$manifest_doc" justfile >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_OPENING_CONTRACT_GUARD: guard-cranelift-phase9d-opening-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_CLOSE_GUARD: guard-cranelift-phase9d-close' "$manifest_doc" justfile >/dev/null
     just guard-cranelift-compiler-mir-ingestion-corpus-surface
     just guard-cranelift-experiment-guard-wiring-surface
     cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
@@ -5116,7 +5117,7 @@ guard-cranelift-phase9c-close:
 guard-cranelift-phase9d-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking Phase 9D compiler-owned MIR ingestion opening contract..."
+    echo "🔒 Checking the closed Phase 9D compiler-owned MIR ingestion contract..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     phase9c_ledger="compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md"
     readme_doc="compiler/experiments/cranelift/README.md"
@@ -5125,7 +5126,7 @@ guard-cranelift-phase9d-opening-contract:
       exit 1
     fi
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_OPENING_CONTRACT_GUARD: guard-cranelift-phase9d-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_status: phase9d_open_compiler_owned_mir_ingestion_canonicalization' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_status: phase9d_closed_compiler_owned_mir_ingestion_canonicalized' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_registry: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_readme: compiler/experiments/cranelift/README.md' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_predecessor_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
@@ -5140,7 +5141,8 @@ guard-cranelift-phase9d-opening-contract:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_translator_policy: no_new_translator_seed_lane_without_explicit_abstraction_gap_exception' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_closure_guard_policy: phase9d_close_guard_added_only_in_phase9d_closure_step' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_closure_guard_policy: phase9d_close_guard_is_required_closure_gate' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_CLOSE_GUARD: guard-cranelift-phase9d-close' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_next_phase: phase9e_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_first_milestone: complete_ingestion_seam_inventory_and_freeze_canonical_architecture' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_first_milestone_status: complete' "$manifest_doc" >/dev/null
@@ -5149,12 +5151,13 @@ guard-cranelift-phase9d-opening-contract:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_status: phase9d_inventory_complete_architecture_frozen' "$manifest_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_closed_fixture_backed_differential' "$phase9c_ledger" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FREEZE_POLICY: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract' "$phase9c_ledger" >/dev/null
-    rg -n -F 'Phase 9D is open as `phase9d_compiler_owned_mir_ingestion_canonicalization`.' "$readme_doc" >/dev/null
+    rg -n -F 'Phase 9D is closed as' "$readme_doc" >/dev/null
+    rg -n -F '`phase9d_closed_compiler_owned_mir_ingestion_canonicalized`.' "$readme_doc" >/dev/null
     rg -n -F 'compiler-owned MIR ingestion the required architecture' "$readme_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
-    echo "✅ Phase 9D opened: compiler-owned MIR ingestion is the canonical experimental Cranelift architecture, with MIR-to-C still primary and no production route change."
+    echo "✅ Phase 9D contract is closed: compiler-owned MIR ingestion is canonical for experimental Cranelift work, with MIR-to-C still primary."
 
 guard-cranelift-phase9d-ingestion-inventory-architecture:
     #!/usr/bin/env bash
@@ -5452,7 +5455,7 @@ guard-cranelift-phase9d-generic-ingestion-command:
 
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_metadata_policy: recognize_validated_metadata_before_shared_lowering_with_no_runtime_semantic_effect' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_fourth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_next_milestone: phase9d_closure_review' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_next_milestone: phase9d_closed_handoff_to_phase9e' "$manifest_doc" >/dev/null
     rg -n '^fn emit_compiler_mir_fixture_contents_object\(' "$source_file" >/dev/null
     rg -n '^fn recognize_compiler_mir_fixture_metadata\(' "$source_file" >/dev/null
     contents_body="$(sed -n '/^fn emit_compiler_mir_fixture_contents_object(/,/^}/p' "$source_file")"
@@ -5642,7 +5645,7 @@ guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_bypass_freeze_status: active' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_bypass_freeze_translator_policy: translator_seed_inventory_frozen_at_17_without_explicit_abstraction_gap_exception' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_fifth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_next_milestone: phase9d_closure_review' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_next_milestone: phase9d_closed_handoff_to_phase9e' "$manifest_doc" >/dev/null
 
     rg -n -F 'const PHASE9D_CANONICAL_ADD_I32_FIXTURE: &str = concat!(' "$source_file" >/dev/null
     rg -n -F 'const PHASE9D_CANONICAL_POSITIVE_I32_BRANCH_FIXTURE: &str = concat!(' "$source_file" >/dev/null
@@ -5709,6 +5712,60 @@ guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze:
     just guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke
     just guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke
     echo "✅ First post-9C scalar cohort is canonical, and new ingestion/object/translator bypasses are frozen."
+
+guard-cranelift-phase9d-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 9D on canonical compiler-owned MIR ingestion evidence..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    phase9c_ledger="compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+
+    just guard-cranelift-phase9d-opening-contract
+    just guard-cranelift-phase9d-ingestion-inventory-architecture
+    just guard-cranelift-phase9d-schema-parser-validator
+    just guard-cranelift-phase9d-generic-ingestion-command
+    just guard-cranelift-phase9d-phase9c-rebase-metadata
+    just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze
+    just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract
+    just guard-cranelift-phase9c-differential-ladder-native-smoke
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_CLOSE_GUARD: guard-cranelift-phase9d-close' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_status: phase9d_closed_compiler_owned_mir_ingestion_canonicalized' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_close_status: phase9d_closed_compiler_owned_mir_ingestion_canonicalized' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_sixth_milestone_status: complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_basis: canonical_schema_parser_validator_generic_command_phase9c_rebase_metadata_first_post9c_cohort_and_bypass_freeze_green' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_inventory: 33_total_10_canonical_shared_23_frozen_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_phase9c_rebased_lane_count: 7' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_post9c_migrated_lane_count: 2' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_validation_policy: invalid_mir_rejected_before_cranelift_module_output_directory_or_object_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_metadata_policy: provenance_resource_native_boundary_are_canonicalized_recognized_and_have_no_claimed_runtime_semantics' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_bypass_policy: canonical_seams_use_shared_model_lowerer_and_object_emitter_while_existing_bespoke_paths_are_frozen' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_freeze_policy: phase9d_closed_no_new_semantic_work_outside_canonical_ingestion_or_new_phase_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_primary_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_next_phase: phase9e_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_next_milestone: phase9d_closed_handoff_to_phase9e' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_next_milestone: phase9d_closed_handoff_to_phase9e' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_next_milestone: phase9d_closed_handoff_to_phase9e' "$manifest_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_closed_fixture_backed_differential' "$phase9c_ledger" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FREEZE_POLICY: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract' "$phase9c_ledger" >/dev/null
+    rg -n -F 'Phase 9D is closed as' "$readme_doc" >/dev/null
+    rg -n -F 'Phase 9E may expand' "$readme_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
+    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
+
+    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
+    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "10" ] || [ "$bespoke_count" != "23" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected Phase 9D closure inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
+      exit 1
+    fi
+
+    echo "✅ Phase 9D closed: canonical compiler-owned MIR ingestion is frozen as the experimental Cranelift architecture, with Phase 9E next and no production route change."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
