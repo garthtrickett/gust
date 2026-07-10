@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     name: build gust
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -101,7 +101,7 @@ jobs:
 
   final:
     name: final diff check
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     needs: guard
 
     steps:
