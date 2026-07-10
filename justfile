@@ -6727,174 +6727,174 @@ guard-cranelift-compiler-mir-ingestion-strict-rejection-contract:
 
     unknown_format_fixture="$build_dir/unknown_fixture_format.mir"
     cat > "$unknown_format_fixture" <<'MIR'
-format: gust.compiler_mir_ingestion.unknown.v1
-producer: compiler/mir.gst
-producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
-lowering_entry: mir_lower_return_int_literal_fixture
-function: tiny_return_int
-return_type: int
-entry_block: 0
-block_count: 1
-terminator: Return
-return_value_kind: IntLiteral
-return_value: 1
-return_value_type: int
-backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
-expected_exit: 1
-MIR
+    format: gust.compiler_mir_ingestion.unknown.v1
+    producer: compiler/mir.gst
+    producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
+    lowering_entry: mir_lower_return_int_literal_fixture
+    function: tiny_return_int
+    return_type: int
+    entry_block: 0
+    block_count: 1
+    terminator: Return
+    return_value_kind: IntLiteral
+    return_value: 1
+    return_value_type: int
+    backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
+    expected_exit: 1
+    MIR
 
     missing_entry_fixture="$build_dir/missing_entry_block.mir"
     cat > "$missing_entry_fixture" <<'MIR'
-format: gust.compiler_mir_ingestion.return_int.v1
-producer: compiler/mir.gst
-producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
-lowering_entry: mir_lower_return_int_literal_fixture
-function: tiny_return_int
-return_type: int
-block_count: 1
-terminator: Return
-return_value_kind: IntLiteral
-return_value: 1
-return_value_type: int
-backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
-expected_exit: 1
-MIR
+    format: gust.compiler_mir_ingestion.return_int.v1
+    producer: compiler/mir.gst
+    producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
+    lowering_entry: mir_lower_return_int_literal_fixture
+    function: tiny_return_int
+    return_type: int
+    block_count: 1
+    terminator: Return
+    return_value_kind: IntLiteral
+    return_value: 1
+    return_value_type: int
+    backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
+    expected_exit: 1
+    MIR
 
     missing_terminator_fixture="$build_dir/missing_return_terminator.mir"
     cat > "$missing_terminator_fixture" <<'MIR'
-format: gust.compiler_mir_ingestion.return_int.v1
-producer: compiler/mir.gst
-producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
-lowering_entry: mir_lower_return_int_literal_fixture
-function: tiny_return_int
-return_type: int
-entry_block: 0
-block_count: 1
-return_value_kind: IntLiteral
-return_value: 1
-return_value_type: int
-backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
-expected_exit: 1
-MIR
+    format: gust.compiler_mir_ingestion.return_int.v1
+    producer: compiler/mir.gst
+    producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
+    lowering_entry: mir_lower_return_int_literal_fixture
+    function: tiny_return_int
+    return_type: int
+    entry_block: 0
+    block_count: 1
+    return_value_kind: IntLiteral
+    return_value: 1
+    return_value_type: int
+    backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
+    expected_exit: 1
+    MIR
 
     bad_local_fixture="$build_dir/bad_local_name.mir"
     cat > "$bad_local_fixture" <<'MIR'
-format: gust.compiler_mir_ingestion.local_binding_read.v1
-producer: compiler/mir.gst
-producer_entry: mir_emit_native_backend_local_binding_read_ingestion_fixture
-lowering_entry: mir_lower_local_binding_read_fixture
-function: tiny_local_binding_read
-return_type: int
-entry_block: 0
-block_count: 1
-local_count: 1
-local_0_name: not_value
-local_0_type: int
-statement_count: 1
-statement_0_kind: LocalI32Set
-statement_0_local: value
-statement_0_value: 2
-terminator: ReturnLocal
-return_local: value
-return_value_type: int
-backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read
-expected_exit: 2
-MIR
+    format: gust.compiler_mir_ingestion.local_binding_read.v1
+    producer: compiler/mir.gst
+    producer_entry: mir_emit_native_backend_local_binding_read_ingestion_fixture
+    lowering_entry: mir_lower_local_binding_read_fixture
+    function: tiny_local_binding_read
+    return_type: int
+    entry_block: 0
+    block_count: 1
+    local_count: 1
+    local_0_name: not_value
+    local_0_type: int
+    statement_count: 1
+    statement_0_kind: LocalI32Set
+    statement_0_local: value
+    statement_0_value: 2
+    terminator: ReturnLocal
+    return_local: value
+    return_value_type: int
+    backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read
+    expected_exit: 2
+    MIR
 
     mismatched_return_fixture="$build_dir/mismatched_return_type.mir"
     cat > "$mismatched_return_fixture" <<'MIR'
-format: gust.compiler_mir_ingestion.return_int.v1
-producer: compiler/mir.gst
-producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
-lowering_entry: mir_lower_return_int_literal_fixture
-function: tiny_return_int
-return_type: void
-entry_block: 0
-block_count: 1
-terminator: Return
-return_value_kind: IntLiteral
-return_value: 1
-return_value_type: int
-backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
-expected_exit: 1
-MIR
+    format: gust.compiler_mir_ingestion.return_int.v1
+    producer: compiler/mir.gst
+    producer_entry: mir_emit_native_backend_return_int_ingestion_fixture
+    lowering_entry: mir_lower_return_int_literal_fixture
+    function: tiny_return_int
+    return_type: void
+    entry_block: 0
+    block_count: 1
+    terminator: Return
+    return_value_kind: IntLiteral
+    return_value: 1
+    return_value_type: int
+    backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
+    expected_exit: 1
+    MIR
 
     unknown_branch_fixture="$build_dir/branch_to_unknown_block.mir"
     cat > "$unknown_branch_fixture" <<'MIR'
-format: gust.compiler_mir_ingestion.conditional_branch.v1
-producer: compiler/mir.gst
-producer_entry: mir_emit_native_backend_conditional_branch_ingestion_fixture
-lowering_entry: mir_lower_conditional_branch_fixture
-function: tiny_conditional_branch
-return_type: int
-entry_block: 0
-block_count: 3
-block_0_terminator: Branch
-branch_condition_kind: IntLiteral
-branch_condition_value: 1
-branch_condition_type: int
-branch_then_block: missing
-branch_else_block: 2
-block_1_terminator: Return
-block_1_return_value_kind: IntLiteral
-block_1_return_value: 1
-block_1_return_value_type: int
-block_2_terminator: Return
-block_2_return_value_kind: IntLiteral
-block_2_return_value: 2
-block_2_return_value_type: int
-backend_symbol: tiny_native_backend_compiler_mir_ingested_conditional_branch
-expected_exit: 1
-MIR
+    format: gust.compiler_mir_ingestion.conditional_branch.v1
+    producer: compiler/mir.gst
+    producer_entry: mir_emit_native_backend_conditional_branch_ingestion_fixture
+    lowering_entry: mir_lower_conditional_branch_fixture
+    function: tiny_conditional_branch
+    return_type: int
+    entry_block: 0
+    block_count: 3
+    block_0_terminator: Branch
+    branch_condition_kind: IntLiteral
+    branch_condition_value: 1
+    branch_condition_type: int
+    branch_then_block: missing
+    branch_else_block: 2
+    block_1_terminator: Return
+    block_1_return_value_kind: IntLiteral
+    block_1_return_value: 1
+    block_1_return_value_type: int
+    block_2_terminator: Return
+    block_2_return_value_kind: IntLiteral
+    block_2_return_value: 2
+    block_2_return_value_type: int
+    backend_symbol: tiny_native_backend_compiler_mir_ingested_conditional_branch
+    expected_exit: 1
+    MIR
 
     duplicate_label_fixture="$build_dir/duplicate_block_label.mir"
     cat > "$duplicate_label_fixture" <<'MIR'
-format: gust.compiler_mir_ingestion.block_jump.v1
-producer: compiler/mir.gst
-producer_entry: mir_emit_native_backend_block_jump_ingestion_fixture
-source_fixture: compiler/mir_lower_block_jump_smoke_test_entry.gst
-lowering_entry: mir_lower_block_jump_fixture
-function: tiny_block_jump
-return_type: int
-entry_block: entry
-block_count: 2
-block_0_label: entry
-block_0_statement_count: 0
-block_0_terminator: Jump
-block_0_target: return
-block_1_label: entry
-block_1_statement_count: 0
-block_1_terminator: Return
-block_1_return_value_kind: IntLiteral
-block_1_return_value: 1
-block_1_return_value_type: int
-backend_symbol: tiny_native_backend_compiler_mir_ingested_block_jump
-expected_exit: 1
-MIR
+    format: gust.compiler_mir_ingestion.block_jump.v1
+    producer: compiler/mir.gst
+    producer_entry: mir_emit_native_backend_block_jump_ingestion_fixture
+    source_fixture: compiler/mir_lower_block_jump_smoke_test_entry.gst
+    lowering_entry: mir_lower_block_jump_fixture
+    function: tiny_block_jump
+    return_type: int
+    entry_block: entry
+    block_count: 2
+    block_0_label: entry
+    block_0_statement_count: 0
+    block_0_terminator: Jump
+    block_0_target: return
+    block_1_label: entry
+    block_1_statement_count: 0
+    block_1_terminator: Return
+    block_1_return_value_kind: IntLiteral
+    block_1_return_value: 1
+    block_1_return_value_type: int
+    backend_symbol: tiny_native_backend_compiler_mir_ingested_block_jump
+    expected_exit: 1
+    MIR
 
     unsupported_statement_fixture="$build_dir/unsupported_statement_kind.mir"
     cat > "$unsupported_statement_fixture" <<'MIR'
-format: gust.compiler_mir_ingestion.local_binding_read.v1
-producer: compiler/mir.gst
-producer_entry: mir_emit_native_backend_local_binding_read_ingestion_fixture
-lowering_entry: mir_lower_local_binding_read_fixture
-function: tiny_local_binding_read
-return_type: int
-entry_block: 0
-block_count: 1
-local_count: 1
-local_0_name: value
-local_0_type: int
-statement_count: 1
-statement_0_kind: RuntimeCall
-statement_0_local: value
-statement_0_value: 2
-terminator: ReturnLocal
-return_local: value
-return_value_type: int
-backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read
-expected_exit: 2
-MIR
+    format: gust.compiler_mir_ingestion.local_binding_read.v1
+    producer: compiler/mir.gst
+    producer_entry: mir_emit_native_backend_local_binding_read_ingestion_fixture
+    lowering_entry: mir_lower_local_binding_read_fixture
+    function: tiny_local_binding_read
+    return_type: int
+    entry_block: 0
+    block_count: 1
+    local_count: 1
+    local_0_name: value
+    local_0_type: int
+    statement_count: 1
+    statement_0_kind: RuntimeCall
+    statement_0_local: value
+    statement_0_value: 2
+    terminator: ReturnLocal
+    return_local: value
+    return_value_type: int
+    backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read
+    expected_exit: 2
+    MIR
 
     check_rejected compiler-mir-return-int-ingestion-object "$unknown_format_fixture" unknown_fixture_format
     check_rejected compiler-mir-return-int-ingestion-object "$missing_entry_fixture" missing_entry_block
