@@ -94,6 +94,31 @@ before object creation, and metadata policy is explicit. Phase 9E may expand
 CFG and block-parameter completeness only through this canonical ingestion
 architecture. It does not change production routing.
 
+Phase 9E is open as
+`phase9e_open_cfg_and_block_parameter_completeness`. Its bounded goal is to
+make typed CFG edges and typed block parameters first-class in the canonical
+compiler-owned MIR ingestion path. The phase starts from the frozen Phase 9D
+inventory of 33 ingestion seams: ten canonical shared-lowering seams,
+twenty-three bespoke seams, no metadata-only seam, and seventeen frozen
+translator seeds.
+
+Twelve existing non-call CFG seams are Phase 9E migration candidates: the
+three local-CFG lanes, two basic block-parameter update/merge lanes, four
+variable-arity materialization lanes, and three block-parameter-to-local
+materialization lanes. The eleven remaining call/import seams are explicitly
+deferred to the next phase. Phase 9E is i32-only and may add typed edge
+arguments, merges, backedges, variable arity, and block-parameter-to-local
+materialization, but it may not add calls, runtime imports, strings, structs,
+arrays, resource execution semantics, or production backend routing.
+
+New Phase 9E semantic evidence must use canonical
+`gust.compiler_mir_ingestion.v1` fixtures through
+`compiler-mir-ingestion-object`; historical lane commands may remain only as
+thin migration adapters. The Phase 9D bypass freeze remains active. The
+closure target is 22 canonical seams and exactly eleven frozen call/import
+bespoke seams, with MIR-to-C still primary and Cranelift still disabled by
+default.
+
 The checked-in lockfile for this crate is owned by:
 
 ```bash
