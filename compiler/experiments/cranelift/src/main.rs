@@ -377,6 +377,165 @@ struct TinyMirBlockFunction {
 }
 const COMPILER_MIR_CANONICAL_FIXTURE_FORMAT: &str = "gust.compiler_mir_ingestion.v1";
 
+const PHASE9C_CANONICAL_RETURN_INT_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_return_int\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int\n",
+    "parameter_count: 0\n",
+    "return_type: int\n",
+    "local_count: 0\n",
+    "entry_block: entry\n",
+    "block_count: 1\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 0\n",
+    "block_0_terminator_kind: ReturnI32\n",
+    "block_0_terminator_value: 1\n",
+    "metadata_count: 0\n",
+    "expected_exit: 1\n",
+);
+
+const PHASE9C_CANONICAL_LOCAL_BINDING_READ_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_local_binding_read\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read\n",
+    "parameter_count: 0\n",
+    "return_type: int\n",
+    "local_count: 1\n",
+    "local_0_name: value\n",
+    "local_0_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 1\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 1\n",
+    "block_0_statement_0_kind: LocalI32Set\n",
+    "block_0_statement_0_local: value\n",
+    "block_0_statement_0_value: 2\n",
+    "block_0_terminator_kind: ReturnLocalI32\n",
+    "block_0_terminator_local: value\n",
+    "metadata_count: 0\n",
+    "expected_exit: 2\n",
+);
+
+const PHASE9C_CANONICAL_CONDITIONAL_BRANCH_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_conditional_branch\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_conditional_branch\n",
+    "parameter_count: 0\n",
+    "return_type: int\n",
+    "local_count: 0\n",
+    "entry_block: entry\n",
+    "block_count: 3\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 0\n",
+    "block_0_terminator_kind: BranchI32Literal\n",
+    "block_0_terminator_condition: 1\n",
+    "block_0_terminator_then: then\n",
+    "block_0_terminator_else: else\n",
+    "block_1_label: then\n",
+    "block_1_statement_count: 0\n",
+    "block_1_terminator_kind: ReturnI32\n",
+    "block_1_terminator_value: 1\n",
+    "block_2_label: else\n",
+    "block_2_statement_count: 0\n",
+    "block_2_terminator_kind: ReturnI32\n",
+    "block_2_terminator_value: 2\n",
+    "metadata_count: 0\n",
+    "expected_exit: 1\n",
+);
+
+const PHASE9C_CANONICAL_BLOCK_JUMP_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_block_jump\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_block_jump\n",
+    "parameter_count: 0\n",
+    "return_type: int\n",
+    "local_count: 0\n",
+    "entry_block: entry\n",
+    "block_count: 2\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 0\n",
+    "block_0_terminator_kind: Jump\n",
+    "block_0_terminator_target: return\n",
+    "block_1_label: return\n",
+    "block_1_statement_count: 0\n",
+    "block_1_terminator_kind: ReturnI32\n",
+    "block_1_terminator_value: 1\n",
+    "metadata_count: 0\n",
+    "expected_exit: 1\n",
+);
+
+const PHASE9C_CANONICAL_PROVENANCE_METADATA_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_provenance_metadata_local_read\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_provenance_metadata\n",
+    "parameter_count: 0\n",
+    "return_type: int\n",
+    "local_count: 1\n",
+    "local_0_name: value\n",
+    "local_0_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 1\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 1\n",
+    "block_0_statement_0_kind: LocalI32Set\n",
+    "block_0_statement_0_local: value\n",
+    "block_0_statement_0_value: 2\n",
+    "block_0_terminator_kind: ReturnLocalI32\n",
+    "block_0_terminator_local: value\n",
+    "metadata_count: 1\n",
+    "metadata_0_kind: provenance\n",
+    "metadata_0_attachment: statement:entry:0\n",
+    "metadata_0_policy: ignored_with_proof\n",
+    "metadata_0_payload: kind=LocalBinding;local=value;origin=compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst\n",
+    "expected_exit: 2\n",
+);
+
+const PHASE9C_CANONICAL_RESOURCE_METADATA_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_resource_metadata_local\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_resource_metadata\n",
+    "parameter_count: 0\n",
+    "return_type: int\n",
+    "local_count: 1\n",
+    "local_0_name: value\n",
+    "local_0_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 1\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 1\n",
+    "block_0_statement_0_kind: LocalI32Set\n",
+    "block_0_statement_0_local: value\n",
+    "block_0_statement_0_value: 2\n",
+    "block_0_terminator_kind: ReturnLocalI32\n",
+    "block_0_terminator_local: value\n",
+    "metadata_count: 1\n",
+    "metadata_0_kind: resource\n",
+    "metadata_0_attachment: statement:entry:0\n",
+    "metadata_0_policy: ignored_with_proof\n",
+    "metadata_0_payload: kind=LinearResource;state=Live;local=value;cleanup_required=false\n",
+    "expected_exit: 2\n",
+);
+
+const PHASE9C_CANONICAL_NATIVE_BOUNDARY_METADATA_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_native_boundary_metadata_function\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_native_boundary_metadata\n",
+    "parameter_count: 0\n",
+    "return_type: void\n",
+    "local_count: 0\n",
+    "entry_block: entry\n",
+    "block_count: 1\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 0\n",
+    "block_0_terminator_kind: ReturnVoid\n",
+    "metadata_count: 1\n",
+    "metadata_0_kind: native_boundary\n",
+    "metadata_0_attachment: function\n",
+    "metadata_0_policy: ignored_with_proof\n",
+    "metadata_0_payload: kind=RuntimeCall;symbol=tiny_runtime_boundary;origin=compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst\n",
+    "expected_exit: 0\n",
+);
+
 #[derive(Clone, Copy)]
 enum CompilerMirLoweringStatement<'a> {
     LocalI32Set { name: &'a str, value: i32 },
@@ -394,6 +553,7 @@ enum CompilerMirLoweringStatement<'a> {
 enum CompilerMirLoweringTerminator<'a> {
     ReturnI32(i32),
     ReturnLocalI32(&'a str),
+    ReturnVoid,
     Jump {
         target: &'a str,
     },
@@ -423,6 +583,7 @@ struct CompilerMirLoweringBlock<'a> {
 struct CompilerMirLoweringFunction<'a> {
     object_name: &'a str,
     symbol: &'a str,
+    return_type: TinyMirType,
     params: Vec<TinyMirType>,
     locals: Vec<CompilerMirLoweringLocal<'a>>,
     entry_block: &'a str,
@@ -1761,21 +1922,11 @@ fn emit_compiler_mir_return_int_ingestion_object(
     output_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
-    let fixture = parse_compiler_mir_return_int_ingestion_fixture(&contents)?;
-    let mir_function = CompilerMirLoweringFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_return_int",
-        symbol: COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL,
-        params: vec![],
-        locals: vec![],
-        entry_block: "entry",
-        blocks: vec![CompilerMirLoweringBlock {
-            label: "entry",
-            statements: vec![],
-            terminator: CompilerMirLoweringTerminator::ReturnI32(fixture.return_value),
-        }],
-    };
-
-    lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)
+    parse_compiler_mir_return_int_ingestion_fixture(&contents)?;
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9C_CANONICAL_RETURN_INT_FIXTURE,
+        output_path,
+    )
 }
 
 fn emit_compiler_mir_to_cranelift_return_int_translator_object(
@@ -2059,6 +2210,7 @@ fn parse_compiler_mir_fixture<'a>(
                     )?,
                 )
             }
+            "ReturnVoid" => CompilerMirLoweringTerminator::ReturnVoid,
             "Jump" => {
                 let target_key = format!("{terminator_prefix}_target");
                 CompilerMirLoweringTerminator::Jump {
@@ -2193,6 +2345,7 @@ fn parse_compiler_mir_fixture<'a>(
         function: CompilerMirLoweringFunction {
             object_name: function_name,
             symbol: backend_symbol,
+            return_type,
             params,
             locals,
             entry_block,
@@ -2211,13 +2364,6 @@ fn validate_compiler_mir_fixture(
     validate_canonical_compiler_mir_name(function.object_name, "function")?;
     validate_canonical_compiler_mir_name(function.symbol, "backend_symbol")?;
 
-    if !matches!(fixture.return_type, TinyMirType::I32) {
-        return Err(IoError::new(
-            ErrorKind::InvalidInput,
-            "canonical compiler MIR fixture currently supports only int return_type",
-        )
-        .into());
-    }
     if function
         .params
         .iter()
@@ -2229,15 +2375,31 @@ fn validate_compiler_mir_fixture(
         )
         .into());
     }
-    if !(0..=255).contains(&fixture.expected_exit) {
-        return Err(IoError::new(
-            ErrorKind::InvalidInput,
-            format!(
-                "canonical compiler MIR fixture expected_exit must be in 0..=255, got {}",
-                fixture.expected_exit
-            ),
-        )
-        .into());
+    match fixture.return_type {
+        TinyMirType::I32 => {
+            if !(0..=255).contains(&fixture.expected_exit) {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR fixture expected_exit must be in 0..=255, got {}",
+                        fixture.expected_exit
+                    ),
+                )
+                .into());
+            }
+        }
+        TinyMirType::Void => {
+            if fixture.expected_exit != 0 {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR void fixture expected_exit must be 0, got {}",
+                        fixture.expected_exit
+                    ),
+                )
+                .into());
+            }
+        }
     }
 
     let mut local_names: HashSet<&str> = HashSet::new();
@@ -2332,13 +2494,46 @@ fn validate_compiler_mir_fixture(
         }
 
         match block.terminator {
-            CompilerMirLoweringTerminator::ReturnI32(_) => {}
+            CompilerMirLoweringTerminator::ReturnI32(_) => {
+                if matches!(fixture.return_type, TinyMirType::Void) {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "canonical compiler MIR void function cannot return int at block {}",
+                            block.label
+                        ),
+                    )
+                    .into());
+                }
+            }
             CompilerMirLoweringTerminator::ReturnLocalI32(name) => {
+                if matches!(fixture.return_type, TinyMirType::Void) {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "canonical compiler MIR void function cannot return local {name} at block {}",
+                            block.label
+                        ),
+                    )
+                    .into());
+                }
                 if !local_names.contains(name) {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
                         format!(
                             "unknown canonical compiler MIR return local {name} at block {}",
+                            block.label
+                        ),
+                    )
+                    .into());
+                }
+            }
+            CompilerMirLoweringTerminator::ReturnVoid => {
+                if matches!(fixture.return_type, TinyMirType::I32) {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "canonical compiler MIR int function cannot use ReturnVoid at block {}",
                             block.label
                         ),
                     )
@@ -2405,10 +2600,13 @@ fn validate_compiler_mir_fixture(
     validate_canonical_compiler_mir_reachability(function, &block_indices)?;
 
     for (index, metadata) in fixture.metadata.iter().enumerate() {
-        if metadata.kind.is_empty() {
+        if !matches!(metadata.kind, "provenance" | "resource" | "native_boundary") {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
-                format!("canonical compiler MIR metadata {index} has an empty kind"),
+                format!(
+                    "unsupported canonical compiler MIR metadata kind at metadata {index}: {}",
+                    metadata.kind
+                ),
             )
             .into());
         }
@@ -2629,7 +2827,8 @@ fn validate_canonical_compiler_mir_reachability(
         })?;
         match function.blocks[block_index].terminator {
             CompilerMirLoweringTerminator::ReturnI32(_)
-            | CompilerMirLoweringTerminator::ReturnLocalI32(_) => {
+            | CompilerMirLoweringTerminator::ReturnLocalI32(_)
+            | CompilerMirLoweringTerminator::ReturnVoid => {
                 has_reachable_return = true;
             }
             CompilerMirLoweringTerminator::Jump { target } => {
@@ -2735,16 +2934,41 @@ fn emit_compiler_mir_fixture_object(
     output_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
-    let fixture = parse_compiler_mir_fixture(&contents)?;
+    emit_compiler_mir_fixture_contents_object(&contents, output_path)
+}
+
+fn emit_compiler_mir_fixture_contents_object(
+    contents: &str,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let fixture = parse_compiler_mir_fixture(contents)?;
     validate_compiler_mir_fixture(&fixture)?;
-    if !fixture.metadata.is_empty() {
-        return Err(IoError::new(
-            ErrorKind::InvalidInput,
-            "canonical compiler MIR generic object emission currently requires metadata_count: 0; metadata lowering is deferred to the Phase 9D metadata canonicalization milestone",
-        )
-        .into());
-    }
+    recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
     lower_compiler_mir_ingestion_function_to_object(output_path, &fixture.function)
+}
+
+fn recognize_compiler_mir_fixture_metadata(
+    metadata: &[CompilerMirFixtureMetadata<'_>],
+) -> Result<(), Box<dyn Error>> {
+    for (index, item) in metadata.iter().enumerate() {
+        match (item.kind, item.policy) {
+            (
+                "provenance" | "resource" | "native_boundary",
+                "recognized_preserved" | "ignored_with_proof",
+            ) => {}
+            _ => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unsupported canonical compiler MIR metadata lowering policy at metadata {index}: kind={} policy={}",
+                        item.kind, item.policy
+                    ),
+                )
+                .into());
+            }
+        }
+    }
+    Ok(())
 }
 
 fn parse_compiler_mir_ingestion_fields(
@@ -2825,26 +3049,10 @@ fn emit_compiler_mir_local_binding_read_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_local_binding_read_ingestion_fixture(&contents)?;
-    let mir_function = CompilerMirLoweringFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_local_binding_read",
-        symbol: COMPILER_MIR_INGESTED_LOCAL_BINDING_READ_SYMBOL,
-        params: vec![],
-        locals: vec![CompilerMirLoweringLocal {
-            name: "value",
-            ty: TinyMirType::I32,
-        }],
-        entry_block: "entry",
-        blocks: vec![CompilerMirLoweringBlock {
-            label: "entry",
-            statements: vec![CompilerMirLoweringStatement::LocalI32Set {
-                name: "value",
-                value: 2,
-            }],
-            terminator: CompilerMirLoweringTerminator::ReturnLocalI32("value"),
-        }],
-    };
-
-    lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9C_CANONICAL_LOCAL_BINDING_READ_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_local_binding_read_ingestion_fixture(
@@ -2924,36 +3132,10 @@ fn emit_compiler_mir_conditional_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_conditional_branch_ingestion_fixture(&contents)?;
-    let mir_function = CompilerMirLoweringFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_conditional_branch",
-        symbol: COMPILER_MIR_INGESTED_CONDITIONAL_BRANCH_SYMBOL,
-        params: vec![],
-        locals: vec![],
-        entry_block: "entry",
-        blocks: vec![
-            CompilerMirLoweringBlock {
-                label: "entry",
-                statements: vec![],
-                terminator: CompilerMirLoweringTerminator::BranchI32Literal {
-                    condition: 1,
-                    then_block: "then",
-                    else_block: "else",
-                },
-            },
-            CompilerMirLoweringBlock {
-                label: "then",
-                statements: vec![],
-                terminator: CompilerMirLoweringTerminator::ReturnI32(1),
-            },
-            CompilerMirLoweringBlock {
-                label: "else",
-                statements: vec![],
-                terminator: CompilerMirLoweringTerminator::ReturnI32(2),
-            },
-        ],
-    };
-
-    lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9C_CANONICAL_CONDITIONAL_BRANCH_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_conditional_branch_ingestion_fixture(
@@ -4212,17 +4394,10 @@ fn emit_compiler_mir_provenance_metadata_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_provenance_metadata_ingestion_fixture(&contents)?;
-    let mir_function = TinyMirFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_provenance_metadata",
-        symbol: COMPILER_MIR_INGESTED_PROVENANCE_METADATA_SYMBOL,
-        params: &[],
-        return_type: TinyMirType::I32,
-        locals: &MIR_LOCAL_BINDING_READ_LOCALS,
-        statements: &MIR_LOCAL_BINDING_READ_STATEMENTS,
-        terminator: TinyMirTerminator::ReturnLocalI32("value"),
-    };
-
-    lower_tiny_mir_function_to_object(output_path, &mir_function)
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9C_CANONICAL_PROVENANCE_METADATA_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_provenance_metadata_ingestion_fixture(
@@ -4294,17 +4469,10 @@ fn emit_compiler_mir_resource_metadata_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_resource_metadata_ingestion_fixture(&contents)?;
-    let mir_function = TinyMirFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_resource_metadata",
-        symbol: COMPILER_MIR_INGESTED_RESOURCE_METADATA_SYMBOL,
-        params: &[],
-        return_type: TinyMirType::I32,
-        locals: &MIR_LOCAL_BINDING_READ_LOCALS,
-        statements: &MIR_LOCAL_BINDING_READ_STATEMENTS,
-        terminator: TinyMirTerminator::ReturnLocalI32("value"),
-    };
-
-    lower_tiny_mir_function_to_object(output_path, &mir_function)
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9C_CANONICAL_RESOURCE_METADATA_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_resource_metadata_ingestion_fixture(
@@ -4369,17 +4537,10 @@ fn emit_compiler_mir_native_boundary_metadata_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_native_boundary_metadata_ingestion_fixture(&contents)?;
-    let mir_function = TinyMirFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_native_boundary_metadata",
-        symbol: COMPILER_MIR_INGESTED_NATIVE_BOUNDARY_METADATA_SYMBOL,
-        params: &[],
-        return_type: TinyMirType::Void,
-        locals: &[],
-        statements: &[],
-        terminator: TinyMirTerminator::ReturnVoid,
-    };
-
-    lower_tiny_mir_function_to_object(output_path, &mir_function)
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9C_CANONICAL_NATIVE_BOUNDARY_METADATA_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_native_boundary_metadata_ingestion_fixture(
@@ -4621,27 +4782,10 @@ fn emit_compiler_mir_block_jump_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_jump_ingestion_fixture(&contents)?;
-    let mir_function = CompilerMirLoweringFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_jump",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_JUMP_SYMBOL,
-        params: vec![],
-        locals: vec![],
-        entry_block: "entry",
-        blocks: vec![
-            CompilerMirLoweringBlock {
-                label: "entry",
-                statements: vec![],
-                terminator: CompilerMirLoweringTerminator::Jump { target: "return" },
-            },
-            CompilerMirLoweringBlock {
-                label: "return",
-                statements: vec![],
-                terminator: CompilerMirLoweringTerminator::ReturnI32(1),
-            },
-        ],
-    };
-
-    lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9C_CANONICAL_BLOCK_JUMP_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_block_jump_ingestion_fixture(contents: &str) -> Result<(), Box<dyn Error>> {
@@ -5177,6 +5321,7 @@ fn emit_compiler_mir_block_local_branch_join_ingestion_object(
     let mir_function = CompilerMirLoweringFunction {
         object_name: "gust_native_backend_compiler_mir_ingested_block_local_branch_join",
         symbol: COMPILER_MIR_INGESTED_BLOCK_LOCAL_BRANCH_JOIN_SYMBOL,
+        return_type: TinyMirType::I32,
         params: vec![TinyMirType::I32],
         locals: vec![CompilerMirLoweringLocal {
             name: "value",
@@ -12512,7 +12657,9 @@ fn define_compiler_mir_ingestion_exported_function(
             .params
             .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
     }
-    signature.returns.push(AbiParam::new(types::I32));
+    if matches!(mir_function.return_type, TinyMirType::I32) {
+        signature.returns.push(AbiParam::new(types::I32));
+    }
 
     let function_id = module.declare_function(mir_function.symbol, Linkage::Export, &signature)?;
     let mut context = module.make_context();
@@ -12654,6 +12801,9 @@ fn build_compiler_mir_ingestion_body(
                 })?;
                 let return_value = builder.use_var(slot);
                 builder.ins().return_(&[return_value]);
+            }
+            CompilerMirLoweringTerminator::ReturnVoid => {
+                builder.ins().return_(&[]);
             }
             CompilerMirLoweringTerminator::Jump { target } => {
                 let target_block = *cranelift_blocks.get(target).ok_or_else(|| {

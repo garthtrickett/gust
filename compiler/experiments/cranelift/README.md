@@ -36,45 +36,43 @@ and runtime imports, strings, structs, arrays, resource execution semantics,
 and complete block-parameter coverage remain outside Phase 9D. MIR-to-C stays
 primary and Cranelift stays disabled by default.
 
-The first Phase 9D milestone is complete. The manifest now inventories all 33
-compiler-owned ingestion emitters and classifies them as five canonical shared
-lowering seams, twenty-five compiler-owned but bespoke lowering seams, or three
-metadata-preservation-only seams. It also freezes all seventeen Phase 9B
-translator seeds as historical fixture-only coverage. The inventory records
-the producer, fixture and format, parser, compiler lowering entry, Rust model
-and lowering entry, object-emission boundary, native guard, and migration
-status for every ingestion seam.
+The inventory and architecture milestones remain complete. The manifest still
+tracks all 33 compiler-owned ingestion emitters and all seventeen frozen Phase
+9B translator seeds. After the Phase 9C rebase, eight seams use the canonical
+shared lowering architecture, twenty-five remain classified as compiler-owned
+bespoke lowering, and no seam remains metadata-preservation-only. The three
+metadata lanes now use the same parser, validator, Rust MIR model, body lowerer,
+and object emitter as the executable scalar lanes.
 
-The canonical architecture is now frozen with its schema/parser/validator
-boundary implemented:
+The canonical architecture is frozen and implemented as:
 `parse_compiler_mir_fixture` -> `validate_compiler_mir_fixture` ->
 `CompilerMirLoweringFunction` -> `build_compiler_mir_ingestion_body` ->
 `lower_compiler_mir_ingestion_function_to_object`. The versioned
-`gust.compiler_mir_ingestion.v1` schema covers one function, parameters, an
-`int` return, locals, blocks, the shared scalar statement and terminator set,
-metadata records, and expected native exit status. Parsing rejects duplicate,
-unknown, malformed, and unsupported fields. Validation checks identifiers,
-types, local and parameter references, unique blocks, control-flow targets,
-entry reachability, reachable return behavior, metadata attachment/policy, and
-native exit range before any Cranelift module or object can be created.
+`gust.compiler_mir_ingestion.v1` schema covers one function, integer
+parameters, `int` or `void` return, locals, blocks, the shared scalar statement
+and terminator set, canonical metadata records, and expected native exit
+status. `ReturnVoid` is supported only for a validated `void` function.
+Parsing rejects duplicate, unknown, malformed, and unsupported fields before
+any Cranelift module or object can be created.
 
 `compiler-mir-validate-fixture` exercises this boundary without emitting an
 object. The generic `compiler-mir-ingestion-object <input.mir> <output.o>`
-command now reads the canonical schema, parses and validates it, then passes
-the validated `CompilerMirLoweringFunction` through the shared body lowerer and
-object emitter. Validation failure happens before output-directory or object
-creation. Nonempty metadata is rejected explicitly at this object-emission
-boundary until the Phase 9D metadata canonicalization milestone, so the generic
-command cannot silently discard recognized metadata.
+command reads canonical fixture contents, parses and validates them, recognizes
+canonical metadata policy, and only then enters shared lowering and object
+emission. Validation failure still happens before output-directory or object
+creation.
 
-The generic command adds no semantic lane and leaves the 33-seam inventory
-unchanged. Existing Phase 9C lane-specific formats and commands remain
-temporary compatibility scaffolding until the rebase milestone; existing
-`TinyMir*` and lane-owned `ObjectModule` paths remain classified noncanonical
-and may not receive new semantic work. CI still requires every ingestion
-emitter or translator seed to enter the inventory. The next milestone is to
-rebase the frozen Phase 9C lanes onto the generic path and canonicalize
-metadata representation and policy.
+The frozen seven Phase 9C lane commands are now thin compatibility adapters.
+They first validate their historical compiler-owned fixture contract, then
+feed canonical fixture contents through the same parser, validator, Rust MIR
+model, metadata recognizer, shared body lowerer, and object emitter used by the
+generic command. Provenance, resource, and native-boundary records use the
+common `kind`/`attachment`/`policy`/`payload` representation and are explicitly
+ignored with proof for code generation; they do not claim runtime semantics.
+The old fixture formats remain accepted only to preserve frozen Phase 9C and
+Phase 9B evidence. New work must use the canonical format directly. The next
+milestone is the first bounded post-9C canonical migration cohort and the
+beginning of bypass-path freeze work.
 
 The checked-in lockfile for this crate is owned by:
 

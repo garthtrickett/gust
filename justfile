@@ -71,6 +71,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9d-ingestion-inventory-architecture
         just guard-cranelift-phase9d-schema-parser-validator
         just guard-cranelift-phase9d-generic-ingestion-command
+        just guard-cranelift-phase9d-phase9c-rebase-metadata
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -206,6 +207,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-ingestion-inventory-architecture' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-schema-parser-validator' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-generic-ingestion-command' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-phase9c-rebase-metadata' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -5161,9 +5163,9 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_status: phase9d_inventory_complete_architecture_frozen' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_registry: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_ingestion_seam_count: 33' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_canonical_shared_lowering_count: 5' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_canonical_shared_lowering_count: 8' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_compiler_owned_bespoke_lowering_count: 25' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_metadata_preservation_only_count: 3' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_metadata_preservation_only_count: 0' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_historical_translator_fixture_only_count: 17' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_classification_policy: canonical_shared_lowering,compiler_owned_bespoke_lowering,metadata_preservation_only,historical_translator_fixture_only' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_status: frozen_with_canonical_schema_parser_validator' "$manifest_doc" >/dev/null
@@ -5204,7 +5206,7 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
     canonical_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=canonical_shared_lowering|' || true)"
     bespoke_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=compiler_owned_bespoke_lowering|' || true)"
     metadata_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=metadata_preservation_only|' || true)"
-    if [ "$canonical_count" != "5" ] || [ "$bespoke_count" != "25" ] || [ "$metadata_count" != "3" ]; then
+    if [ "$canonical_count" != "8" ] || [ "$bespoke_count" != "25" ] || [ "$metadata_count" != "0" ]; then
       echo "Unexpected Phase 9D ingestion classification counts: canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count"
       exit 1
     fi
@@ -5234,15 +5236,19 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
     rg -n -F "struct CompilerMirLoweringFunction<'a> {" "$source_file" >/dev/null
     rg -n '^fn build_compiler_mir_ingestion_body\(' "$source_file" >/dev/null
     rg -n '^fn lower_compiler_mir_ingestion_function_to_object\(' "$source_file" >/dev/null
-    for lane in return_int local_binding_read conditional_branch block_jump block_local_branch_join; do
+    for lane in return_int local_binding_read conditional_branch block_jump provenance_metadata resource_metadata native_boundary_metadata; do
       lowering_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
-      printf '%s\n' "$lowering_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
-      if printf '%s\n' "$lowering_body" | rg -n 'ObjectBuilder::new|lower_tiny_mir_|define_tiny_mir_' >/dev/null; then
-        echo "Canonical shared-lowering seam $lane must not own a bespoke Cranelift object path."
+      printf '%s\n' "$lowering_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
+      if printf '%s\n' "$lowering_body" | rg -n 'ObjectBuilder::new|lower_tiny_mir_|define_tiny_mir_|lower_compiler_mir_ingestion_function_to_object' >/dev/null; then
+        echo "Rebased Phase 9C seam $lane must remain a thin adapter into canonical contents emission."
         exit 1
       fi
       rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|" "$manifest_doc" >/dev/null
     done
+
+    join_body="$(sed -n '/^fn emit_compiler_mir_block_local_branch_join_ingestion_object(/,/^}/p' "$source_file")"
+    printf '%s\n' "$join_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
+    rg -n '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_block_local_branch_join:.*\|class=canonical_shared_lowering\|' "$manifest_doc" >/dev/null
 
     if rg -n '^fn emit_compiler_mir_increment_local_i32_ingestion_object\(' "$source_file" >/dev/null; then
       echo "The known increment_local_i32 ingestion gap changed; update the Phase 9D inventory and architecture contract explicitly."
@@ -5270,7 +5276,7 @@ guard-cranelift-phase9d-schema-parser-validator:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_status: phase9d_canonical_schema_parser_validator_complete' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_format: gust.compiler_mir_ingestion.v1' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_statement_kinds: LocalI32Set,LocalI32SetParam,LocalI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_terminator_kinds: ReturnI32,ReturnLocalI32,Jump,BranchI32Literal,BranchLocalI32Positive' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_terminator_kinds: ReturnI32,ReturnLocalI32,ReturnVoid,Jump,BranchI32Literal,BranchLocalI32Positive' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_parser_entry: parse_compiler_mir_fixture' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_validator_entry: validate_compiler_mir_fixture' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_validation_command: compiler-mir-validate-fixture' "$manifest_doc" >/dev/null
@@ -5433,44 +5439,19 @@ guard-cranelift-phase9d-generic-ingestion-command:
     object_file="$build_dir/generic_shared_cfg.o"
     shim_c="$build_dir/generic_shared_cfg_main.c"
     binary="$build_dir/generic_shared_cfg_bin"
-    if [ ! -f "$manifest_doc" ] || [ ! -f "$source_file" ]; then
-      echo "Phase 9D generic command guard requires the Cranelift manifest and experiment source."
-      exit 1
-    fi
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_GENERIC_INGESTION_COMMAND_GUARD: guard-cranelift-phase9d-generic-ingestion-command' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_third_milestone: add_generic_ingestion_command' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_third_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_fourth_milestone: rebase_phase9c_lanes_and_canonicalize_metadata' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_next_milestone: phase9c_rebase_and_metadata_canonicalization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_status: phase9d_generic_ingestion_command_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_name: compiler-mir-ingestion-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_entry: emit_compiler_mir_fixture_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_parser: parse_compiler_mir_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_validator: validate_compiler_mir_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_rust_model: CompilerMirLoweringFunction' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_body_lowerer: build_compiler_mir_ingestion_body' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_object_emitter: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_stage_order: read_then_parse_then_validate_then_shared_lowering_then_object_emission' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_validation_failure_policy: reject_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_metadata_policy: reject_nonempty_metadata_until_phase9d_metadata_canonicalization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_inventory_policy: generic_command_adds_no_semantic_lane_and_preserves_33_seam_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_next_milestone: rebase_phase9c_lanes_and_canonicalize_metadata' "$manifest_doc" >/dev/null
-
-    rg -n -F '"compiler-mir-ingestion-object" => {' "$source_file" >/dev/null
-    rg -n '^fn emit_compiler_mir_fixture_object\(' "$source_file" >/dev/null
-    generic_body="$(sed -n '/^fn emit_compiler_mir_fixture_object(/,/^}/p' "$source_file")"
-    printf '%s\n' "$generic_body" | rg -n -F 'let fixture = parse_compiler_mir_fixture(&contents)?;' >/dev/null
-    printf '%s\n' "$generic_body" | rg -n -F 'validate_compiler_mir_fixture(&fixture)?;' >/dev/null
-    printf '%s\n' "$generic_body" | rg -n -F 'if !fixture.metadata.is_empty() {' >/dev/null
-    printf '%s\n' "$generic_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &fixture.function)' >/dev/null
-    if printf '%s\n' "$generic_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|build_compiler_mir_ingestion_body' >/dev/null; then
-      echo "The generic command must delegate to the shared object emitter instead of owning Cranelift construction."
-      exit 1
-    fi
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_metadata_policy: recognize_validated_metadata_before_shared_lowering_with_no_runtime_semantic_effect' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_fourth_milestone_status: complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_next_milestone: migrate_first_post9c_canonical_cohort' "$manifest_doc" >/dev/null
+    rg -n '^fn emit_compiler_mir_fixture_contents_object\(' "$source_file" >/dev/null
+    rg -n '^fn recognize_compiler_mir_fixture_metadata\(' "$source_file" >/dev/null
+    contents_body="$(sed -n '/^fn emit_compiler_mir_fixture_contents_object(/,/^}/p' "$source_file")"
+    printf '%s\n' "$contents_body" | rg -n -F 'let fixture = parse_compiler_mir_fixture(contents)?;' >/dev/null
+    printf '%s\n' "$contents_body" | rg -n -F 'validate_compiler_mir_fixture(&fixture)?;' >/dev/null
+    printf '%s\n' "$contents_body" | rg -n -F 'recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;' >/dev/null
+    printf '%s\n' "$contents_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &fixture.function)' >/dev/null
 
     cat > "$fixture" <<'MIR'
     format: gust.compiler_mir_ingestion.v1
@@ -5552,7 +5533,7 @@ guard-cranelift-phase9d-generic-ingestion-command:
     fi
 
     metadata_fixture="$build_dir/nonempty_metadata.mir"
-    metadata_object="$build_dir/metadata/should_not_exist.o"
+    metadata_object="$build_dir/metadata/nonempty_metadata.o"
     sed 's/metadata_count: 0/metadata_count: 1/' "$fixture" > "$metadata_fixture"
     cat >> "$metadata_fixture" <<'MIR'
     metadata_0_kind: provenance
@@ -5560,21 +5541,82 @@ guard-cranelift-phase9d-generic-ingestion-command:
     metadata_0_policy: recognized_preserved
     metadata_0_payload: local_binding
     MIR
-    set +e
-    "${cargo_cmd[@]}" "$metadata_fixture" "$metadata_object" > "$build_dir/metadata.log" 2>&1
-    metadata_status="$?"
-    set -e
-    if [ "$metadata_status" = "0" ]; then
-      echo "Expected generic object emission to reject nonempty metadata before the metadata canonicalization milestone."
-      exit 1
-    fi
-    rg -n -F 'generic object emission currently requires metadata_count: 0' "$build_dir/metadata.log" >/dev/null
-    if [ -e "$metadata_object" ] || [ -d "$(dirname "$metadata_object")" ]; then
-      echo "Metadata rejection must happen before output-directory or object creation."
-      exit 1
-    fi
+    "${cargo_cmd[@]}" "$metadata_fixture" "$metadata_object"
+    test -s "$metadata_object"
 
-    echo "✅ Phase 9D generic ingestion command parsed, validated, lowered, emitted, linked, and executed one canonical shared-CFG fixture without adding a semantic lane."
+    void_fixture="$build_dir/native_boundary_void.mir"
+    void_object="$build_dir/native_boundary_void.o"
+    void_shim="$build_dir/native_boundary_void_main.c"
+    void_binary="$build_dir/native_boundary_void_bin"
+    cat > "$void_fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9d_native_boundary_void
+    backend_symbol: tiny_phase9d_native_boundary_void
+    parameter_count: 0
+    return_type: void
+    local_count: 0
+    entry_block: entry
+    block_count: 1
+    block_0_label: entry
+    block_0_statement_count: 0
+    block_0_terminator_kind: ReturnVoid
+    metadata_count: 1
+    metadata_0_kind: native_boundary
+    metadata_0_attachment: function
+    metadata_0_policy: ignored_with_proof
+    metadata_0_payload: kind=RuntimeCall;symbol=tiny_runtime_boundary
+    expected_exit: 0
+    MIR
+    "${cargo_cmd[@]}" "$void_fixture" "$void_object"
+    test -s "$void_object"
+    printf '%s\n' 'extern void tiny_phase9d_native_boundary_void(void);' > "$void_shim"
+    printf '%s\n' 'int main(void) { tiny_phase9d_native_boundary_void(); return 0; }' >> "$void_shim"
+    "$CC_BIN" $CFLAGS_VAL "$void_shim" "$void_object" -o "$void_binary"
+    "$void_binary"
+
+    echo "✅ Phase 9D generic ingestion supports validated metadata and canonical int/void object emission while rejecting invalid MIR before output creation."
+
+guard-cranelift-phase9d-phase9c-rebase-metadata:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9D Phase 9C lane rebase and metadata canonicalization..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_PHASE9C_REBASE_METADATA_GUARD: guard-cranelift-phase9d-phase9c-rebase-metadata' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_status: phase9d_phase9c_lanes_rebased_metadata_canonicalized' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_lane_count: 7' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_metadata_kinds: provenance,resource,native_boundary' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_void_policy: native_boundary_metadata_uses_canonical_ReturnVoid' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_canonical_shared_lowering_count: 8' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_metadata_preservation_only_count: 0' "$manifest_doc" >/dev/null
+
+    rg -n -F 'const PHASE9C_CANONICAL_RETURN_INT_FIXTURE: &str = concat!(' "$source_file" >/dev/null
+    rg -n -F 'const PHASE9C_CANONICAL_LOCAL_BINDING_READ_FIXTURE: &str = concat!(' "$source_file" >/dev/null
+    rg -n -F 'const PHASE9C_CANONICAL_CONDITIONAL_BRANCH_FIXTURE: &str = concat!(' "$source_file" >/dev/null
+    rg -n -F 'const PHASE9C_CANONICAL_BLOCK_JUMP_FIXTURE: &str = concat!(' "$source_file" >/dev/null
+    rg -n -F 'const PHASE9C_CANONICAL_PROVENANCE_METADATA_FIXTURE: &str = concat!(' "$source_file" >/dev/null
+    rg -n -F 'const PHASE9C_CANONICAL_RESOURCE_METADATA_FIXTURE: &str = concat!(' "$source_file" >/dev/null
+    rg -n -F 'const PHASE9C_CANONICAL_NATIVE_BOUNDARY_METADATA_FIXTURE: &str = concat!(' "$source_file" >/dev/null
+    rg -n -F '"block_0_terminator_kind: ReturnVoid\n"' "$source_file" >/dev/null
+    rg -n -F '"metadata_0_kind: provenance\n"' "$source_file" >/dev/null
+    rg -n -F '"metadata_0_kind: resource\n"' "$source_file" >/dev/null
+    rg -n -F '"metadata_0_kind: native_boundary\n"' "$source_file" >/dev/null
+
+    for lane in return_int local_binding_read conditional_branch block_jump provenance_metadata resource_metadata native_boundary_metadata; do
+      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
+      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(&contents)?;" >/dev/null
+      printf '%s\n' "$adapter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
+      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|lower_tiny_mir_|lower_compiler_mir_ingestion_function_to_object' >/dev/null; then
+        echo "Phase 9C lane $lane bypasses the canonical contents path."
+        exit 1
+      fi
+    done
+
+    metadata_body="$(sed -n '/^fn recognize_compiler_mir_fixture_metadata(/,/^}/p' "$source_file")"
+    printf '%s\n' "$metadata_body" | rg -n -F '"provenance" | "resource" | "native_boundary"' >/dev/null
+    printf '%s\n' "$metadata_body" | rg -n -F '"recognized_preserved" | "ignored_with_proof"' >/dev/null
+    echo "✅ Seven frozen Phase 9C lanes enter the canonical parser/validator/model/lowerer path, with metadata and void return policies explicit."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
