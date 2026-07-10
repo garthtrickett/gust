@@ -11,6 +11,13 @@ Step 9 adds the first real Cranelift object emission smoke: a tiny exported
 object with a C shim only to execute the native smoke; the function body itself
 is emitted by Cranelift.
 
+The Phase 9C+ roadmap promotes compiler-owned MIR ingestion to the main
+experimental seam. New lanes should prefer a fixture produced by
+`compiler/mir.gst`, consumed by this crate, emitted as an object, linked with a
+native shim, and checked for its expected result instead of adding another
+bespoke translator seed. The first ingestion-backed differential candidates
+are return-int literal, local-binding/read, and conditional-branch.
+
 The checked-in lockfile for this crate is owned by:
 
 ```bash

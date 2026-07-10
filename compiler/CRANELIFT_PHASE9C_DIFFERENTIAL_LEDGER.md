@@ -9,7 +9,7 @@ PHASE9C_DIFFERENTIAL_LEDGER_ROUTE_POLICY: experiment_only_no_default_backend_fli
 PHASE9C_DIFFERENTIAL_LEDGER_RESULT_POLICY: each_lane_records_oracle_candidate_expected_status_and_divergence_owner
 PHASE9C_DIFFERENTIAL_LEDGER_FUTURE_LANE_POLICY: prefer_compiler_owned_mir_ingestion_before_new_bespoke_translator_lanes
 
-This ledger freezes the Phase 9C initial comparison set. It is deliberately an audit surface, not a backend route flip. MIR-to-C remains the oracle. Cranelift remains an experiment-only candidate until later phases replace fixture-shaped candidates with compiler-owned MIR ingestion and shared lowering.
+This ledger freezes the Phase 9C semantic comparison set. It is deliberately an audit surface, not a backend route flip. MIR-to-C remains the oracle and Cranelift remains experiment-only. The return-int, local-binding/read, and conditional-branch candidates now consume compiler-owned MIR fixtures, emit objects through the isolated Cranelift experiment, link with native shims, and validate their expected exit statuses. The remaining four candidates stay on the frozen Phase 9B translator seeds until ingestion-backed variants replace them.
 
 ## Lanes
 
@@ -17,34 +17,37 @@ This ledger freezes the Phase 9C initial comparison set. It is deliberately an a
 
 lane: return_int_literal
 oracle_guard: guard-mir-to-c-return-int-literal-native-smoke
-candidate_guard: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
+candidate_guard: guard-cranelift-compiler-mir-return-int-ingestion-native-smoke
+candidate_fixture: compiler/fixtures/native_backend_return_int_ingestion.mir
 expected_native_status: 1
-current_result: registered_initial_ladder
+current_result: ingestion_backed_candidate_registered
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
-candidate_shape: phase9b_translator_seed
-promotion_blocker: candidate_still_experiment_only_fixture_translator
+candidate_shape: compiler_owned_mir_ingestion
+promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
 
 ### local_binding_read
 
 lane: local_binding_read
 oracle_guard: guard-mir-to-c-local-binding-read-native-smoke
-candidate_guard: guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke
+candidate_guard: guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke
+candidate_fixture: compiler/fixtures/native_backend_local_binding_read_ingestion.mir
 expected_native_status: 2
-current_result: registered_initial_ladder
+current_result: ingestion_backed_candidate_registered
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
-candidate_shape: phase9b_translator_seed
-promotion_blocker: candidate_still_experiment_only_fixture_translator
+candidate_shape: compiler_owned_mir_ingestion
+promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
 
 ### conditional_branch
 
 lane: conditional_branch
 oracle_guard: guard-mir-to-c-conditional-branch-native-smoke
-candidate_guard: guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke
+candidate_guard: guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke
+candidate_fixture: compiler/fixtures/native_backend_conditional_branch_ingestion.mir
 expected_native_status: 1
-current_result: registered_initial_ladder
+current_result: ingestion_backed_candidate_registered
 failure_owner_policy: oracle_candidate_or_divergence_must_be_identified
-candidate_shape: phase9b_translator_seed
-promotion_blocker: candidate_still_experiment_only_fixture_translator
+candidate_shape: compiler_owned_mir_ingestion
+promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route
 
 ### block_jump
 
@@ -93,6 +96,6 @@ candidate_shape: phase9b_translator_seed
 semantic_scope: metadata_preservation_recognition_without_claiming_full_runtime_boundary_lowering
 promotion_blocker: candidate_still_experiment_only_fixture_translator
 
-## Next ingestion policy
+## Phase 9C+ roadmap
 
-New Phase 9C+ lanes should prefer compiler-owned MIR ingestion over new bespoke translator seeds. A lane may stay in this ledger only if it remains experiment-only, records its MIR-to-C oracle guard, records its Cranelift candidate guard, records its expected native status, and keeps production routing unchanged.
+New Phase 9C+ lanes should prefer compiler-owned MIR ingestion over new bespoke translator seeds. Ingestion-backed candidates are the next center of gravity: compiler MIR fixture -> Cranelift ingestion -> object -> native result. A lane may stay in this ledger only if it remains experiment-only, records its MIR-to-C oracle guard, records its Cranelift candidate guard, records its expected native status, and keeps production routing unchanged.
