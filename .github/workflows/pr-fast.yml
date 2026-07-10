@@ -60,7 +60,8 @@ jobs:
           - cranelift-phase9c-differential-ladder
           - cranelift-backend-suite-core-baseline
           - cranelift-backend-suite-core-legacy
-          - cranelift-backend-suite-core-mir-basic
+          - cranelift-backend-suite-core-mir-basic-arithmetic
+          - cranelift-backend-suite-core-mir-basic-calls
           - cranelift-backend-suite-core-mir-bundles
           - cranelift-backend-suite-core-mir-block-graphs
           - cranelift-backend-suite-compiler-mir-scalars
