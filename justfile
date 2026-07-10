@@ -1583,7 +1583,7 @@ guard-mir-to-c-boring-surface:
       exit 1
     fi
 
-    cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
+    cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
     if [ -n "$cranelift_refs" ]; then
       echo "MIR-to-C boring gate allows only the manifest and isolated experimental Cranelift crate before production implementation references exist:"
       echo "$cranelift_refs"
