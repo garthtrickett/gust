@@ -4931,8 +4931,7 @@ guard-cranelift-phase9c-differential-ladder-surface:
     phase9c_unexpected_translator_candidates="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard: guard-cranelift-mir-to-cranelift-.*-translator-native-smoke$' "$manifest_doc" || true)"
     phase9c_initial_ladder_expected_status_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_expected_status:' "$manifest_doc" | wc -l | tr -d '[:space:]')"
     phase9c_ledger_lane_count="$(rg -n '^lane: ' "$ledger_doc" | wc -l | tr -d '[:space:]')"
-    phase9c_ledger_fixture_count="$(rg -n '^candidate_fixture: compiler/fixtures/native_backend_.*_ingestion\.mir$' "$ledger_doc" | wc -l | tr -d '[:space:]')
-    phase9c_ledger_lane_count="$(rg -n '^lane: ' "$ledger_doc" | wc -l | tr -d '[:space:]')"
+    phase9c_ledger_fixture_count="$(rg -n '^candidate_fixture: compiler/fixtures/native_backend_.*_ingestion\.mir$' "$ledger_doc" | wc -l | tr -d '[:space:]')"
     if [ "$phase9c_initial_ladder_oracle_count" != "7" ]; then
       echo "Expected exactly 7 Phase 9C oracle guards, found $phase9c_initial_ladder_oracle_count."
       rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_oracle_guard:' "$manifest_doc" || true
@@ -4968,8 +4967,7 @@ guard-cranelift-phase9c-differential-ladder-surface:
       rg -n '^candidate_fixture:' "$ledger_doc" || true
       exit 1
     fi
-    echo "✅ Phase 9C differential ladder surface passed: all seven frozen semantic lanes use compiler-owned MIR ingestion candidates and production routing is unchanged.
-    echo "✅ Phase 9C differential ladder surface passed: seven semantic lanes remain frozen, the first three candidates are compiler-owned MIR ingestion-backed, and production routing is unchanged."
+    echo "✅ Phase 9C differential ladder surface passed: all seven frozen semantic lanes use compiler-owned MIR ingestion candidates and production routing is unchanged."
 
 guard-cranelift-phase9c-differential-ladder-native-smoke:
     #!/usr/bin/env bash
