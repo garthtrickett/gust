@@ -381,6 +381,14 @@ struct TinyMirBlockFunction {
 #[derive(Clone, Copy)]
 enum CompilerMirLoweringStatement {
     LocalI32Set { name: &'static str, value: i32 },
+    LocalI32SetParam {
+        name: &'static str,
+        param: usize,
+    },
+    LocalI32AddI32Literal {
+        name: &'static str,
+        value: i32,
+    },
 }
 
 #[derive(Clone, Copy)]
@@ -395,6 +403,11 @@ enum CompilerMirLoweringTerminator {
         then_block: &'static str,
         else_block: &'static str,
     },
+    BranchLocalI32Positive {
+        name: &'static str,
+        then_block: &'static str,
+        else_block: &'static str,
+    },
 }
 
 struct CompilerMirLoweringBlock {
@@ -406,6 +419,7 @@ struct CompilerMirLoweringBlock {
 struct CompilerMirLoweringFunction {
     object_name: &'static str,
     symbol: &'static str,
+    params: Vec<TinyMirType>,
     locals: Vec<TinyMirLocal>,
     entry_block: &'static str,
     blocks: Vec<CompilerMirLoweringBlock>,
