@@ -69,6 +69,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract
         just guard-cranelift-phase9d-opening-contract
         just guard-cranelift-phase9d-ingestion-inventory-architecture
+        just guard-cranelift-phase9d-schema-parser-validator
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -202,6 +203,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-surface' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-opening-contract' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-ingestion-inventory-architecture' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-schema-parser-validator' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -1636,6 +1638,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9d-opening-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9d-ingestion-inventory-architecture' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9d-schema-parser-validator' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -5161,7 +5164,7 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_metadata_preservation_only_count: 3' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_historical_translator_fixture_only_count: 17' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_classification_policy: canonical_shared_lowering,compiler_owned_bespoke_lowering,metadata_preservation_only,historical_translator_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_status: frozen_before_schema_parser_validator_work' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_status: frozen_with_canonical_schema_parser_validator' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_stage_order: parse_then_validate_then_rust_mir_model_then_shared_lowering_then_object_emission' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_parser_target: parse_compiler_mir_fixture' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_validator_target: validate_compiler_mir_fixture' "$manifest_doc" >/dev/null
@@ -5226,7 +5229,7 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
       exit 1
     fi
 
-    rg -n -F 'struct CompilerMirLoweringFunction {' "$source_file" >/dev/null
+    rg -n -F "struct CompilerMirLoweringFunction<'a> {" "$source_file" >/dev/null
     rg -n '^fn build_compiler_mir_ingestion_body\(' "$source_file" >/dev/null
     rg -n '^fn lower_compiler_mir_ingestion_function_to_object\(' "$source_file" >/dev/null
     for lane in return_int local_binding_read conditional_branch block_jump block_local_branch_join; do
@@ -5245,6 +5248,177 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
     fi
 
     echo "✅ Phase 9D inventory complete: 33 ingestion seams classified, 17 translator seeds frozen, and the canonical parse/validate/model/lower/emit architecture is guarded."
+
+guard-cranelift-phase9d-schema-parser-validator:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9D canonical fixture schema, parser, and validator..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    build_dir="build/guards/cranelift_phase9d_schema_parser_validator"
+    valid_fixture="$build_dir/valid_shared_cfg.mir"
+    if [ ! -f "$manifest_doc" ] || [ ! -f "$source_file" ]; then
+      echo "Phase 9D schema/parser/validator guard requires the Cranelift manifest and experiment source."
+      exit 1
+    fi
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_SCHEMA_PARSER_VALIDATOR_GUARD: guard-cranelift-phase9d-schema-parser-validator' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_status: phase9d_canonical_schema_parser_validator_complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_format: gust.compiler_mir_ingestion.v1' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_statement_kinds: LocalI32Set,LocalI32SetParam,LocalI32AddI32Literal' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_terminator_kinds: ReturnI32,ReturnLocalI32,Jump,BranchI32Literal,BranchLocalI32Positive' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_parser_entry: parse_compiler_mir_fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_validator_entry: validate_compiler_mir_fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_validation_command: compiler-mir-validate-fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_validation_boundary: before_cranelift_module_or_object_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_second_milestone_status: complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_third_milestone: add_generic_ingestion_command' "$manifest_doc" >/dev/null
+
+    rg -n -F 'const COMPILER_MIR_CANONICAL_FIXTURE_FORMAT: &str = "gust.compiler_mir_ingestion.v1";' "$source_file" >/dev/null
+    rg -n '^fn parse_compiler_mir_fixture' "$source_file" >/dev/null
+    rg -n '^fn validate_compiler_mir_fixture\(' "$source_file" >/dev/null
+    rg -n '^fn validate_compiler_mir_fixture_path\(' "$source_file" >/dev/null
+    rg -n -F '"compiler-mir-validate-fixture" => {' "$source_file" >/dev/null
+    rg -n -F "struct CompilerMirLoweringFunction<'a> {" "$source_file" >/dev/null
+    rg -n -F "struct CompilerMirLoweringLocal<'a> {" "$source_file" >/dev/null
+    schema_body="$(sed -n '/^fn parse_compiler_mir_fixture/,/^fn parse_compiler_mir_ingestion_fields/p' "$source_file")"
+    if printf '%s\n' "$schema_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|cranelift_native::builder|module\.define_function|object_product\.emit' >/dev/null; then
+      echo "Canonical compiler MIR parsing and validation must finish before Cranelift module or object creation."
+      exit 1
+    fi
+
+    cat > "$valid_fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9d_shared_cfg
+    backend_symbol: tiny_phase9d_shared_cfg
+    parameter_count: 1
+    parameter_0_type: int
+    return_type: int
+    local_count: 2
+    local_0_name: value
+    local_0_type: int
+    local_1_name: marker
+    local_1_type: int
+    entry_block: entry
+    block_count: 4
+    block_0_label: entry
+    block_0_statement_count: 2
+    block_0_statement_0_kind: LocalI32SetParam
+    block_0_statement_0_local: value
+    block_0_statement_0_param: 0
+    block_0_statement_1_kind: LocalI32Set
+    block_0_statement_1_local: marker
+    block_0_statement_1_value: 1
+    block_0_terminator_kind: BranchLocalI32Positive
+    block_0_terminator_local: value
+    block_0_terminator_then: positive
+    block_0_terminator_else: non_positive
+    block_1_label: positive
+    block_1_statement_count: 1
+    block_1_statement_0_kind: LocalI32AddI32Literal
+    block_1_statement_0_local: value
+    block_1_statement_0_value: 4
+    block_1_terminator_kind: Jump
+    block_1_terminator_target: join
+    block_2_label: non_positive
+    block_2_statement_count: 1
+    block_2_statement_0_kind: LocalI32AddI32Literal
+    block_2_statement_0_local: value
+    block_2_statement_0_value: 8
+    block_2_terminator_kind: Jump
+    block_2_terminator_target: join
+    block_3_label: join
+    block_3_statement_count: 0
+    block_3_terminator_kind: ReturnLocalI32
+    block_3_terminator_local: value
+    metadata_count: 1
+    metadata_0_kind: provenance
+    metadata_0_attachment: function
+    metadata_0_policy: recognized_preserved
+    metadata_0_payload: local_binding
+    expected_exit: 9
+    MIR
+
+    cargo_cmd=(cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-validate-fixture)
+    "${cargo_cmd[@]}" "$valid_fixture" > "$build_dir/valid.log" 2>&1
+    rg -n -F 'validated canonical compiler MIR fixture: tiny_phase9d_shared_cfg -> tiny_phase9d_shared_cfg' "$build_dir/valid.log" >/dev/null
+
+    expect_invalid() {
+      local name="$1"
+      local fixture="$2"
+      local expected="$3"
+      local log="$build_dir/${name}.log"
+      set +e
+      "${cargo_cmd[@]}" "$fixture" > "$log" 2>&1
+      local status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Expected canonical compiler MIR fixture rejection: $name"
+        cat "$log"
+        exit 1
+      fi
+      rg -n -F "$expected" "$log" >/dev/null
+    }
+
+    duplicate_field="$build_dir/duplicate_field.mir"
+    cp "$valid_fixture" "$duplicate_field"
+    printf '%s\n' 'function: duplicate' >> "$duplicate_field"
+    expect_invalid duplicate_field "$duplicate_field" 'duplicate canonical compiler MIR fixture field: function'
+
+    unknown_field="$build_dir/unknown_field.mir"
+    cp "$valid_fixture" "$unknown_field"
+    printf '%s\n' 'mystery_field: value' >> "$unknown_field"
+    expect_invalid unknown_field "$unknown_field" 'unknown canonical compiler MIR fixture field(s): mystery_field'
+
+    unknown_local="$build_dir/unknown_local.mir"
+    sed 's/block_1_statement_0_local: value/block_1_statement_0_local: missing/' "$valid_fixture" > "$unknown_local"
+    expect_invalid unknown_local "$unknown_local" 'unknown canonical compiler MIR local missing'
+
+    unknown_target="$build_dir/unknown_target.mir"
+    sed 's/block_0_terminator_then: positive/block_0_terminator_then: missing/' "$valid_fixture" > "$unknown_target"
+    expect_invalid unknown_target "$unknown_target" 'unknown canonical compiler MIR branch then target missing'
+
+    unknown_parameter="$build_dir/unknown_parameter.mir"
+    sed 's/block_0_statement_0_param: 0/block_0_statement_0_param: 9/' "$valid_fixture" > "$unknown_parameter"
+    expect_invalid unknown_parameter "$unknown_parameter" 'unknown canonical compiler MIR parameter 9'
+
+    duplicate_block="$build_dir/duplicate_block.mir"
+    sed 's/block_3_label: join/block_3_label: positive/' "$valid_fixture" > "$duplicate_block"
+    expect_invalid duplicate_block "$duplicate_block" 'duplicate canonical compiler MIR block label: positive'
+
+    unreachable_block="$build_dir/unreachable_block.mir"
+    sed 's/block_count: 4/block_count: 5/' "$valid_fixture" > "$unreachable_block"
+    cat >> "$unreachable_block" <<'MIR'
+    block_4_label: unreachable
+    block_4_statement_count: 0
+    block_4_terminator_kind: ReturnI32
+    block_4_terminator_value: 0
+    MIR
+    expect_invalid unreachable_block "$unreachable_block" 'canonical compiler MIR fixture has unreachable block(s): unreachable'
+
+    no_return="$build_dir/no_return.mir"
+    sed \
+      -e 's/block_3_terminator_kind: ReturnLocalI32/block_3_terminator_kind: Jump/' \
+      -e 's/block_3_terminator_local: value/block_3_terminator_target: entry/' \
+      "$valid_fixture" > "$no_return"
+    expect_invalid no_return "$no_return" 'canonical compiler MIR fixture entry graph has no reachable Return terminator'
+
+    bad_metadata="$build_dir/bad_metadata.mir"
+    sed 's/metadata_0_policy: recognized_preserved/metadata_0_policy: silently_drop/' "$valid_fixture" > "$bad_metadata"
+    expect_invalid bad_metadata "$bad_metadata" 'unsupported canonical compiler MIR metadata policy'
+
+    unsupported_statement="$build_dir/unsupported_statement.mir"
+    sed 's/block_0_statement_1_kind: LocalI32Set/block_0_statement_1_kind: RuntimeCall/' "$valid_fixture" > "$unsupported_statement"
+    expect_invalid unsupported_statement "$unsupported_statement" 'unsupported canonical compiler MIR statement kind'
+
+    if find "$build_dir" -type f -name '*.o' -print -quit | grep -q .; then
+      echo "The Phase 9D schema/parser/validator milestone must not emit object files."
+      exit 1
+    fi
+
+    echo "✅ Phase 9D canonical fixture schema, parser, and validator passed with strict structural and semantic rejection before object emission."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

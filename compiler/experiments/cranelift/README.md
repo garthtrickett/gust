@@ -45,17 +45,27 @@ the producer, fixture and format, parser, compiler lowering entry, Rust model
 and lowering entry, object-emission boundary, native guard, and migration
 status for every ingestion seam.
 
-The canonical architecture is frozen before schema/parser work begins:
+The canonical architecture is now frozen with its schema/parser/validator
+boundary implemented:
 `parse_compiler_mir_fixture` -> `validate_compiler_mir_fixture` ->
 `CompilerMirLoweringFunction` -> `build_compiler_mir_ingestion_body` ->
-`lower_compiler_mir_ingestion_function_to_object`. The parser and validator
-names are Phase 9D targets, not claims that the generic implementations already
-exist. Existing lane-specific parsers are temporary compatibility scaffolding;
-existing `TinyMir*` and lane-owned `ObjectModule` paths are classified
-noncanonical and may not receive new semantic work. CI requires every new
-ingestion emitter or translator seed to enter the inventory before it can be
-accepted. The next milestone is the canonical fixture schema, parser, and
-validator.
+`lower_compiler_mir_ingestion_function_to_object`. The versioned
+`gust.compiler_mir_ingestion.v1` schema covers one function, parameters, an
+`int` return, locals, blocks, the shared scalar statement and terminator set,
+metadata records, and expected native exit status. Parsing rejects duplicate,
+unknown, malformed, and unsupported fields. Validation checks identifiers,
+types, local and parameter references, unique blocks, control-flow targets,
+entry reachability, reachable return behavior, metadata attachment/policy, and
+native exit range before any Cranelift module or object can be created.
+
+`compiler-mir-validate-fixture` exercises this boundary without emitting an
+object. Existing Phase 9C lane-specific formats and parsers remain temporary
+compatibility scaffolding until the later rebase milestone; this step does not
+pretend they already consume the canonical schema. Existing `TinyMir*` and
+lane-owned `ObjectModule` paths remain classified noncanonical and may not
+receive new semantic work. CI still requires every ingestion emitter or
+translator seed to enter the inventory. The next milestone is the generic
+ingestion command.
 
 The checked-in lockfile for this crate is owned by:
 
