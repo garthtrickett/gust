@@ -12450,7 +12450,6 @@ fn tiny_mir_type_to_cranelift_type(mir_type: TinyMirType) -> Type {
 fn lower_compiler_mir_ingestion_function_to_object(
     output_path: &Path,
     mir_function: &CompilerMirLoweringFunction<'_>,
-)
 ) -> Result<(), Box<dyn Error>> {
     if let Some(parent) = output_path.parent() {
         fs::create_dir_all(parent)?;
@@ -12473,7 +12472,6 @@ fn lower_compiler_mir_ingestion_function_to_object(
 fn define_compiler_mir_ingestion_exported_function(
     module: &mut ObjectModule,
     mir_function: &CompilerMirLoweringFunction<'_>,
-)
 ) -> Result<(), Box<dyn Error>> {
     let mut signature = module.make_signature();
     for param in &mir_function.params {
