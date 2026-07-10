@@ -68,6 +68,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9c-differential-ladder-surface
         just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract
         just guard-cranelift-phase9d-opening-contract
+        just guard-cranelift-phase9d-ingestion-inventory-architecture
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -200,6 +201,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9c-differential-ladder)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-surface' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-opening-contract' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-ingestion-inventory-architecture' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -1633,6 +1635,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9d-opening-contract' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9d-ingestion-inventory-architecture' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -5125,6 +5128,10 @@ guard-cranelift-phase9d-opening-contract:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_closure_guard_policy: phase9d_close_guard_added_only_in_phase9d_closure_step' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_next_phase: phase9e_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_first_milestone: complete_ingestion_seam_inventory_and_freeze_canonical_architecture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_first_milestone_status: complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_second_milestone: define_canonical_fixture_schema_parser_and_validator' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_INGESTION_INVENTORY_ARCHITECTURE_GUARD: guard-cranelift-phase9d-ingestion-inventory-architecture' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_status: phase9d_inventory_complete_architecture_frozen' "$manifest_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_closed_fixture_backed_differential' "$phase9c_ledger" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FREEZE_POLICY: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract' "$phase9c_ledger" >/dev/null
     rg -n -F 'Phase 9D is open as `phase9d_compiler_owned_mir_ingestion_canonicalization`.' "$readme_doc" >/dev/null
@@ -5133,6 +5140,111 @@ guard-cranelift-phase9d-opening-contract:
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
     echo "✅ Phase 9D opened: compiler-owned MIR ingestion is the canonical experimental Cranelift architecture, with MIR-to-C still primary and no production route change."
+
+guard-cranelift-phase9d-ingestion-inventory-architecture:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9D ingestion inventory and canonical architecture freeze..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    if [ ! -f "$manifest_doc" ] || [ ! -f "$source_file" ]; then
+      echo "Phase 9D inventory guard requires the Cranelift manifest and experiment source."
+      exit 1
+    fi
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_INGESTION_INVENTORY_ARCHITECTURE_GUARD: guard-cranelift-phase9d-ingestion-inventory-architecture' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_status: phase9d_inventory_complete_architecture_frozen' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_registry: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_ingestion_seam_count: 33' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_canonical_shared_lowering_count: 5' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_compiler_owned_bespoke_lowering_count: 25' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_metadata_preservation_only_count: 3' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_historical_translator_fixture_only_count: 17' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_classification_policy: canonical_shared_lowering,compiler_owned_bespoke_lowering,metadata_preservation_only,historical_translator_fixture_only' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_status: frozen_before_schema_parser_validator_work' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_stage_order: parse_then_validate_then_rust_mir_model_then_shared_lowering_then_object_emission' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_parser_target: parse_compiler_mir_fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_validator_target: validate_compiler_mir_fixture' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_rust_model: CompilerMirLoweringFunction' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_body_lowerer: build_compiler_mir_ingestion_body' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_object_emitter: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_validation_boundary: validation_must_complete_before_cranelift_module_or_object_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_lane_parser_policy: existing_lane_specific_parsers_are_temporary_compatibility_scaffolding' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_bespoke_lowering_policy: existing_bespoke_lowerers_are_classified_noncanonical_and_may_not_receive_new_semantic_work' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_direct_object_policy: new_canonical_ingestion_paths_must_not_own_ObjectModule_construction' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_registration_policy: every_new_ingestion_emitter_or_translator_seed_must_register_before_ci_acceptance' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_known_gap: increment_local_i32_has_no_compiler_owned_ingestion_seam' "$manifest_doc" >/dev/null
+
+    inventory_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
+    inventory_count="$(printf '%s\n' "$inventory_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [ "$inventory_count" != "33" ]; then
+      echo "Expected exactly 33 registered compiler-owned MIR ingestion seams, found $inventory_count."
+      exit 1
+    fi
+
+    while IFS= read -r inventory_line; do
+      [ -n "$inventory_line" ] || continue
+      inventory_key="${inventory_line%%:*}"
+      lane="${inventory_key#allowed_compiler_mir_ingestion_phase9d_inventory_seam_}"
+      for required_field in 'producer=' '|fixture=' '|format=' '|parser=' '|compiler_lowering=' '|rust_entry=' '|rust_model=' '|rust_lowering=' '|object_emitter=' '|native_guard=' '|class=' '|migration='; do
+        if [[ "$inventory_line" != *"$required_field"* ]]; then
+          echo "Phase 9D inventory seam $lane is missing field $required_field"
+          exit 1
+        fi
+      done
+      rg -n "^fn emit_compiler_mir_${lane}_ingestion_object\(" "$source_file" >/dev/null
+      rg -n "^fn parse_compiler_mir_${lane}_ingestion_fixture\(" "$source_file" >/dev/null
+    done <<< "$inventory_lines"
+
+    canonical_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=canonical_shared_lowering|' || true)"
+    bespoke_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=compiler_owned_bespoke_lowering|' || true)"
+    metadata_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=metadata_preservation_only|' || true)"
+    if [ "$canonical_count" != "5" ] || [ "$bespoke_count" != "25" ] || [ "$metadata_count" != "3" ]; then
+      echo "Unexpected Phase 9D ingestion classification counts: canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count"
+      exit 1
+    fi
+
+    source_lanes="$(rg '^fn emit_compiler_mir_[a-z0-9_]+_ingestion_object\(' "$source_file" | sed -E 's/^fn emit_compiler_mir_([a-z0-9_]+)_ingestion_object\(.*/\1/' | sort)"
+    inventory_lanes="$(printf '%s\n' "$inventory_lines" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
+    if [ "$source_lanes" != "$inventory_lanes" ]; then
+      echo "Every compiler-owned MIR ingestion emitter must be registered in the Phase 9D inventory."
+      diff -u <(printf '%s\n' "$source_lanes") <(printf '%s\n' "$inventory_lanes") || true
+      exit 1
+    fi
+
+    historical_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
+    historical_count="$(printf '%s\n' "$historical_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [ "$historical_count" != "17" ]; then
+      echo "Expected exactly 17 frozen historical translator seeds, found $historical_count."
+      exit 1
+    fi
+    translator_lanes="$(rg '^allowed_mir_to_cranelift_[a-z0-9_]+_translator_native_guard:' "$manifest_doc" | sed -E 's/^allowed_mir_to_cranelift_([a-z0-9_]+)_translator_native_guard:.*/\1/' | sort)"
+    historical_lanes="$(printf '%s\n' "$historical_lines" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_([a-z0-9_]+):.*/\1/' | sort)"
+    if [ "$translator_lanes" != "$historical_lanes" ]; then
+      echo "Every historical translator seed must be frozen in the Phase 9D inventory."
+      diff -u <(printf '%s\n' "$translator_lanes") <(printf '%s\n' "$historical_lanes") || true
+      exit 1
+    fi
+
+    rg -n -F 'struct CompilerMirLoweringFunction {' "$source_file" >/dev/null
+    rg -n '^fn build_compiler_mir_ingestion_body\(' "$source_file" >/dev/null
+    rg -n '^fn lower_compiler_mir_ingestion_function_to_object\(' "$source_file" >/dev/null
+    for lane in return_int local_binding_read conditional_branch block_jump block_local_branch_join; do
+      lowering_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
+      printf '%s\n' "$lowering_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
+      if printf '%s\n' "$lowering_body" | rg -n 'ObjectBuilder::new|lower_tiny_mir_|define_tiny_mir_' >/dev/null; then
+        echo "Canonical shared-lowering seam $lane must not own a bespoke Cranelift object path."
+        exit 1
+      fi
+      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|" "$manifest_doc" >/dev/null
+    done
+
+    if rg -n '^fn emit_compiler_mir_increment_local_i32_ingestion_object\(' "$source_file" >/dev/null; then
+      echo "The known increment_local_i32 ingestion gap changed; update the Phase 9D inventory and architecture contract explicitly."
+      exit 1
+    fi
+
+    echo "✅ Phase 9D inventory complete: 33 ingestion seams classified, 17 translator seeds frozen, and the canonical parse/validate/model/lower/emit architecture is guarded."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

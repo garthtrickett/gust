@@ -29,14 +29,33 @@ Phase 9D is open as `phase9d_compiler_owned_mir_ingestion_canonicalization`.
 Its contract makes compiler-owned MIR ingestion the required architecture for
 new experimental Cranelift semantic work: compiler MIR producer -> versioned
 fixture -> parser -> validated Rust MIR model -> shared lowering -> object
-emission. The first milestone is to inventory every existing ingestion seam and
-freeze that architecture before adding new language coverage. Historical
-commands may remain as thin wrappers, while new translator-seed lanes require
-an explicit abstraction-gap exception. Production routing, default-backend
-changes, C-backend retirement, full calls and runtime imports, strings,
-structs, arrays, resource execution semantics, and complete block-parameter
-coverage remain outside Phase 9D. MIR-to-C stays primary and Cranelift stays
-disabled by default.
+emission. Historical commands may remain as thin wrappers, while new
+translator-seed lanes require an explicit abstraction-gap exception.
+Production routing, default-backend changes, C-backend retirement, full calls
+and runtime imports, strings, structs, arrays, resource execution semantics,
+and complete block-parameter coverage remain outside Phase 9D. MIR-to-C stays
+primary and Cranelift stays disabled by default.
+
+The first Phase 9D milestone is complete. The manifest now inventories all 33
+compiler-owned ingestion emitters and classifies them as five canonical shared
+lowering seams, twenty-five compiler-owned but bespoke lowering seams, or three
+metadata-preservation-only seams. It also freezes all seventeen Phase 9B
+translator seeds as historical fixture-only coverage. The inventory records
+the producer, fixture and format, parser, compiler lowering entry, Rust model
+and lowering entry, object-emission boundary, native guard, and migration
+status for every ingestion seam.
+
+The canonical architecture is frozen before schema/parser work begins:
+`parse_compiler_mir_fixture` -> `validate_compiler_mir_fixture` ->
+`CompilerMirLoweringFunction` -> `build_compiler_mir_ingestion_body` ->
+`lower_compiler_mir_ingestion_function_to_object`. The parser and validator
+names are Phase 9D targets, not claims that the generic implementations already
+exist. Existing lane-specific parsers are temporary compatibility scaffolding;
+existing `TinyMir*` and lane-owned `ObjectModule` paths are classified
+noncanonical and may not receive new semantic work. CI requires every new
+ingestion emitter or translator seed to enter the inventory before it can be
+accepted. The next milestone is the canonical fixture schema, parser, and
+validator.
 
 The checked-in lockfile for this crate is owned by:
 
