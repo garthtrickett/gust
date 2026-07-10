@@ -413,17 +413,17 @@ guard-cranelift-phase9c-differential-ladder-native-shard shard:
         just guard-mir-to-c-conditional-branch-native-smoke
         just guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke
         just guard-mir-to-c-block-jump-native-smoke
-        just guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke
+        just guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke
         ;;
       metadata)
         just guard-mir-to-c-provenance-metadata-native-smoke
-        just guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke
+        just guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke
         just guard-mir-to-c-resource-metadata-native-smoke
-        just guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke
+        just guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke
         ;;
       boundary)
         just guard-mir-to-c-native-boundary-metadata-native-smoke
-        just guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke
+        just guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke
         ;;
       *)
         echo "unknown Phase 9C native differential ladder shard: {{shard}}"
@@ -4826,14 +4826,20 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_result_policy: per_lane_oracle_candidate_expected_status_must_be_registered' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_failure_policy: failed_lane_must_identify_oracle_candidate_or_divergence' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_future_lane_policy: prefer_compiler_owned_mir_ingestion_before_new_bespoke_translator_lanes' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_candidate_shape: compiler_owned_mir_ingestion' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_ingestion_candidate_count: 7' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_translator_candidate_count: 0' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
 
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_VERSION: 1' "$ledger_doc" >/dev/null
-    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_initial_seven_lane_baseline' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_seven_lane_ingestion_backed' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_LANE_COUNT: 7' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_ORACLE_ROUTE: mir_to_c' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_CANDIDATE_ROUTE: mir_to_cranelift_experiment_only' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_CANDIDATE_SHAPE: compiler_owned_mir_ingestion' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_INGESTION_CANDIDATE_COUNT: 7' "$ledger_doc" >/dev/null
+    rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_TRANSLATOR_CANDIDATE_COUNT: 0' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_ROUTE_POLICY: experiment_only_no_default_backend_flip' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_RESULT_POLICY: each_lane_records_oracle_candidate_expected_status_and_divergence_owner' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FUTURE_LANE_POLICY: prefer_compiler_owned_mir_ingestion_before_new_bespoke_translator_lanes' "$ledger_doc" >/dev/null
@@ -4866,32 +4872,41 @@ guard-cranelift-phase9c-differential-ladder-surface:
 
     rg -n -F 'lane: block_jump' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-block-jump-native-smoke' "$ledger_doc" >/dev/null
-    rg -n -F 'candidate_guard: guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke' "$ledger_doc" >/dev/null
+    rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke' "$ledger_doc" >/dev/null
+    rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_block_jump_ingestion.mir' "$ledger_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_block_jump_expected_status: 1' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_block_jump_candidate_guard: guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_fixture: compiler/fixtures/native_backend_block_jump_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'lane: provenance_metadata' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-provenance-metadata-native-smoke' "$ledger_doc" >/dev/null
-    rg -n -F 'candidate_guard: guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke' "$ledger_doc" >/dev/null
+    rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke' "$ledger_doc" >/dev/null
+    rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$ledger_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_provenance_metadata_expected_status: 2' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_provenance_metadata_candidate_guard: guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_fixture: compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'lane: resource_metadata' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-resource-metadata-native-smoke' "$ledger_doc" >/dev/null
-    rg -n -F 'candidate_guard: guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke' "$ledger_doc" >/dev/null
+    rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke' "$ledger_doc" >/dev/null
+    rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_resource_metadata_ingestion.mir' "$ledger_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_resource_metadata_expected_status: 2' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_resource_metadata_candidate_guard: guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_fixture: compiler/fixtures/native_backend_resource_metadata_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'lane: native_boundary_metadata' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-native-boundary-metadata-native-smoke' "$ledger_doc" >/dev/null
-    rg -n -F 'candidate_guard: guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke' "$ledger_doc" >/dev/null
+    rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' "$ledger_doc" >/dev/null
+    rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir' "$ledger_doc" >/dev/null
     rg -n -F 'expected_native_status: 0' "$ledger_doc" >/dev/null
     rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_native_boundary_metadata_expected_status: 0' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_native_boundary_metadata_candidate_guard: guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'failure_owner_policy: oracle_candidate_or_divergence_must_be_identified' "$ledger_doc" >/dev/null
     rg -n -F 'current_result: ingestion_backed_candidate_registered' "$ledger_doc" >/dev/null
-    rg -n -F 'current_result: registered_initial_ladder' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_shape: compiler_owned_mir_ingestion' "$ledger_doc" >/dev/null
-    rg -n -F 'candidate_shape: phase9b_translator_seed' "$ledger_doc" >/dev/null
     rg -n -F 'promotion_blocker: ingestion_candidate_remains_experiment_only_no_production_route' "$ledger_doc" >/dev/null
-    rg -n -F 'promotion_blocker: candidate_still_experiment_only_fixture_translator' "$ledger_doc" >/dev/null
     rg -n -F 'semantic_scope: metadata_preservation_recognition_without_claiming_full_resource_semantics' "$ledger_doc" >/dev/null
     rg -n -F 'semantic_scope: metadata_preservation_recognition_without_claiming_full_runtime_boundary_lowering' "$ledger_doc" >/dev/null
 
@@ -4902,26 +4917,40 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'guard-mir-to-c-conditional-branch-native-smoke' justfile "$ledger_doc" >/dev/null
     rg -n -F 'guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
     rg -n -F 'guard-mir-to-c-block-jump-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
+    rg -n -F 'guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
     rg -n -F 'guard-mir-to-c-provenance-metadata-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
+    rg -n -F 'guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
     rg -n -F 'guard-mir-to-c-resource-metadata-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
+    rg -n -F 'guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
     rg -n -F 'guard-mir-to-c-native-boundary-metadata-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
+    rg -n -F 'guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
 
     phase9c_initial_ladder_oracle_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_oracle_guard:' "$manifest_doc" | wc -l | tr -d '[:space:]')"
-    phase9c_initial_ladder_translator_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard:' "$manifest_doc" | wc -l | tr -d '[:space:]')"
+    phase9c_initial_ladder_candidate_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard:' "$manifest_doc" | wc -l | tr -d '[:space:]')"
+    phase9c_ingestion_candidate_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard: guard-cranelift-compiler-mir-.*-ingestion-native-smoke$' "$manifest_doc" | wc -l | tr -d '[:space:]')"
+    phase9c_unexpected_translator_candidates="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard: guard-cranelift-mir-to-cranelift-.*-translator-native-smoke$' "$manifest_doc" || true)"
     phase9c_initial_ladder_expected_status_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_expected_status:' "$manifest_doc" | wc -l | tr -d '[:space:]')"
+    phase9c_ledger_lane_count="$(rg -n '^lane: ' "$ledger_doc" | wc -l | tr -d '[:space:]')"
+    phase9c_ledger_fixture_count="$(rg -n '^candidate_fixture: compiler/fixtures/native_backend_.*_ingestion\.mir$' "$ledger_doc" | wc -l | tr -d '[:space:]')
     phase9c_ledger_lane_count="$(rg -n '^lane: ' "$ledger_doc" | wc -l | tr -d '[:space:]')"
     if [ "$phase9c_initial_ladder_oracle_count" != "7" ]; then
       echo "Expected exactly 7 Phase 9C oracle guards, found $phase9c_initial_ladder_oracle_count."
       rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_oracle_guard:' "$manifest_doc" || true
       exit 1
     fi
-    if [ "$phase9c_initial_ladder_translator_count" != "7" ]; then
-      echo "Expected exactly 7 Phase 9C candidate guards, found $phase9c_initial_ladder_translator_count."
+    if [ "$phase9c_initial_ladder_candidate_count" != "7" ]; then
+      echo "Expected exactly 7 Phase 9C candidate guards, found $phase9c_initial_ladder_candidate_count."
       rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard:' "$manifest_doc" || true
+      exit 1
+    fi
+    if [ "$phase9c_ingestion_candidate_count" != "7" ]; then
+      echo "Expected all 7 Phase 9C candidates to use compiler-owned MIR ingestion, found $phase9c_ingestion_candidate_count."
+      rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard:' "$manifest_doc" || true
+      exit 1
+    fi
+    if [ -n "$phase9c_unexpected_translator_candidates" ]; then
+      echo "Phase 9C candidates must no longer route through frozen translator seeds:"
+      echo "$phase9c_unexpected_translator_candidates"
       exit 1
     fi
     if [ "$phase9c_initial_ladder_expected_status_count" != "7" ]; then
@@ -4934,6 +4963,12 @@ guard-cranelift-phase9c-differential-ladder-surface:
       rg -n '^lane: ' "$ledger_doc" || true
       exit 1
     fi
+    if [ "$phase9c_ledger_fixture_count" != "7" ]; then
+      echo "Expected exactly 7 Phase 9C compiler-owned MIR candidate fixtures, found $phase9c_ledger_fixture_count."
+      rg -n '^candidate_fixture:' "$ledger_doc" || true
+      exit 1
+    fi
+    echo "✅ Phase 9C differential ladder surface passed: all seven frozen semantic lanes use compiler-owned MIR ingestion candidates and production routing is unchanged.
     echo "✅ Phase 9C differential ladder surface passed: seven semantic lanes remain frozen, the first three candidates are compiler-owned MIR ingestion-backed, and production routing is unchanged."
 
 guard-cranelift-phase9c-differential-ladder-native-smoke:
@@ -4956,13 +4991,14 @@ guard-cranelift-phase9c-differential-ladder-native-smoke:
     just guard-mir-to-c-conditional-branch-native-smoke
     just guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke
     just guard-mir-to-c-block-jump-native-smoke
-    just guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke
+    just guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke
     just guard-mir-to-c-provenance-metadata-native-smoke
-    just guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke
+    just guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke
     just guard-mir-to-c-resource-metadata-native-smoke
-    just guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke
+    just guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke
     just guard-mir-to-c-native-boundary-metadata-native-smoke
-    just guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke
+    just guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke
+    echo "✅ Phase 9C native differential ladder passed: 7 MIR-to-C oracle lanes and 7 compiler-owned MIR ingestion candidates execute with matching expected native statuses.
     echo "✅ Phase 9C native differential ladder passed: 7 MIR-to-C oracle lanes, 3 compiler-owned MIR ingestion candidates, and 4 frozen translator candidates execute with matching expected native statuses."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
