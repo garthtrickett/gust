@@ -5153,7 +5153,7 @@ guard-cranelift-phase9d-opening-contract:
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FREEZE_POLICY: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract' "$phase9c_ledger" >/dev/null
     rg -n -F 'Phase 9D is closed as' "$readme_doc" >/dev/null
     rg -n -F '`phase9d_closed_compiler_owned_mir_ingestion_canonicalized`.' "$readme_doc" >/dev/null
-    rg -n -F 'compiler-owned MIR ingestion the required architecture' "$readme_doc" >/dev/null
+    rg -n -F 'ingestion is now the required architecture for new experimental Cranelift' "$readme_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
