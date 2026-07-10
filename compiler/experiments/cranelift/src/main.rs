@@ -536,6 +536,66 @@ const PHASE9C_CANONICAL_NATIVE_BOUNDARY_METADATA_FIXTURE: &str = concat!(
     "expected_exit: 0\n",
 );
 
+const PHASE9D_CANONICAL_ADD_I32_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_add_i32\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_add_i32\n",
+    "parameter_count: 2\n",
+    "parameter_0_type: int\n",
+    "parameter_1_type: int\n",
+    "return_type: int\n",
+    "local_count: 1\n",
+    "local_0_name: result\n",
+    "local_0_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 1\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 2\n",
+    "block_0_statement_0_kind: LocalI32SetParam\n",
+    "block_0_statement_0_local: result\n",
+    "block_0_statement_0_param: 0\n",
+    "block_0_statement_1_kind: LocalI32AddParam\n",
+    "block_0_statement_1_local: result\n",
+    "block_0_statement_1_param: 1\n",
+    "block_0_terminator_kind: ReturnLocalI32\n",
+    "block_0_terminator_local: result\n",
+    "metadata_count: 0\n",
+    "expected_exit: 5\n",
+);
+
+const PHASE9D_CANONICAL_POSITIVE_I32_BRANCH_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_positive_i32_branch\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_positive_i32_branch\n",
+    "parameter_count: 1\n",
+    "parameter_0_type: int\n",
+    "return_type: int\n",
+    "local_count: 1\n",
+    "local_0_name: value\n",
+    "local_0_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 3\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 1\n",
+    "block_0_statement_0_kind: LocalI32SetParam\n",
+    "block_0_statement_0_local: value\n",
+    "block_0_statement_0_param: 0\n",
+    "block_0_terminator_kind: BranchLocalI32Positive\n",
+    "block_0_terminator_local: value\n",
+    "block_0_terminator_then: positive\n",
+    "block_0_terminator_else: non_positive\n",
+    "block_1_label: positive\n",
+    "block_1_statement_count: 0\n",
+    "block_1_terminator_kind: ReturnI32\n",
+    "block_1_terminator_value: 7\n",
+    "block_2_label: non_positive\n",
+    "block_2_statement_count: 0\n",
+    "block_2_terminator_kind: ReturnI32\n",
+    "block_2_terminator_value: 9\n",
+    "metadata_count: 0\n",
+    "expected_exit: 7\n",
+);
+
 #[derive(Clone, Copy)]
 enum CompilerMirLoweringStatement<'a> {
     LocalI32Set { name: &'a str, value: i32 },
@@ -546,6 +606,10 @@ enum CompilerMirLoweringStatement<'a> {
     LocalI32AddI32Literal {
         name: &'a str,
         value: i32,
+    },
+    LocalI32AddParam {
+        name: &'a str,
+        param: usize,
     },
 }
 
@@ -2169,6 +2233,22 @@ fn parse_compiler_mir_fixture<'a>(
                         )?,
                     }
                 }
+                "LocalI32AddParam" => {
+                    let local_key = format!("{prefix}_local");
+                    let param_key = format!("{prefix}_param");
+                    CompilerMirLoweringStatement::LocalI32AddParam {
+                        name: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &local_key,
+                        )?,
+                        param: parse_canonical_compiler_mir_usize_field(
+                            &fields,
+                            &mut consumed,
+                            &param_key,
+                        )?,
+                    }
+                }
                 other => {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
@@ -2472,7 +2552,8 @@ fn validate_compiler_mir_fixture(
                         statement_index,
                     )?;
                 }
-                CompilerMirLoweringStatement::LocalI32SetParam { name, param } => {
+                CompilerMirLoweringStatement::LocalI32SetParam { name, param }
+                | CompilerMirLoweringStatement::LocalI32AddParam { name, param } => {
                     validate_canonical_compiler_mir_local_reference(
                         &local_names,
                         name,
@@ -3193,21 +3274,7 @@ fn emit_compiler_mir_add_i32_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_add_i32_ingestion_fixture(&contents)?;
-    static COMPILER_MIR_ADD_I32_PARAMS: [TinyMirType; 2] = [TinyMirType::I32, TinyMirType::I32];
-    let mir_function = TinyMirFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_add_i32",
-        symbol: COMPILER_MIR_INGESTED_ADD_I32_SYMBOL,
-        params: &COMPILER_MIR_ADD_I32_PARAMS,
-        return_type: TinyMirType::I32,
-        locals: &[],
-        statements: &[],
-        terminator: TinyMirTerminator::ReturnParamI32Add {
-            lhs_param: 0,
-            rhs_param: 1,
-        },
-    };
-
-    lower_tiny_mir_function_to_object(output_path, &mir_function)
+    emit_compiler_mir_fixture_contents_object(PHASE9D_CANONICAL_ADD_I32_FIXTURE, output_path)
 }
 
 fn parse_compiler_mir_add_i32_ingestion_fixture(contents: &str) -> Result<(), Box<dyn Error>> {
@@ -4643,22 +4710,10 @@ fn emit_compiler_mir_positive_i32_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_positive_i32_branch_ingestion_fixture(&contents)?;
-    static COMPILER_MIR_POSITIVE_I32_BRANCH_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    let mir_function = TinyMirFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_positive_i32_branch",
-        symbol: COMPILER_MIR_INGESTED_POSITIVE_I32_BRANCH_SYMBOL,
-        params: &COMPILER_MIR_POSITIVE_I32_BRANCH_PARAMS,
-        return_type: TinyMirType::I32,
-        locals: &[],
-        statements: &[],
-        terminator: TinyMirTerminator::BranchParamI32Positive {
-            param: 0,
-            then_return: 7,
-            else_return: 9,
-        },
-    };
-
-    lower_tiny_mir_function_to_object(output_path, &mir_function)
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9D_CANONICAL_POSITIVE_I32_BRANCH_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_positive_i32_branch_ingestion_fixture(
@@ -12782,6 +12837,23 @@ fn build_compiler_mir_ingestion_body(
                     })?;
                     let current_value = builder.use_var(slot);
                     let updated_value = builder.ins().iadd_imm(current_value, i64::from(value));
+                    builder.def_var(slot, updated_value);
+                }
+                CompilerMirLoweringStatement::LocalI32AddParam { name, param } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering local add target: {name}"),
+                        )
+                    })?;
+                    let param_value = function_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering function parameter: {param}"),
+                        )
+                    })?;
+                    let current_value = builder.use_var(slot);
+                    let updated_value = builder.ins().iadd(current_value, param_value);
                     builder.def_var(slot, updated_value);
                 }
             }

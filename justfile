@@ -72,6 +72,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9d-schema-parser-validator
         just guard-cranelift-phase9d-generic-ingestion-command
         just guard-cranelift-phase9d-phase9c-rebase-metadata
+        just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -208,6 +209,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-schema-parser-validator' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-generic-ingestion-command' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-phase9c-rebase-metadata' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -5169,8 +5171,8 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_status: phase9d_inventory_complete_architecture_frozen' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_registry: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_ingestion_seam_count: 33' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_canonical_shared_lowering_count: 8' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_compiler_owned_bespoke_lowering_count: 25' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_canonical_shared_lowering_count: 10' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_compiler_owned_bespoke_lowering_count: 23' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_metadata_preservation_only_count: 0' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_historical_translator_fixture_only_count: 17' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_classification_policy: canonical_shared_lowering,compiler_owned_bespoke_lowering,metadata_preservation_only,historical_translator_fixture_only' "$manifest_doc" >/dev/null
@@ -5212,7 +5214,7 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
     canonical_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=canonical_shared_lowering|' || true)"
     bespoke_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=compiler_owned_bespoke_lowering|' || true)"
     metadata_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=metadata_preservation_only|' || true)"
-    if [ "$canonical_count" != "8" ] || [ "$bespoke_count" != "25" ] || [ "$metadata_count" != "0" ]; then
+    if [ "$canonical_count" != "10" ] || [ "$bespoke_count" != "23" ] || [ "$metadata_count" != "0" ]; then
       echo "Unexpected Phase 9D ingestion classification counts: canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count"
       exit 1
     fi
@@ -5242,7 +5244,7 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
     rg -n -F "struct CompilerMirLoweringFunction<'a> {" "$source_file" >/dev/null
     rg -n '^fn build_compiler_mir_ingestion_body\(' "$source_file" >/dev/null
     rg -n '^fn lower_compiler_mir_ingestion_function_to_object\(' "$source_file" >/dev/null
-    for lane in return_int local_binding_read conditional_branch block_jump provenance_metadata resource_metadata native_boundary_metadata; do
+    for lane in return_int local_binding_read conditional_branch block_jump provenance_metadata resource_metadata native_boundary_metadata add_i32 positive_i32_branch; do
       lowering_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
       printf '%s\n' "$lowering_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
       if printf '%s\n' "$lowering_body" | rg -n 'ObjectBuilder::new|lower_tiny_mir_|define_tiny_mir_|lower_compiler_mir_ingestion_function_to_object' >/dev/null; then
@@ -5261,7 +5263,7 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
       exit 1
     fi
 
-    echo "✅ Phase 9D inventory complete: 33 ingestion seams classified, 17 translator seeds frozen, and the canonical parse/validate/model/lower/emit architecture is guarded."
+    echo "✅ Phase 9D inventory complete: 33 ingestion seams classified as 10 canonical and 23 frozen bespoke paths, with 17 translator seeds frozen."
 
 guard-cranelift-phase9d-schema-parser-validator:
     #!/usr/bin/env bash
@@ -5281,7 +5283,7 @@ guard-cranelift-phase9d-schema-parser-validator:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_SCHEMA_PARSER_VALIDATOR_GUARD: guard-cranelift-phase9d-schema-parser-validator' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_status: phase9d_canonical_schema_parser_validator_complete' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_format: gust.compiler_mir_ingestion.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_statement_kinds: LocalI32Set,LocalI32SetParam,LocalI32AddI32Literal' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_statement_kinds: LocalI32Set,LocalI32SetParam,LocalI32AddI32Literal,LocalI32AddParam' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_terminator_kinds: ReturnI32,ReturnLocalI32,ReturnVoid,Jump,BranchI32Literal,BranchLocalI32Positive' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_parser_entry: parse_compiler_mir_fixture' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_validator_entry: validate_compiler_mir_fixture' "$manifest_doc" >/dev/null
@@ -5450,7 +5452,7 @@ guard-cranelift-phase9d-generic-ingestion-command:
 
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_metadata_policy: recognize_validated_metadata_before_shared_lowering_with_no_runtime_semantic_effect' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_fourth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_next_milestone: migrate_first_post9c_canonical_cohort' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_next_milestone: phase9d_closure_review' "$manifest_doc" >/dev/null
     rg -n '^fn emit_compiler_mir_fixture_contents_object\(' "$source_file" >/dev/null
     rg -n '^fn recognize_compiler_mir_fixture_metadata\(' "$source_file" >/dev/null
     contents_body="$(sed -n '/^fn emit_compiler_mir_fixture_contents_object(/,/^}/p' "$source_file")"
@@ -5594,7 +5596,7 @@ guard-cranelift-phase9d-phase9c-rebase-metadata:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_lane_count: 7' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_metadata_kinds: provenance,resource,native_boundary' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_void_policy: native_boundary_metadata_uses_canonical_ReturnVoid' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_canonical_shared_lowering_count: 8' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_inventory_policy: phase9c_rebase_contributed_8_canonical_shared_lanes_to_the_33_seam_inventory' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_metadata_preservation_only_count: 0' "$manifest_doc" >/dev/null
 
     rg -n -F 'const PHASE9C_CANONICAL_RETURN_INT_FIXTURE: &str = concat!(' "$source_file" >/dev/null
@@ -5623,6 +5625,90 @@ guard-cranelift-phase9d-phase9c-rebase-metadata:
     printf '%s\n' "$metadata_body" | rg -n -F '"provenance" | "resource" | "native_boundary"' >/dev/null
     printf '%s\n' "$metadata_body" | rg -n -F '"recognized_preserved" | "ignored_with_proof"' >/dev/null
     echo "✅ Seven frozen Phase 9C lanes enter the canonical parser/validator/model/lowerer path, with metadata and void return policies explicit."
+
+guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9D first post-9C cohort and bypass freeze..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_FIRST_POST9C_COHORT_BYPASS_FREEZE_GUARD: guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_status: phase9d_first_post9c_scalar_cohort_migrated_bypass_freeze_active' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_lane_count: 2' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_lanes: add_i32,positive_i32_branch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_schema_extension: LocalI32AddParam' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_inventory_policy: 33_total_10_canonical_shared_23_bespoke_0_metadata_only' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_bypass_freeze_status: active' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_bypass_freeze_translator_policy: translator_seed_inventory_frozen_at_17_without_explicit_abstraction_gap_exception' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_fifth_milestone_status: complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_next_milestone: phase9d_closure_review' "$manifest_doc" >/dev/null
+
+    rg -n -F 'const PHASE9D_CANONICAL_ADD_I32_FIXTURE: &str = concat!(' "$source_file" >/dev/null
+    rg -n -F 'const PHASE9D_CANONICAL_POSITIVE_I32_BRANCH_FIXTURE: &str = concat!(' "$source_file" >/dev/null
+    rg -n -F 'LocalI32AddParam {' "$source_file" >/dev/null
+    rg -n -F '"LocalI32AddParam" => {' "$source_file" >/dev/null
+    rg -n -F 'CompilerMirLoweringStatement::LocalI32AddParam { name, param }' "$source_file" >/dev/null
+    rg -n -F 'builder.ins().iadd(current_value, param_value)' "$source_file" >/dev/null
+
+    for lane in add_i32 positive_i32_branch; do
+      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringFunction\|rust_lowering=build_compiler_mir_ingestion_body\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9d_first_post9c_scalar_cohort\|$" "$manifest_doc" >/dev/null
+      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
+      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(&contents)?;" >/dev/null
+      printf '%s\n' "$adapter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
+      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMir(Function|BlockFunction|ParamBlockFunction)|lower_tiny_mir_|define_tiny_mir_|lower_compiler_mir_ingestion_function_to_object' >/dev/null; then
+        echo "Phase 9D cohort lane $lane bypasses canonical contents emission."
+        exit 1
+      fi
+    done
+
+    canonical_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc")"
+    canonical_count="$(printf '%s\n' "$canonical_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [ "$canonical_count" != "10" ]; then
+      echo "Expected exactly 10 canonical compiler MIR ingestion seams, found $canonical_count."
+      exit 1
+    fi
+    while IFS= read -r inventory_line; do
+      [ -n "$inventory_line" ] || continue
+      inventory_key="${inventory_line%%:*}"
+      lane="${inventory_key#allowed_compiler_mir_ingestion_phase9d_inventory_seam_}"
+      for required_field in '|rust_model=CompilerMirLoweringFunction|' '|object_emitter=lower_compiler_mir_ingestion_function_to_object|'; do
+        if [[ "$inventory_line" != *"$required_field"* ]]; then
+          echo "Canonical seam $lane bypasses the shared Phase 9D model or object pipeline."
+          exit 1
+        fi
+      done
+      if [ "$lane" = "block_local_branch_join" ]; then
+        [[ "$inventory_line" == *'|rust_lowering=lower_compiler_mir_ingestion_function_to_object|'* ]]
+      else
+        [[ "$inventory_line" == *'|rust_lowering=build_compiler_mir_ingestion_body|'* ]]
+      fi
+      emitter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
+      if printf '%s\n' "$emitter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMir(Function|BlockFunction|ParamBlockFunction)|lower_tiny_mir_|define_tiny_mir_' >/dev/null; then
+        echo "Canonical seam $lane owns a forbidden object or TinyMir lowering path."
+        exit 1
+      fi
+      if [ "$lane" = "block_local_branch_join" ]; then
+        printf '%s\n' "$emitter_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
+      else
+        printf '%s\n' "$emitter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
+      fi
+    done <<< "$canonical_lines"
+
+    source_ingestion_count="$(rg -c '^fn emit_compiler_mir_[a-z0-9_]+_ingestion_object\(' "$source_file")"
+    source_translator_count="$(rg -c '^fn emit_compiler_mir_to_cranelift_[a-z0-9_]+_translator_object\(' "$source_file")"
+    if [ "$source_ingestion_count" != "33" ]; then
+      echo "Bypass freeze requires exactly 33 registered ingestion emitters, found $source_ingestion_count."
+      exit 1
+    fi
+    if [ "$source_translator_count" != "17" ]; then
+      echo "Bypass freeze requires exactly 17 frozen translator seeds, found $source_translator_count."
+      exit 1
+    fi
+
+    just guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke
+    just guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke
+    echo "✅ First post-9C scalar cohort is canonical, and new ingestion/object/translator bypasses are frozen."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
@@ -5967,7 +6053,9 @@ guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke:
     rg -n -F 'compiler-mir-positive-i32-branch-ingestion-object' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'parse_compiler_mir_positive_i32_branch_ingestion_fixture' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'COMPILER_MIR_INGESTED_POSITIVE_I32_BRANCH_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
-    rg -n -F 'TinyMirTerminator::BranchParamI32Positive' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'const PHASE9D_CANONICAL_POSITIVE_I32_BRANCH_FIXTURE: &str = concat!(' compiler/experiments/cranelift/src/main.rs >/dev/null
+    positive_adapter="$(sed -n '/^fn emit_compiler_mir_positive_i32_branch_ingestion_object(/,/^}/p' compiler/experiments/cranelift/src/main.rs)"
+    printf '%s\n' "$positive_adapter" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
     build_dir="build/guards/cranelift_compiler_mir_positive_i32_branch_ingestion_native"
     object_file="$build_dir/tiny_native_backend_compiler_mir_ingested_positive_i32_branch.o"
     shim_c="$build_dir/tiny_native_backend_compiler_mir_ingested_positive_i32_branch_main.c"

@@ -38,11 +38,12 @@ primary and Cranelift stays disabled by default.
 
 The inventory and architecture milestones remain complete. The manifest still
 tracks all 33 compiler-owned ingestion emitters and all seventeen frozen Phase
-9B translator seeds. After the Phase 9C rebase, eight seams use the canonical
-shared lowering architecture, twenty-five remain classified as compiler-owned
-bespoke lowering, and no seam remains metadata-preservation-only. The three
-metadata lanes now use the same parser, validator, Rust MIR model, body lowerer,
-and object emitter as the executable scalar lanes.
+9B translator seeds. The first bounded post-9C cohort migrates `add_i32` and
+`positive_i32_branch`; ten seams now use the canonical shared lowering
+architecture, twenty-three remain classified as compiler-owned bespoke
+lowering, and no seam remains metadata-preservation-only. The three metadata
+lanes use the same parser, validator, Rust MIR model, body lowerer, and object
+emitter as executable scalar lanes.
 
 The canonical architecture is frozen and implemented as:
 `parse_compiler_mir_fixture` -> `validate_compiler_mir_fixture` ->
@@ -51,7 +52,9 @@ The canonical architecture is frozen and implemented as:
 `gust.compiler_mir_ingestion.v1` schema covers one function, integer
 parameters, `int` or `void` return, locals, blocks, the shared scalar statement
 and terminator set, canonical metadata records, and expected native exit
-status. `ReturnVoid` is supported only for a validated `void` function.
+status. The first post-9C cohort adds `LocalI32AddParam` so parameter arithmetic
+also remains inside the canonical model rather than a `TinyMirFunction`
+shortcut. `ReturnVoid` is supported only for a validated `void` function.
 Parsing rejects duplicate, unknown, malformed, and unsupported fields before
 any Cranelift module or object can be created.
 
@@ -70,9 +73,17 @@ generic command. Provenance, resource, and native-boundary records use the
 common `kind`/`attachment`/`policy`/`payload` representation and are explicitly
 ignored with proof for code generation; they do not claim runtime semantics.
 The old fixture formats remain accepted only to preserve frozen Phase 9C and
-Phase 9B evidence. New work must use the canonical format directly. The next
-milestone is the first bounded post-9C canonical migration cohort and the
-beginning of bypass-path freeze work.
+Phase 9B evidence. `add_i32` and `positive_i32_branch` now validate those
+historical inputs and immediately enter canonical fixture parsing, validation,
+model construction, shared lowering, and object emission. Their lane commands
+no longer construct an `ObjectModule` or invoke a `TinyMir` lowerer.
+
+The bypass freeze is now active. Every canonical inventory seam must use
+`CompilerMirLoweringFunction` and shared object emission; lane-owned
+`ObjectModule` construction, new unregistered ingestion emitters, and new
+translator seeds without an explicit abstraction-gap exception are rejected by
+the Phase 9D guard. Existing bespoke paths remain frozen migration candidates,
+not extension points. The next milestone is Phase 9D closure review.
 
 The checked-in lockfile for this crate is owned by:
 
