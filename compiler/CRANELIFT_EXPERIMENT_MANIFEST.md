@@ -1285,6 +1285,9 @@ CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c
 CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite
 CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_PARALLEL_GUARD: guard-cranelift-experimental-backend-suite-parallel
 CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_SHARD_GUARD: guard-cranelift-experimental-backend-suite-shard
+CRANELIFT_EXPERIMENT_ALLOWED_CORE_MIR_BASIC_SUITE_SHARD_GUARD: guard-cranelift-core-mir-basic-suite-shard
+CRANELIFT_EXPERIMENT_ALLOWED_TRANSLATOR_SEED_SUITE_SHARD_GUARD: guard-cranelift-mir-to-cranelift-translator-seed-suite-shard
+CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_SHARD_GUARD: guard-cranelift-phase9c-differential-ladder-native-shard
 CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead
 CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression
 MIR_TO_C_BORING_GATE: guard-mir-to-c-boring-surface
@@ -1314,6 +1317,9 @@ allowed_differential_native_guard: guard-cranelift-mir-to-c-differential-native-
 allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite
 allowed_backend_suite_parallel_guard: guard-cranelift-experimental-backend-suite-parallel
 allowed_backend_suite_shard_guard: guard-cranelift-experimental-backend-suite-shard
+allowed_core_mir_basic_suite_shard_guard: guard-cranelift-core-mir-basic-suite-shard
+allowed_translator_seed_suite_shard_guard: guard-cranelift-mir-to-cranelift-translator-seed-suite-shard
+allowed_phase9c_differential_ladder_native_shard_guard: guard-cranelift-phase9c-differential-ladder-native-shard
 allowed_backend_suite_parallel_isolation: git_worktree_per_shard_to_avoid_to_log_collisions
 allowed_backend_suite_parallel_shards: core-baseline, core-legacy, core-mir-basic, core-mir-bundles, core-mir-block-graphs, compiler-mir-scalars, compiler-mir-metadata, compiler-mir-blocks, translators
 allowed_dependency_beachhead_guard: guard-cranelift-dependency-beachhead
