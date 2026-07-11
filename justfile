@@ -7384,6 +7384,12 @@ guard-cranelift-phase9f-call-import-schema-validator:
       echo "Missing Phase 9F canonical schema validation fixture: $valid_fixture"
       exit 1
     fi
+    format_count="$(rg -c '^format: gust\.compiler_mir_ingestion\.v2$' "$valid_fixture" || true)"
+    if [ "$format_count" != "1" ]; then
+      echo "Expected exactly one Phase 9F v2 format record in $valid_fixture, found ${format_count:-0}."
+      rg -n '^format:' "$valid_fixture" || true
+      exit 1
+    fi
 
     just guard-cranelift-phase9f-opening-contract
 
