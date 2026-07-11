@@ -123,9 +123,10 @@ The first Phase 9E cohort is complete. `block_local_branch`,
 their frozen compiler-owned fixtures, but their commands now enter canonical
 fixture parsing, validation, `CompilerMirLoweringFunction`, shared body
 lowering, and shared object emission. None of those commands constructs an
-`ObjectModule` or invokes `TinyMirBlockFunction` lowering. The live inventory
-is now thirteen canonical seams and twenty frozen bespoke seams; the total
-remains 33 and the translator-seed inventory remains frozen at seventeen.
+`ObjectModule` or invokes `TinyMirBlockFunction` lowering. At completion of
+that cohort, the inventory stood at thirteen canonical seams and twenty frozen
+bespoke seams; the total remained 33 and the translator-seed inventory remained
+frozen at seventeen.
 
 The typed block-parameter representation milestone is complete. Canonical
 blocks now carry ordered typed parameter declarations, and every jump or branch
@@ -153,10 +154,25 @@ The generic `compiler-mir-ingestion-object` command now proves literal,
 function-parameter, local, block-parameter, and block-parameter-plus-literal
 edge transport, independent branch-arm arguments, block-parameter returns, and
 a native countdown backedge. `LocalI32SetBlockParam` remains validation-only
-until the dedicated block-parameter-to-local materialization cohort. The live
-inventory stays at thirteen canonical seams and twenty frozen bespoke seams.
-The next milestone migrates the basic single-parameter CFG cohort and freezes
-the backedge evidence.
+until the dedicated block-parameter-to-local materialization cohort. At the
+end of the shared-core milestone, the inventory remained thirteen canonical
+seams and twenty frozen bespoke seams.
+
+The basic single-parameter CFG cohort is now canonical. The historical
+`block_param_update_branch` and `block_param_merge_update_branch` commands
+still validate their frozen compiler-owned fixtures, then delegate to canonical
+`gust.compiler_mir_ingestion.v1` fixtures and shared object emission. The first
+lane proves function-parameter transport, block-parameter update, and
+block-parameter branching. The second proves independent branch-arm values,
+a parameterized merge block, and block-parameter return. Neither command owns
+an `ObjectModule` or invokes `TinyMirParamBlockFunction` lowering.
+
+The countdown loop remains the bounded canonical backedge proof through the
+generic ingestion command. It transports an i32 value around a typed backedge
+and relies on delayed block sealing after all predecessor edges are emitted.
+The live inventory is now fifteen canonical seams and eighteen frozen bespoke
+seams, with all seventeen translator seeds still frozen. The next milestone is
+the variable-arity block-parameter cohort.
 
 The checked-in lockfile for this crate is owned by:
 
