@@ -76,6 +76,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9e-opening-contract
         just guard-cranelift-phase9e-local-cfg-cohort
         just guard-cranelift-phase9e-block-parameter-schema-validator
+        just guard-cranelift-phase9e-shared-block-parameter-lowering-core
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -216,6 +217,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-opening-contract' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-local-cfg-cohort' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-block-parameter-schema-validator' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-shared-block-parameter-lowering-core' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -5928,9 +5930,10 @@ guard-cranelift-phase9e-block-parameter-schema-validator:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_reference_policy: block_parameter_references_are_scoped_to_the_current_block' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_edge_policy: edge_argument_arity_order_and_type_must_match_the_target_block_parameters' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_cycle_policy: reachability_validation_is_worklist_based_and_cycle_safe' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_lowering_policy: validation_only_until_shared_block_parameter_lowering_core' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_lowering_policy: shared_block_parameter_lowering_core_active_for_typed_edges_and_block_parameter_terminators' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_lowering_gate: LocalI32SetBlockParam_remains_rejected_before_output_creation_until_materialization_cohort' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_inventory: 33_total_13_canonical_shared_20_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_next_milestone: shared_block_parameter_lowering_core' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_next_milestone: single_parameter_cfg_cohort_and_backedge_proof' "$manifest_doc" >/dev/null
 
     rg -n -F "struct CompilerMirLoweringBlockParameter<'a> {" "$source_file" >/dev/null
     rg -n -F "struct CompilerMirLoweringEdge<'a> {" "$source_file" >/dev/null
@@ -6063,23 +6066,307 @@ guard-cranelift-phase9e-block-parameter-schema-validator:
       "$valid_fixture" > "$missing_branch_arm_argument"
     expect_invalid missing_branch_arm_argument "$missing_branch_arm_argument" 'branch else from block loop to exit passes 0 argument(s), but target declares 1 block parameter(s)'
 
-    set +e
     cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- \
-      compiler-mir-ingestion-object "$valid_fixture" "$object_path" \
-      > "$build_dir/object-gate.log" 2>&1
-    object_status="$?"
+      compiler-mir-ingestion-object "$valid_fixture" "$object_path"
+    test -s "$object_path"
+
+    echo "✅ Typed block parameters and ordered edge arguments parse, validate, and enter shared object lowering with cycle-safe CFG checks."
+guard-cranelift-phase9e-shared-block-parameter-lowering-core:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the Phase 9E shared block-parameter lowering core..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    build_dir="build/guards/cranelift_phase9e_shared_block_parameter_lowering_core"
+    transport_fixture="$build_dir/typed_transport.mir"
+    transport_object="$build_dir/typed_transport.o"
+    transport_shim="$build_dir/typed_transport_main.c"
+    transport_binary="$build_dir/typed_transport_bin"
+    local_fixture="$build_dir/local_edge_transport.mir"
+    local_object="$build_dir/local_edge_transport.o"
+    local_shim="$build_dir/local_edge_transport_main.c"
+    local_binary="$build_dir/local_edge_transport_bin"
+    countdown_fixture="$build_dir/countdown_backedge.mir"
+    countdown_object="$build_dir/countdown_backedge.o"
+    countdown_shim="$build_dir/countdown_backedge_main.c"
+    countdown_binary="$build_dir/countdown_backedge_bin"
+    materialization_fixture="$build_dir/materialization_deferred.mir"
+    materialization_object="$build_dir/materialization-output/materialization_deferred.o"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9e-block-parameter-schema-validator
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_SHARED_BLOCK_PARAMETER_LOWERING_CORE_GUARD: guard-cranelift-phase9e-shared-block-parameter-lowering-core' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_status: phase9e_shared_block_parameter_lowering_core_complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_command: compiler-mir-ingestion-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_block_policy: create_all_blocks_and_append_typed_parameters_before_emitting_any_body' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_edge_policy: resolve_ordered_arguments_in_source_order_and_pass_them_to_jump_or_branch_edges' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_backedge_policy: backedges_use_the_same_typed_edge_argument_path_as_forward_edges' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_sealing_policy: seal_all_blocks_only_after_all_forward_edges_and_backedges_are_emitted' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_argument_kinds: I32Literal,FunctionParamI32,LocalI32,BlockParamI32,BlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_proof_fixtures: typed_transport,local_edge_transport,countdown_backedge' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_materialization_policy: LocalI32SetBlockParam_remains_validation_only_until_the_block_parameter_to_local_materialization_cohort' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_inventory: 33_total_13_canonical_shared_20_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_next_milestone: single_parameter_cfg_cohort_and_backedge_proof' "$manifest_doc" >/dev/null
+    rg -n -F 'The shared block-parameter lowering core is now active.' "$readme_doc" >/dev/null
+
+    rg -n '^fn lower_compiler_mir_ingestion_edge_arguments\(' "$source_file" >/dev/null
+    rg -n -F 'builder.append_block_param(cranelift_block, parameter_type);' "$source_file" >/dev/null
+    rg -n -F 'CompilerMirLoweringEdgeArgument::I32Literal(value)' "$source_file" >/dev/null
+    rg -n -F 'CompilerMirLoweringEdgeArgument::FunctionParamI32(param)' "$source_file" >/dev/null
+    rg -n -F 'CompilerMirLoweringEdgeArgument::LocalI32(name)' "$source_file" >/dev/null
+    rg -n -F 'CompilerMirLoweringEdgeArgument::BlockParamI32(name)' "$source_file" >/dev/null
+    rg -n -F 'CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal { name, value }' "$source_file" >/dev/null
+    rg -n -F 'builder.ins().jump(target_block, &arguments);' "$source_file" >/dev/null
+    rg -n -F 'then_cranelift_block,' "$source_file" >/dev/null
+    rg -n -F '&then_arguments,' "$source_file" >/dev/null
+    rg -n -F '&else_arguments,' "$source_file" >/dev/null
+    rg -n -F 'CompilerMirLoweringTerminator::ReturnBlockParamI32(name)' "$source_file" >/dev/null
+    rg -n -F 'CompilerMirLoweringTerminator::BranchBlockParamI32Positive {' "$source_file" >/dev/null
+    rg -n -F 'builder.seal_all_blocks();' "$source_file" >/dev/null
+    rg -n -F 'canonical compiler MIR block-parameter local materialization remains disabled until the Phase 9E materialization cohort' "$source_file" >/dev/null
+
+    cat > "$transport_fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9e_typed_transport
+    backend_symbol: tiny_phase9e_typed_transport
+    parameter_count: 1
+    parameter_0_type: int
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 6
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 0
+    block_0_terminator_kind: Jump
+    block_0_terminator_target: literal
+    block_0_terminator_argument_count: 1
+    block_0_terminator_argument_0_kind: I32Literal
+    block_0_terminator_argument_0_value: 2
+    block_1_label: literal
+    block_1_parameter_count: 1
+    block_1_parameter_0_name: seed
+    block_1_parameter_0_type: int
+    block_1_statement_count: 0
+    block_1_terminator_kind: Jump
+    block_1_terminator_target: function_value
+    block_1_terminator_argument_count: 1
+    block_1_terminator_argument_0_kind: FunctionParamI32
+    block_1_terminator_argument_0_param: 0
+    block_2_label: function_value
+    block_2_parameter_count: 1
+    block_2_parameter_0_name: input
+    block_2_parameter_0_type: int
+    block_2_statement_count: 0
+    block_2_terminator_kind: Jump
+    block_2_terminator_target: adjusted
+    block_2_terminator_argument_count: 1
+    block_2_terminator_argument_0_kind: BlockParamI32AddI32Literal
+    block_2_terminator_argument_0_block_param: input
+    block_2_terminator_argument_0_value: 2
+    block_3_label: adjusted
+    block_3_parameter_count: 1
+    block_3_parameter_0_name: value
+    block_3_parameter_0_type: int
+    block_3_statement_count: 0
+    block_3_terminator_kind: BranchBlockParamI32Positive
+    block_3_terminator_block_param: value
+    block_3_terminator_then: positive
+    block_3_terminator_then_argument_count: 1
+    block_3_terminator_then_argument_0_kind: BlockParamI32
+    block_3_terminator_then_argument_0_block_param: value
+    block_3_terminator_else: non_positive
+    block_3_terminator_else_argument_count: 1
+    block_3_terminator_else_argument_0_kind: I32Literal
+    block_3_terminator_else_argument_0_value: 41
+    block_4_label: positive
+    block_4_parameter_count: 1
+    block_4_parameter_0_name: positive_result
+    block_4_parameter_0_type: int
+    block_4_statement_count: 0
+    block_4_terminator_kind: ReturnBlockParamI32
+    block_4_terminator_block_param: positive_result
+    block_5_label: non_positive
+    block_5_parameter_count: 1
+    block_5_parameter_0_name: non_positive_result
+    block_5_parameter_0_type: int
+    block_5_statement_count: 0
+    block_5_terminator_kind: ReturnBlockParamI32
+    block_5_terminator_block_param: non_positive_result
+    metadata_count: 0
+    expected_exit: 7
+    MIR
+
+    cat > "$local_fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9e_local_edge_transport
+    backend_symbol: tiny_phase9e_local_edge_transport
+    parameter_count: 1
+    parameter_0_type: int
+    return_type: int
+    local_count: 1
+    local_0_name: value
+    local_0_type: int
+    entry_block: entry
+    block_count: 2
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 1
+    block_0_statement_0_kind: LocalI32SetParam
+    block_0_statement_0_local: value
+    block_0_statement_0_param: 0
+    block_0_terminator_kind: Jump
+    block_0_terminator_target: result
+    block_0_terminator_argument_count: 1
+    block_0_terminator_argument_0_kind: LocalI32
+    block_0_terminator_argument_0_local: value
+    block_1_label: result
+    block_1_parameter_count: 1
+    block_1_parameter_0_name: output
+    block_1_parameter_0_type: int
+    block_1_statement_count: 0
+    block_1_terminator_kind: ReturnBlockParamI32
+    block_1_terminator_block_param: output
+    metadata_count: 0
+    expected_exit: 6
+    MIR
+
+    cat > "$countdown_fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9e_countdown_backedge
+    backend_symbol: tiny_phase9e_countdown_backedge
+    parameter_count: 1
+    parameter_0_type: int
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 4
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 0
+    block_0_terminator_kind: Jump
+    block_0_terminator_target: loop
+    block_0_terminator_argument_count: 1
+    block_0_terminator_argument_0_kind: FunctionParamI32
+    block_0_terminator_argument_0_param: 0
+    block_1_label: loop
+    block_1_parameter_count: 1
+    block_1_parameter_0_name: value
+    block_1_parameter_0_type: int
+    block_1_statement_count: 0
+    block_1_terminator_kind: BranchBlockParamI32Positive
+    block_1_terminator_block_param: value
+    block_1_terminator_then: body
+    block_1_terminator_then_argument_count: 1
+    block_1_terminator_then_argument_0_kind: BlockParamI32
+    block_1_terminator_then_argument_0_block_param: value
+    block_1_terminator_else: exit
+    block_1_terminator_else_argument_count: 1
+    block_1_terminator_else_argument_0_kind: BlockParamI32
+    block_1_terminator_else_argument_0_block_param: value
+    block_2_label: body
+    block_2_parameter_count: 1
+    block_2_parameter_0_name: current
+    block_2_parameter_0_type: int
+    block_2_statement_count: 0
+    block_2_terminator_kind: Jump
+    block_2_terminator_target: loop
+    block_2_terminator_argument_count: 1
+    block_2_terminator_argument_0_kind: BlockParamI32AddI32Literal
+    block_2_terminator_argument_0_block_param: current
+    block_2_terminator_argument_0_value: -1
+    block_3_label: exit
+    block_3_parameter_count: 1
+    block_3_parameter_0_name: result
+    block_3_parameter_0_type: int
+    block_3_statement_count: 0
+    block_3_terminator_kind: ReturnBlockParamI32
+    block_3_terminator_block_param: result
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+
+    cargo_cmd=(cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-ingestion-object)
+    "${cargo_cmd[@]}" "$transport_fixture" "$transport_object"
+    "${cargo_cmd[@]}" "$local_fixture" "$local_object"
+    "${cargo_cmd[@]}" "$countdown_fixture" "$countdown_object"
+    test -s "$transport_object"
+    test -s "$local_object"
+    test -s "$countdown_object"
+
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+
+    printf '%s\n' '#include <stdint.h>' > "$transport_shim"
+    printf '%s\n' 'extern int32_t tiny_phase9e_typed_transport(int32_t);' >> "$transport_shim"
+    printf '%s\n' 'int main(void) { if (tiny_phase9e_typed_transport(5) != 7) return 1; if (tiny_phase9e_typed_transport(-5) != 41) return 2; return 0; }' >> "$transport_shim"
+    "$CC_BIN" $CFLAGS_VAL "$transport_shim" "$transport_object" -o "$transport_binary"
+    "$transport_binary"
+
+    printf '%s\n' '#include <stdint.h>' > "$local_shim"
+    printf '%s\n' 'extern int32_t tiny_phase9e_local_edge_transport(int32_t);' >> "$local_shim"
+    printf '%s\n' 'int main(void) { return tiny_phase9e_local_edge_transport(6) == 6 ? 0 : 1; }' >> "$local_shim"
+    "$CC_BIN" $CFLAGS_VAL "$local_shim" "$local_object" -o "$local_binary"
+    "$local_binary"
+
+    printf '%s\n' '#include <stdint.h>' > "$countdown_shim"
+    printf '%s\n' 'extern int32_t tiny_phase9e_countdown_backedge(int32_t);' >> "$countdown_shim"
+    printf '%s\n' 'int main(void) { if (tiny_phase9e_countdown_backedge(3) != 0) return 1; if (tiny_phase9e_countdown_backedge(0) != 0) return 2; return 0; }' >> "$countdown_shim"
+    "$CC_BIN" $CFLAGS_VAL "$countdown_shim" "$countdown_object" -o "$countdown_binary"
+    "$countdown_binary"
+
+    cat > "$materialization_fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9e_materialization_deferred
+    backend_symbol: tiny_phase9e_materialization_deferred
+    parameter_count: 1
+    parameter_0_type: int
+    return_type: int
+    local_count: 1
+    local_0_name: result
+    local_0_type: int
+    entry_block: entry
+    block_count: 2
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 0
+    block_0_terminator_kind: Jump
+    block_0_terminator_target: materialize
+    block_0_terminator_argument_count: 1
+    block_0_terminator_argument_0_kind: FunctionParamI32
+    block_0_terminator_argument_0_param: 0
+    block_1_label: materialize
+    block_1_parameter_count: 1
+    block_1_parameter_0_name: value
+    block_1_parameter_0_type: int
+    block_1_statement_count: 1
+    block_1_statement_0_kind: LocalI32SetBlockParam
+    block_1_statement_0_local: result
+    block_1_statement_0_block_param: value
+    block_1_terminator_kind: ReturnLocalI32
+    block_1_terminator_local: result
+    metadata_count: 0
+    expected_exit: 5
+    MIR
+
+    set +e
+    "${cargo_cmd[@]}" "$materialization_fixture" "$materialization_object" > "$build_dir/materialization.log" 2>&1
+    materialization_status="$?"
     set -e
-    if [ "$object_status" = "0" ]; then
-      echo "Typed block-parameter object lowering must remain disabled until the shared lowering core lands."
+    if [ "$materialization_status" = "0" ]; then
+      echo "Block-parameter-to-local materialization must remain deferred until its dedicated cohort."
       exit 1
     fi
-    rg -n -F 'edge arguments are validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core' "$build_dir/object-gate.log" >/dev/null
-    if [ -e "$object_path" ] || [ -d "$build_dir/object-output" ]; then
-      echo "The Phase 9E schema milestone must reject block-parameter object lowering before output creation."
+    rg -n -F 'canonical compiler MIR block-parameter local materialization remains disabled until the Phase 9E materialization cohort' "$build_dir/materialization.log" >/dev/null
+    if [ -e "$materialization_object" ] || [ -d "$build_dir/materialization-output" ]; then
+      echo "Deferred block-parameter local materialization must fail before output creation."
       exit 1
     fi
 
-    echo "✅ Typed block parameters and ordered edge arguments parse and validate with cycle-safe CFG checks; object lowering remains gated before output creation."
+    echo "✅ Shared typed block-parameter lowering passes ordered forward edges, independent branch arms, local transport, returns, and a native countdown backedge."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

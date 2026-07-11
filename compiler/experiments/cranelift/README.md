@@ -139,12 +139,24 @@ The parser remains backward-compatible with existing canonical fixtures by
 treating omitted block-parameter and edge-argument counts as zero. Validation
 rejects entry-block parameters, duplicate or non-int block parameters,
 cross-block references, unknown sources, and edge arity or type mismatches. Its
-worklist reachability pass is cycle-safe. These forms are validation-only in
-this patch: object emission rejects them before creating the output directory
-until the shared block-parameter lowering core lands. The live inventory stays
-at thirteen canonical seams and twenty frozen bespoke seams. The next
-milestone implements shared Cranelift block-parameter and edge-argument
-lowering.
+worklist reachability pass is cycle-safe.
+
+The shared block-parameter lowering core is now active. It creates every
+Cranelift block before emitting bodies, appends typed destination parameters
+before any predecessor edge, resolves ordered edge arguments in source order,
+and uses the same path for forward edges and backedges. Block-parameter
+returns and conditions lower directly from values bound in the current
+destination block, and `seal_all_blocks` remains after all block bodies so
+backedges are known before sealing.
+
+The generic `compiler-mir-ingestion-object` command now proves literal,
+function-parameter, local, block-parameter, and block-parameter-plus-literal
+edge transport, independent branch-arm arguments, block-parameter returns, and
+a native countdown backedge. `LocalI32SetBlockParam` remains validation-only
+until the dedicated block-parameter-to-local materialization cohort. The live
+inventory stays at thirteen canonical seams and twenty frozen bespoke seams.
+The next milestone migrates the basic single-parameter CFG cohort and freezes
+the backedge evidence.
 
 The checked-in lockfile for this crate is owned by:
 

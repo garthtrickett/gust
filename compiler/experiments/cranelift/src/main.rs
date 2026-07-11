@@ -13197,13 +13197,6 @@ fn validate_compiler_mir_ingestion_lowering_readiness(
     mir_function: &CompilerMirLoweringFunction<'_>,
 ) -> Result<(), Box<dyn Error>> {
     for block in &mir_function.blocks {
-        if !block.parameters.is_empty() {
-            return Err(IoError::new(
-                ErrorKind::InvalidInput,
-                "canonical compiler MIR block parameters are validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core",
-            )
-            .into());
-        }
         if block.statements.iter().any(|statement| {
             matches!(
                 statement,
@@ -13212,49 +13205,9 @@ fn validate_compiler_mir_ingestion_lowering_readiness(
         }) {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
-                "canonical compiler MIR block-parameter local materialization is validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core",
+                "canonical compiler MIR block-parameter local materialization remains disabled until the Phase 9E materialization cohort",
             )
             .into());
-        }
-        match &block.terminator {
-            CompilerMirLoweringTerminator::ReturnBlockParamI32(_)
-            | CompilerMirLoweringTerminator::BranchBlockParamI32Positive { .. } => {
-                return Err(IoError::new(
-                    ErrorKind::InvalidInput,
-                    "canonical compiler MIR block-parameter terminators are validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core",
-                )
-                .into());
-            }
-            CompilerMirLoweringTerminator::Jump { edge } => {
-                if !edge.arguments.is_empty() {
-                    return Err(IoError::new(
-                        ErrorKind::InvalidInput,
-                        "canonical compiler MIR edge arguments are validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core",
-                    )
-                    .into());
-                }
-            }
-            CompilerMirLoweringTerminator::BranchI32Literal {
-                then_edge,
-                else_edge,
-                ..
-            }
-            | CompilerMirLoweringTerminator::BranchLocalI32Positive {
-                then_edge,
-                else_edge,
-                ..
-            } => {
-                if !then_edge.arguments.is_empty() || !else_edge.arguments.is_empty() {
-                    return Err(IoError::new(
-                        ErrorKind::InvalidInput,
-                        "canonical compiler MIR edge arguments are validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core",
-                    )
-                    .into());
-                }
-            }
-            CompilerMirLoweringTerminator::ReturnI32(_)
-            | CompilerMirLoweringTerminator::ReturnLocalI32(_)
-            | CompilerMirLoweringTerminator::ReturnVoid => {}
         }
     }
     Ok(())
@@ -13312,6 +13265,68 @@ fn define_compiler_mir_ingestion_exported_function(
     Ok(())
 }
 
+fn lower_compiler_mir_ingestion_edge_arguments(
+    builder: &mut FunctionBuilder<'_>,
+    edge: &CompilerMirLoweringEdge<'_>,
+    function_params: &[cranelift_codegen::ir::Value],
+    local_slots: &HashMap<&str, Variable>,
+    block_parameter_values: &HashMap<&str, cranelift_codegen::ir::Value>,
+    current_block_label: &str,
+) -> Result<Vec<BlockArg>, Box<dyn Error>> {
+    let mut lowered_arguments = Vec::with_capacity(edge.arguments.len());
+    for argument in &edge.arguments {
+        let value = match *argument {
+            CompilerMirLoweringEdgeArgument::I32Literal(value) => {
+                builder.ins().iconst(types::I32, i64::from(value))
+            }
+            CompilerMirLoweringEdgeArgument::FunctionParamI32(param) => {
+                function_params.get(param).copied().ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "unknown compiler MIR lowering function parameter {param} at block {current_block_label}"
+                        ),
+                    )
+                })?
+            }
+            CompilerMirLoweringEdgeArgument::LocalI32(name) => {
+                let slot = *local_slots.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "unknown compiler MIR lowering edge local {name} at block {current_block_label}"
+                        ),
+                    )
+                })?;
+                builder.use_var(slot)
+            }
+            CompilerMirLoweringEdgeArgument::BlockParamI32(name) => {
+                *block_parameter_values.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "unknown compiler MIR lowering edge block parameter {name} at block {current_block_label}"
+                        ),
+                    )
+                })?
+            }
+            CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal { name, value } => {
+                let block_value = *block_parameter_values.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "unknown compiler MIR lowering edge block parameter {name} at block {current_block_label}"
+                        ),
+                    )
+                })?;
+                builder.ins().iadd_imm(block_value, i64::from(value))
+            }
+        };
+        lowered_arguments.push(BlockArg::Value(value));
+    }
+    Ok(lowered_arguments)
+}
+
 fn build_compiler_mir_ingestion_body(
     builder: &mut FunctionBuilder<'_>,
     mir_function: &CompilerMirLoweringFunction<'_>,
@@ -13331,6 +13346,23 @@ fn build_compiler_mir_ingestion_body(
                 ),
             )
             .into());
+        }
+
+        for parameter in &block.parameters {
+            let parameter_type = match parameter.ty {
+                TinyMirType::I32 => types::I32,
+                TinyMirType::Void => {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "unsupported compiler MIR lowering block parameter type: {} in block {}",
+                            parameter.name, block.label
+                        ),
+                    )
+                    .into());
+                }
+            };
+            builder.append_block_param(cranelift_block, parameter_type);
         }
     }
 
@@ -13382,6 +13414,38 @@ fn build_compiler_mir_ingestion_body(
         })?;
         builder.switch_to_block(current_block);
 
+        let current_cranelift_parameters = builder.block_params(current_block).to_vec();
+        if current_cranelift_parameters.len() < block.parameters.len() {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "compiler MIR lowering block {} declares {} parameter(s), but Cranelift exposes {}",
+                    block.label,
+                    block.parameters.len(),
+                    current_cranelift_parameters.len()
+                ),
+            )
+            .into());
+        }
+        let mut block_parameter_values: HashMap<&str, cranelift_codegen::ir::Value> =
+            HashMap::new();
+        for (parameter, value) in block
+            .parameters
+            .iter()
+            .zip(current_cranelift_parameters.iter().copied())
+        {
+            if block_parameter_values.insert(parameter.name, value).is_some() {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "duplicate compiler MIR lowering block parameter {} in block {}",
+                        parameter.name, block.label
+                    ),
+                )
+                .into());
+            }
+        }
+
         for statement in &block.statements {
             match *statement {
                 CompilerMirLoweringStatement::LocalI32Set { name, value } => {
@@ -13412,7 +13476,7 @@ fn build_compiler_mir_ingestion_body(
                 CompilerMirLoweringStatement::LocalI32SetBlockParam { .. } => {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
-                        "compiler MIR block-parameter local materialization reached lowering before the Phase 9E shared lowering core",
+                        "compiler MIR block-parameter local materialization reached lowering before the Phase 9E materialization cohort",
                     )
                     .into());
                 }
@@ -13462,13 +13526,17 @@ fn build_compiler_mir_ingestion_body(
                 let return_value = builder.use_var(slot);
                 builder.ins().return_(&[return_value]);
             }
-            CompilerMirLoweringTerminator::ReturnBlockParamI32(_)
-            | CompilerMirLoweringTerminator::BranchBlockParamI32Positive { .. } => {
-                return Err(IoError::new(
-                    ErrorKind::InvalidInput,
-                    "compiler MIR block-parameter terminator reached lowering before the Phase 9E shared lowering core",
-                )
-                .into());
+            CompilerMirLoweringTerminator::ReturnBlockParamI32(name) => {
+                let return_value = *block_parameter_values.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "unknown compiler MIR lowering return block parameter {name} at block {}",
+                            block.label
+                        ),
+                    )
+                })?;
+                builder.ins().return_(&[return_value]);
             }
             CompilerMirLoweringTerminator::ReturnVoid => {
                 builder.ins().return_(&[]);
@@ -13483,7 +13551,15 @@ fn build_compiler_mir_ingestion_body(
                         ),
                     )
                 })?;
-                builder.ins().jump(target_block, &[]);
+                let arguments = lower_compiler_mir_ingestion_edge_arguments(
+                    builder,
+                    edge,
+                    &function_params,
+                    &local_slots,
+                    &block_parameter_values,
+                    block.label,
+                )?;
+                builder.ins().jump(target_block, &arguments);
             }
             CompilerMirLoweringTerminator::BranchI32Literal {
                 condition,
@@ -13508,14 +13584,30 @@ fn build_compiler_mir_ingestion_body(
                         ),
                     )
                 })?;
+                let then_arguments = lower_compiler_mir_ingestion_edge_arguments(
+                    builder,
+                    then_edge,
+                    &function_params,
+                    &local_slots,
+                    &block_parameter_values,
+                    block.label,
+                )?;
+                let else_arguments = lower_compiler_mir_ingestion_edge_arguments(
+                    builder,
+                    else_edge,
+                    &function_params,
+                    &local_slots,
+                    &block_parameter_values,
+                    block.label,
+                )?;
                 let condition_value = builder.ins().iconst(types::I32, i64::from(*condition));
                 let branch_condition = builder.ins().icmp_imm(IntCC::NotEqual, condition_value, 0);
                 builder.ins().brif(
                     branch_condition,
                     then_cranelift_block,
-                    &[],
+                    &then_arguments,
                     else_cranelift_block,
-                    &[],
+                    &else_arguments,
                 );
             }
             CompilerMirLoweringTerminator::BranchLocalI32Positive {
@@ -13547,6 +13639,22 @@ fn build_compiler_mir_ingestion_body(
                         ),
                     )
                 })?;
+                let then_arguments = lower_compiler_mir_ingestion_edge_arguments(
+                    builder,
+                    then_edge,
+                    &function_params,
+                    &local_slots,
+                    &block_parameter_values,
+                    block.label,
+                )?;
+                let else_arguments = lower_compiler_mir_ingestion_edge_arguments(
+                    builder,
+                    else_edge,
+                    &function_params,
+                    &local_slots,
+                    &block_parameter_values,
+                    block.label,
+                )?;
                 let condition_value = builder.use_var(slot);
                 let branch_condition =
                     builder
@@ -13555,9 +13663,69 @@ fn build_compiler_mir_ingestion_body(
                 builder.ins().brif(
                     branch_condition,
                     then_cranelift_block,
-                    &[],
+                    &then_arguments,
                     else_cranelift_block,
-                    &[],
+                    &else_arguments,
+                );
+            }
+            CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                name,
+                then_edge,
+                else_edge,
+            } => {
+                let condition_value = *block_parameter_values.get(name).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "unknown compiler MIR lowering branch block parameter {name} at block {}",
+                            block.label
+                        ),
+                    )
+                })?;
+                let then_cranelift_block = *cranelift_blocks.get(then_edge.target).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "unknown compiler MIR lowering then block: {}",
+                            then_edge.target
+                        ),
+                    )
+                })?;
+                let else_cranelift_block = *cranelift_blocks.get(else_edge.target).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "unknown compiler MIR lowering else block: {}",
+                            else_edge.target
+                        ),
+                    )
+                })?;
+                let then_arguments = lower_compiler_mir_ingestion_edge_arguments(
+                    builder,
+                    then_edge,
+                    &function_params,
+                    &local_slots,
+                    &block_parameter_values,
+                    block.label,
+                )?;
+                let else_arguments = lower_compiler_mir_ingestion_edge_arguments(
+                    builder,
+                    else_edge,
+                    &function_params,
+                    &local_slots,
+                    &block_parameter_values,
+                    block.label,
+                )?;
+                let branch_condition =
+                    builder
+                        .ins()
+                        .icmp_imm(IntCC::SignedGreaterThan, condition_value, 0);
+                builder.ins().brif(
+                    branch_condition,
+                    then_cranelift_block,
+                    &then_arguments,
+                    else_cranelift_block,
+                    &else_arguments,
                 );
             }
         }
