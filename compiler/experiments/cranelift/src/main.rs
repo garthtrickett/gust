@@ -5185,12 +5185,7 @@ fn emit_compiler_mir_fixture_object(
             emit_compiler_mir_fixture_contents_object(&contents, output_path)
         }
         ParsedCompilerMirInput::V2(module) => {
-            validate_compiler_mir_module(&module)?;
-            Err(IoError::new(
-                ErrorKind::Unsupported,
-                "gust.compiler_mir_ingestion.v2 is validation-only in Phase 9F Patch 2; object emission is not implemented",
-            )
-            .into())
+            lower_compiler_mir_ingestion_module_to_object(output_path, &module)
         }
     }
 }
@@ -7618,112 +7613,132 @@ fn emit_compiler_mir_block_param_local_call_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_param_local_call_branch_ingestion_fixture(&contents)?;
-    static COMPILER_MIR_BLOCK_PARAM_LOCAL_CALL_BRANCH_FUNCTION_PARAMS: [TinyMirType; 1] =
-        [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_PARAM_LOCAL_CALL_BRANCH_BLOCK_PARAMS: [TinyMirType; 1] =
-        [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_PARAM_LOCAL_CALL_BRANCH_BLOCKS: [TinyMirParamBlock; 4] = [
-        TinyMirParamBlock {
-            label: "entry",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
-                target: "branch",
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "branch",
-            params: &COMPILER_MIR_BLOCK_PARAM_LOCAL_CALL_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamLocalFunctionI32CallPositive {
-                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_CALL_HELPER_SYMBOL,
-                param: 0,
-                then_block: "positive",
-                else_block: "non_positive",
-            },
-        },
-        TinyMirParamBlock {
-            label: "positive",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::ReturnI32(79),
-        },
-        TinyMirParamBlock {
-            label: "non_positive",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::ReturnI32(83),
-        },
-    ];
-    let helper_mir_function = TinyMirFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_local_call_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_CALL_HELPER_SYMBOL,
-        params: &COMPILER_MIR_BLOCK_PARAM_LOCAL_CALL_BRANCH_FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        locals: &[],
-        statements: &[],
-        terminator: TinyMirTerminator::ReturnParamI32AddLiteral { param: 0, value: 1 },
-    };
+    let module = build_compiler_mir_block_param_local_call_branch_module();
+    lower_compiler_mir_ingestion_module_to_object(output_path, &module)
+}
 
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
+fn build_compiler_mir_block_param_local_call_branch_module(
+) -> CompilerMirLoweringModule<'static> {
+    CompilerMirLoweringModule {
+        name: "gust_native_backend_compiler_mir_ingested_block_param_local_call_branch",
+        imports: Vec::new(),
+        functions: vec![
+            CompilerMirLoweringDefinedFunction {
+                linkage: CompilerMirLoweringFunctionLinkage::ExportedEntry,
+                fixture: ParsedCompilerMirFixture {
+                    function: CompilerMirLoweringFunction {
+                        object_name: "tiny_block_param_local_call_branch",
+                        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_CALL_BRANCH_SYMBOL,
+                        return_type: TinyMirType::I32,
+                        params: vec![TinyMirType::I32],
+                        locals: vec![CompilerMirLoweringLocal {
+                            name: "called",
+                            ty: TinyMirType::I32,
+                        }],
+                        entry_block: "entry",
+                        blocks: vec![
+                            CompilerMirLoweringBlock {
+                                label: "entry",
+                                parameters: Vec::new(),
+                                statements: Vec::new(),
+                                terminator: CompilerMirLoweringTerminator::Jump {
+                                    edge: CompilerMirLoweringEdge {
+                                        target: "branch",
+                                        arguments: vec![
+                                            CompilerMirLoweringEdgeArgument::FunctionParamI32(0),
+                                        ],
+                                    },
+                                },
+                            },
+                            CompilerMirLoweringBlock {
+                                label: "branch",
+                                parameters: vec![CompilerMirLoweringBlockParameter {
+                                    name: "input",
+                                    ty: TinyMirType::I32,
+                                }],
+                                statements: vec![
+                                    CompilerMirLoweringStatement::LocalI32SetCall {
+                                        name: "called",
+                                        target: CompilerMirLoweringCallTarget::LocalFunction(
+                                            "tiny_block_param_local_call_helper",
+                                        ),
+                                        arguments: vec![
+                                            CompilerMirLoweringCallArgument::BlockParamI32(
+                                                "input",
+                                            ),
+                                        ],
+                                    },
+                                ],
+                                terminator:
+                                    CompilerMirLoweringTerminator::BranchLocalI32Positive {
+                                        name: "called",
+                                        then_edge: CompilerMirLoweringEdge {
+                                            target: "positive",
+                                            arguments: Vec::new(),
+                                        },
+                                        else_edge: CompilerMirLoweringEdge {
+                                            target: "non_positive",
+                                            arguments: Vec::new(),
+                                        },
+                                    },
+                            },
+                            CompilerMirLoweringBlock {
+                                label: "positive",
+                                parameters: Vec::new(),
+                                statements: Vec::new(),
+                                terminator: CompilerMirLoweringTerminator::ReturnI32(79),
+                            },
+                            CompilerMirLoweringBlock {
+                                label: "non_positive",
+                                parameters: Vec::new(),
+                                statements: Vec::new(),
+                                terminator: CompilerMirLoweringTerminator::ReturnI32(83),
+                            },
+                        ],
+                    },
+                    return_type: TinyMirType::I32,
+                    metadata: Vec::new(),
+                    expected_exit: 0,
+                },
+            },
+            CompilerMirLoweringDefinedFunction {
+                linkage: CompilerMirLoweringFunctionLinkage::ModuleLocal,
+                fixture: ParsedCompilerMirFixture {
+                    function: CompilerMirLoweringFunction {
+                        object_name: "tiny_block_param_local_call_helper",
+                        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_CALL_HELPER_SYMBOL,
+                        return_type: TinyMirType::I32,
+                        params: vec![TinyMirType::I32],
+                        locals: vec![CompilerMirLoweringLocal {
+                            name: "result",
+                            ty: TinyMirType::I32,
+                        }],
+                        entry_block: "entry",
+                        blocks: vec![CompilerMirLoweringBlock {
+                            label: "entry",
+                            parameters: Vec::new(),
+                            statements: vec![
+                                CompilerMirLoweringStatement::LocalI32SetParam {
+                                    name: "result",
+                                    param: 0,
+                                },
+                                CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                                    name: "result",
+                                    value: 1,
+                                },
+                            ],
+                            terminator: CompilerMirLoweringTerminator::ReturnLocalI32(
+                                "result",
+                            ),
+                        }],
+                    },
+                    return_type: TinyMirType::I32,
+                    metadata: Vec::new(),
+                    expected_exit: 0,
+                },
+            },
+        ],
     }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_param_local_call_branch",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-
-    let mut helper_signature = module.make_signature();
-    helper_signature.params.push(AbiParam::new(types::I32));
-    helper_signature.returns.push(AbiParam::new(types::I32));
-    let helper_function_id = module.declare_function(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_CALL_HELPER_SYMBOL,
-        Linkage::Local,
-        &helper_signature,
-    )?;
-    let mut helper_context = module.make_context();
-    helper_context.func.signature = helper_signature;
-
-    let mut helper_builder_context = FunctionBuilderContext::new();
-    let mut helper_builder =
-        FunctionBuilder::new(&mut helper_context.func, &mut helper_builder_context);
-    let helper_function_refs: HashMap<&'static str, FuncRef> = HashMap::new();
-    build_tiny_mir_body(
-        &mut helper_builder,
-        &helper_mir_function,
-        &helper_function_refs,
-    )?;
-    helper_builder.seal_all_blocks();
-    helper_builder.finalize();
-
-    module.define_function(helper_function_id, &mut helper_context)?;
-    module.clear_context(&mut helper_context);
-
-    let mut local_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    local_function_ids.insert(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_CALL_HELPER_SYMBOL,
-        helper_function_id,
-    );
-
-    let mir_function = TinyMirParamBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_local_call_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_CALL_BRANCH_SYMBOL,
-        params: &COMPILER_MIR_BLOCK_PARAM_LOCAL_CALL_BRANCH_FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        entry_block: "entry",
-        blocks: &COMPILER_MIR_BLOCK_PARAM_LOCAL_CALL_BRANCH_BLOCKS,
-    };
-    define_tiny_mir_param_block_graph_exported_function(
-        &mut module,
-        &mir_function,
-        &local_function_ids,
-    )?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
 }
 
 fn parse_compiler_mir_block_param_local_call_branch_ingestion_fixture(
@@ -13444,6 +13459,136 @@ fn lower_compiler_mir_ingestion_function_to_object(
     Ok(())
 }
 
+fn compiler_mir_ingestion_signature(
+    module: &ObjectModule,
+    mir_function: &CompilerMirLoweringFunction<'_>,
+) -> cranelift_codegen::ir::Signature {
+    let mut signature = module.make_signature();
+    for param in &mir_function.params {
+        signature
+            .params
+            .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
+    }
+    if matches!(mir_function.return_type, TinyMirType::I32) {
+        signature.returns.push(AbiParam::new(types::I32));
+    }
+    signature
+}
+
+fn lower_compiler_mir_ingestion_module_to_object(
+    output_path: &Path,
+    mir_module: &CompilerMirLoweringModule<'_>,
+) -> Result<(), Box<dyn Error>> {
+    validate_compiler_mir_module(mir_module)?;
+    if !mir_module.imports.is_empty() {
+        return Err(IoError::new(
+            ErrorKind::Unsupported,
+            "canonical compiler MIR imported call emission is not implemented in Phase 9F Patch 3",
+        )
+        .into());
+    }
+    for defined in &mir_module.functions {
+        validate_compiler_mir_ingestion_lowering_readiness(
+            &defined.fixture.function,
+        )?;
+        recognize_compiler_mir_fixture_metadata(&defined.fixture.metadata)?;
+    }
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder =
+        ObjectBuilder::new(isa, mir_module.name, default_libcall_names())?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut local_function_ids: HashMap<&str, FuncId> = HashMap::new();
+    for defined in &mir_module.functions {
+        let mir_function = &defined.fixture.function;
+        let signature = compiler_mir_ingestion_signature(&module, mir_function);
+        let linkage = match defined.linkage {
+            CompilerMirLoweringFunctionLinkage::ExportedEntry => Linkage::Export,
+            CompilerMirLoweringFunctionLinkage::ModuleLocal => Linkage::Local,
+            CompilerMirLoweringFunctionLinkage::ImportedHost => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR defined function {} cannot use imported_host linkage",
+                        mir_function.object_name
+                    ),
+                )
+                .into());
+            }
+        };
+        let function_id =
+            module.declare_function(mir_function.symbol, linkage, &signature)?;
+        local_function_ids.insert(mir_function.object_name, function_id);
+    }
+
+    for defined in &mir_module.functions {
+        define_compiler_mir_ingestion_module_function(
+            &mut module,
+            defined,
+            &local_function_ids,
+        )?;
+    }
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+fn define_compiler_mir_ingestion_module_function(
+    module: &mut ObjectModule,
+    defined: &CompilerMirLoweringDefinedFunction<'_>,
+    local_function_ids: &HashMap<&str, FuncId>,
+) -> Result<(), Box<dyn Error>> {
+    let mir_function = &defined.fixture.function;
+    let function_id = *local_function_ids
+        .get(mir_function.object_name)
+        .ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "missing canonical compiler MIR declared function id: {}",
+                    mir_function.object_name
+                ),
+            )
+        })?;
+    let signature = compiler_mir_ingestion_signature(module, mir_function);
+    let mut context = module.make_context();
+    context.func.signature = signature;
+
+    let mut builder_context = FunctionBuilderContext::new();
+    let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
+    let mut local_function_refs: HashMap<&str, FuncRef> = HashMap::new();
+    for (name, candidate_id) in local_function_ids {
+        if *name == mir_function.object_name {
+            continue;
+        }
+        local_function_refs.insert(
+            *name,
+            module.declare_func_in_func(*candidate_id, builder.func),
+        );
+    }
+    let imported_function_refs: HashMap<&str, FuncRef> = HashMap::new();
+    build_compiler_mir_ingestion_body_with_calls(
+        &mut builder,
+        mir_function,
+        &local_function_refs,
+        &imported_function_refs,
+    )?;
+    builder.seal_all_blocks();
+    builder.finalize();
+
+    module.define_function(function_id, &mut context)?;
+    module.clear_context(&mut context);
+    Ok(())
+}
+
 fn define_compiler_mir_ingestion_exported_function(
     module: &mut ObjectModule,
     mir_function: &CompilerMirLoweringFunction<'_>,
@@ -13538,6 +13683,22 @@ fn lower_compiler_mir_ingestion_edge_arguments(
 fn build_compiler_mir_ingestion_body(
     builder: &mut FunctionBuilder<'_>,
     mir_function: &CompilerMirLoweringFunction<'_>,
+) -> Result<(), Box<dyn Error>> {
+    let local_function_refs: HashMap<&str, FuncRef> = HashMap::new();
+    let imported_function_refs: HashMap<&str, FuncRef> = HashMap::new();
+    build_compiler_mir_ingestion_body_with_calls(
+        builder,
+        mir_function,
+        &local_function_refs,
+        &imported_function_refs,
+    )
+}
+
+fn build_compiler_mir_ingestion_body_with_calls(
+    builder: &mut FunctionBuilder<'_>,
+    mir_function: &CompilerMirLoweringFunction<'_>,
+    local_function_refs: &HashMap<&str, FuncRef>,
+    imported_function_refs: &HashMap<&str, FuncRef>,
 ) -> Result<(), Box<dyn Error>> {
     let mut cranelift_blocks: HashMap<&str, Block> = HashMap::new();
     for block in &mir_function.blocks {
@@ -13730,12 +13891,114 @@ fn build_compiler_mir_ingestion_body(
                     let updated_value = builder.ins().iadd(current_value, param_value);
                     builder.def_var(slot, updated_value);
                 }
-                CompilerMirLoweringStatement::LocalI32SetCall { .. } => {
-                    return Err(IoError::new(
-                        ErrorKind::Unsupported,
-                        "canonical compiler MIR call lowering is not implemented in Phase 9F Patch 2",
-                    )
-                    .into());
+                CompilerMirLoweringStatement::LocalI32SetCall {
+                    name,
+                    target,
+                    arguments,
+                } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering call result local: {name}"),
+                        )
+                    })?;
+                    let function_ref = match target {
+                        CompilerMirLoweringCallTarget::LocalFunction(callee) => {
+                            *local_function_refs.get(callee).ok_or_else(|| {
+                                IoError::new(
+                                    ErrorKind::InvalidInput,
+                                    format!(
+                                        "unknown compiler MIR lowering local callee {callee} at block {}",
+                                        block.label
+                                    ),
+                                )
+                            })?
+                        }
+                        CompilerMirLoweringCallTarget::ImportedFunction(callee) => {
+                            *imported_function_refs.get(callee).ok_or_else(|| {
+                                IoError::new(
+                                    ErrorKind::Unsupported,
+                                    format!(
+                                        "canonical compiler MIR imported callee {callee} cannot be emitted in Phase 9F Patch 3"
+                                    ),
+                                )
+                            })?
+                        }
+                    };
+                    let mut lowered_arguments = Vec::with_capacity(arguments.len());
+                    for argument in arguments {
+                        let value = match argument {
+                            CompilerMirLoweringCallArgument::I32Literal(value) => {
+                                builder.ins().iconst(types::I32, i64::from(value))
+                            }
+                            CompilerMirLoweringCallArgument::FunctionParamI32(param) => {
+                                function_params.get(param).copied().ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering function parameter {param} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?
+                            }
+                            CompilerMirLoweringCallArgument::LocalI32(local) => {
+                                let argument_slot = *local_slots.get(local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering call local {local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                builder.use_var(argument_slot)
+                            }
+                            CompilerMirLoweringCallArgument::BlockParamI32(block_param) => {
+                                *block_parameter_values.get(block_param).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering call block parameter {block_param} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?
+                            }
+                            CompilerMirLoweringCallArgument::BlockParamI32AddI32Literal {
+                                name: block_param,
+                                value,
+                            } => {
+                                let block_value =
+                                    *block_parameter_values.get(block_param).ok_or_else(|| {
+                                        IoError::new(
+                                            ErrorKind::InvalidInput,
+                                            format!(
+                                                "unknown compiler MIR lowering call block parameter {block_param} at block {}",
+                                                block.label
+                                            ),
+                                        )
+                                    })?;
+                                builder.ins().iadd_imm(block_value, i64::from(value))
+                            }
+                        };
+                        lowered_arguments.push(value);
+                    }
+                    let call_inst = builder.ins().call(function_ref, &lowered_arguments);
+                    let return_value = builder
+                        .inst_results(call_inst)
+                        .first()
+                        .copied()
+                        .ok_or_else(|| {
+                            IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "canonical compiler MIR call at block {} produced no i32 result",
+                                    block.label
+                                ),
+                            )
+                        })?;
+                    builder.def_var(slot, return_value);
                 }
             }
         }

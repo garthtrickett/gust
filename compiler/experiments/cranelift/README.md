@@ -309,18 +309,12 @@ seams, zero bespoke seams, zero metadata-only seams, and the same seventeen
 translator seeds.
 
 The Phase 9F v2 schema/parser/validator milestone is complete. The canonical
-`gust.compiler_mir_ingestion.v2` form now owns a module name, imported host
+`gust.compiler_mir_ingestion.v2` form owns a module name, imported host
 declarations, defined exported-entry and module-local functions, explicit
 ordered i32 signatures, and `LocalI32SetCall` statements. Calls resolve through
 typed `LocalFunction` or `ImportedFunction` targets and accept literal,
 function-parameter, local, block-parameter, and block-parameter-plus-literal
 arguments.
-
-The validation command dispatches both v1 and v2. The generic object command
-also recognizes both versions, but after successful v2 validation it rejects
-with the explicit Patch 2 validation-only diagnostic before creating an output
-directory or object. Object emission for v2 remains intentionally unavailable
-in this patch.
 
 The v2 validator freezes separate source-function, imported-function, emitted
 backend-symbol, and imported link-symbol namespaces. It rejects duplicate
@@ -328,15 +322,35 @@ imports or local functions, conflicting import-link signatures, emitted/import
 symbol collisions, unknown callees, wrong arity, non-i32 signatures,
 undeclared call destinations, calls to exported entry functions, recursive or
 mutually recursive local call graphs, invalid linkage, indirect targets, and
-call/import records in v1. The positive fixture proves caller-before-callee
+call/import records in v1. The schema fixture proves caller-before-callee
 ordering, multiple defined functions, multiple imports, direct local calls,
 direct imported calls, ordered arguments, and result materialization into
 declared locals.
 
-No ingestion seam migrates in this patch. The inventory remains 33 total,
-22 canonical shared, eleven bespoke call/import seams, zero metadata-only, and
-seventeen frozen translator seeds. MIR-to-C remains primary, Cranelift remains
-disabled by default, and no production runtime or backend route is enabled.
+Patch 3 enables v2 object emission for validated import-free local-call
+modules. The shared module emitter declares every exported-entry and
+module-local function before defining any body, so caller-before-callee source
+ordering is supported. Exported entries use Cranelift export linkage,
+module-local helpers use local linkage, and direct local calls lower through
+the shared call-aware canonical body builder.
+
+Modules containing imported functions still reject before output creation.
+The canonical import declarations and imported-call validation remain frozen,
+but imported function declaration, linking, and call emission are reserved for
+the next explicit cohort. v1 remains single-function and call/import-free.
+
+The block-param local-call branch seam is the first Phase 9F migration. Its
+legacy lane-specific fixture parser is now only a compatibility adapter: after
+validating the existing fixture, it constructs `CompilerMirLoweringModule` and
+calls the shared module emitter. It no longer owns a lane-specific
+`ObjectModule`, `TinyMirParamBlockFunction`, or bespoke function-definition
+path.
+
+The inventory is now 33 total seams, 23 canonical shared-lowering seams, ten
+frozen bespoke imported-call seams, zero metadata-only seams, and seventeen
+frozen translator seeds. MIR-to-C remains primary, Cranelift remains disabled
+by default, and no production runtime or backend route is enabled. The next
+milestone is the imported-function emitter and first imported-call cohort.
 
 The checked-in lockfile for this crate is owned by:
 
