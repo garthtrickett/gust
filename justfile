@@ -75,6 +75,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze
         just guard-cranelift-phase9e-opening-contract
         just guard-cranelift-phase9e-local-cfg-cohort
+        just guard-cranelift-phase9e-block-parameter-schema-validator
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -214,6 +215,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-opening-contract' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-local-cfg-cohort' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-block-parameter-schema-validator' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -5809,6 +5811,8 @@ guard-cranelift-phase9e-opening-contract:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_first_milestone_lanes: block_local_branch,block_local_update_branch,block_two_local_update_branch' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_first_milestone_status: complete' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_second_milestone: define_typed_block_parameter_model_schema_parser_validator' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_second_milestone_status: complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_third_milestone: implement_shared_block_parameter_lowering_core' "$manifest_doc" >/dev/null
 
     migrated_local_cfg='block_local_branch block_local_update_branch block_two_local_update_branch'
     remaining_migration_candidates='block_param_update_branch block_param_merge_update_branch block_param_dual_materialize_return block_param_triple_materialize_return block_param_quad_materialize_return block_param_quint_materialize_return block_param_local_materialize_return block_param_local_materialize_branch block_param_local_first_dual_materialize_return'
@@ -5855,7 +5859,7 @@ guard-cranelift-phase9e-local-cfg-cohort:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_lanes: block_local_branch,block_local_update_branch,block_two_local_update_branch' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_inventory: 33_total_13_canonical_shared_20_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_bypass_policy: migrated_lane_commands_must_not_construct_ObjectModule_or_use_TinyMirBlockFunction' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_next_milestone: typed_block_parameter_model_schema_parser_validator' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_next_milestone: shared_block_parameter_lowering_core' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_canonical_shared_lowering_count: 13' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_compiler_owned_bespoke_lowering_count: 20' "$manifest_doc" >/dev/null
 
@@ -5902,6 +5906,180 @@ guard-cranelift-phase9e-local-cfg-cohort:
     just guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smoke
     echo "✅ Phase 9E local CFG cohort passed: three historical commands are thin canonical adapters and preserve their native behavior."
+
+guard-cranelift-phase9e-block-parameter-schema-validator:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the Phase 9E typed block-parameter model, schema, parser, and validator..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    build_dir="build/guards/cranelift_phase9e_block_parameter_schema_validator"
+    valid_fixture="$build_dir/valid_typed_backedge.mir"
+    object_path="$build_dir/object-output/typed_backedge.o"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9e-local-cfg-cohort
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_BLOCK_PARAMETER_SCHEMA_VALIDATOR_GUARD: guard-cranelift-phase9e-block-parameter-schema-validator' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_status: phase9e_typed_block_parameter_model_schema_parser_validator_complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_edge_argument_kinds: I32Literal,FunctionParamI32,LocalI32,BlockParamI32,BlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_entry_policy: entry_block_parameters_rejected_until_explicit_entry_argument_semantics_exist' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_reference_policy: block_parameter_references_are_scoped_to_the_current_block' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_edge_policy: edge_argument_arity_order_and_type_must_match_the_target_block_parameters' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_cycle_policy: reachability_validation_is_worklist_based_and_cycle_safe' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_lowering_policy: validation_only_until_shared_block_parameter_lowering_core' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_inventory: 33_total_13_canonical_shared_20_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_next_milestone: shared_block_parameter_lowering_core' "$manifest_doc" >/dev/null
+
+    rg -n -F "struct CompilerMirLoweringBlockParameter<'a> {" "$source_file" >/dev/null
+    rg -n -F "struct CompilerMirLoweringEdge<'a> {" "$source_file" >/dev/null
+    rg -n -F "enum CompilerMirLoweringEdgeArgument<'a> {" "$source_file" >/dev/null
+    rg -n -F 'LocalI32SetBlockParam {' "$source_file" >/dev/null
+    rg -n -F 'ReturnBlockParamI32(&' "$source_file" >/dev/null
+    rg -n -F 'BranchBlockParamI32Positive {' "$source_file" >/dev/null
+    rg -n '^fn parse_canonical_compiler_mir_edge_arguments' "$source_file" >/dev/null
+    rg -n '^fn validate_canonical_compiler_mir_edge' "$source_file" >/dev/null
+    rg -n '^fn validate_canonical_compiler_mir_block_parameter_reference' "$source_file" >/dev/null
+    rg -n '^fn validate_compiler_mir_ingestion_lowering_readiness' "$source_file" >/dev/null
+
+    cat > "$valid_fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9e_typed_backedge
+    backend_symbol: tiny_phase9e_typed_backedge
+    parameter_count: 1
+    parameter_0_type: int
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 4
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 0
+    block_0_terminator_kind: Jump
+    block_0_terminator_target: loop
+    block_0_terminator_argument_count: 1
+    block_0_terminator_argument_0_kind: FunctionParamI32
+    block_0_terminator_argument_0_param: 0
+    block_1_label: loop
+    block_1_parameter_count: 1
+    block_1_parameter_0_name: value
+    block_1_parameter_0_type: int
+    block_1_statement_count: 0
+    block_1_terminator_kind: BranchBlockParamI32Positive
+    block_1_terminator_block_param: value
+    block_1_terminator_then: body
+    block_1_terminator_then_argument_count: 1
+    block_1_terminator_then_argument_0_kind: BlockParamI32
+    block_1_terminator_then_argument_0_block_param: value
+    block_1_terminator_else: exit
+    block_1_terminator_else_argument_count: 1
+    block_1_terminator_else_argument_0_kind: BlockParamI32
+    block_1_terminator_else_argument_0_block_param: value
+    block_2_label: body
+    block_2_parameter_count: 1
+    block_2_parameter_0_name: current
+    block_2_parameter_0_type: int
+    block_2_statement_count: 0
+    block_2_terminator_kind: Jump
+    block_2_terminator_target: loop
+    block_2_terminator_argument_count: 1
+    block_2_terminator_argument_0_kind: BlockParamI32AddI32Literal
+    block_2_terminator_argument_0_block_param: current
+    block_2_terminator_argument_0_value: -1
+    block_3_label: exit
+    block_3_parameter_count: 1
+    block_3_parameter_0_name: result
+    block_3_parameter_0_type: int
+    block_3_statement_count: 0
+    block_3_terminator_kind: ReturnBlockParamI32
+    block_3_terminator_block_param: result
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+
+    validate_cmd=(cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- compiler-mir-validate-fixture)
+    "${validate_cmd[@]}" "$valid_fixture" > "$build_dir/valid.log" 2>&1
+    rg -n -F 'validated canonical compiler MIR fixture: tiny_phase9e_typed_backedge -> tiny_phase9e_typed_backedge' "$build_dir/valid.log" >/dev/null
+
+    expect_invalid() {
+      local name="$1"
+      local fixture="$2"
+      local expected="$3"
+      local log="$build_dir/${name}.log"
+      set +e
+      "${validate_cmd[@]}" "$fixture" > "$log" 2>&1
+      local status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Expected typed block-parameter fixture rejection: $name"
+        cat "$log"
+        exit 1
+      fi
+      rg -n -F "$expected" "$log" >/dev/null
+    }
+
+    duplicate_parameter="$build_dir/duplicate_parameter.mir"
+    sed 's/block_1_parameter_count: 1/block_1_parameter_count: 2/' "$valid_fixture" > "$duplicate_parameter"
+    cat >> "$duplicate_parameter" <<'MIR'
+    block_1_parameter_1_name: value
+    block_1_parameter_1_type: int
+    MIR
+    expect_invalid duplicate_parameter "$duplicate_parameter" 'duplicate canonical compiler MIR block parameter value in block loop'
+
+    entry_parameter="$build_dir/entry_parameter.mir"
+    sed 's/block_0_parameter_count: 0/block_0_parameter_count: 1/' "$valid_fixture" > "$entry_parameter"
+    cat >> "$entry_parameter" <<'MIR'
+    block_0_parameter_0_name: illegal
+    block_0_parameter_0_type: int
+    MIR
+    expect_invalid entry_parameter "$entry_parameter" 'canonical compiler MIR entry block entry cannot declare block parameters'
+
+    missing_argument="$build_dir/missing_argument.mir"
+    sed \
+      -e 's/block_0_terminator_argument_count: 1/block_0_terminator_argument_count: 0/' \
+      -e '/block_0_terminator_argument_0_kind:/d' \
+      -e '/block_0_terminator_argument_0_param:/d' \
+      "$valid_fixture" > "$missing_argument"
+    expect_invalid missing_argument "$missing_argument" 'passes 0 argument(s), but target declares 1 block parameter(s)'
+
+    invalid_function_parameter="$build_dir/invalid_function_parameter.mir"
+    sed 's/block_0_terminator_argument_0_param: 0/block_0_terminator_argument_0_param: 9/' "$valid_fixture" > "$invalid_function_parameter"
+    expect_invalid invalid_function_parameter "$invalid_function_parameter" 'unknown canonical compiler MIR function parameter 9'
+
+    cross_block_reference="$build_dir/cross_block_reference.mir"
+    sed 's/block_2_terminator_argument_0_block_param: current/block_2_terminator_argument_0_block_param: value/' "$valid_fixture" > "$cross_block_reference"
+    expect_invalid cross_block_reference "$cross_block_reference" 'references block parameter value owned by block(s): loop'
+
+    unsupported_parameter_type="$build_dir/unsupported_parameter_type.mir"
+    sed 's/block_1_parameter_0_type: int/block_1_parameter_0_type: void/' "$valid_fixture" > "$unsupported_parameter_type"
+    expect_invalid unsupported_parameter_type "$unsupported_parameter_type" 'block parameter value in block loop must have int type'
+
+    missing_branch_arm_argument="$build_dir/missing_branch_arm_argument.mir"
+    sed \
+      -e 's/block_1_terminator_else_argument_count: 1/block_1_terminator_else_argument_count: 0/' \
+      -e '/block_1_terminator_else_argument_0_kind:/d' \
+      -e '/block_1_terminator_else_argument_0_block_param:/d' \
+      "$valid_fixture" > "$missing_branch_arm_argument"
+    expect_invalid missing_branch_arm_argument "$missing_branch_arm_argument" 'branch else from block loop to exit passes 0 argument(s), but target declares 1 block parameter(s)'
+
+    set +e
+    cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked -- \
+      compiler-mir-ingestion-object "$valid_fixture" "$object_path" \
+      > "$build_dir/object-gate.log" 2>&1
+    object_status="$?"
+    set -e
+    if [ "$object_status" = "0" ]; then
+      echo "Typed block-parameter object lowering must remain disabled until the shared lowering core lands."
+      exit 1
+    fi
+    rg -n -F 'edge arguments are validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core' "$build_dir/object-gate.log" >/dev/null
+    if [ -e "$object_path" ] || [ -d "$build_dir/object-output" ]; then
+      echo "The Phase 9E schema milestone must reject block-parameter object lowering before output creation."
+      exit 1
+    fi
+
+    echo "✅ Typed block parameters and ordered edge arguments parse and validate with cycle-safe CFG checks; object lowering remains gated before output creation."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

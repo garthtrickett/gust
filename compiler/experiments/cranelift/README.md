@@ -125,9 +125,26 @@ fixture parsing, validation, `CompilerMirLoweringFunction`, shared body
 lowering, and shared object emission. None of those commands constructs an
 `ObjectModule` or invokes `TinyMirBlockFunction` lowering. The live inventory
 is now thirteen canonical seams and twenty frozen bespoke seams; the total
-remains 33 and the translator-seed inventory remains frozen at seventeen. The
-next milestone defines typed block parameters, typed edge arguments, parser
-fields, and validation rules before enabling block-parameter object lowering.
+remains 33 and the translator-seed inventory remains frozen at seventeen.
+
+The typed block-parameter representation milestone is complete. Canonical
+blocks now carry ordered typed parameter declarations, and every jump or branch
+edge owns an ordered argument list. Edge arguments can currently be i32
+literals, function parameters, locals, current-block parameters, or a
+current-block parameter plus an i32 literal. Canonical fixtures may also return
+a block parameter, branch on a block parameter, or materialize one into a
+local.
+
+The parser remains backward-compatible with existing canonical fixtures by
+treating omitted block-parameter and edge-argument counts as zero. Validation
+rejects entry-block parameters, duplicate or non-int block parameters,
+cross-block references, unknown sources, and edge arity or type mismatches. Its
+worklist reachability pass is cycle-safe. These forms are validation-only in
+this patch: object emission rejects them before creating the output directory
+until the shared block-parameter lowering core lands. The live inventory stays
+at thirteen canonical seams and twenty frozen bespoke seams. The next
+milestone implements shared Cranelift block-parameter and edge-argument
+lowering.
 
 The checked-in lockfile for this crate is owned by:
 

@@ -242,7 +242,7 @@ const MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_BRANCH_I32_SYMBOL: &str =
 const MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_HELPER_I32_SYMBOL: &str =
     "tiny_cranelift_mir_block_graph_param_merge_add_one_helper_i32";
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum TinyMirType {
     I32,
     Void,
@@ -721,6 +721,10 @@ enum CompilerMirLoweringStatement<'a> {
         name: &'a str,
         param: usize,
     },
+    LocalI32SetBlockParam {
+        name: &'a str,
+        block_param: &'a str,
+    },
     LocalI32AddI32Literal {
         name: &'a str,
         value: i32,
@@ -732,22 +736,52 @@ enum CompilerMirLoweringStatement<'a> {
 }
 
 #[derive(Clone, Copy)]
+struct CompilerMirLoweringBlockParameter<'a> {
+    name: &'a str,
+    ty: TinyMirType,
+}
+
+#[derive(Clone, Copy)]
+enum CompilerMirLoweringEdgeArgument<'a> {
+    I32Literal(i32),
+    FunctionParamI32(usize),
+    LocalI32(&'a str),
+    BlockParamI32(&'a str),
+    BlockParamI32AddI32Literal {
+        name: &'a str,
+        value: i32,
+    },
+}
+
+#[derive(Clone)]
+struct CompilerMirLoweringEdge<'a> {
+    target: &'a str,
+    arguments: Vec<CompilerMirLoweringEdgeArgument<'a>>,
+}
+
+#[derive(Clone)]
 enum CompilerMirLoweringTerminator<'a> {
     ReturnI32(i32),
     ReturnLocalI32(&'a str),
+    ReturnBlockParamI32(&'a str),
     ReturnVoid,
     Jump {
-        target: &'a str,
+        edge: CompilerMirLoweringEdge<'a>,
     },
     BranchI32Literal {
         condition: i32,
-        then_block: &'a str,
-        else_block: &'a str,
+        then_edge: CompilerMirLoweringEdge<'a>,
+        else_edge: CompilerMirLoweringEdge<'a>,
     },
     BranchLocalI32Positive {
         name: &'a str,
-        then_block: &'a str,
-        else_block: &'a str,
+        then_edge: CompilerMirLoweringEdge<'a>,
+        else_edge: CompilerMirLoweringEdge<'a>,
+    },
+    BranchBlockParamI32Positive {
+        name: &'a str,
+        then_edge: CompilerMirLoweringEdge<'a>,
+        else_edge: CompilerMirLoweringEdge<'a>,
     },
 }
 
@@ -758,6 +792,7 @@ struct CompilerMirLoweringLocal<'a> {
 
 struct CompilerMirLoweringBlock<'a> {
     label: &'a str,
+    parameters: Vec<CompilerMirLoweringBlockParameter<'a>>,
     statements: Vec<CompilerMirLoweringStatement<'a>>,
     terminator: CompilerMirLoweringTerminator<'a>,
 }
@@ -2288,6 +2323,36 @@ fn parse_compiler_mir_fixture<'a>(
             &mut consumed,
             &label_key,
         )?;
+        let block_parameter_count_key = format!("block_{block_index}_parameter_count");
+        let block_parameter_count = parse_optional_canonical_compiler_mir_usize_field(
+            &fields,
+            &mut consumed,
+            &block_parameter_count_key,
+            0,
+        )?;
+        let mut block_parameters = Vec::with_capacity(block_parameter_count);
+        for parameter_index in 0..block_parameter_count {
+            let name_key = format!(
+                "block_{block_index}_parameter_{parameter_index}_name"
+            );
+            let type_key = format!(
+                "block_{block_index}_parameter_{parameter_index}_type"
+            );
+            let name = required_canonical_compiler_mir_fixture_field(
+                &fields,
+                &mut consumed,
+                &name_key,
+            )?;
+            let ty_value = required_canonical_compiler_mir_fixture_field(
+                &fields,
+                &mut consumed,
+                &type_key,
+            )?;
+            block_parameters.push(CompilerMirLoweringBlockParameter {
+                name,
+                ty: parse_canonical_compiler_mir_type(ty_value, &type_key)?,
+            });
+        }
         let statement_count = parse_canonical_compiler_mir_usize_field(
             &fields,
             &mut consumed,
@@ -2332,6 +2397,22 @@ fn parse_compiler_mir_fixture<'a>(
                             &fields,
                             &mut consumed,
                             &param_key,
+                        )?,
+                    }
+                }
+                "LocalI32SetBlockParam" => {
+                    let local_key = format!("{prefix}_local");
+                    let block_param_key = format!("{prefix}_block_param");
+                    CompilerMirLoweringStatement::LocalI32SetBlockParam {
+                        name: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &local_key,
+                        )?,
+                        block_param: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &block_param_key,
                         )?,
                     }
                 }
@@ -2408,59 +2489,146 @@ fn parse_compiler_mir_fixture<'a>(
                     )?,
                 )
             }
+            "ReturnBlockParamI32" => {
+                let block_param_key = format!("{terminator_prefix}_block_param");
+                CompilerMirLoweringTerminator::ReturnBlockParamI32(
+                    required_canonical_compiler_mir_fixture_field(
+                        &fields,
+                        &mut consumed,
+                        &block_param_key,
+                    )?,
+                )
+            }
             "ReturnVoid" => CompilerMirLoweringTerminator::ReturnVoid,
             "Jump" => {
                 let target_key = format!("{terminator_prefix}_target");
                 CompilerMirLoweringTerminator::Jump {
-                    target: required_canonical_compiler_mir_fixture_field(
-                        &fields,
-                        &mut consumed,
-                        &target_key,
-                    )?,
+                    edge: CompilerMirLoweringEdge {
+                        target: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &target_key,
+                        )?,
+                        arguments: parse_canonical_compiler_mir_edge_arguments(
+                            &fields,
+                            &mut consumed,
+                            &terminator_prefix,
+                        )?,
+                    },
                 }
             }
             "BranchI32Literal" => {
                 let condition_key = format!("{terminator_prefix}_condition");
                 let then_key = format!("{terminator_prefix}_then");
                 let else_key = format!("{terminator_prefix}_else");
+                let then_argument_prefix = format!("{terminator_prefix}_then");
+                let else_argument_prefix = format!("{terminator_prefix}_else");
                 CompilerMirLoweringTerminator::BranchI32Literal {
                     condition: parse_canonical_compiler_mir_i32_field(
                         &fields,
                         &mut consumed,
                         &condition_key,
                     )?,
-                    then_block: required_canonical_compiler_mir_fixture_field(
-                        &fields,
-                        &mut consumed,
-                        &then_key,
-                    )?,
-                    else_block: required_canonical_compiler_mir_fixture_field(
-                        &fields,
-                        &mut consumed,
-                        &else_key,
-                    )?,
+                    then_edge: CompilerMirLoweringEdge {
+                        target: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &then_key,
+                        )?,
+                        arguments: parse_canonical_compiler_mir_edge_arguments(
+                            &fields,
+                            &mut consumed,
+                            &then_argument_prefix,
+                        )?,
+                    },
+                    else_edge: CompilerMirLoweringEdge {
+                        target: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &else_key,
+                        )?,
+                        arguments: parse_canonical_compiler_mir_edge_arguments(
+                            &fields,
+                            &mut consumed,
+                            &else_argument_prefix,
+                        )?,
+                    },
                 }
             }
             "BranchLocalI32Positive" => {
                 let local_key = format!("{terminator_prefix}_local");
                 let then_key = format!("{terminator_prefix}_then");
                 let else_key = format!("{terminator_prefix}_else");
+                let then_argument_prefix = format!("{terminator_prefix}_then");
+                let else_argument_prefix = format!("{terminator_prefix}_else");
                 CompilerMirLoweringTerminator::BranchLocalI32Positive {
                     name: required_canonical_compiler_mir_fixture_field(
                         &fields,
                         &mut consumed,
                         &local_key,
                     )?,
-                    then_block: required_canonical_compiler_mir_fixture_field(
+                    then_edge: CompilerMirLoweringEdge {
+                        target: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &then_key,
+                        )?,
+                        arguments: parse_canonical_compiler_mir_edge_arguments(
+                            &fields,
+                            &mut consumed,
+                            &then_argument_prefix,
+                        )?,
+                    },
+                    else_edge: CompilerMirLoweringEdge {
+                        target: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &else_key,
+                        )?,
+                        arguments: parse_canonical_compiler_mir_edge_arguments(
+                            &fields,
+                            &mut consumed,
+                            &else_argument_prefix,
+                        )?,
+                    },
+                }
+            }
+            "BranchBlockParamI32Positive" => {
+                let block_param_key = format!("{terminator_prefix}_block_param");
+                let then_key = format!("{terminator_prefix}_then");
+                let else_key = format!("{terminator_prefix}_else");
+                let then_argument_prefix = format!("{terminator_prefix}_then");
+                let else_argument_prefix = format!("{terminator_prefix}_else");
+                CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                    name: required_canonical_compiler_mir_fixture_field(
                         &fields,
                         &mut consumed,
-                        &then_key,
+                        &block_param_key,
                     )?,
-                    else_block: required_canonical_compiler_mir_fixture_field(
-                        &fields,
-                        &mut consumed,
-                        &else_key,
-                    )?,
+                    then_edge: CompilerMirLoweringEdge {
+                        target: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &then_key,
+                        )?,
+                        arguments: parse_canonical_compiler_mir_edge_arguments(
+                            &fields,
+                            &mut consumed,
+                            &then_argument_prefix,
+                        )?,
+                    },
+                    else_edge: CompilerMirLoweringEdge {
+                        target: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &else_key,
+                        )?,
+                        arguments: parse_canonical_compiler_mir_edge_arguments(
+                            &fields,
+                            &mut consumed,
+                            &else_argument_prefix,
+                        )?,
+                    },
                 }
             }
             other => {
@@ -2476,6 +2644,7 @@ fn parse_compiler_mir_fixture<'a>(
 
         blocks.push(CompilerMirLoweringBlock {
             label,
+            parameters: block_parameters,
             statements,
             terminator,
         });
@@ -2658,7 +2827,53 @@ fn validate_compiler_mir_fixture(
         .into());
     }
 
+    let mut block_parameter_types: Vec<HashMap<&str, TinyMirType>> =
+        Vec::with_capacity(function.blocks.len());
+    let mut block_parameter_owners: HashMap<&str, Vec<&str>> = HashMap::new();
     for block in &function.blocks {
+        if block.label == function.entry_block && !block.parameters.is_empty() {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR entry block {} cannot declare block parameters",
+                    block.label
+                ),
+            )
+            .into());
+        }
+        let mut parameter_types: HashMap<&str, TinyMirType> = HashMap::new();
+        for parameter in &block.parameters {
+            validate_canonical_compiler_mir_name(parameter.name, "block parameter")?;
+            if !matches!(parameter.ty, TinyMirType::I32) {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR block parameter {} in block {} must have int type",
+                        parameter.name, block.label
+                    ),
+                )
+                .into());
+            }
+            if parameter_types.insert(parameter.name, parameter.ty).is_some() {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "duplicate canonical compiler MIR block parameter {} in block {}",
+                        parameter.name, block.label
+                    ),
+                )
+                .into());
+            }
+            block_parameter_owners
+                .entry(parameter.name)
+                .or_default()
+                .push(block.label);
+        }
+        block_parameter_types.push(parameter_types);
+    }
+
+    for (block_index, block) in function.blocks.iter().enumerate() {
+        let current_block_parameters = &block_parameter_types[block_index];
         for (statement_index, statement) in block.statements.iter().enumerate() {
             match *statement {
                 CompilerMirLoweringStatement::LocalI32Set { name, .. }
@@ -2689,10 +2904,28 @@ fn validate_compiler_mir_fixture(
                         .into());
                     }
                 }
+                CompilerMirLoweringStatement::LocalI32SetBlockParam {
+                    name,
+                    block_param,
+                } => {
+                    validate_canonical_compiler_mir_local_reference(
+                        &local_names,
+                        name,
+                        block.label,
+                        statement_index,
+                    )?;
+                    validate_canonical_compiler_mir_block_parameter_reference(
+                        current_block_parameters,
+                        &block_parameter_owners,
+                        block_param,
+                        block.label,
+                        &format!("statement {statement_index}"),
+                    )?;
+                }
             }
         }
 
-        match block.terminator {
+        match &block.terminator {
             CompilerMirLoweringTerminator::ReturnI32(_) => {
                 if matches!(fixture.return_type, TinyMirType::Void) {
                     return Err(IoError::new(
@@ -2727,6 +2960,25 @@ fn validate_compiler_mir_fixture(
                     .into());
                 }
             }
+            CompilerMirLoweringTerminator::ReturnBlockParamI32(name) => {
+                if matches!(fixture.return_type, TinyMirType::Void) {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "canonical compiler MIR void function cannot return block parameter {name} at block {}",
+                            block.label
+                        ),
+                    )
+                    .into());
+                }
+                validate_canonical_compiler_mir_block_parameter_reference(
+                    current_block_parameters,
+                    &block_parameter_owners,
+                    name,
+                    block.label,
+                    "return",
+                )?;
+            }
             CompilerMirLoweringTerminator::ReturnVoid => {
                 if matches!(fixture.return_type, TinyMirType::I32) {
                     return Err(IoError::new(
@@ -2739,36 +2991,48 @@ fn validate_compiler_mir_fixture(
                     .into());
                 }
             }
-            CompilerMirLoweringTerminator::Jump { target } => {
-                validate_canonical_compiler_mir_block_target(
+            CompilerMirLoweringTerminator::Jump { edge } => {
+                validate_canonical_compiler_mir_edge(
+                    function,
                     &block_indices,
-                    target,
+                    &local_names,
+                    current_block_parameters,
+                    &block_parameter_owners,
                     block.label,
                     "jump",
+                    edge,
                 )?;
             }
             CompilerMirLoweringTerminator::BranchI32Literal {
-                then_block,
-                else_block,
+                then_edge,
+                else_edge,
                 ..
             } => {
-                validate_canonical_compiler_mir_block_target(
+                validate_canonical_compiler_mir_edge(
+                    function,
                     &block_indices,
-                    then_block,
+                    &local_names,
+                    current_block_parameters,
+                    &block_parameter_owners,
                     block.label,
                     "branch then",
+                    then_edge,
                 )?;
-                validate_canonical_compiler_mir_block_target(
+                validate_canonical_compiler_mir_edge(
+                    function,
                     &block_indices,
-                    else_block,
+                    &local_names,
+                    current_block_parameters,
+                    &block_parameter_owners,
                     block.label,
                     "branch else",
+                    else_edge,
                 )?;
             }
             CompilerMirLoweringTerminator::BranchLocalI32Positive {
                 name,
-                then_block,
-                else_block,
+                then_edge,
+                else_edge,
             } => {
                 if !local_names.contains(name) {
                     return Err(IoError::new(
@@ -2780,17 +3044,58 @@ fn validate_compiler_mir_fixture(
                     )
                     .into());
                 }
-                validate_canonical_compiler_mir_block_target(
+                validate_canonical_compiler_mir_edge(
+                    function,
                     &block_indices,
-                    then_block,
+                    &local_names,
+                    current_block_parameters,
+                    &block_parameter_owners,
                     block.label,
                     "branch then",
+                    then_edge,
                 )?;
-                validate_canonical_compiler_mir_block_target(
+                validate_canonical_compiler_mir_edge(
+                    function,
                     &block_indices,
-                    else_block,
+                    &local_names,
+                    current_block_parameters,
+                    &block_parameter_owners,
                     block.label,
                     "branch else",
+                    else_edge,
+                )?;
+            }
+            CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                name,
+                then_edge,
+                else_edge,
+            } => {
+                validate_canonical_compiler_mir_block_parameter_reference(
+                    current_block_parameters,
+                    &block_parameter_owners,
+                    name,
+                    block.label,
+                    "branch condition",
+                )?;
+                validate_canonical_compiler_mir_edge(
+                    function,
+                    &block_indices,
+                    &local_names,
+                    current_block_parameters,
+                    &block_parameter_owners,
+                    block.label,
+                    "branch then",
+                    then_edge,
+                )?;
+                validate_canonical_compiler_mir_edge(
+                    function,
+                    &block_indices,
+                    &local_names,
+                    current_block_parameters,
+                    &block_parameter_owners,
+                    block.label,
+                    "branch else",
+                    else_edge,
                 )?;
             }
         }
@@ -2837,6 +3142,153 @@ fn validate_compiler_mir_fixture(
         )?;
     }
 
+    Ok(())
+}
+
+fn validate_canonical_compiler_mir_block_parameter_reference<'a>(
+    current_block_parameters: &HashMap<&'a str, TinyMirType>,
+    block_parameter_owners: &HashMap<&'a str, Vec<&'a str>>,
+    name: &str,
+    block: &str,
+    context: &str,
+) -> Result<TinyMirType, Box<dyn Error>> {
+    if let Some(ty) = current_block_parameters.get(name).copied() {
+        return Ok(ty);
+    }
+    if let Some(owners) = block_parameter_owners.get(name) {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR {context} in block {block} references block parameter {name} owned by block(s): {}",
+                owners.join(",")
+            ),
+        )
+        .into());
+    }
+    Err(IoError::new(
+        ErrorKind::InvalidInput,
+        format!(
+            "unknown canonical compiler MIR block parameter {name} at block {block} {context}"
+        ),
+    )
+    .into())
+}
+
+fn validate_canonical_compiler_mir_edge_argument<'a>(
+    function: &CompilerMirLoweringFunction<'a>,
+    local_names: &HashSet<&'a str>,
+    current_block_parameters: &HashMap<&'a str, TinyMirType>,
+    block_parameter_owners: &HashMap<&'a str, Vec<&'a str>>,
+    source_block: &str,
+    edge_name: &str,
+    argument_index: usize,
+    argument: &CompilerMirLoweringEdgeArgument<'a>,
+) -> Result<TinyMirType, Box<dyn Error>> {
+    match *argument {
+        CompilerMirLoweringEdgeArgument::I32Literal(_) => Ok(TinyMirType::I32),
+        CompilerMirLoweringEdgeArgument::FunctionParamI32(param) => function
+            .params
+            .get(param)
+            .copied()
+            .ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown canonical compiler MIR function parameter {param} at block {source_block} {edge_name} argument {argument_index}"
+                    ),
+                )
+                .into()
+            }),
+        CompilerMirLoweringEdgeArgument::LocalI32(name) => {
+            if !local_names.contains(name) {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown canonical compiler MIR local {name} at block {source_block} {edge_name} argument {argument_index}"
+                    ),
+                )
+                .into());
+            }
+            Ok(TinyMirType::I32)
+        }
+        CompilerMirLoweringEdgeArgument::BlockParamI32(name)
+        | CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal { name, .. } => {
+            validate_canonical_compiler_mir_block_parameter_reference(
+                current_block_parameters,
+                block_parameter_owners,
+                name,
+                source_block,
+                &format!("{edge_name} argument {argument_index}"),
+            )
+        }
+    }
+}
+
+fn validate_canonical_compiler_mir_edge<'a>(
+    function: &CompilerMirLoweringFunction<'a>,
+    block_indices: &HashMap<&'a str, usize>,
+    local_names: &HashSet<&'a str>,
+    current_block_parameters: &HashMap<&'a str, TinyMirType>,
+    block_parameter_owners: &HashMap<&'a str, Vec<&'a str>>,
+    source_block: &str,
+    edge_name: &str,
+    edge: &CompilerMirLoweringEdge<'a>,
+) -> Result<(), Box<dyn Error>> {
+    validate_canonical_compiler_mir_block_target(
+        block_indices,
+        edge.target,
+        source_block,
+        edge_name,
+    )?;
+    let target_index = *block_indices.get(edge.target).ok_or_else(|| {
+        IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "unknown canonical compiler MIR {edge_name} target {} from block {source_block}",
+                edge.target
+            ),
+        )
+    })?;
+    let target_parameters = &function.blocks[target_index].parameters;
+    if edge.arguments.len() != target_parameters.len() {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR {edge_name} from block {source_block} to {} passes {} argument(s), but target declares {} block parameter(s)",
+                edge.target,
+                edge.arguments.len(),
+                target_parameters.len()
+            ),
+        )
+        .into());
+    }
+    for (argument_index, (argument, target_parameter)) in edge
+        .arguments
+        .iter()
+        .zip(target_parameters.iter())
+        .enumerate()
+    {
+        let argument_type = validate_canonical_compiler_mir_edge_argument(
+            function,
+            local_names,
+            current_block_parameters,
+            block_parameter_owners,
+            source_block,
+            edge_name,
+            argument_index,
+            argument,
+        )?;
+        if argument_type != target_parameter.ty {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR {edge_name} argument {argument_index} from block {source_block} does not match target block parameter {} in block {}",
+                    target_parameter.name, edge.target
+                ),
+            )
+            .into());
+        }
+    }
     Ok(())
 }
 
@@ -2926,6 +3378,118 @@ fn parse_canonical_compiler_mir_i32_field<'a>(
         )
         .into()
     })
+}
+
+fn parse_optional_canonical_compiler_mir_usize_field<'a>(
+    fields: &HashMap<&'a str, &'a str>,
+    consumed: &mut HashSet<&'a str>,
+    key: &str,
+    default: usize,
+) -> Result<usize, Box<dyn Error>> {
+    let Some((stored_key, value)) = fields.get_key_value(key) else {
+        return Ok(default);
+    };
+    consumed.insert(*stored_key);
+    value.parse::<usize>().map_err(|_| {
+        IoError::new(
+            ErrorKind::InvalidInput,
+            format!("canonical compiler MIR fixture field {key} must be a usize, got {value}"),
+        )
+        .into()
+    })
+}
+
+fn parse_canonical_compiler_mir_edge_arguments<'a>(
+    fields: &HashMap<&'a str, &'a str>,
+    consumed: &mut HashSet<&'a str>,
+    prefix: &str,
+) -> Result<Vec<CompilerMirLoweringEdgeArgument<'a>>, Box<dyn Error>> {
+    let argument_count_key = format!("{prefix}_argument_count");
+    let argument_count = parse_optional_canonical_compiler_mir_usize_field(
+        fields,
+        consumed,
+        &argument_count_key,
+        0,
+    )?;
+    let mut arguments = Vec::with_capacity(argument_count);
+    for argument_index in 0..argument_count {
+        let argument_prefix = format!("{prefix}_argument_{argument_index}");
+        let kind_key = format!("{argument_prefix}_kind");
+        let kind = required_canonical_compiler_mir_fixture_field(
+            fields,
+            consumed,
+            &kind_key,
+        )?;
+        let argument = match kind {
+            "I32Literal" => {
+                let value_key = format!("{argument_prefix}_value");
+                CompilerMirLoweringEdgeArgument::I32Literal(
+                    parse_canonical_compiler_mir_i32_field(
+                        fields,
+                        consumed,
+                        &value_key,
+                    )?,
+                )
+            }
+            "FunctionParamI32" => {
+                let param_key = format!("{argument_prefix}_param");
+                CompilerMirLoweringEdgeArgument::FunctionParamI32(
+                    parse_canonical_compiler_mir_usize_field(
+                        fields,
+                        consumed,
+                        &param_key,
+                    )?,
+                )
+            }
+            "LocalI32" => {
+                let local_key = format!("{argument_prefix}_local");
+                CompilerMirLoweringEdgeArgument::LocalI32(
+                    required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &local_key,
+                    )?,
+                )
+            }
+            "BlockParamI32" => {
+                let block_param_key = format!("{argument_prefix}_block_param");
+                CompilerMirLoweringEdgeArgument::BlockParamI32(
+                    required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &block_param_key,
+                    )?,
+                )
+            }
+            "BlockParamI32AddI32Literal" => {
+                let block_param_key = format!("{argument_prefix}_block_param");
+                let value_key = format!("{argument_prefix}_value");
+                CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal {
+                    name: required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &block_param_key,
+                    )?,
+                    value: parse_canonical_compiler_mir_i32_field(
+                        fields,
+                        consumed,
+                        &value_key,
+                    )?,
+                }
+            }
+            other => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unsupported canonical compiler MIR edge argument kind at {kind_key}: {other}"
+                    ),
+                )
+                .into());
+            }
+        };
+        arguments.push(argument);
+    }
+    Ok(arguments)
 }
 
 fn parse_canonical_compiler_mir_type(
@@ -3024,27 +3588,33 @@ fn validate_canonical_compiler_mir_reachability(
                 format!("unknown canonical compiler MIR reachable block: {label}"),
             )
         })?;
-        match function.blocks[block_index].terminator {
+        match &function.blocks[block_index].terminator {
             CompilerMirLoweringTerminator::ReturnI32(_)
             | CompilerMirLoweringTerminator::ReturnLocalI32(_)
+            | CompilerMirLoweringTerminator::ReturnBlockParamI32(_)
             | CompilerMirLoweringTerminator::ReturnVoid => {
                 has_reachable_return = true;
             }
-            CompilerMirLoweringTerminator::Jump { target } => {
-                pending.push_back(target);
+            CompilerMirLoweringTerminator::Jump { edge } => {
+                pending.push_back(edge.target);
             }
             CompilerMirLoweringTerminator::BranchI32Literal {
-                then_block,
-                else_block,
+                then_edge,
+                else_edge,
                 ..
             }
             | CompilerMirLoweringTerminator::BranchLocalI32Positive {
-                then_block,
-                else_block,
+                then_edge,
+                else_edge,
+                ..
+            }
+            | CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                then_edge,
+                else_edge,
                 ..
             } => {
-                pending.push_back(then_block);
-                pending.push_back(else_block);
+                pending.push_back(then_edge.target);
+                pending.push_back(else_edge.target);
             }
         }
     }
@@ -5309,34 +5879,54 @@ fn emit_compiler_mir_block_local_branch_join_ingestion_object(
         blocks: vec![
             CompilerMirLoweringBlock {
                 label: "entry",
+                parameters: vec![],
                 statements: vec![CompilerMirLoweringStatement::LocalI32SetParam {
                     name: "value",
                     param: 0,
                 }],
                 terminator: CompilerMirLoweringTerminator::BranchLocalI32Positive {
                     name: "value",
-                    then_block: "positive",
-                    else_block: "non_positive",
+                    then_edge: CompilerMirLoweringEdge {
+                        target: "positive",
+                        arguments: vec![],
+                    },
+                    else_edge: CompilerMirLoweringEdge {
+                        target: "non_positive",
+                        arguments: vec![],
+                    },
                 },
             },
             CompilerMirLoweringBlock {
                 label: "positive",
+                parameters: vec![],
                 statements: vec![CompilerMirLoweringStatement::LocalI32AddI32Literal {
                     name: "value",
                     value: 4,
                 }],
-                terminator: CompilerMirLoweringTerminator::Jump { target: "join" },
+                terminator: CompilerMirLoweringTerminator::Jump {
+                    edge: CompilerMirLoweringEdge {
+                        target: "join",
+                        arguments: vec![],
+                    },
+                },
             },
             CompilerMirLoweringBlock {
                 label: "non_positive",
+                parameters: vec![],
                 statements: vec![CompilerMirLoweringStatement::LocalI32AddI32Literal {
                     name: "value",
                     value: 8,
                 }],
-                terminator: CompilerMirLoweringTerminator::Jump { target: "join" },
+                terminator: CompilerMirLoweringTerminator::Jump {
+                    edge: CompilerMirLoweringEdge {
+                        target: "join",
+                        arguments: vec![],
+                    },
+                },
             },
             CompilerMirLoweringBlock {
                 label: "join",
+                parameters: vec![],
                 statements: vec![],
                 terminator: CompilerMirLoweringTerminator::ReturnLocalI32("value"),
             },
@@ -12603,10 +13193,78 @@ fn tiny_mir_type_to_cranelift_type(mir_type: TinyMirType) -> Type {
     }
 }
 
+fn validate_compiler_mir_ingestion_lowering_readiness(
+    mir_function: &CompilerMirLoweringFunction<'_>,
+) -> Result<(), Box<dyn Error>> {
+    for block in &mir_function.blocks {
+        if !block.parameters.is_empty() {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                "canonical compiler MIR block parameters are validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core",
+            )
+            .into());
+        }
+        if block.statements.iter().any(|statement| {
+            matches!(
+                statement,
+                CompilerMirLoweringStatement::LocalI32SetBlockParam { .. }
+            )
+        }) {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                "canonical compiler MIR block-parameter local materialization is validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core",
+            )
+            .into());
+        }
+        match &block.terminator {
+            CompilerMirLoweringTerminator::ReturnBlockParamI32(_)
+            | CompilerMirLoweringTerminator::BranchBlockParamI32Positive { .. } => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    "canonical compiler MIR block-parameter terminators are validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core",
+                )
+                .into());
+            }
+            CompilerMirLoweringTerminator::Jump { edge } => {
+                if !edge.arguments.is_empty() {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        "canonical compiler MIR edge arguments are validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core",
+                    )
+                    .into());
+                }
+            }
+            CompilerMirLoweringTerminator::BranchI32Literal {
+                then_edge,
+                else_edge,
+                ..
+            }
+            | CompilerMirLoweringTerminator::BranchLocalI32Positive {
+                then_edge,
+                else_edge,
+                ..
+            } => {
+                if !then_edge.arguments.is_empty() || !else_edge.arguments.is_empty() {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        "canonical compiler MIR edge arguments are validated but object lowering is not enabled until the Phase 9E shared block-parameter lowering core",
+                    )
+                    .into());
+                }
+            }
+            CompilerMirLoweringTerminator::ReturnI32(_)
+            | CompilerMirLoweringTerminator::ReturnLocalI32(_)
+            | CompilerMirLoweringTerminator::ReturnVoid => {}
+        }
+    }
+    Ok(())
+}
+
 fn lower_compiler_mir_ingestion_function_to_object(
     output_path: &Path,
     mir_function: &CompilerMirLoweringFunction<'_>,
 ) -> Result<(), Box<dyn Error>> {
+    validate_compiler_mir_ingestion_lowering_readiness(mir_function)?;
     if let Some(parent) = output_path.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -12751,6 +13409,13 @@ fn build_compiler_mir_ingestion_body(
                     })?;
                     builder.def_var(slot, param_value);
                 }
+                CompilerMirLoweringStatement::LocalI32SetBlockParam { .. } => {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        "compiler MIR block-parameter local materialization reached lowering before the Phase 9E shared lowering core",
+                    )
+                    .into());
+                }
                 CompilerMirLoweringStatement::LocalI32AddI32Literal { name, value } => {
                     let slot = *local_slots.get(name).ok_or_else(|| {
                         IoError::new(
@@ -12782,9 +13447,9 @@ fn build_compiler_mir_ingestion_body(
             }
         }
 
-        match block.terminator {
+        match &block.terminator {
             CompilerMirLoweringTerminator::ReturnI32(value) => {
-                let return_value = builder.ins().iconst(types::I32, i64::from(value));
+                let return_value = builder.ins().iconst(types::I32, i64::from(*value));
                 builder.ins().return_(&[return_value]);
             }
             CompilerMirLoweringTerminator::ReturnLocalI32(name) => {
@@ -12797,36 +13462,53 @@ fn build_compiler_mir_ingestion_body(
                 let return_value = builder.use_var(slot);
                 builder.ins().return_(&[return_value]);
             }
+            CompilerMirLoweringTerminator::ReturnBlockParamI32(_)
+            | CompilerMirLoweringTerminator::BranchBlockParamI32Positive { .. } => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    "compiler MIR block-parameter terminator reached lowering before the Phase 9E shared lowering core",
+                )
+                .into());
+            }
             CompilerMirLoweringTerminator::ReturnVoid => {
                 builder.ins().return_(&[]);
             }
-            CompilerMirLoweringTerminator::Jump { target } => {
-                let target_block = *cranelift_blocks.get(target).ok_or_else(|| {
+            CompilerMirLoweringTerminator::Jump { edge } => {
+                let target_block = *cranelift_blocks.get(edge.target).ok_or_else(|| {
                     IoError::new(
                         ErrorKind::InvalidInput,
-                        format!("unknown compiler MIR lowering jump target: {target}"),
+                        format!(
+                            "unknown compiler MIR lowering jump target: {}",
+                            edge.target
+                        ),
                     )
                 })?;
                 builder.ins().jump(target_block, &[]);
             }
             CompilerMirLoweringTerminator::BranchI32Literal {
                 condition,
-                then_block,
-                else_block,
+                then_edge,
+                else_edge,
             } => {
-                let then_cranelift_block = *cranelift_blocks.get(then_block).ok_or_else(|| {
+                let then_cranelift_block = *cranelift_blocks.get(then_edge.target).ok_or_else(|| {
                     IoError::new(
                         ErrorKind::InvalidInput,
-                        format!("unknown compiler MIR lowering then block: {then_block}"),
+                        format!(
+                            "unknown compiler MIR lowering then block: {}",
+                            then_edge.target
+                        ),
                     )
                 })?;
-                let else_cranelift_block = *cranelift_blocks.get(else_block).ok_or_else(|| {
+                let else_cranelift_block = *cranelift_blocks.get(else_edge.target).ok_or_else(|| {
                     IoError::new(
                         ErrorKind::InvalidInput,
-                        format!("unknown compiler MIR lowering else block: {else_block}"),
+                        format!(
+                            "unknown compiler MIR lowering else block: {}",
+                            else_edge.target
+                        ),
                     )
                 })?;
-                let condition_value = builder.ins().iconst(types::I32, i64::from(condition));
+                let condition_value = builder.ins().iconst(types::I32, i64::from(*condition));
                 let branch_condition = builder.ins().icmp_imm(IntCC::NotEqual, condition_value, 0);
                 builder.ins().brif(
                     branch_condition,
@@ -12838,8 +13520,8 @@ fn build_compiler_mir_ingestion_body(
             }
             CompilerMirLoweringTerminator::BranchLocalI32Positive {
                 name,
-                then_block,
-                else_block,
+                then_edge,
+                else_edge,
             } => {
                 let slot = *local_slots.get(name).ok_or_else(|| {
                     IoError::new(
@@ -12847,16 +13529,22 @@ fn build_compiler_mir_ingestion_body(
                         format!("unknown compiler MIR lowering branch local: {name}"),
                     )
                 })?;
-                let then_cranelift_block = *cranelift_blocks.get(then_block).ok_or_else(|| {
+                let then_cranelift_block = *cranelift_blocks.get(then_edge.target).ok_or_else(|| {
                     IoError::new(
                         ErrorKind::InvalidInput,
-                        format!("unknown compiler MIR lowering then block: {then_block}"),
+                        format!(
+                            "unknown compiler MIR lowering then block: {}",
+                            then_edge.target
+                        ),
                     )
                 })?;
-                let else_cranelift_block = *cranelift_blocks.get(else_block).ok_or_else(|| {
+                let else_cranelift_block = *cranelift_blocks.get(else_edge.target).ok_or_else(|| {
                     IoError::new(
                         ErrorKind::InvalidInput,
-                        format!("unknown compiler MIR lowering else block: {else_block}"),
+                        format!(
+                            "unknown compiler MIR lowering else block: {}",
+                            else_edge.target
+                        ),
                     )
                 })?;
                 let condition_value = builder.use_var(slot);
