@@ -223,6 +223,37 @@ still frozen. Every bounded non-call Phase 9E migration candidate is now on the
 shared canonical path. The next milestone is the CFG completeness matrix,
 strict rejection expansion, and exact Phase 9F call/import freeze.
 
+The CFG completeness, strict-rejection, and Phase 9F freeze milestone is now
+complete. The canonical matrix fixes five statement kinds, eight terminator
+kinds, five ordered edge-argument kinds, block-parameter arities zero through
+five, and the forward-jump, independent-branch-arm, parameterized-merge,
+typed-backedge, and block-parameter-to-local CFG shapes. A compiled matrix
+fixture traverses the shared parser, validator, block model, edge resolver, and
+object emitter, while a separate void fixture closes the return-form matrix.
+
+Strict rejection is exercised through both `compiler-mir-validate-fixture` and
+`compiler-mir-ingestion-object`. Fourteen malformed forms cover unsupported
+statements, terminators, and edge arguments; illegal entry, duplicate, or
+non-int block parameters; cross-block references; unknown local and function
+parameter sources; whole-edge and independent-branch-arm arity mismatches;
+invalid block-parameter-to-local materialization; a return-free cycle; and an
+unreachable block. Every object-command rejection is required to occur before
+its output directory or object file exists.
+
+The eleven remaining bespoke seams are now tagged
+`phase9f_frozen_call_import_scope`. They are exactly the deferred local-call,
+imported-call, imported-materialization, imported-predicate, and imported-merge
+lanes recorded in the manifest. They retain `TinyMirParamBlockFunction` and
+lane-owned object emission until Phase 9F explicitly opens call/import
+canonicalization; Phase 9E does not admit call or import kinds into canonical
+`gust.compiler_mir_ingestion.v1`.
+
+The inventory remains 33 total seams, 22 canonical shared-lowering seams,
+eleven frozen Phase 9F call/import bespoke seams, no metadata-only seam, and
+seventeen frozen translator seeds. MIR-to-C remains primary and experimental
+Cranelift remains disabled by default. The next milestone is the Phase 9E
+closure contract and final guard.
+
 The checked-in lockfile for this crate is owned by:
 
 ```bash

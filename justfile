@@ -80,6 +80,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9e-single-parameter-cfg-cohort
         just guard-cranelift-phase9e-variable-arity-block-parameter-cohort
         just guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort
+        just guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -224,6 +225,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-single-parameter-cfg-cohort' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-variable-arity-block-parameter-cohort' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -6593,6 +6595,7 @@ guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_inventory: 33_total_22_canonical_shared_11_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_remaining_bespoke_policy: exactly_the_11_deferred_call_import_seams_remain' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_next_milestone: cfg_completeness_matrix_strict_rejection_and_phase9f_freeze' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_next_milestone_status: complete' "$manifest_doc" >/dev/null
 
     rg -n -F 'CompilerMirLoweringStatement::LocalI32SetBlockParam {' "$source_file" >/dev/null
     rg -n -F 'let block_value = *block_parameter_values.get(block_param).ok_or_else(|| {' "$source_file" >/dev/null
@@ -6698,6 +6701,449 @@ guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort:
     just guard-cranelift-compiler-mir-block-param-local-materialize-branch-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ingestion-native-smoke
     echo "✅ Phase 9E block-parameter-to-local materialization cohort passed: three historical commands are canonical adapters and exactly eleven call/import seams remain bespoke."
+
+guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9E CFG completeness, strict rejection, and the Phase 9F call/import freeze..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    build_dir="build/guards/cranelift_phase9e_cfg_completeness_rejection_phase9f_freeze"
+    matrix_fixture="$build_dir/phase9e_cfg_completeness_matrix.mir"
+    matrix_object="$build_dir/phase9e_cfg_completeness_matrix.o"
+    matrix_shim="$build_dir/phase9e_cfg_completeness_matrix_main.c"
+    matrix_binary="$build_dir/phase9e_cfg_completeness_matrix_bin"
+    void_fixture="$build_dir/phase9e_return_void_matrix.mir"
+    void_object="$build_dir/phase9e_return_void_matrix.o"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_CFG_COMPLETENESS_REJECTION_PHASE9F_FREEZE_GUARD: guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_status: phase9e_cfg_completeness_strict_rejection_and_phase9f_call_import_freeze_complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_statement_kind_count: 5' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_statement_kinds: LocalI32Set,LocalI32SetParam,LocalI32SetBlockParam,LocalI32AddI32Literal,LocalI32AddParam' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_terminator_kind_count: 8' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_terminator_kinds: ReturnI32,ReturnLocalI32,ReturnBlockParamI32,ReturnVoid,Jump,BranchI32Literal,BranchLocalI32Positive,BranchBlockParamI32Positive' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_edge_argument_kind_count: 5' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_edge_argument_kinds: I32Literal,FunctionParamI32,LocalI32,BlockParamI32,BlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_arity_matrix: 0,1,2,3,4,5' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_cfg_shape_matrix: forward_jump,independent_branch_arms,parameterized_merge,typed_backedge,block_parameter_to_local_materialization' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_rejection_case_count: 14' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_rejection_boundary: validation_and_object_commands_fail_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_inventory: 33_total_22_canonical_shared_11_phase9f_frozen_call_import_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_phase9f_seam_count: 11' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_phase9f_migration_tag: phase9f_frozen_call_import_scope' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_next_milestone: phase9e_closure_contract_and_final_guard' "$manifest_doc" >/dev/null
+
+    for statement_kind in \
+      LocalI32Set \
+      LocalI32SetParam \
+      LocalI32SetBlockParam \
+      LocalI32AddI32Literal \
+      LocalI32AddParam
+    do
+      rg -n -F "\"${statement_kind}\" =>" "$source_file" >/dev/null
+      rg -n -F "CompilerMirLoweringStatement::${statement_kind}" "$source_file" >/dev/null
+    done
+
+    for terminator_kind in \
+      ReturnI32 \
+      ReturnLocalI32 \
+      ReturnBlockParamI32 \
+      ReturnVoid \
+      Jump \
+      BranchI32Literal \
+      BranchLocalI32Positive \
+      BranchBlockParamI32Positive
+    do
+      rg -n -F "\"${terminator_kind}\" =>" "$source_file" >/dev/null
+      rg -n -F "CompilerMirLoweringTerminator::${terminator_kind}" "$source_file" >/dev/null
+    done
+
+    for argument_kind in \
+      I32Literal \
+      FunctionParamI32 \
+      LocalI32 \
+      BlockParamI32 \
+      BlockParamI32AddI32Literal
+    do
+      rg -n -F "\"${argument_kind}\" =>" "$source_file" >/dev/null
+      rg -n -F "CompilerMirLoweringEdgeArgument::${argument_kind}" "$source_file" >/dev/null
+    done
+
+    cat > "$matrix_fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9e_cfg_completeness_matrix
+    backend_symbol: tiny_phase9e_cfg_completeness_matrix
+    parameter_count: 2
+    parameter_0_type: int
+    parameter_1_type: int
+    return_type: int
+    local_count: 2
+    local_0_name: scratch
+    local_0_type: int
+    local_1_name: materialized
+    local_1_type: int
+    entry_block: entry
+    block_count: 7
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 4
+    block_0_statement_0_kind: LocalI32Set
+    block_0_statement_0_local: scratch
+    block_0_statement_0_value: 1
+    block_0_statement_1_kind: LocalI32SetParam
+    block_0_statement_1_local: materialized
+    block_0_statement_1_param: 0
+    block_0_statement_2_kind: LocalI32AddI32Literal
+    block_0_statement_2_local: scratch
+    block_0_statement_2_value: 2
+    block_0_statement_3_kind: LocalI32AddParam
+    block_0_statement_3_local: scratch
+    block_0_statement_3_param: 1
+    block_0_terminator_kind: BranchI32Literal
+    block_0_terminator_condition: 1
+    block_0_terminator_then: transport
+    block_0_terminator_then_argument_count: 5
+    block_0_terminator_then_argument_0_kind: I32Literal
+    block_0_terminator_then_argument_0_value: 10
+    block_0_terminator_then_argument_1_kind: FunctionParamI32
+    block_0_terminator_then_argument_1_param: 0
+    block_0_terminator_then_argument_2_kind: LocalI32
+    block_0_terminator_then_argument_2_local: scratch
+    block_0_terminator_then_argument_3_kind: FunctionParamI32
+    block_0_terminator_then_argument_3_param: 1
+    block_0_terminator_then_argument_4_kind: FunctionParamI32
+    block_0_terminator_then_argument_4_param: 0
+    block_0_terminator_else: literal_return
+    block_0_terminator_else_argument_count: 0
+    block_1_label: transport
+    block_1_parameter_count: 5
+    block_1_parameter_0_name: p0
+    block_1_parameter_0_type: int
+    block_1_parameter_1_name: p1
+    block_1_parameter_1_type: int
+    block_1_parameter_2_name: p2
+    block_1_parameter_2_type: int
+    block_1_parameter_3_name: p3
+    block_1_parameter_3_type: int
+    block_1_parameter_4_name: p4
+    block_1_parameter_4_type: int
+    block_1_statement_count: 1
+    block_1_statement_0_kind: LocalI32SetBlockParam
+    block_1_statement_0_local: materialized
+    block_1_statement_0_block_param: p4
+    block_1_terminator_kind: BranchLocalI32Positive
+    block_1_terminator_local: materialized
+    block_1_terminator_then: block_branch
+    block_1_terminator_then_argument_count: 1
+    block_1_terminator_then_argument_0_kind: BlockParamI32
+    block_1_terminator_then_argument_0_block_param: p4
+    block_1_terminator_else: local_return
+    block_1_terminator_else_argument_count: 0
+    block_2_label: block_branch
+    block_2_parameter_count: 1
+    block_2_parameter_0_name: current
+    block_2_parameter_0_type: int
+    block_2_statement_count: 0
+    block_2_terminator_kind: BranchBlockParamI32Positive
+    block_2_terminator_block_param: current
+    block_2_terminator_then: merge
+    block_2_terminator_then_argument_count: 5
+    block_2_terminator_then_argument_0_kind: I32Literal
+    block_2_terminator_then_argument_0_value: 20
+    block_2_terminator_then_argument_1_kind: FunctionParamI32
+    block_2_terminator_then_argument_1_param: 0
+    block_2_terminator_then_argument_2_kind: LocalI32
+    block_2_terminator_then_argument_2_local: scratch
+    block_2_terminator_then_argument_3_kind: BlockParamI32
+    block_2_terminator_then_argument_3_block_param: current
+    block_2_terminator_then_argument_4_kind: BlockParamI32AddI32Literal
+    block_2_terminator_then_argument_4_block_param: current
+    block_2_terminator_then_argument_4_value: 1
+    block_2_terminator_else: merge
+    block_2_terminator_else_argument_count: 5
+    block_2_terminator_else_argument_0_kind: I32Literal
+    block_2_terminator_else_argument_0_value: 30
+    block_2_terminator_else_argument_1_kind: FunctionParamI32
+    block_2_terminator_else_argument_1_param: 1
+    block_2_terminator_else_argument_2_kind: LocalI32
+    block_2_terminator_else_argument_2_local: materialized
+    block_2_terminator_else_argument_3_kind: BlockParamI32
+    block_2_terminator_else_argument_3_block_param: current
+    block_2_terminator_else_argument_4_kind: BlockParamI32AddI32Literal
+    block_2_terminator_else_argument_4_block_param: current
+    block_2_terminator_else_argument_4_value: -1
+    block_3_label: merge
+    block_3_parameter_count: 5
+    block_3_parameter_0_name: m0
+    block_3_parameter_0_type: int
+    block_3_parameter_1_name: m1
+    block_3_parameter_1_type: int
+    block_3_parameter_2_name: m2
+    block_3_parameter_2_type: int
+    block_3_parameter_3_name: m3
+    block_3_parameter_3_type: int
+    block_3_parameter_4_name: m4
+    block_3_parameter_4_type: int
+    block_3_statement_count: 0
+    block_3_terminator_kind: Jump
+    block_3_terminator_target: block_return
+    block_3_terminator_argument_count: 1
+    block_3_terminator_argument_0_kind: BlockParamI32
+    block_3_terminator_argument_0_block_param: m4
+    block_4_label: block_return
+    block_4_parameter_count: 1
+    block_4_parameter_0_name: result
+    block_4_parameter_0_type: int
+    block_4_statement_count: 0
+    block_4_terminator_kind: ReturnBlockParamI32
+    block_4_terminator_block_param: result
+    block_5_label: local_return
+    block_5_parameter_count: 0
+    block_5_statement_count: 0
+    block_5_terminator_kind: ReturnLocalI32
+    block_5_terminator_local: materialized
+    block_6_label: literal_return
+    block_6_parameter_count: 0
+    block_6_statement_count: 0
+    block_6_terminator_kind: ReturnI32
+    block_6_terminator_value: 7
+    metadata_count: 0
+    expected_exit: 6
+    MIR
+
+    cat > "$void_fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9e_return_void_matrix
+    backend_symbol: tiny_phase9e_return_void_matrix
+    parameter_count: 0
+    return_type: void
+    local_count: 0
+    entry_block: entry
+    block_count: 1
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 0
+    block_0_terminator_kind: ReturnVoid
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+
+    cargo_cmd=(cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked --)
+    "${cargo_cmd[@]}" compiler-mir-validate-fixture "$matrix_fixture"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$matrix_fixture" "$matrix_object"
+    test -s "$matrix_object"
+
+    "${cargo_cmd[@]}" compiler-mir-validate-fixture "$void_fixture"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$void_fixture" "$void_object"
+    test -s "$void_object"
+
+    printf '%s\n' '#include <stdint.h>' > "$matrix_shim"
+    printf '%s\n' 'extern int32_t tiny_phase9e_cfg_completeness_matrix(int32_t, int32_t);' >> "$matrix_shim"
+    printf '%s\n' 'int main(void) { if (tiny_phase9e_cfg_completeness_matrix(5, 2) != 6) return 1; if (tiny_phase9e_cfg_completeness_matrix(-3, 2) != -3) return 2; return 0; }' >> "$matrix_shim"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$matrix_shim" "$matrix_object" -o "$matrix_binary"
+    "$matrix_binary"
+
+    expect_rejected_before_object() {
+      case_name="$1"
+      fixture_path="$2"
+      expected_message="$3"
+      validate_log="$build_dir/${case_name}.validate.log"
+      object_log="$build_dir/${case_name}.object.log"
+      object_dir="$build_dir/${case_name}.object-output"
+      object_path="$object_dir/rejected.o"
+      rm -rf "$object_dir"
+
+      set +e
+      "${cargo_cmd[@]}" compiler-mir-validate-fixture "$fixture_path" >"$validate_log" 2>&1
+      validate_status="$?"
+      set -e
+      if [ "$validate_status" = "0" ]; then
+        echo "Expected validation rejection for $case_name."
+        cat "$validate_log"
+        exit 1
+      fi
+      rg -n -F "$expected_message" "$validate_log" >/dev/null
+
+      set +e
+      "${cargo_cmd[@]}" compiler-mir-ingestion-object "$fixture_path" "$object_path" >"$object_log" 2>&1
+      object_status="$?"
+      set -e
+      if [ "$object_status" = "0" ]; then
+        echo "Expected object-command rejection for $case_name."
+        cat "$object_log"
+        exit 1
+      fi
+      rg -n -F "$expected_message" "$object_log" >/dev/null
+      if [ -d "$object_dir" ] || [ -e "$object_path" ]; then
+        echo "Rejected fixture $case_name created an output directory or object file."
+        find "$object_dir" -maxdepth 2 -print 2>/dev/null || true
+        exit 1
+      fi
+    }
+
+    unsupported_statement="$build_dir/unsupported_statement.mir"
+    sed 's/block_0_statement_0_kind: LocalI32Set/block_0_statement_0_kind: CallI32/' "$matrix_fixture" > "$unsupported_statement"
+    expect_rejected_before_object unsupported_statement "$unsupported_statement" 'unsupported canonical compiler MIR statement kind'
+
+    unsupported_terminator="$build_dir/unsupported_terminator.mir"
+    sed 's/block_6_terminator_kind: ReturnI32/block_6_terminator_kind: ImportedCallI32/' "$matrix_fixture" > "$unsupported_terminator"
+    expect_rejected_before_object unsupported_terminator "$unsupported_terminator" 'unsupported canonical compiler MIR terminator kind'
+
+    unsupported_edge_argument="$build_dir/unsupported_edge_argument.mir"
+    sed 's/block_0_terminator_then_argument_0_kind: I32Literal/block_0_terminator_then_argument_0_kind: ImportedCallI32/' "$matrix_fixture" > "$unsupported_edge_argument"
+    expect_rejected_before_object unsupported_edge_argument "$unsupported_edge_argument" 'unsupported canonical compiler MIR edge argument kind'
+
+    entry_block_parameter="$build_dir/entry_block_parameter.mir"
+    sed 's/block_0_parameter_count: 0/block_0_parameter_count: 1/' "$matrix_fixture" > "$entry_block_parameter"
+    cat >> "$entry_block_parameter" <<'MIR'
+    block_0_parameter_0_name: illegal_entry_parameter
+    block_0_parameter_0_type: int
+    MIR
+    expect_rejected_before_object entry_block_parameter "$entry_block_parameter" 'canonical compiler MIR entry block entry cannot declare block parameters'
+
+    duplicate_block_parameter="$build_dir/duplicate_block_parameter.mir"
+    sed 's/block_1_parameter_1_name: p1/block_1_parameter_1_name: p0/' "$matrix_fixture" > "$duplicate_block_parameter"
+    expect_rejected_before_object duplicate_block_parameter "$duplicate_block_parameter" 'duplicate canonical compiler MIR block parameter p0 in block transport'
+
+    non_int_block_parameter="$build_dir/non_int_block_parameter.mir"
+    sed 's/block_1_parameter_0_type: int/block_1_parameter_0_type: void/' "$matrix_fixture" > "$non_int_block_parameter"
+    expect_rejected_before_object non_int_block_parameter "$non_int_block_parameter" 'block parameter p0 in block transport must have int type'
+
+    cross_block_reference="$build_dir/cross_block_reference.mir"
+    sed 's/block_2_terminator_then_argument_3_block_param: current/block_2_terminator_then_argument_3_block_param: p4/' "$matrix_fixture" > "$cross_block_reference"
+    expect_rejected_before_object cross_block_reference "$cross_block_reference" 'references block parameter p4 owned by block(s): transport'
+
+    unknown_local="$build_dir/unknown_local.mir"
+    sed 's/block_2_terminator_then_argument_2_local: scratch/block_2_terminator_then_argument_2_local: missing/' "$matrix_fixture" > "$unknown_local"
+    expect_rejected_before_object unknown_local "$unknown_local" 'unknown canonical compiler MIR local missing at block block_branch branch then argument 2'
+
+    unknown_function_parameter="$build_dir/unknown_function_parameter.mir"
+    sed 's/block_2_terminator_then_argument_1_param: 0/block_2_terminator_then_argument_1_param: 9/' "$matrix_fixture" > "$unknown_function_parameter"
+    expect_rejected_before_object unknown_function_parameter "$unknown_function_parameter" 'unknown canonical compiler MIR function parameter 9 at block block_branch branch then argument 1'
+
+    edge_arity_mismatch="$build_dir/edge_arity_mismatch.mir"
+    sed 's/block_3_parameter_count: 5/block_3_parameter_count: 6/' "$matrix_fixture" > "$edge_arity_mismatch"
+    cat >> "$edge_arity_mismatch" <<'MIR'
+    block_3_parameter_5_name: extra
+    block_3_parameter_5_type: int
+    MIR
+    expect_rejected_before_object edge_arity_mismatch "$edge_arity_mismatch" 'branch then from block block_branch to merge passes 5 argument(s), but target declares 6 block parameter(s)'
+
+    independent_else_arm_arity_mismatch="$build_dir/independent_else_arm_arity_mismatch.mir"
+    sed \
+      -e 's/block_2_terminator_else_argument_count: 5/block_2_terminator_else_argument_count: 4/' \
+      -e '/block_2_terminator_else_argument_4_/d' \
+      "$matrix_fixture" > "$independent_else_arm_arity_mismatch"
+    expect_rejected_before_object independent_else_arm_arity_mismatch "$independent_else_arm_arity_mismatch" 'branch else from block block_branch to merge passes 4 argument(s), but target declares 5 block parameter(s)'
+
+    unknown_materialization_block_parameter="$build_dir/unknown_materialization_block_parameter.mir"
+    sed 's/block_1_statement_0_block_param: p4/block_1_statement_0_block_param: missing/' "$matrix_fixture" > "$unknown_materialization_block_parameter"
+    expect_rejected_before_object unknown_materialization_block_parameter "$unknown_materialization_block_parameter" 'unknown canonical compiler MIR block parameter missing at block transport statement 0'
+
+    no_reachable_return="$build_dir/no_reachable_return.mir"
+    cat > "$no_reachable_return" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9e_no_reachable_return
+    backend_symbol: tiny_phase9e_no_reachable_return
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 2
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 0
+    block_0_terminator_kind: Jump
+    block_0_terminator_target: loop
+    block_0_terminator_argument_count: 0
+    block_1_label: loop
+    block_1_parameter_count: 0
+    block_1_statement_count: 0
+    block_1_terminator_kind: Jump
+    block_1_terminator_target: loop
+    block_1_terminator_argument_count: 0
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+    expect_rejected_before_object no_reachable_return "$no_reachable_return" 'canonical compiler MIR fixture entry graph has no reachable Return terminator'
+
+    unreachable_block="$build_dir/unreachable_block.mir"
+    cat > "$unreachable_block" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_phase9e_unreachable_block
+    backend_symbol: tiny_phase9e_unreachable_block
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 2
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 0
+    block_0_terminator_kind: ReturnI32
+    block_0_terminator_value: 0
+    block_1_label: orphan
+    block_1_parameter_count: 0
+    block_1_statement_count: 0
+    block_1_terminator_kind: ReturnI32
+    block_1_terminator_value: 1
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+    expect_rejected_before_object unreachable_block "$unreachable_block" 'canonical compiler MIR fixture has unreachable block(s): orphan'
+
+    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
+    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "22" ] || [ "$bespoke_count" != "11" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected Phase 9E completeness/freeze inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
+      exit 1
+    fi
+
+    expected_phase9f="$(printf '%s\n' \
+      block_param_local_call_branch \
+      block_param_imported_call_branch \
+      block_param_imported_call_return \
+      block_param_imported_materialize_branch \
+      block_param_imported_materialize_return \
+      block_param_imported_predicate_update_branch \
+      block_param_merge_arm_update_imported_call_branch \
+      block_param_merge_arm_update_imported_call_return \
+      block_param_merge_dual_imported_joined_return \
+      block_param_merge_imported_branch_joined_return \
+      block_param_merge_imported_call_return | sort)"
+    actual_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
+    if [ "$actual_phase9f" != "$expected_phase9f" ]; then
+      echo "The Phase 9F freeze must contain exactly the eleven deferred call/import seams."
+      diff -u <(printf '%s\n' "$expected_phase9f") <(printf '%s\n' "$actual_phase9f") || true
+      exit 1
+    fi
+
+    for lane in $expected_phase9f; do
+      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=TinyMirParamBlockFunction\|rust_lowering=define_tiny_mir_param_block_graph_exported_function\|object_emitter=lane_owned_object_module\|.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$" "$manifest_doc" >/dev/null
+    done
+
+    canonical_parser_body="$(sed -n '/^fn parse_compiler_mir_fixture/,/^fn parse_compiler_mir_fixture_fields/p' "$source_file")"
+    if printf '%s\n' "$canonical_parser_body" | rg -n 'CallI32|ImportedCall|ImportedFunction|LocalFunction|RuntimeCall' >/dev/null; then
+      echo "Phase 9E canonical v1 parsing must remain call/import-free until Phase 9F."
+      exit 1
+    fi
+
+    rg -n -F 'The CFG completeness, strict-rejection, and Phase 9F freeze milestone is now' "$readme_doc" >/dev/null
+    rg -n -F 'Fourteen malformed forms cover unsupported' "$readme_doc" >/dev/null
+    rg -n -F '`phase9f_frozen_call_import_scope`' "$readme_doc" >/dev/null
+    rg -n -F 'The inventory remains 33 total seams, 22 canonical shared-lowering seams,' "$readme_doc" >/dev/null
+    rg -n -F 'The next milestone is the Phase 9E' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9E CFG completeness and strict rejection are frozen: all bounded non-call forms are canonical, malformed fixtures fail before output creation, and exactly eleven call/import seams are reserved for Phase 9F."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
