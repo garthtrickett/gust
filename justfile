@@ -7380,6 +7380,11 @@ guard-cranelift-phase9f-call-import-schema-validator:
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
+    if [ ! -f "$valid_fixture" ]; then
+      echo "Missing Phase 9F canonical schema validation fixture: $valid_fixture"
+      exit 1
+    fi
+
     just guard-cranelift-phase9f-opening-contract
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_CALL_IMPORT_SCHEMA_VALIDATOR_GUARD: guard-cranelift-phase9f-call-import-schema-validator' "$manifest_doc" justfile >/dev/null
@@ -7416,7 +7421,11 @@ guard-cranelift-phase9f-call-import-schema-validator:
     fi
 
     cargo_cmd=(cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked --)
-    "${cargo_cmd[@]}" compiler-mir-validate-fixture "$valid_fixture" >"$build_dir/valid.log" 2>&1
+    if ! "${cargo_cmd[@]}" compiler-mir-validate-fixture "$valid_fixture" >"$build_dir/valid.log" 2>&1; then
+      echo "Phase 9F canonical schema validation fixture failed:"
+      cat "$build_dir/valid.log"
+      exit 1
+    fi
     rg -n -F 'validated canonical compiler MIR module: phase9f_schema_validation (3 defined, 2 imported)' "$build_dir/valid.log" >/dev/null
 
     valid_output_dir="$build_dir/valid-v2-object"
