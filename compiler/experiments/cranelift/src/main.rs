@@ -1164,7 +1164,6 @@ const PHASE9E_CANONICAL_BLOCK_PARAM_QUINT_MATERIALIZE_RETURN_FIXTURE: &str = con
 );
 
 #[derive(Clone, Copy)]
-enum CompilerMirLoweringStatement
 enum CompilerMirLoweringStatement<'a> {
     LocalI32Set { name: &'a str, value: i32 },
     LocalI32SetParam {
