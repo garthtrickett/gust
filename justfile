@@ -7600,7 +7600,7 @@ guard-cranelift-phase9f-call-import-schema-validator:
     fi
 
     rg -n -F 'The Phase 9F v2 schema/parser/validator milestone is complete.' "$readme_doc" >/dev/null
-    rg -n -F 'Object emission for v2 remains intentionally unavailable in this patch.' "$readme_doc" >/dev/null
+    tr '\n' ' ' < "$readme_doc" | rg -F 'Object emission for v2 remains intentionally unavailable in this patch.' >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
