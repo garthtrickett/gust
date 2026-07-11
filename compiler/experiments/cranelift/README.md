@@ -265,6 +265,48 @@ call/import boundary. Phase 9F is the next contract and is reserved for
 canonicalizing the exact eleven frozen call/import seams. Production routing
 is unchanged.
 
+Phase 9F is open as
+`phase9f_open_canonical_calls_and_imported_runtime_boundary`. It opens from 33
+total ingestion seams: twenty-two canonical shared-lowering seams, eleven
+bespoke call/import seams, no metadata-only seam, and seventeen frozen
+translator seeds. Steps 1 and 2 migrate no seams.
+
+The exact eleven migration candidates are frozen as the complete Phase 9F set:
+`block_param_local_call_branch`, `block_param_imported_call_branch`,
+`block_param_imported_call_return`, `block_param_imported_materialize_branch`,
+`block_param_imported_materialize_return`,
+`block_param_imported_predicate_update_branch`,
+`block_param_merge_arm_update_imported_call_branch`,
+`block_param_merge_arm_update_imported_call_return`,
+`block_param_merge_dual_imported_joined_return`,
+`block_param_merge_imported_branch_joined_return`, and
+`block_param_merge_imported_call_return`. Until each seam's explicit migration
+patch, it remains frozen on `TinyMirParamBlockFunction`,
+`define_tiny_mir_param_block_graph_exported_function`, and lane-owned
+`ObjectModule` emission.
+
+`gust.compiler_mir_ingestion.v1` remains frozen, single-function, and call/import-free.
+`gust.compiler_mir_ingestion.v2` is the only new canonical schema allowed to represent modules, imports, and calls.
+The generic `compiler-mir-ingestion-object` command may eventually dispatch
+both versions, with a v1 fixture wrapped internally as a one-function module,
+but this opening patch adds no v2 parser, validator, or call emission.
+
+Phase 9F is bounded to direct local-function calls and direct imported-function
+calls with ordered i32 arguments, one i32 return value, and every result stored
+in a declared i32 local before use by the existing CFG, block-parameter, merge,
+or materialization operations. Imported host symbols are statically linked and
+supplied by native test shims.
+
+Indirect calls, function pointers, variadic calls, callbacks, recursion,
+mutually recursive local functions, void calls, multiple return values,
+strings, pointers, structs, arrays, resources or runtime objects, dynamic
+loading, symbol lookup, exceptions, unwinding, and production backend routing
+remain excluded. All closed Phase 9E non-call semantics remain unchanged.
+MIR-to-C remains primary, Cranelift remains disabled by default, and no
+production runtime route is enabled. The closure target is 33 canonical shared
+seams, zero bespoke seams, zero metadata-only seams, and the same seventeen
+translator seeds.
+
 The checked-in lockfile for this crate is owned by:
 
 ```bash
