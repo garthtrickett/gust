@@ -376,6 +376,9 @@ struct TinyMirBlockFunction {
     blocks: &'static [TinyMirBlock],
 }
 const COMPILER_MIR_CANONICAL_FIXTURE_FORMAT: &str = "gust.compiler_mir_ingestion.v1";
+const COMPILER_MIR_CANONICAL_MODULE_FORMAT: &str = "gust.compiler_mir_ingestion.v2";
+const COMPILER_MIR_CANONICAL_MODULE_FUNCTION_FORMAT: &str =
+    "gust.compiler_mir_ingestion.function.v2";
 
 const PHASE9C_CANONICAL_RETURN_INT_FIXTURE: &str = concat!(
     "format: gust.compiler_mir_ingestion.v1\n",
@@ -1335,6 +1338,24 @@ const PHASE9E_CANONICAL_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_FIXTURE:
 );
 
 #[derive(Clone, Copy)]
+enum CompilerMirLoweringCallTarget<'a> {
+    LocalFunction(&'a str),
+    ImportedFunction(&'a str),
+}
+
+#[derive(Clone, Copy)]
+enum CompilerMirLoweringCallArgument<'a> {
+    I32Literal(i32),
+    FunctionParamI32(usize),
+    LocalI32(&'a str),
+    BlockParamI32(&'a str),
+    BlockParamI32AddI32Literal {
+        name: &'a str,
+        value: i32,
+    },
+}
+
+#[derive(Clone)]
 enum CompilerMirLoweringStatement<'a> {
     LocalI32Set { name: &'a str, value: i32 },
     LocalI32SetParam {
@@ -1352,6 +1373,11 @@ enum CompilerMirLoweringStatement<'a> {
     LocalI32AddParam {
         name: &'a str,
         param: usize,
+    },
+    LocalI32SetCall {
+        name: &'a str,
+        target: CompilerMirLoweringCallTarget<'a>,
+        arguments: Vec<CompilerMirLoweringCallArgument<'a>>,
     },
 }
 
@@ -1439,6 +1465,37 @@ struct ParsedCompilerMirFixture<'a> {
     return_type: TinyMirType,
     metadata: Vec<CompilerMirFixtureMetadata<'a>>,
     expected_exit: i32,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum CompilerMirLoweringFunctionLinkage {
+    ExportedEntry,
+    ModuleLocal,
+    ImportedHost,
+}
+
+struct CompilerMirLoweringImportedFunction<'a> {
+    name: &'a str,
+    link_symbol: &'a str,
+    linkage: CompilerMirLoweringFunctionLinkage,
+    params: Vec<TinyMirType>,
+    return_type: TinyMirType,
+}
+
+struct CompilerMirLoweringDefinedFunction<'a> {
+    linkage: CompilerMirLoweringFunctionLinkage,
+    fixture: ParsedCompilerMirFixture<'a>,
+}
+
+struct CompilerMirLoweringModule<'a> {
+    name: &'a str,
+    imports: Vec<CompilerMirLoweringImportedFunction<'a>>,
+    functions: Vec<CompilerMirLoweringDefinedFunction<'a>>,
+}
+
+enum ParsedCompilerMirInput<'a> {
+    V1(ParsedCompilerMirFixture<'a>),
+    V2(CompilerMirLoweringModule<'a>),
 }
 
 #[derive(Clone, Copy)]
@@ -2847,6 +2904,18 @@ fn parse_compiler_mir_fixture<'a>(
     contents: &'a str,
 ) -> Result<ParsedCompilerMirFixture<'a>, Box<dyn Error>> {
     let fields = parse_compiler_mir_fixture_fields(contents)?;
+    parse_compiler_mir_fixture_field_map(
+        fields,
+        COMPILER_MIR_CANONICAL_FIXTURE_FORMAT,
+        false,
+    )
+}
+
+fn parse_compiler_mir_fixture_field_map<'a>(
+    fields: HashMap<&'a str, &'a str>,
+    expected_format: &str,
+    allow_calls: bool,
+) -> Result<ParsedCompilerMirFixture<'a>, Box<dyn Error>> {
     let mut consumed: HashSet<&str> = HashSet::new();
 
     let format = required_canonical_compiler_mir_fixture_field(
@@ -2854,12 +2923,12 @@ fn parse_compiler_mir_fixture<'a>(
         &mut consumed,
         "format",
     )?;
-    if format != COMPILER_MIR_CANONICAL_FIXTURE_FORMAT {
+    if format != expected_format {
         return Err(IoError::new(
             ErrorKind::InvalidInput,
             format!(
                 "canonical compiler MIR fixture format expected {}, got {format}",
-                COMPILER_MIR_CANONICAL_FIXTURE_FORMAT
+                expected_format
             ),
         )
         .into());
@@ -3065,6 +3134,58 @@ fn parse_compiler_mir_fixture<'a>(
                             &fields,
                             &mut consumed,
                             &param_key,
+                        )?,
+                    }
+                }
+                "LocalI32SetCall" => {
+                    if !allow_calls {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            "gust.compiler_mir_ingestion.v1 remains call/import-free",
+                        )
+                        .into());
+                    }
+                    let local_key = format!("{prefix}_local");
+                    let callee_kind_key = format!("{prefix}_callee_kind");
+                    let callee_key = format!("{prefix}_callee");
+                    let callee_kind = required_canonical_compiler_mir_fixture_field(
+                        &fields,
+                        &mut consumed,
+                        &callee_kind_key,
+                    )?;
+                    let callee = required_canonical_compiler_mir_fixture_field(
+                        &fields,
+                        &mut consumed,
+                        &callee_key,
+                    )?;
+                    let target = match callee_kind {
+                        "LocalFunction" => {
+                            CompilerMirLoweringCallTarget::LocalFunction(callee)
+                        }
+                        "ImportedFunction" => {
+                            CompilerMirLoweringCallTarget::ImportedFunction(callee)
+                        }
+                        other => {
+                            return Err(IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "unsupported canonical compiler MIR call target kind at {callee_kind_key}: {other}"
+                                ),
+                            )
+                            .into());
+                        }
+                    };
+                    CompilerMirLoweringStatement::LocalI32SetCall {
+                        name: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &local_key,
+                        )?,
+                        target,
+                        arguments: parse_canonical_compiler_mir_call_arguments(
+                            &fields,
+                            &mut consumed,
+                            &prefix,
                         )?,
                     }
                 }
@@ -3344,8 +3465,229 @@ fn parse_compiler_mir_fixture<'a>(
     })
 }
 
+fn parse_compiler_mir_input<'a>(
+    contents: &'a str,
+) -> Result<ParsedCompilerMirInput<'a>, Box<dyn Error>> {
+    let fields = parse_compiler_mir_fixture_fields(contents)?;
+    let format = fields.get("format").copied().ok_or_else(|| {
+        IoError::new(
+            ErrorKind::InvalidInput,
+            "missing canonical compiler MIR fixture field: format",
+        )
+    })?;
+    match format {
+        COMPILER_MIR_CANONICAL_FIXTURE_FORMAT => {
+            parse_compiler_mir_fixture(contents).map(ParsedCompilerMirInput::V1)
+        }
+        COMPILER_MIR_CANONICAL_MODULE_FORMAT => {
+            parse_compiler_mir_module_field_map(&fields).map(ParsedCompilerMirInput::V2)
+        }
+        other => Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!("unsupported canonical compiler MIR fixture format: {other}"),
+        )
+        .into()),
+    }
+}
+
+fn parse_compiler_mir_module_field_map<'a>(
+    fields: &HashMap<&'a str, &'a str>,
+) -> Result<CompilerMirLoweringModule<'a>, Box<dyn Error>> {
+    let mut consumed: HashSet<&str> = HashSet::new();
+    let format = required_canonical_compiler_mir_fixture_field(
+        fields,
+        &mut consumed,
+        "format",
+    )?;
+    if format != COMPILER_MIR_CANONICAL_MODULE_FORMAT {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR module format expected {}, got {format}",
+                COMPILER_MIR_CANONICAL_MODULE_FORMAT
+            ),
+        )
+        .into());
+    }
+
+    let name = required_canonical_compiler_mir_fixture_field(
+        fields,
+        &mut consumed,
+        "module",
+    )?;
+
+    let import_count = parse_canonical_compiler_mir_usize_field(
+        fields,
+        &mut consumed,
+        "import_count",
+    )?;
+    let mut imports = Vec::with_capacity(import_count);
+    for index in 0..import_count {
+        let prefix = format!("import_{index}");
+        let name_key = format!("{prefix}_name");
+        let link_symbol_key = format!("{prefix}_link_symbol");
+        let linkage_key = format!("{prefix}_linkage");
+        let parameter_count_key = format!("{prefix}_parameter_count");
+        let return_type_key = format!("{prefix}_return_type");
+        let linkage_value = required_canonical_compiler_mir_fixture_field(
+            fields,
+            &mut consumed,
+            &linkage_key,
+        )?;
+        let linkage = match linkage_value {
+            "imported_host" => CompilerMirLoweringFunctionLinkage::ImportedHost,
+            other => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "invalid canonical compiler MIR imported function linkage at {linkage_key}: {other}"
+                    ),
+                )
+                .into());
+            }
+        };
+        let parameter_count = parse_canonical_compiler_mir_usize_field(
+            fields,
+            &mut consumed,
+            &parameter_count_key,
+        )?;
+        let mut params = Vec::with_capacity(parameter_count);
+        for parameter_index in 0..parameter_count {
+            let key = format!("{prefix}_parameter_{parameter_index}_type");
+            let value = required_canonical_compiler_mir_fixture_field(
+                fields,
+                &mut consumed,
+                &key,
+            )?;
+            params.push(parse_canonical_compiler_mir_type(value, &key)?);
+        }
+        let return_type_value = required_canonical_compiler_mir_fixture_field(
+            fields,
+            &mut consumed,
+            &return_type_key,
+        )?;
+        imports.push(CompilerMirLoweringImportedFunction {
+            name: required_canonical_compiler_mir_fixture_field(
+                fields,
+                &mut consumed,
+                &name_key,
+            )?,
+            link_symbol: required_canonical_compiler_mir_fixture_field(
+                fields,
+                &mut consumed,
+                &link_symbol_key,
+            )?,
+            linkage,
+            params,
+            return_type: parse_canonical_compiler_mir_type(
+                return_type_value,
+                &return_type_key,
+            )?,
+        });
+    }
+
+    let function_count = parse_canonical_compiler_mir_usize_field(
+        fields,
+        &mut consumed,
+        "function_count",
+    )?;
+    let mut functions = Vec::with_capacity(function_count);
+    for index in 0..function_count {
+        let prefix = format!("function_{index}_");
+        let linkage_key = format!("function_{index}_linkage");
+        let linkage_value = required_canonical_compiler_mir_fixture_field(
+            fields,
+            &mut consumed,
+            &linkage_key,
+        )?;
+        let linkage = match linkage_value {
+            "exported_entry" => CompilerMirLoweringFunctionLinkage::ExportedEntry,
+            "module_local" => CompilerMirLoweringFunctionLinkage::ModuleLocal,
+            other => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "invalid canonical compiler MIR defined function linkage at {linkage_key}: {other}"
+                    ),
+                )
+                .into());
+            }
+        };
+
+        let mut function_fields: HashMap<&str, &str> = HashMap::new();
+        for (&key, &value) in fields {
+            let Some(stripped_key) = key.strip_prefix(&prefix) else {
+                continue;
+            };
+            if stripped_key == "linkage" {
+                continue;
+            }
+            consumed.insert(key);
+            if function_fields.insert(stripped_key, value).is_some() {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "duplicate canonical compiler MIR function field at {key}"
+                    ),
+                )
+                .into());
+            }
+        }
+        if function_fields.contains_key("format") {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR v2 function {index} must not declare a nested format"
+                ),
+            )
+            .into());
+        }
+        function_fields.insert(
+            "format",
+            COMPILER_MIR_CANONICAL_MODULE_FUNCTION_FORMAT,
+        );
+        let fixture = parse_compiler_mir_fixture_field_map(
+            function_fields,
+            COMPILER_MIR_CANONICAL_MODULE_FUNCTION_FORMAT,
+            true,
+        )?;
+        functions.push(CompilerMirLoweringDefinedFunction { linkage, fixture });
+    }
+
+    let mut unknown_fields: Vec<&str> = fields
+        .keys()
+        .copied()
+        .filter(|key| !consumed.contains(*key))
+        .collect();
+    unknown_fields.sort_unstable();
+    if !unknown_fields.is_empty() {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "unknown canonical compiler MIR module field(s): {}",
+                unknown_fields.join(",")
+            ),
+        )
+        .into());
+    }
+
+    Ok(CompilerMirLoweringModule {
+        name,
+        imports,
+        functions,
+    })
+}
+
+
 fn validate_compiler_mir_fixture(
     fixture: &ParsedCompilerMirFixture<'_>,
+) -> Result<(), Box<dyn Error>> {
+    validate_compiler_mir_function_fixture(fixture, false)
+}
+
+fn validate_compiler_mir_function_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+    allow_calls: bool,
 ) -> Result<(), Box<dyn Error>> {
     let function = &fixture.function;
     validate_canonical_compiler_mir_name(function.object_name, "function")?;
@@ -3495,7 +3837,7 @@ fn validate_compiler_mir_fixture(
     for (block_index, block) in function.blocks.iter().enumerate() {
         let current_block_parameters = &block_parameter_types[block_index];
         for (statement_index, statement) in block.statements.iter().enumerate() {
-            match *statement {
+            match statement.clone() {
                 CompilerMirLoweringStatement::LocalI32Set { name, .. }
                 | CompilerMirLoweringStatement::LocalI32AddI32Literal { name, .. } => {
                     validate_canonical_compiler_mir_local_reference(
@@ -3541,6 +3883,37 @@ fn validate_compiler_mir_fixture(
                         block.label,
                         &format!("statement {statement_index}"),
                     )?;
+                }
+                CompilerMirLoweringStatement::LocalI32SetCall {
+                    name,
+                    ref arguments,
+                    ..
+                } => {
+                    if !allow_calls {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            "gust.compiler_mir_ingestion.v1 remains call/import-free",
+                        )
+                        .into());
+                    }
+                    validate_canonical_compiler_mir_local_reference(
+                        &local_names,
+                        name,
+                        block.label,
+                        statement_index,
+                    )?;
+                    for (argument_index, argument) in arguments.iter().enumerate() {
+                        validate_canonical_compiler_mir_call_argument(
+                            function,
+                            &local_names,
+                            current_block_parameters,
+                            &block_parameter_owners,
+                            block.label,
+                            statement_index,
+                            argument_index,
+                            argument,
+                        )?;
+                    }
                 }
             }
         }
@@ -3764,6 +4137,385 @@ fn validate_compiler_mir_fixture(
 
     Ok(())
 }
+
+fn validate_compiler_mir_module(
+    module: &CompilerMirLoweringModule<'_>,
+) -> Result<(), Box<dyn Error>> {
+    validate_canonical_compiler_mir_name(module.name, "module")?;
+    if module.functions.is_empty() {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "canonical compiler MIR module must define at least one function",
+        )
+        .into());
+    }
+
+    let mut import_names = HashMap::new();
+    let mut import_link_signatures: HashMap<&str, (&[TinyMirType], TinyMirType)> =
+        HashMap::new();
+    for imported in &module.imports {
+        validate_canonical_compiler_mir_name(imported.name, "import name")?;
+        validate_canonical_compiler_mir_name(
+            imported.link_symbol,
+            "import link symbol",
+        )?;
+        if imported.linkage != CompilerMirLoweringFunctionLinkage::ImportedHost {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR import {} must use imported_host linkage",
+                    imported.name
+                ),
+            )
+            .into());
+        }
+        if imported
+            .params
+            .iter()
+            .any(|ty| !matches!(*ty, TinyMirType::I32))
+            || !matches!(imported.return_type, TinyMirType::I32)
+        {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR import {} must use only int parameters and one int return",
+                    imported.name
+                ),
+            )
+            .into());
+        }
+        if import_names.insert(imported.name, imported).is_some() {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "duplicate canonical compiler MIR imported function name: {}",
+                    imported.name
+                ),
+            )
+            .into());
+        }
+        if let Some((params, return_type)) =
+            import_link_signatures.get(imported.link_symbol)
+        {
+            if *params != imported.params.as_slice()
+                || *return_type != imported.return_type
+            {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR imported link symbol {} has conflicting signatures",
+                        imported.link_symbol
+                    ),
+                )
+                .into());
+            }
+        } else {
+            import_link_signatures.insert(
+                imported.link_symbol,
+                (imported.params.as_slice(), imported.return_type),
+            );
+        }
+    }
+
+    let mut function_names = HashMap::new();
+    let mut backend_symbols: HashSet<&str> = HashSet::new();
+    let mut exported_entry_count = 0usize;
+    for defined in &module.functions {
+        validate_compiler_mir_function_fixture(&defined.fixture, true)?;
+        let function = &defined.fixture.function;
+        if function
+            .params
+            .iter()
+            .any(|ty| !matches!(*ty, TinyMirType::I32))
+            || !matches!(function.return_type, TinyMirType::I32)
+        {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR defined function {} must use only int parameters and one int return",
+                    function.object_name
+                ),
+            )
+            .into());
+        }
+        if function_names.insert(function.object_name, defined).is_some() {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "duplicate canonical compiler MIR local function name: {}",
+                    function.object_name
+                ),
+            )
+            .into());
+        }
+        if !backend_symbols.insert(function.symbol) {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "duplicate canonical compiler MIR emitted backend symbol: {}",
+                    function.symbol
+                ),
+            )
+            .into());
+        }
+        if import_names.contains_key(function.object_name) {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR import/function name collision: {}",
+                    function.object_name
+                ),
+            )
+            .into());
+        }
+        if import_link_signatures.contains_key(function.symbol) {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR emitted backend symbol collides with imported link symbol: {}",
+                    function.symbol
+                ),
+            )
+            .into());
+        }
+        match defined.linkage {
+            CompilerMirLoweringFunctionLinkage::ExportedEntry => {
+                exported_entry_count += 1;
+            }
+            CompilerMirLoweringFunctionLinkage::ModuleLocal => {}
+            CompilerMirLoweringFunctionLinkage::ImportedHost => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR defined function {} cannot use imported_host linkage",
+                        function.object_name
+                    ),
+                )
+                .into());
+            }
+        }
+    }
+    if exported_entry_count != 1 {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR module must define exactly one exported_entry function, found {exported_entry_count}"
+            ),
+        )
+        .into());
+    }
+
+    let mut local_call_edges: HashMap<&str, Vec<&str>> = module
+        .functions
+        .iter()
+        .map(|defined| (defined.fixture.function.object_name, Vec::new()))
+        .collect();
+
+    for defined in &module.functions {
+        let caller = &defined.fixture.function;
+        for block in &caller.blocks {
+            for statement in &block.statements {
+                let CompilerMirLoweringStatement::LocalI32SetCall {
+                    target,
+                    arguments,
+                    ..
+                } = statement
+                else {
+                    continue;
+                };
+                let (callee_params, callee_return_type) = match *target {
+                    CompilerMirLoweringCallTarget::LocalFunction(name) => {
+                        let callee = function_names.get(name).copied().ok_or_else(|| {
+                            IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "unknown canonical compiler MIR local callee {name} in function {}",
+                                    caller.object_name
+                                ),
+                            )
+                        })?;
+                        if callee.linkage
+                            == CompilerMirLoweringFunctionLinkage::ExportedEntry
+                        {
+                            return Err(IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "canonical compiler MIR local call from {} cannot target exported entry function {name}",
+                                    caller.object_name
+                                ),
+                            )
+                            .into());
+                        }
+                        local_call_edges
+                            .get_mut(caller.object_name)
+                            .ok_or_else(|| {
+                                IoError::new(
+                                    ErrorKind::InvalidInput,
+                                    format!(
+                                        "unknown canonical compiler MIR caller function: {}",
+                                        caller.object_name
+                                    ),
+                                )
+                            })?
+                            .push(name);
+                        (
+                            callee.fixture.function.params.as_slice(),
+                            callee.fixture.return_type,
+                        )
+                    }
+                    CompilerMirLoweringCallTarget::ImportedFunction(name) => {
+                        let callee = import_names.get(name).copied().ok_or_else(|| {
+                            IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "unknown canonical compiler MIR imported callee {name} in function {}",
+                                    caller.object_name
+                                ),
+                            )
+                        })?;
+                        (callee.params.as_slice(), callee.return_type)
+                    }
+                };
+                if arguments.len() != callee_params.len() {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "canonical compiler MIR call in function {} passes {} argument(s), but callee declares {} parameter(s)",
+                            caller.object_name,
+                            arguments.len(),
+                            callee_params.len()
+                        ),
+                    )
+                    .into());
+                }
+                if !matches!(callee_return_type, TinyMirType::I32)
+                    || callee_params
+                        .iter()
+                        .any(|ty| !matches!(*ty, TinyMirType::I32))
+                {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "canonical compiler MIR callee in function {} must use only int parameters and one int return",
+                            caller.object_name
+                        ),
+                    )
+                    .into());
+                }
+            }
+        }
+    }
+
+    validate_canonical_compiler_mir_local_call_graph_acyclic(
+        &local_call_edges,
+    )
+}
+
+fn validate_canonical_compiler_mir_local_call_graph_acyclic(
+    call_edges: &HashMap<&str, Vec<&str>>,
+) -> Result<(), Box<dyn Error>> {
+    let mut indegree: HashMap<&str, usize> =
+        call_edges.keys().copied().map(|name| (name, 0)).collect();
+    for targets in call_edges.values() {
+        for target in targets {
+            let count = indegree.get_mut(target).ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown canonical compiler MIR local call target: {target}"),
+                )
+            })?;
+            *count += 1;
+        }
+    }
+    let mut pending: VecDeque<&str> = indegree
+        .iter()
+        .filter_map(|(name, count)| (*count == 0).then_some(*name))
+        .collect();
+    let mut visited = 0usize;
+    while let Some(name) = pending.pop_front() {
+        visited += 1;
+        let targets = call_edges.get(name).ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                format!("unknown canonical compiler MIR local call source: {name}"),
+            )
+        })?;
+        for target in targets {
+            let count = indegree.get_mut(target).ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("unknown canonical compiler MIR local call target: {target}"),
+                )
+            })?;
+            *count -= 1;
+            if *count == 0 {
+                pending.push_back(target);
+            }
+        }
+    }
+    if visited != call_edges.len() {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "canonical compiler MIR local call graph must not contain recursion or mutual recursion",
+        )
+        .into());
+    }
+    Ok(())
+}
+
+fn validate_canonical_compiler_mir_call_argument<'a>(
+    function: &CompilerMirLoweringFunction<'a>,
+    local_names: &HashSet<&'a str>,
+    current_block_parameters: &HashMap<&'a str, TinyMirType>,
+    block_parameter_owners: &HashMap<&'a str, Vec<&'a str>>,
+    source_block: &str,
+    statement_index: usize,
+    argument_index: usize,
+    argument: &CompilerMirLoweringCallArgument<'a>,
+) -> Result<TinyMirType, Box<dyn Error>> {
+    match *argument {
+        CompilerMirLoweringCallArgument::I32Literal(_) => Ok(TinyMirType::I32),
+        CompilerMirLoweringCallArgument::FunctionParamI32(param) => function
+            .params
+            .get(param)
+            .copied()
+            .ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown canonical compiler MIR function parameter {param} at block {source_block} statement {statement_index} call argument {argument_index}"
+                    ),
+                )
+                .into()
+            }),
+        CompilerMirLoweringCallArgument::LocalI32(name) => {
+            if !local_names.contains(name) {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown canonical compiler MIR local {name} at block {source_block} statement {statement_index} call argument {argument_index}"
+                    ),
+                )
+                .into());
+            }
+            Ok(TinyMirType::I32)
+        }
+        CompilerMirLoweringCallArgument::BlockParamI32(name)
+        | CompilerMirLoweringCallArgument::BlockParamI32AddI32Literal {
+            name,
+            ..
+        } => validate_canonical_compiler_mir_block_parameter_reference(
+            current_block_parameters,
+            block_parameter_owners,
+            name,
+            source_block,
+            &format!(
+                "statement {statement_index} call argument {argument_index}"
+            ),
+        ),
+    }
+}
+
 
 fn validate_canonical_compiler_mir_block_parameter_reference<'a>(
     current_block_parameters: &HashMap<&'a str, TinyMirType>,
@@ -4018,6 +4770,99 @@ fn parse_optional_canonical_compiler_mir_usize_field<'a>(
         .into()
     })
 }
+
+fn parse_canonical_compiler_mir_call_arguments<'a>(
+    fields: &HashMap<&'a str, &'a str>,
+    consumed: &mut HashSet<&'a str>,
+    prefix: &str,
+) -> Result<Vec<CompilerMirLoweringCallArgument<'a>>, Box<dyn Error>> {
+    let count_key = format!("{prefix}_argument_count");
+    let count = parse_canonical_compiler_mir_usize_field(
+        fields,
+        consumed,
+        &count_key,
+    )?;
+    let mut arguments = Vec::with_capacity(count);
+    for index in 0..count {
+        let argument_prefix = format!("{prefix}_argument_{index}");
+        let kind_key = format!("{argument_prefix}_kind");
+        let kind = required_canonical_compiler_mir_fixture_field(
+            fields,
+            consumed,
+            &kind_key,
+        )?;
+        let argument = match kind {
+            "I32Literal" => {
+                let value_key = format!("{argument_prefix}_value");
+                CompilerMirLoweringCallArgument::I32Literal(
+                    parse_canonical_compiler_mir_i32_field(
+                        fields,
+                        consumed,
+                        &value_key,
+                    )?,
+                )
+            }
+            "FunctionParamI32" => {
+                let param_key = format!("{argument_prefix}_param");
+                CompilerMirLoweringCallArgument::FunctionParamI32(
+                    parse_canonical_compiler_mir_usize_field(
+                        fields,
+                        consumed,
+                        &param_key,
+                    )?,
+                )
+            }
+            "LocalI32" => {
+                let local_key = format!("{argument_prefix}_local");
+                CompilerMirLoweringCallArgument::LocalI32(
+                    required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &local_key,
+                    )?,
+                )
+            }
+            "BlockParamI32" => {
+                let block_param_key = format!("{argument_prefix}_block_param");
+                CompilerMirLoweringCallArgument::BlockParamI32(
+                    required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &block_param_key,
+                    )?,
+                )
+            }
+            "BlockParamI32AddI32Literal" => {
+                let block_param_key = format!("{argument_prefix}_block_param");
+                let value_key = format!("{argument_prefix}_value");
+                CompilerMirLoweringCallArgument::BlockParamI32AddI32Literal {
+                    name: required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &block_param_key,
+                    )?,
+                    value: parse_canonical_compiler_mir_i32_field(
+                        fields,
+                        consumed,
+                        &value_key,
+                    )?,
+                }
+            }
+            other => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unsupported canonical compiler MIR call argument kind at {kind_key}: {other}"
+                    ),
+                )
+                .into());
+            }
+        };
+        arguments.push(argument);
+    }
+    Ok(arguments)
+}
+
 
 fn parse_canonical_compiler_mir_edge_arguments<'a>(
     fields: &HashMap<&'a str, &'a str>,
@@ -4309,12 +5154,24 @@ fn validate_canonical_compiler_mir_metadata_attachment(
 
 fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
-    let fixture = parse_compiler_mir_fixture(&contents)?;
-    validate_compiler_mir_fixture(&fixture)?;
-    println!(
-        "validated canonical compiler MIR fixture: {} -> {}",
-        fixture.function.object_name, fixture.function.symbol
-    );
+    match parse_compiler_mir_input(&contents)? {
+        ParsedCompilerMirInput::V1(fixture) => {
+            validate_compiler_mir_fixture(&fixture)?;
+            println!(
+                "validated canonical compiler MIR fixture: {} -> {}",
+                fixture.function.object_name, fixture.function.symbol
+            );
+        }
+        ParsedCompilerMirInput::V2(module) => {
+            validate_compiler_mir_module(&module)?;
+            println!(
+                "validated canonical compiler MIR module: {} ({} defined, {} imported)",
+                module.name,
+                module.functions.len(),
+                module.imports.len()
+            );
+        }
+    }
     Ok(())
 }
 
@@ -4323,7 +5180,19 @@ fn emit_compiler_mir_fixture_object(
     output_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
-    emit_compiler_mir_fixture_contents_object(&contents, output_path)
+    match parse_compiler_mir_input(&contents)? {
+        ParsedCompilerMirInput::V1(_) => {
+            emit_compiler_mir_fixture_contents_object(&contents, output_path)
+        }
+        ParsedCompilerMirInput::V2(module) => {
+            validate_compiler_mir_module(&module)?;
+            Err(IoError::new(
+                ErrorKind::Unsupported,
+                "gust.compiler_mir_ingestion.v2 is validation-only in Phase 9F Patch 2; object emission is not implemented",
+            )
+            .into())
+        }
+    }
 }
 
 fn emit_compiler_mir_fixture_contents_object(
@@ -12786,7 +13655,7 @@ fn build_compiler_mir_ingestion_body(
         }
 
         for statement in &block.statements {
-            match *statement {
+            match statement.clone() {
                 CompilerMirLoweringStatement::LocalI32Set { name, value } => {
                     let slot = *local_slots.get(name).ok_or_else(|| {
                         IoError::new(
@@ -12860,6 +13729,13 @@ fn build_compiler_mir_ingestion_body(
                     let current_value = builder.use_var(slot);
                     let updated_value = builder.ins().iadd(current_value, param_value);
                     builder.def_var(slot, updated_value);
+                }
+                CompilerMirLoweringStatement::LocalI32SetCall { .. } => {
+                    return Err(IoError::new(
+                        ErrorKind::Unsupported,
+                        "canonical compiler MIR call lowering is not implemented in Phase 9F Patch 2",
+                    )
+                    .into());
                 }
             }
         }

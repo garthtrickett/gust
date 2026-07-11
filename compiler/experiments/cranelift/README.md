@@ -287,9 +287,10 @@ patch, it remains frozen on `TinyMirParamBlockFunction`,
 
 `gust.compiler_mir_ingestion.v1` remains frozen, single-function, and call/import-free.
 `gust.compiler_mir_ingestion.v2` is the only new canonical schema allowed to represent modules, imports, and calls.
-The generic `compiler-mir-ingestion-object` command may eventually dispatch
-both versions, with a v1 fixture wrapped internally as a one-function module,
-but this opening patch adds no v2 parser, validator, or call emission.
+The generic `compiler-mir-ingestion-object` command now dispatches both
+versions. v1 continues through its frozen single-function object path, while
+v2 parses and validates the module boundary but deliberately rejects before
+object creation until the shared module emitter lands.
 
 Phase 9F is bounded to direct local-function calls and direct imported-function
 calls with ordered i32 arguments, one i32 return value, and every result stored
@@ -306,6 +307,36 @@ MIR-to-C remains primary, Cranelift remains disabled by default, and no
 production runtime route is enabled. The closure target is 33 canonical shared
 seams, zero bespoke seams, zero metadata-only seams, and the same seventeen
 translator seeds.
+
+The Phase 9F v2 schema/parser/validator milestone is complete. The canonical
+`gust.compiler_mir_ingestion.v2` form now owns a module name, imported host
+declarations, defined exported-entry and module-local functions, explicit
+ordered i32 signatures, and `LocalI32SetCall` statements. Calls resolve through
+typed `LocalFunction` or `ImportedFunction` targets and accept literal,
+function-parameter, local, block-parameter, and block-parameter-plus-literal
+arguments.
+
+The validation command dispatches both v1 and v2. The generic object command
+also recognizes both versions, but after successful v2 validation it rejects
+with the explicit Patch 2 validation-only diagnostic before creating an output
+directory or object. Object emission for v2 remains intentionally unavailable
+in this patch.
+
+The v2 validator freezes separate source-function, imported-function, emitted
+backend-symbol, and imported link-symbol namespaces. It rejects duplicate
+imports or local functions, conflicting import-link signatures, emitted/import
+symbol collisions, unknown callees, wrong arity, non-i32 signatures,
+undeclared call destinations, calls to exported entry functions, recursive or
+mutually recursive local call graphs, invalid linkage, indirect targets, and
+call/import records in v1. The positive fixture proves caller-before-callee
+ordering, multiple defined functions, multiple imports, direct local calls,
+direct imported calls, ordered arguments, and result materialization into
+declared locals.
+
+No ingestion seam migrates in this patch. The inventory remains 33 total,
+22 canonical shared, eleven bespoke call/import seams, zero metadata-only, and
+seventeen frozen translator seeds. MIR-to-C remains primary, Cranelift remains
+disabled by default, and no production runtime or backend route is enabled.
 
 The checked-in lockfile for this crate is owned by:
 
