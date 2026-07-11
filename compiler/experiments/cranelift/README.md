@@ -174,6 +174,30 @@ The live inventory is now fifteen canonical seams and eighteen frozen bespoke
 seams, with all seventeen translator seeds still frozen. The next milestone is
 the variable-arity block-parameter cohort.
 
+The variable-arity block-parameter cohort is now canonical.
+`block_param_dual_materialize_return`,
+`block_param_triple_materialize_return`,
+`block_param_quad_materialize_return`, and
+`block_param_quint_materialize_return` still validate their frozen historical
+fixtures, then delegate to call-free canonical CFG fixtures through shared
+object emission. Those canonical fixtures carry ordered block-parameter and
+edge-argument lists of arity two through five. In every fixture the final
+argument position drives both the branch decision and returned result, giving
+native evidence that argument order is preserved rather than collapsed into
+hardcoded dual, triple, quad, or quint lowering variants.
+
+The historical fixtures contain local/imported call materialization records,
+but those records remain compatibility-input validation only. Phase 9E adds no
+call, import, or runtime-boundary lowering; each adapter preserves the existing
+native arithmetic result with a bounded canonical CFG equivalent. None of the
+four commands owns an `ObjectModule` or invokes `TinyMirParamBlockFunction`
+lowering.
+
+The live inventory is now nineteen canonical seams and fourteen frozen bespoke
+seams, with the total still 33 and all seventeen translator seeds still
+frozen. The next milestone is the block-parameter-to-local materialization
+cohort.
+
 The checked-in lockfile for this crate is owned by:
 
 ```bash
