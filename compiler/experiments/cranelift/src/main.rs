@@ -596,6 +596,124 @@ const PHASE9D_CANONICAL_POSITIVE_I32_BRANCH_FIXTURE: &str = concat!(
     "expected_exit: 7\n",
 );
 
+const PHASE9E_CANONICAL_BLOCK_LOCAL_BRANCH_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_block_local_branch\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_block_local_branch\n",
+    "parameter_count: 1\n",
+    "parameter_0_type: int\n",
+    "return_type: int\n",
+    "local_count: 1\n",
+    "local_0_name: value\n",
+    "local_0_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 3\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 1\n",
+    "block_0_statement_0_kind: LocalI32SetParam\n",
+    "block_0_statement_0_local: value\n",
+    "block_0_statement_0_param: 0\n",
+    "block_0_terminator_kind: BranchLocalI32Positive\n",
+    "block_0_terminator_local: value\n",
+    "block_0_terminator_then: positive\n",
+    "block_0_terminator_else: non_positive\n",
+    "block_1_label: positive\n",
+    "block_1_statement_count: 0\n",
+    "block_1_terminator_kind: ReturnI32\n",
+    "block_1_terminator_value: 43\n",
+    "block_2_label: non_positive\n",
+    "block_2_statement_count: 0\n",
+    "block_2_terminator_kind: ReturnI32\n",
+    "block_2_terminator_value: 47\n",
+    "metadata_count: 0\n",
+    "expected_exit: 43\n",
+);
+
+const PHASE9E_CANONICAL_BLOCK_LOCAL_UPDATE_BRANCH_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_block_local_update_branch\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_block_local_update_branch\n",
+    "parameter_count: 1\n",
+    "parameter_0_type: int\n",
+    "return_type: int\n",
+    "local_count: 1\n",
+    "local_0_name: value\n",
+    "local_0_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 4\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 1\n",
+    "block_0_statement_0_kind: LocalI32SetParam\n",
+    "block_0_statement_0_local: value\n",
+    "block_0_statement_0_param: 0\n",
+    "block_0_terminator_kind: Jump\n",
+    "block_0_terminator_target: increment\n",
+    "block_1_label: increment\n",
+    "block_1_statement_count: 1\n",
+    "block_1_statement_0_kind: LocalI32AddI32Literal\n",
+    "block_1_statement_0_local: value\n",
+    "block_1_statement_0_value: 2\n",
+    "block_1_terminator_kind: BranchLocalI32Positive\n",
+    "block_1_terminator_local: value\n",
+    "block_1_terminator_then: positive\n",
+    "block_1_terminator_else: non_positive\n",
+    "block_2_label: positive\n",
+    "block_2_statement_count: 0\n",
+    "block_2_terminator_kind: ReturnI32\n",
+    "block_2_terminator_value: 53\n",
+    "block_3_label: non_positive\n",
+    "block_3_statement_count: 0\n",
+    "block_3_terminator_kind: ReturnI32\n",
+    "block_3_terminator_value: 59\n",
+    "metadata_count: 0\n",
+    "expected_exit: 53\n",
+);
+
+const PHASE9E_CANONICAL_BLOCK_TWO_LOCAL_UPDATE_BRANCH_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_block_two_local_update_branch\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_block_two_local_update_branch\n",
+    "parameter_count: 1\n",
+    "parameter_0_type: int\n",
+    "return_type: int\n",
+    "local_count: 2\n",
+    "local_0_name: raw\n",
+    "local_0_type: int\n",
+    "local_1_name: adjusted\n",
+    "local_1_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 4\n",
+    "block_0_label: entry\n",
+    "block_0_statement_count: 2\n",
+    "block_0_statement_0_kind: LocalI32SetParam\n",
+    "block_0_statement_0_local: raw\n",
+    "block_0_statement_0_param: 0\n",
+    "block_0_statement_1_kind: LocalI32SetParam\n",
+    "block_0_statement_1_local: adjusted\n",
+    "block_0_statement_1_param: 0\n",
+    "block_0_terminator_kind: Jump\n",
+    "block_0_terminator_target: adjust\n",
+    "block_1_label: adjust\n",
+    "block_1_statement_count: 1\n",
+    "block_1_statement_0_kind: LocalI32AddI32Literal\n",
+    "block_1_statement_0_local: adjusted\n",
+    "block_1_statement_0_value: 3\n",
+    "block_1_terminator_kind: BranchLocalI32Positive\n",
+    "block_1_terminator_local: adjusted\n",
+    "block_1_terminator_then: positive\n",
+    "block_1_terminator_else: non_positive\n",
+    "block_2_label: positive\n",
+    "block_2_statement_count: 0\n",
+    "block_2_terminator_kind: ReturnI32\n",
+    "block_2_terminator_value: 61\n",
+    "block_3_label: non_positive\n",
+    "block_3_statement_count: 0\n",
+    "block_3_terminator_kind: ReturnI32\n",
+    "block_3_terminator_value: 67\n",
+    "metadata_count: 0\n",
+    "expected_exit: 61\n",
+);
+
 #[derive(Clone, Copy)]
 enum CompilerMirLoweringStatement<'a> {
     LocalI32Set { name: &'a str, value: i32 },
@@ -4895,64 +5013,10 @@ fn emit_compiler_mir_block_local_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_local_branch_ingestion_fixture(&contents)?;
-    static COMPILER_MIR_BLOCK_LOCAL_BRANCH_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_LOCAL_BRANCH_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
-        name: "value",
-        ty: TinyMirType::I32,
-    }];
-    static COMPILER_MIR_BLOCK_LOCAL_BRANCH_ENTRY_STATEMENTS: [TinyMirBlockStatement; 1] =
-        [TinyMirBlockStatement::LocalI32SetParam {
-            name: "value",
-            param: 0,
-        }];
-    static COMPILER_MIR_BLOCK_LOCAL_BRANCH_BLOCKS: [TinyMirBlock; 3] = [
-        TinyMirBlock {
-            label: "entry",
-            statements: &COMPILER_MIR_BLOCK_LOCAL_BRANCH_ENTRY_STATEMENTS,
-            terminator: TinyMirBlockTerminator::BranchLocalI32Positive {
-                name: "value",
-                then_block: "positive",
-                else_block: "non_positive",
-            },
-        },
-        TinyMirBlock {
-            label: "positive",
-            statements: &[],
-            terminator: TinyMirBlockTerminator::ReturnI32(43),
-        },
-        TinyMirBlock {
-            label: "non_positive",
-            statements: &[],
-            terminator: TinyMirBlockTerminator::ReturnI32(47),
-        },
-    ];
-    let mir_function = TinyMirBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_local_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_LOCAL_BRANCH_SYMBOL,
-        params: &COMPILER_MIR_BLOCK_LOCAL_BRANCH_PARAMS,
-        return_type: TinyMirType::I32,
-        locals: &COMPILER_MIR_BLOCK_LOCAL_BRANCH_LOCALS,
-        entry_block: "entry",
-        blocks: &COMPILER_MIR_BLOCK_LOCAL_BRANCH_BLOCKS,
-    };
-
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_local_branch",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-    define_tiny_mir_block_graph_exported_function(&mut module, &mir_function)?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9E_CANONICAL_BLOCK_LOCAL_BRANCH_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_block_local_branch_ingestion_fixture(
@@ -5033,76 +5097,10 @@ fn emit_compiler_mir_block_local_update_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_local_update_branch_ingestion_fixture(&contents)?;
-    static COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_LOCALS: [TinyMirLocal; 1] = [TinyMirLocal {
-        name: "value",
-        ty: TinyMirType::I32,
-    }];
-    static COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_ENTRY_STATEMENTS: [TinyMirBlockStatement; 1] =
-        [TinyMirBlockStatement::LocalI32SetParam {
-            name: "value",
-            param: 0,
-        }];
-    static COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_INCREMENT_STATEMENTS: [TinyMirBlockStatement; 1] =
-        [TinyMirBlockStatement::LocalI32AddI32Literal {
-            name: "value",
-            value: 2,
-        }];
-    static COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_BLOCKS: [TinyMirBlock; 4] = [
-        TinyMirBlock {
-            label: "entry",
-            statements: &COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_ENTRY_STATEMENTS,
-            terminator: TinyMirBlockTerminator::Jump {
-                target: "increment",
-            },
-        },
-        TinyMirBlock {
-            label: "increment",
-            statements: &COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_INCREMENT_STATEMENTS,
-            terminator: TinyMirBlockTerminator::BranchLocalI32Positive {
-                name: "value",
-                then_block: "positive",
-                else_block: "non_positive",
-            },
-        },
-        TinyMirBlock {
-            label: "positive",
-            statements: &[],
-            terminator: TinyMirBlockTerminator::ReturnI32(53),
-        },
-        TinyMirBlock {
-            label: "non_positive",
-            statements: &[],
-            terminator: TinyMirBlockTerminator::ReturnI32(59),
-        },
-    ];
-    let mir_function = TinyMirBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_local_update_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_LOCAL_UPDATE_BRANCH_SYMBOL,
-        params: &COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_PARAMS,
-        return_type: TinyMirType::I32,
-        locals: &COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_LOCALS,
-        entry_block: "entry",
-        blocks: &COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_BLOCKS,
-    };
-
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_local_update_branch",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-    define_tiny_mir_block_graph_exported_function(&mut module, &mir_function)?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9E_CANONICAL_BLOCK_LOCAL_UPDATE_BRANCH_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_block_local_update_branch_ingestion_fixture(
@@ -5194,85 +5192,10 @@ fn emit_compiler_mir_block_two_local_update_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_two_local_update_branch_ingestion_fixture(&contents)?;
-    static COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_LOCALS: [TinyMirLocal; 2] = [
-        TinyMirLocal {
-            name: "raw",
-            ty: TinyMirType::I32,
-        },
-        TinyMirLocal {
-            name: "adjusted",
-            ty: TinyMirType::I32,
-        },
-    ];
-    static COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_ENTRY_STATEMENTS: [TinyMirBlockStatement; 2] = [
-        TinyMirBlockStatement::LocalI32SetParam {
-            name: "raw",
-            param: 0,
-        },
-        TinyMirBlockStatement::LocalI32SetParam {
-            name: "adjusted",
-            param: 0,
-        },
-    ];
-    static COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_ADJUST_STATEMENTS: [TinyMirBlockStatement;
-        1] = [TinyMirBlockStatement::LocalI32AddI32Literal {
-        name: "adjusted",
-        value: 3,
-    }];
-    static COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_BLOCKS: [TinyMirBlock; 4] = [
-        TinyMirBlock {
-            label: "entry",
-            statements: &COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_ENTRY_STATEMENTS,
-            terminator: TinyMirBlockTerminator::Jump { target: "adjust" },
-        },
-        TinyMirBlock {
-            label: "adjust",
-            statements: &COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_ADJUST_STATEMENTS,
-            terminator: TinyMirBlockTerminator::BranchLocalI32Positive {
-                name: "adjusted",
-                then_block: "positive",
-                else_block: "non_positive",
-            },
-        },
-        TinyMirBlock {
-            label: "positive",
-            statements: &[],
-            terminator: TinyMirBlockTerminator::ReturnI32(61),
-        },
-        TinyMirBlock {
-            label: "non_positive",
-            statements: &[],
-            terminator: TinyMirBlockTerminator::ReturnI32(67),
-        },
-    ];
-    let mir_function = TinyMirBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_two_local_update_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_TWO_LOCAL_UPDATE_BRANCH_SYMBOL,
-        params: &COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_PARAMS,
-        return_type: TinyMirType::I32,
-        locals: &COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_LOCALS,
-        entry_block: "entry",
-        blocks: &COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_BLOCKS,
-    };
-
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_two_local_update_branch",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-    define_tiny_mir_block_graph_exported_function(&mut module, &mir_function)?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9E_CANONICAL_BLOCK_TWO_LOCAL_UPDATE_BRANCH_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_block_two_local_update_branch_ingestion_fixture(

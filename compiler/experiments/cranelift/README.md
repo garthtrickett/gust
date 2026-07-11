@@ -37,14 +37,13 @@ strings, structs, arrays, resource execution semantics, and complete
 block-parameter coverage remained outside Phase 9D. MIR-to-C stays primary and
 Cranelift stays disabled by default.
 
-The inventory and architecture milestones remain complete. The manifest still
-tracks all 33 compiler-owned ingestion emitters and all seventeen frozen Phase
-9B translator seeds. The first bounded post-9C cohort migrates `add_i32` and
-`positive_i32_branch`; ten seams now use the canonical shared lowering
-architecture, twenty-three remain classified as compiler-owned bespoke
-lowering, and no seam remains metadata-preservation-only. The three metadata
-lanes use the same parser, validator, Rust MIR model, body lowerer, and object
-emitter as executable scalar lanes.
+At Phase 9D closure, the manifest tracked all 33 compiler-owned ingestion
+emitters and all seventeen frozen Phase 9B translator seeds. The first bounded
+post-9C cohort migrated `add_i32` and `positive_i32_branch`; ten seams used the
+canonical shared lowering architecture, twenty-three remained classified as
+compiler-owned bespoke lowering, and no seam remained metadata-preservation-
+only. The three metadata lanes used the same parser, validator, Rust MIR model,
+body lowerer, and object emitter as executable scalar lanes.
 
 The canonical architecture is frozen and implemented as:
 `parse_compiler_mir_fixture` -> `validate_compiler_mir_fixture` ->
@@ -118,6 +117,17 @@ thin migration adapters. The Phase 9D bypass freeze remains active. The
 closure target is 22 canonical seams and exactly eleven frozen call/import
 bespoke seams, with MIR-to-C still primary and Cranelift still disabled by
 default.
+
+The first Phase 9E cohort is complete. `block_local_branch`,
+`block_local_update_branch`, and `block_two_local_update_branch` still validate
+their frozen compiler-owned fixtures, but their commands now enter canonical
+fixture parsing, validation, `CompilerMirLoweringFunction`, shared body
+lowering, and shared object emission. None of those commands constructs an
+`ObjectModule` or invokes `TinyMirBlockFunction` lowering. The live inventory
+is now thirteen canonical seams and twenty frozen bespoke seams; the total
+remains 33 and the translator-seed inventory remains frozen at seventeen. The
+next milestone defines typed block parameters, typed edge arguments, parser
+fields, and validation rules before enabling block-parameter object lowering.
 
 The checked-in lockfile for this crate is owned by:
 
