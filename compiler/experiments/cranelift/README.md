@@ -93,10 +93,10 @@ before object creation, and metadata policy is explicit. Phase 9E may expand
 CFG and block-parameter completeness only through this canonical ingestion
 architecture. It does not change production routing.
 
-Phase 9E is open as
-`phase9e_open_cfg_and_block_parameter_completeness`. Its bounded goal is to
+Phase 9E is closed as
+`phase9e_closed_cfg_and_block_parameter_completeness`. Its bounded goal was to
 make typed CFG edges and typed block parameters first-class in the canonical
-compiler-owned MIR ingestion path. The phase starts from the frozen Phase 9D
+compiler-owned MIR ingestion path. The phase opened from the frozen Phase 9D
 inventory of 33 ingestion seams: ten canonical shared-lowering seams,
 twenty-three bespoke seams, no metadata-only seam, and seventeen frozen
 translator seeds.
@@ -251,8 +251,19 @@ canonicalization; Phase 9E does not admit call or import kinds into canonical
 The inventory remains 33 total seams, 22 canonical shared-lowering seams,
 eleven frozen Phase 9F call/import bespoke seams, no metadata-only seam, and
 seventeen frozen translator seeds. MIR-to-C remains primary and experimental
-Cranelift remains disabled by default. The next milestone is the Phase 9E
-closure contract and final guard.
+Cranelift remains disabled by default.
+
+Phase 9E is closed on this evidence. All twelve bounded non-call migration
+candidates use canonical parsing, validation, `CompilerMirLoweringFunction`,
+shared CFG lowering, and shared object emission. The five statement kinds,
+eight terminator kinds, five edge-argument kinds, arities zero through five,
+merge, backedge, and block-parameter-to-local forms are frozen with strict
+pre-output rejection for malformed fixtures.
+
+No new Phase 9E semantic work may bypass canonical ingestion or expand the
+call/import boundary. Phase 9F is the next contract and is reserved for
+canonicalizing the exact eleven frozen call/import seams. Production routing
+is unchanged.
 
 The checked-in lockfile for this crate is owned by:
 
