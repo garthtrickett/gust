@@ -7528,29 +7528,29 @@ guard-cranelift-phase9f-call-import-schema-validator:
 
     v1_call="$build_dir/v1-call.mir"
     cat >"$v1_call" <<'MIR'
-format: gust.compiler_mir_ingestion.v1
-function: invalid_v1_call
-backend_symbol: invalid_v1_call
-parameter_count: 0
-return_type: int
-local_count: 1
-local_0_name: result
-local_0_type: int
-entry_block: entry
-block_count: 1
-block_0_label: entry
-block_0_parameter_count: 0
-block_0_statement_count: 1
-block_0_statement_0_kind: LocalI32SetCall
-block_0_statement_0_local: result
-block_0_statement_0_callee_kind: ImportedFunction
-block_0_statement_0_callee: host_identity
-block_0_statement_0_argument_count: 0
-block_0_terminator_kind: ReturnLocalI32
-block_0_terminator_local: result
-metadata_count: 0
-expected_exit: 0
-MIR
+    format: gust.compiler_mir_ingestion.v1
+    function: invalid_v1_call
+    backend_symbol: invalid_v1_call
+    parameter_count: 0
+    return_type: int
+    local_count: 1
+    local_0_name: result
+    local_0_type: int
+    entry_block: entry
+    block_count: 1
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 1
+    block_0_statement_0_kind: LocalI32SetCall
+    block_0_statement_0_local: result
+    block_0_statement_0_callee_kind: ImportedFunction
+    block_0_statement_0_callee: host_identity
+    block_0_statement_0_argument_count: 0
+    block_0_terminator_kind: ReturnLocalI32
+    block_0_terminator_local: result
+    metadata_count: 0
+    expected_exit: 0
+    MIR
     expect_reject v1-call "$v1_call" 'gust.compiler_mir_ingestion.v1 remains call/import-free'
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
