@@ -153,10 +153,11 @@ backedges are known before sealing.
 The generic `compiler-mir-ingestion-object` command now proves literal,
 function-parameter, local, block-parameter, and block-parameter-plus-literal
 edge transport, independent branch-arm arguments, block-parameter returns, and
-a native countdown backedge. `LocalI32SetBlockParam` remains validation-only
-until the dedicated block-parameter-to-local materialization cohort. At the
-end of the shared-core milestone, the inventory remained thirteen canonical
-seams and twenty frozen bespoke seams.
+a native countdown backedge. At the end of the shared-core milestone,
+`LocalI32SetBlockParam` was still validation-only; the dedicated
+block-parameter-to-local materialization cohort below activates its shared
+lowering. The shared-core inventory at that milestone remained thirteen
+canonical seams and twenty frozen bespoke seams.
 
 The basic single-parameter CFG cohort is now canonical. The historical
 `block_param_update_branch` and `block_param_merge_update_branch` commands
@@ -197,6 +198,30 @@ The live inventory is now nineteen canonical seams and fourteen frozen bespoke
 seams, with the total still 33 and all seventeen translator seeds still
 frozen. The next milestone is the block-parameter-to-local materialization
 cohort.
+
+The block-parameter-to-local materialization cohort is now canonical.
+`block_param_local_materialize_return`,
+`block_param_local_materialize_branch`, and
+`block_param_local_first_dual_materialize_return` still validate their frozen
+historical fixtures, then delegate to bounded call-free canonical fixtures
+through shared object emission. `LocalI32SetBlockParam` now copies the current
+block parameter into a declared i32 local before later local updates,
+local-based branches, edge transport, or local returns.
+
+The first migrated lane proves block-parameter-to-local copy, a local literal
+update, local-based branch selection, a second block-parameter-to-local copy,
+and local return. The second proves a local-based branch followed by direct
+block-parameter return. The local-first dual lane models its historical
+local-helper and imported-add sequence as explicit local literal updates while
+keeping call and import records as compatibility-input validation only.
+
+All three historical commands are thin canonical adapters and no longer own an
+`ObjectModule` or invoke `TinyMirParamBlockFunction` lowering. The live
+inventory is now twenty-two canonical seams and exactly eleven frozen bespoke
+call/import seams, with the total still 33 and all seventeen translator seeds
+still frozen. Every bounded non-call Phase 9E migration candidate is now on the
+shared canonical path. The next milestone is the CFG completeness matrix,
+strict rejection expansion, and exact Phase 9F call/import freeze.
 
 The checked-in lockfile for this crate is owned by:
 

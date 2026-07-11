@@ -1163,6 +1163,177 @@ const PHASE9E_CANONICAL_BLOCK_PARAM_QUINT_MATERIALIZE_RETURN_FIXTURE: &str = con
     "expected_exit: 159\n",
 );
 
+const PHASE9E_CANONICAL_BLOCK_PARAM_LOCAL_MATERIALIZE_RETURN_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_block_param_local_materialize_return\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_materialize_return\n",
+    "parameter_count: 1\n",
+    "parameter_0_type: int\n",
+    "return_type: int\n",
+    "local_count: 1\n",
+    "local_0_name: materialized\n",
+    "local_0_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 3\n",
+    "block_0_label: entry\n",
+    "block_0_parameter_count: 0\n",
+    "block_0_statement_count: 0\n",
+    "block_0_terminator_kind: Jump\n",
+    "block_0_terminator_target: materialize\n",
+    "block_0_terminator_argument_count: 1\n",
+    "block_0_terminator_argument_0_kind: FunctionParamI32\n",
+    "block_0_terminator_argument_0_param: 0\n",
+    "block_1_label: materialize\n",
+    "block_1_parameter_count: 1\n",
+    "block_1_parameter_0_name: input_value\n",
+    "block_1_parameter_0_type: int\n",
+    "block_1_statement_count: 2\n",
+    "block_1_statement_0_kind: LocalI32SetBlockParam\n",
+    "block_1_statement_0_local: materialized\n",
+    "block_1_statement_0_block_param: input_value\n",
+    "block_1_statement_1_kind: LocalI32AddI32Literal\n",
+    "block_1_statement_1_local: materialized\n",
+    "block_1_statement_1_value: 2\n",
+    "block_1_terminator_kind: BranchLocalI32Positive\n",
+    "block_1_terminator_local: materialized\n",
+    "block_1_terminator_then: result\n",
+    "block_1_terminator_then_argument_count: 1\n",
+    "block_1_terminator_then_argument_0_kind: I32Literal\n",
+    "block_1_terminator_then_argument_0_value: 401\n",
+    "block_1_terminator_else: result\n",
+    "block_1_terminator_else_argument_count: 1\n",
+    "block_1_terminator_else_argument_0_kind: I32Literal\n",
+    "block_1_terminator_else_argument_0_value: 421\n",
+    "block_2_label: result\n",
+    "block_2_parameter_count: 1\n",
+    "block_2_parameter_0_name: selected\n",
+    "block_2_parameter_0_type: int\n",
+    "block_2_statement_count: 2\n",
+    "block_2_statement_0_kind: LocalI32SetBlockParam\n",
+    "block_2_statement_0_local: materialized\n",
+    "block_2_statement_0_block_param: selected\n",
+    "block_2_statement_1_kind: LocalI32AddI32Literal\n",
+    "block_2_statement_1_local: materialized\n",
+    "block_2_statement_1_value: 2\n",
+    "block_2_terminator_kind: ReturnLocalI32\n",
+    "block_2_terminator_local: materialized\n",
+    "metadata_count: 0\n",
+    "expected_exit: 147\n",
+);
+
+const PHASE9E_CANONICAL_BLOCK_PARAM_LOCAL_MATERIALIZE_BRANCH_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_block_param_local_materialize_branch\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_materialize_branch\n",
+    "parameter_count: 1\n",
+    "parameter_0_type: int\n",
+    "return_type: int\n",
+    "local_count: 1\n",
+    "local_0_name: materialized\n",
+    "local_0_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 3\n",
+    "block_0_label: entry\n",
+    "block_0_parameter_count: 0\n",
+    "block_0_statement_count: 0\n",
+    "block_0_terminator_kind: Jump\n",
+    "block_0_terminator_target: materialize\n",
+    "block_0_terminator_argument_count: 1\n",
+    "block_0_terminator_argument_0_kind: FunctionParamI32\n",
+    "block_0_terminator_argument_0_param: 0\n",
+    "block_1_label: materialize\n",
+    "block_1_parameter_count: 1\n",
+    "block_1_parameter_0_name: input_value\n",
+    "block_1_parameter_0_type: int\n",
+    "block_1_statement_count: 2\n",
+    "block_1_statement_0_kind: LocalI32SetBlockParam\n",
+    "block_1_statement_0_local: materialized\n",
+    "block_1_statement_0_block_param: input_value\n",
+    "block_1_statement_1_kind: LocalI32AddI32Literal\n",
+    "block_1_statement_1_local: materialized\n",
+    "block_1_statement_1_value: 1\n",
+    "block_1_terminator_kind: BranchLocalI32Positive\n",
+    "block_1_terminator_local: materialized\n",
+    "block_1_terminator_then: result\n",
+    "block_1_terminator_then_argument_count: 1\n",
+    "block_1_terminator_then_argument_0_kind: I32Literal\n",
+    "block_1_terminator_then_argument_0_value: 293\n",
+    "block_1_terminator_else: result\n",
+    "block_1_terminator_else_argument_count: 1\n",
+    "block_1_terminator_else_argument_0_kind: I32Literal\n",
+    "block_1_terminator_else_argument_0_value: 307\n",
+    "block_2_label: result\n",
+    "block_2_parameter_count: 1\n",
+    "block_2_parameter_0_name: selected\n",
+    "block_2_parameter_0_type: int\n",
+    "block_2_statement_count: 0\n",
+    "block_2_terminator_kind: ReturnBlockParamI32\n",
+    "block_2_terminator_block_param: selected\n",
+    "metadata_count: 0\n",
+    "expected_exit: 37\n",
+);
+
+const PHASE9E_CANONICAL_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_FIXTURE: &str = concat!(
+    "format: gust.compiler_mir_ingestion.v1\n",
+    "function: tiny_block_param_local_first_dual_materialize_return\n",
+    "backend_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_first_dual_materialize_return\n",
+    "parameter_count: 1\n",
+    "parameter_0_type: int\n",
+    "return_type: int\n",
+    "local_count: 1\n",
+    "local_0_name: materialized\n",
+    "local_0_type: int\n",
+    "entry_block: entry\n",
+    "block_count: 3\n",
+    "block_0_label: entry\n",
+    "block_0_parameter_count: 0\n",
+    "block_0_statement_count: 0\n",
+    "block_0_terminator_kind: Jump\n",
+    "block_0_terminator_target: materialize\n",
+    "block_0_terminator_argument_count: 1\n",
+    "block_0_terminator_argument_0_kind: FunctionParamI32\n",
+    "block_0_terminator_argument_0_param: 0\n",
+    "block_1_label: materialize\n",
+    "block_1_parameter_count: 1\n",
+    "block_1_parameter_0_name: input_value\n",
+    "block_1_parameter_0_type: int\n",
+    "block_1_statement_count: 3\n",
+    "block_1_statement_0_kind: LocalI32SetBlockParam\n",
+    "block_1_statement_0_local: materialized\n",
+    "block_1_statement_0_block_param: input_value\n",
+    "block_1_statement_1_kind: LocalI32AddI32Literal\n",
+    "block_1_statement_1_local: materialized\n",
+    "block_1_statement_1_value: 4\n",
+    "block_1_statement_2_kind: LocalI32AddI32Literal\n",
+    "block_1_statement_2_local: materialized\n",
+    "block_1_statement_2_value: -7\n",
+    "block_1_terminator_kind: BranchLocalI32Positive\n",
+    "block_1_terminator_local: materialized\n",
+    "block_1_terminator_then: result\n",
+    "block_1_terminator_then_argument_count: 1\n",
+    "block_1_terminator_then_argument_0_kind: I32Literal\n",
+    "block_1_terminator_then_argument_0_value: 601\n",
+    "block_1_terminator_else: result\n",
+    "block_1_terminator_else_argument_count: 1\n",
+    "block_1_terminator_else_argument_0_kind: I32Literal\n",
+    "block_1_terminator_else_argument_0_value: 631\n",
+    "block_2_label: result\n",
+    "block_2_parameter_count: 1\n",
+    "block_2_parameter_0_name: selected\n",
+    "block_2_parameter_0_type: int\n",
+    "block_2_statement_count: 2\n",
+    "block_2_statement_0_kind: LocalI32SetBlockParam\n",
+    "block_2_statement_0_local: materialized\n",
+    "block_2_statement_0_block_param: selected\n",
+    "block_2_statement_1_kind: LocalI32AddI32Literal\n",
+    "block_2_statement_1_local: materialized\n",
+    "block_2_statement_1_value: 4\n",
+    "block_2_terminator_kind: ReturnLocalI32\n",
+    "block_2_terminator_local: materialized\n",
+    "metadata_count: 0\n",
+    "expected_exit: 93\n",
+);
+
 #[derive(Clone, Copy)]
 enum CompilerMirLoweringStatement<'a> {
     LocalI32Set { name: &'a str, value: i32 },
@@ -9140,141 +9311,11 @@ fn emit_compiler_mir_block_param_local_first_dual_materialize_return_ingestion_o
     output_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
-    parse_compiler_mir_block_param_local_first_dual_materialize_return_ingestion_fixture(
-        &contents,
-    )?;
-    static FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static BLOCKS: [TinyMirParamBlock; 5] = [
-        TinyMirParamBlock {
-            label: "entry",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
-                target: "materialize_local_call",
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "materialize_local_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamLocalFunctionI32Call {
-                target: "materialize_imported_call",
-                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_HELPER_SYMBOL,
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "materialize_imported_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamImportedFunctionI32CallI32Literal {
-                target: "branch_on_dual_materialized_call",
-                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
-                param: 0,
-                value: -7,
-            },
-        },
-        TinyMirParamBlock {
-            label: "branch_on_dual_materialized_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
-                param: 0,
-                then_block: "result",
-                then_value: 601,
-                else_block: "result",
-                else_value: 631,
-            },
-        },
-        TinyMirParamBlock {
-            label: "result",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::ReturnBlockParamLocalFunctionI32Call {
-                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_HELPER_SYMBOL,
-                param: 0,
-            },
-        },
-    ];
-
-    let helper_mir_function = TinyMirFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_local_first_dual_materialize_return",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_HELPER_SYMBOL,
-        params: &FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        locals: &[],
-        statements: &[],
-        terminator: TinyMirTerminator::ReturnParamI32AddLiteral { param: 0, value: 4 },
-    };
-
-    let mir_function = TinyMirParamBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_local_first_dual_materialize_return",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_SYMBOL,
-        params: &FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        entry_block: "entry",
-        blocks: &BLOCKS,
-    };
-
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_param_local_first_dual_materialize_return",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-
-    let mut helper_signature = module.make_signature();
-    helper_signature.params.push(AbiParam::new(types::I32));
-    helper_signature.returns.push(AbiParam::new(types::I32));
-    let helper_function_id = module.declare_function(
-        helper_mir_function.symbol,
-        Linkage::Local,
-        &helper_signature,
-    )?;
-    let mut helper_context = module.make_context();
-    helper_context.func.signature = helper_signature;
-    let mut helper_builder_context = FunctionBuilderContext::new();
-    let mut helper_builder =
-        FunctionBuilder::new(&mut helper_context.func, &mut helper_builder_context);
-    let helper_function_refs: HashMap<&'static str, FuncRef> = HashMap::new();
-    build_tiny_mir_body(
-        &mut helper_builder,
-        &helper_mir_function,
-        &helper_function_refs,
-    )?;
-    helper_builder.seal_all_blocks();
-    helper_builder.finalize();
-    module.define_function(helper_function_id, &mut helper_context)?;
-    module.clear_context(&mut helper_context);
-
-    let mut host_add_signature = module.make_signature();
-    host_add_signature.params.push(AbiParam::new(types::I32));
-    host_add_signature.params.push(AbiParam::new(types::I32));
-    host_add_signature.returns.push(AbiParam::new(types::I32));
-    let host_add_function_id = module.declare_function(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
-        Linkage::Import,
-        &host_add_signature,
-    )?;
-
-    let mut function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    function_ids.insert(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_HELPER_SYMBOL,
-        helper_function_id,
-    );
-    function_ids.insert(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
-        host_add_function_id,
-    );
-
-    define_tiny_mir_param_block_graph_exported_function(&mut module, &mir_function, &function_ids)?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
+    parse_compiler_mir_block_param_local_first_dual_materialize_return_ingestion_fixture(&contents)?;
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9E_CANONICAL_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_block_param_local_first_dual_materialize_return_ingestion_fixture(
@@ -9483,120 +9524,10 @@ fn emit_compiler_mir_block_param_local_materialize_return_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_param_local_materialize_return_ingestion_fixture(&contents)?;
-    static FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static BLOCKS: [TinyMirParamBlock; 4] = [
-        TinyMirParamBlock {
-            label: "entry",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
-                target: "materialize_local_call",
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "materialize_local_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamLocalFunctionI32Call {
-                target: "branch_on_materialized_call",
-                function_symbol:
-                    COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_MATERIALIZE_RETURN_HELPER_SYMBOL,
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "branch_on_materialized_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
-                param: 0,
-                then_block: "result",
-                then_value: 401,
-                else_block: "result",
-                else_value: 421,
-            },
-        },
-        TinyMirParamBlock {
-            label: "result",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::ReturnBlockParamLocalFunctionI32Call {
-                function_symbol:
-                    COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_MATERIALIZE_RETURN_HELPER_SYMBOL,
-                param: 0,
-            },
-        },
-    ];
-
-    let helper_mir_function = TinyMirFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_local_materialize_return",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_MATERIALIZE_RETURN_HELPER_SYMBOL,
-        params: &FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        locals: &[],
-        statements: &[],
-        terminator: TinyMirTerminator::ReturnParamI32AddLiteral { param: 0, value: 2 },
-    };
-
-    let mir_function = TinyMirParamBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_local_materialize_return",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_MATERIALIZE_RETURN_SYMBOL,
-        params: &FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        entry_block: "entry",
-        blocks: &BLOCKS,
-    };
-
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_param_local_materialize_return",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-
-    let mut helper_signature = module.make_signature();
-    helper_signature.params.push(AbiParam::new(types::I32));
-    helper_signature.returns.push(AbiParam::new(types::I32));
-    let helper_function_id = module.declare_function(
-        helper_mir_function.symbol,
-        Linkage::Local,
-        &helper_signature,
-    )?;
-    let mut helper_context = module.make_context();
-    helper_context.func.signature = helper_signature;
-    let mut helper_builder_context = FunctionBuilderContext::new();
-    let mut helper_builder =
-        FunctionBuilder::new(&mut helper_context.func, &mut helper_builder_context);
-    let helper_function_refs: HashMap<&'static str, FuncRef> = HashMap::new();
-    build_tiny_mir_body(
-        &mut helper_builder,
-        &helper_mir_function,
-        &helper_function_refs,
-    )?;
-    helper_builder.seal_all_blocks();
-    helper_builder.finalize();
-    module.define_function(helper_function_id, &mut helper_context)?;
-    module.clear_context(&mut helper_context);
-
-    let mut local_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    local_function_ids.insert(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_MATERIALIZE_RETURN_HELPER_SYMBOL,
-        helper_function_id,
-    );
-
-    define_tiny_mir_param_block_graph_exported_function(
-        &mut module,
-        &mir_function,
-        &local_function_ids,
-    )?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9E_CANONICAL_BLOCK_PARAM_LOCAL_MATERIALIZE_RETURN_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_block_param_local_materialize_return_ingestion_fixture(
@@ -9848,116 +9779,10 @@ fn emit_compiler_mir_block_param_local_materialize_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_param_local_materialize_branch_ingestion_fixture(&contents)?;
-    static FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static BLOCKS: [TinyMirParamBlock; 4] = [
-        TinyMirParamBlock {
-            label: "entry",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
-                target: "materialize_local_call",
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "materialize_local_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamLocalFunctionI32Call {
-                target: "branch_on_materialized_call",
-                function_symbol:
-                    COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_MATERIALIZE_BRANCH_HELPER_SYMBOL,
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "branch_on_materialized_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
-                param: 0,
-                then_block: "result",
-                then_value: 293,
-                else_block: "result",
-                else_value: 307,
-            },
-        },
-        TinyMirParamBlock {
-            label: "result",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::ReturnBlockParamI32(0),
-        },
-    ];
-
-    let helper_mir_function = TinyMirFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_local_materialize_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_MATERIALIZE_BRANCH_HELPER_SYMBOL,
-        params: &FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        locals: &[],
-        statements: &[],
-        terminator: TinyMirTerminator::ReturnParamI32AddLiteral { param: 0, value: 1 },
-    };
-
-    let mir_function = TinyMirParamBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_local_materialize_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_MATERIALIZE_BRANCH_SYMBOL,
-        params: &FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        entry_block: "entry",
-        blocks: &BLOCKS,
-    };
-
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_param_local_materialize_branch",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-
-    let mut helper_signature = module.make_signature();
-    helper_signature.params.push(AbiParam::new(types::I32));
-    helper_signature.returns.push(AbiParam::new(types::I32));
-    let helper_function_id = module.declare_function(
-        helper_mir_function.symbol,
-        Linkage::Local,
-        &helper_signature,
-    )?;
-    let mut helper_context = module.make_context();
-    helper_context.func.signature = helper_signature;
-    let mut helper_builder_context = FunctionBuilderContext::new();
-    let mut helper_builder =
-        FunctionBuilder::new(&mut helper_context.func, &mut helper_builder_context);
-    let helper_function_refs: HashMap<&'static str, FuncRef> = HashMap::new();
-    build_tiny_mir_body(
-        &mut helper_builder,
-        &helper_mir_function,
-        &helper_function_refs,
-    )?;
-    helper_builder.seal_all_blocks();
-    helper_builder.finalize();
-    module.define_function(helper_function_id, &mut helper_context)?;
-    module.clear_context(&mut helper_context);
-
-    let mut local_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    local_function_ids.insert(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_LOCAL_MATERIALIZE_BRANCH_HELPER_SYMBOL,
-        helper_function_id,
-    );
-
-    define_tiny_mir_param_block_graph_exported_function(
-        &mut module,
-        &mir_function,
-        &local_function_ids,
-    )?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9E_CANONICAL_BLOCK_PARAM_LOCAL_MATERIALIZE_BRANCH_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_block_param_local_materialize_branch_ingestion_fixture(
@@ -12722,22 +12547,8 @@ fn tiny_mir_type_to_cranelift_type(mir_type: TinyMirType) -> Type {
 }
 
 fn validate_compiler_mir_ingestion_lowering_readiness(
-    mir_function: &CompilerMirLoweringFunction<'_>,
+    _mir_function: &CompilerMirLoweringFunction<'_>,
 ) -> Result<(), Box<dyn Error>> {
-    for block in &mir_function.blocks {
-        if block.statements.iter().any(|statement| {
-            matches!(
-                statement,
-                CompilerMirLoweringStatement::LocalI32SetBlockParam { .. }
-            )
-        }) {
-            return Err(IoError::new(
-                ErrorKind::InvalidInput,
-                "canonical compiler MIR block-parameter local materialization remains disabled until the Phase 9E materialization cohort",
-            )
-            .into());
-        }
-    }
     Ok(())
 }
 
@@ -13001,12 +12812,26 @@ fn build_compiler_mir_ingestion_body(
                     })?;
                     builder.def_var(slot, param_value);
                 }
-                CompilerMirLoweringStatement::LocalI32SetBlockParam { .. } => {
-                    return Err(IoError::new(
-                        ErrorKind::InvalidInput,
-                        "compiler MIR block-parameter local materialization reached lowering before the Phase 9E materialization cohort",
-                    )
-                    .into());
+                CompilerMirLoweringStatement::LocalI32SetBlockParam {
+                    name,
+                    block_param,
+                } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering local set target: {name}"),
+                        )
+                    })?;
+                    let block_value = *block_parameter_values.get(block_param).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "unknown compiler MIR lowering block parameter {block_param} at block {}",
+                                block.label
+                            ),
+                        )
+                    })?;
+                    builder.def_var(slot, block_value);
                 }
                 CompilerMirLoweringStatement::LocalI32AddI32Literal { name, value } => {
                     let slot = *local_slots.get(name).ok_or_else(|| {
