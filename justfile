@@ -6703,7 +6703,6 @@ guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort:
     fi
 
     expected_bespoke="$(printf '%s\n' \
-      block_param_local_call_branch \
       block_param_imported_call_branch \
       block_param_imported_call_return \
       block_param_imported_materialize_branch \
@@ -6716,7 +6715,7 @@ guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort:
       block_param_merge_imported_call_return | sort)"
     actual_bespoke="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
     if [ "$actual_bespoke" != "$expected_bespoke" ]; then
-      echo "The remaining bespoke inventory must be exactly the eleven deferred Phase 9F call/import seams."
+      echo "The remaining bespoke inventory must be exactly the ten deferred imported-call seams."
       diff -u <(printf '%s\n' "$expected_bespoke") <(printf '%s\n' "$actual_bespoke") || true
       exit 1
     fi
@@ -6729,7 +6728,7 @@ guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort:
     just guard-cranelift-compiler-mir-block-param-local-materialize-return-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-local-materialize-branch-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ingestion-native-smoke
-    echo "✅ Phase 9E block-parameter-to-local materialization cohort passed: three historical commands are canonical adapters and exactly eleven call/import seams remain bespoke."
+    echo "✅ Phase 9E block-parameter-to-local materialization cohort passed: three historical commands are canonical adapters, the Phase 9F local-call seam is canonical, and exactly ten imported-call seams remain bespoke."
 
 guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
     #!/usr/bin/env bash
