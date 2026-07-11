@@ -6159,79 +6159,10 @@ fn emit_compiler_mir_block_param_update_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_param_update_branch_ingestion_fixture(&contents)?;
-    static COMPILER_MIR_BLOCK_PARAM_UPDATE_BRANCH_FUNCTION_PARAMS: [TinyMirType; 1] =
-        [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_PARAM_UPDATE_BRANCH_BLOCK_PARAMS: [TinyMirType; 1] =
-        [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_PARAM_UPDATE_BRANCH_BLOCKS: [TinyMirParamBlock; 5] = [
-        TinyMirParamBlock {
-            label: "entry",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
-                target: "increment",
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "increment",
-            params: &COMPILER_MIR_BLOCK_PARAM_UPDATE_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
-                target: "branch",
-                param: 0,
-                value: 4,
-            },
-        },
-        TinyMirParamBlock {
-            label: "branch",
-            params: &COMPILER_MIR_BLOCK_PARAM_UPDATE_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32Positive {
-                param: 0,
-                then_block: "positive",
-                else_block: "non_positive",
-            },
-        },
-        TinyMirParamBlock {
-            label: "positive",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::ReturnI32(67),
-        },
-        TinyMirParamBlock {
-            label: "non_positive",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::ReturnI32(71),
-        },
-    ];
-    let mir_function = TinyMirParamBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_update_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_UPDATE_BRANCH_SYMBOL,
-        params: &COMPILER_MIR_BLOCK_PARAM_UPDATE_BRANCH_FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        entry_block: "entry",
-        blocks: &COMPILER_MIR_BLOCK_PARAM_UPDATE_BRANCH_BLOCKS,
-    };
-
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_param_update_branch",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-    let local_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    define_tiny_mir_param_block_graph_exported_function(
-        &mut module,
-        &mir_function,
-        &local_function_ids,
-    )?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9E_CANONICAL_BLOCK_PARAM_UPDATE_BRANCH_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_block_param_update_branch_ingestion_fixture(
@@ -7114,94 +7045,10 @@ fn emit_compiler_mir_block_param_merge_update_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_param_merge_update_branch_ingestion_fixture(&contents)?;
-    static COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_FUNCTION_PARAMS: [TinyMirType; 1] =
-        [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_BLOCK_PARAMS: [TinyMirType; 1] =
-        [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_BLOCKS: [TinyMirParamBlock; 6] = [
-        TinyMirParamBlock {
-            label: "entry",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
-                target: "adjust",
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "adjust",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
-                target: "branch",
-                param: 0,
-                value: 4,
-            },
-        },
-        TinyMirParamBlock {
-            label: "branch",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
-                param: 0,
-                then_block: "then_value",
-                then_value: 181,
-                else_block: "else_value",
-                else_value: 191,
-            },
-        },
-        TinyMirParamBlock {
-            label: "then_value",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
-                target: "join",
-                param: 0,
-                value: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "else_value",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
-                target: "join",
-                param: 0,
-                value: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "join",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::ReturnBlockParamI32(0),
-        },
-    ];
-    let mir_function = TinyMirParamBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_merge_update_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_UPDATE_BRANCH_SYMBOL,
-        params: &COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        entry_block: "entry",
-        blocks: &COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_BLOCKS,
-    };
-
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_param_merge_update_branch",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-    let local_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    define_tiny_mir_param_block_graph_exported_function(
-        &mut module,
-        &mir_function,
-        &local_function_ids,
-    )?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
+    emit_compiler_mir_fixture_contents_object(
+        PHASE9E_CANONICAL_BLOCK_PARAM_MERGE_UPDATE_BRANCH_FIXTURE,
+        output_path,
+    )
 }
 
 fn parse_compiler_mir_block_param_merge_update_branch_ingestion_fixture(
