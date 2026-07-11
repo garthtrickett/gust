@@ -6356,8 +6356,15 @@ guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke:
     rg -n -F 'compiler-mir-block-local-branch-ingestion-object' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'parse_compiler_mir_block_local_branch_ingestion_fixture' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'COMPILER_MIR_INGESTED_BLOCK_LOCAL_BRANCH_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
-    rg -n -F 'TinyMirBlockStatement::LocalI32SetParam' compiler/experiments/cranelift/src/main.rs >/dev/null
-    rg -n -F 'TinyMirBlockTerminator::BranchLocalI32Positive' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'const PHASE9E_CANONICAL_BLOCK_LOCAL_BRANCH_FIXTURE: &str = concat!(' compiler/experiments/cranelift/src/main.rs >/dev/null
+    local_branch_adapter="$(sed -n '/^fn emit_compiler_mir_block_local_branch_ingestion_object(/,/^}/p' compiler/experiments/cranelift/src/main.rs)"
+    printf '%s\n' "$local_branch_adapter" | rg -n -F 'parse_compiler_mir_block_local_branch_ingestion_fixture(&contents)?;' >/dev/null
+    printf '%s\n' "$local_branch_adapter" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
+    printf '%s\n' "$local_branch_adapter" | rg -n -F 'PHASE9E_CANONICAL_BLOCK_LOCAL_BRANCH_FIXTURE' >/dev/null
+    if printf '%s\n' "$local_branch_adapter" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMirBlockFunction|define_tiny_mir_block_graph_exported_function|lower_tiny_mir_' >/dev/null; then
+      echo "Block-local branch ingestion bypasses canonical Phase 9E contents emission."
+      exit 1
+    fi
     build_dir="build/guards/cranelift_compiler_mir_block_local_branch_ingestion_native"
     object_file="$build_dir/tiny_native_backend_compiler_mir_ingested_block_local_branch.o"
     shim_c="$build_dir/tiny_native_backend_compiler_mir_ingested_block_local_branch_main.c"
@@ -6414,8 +6421,15 @@ guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke:
     rg -n -F 'compiler-mir-block-local-update-branch-ingestion-object' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'parse_compiler_mir_block_local_update_branch_ingestion_fixture' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'COMPILER_MIR_INGESTED_BLOCK_LOCAL_UPDATE_BRANCH_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
-    rg -n -F 'TinyMirBlockStatement::LocalI32AddI32Literal' compiler/experiments/cranelift/src/main.rs >/dev/null
-    rg -n -F 'TinyMirBlockTerminator::BranchLocalI32Positive' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'const PHASE9E_CANONICAL_BLOCK_LOCAL_UPDATE_BRANCH_FIXTURE: &str = concat!(' compiler/experiments/cranelift/src/main.rs >/dev/null
+    local_update_adapter="$(sed -n '/^fn emit_compiler_mir_block_local_update_branch_ingestion_object(/,/^}/p' compiler/experiments/cranelift/src/main.rs)"
+    printf '%s\n' "$local_update_adapter" | rg -n -F 'parse_compiler_mir_block_local_update_branch_ingestion_fixture(&contents)?;' >/dev/null
+    printf '%s\n' "$local_update_adapter" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
+    printf '%s\n' "$local_update_adapter" | rg -n -F 'PHASE9E_CANONICAL_BLOCK_LOCAL_UPDATE_BRANCH_FIXTURE' >/dev/null
+    if printf '%s\n' "$local_update_adapter" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMirBlockFunction|define_tiny_mir_block_graph_exported_function|lower_tiny_mir_' >/dev/null; then
+      echo "Block-local update branch ingestion bypasses canonical Phase 9E contents emission."
+      exit 1
+    fi
     build_dir="build/guards/cranelift_compiler_mir_block_local_update_branch_ingestion_native"
     object_file="$build_dir/tiny_native_backend_compiler_mir_ingested_block_local_update_branch.o"
     shim_c="$build_dir/tiny_native_backend_compiler_mir_ingested_block_local_update_branch_main.c"
@@ -6477,10 +6491,15 @@ guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smok
     rg -n -F 'compiler-mir-block-two-local-update-branch-ingestion-object' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'parse_compiler_mir_block_two_local_update_branch_ingestion_fixture' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'COMPILER_MIR_INGESTED_BLOCK_TWO_LOCAL_UPDATE_BRANCH_SYMBOL' compiler/experiments/cranelift/src/main.rs >/dev/null
-    rg -n -F 'COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_LOCALS: [TinyMirLocal; 2]' compiler/experiments/cranelift/src/main.rs >/dev/null
-    rg -n -F 'TinyMirBlockStatement::LocalI32SetParam' compiler/experiments/cranelift/src/main.rs >/dev/null
-    rg -n -F 'TinyMirBlockStatement::LocalI32AddI32Literal' compiler/experiments/cranelift/src/main.rs >/dev/null
-    rg -n -F 'TinyMirBlockTerminator::BranchLocalI32Positive' compiler/experiments/cranelift/src/main.rs >/dev/null
+    rg -n -F 'const PHASE9E_CANONICAL_BLOCK_TWO_LOCAL_UPDATE_BRANCH_FIXTURE: &str = concat!(' compiler/experiments/cranelift/src/main.rs >/dev/null
+    two_local_update_adapter="$(sed -n '/^fn emit_compiler_mir_block_two_local_update_branch_ingestion_object(/,/^}/p' compiler/experiments/cranelift/src/main.rs)"
+    printf '%s\n' "$two_local_update_adapter" | rg -n -F 'parse_compiler_mir_block_two_local_update_branch_ingestion_fixture(&contents)?;' >/dev/null
+    printf '%s\n' "$two_local_update_adapter" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
+    printf '%s\n' "$two_local_update_adapter" | rg -n -F 'PHASE9E_CANONICAL_BLOCK_TWO_LOCAL_UPDATE_BRANCH_FIXTURE' >/dev/null
+    if printf '%s\n' "$two_local_update_adapter" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMirBlockFunction|define_tiny_mir_block_graph_exported_function|lower_tiny_mir_' >/dev/null; then
+      echo "Block two-local update branch ingestion bypasses canonical Phase 9E contents emission."
+      exit 1
+    fi
     build_dir="build/guards/cranelift_compiler_mir_block_two_local_update_branch_ingestion_native"
     object_file="$build_dir/tiny_native_backend_compiler_mir_ingested_block_two_local_update_branch.o"
     shim_c="$build_dir/tiny_native_backend_compiler_mir_ingested_block_two_local_update_branch_main.c"
