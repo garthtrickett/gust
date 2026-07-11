@@ -7450,8 +7450,30 @@ guard-cranelift-phase9f-call-import-schema-validator:
       exit 1
     fi
 
-    "${cargo_cmd[@]}" compiler-mir-validate-fixture compiler/fixtures/native_backend_return_int_ingestion.mir >"$build_dir/valid-v1.log" 2>&1
-    rg -n -F 'validated canonical compiler MIR fixture:' "$build_dir/valid-v1.log" >/dev/null
+    valid_v1_fixture="$build_dir/valid-v1.mir"
+    cat >"$valid_v1_fixture" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: phase9f_valid_v1
+    backend_symbol: phase9f_valid_v1
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 1
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 0
+    block_0_terminator_kind: ReturnI32
+    block_0_terminator_value: 0
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+    if ! "${cargo_cmd[@]}" compiler-mir-validate-fixture "$valid_v1_fixture" >"$build_dir/valid-v1.log" 2>&1; then
+      echo "Phase 9F canonical v1 compatibility validation failed:"
+      cat "$build_dir/valid-v1.log"
+      exit 1
+    fi
+    rg -n -F 'validated canonical compiler MIR fixture: phase9f_valid_v1 -> phase9f_valid_v1' "$build_dir/valid-v1.log" >/dev/null
 
     expect_reject() {
       local label="$1"
