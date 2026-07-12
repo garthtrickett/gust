@@ -88,6 +88,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9f-direct-imported-call-cohort
         just guard-cranelift-phase9f-imported-materialization-predicate-cohort
         just guard-cranelift-phase9f-merge-arm-imported-call-cohort
+        just guard-cranelift-phase9f-joined-imported-call-cohort
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -240,6 +241,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-direct-imported-call-cohort' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-imported-materialization-predicate-cohort' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-merge-arm-imported-call-cohort' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-joined-imported-call-cohort' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -5258,8 +5260,8 @@ guard-cranelift-phase9d-ingestion-inventory-architecture:
     canonical_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=canonical_shared_lowering|' || true)"
     bespoke_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=compiler_owned_bespoke_lowering|' || true)"
     metadata_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=metadata_preservation_only|' || true)"
-    if [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$metadata_count" != "0" ]; then
-      echo "Unexpected current ingestion classification counts after the Phase 9F merge-arm imported-call cohort: canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count"
+    if [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ]; then
+      echo "Unexpected current ingestion classification counts after Phase 9F joined imported-call closure: canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count"
       exit 1
     fi
 
@@ -5708,8 +5710,8 @@ guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze:
 
     canonical_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc")"
     canonical_count="$(printf '%s\n' "$canonical_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
-    if [ "$canonical_count" != "30" ]; then
-      echo "Expected exactly 30 canonical compiler MIR ingestion seams after the Phase 9F merge-arm imported-call cohort, found $canonical_count."
+    if [ "$canonical_count" != "33" ]; then
+      echo "Expected exactly 33 canonical compiler MIR ingestion seams after Phase 9F joined imported-call closure, found $canonical_count."
       exit 1
     fi
     while IFS= read -r inventory_line; do
@@ -5804,10 +5806,11 @@ guard-cranelift-phase9d-close:
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9D closure baseline through the Phase 9F merge-arm imported-call cohort: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected current inventory while preserving the Phase 9D closure baseline through Phase 9F joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
       exit 1
     fi
 
@@ -5873,7 +5876,7 @@ guard-cranelift-phase9e-opening-contract:
     migrated_phase9f_direct_imports='block_param_imported_call_branch block_param_imported_call_return block_param_imported_predicate_update_branch'
     migrated_phase9f_materialization='block_param_imported_materialize_branch block_param_imported_materialize_return'
     migrated_phase9f_merge_arm_imports='block_param_merge_arm_update_imported_call_branch block_param_merge_arm_update_imported_call_return'
-    deferred_seams='block_param_merge_dual_imported_joined_return block_param_merge_imported_branch_joined_return block_param_merge_imported_call_return'
+    migrated_phase9f_joined_imports='block_param_merge_dual_imported_joined_return block_param_merge_imported_branch_joined_return block_param_merge_imported_call_return'
     for lane in $migrated_local_cfg; do
       rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9e_local_cfg_cohort\|$" "$manifest_doc" >/dev/null
     done
@@ -5898,16 +5901,17 @@ guard-cranelift-phase9e-opening-contract:
     for lane in $migrated_phase9f_merge_arm_imports; do
       rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9f_merge_arm_imported_call_cohort\|$" "$manifest_doc" >/dev/null
     done
-    for lane in $deferred_seams; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$" "$manifest_doc" >/dev/null
+    for lane in $migrated_phase9f_joined_imports; do
+      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9f_joined_imported_call_cohort\|$" "$manifest_doc" >/dev/null
     done
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current Phase 9F merge-arm imported-call inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected current Phase 9F joined imported-call closure inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
       exit 1
     fi
 
@@ -5969,10 +5973,11 @@ guard-cranelift-phase9e-local-cfg-cohort:
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9E local CFG milestone through the Phase 9F merge-arm imported-call cohort: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected current inventory while preserving the Phase 9E local CFG milestone through Phase 9F joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
       exit 1
     fi
 
@@ -6493,10 +6498,11 @@ guard-cranelift-phase9e-single-parameter-cfg-cohort:
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9E single-parameter CFG milestone through the Phase 9F merge-arm imported-call cohort: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected current inventory while preserving the Phase 9E single-parameter CFG milestone through Phase 9F joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
       exit 1
     fi
 
@@ -6603,10 +6609,11 @@ guard-cranelift-phase9e-variable-arity-block-parameter-cohort:
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9E variable-arity milestone through the Phase 9F merge-arm imported-call cohort: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected current inventory while preserving the Phase 9E variable-arity milestone through Phase 9F joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
       exit 1
     fi
 
@@ -6716,20 +6723,18 @@ guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort:
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory after the Phase 9F merge-arm imported-call cohort: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected current inventory after Phase 9F joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
       exit 1
     fi
 
-    expected_bespoke="$(printf '%s\n' \
-      block_param_merge_dual_imported_joined_return \
-      block_param_merge_imported_branch_joined_return \
-      block_param_merge_imported_call_return | sort)"
-    actual_bespoke="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
+    expected_bespoke=""
+    actual_bespoke="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true) | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
     if [ "$actual_bespoke" != "$expected_bespoke" ]; then
-      echo "The remaining bespoke inventory must be exactly the three deferred imported merge-call graph seams."
+      echo "The current ingestion inventory must contain no bespoke seams after Phase 9F closure."
       diff -u <(printf '%s\n' "$expected_bespoke") <(printf '%s\n' "$actual_bespoke") || true
       exit 1
     fi
@@ -6742,7 +6747,7 @@ guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort:
     just guard-cranelift-compiler-mir-block-param-local-materialize-return-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-local-materialize-branch-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ingestion-native-smoke
-    echo "✅ Phase 9E block-parameter-to-local materialization cohort passed: three historical commands are canonical adapters, the Phase 9F local/direct-import/merge-arm call seams are canonical, and exactly three imported merge-call graph seams remain bespoke."
+    echo "✅ Phase 9E block-parameter-to-local materialization cohort passed: three historical commands are canonical adapters and the current Phase 9F call/import inventory is fully canonical."
 
 guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
     #!/usr/bin/env bash
@@ -7144,9 +7149,10 @@ guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$translator_count" != "17" ]; then
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
       echo "Unexpected current inventory while preserving the Phase 9E completeness/freeze contract: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
       exit 1
     fi
@@ -7163,7 +7169,7 @@ guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
       block_param_merge_dual_imported_joined_return \
       block_param_merge_imported_branch_joined_return \
       block_param_merge_imported_call_return | sort)"
-    actual_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|migration=phase9f_(frozen_call_import_scope|module_emitter_local_call_cohort|direct_imported_call_cohort|imported_materialization_predicate_cohort|merge_arm_imported_call_cohort)\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
+    actual_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|migration=phase9f_(frozen_call_import_scope|module_emitter_local_call_cohort|direct_imported_call_cohort|imported_materialization_predicate_cohort|merge_arm_imported_call_cohort|joined_imported_call_cohort)\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
     if [ "$actual_phase9f" != "$expected_phase9f" ]; then
       echo "The Phase 9F scope must still contain exactly the eleven call/import migration candidates."
       diff -u <(printf '%s\n' "$expected_phase9f") <(printf '%s\n' "$actual_phase9f") || true
@@ -7184,8 +7190,12 @@ guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
         block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return)
           rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_merge_arm_imported_call_cohort\|$" "$manifest_doc" >/dev/null
           ;;
+        block_param_merge_dual_imported_joined_return|block_param_merge_imported_branch_joined_return|block_param_merge_imported_call_return)
+          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_joined_imported_call_cohort\|$" "$manifest_doc" >/dev/null
+          ;;
         *)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=TinyMirParamBlockFunction\|rust_lowering=define_tiny_mir_param_block_graph_exported_function\|object_emitter=lane_owned_object_module\|.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$" "$manifest_doc" >/dev/null
+          echo "Unexpected Phase 9F migration candidate in historical scope guard: $lane"
+          exit 1
           ;;
       esac
     done
@@ -7280,7 +7290,7 @@ guard-cranelift-phase9e-close:
       block_param_merge_dual_imported_joined_return \
       block_param_merge_imported_branch_joined_return \
       block_param_merge_imported_call_return | sort)"
-    actual_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|migration=phase9f_(frozen_call_import_scope|module_emitter_local_call_cohort|direct_imported_call_cohort|imported_materialization_predicate_cohort|merge_arm_imported_call_cohort)\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
+    actual_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|migration=phase9f_(frozen_call_import_scope|module_emitter_local_call_cohort|direct_imported_call_cohort|imported_materialization_predicate_cohort|merge_arm_imported_call_cohort|joined_imported_call_cohort)\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
     if [ "$actual_phase9f" != "$expected_phase9f" ]; then
       echo "Phase 9E closure evidence must continue to account for all eleven Phase 9F call/import candidates."
       diff -u <(printf '%s\n' "$expected_phase9f") <(printf '%s\n' "$actual_phase9f") || true
@@ -7288,7 +7298,7 @@ guard-cranelift-phase9e-close:
     fi
 
     canonical_records="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc")"
-    function_canonical_records="$(printf '%s\n' "$canonical_records" | rg -v '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_(block_param_local_call_branch|block_param_imported_call_branch|block_param_imported_call_return|block_param_imported_predicate_update_branch|block_param_imported_materialize_branch|block_param_imported_materialize_return|block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return):')"
+    function_canonical_records="$(printf '%s\n' "$canonical_records" | rg -v '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_(block_param_local_call_branch|block_param_imported_call_branch|block_param_imported_call_return|block_param_imported_predicate_update_branch|block_param_imported_materialize_branch|block_param_imported_materialize_return|block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return|block_param_merge_dual_imported_joined_return|block_param_merge_imported_branch_joined_return|block_param_merge_imported_call_return):')"
     if printf '%s\n' "$function_canonical_records" | rg -v '\|rust_model=CompilerMirLoweringFunction\|.*\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|' >/dev/null; then
       echo "Every pre-call canonical seam must use CompilerMirLoweringFunction and the shared function object emitter."
       printf '%s\n' "$function_canonical_records" | rg -v '\|rust_model=CompilerMirLoweringFunction\|.*\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|' || true
@@ -7319,19 +7329,24 @@ guard-cranelift-phase9e-close:
         block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return)
           rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_merge_arm_imported_call_cohort\|$" "$manifest_doc" >/dev/null
           ;;
+        block_param_merge_dual_imported_joined_return|block_param_merge_imported_branch_joined_return|block_param_merge_imported_call_return)
+          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_joined_imported_call_cohort\|$" "$manifest_doc" >/dev/null
+          ;;
         *)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=TinyMirParamBlockFunction\|rust_lowering=define_tiny_mir_param_block_graph_exported_function\|object_emitter=lane_owned_object_module\|.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$" "$manifest_doc" >/dev/null
+          echo "Unexpected Phase 9F migration candidate in historical scope guard: $lane"
+          exit 1
           ;;
       esac
     done
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(printf '%s\n' "$canonical_records" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
     metadata_count="${metadata_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
       echo "Unexpected current inventory while preserving the Phase 9E closure contract: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
       exit 1
     fi
@@ -7394,7 +7409,7 @@ guard-cranelift-phase9f-opening-contract:
       block_param_merge_imported_branch_joined_return \
       block_param_merge_imported_call_return | sort)"
     declared_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9f_contract_migration_candidates:' "$manifest_doc" | cut -d: -f2- | tr ',' '\n' | sed 's/^ //' | sort)"
-    actual_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|migration=phase9f_(frozen_call_import_scope|module_emitter_local_call_cohort|direct_imported_call_cohort|imported_materialization_predicate_cohort|merge_arm_imported_call_cohort)\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
+    actual_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|migration=phase9f_(frozen_call_import_scope|module_emitter_local_call_cohort|direct_imported_call_cohort|imported_materialization_predicate_cohort|merge_arm_imported_call_cohort|joined_imported_call_cohort)\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
     if [ "$declared_phase9f" != "$expected_phase9f" ] || [ "$actual_phase9f" != "$expected_phase9f" ]; then
       echo "Phase 9F must continue to account for exactly the eleven Phase 9E call/import migration candidates."
       diff -u <(printf '%s\n' "$expected_phase9f") <(printf '%s\n' "$declared_phase9f") || true
@@ -7416,19 +7431,24 @@ guard-cranelift-phase9f-opening-contract:
         block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return)
           rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_merge_arm_imported_call_cohort\|$" "$manifest_doc" >/dev/null
           ;;
+        block_param_merge_dual_imported_joined_return|block_param_merge_imported_branch_joined_return|block_param_merge_imported_call_return)
+          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_joined_imported_call_cohort\|$" "$manifest_doc" >/dev/null
+          ;;
         *)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=TinyMirParamBlockFunction\|rust_lowering=define_tiny_mir_param_block_graph_exported_function\|object_emitter=lane_owned_object_module\|.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$" "$manifest_doc" >/dev/null
+          echo "Unexpected Phase 9F migration candidate in historical scope guard: $lane"
+          exit 1
           ;;
       esac
     done
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
     metadata_count="${metadata_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
       echo "Unexpected current inventory while preserving the Phase 9F opening contract: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
       exit 1
     fi
@@ -7486,7 +7506,7 @@ guard-cranelift-phase9f-call-import-schema-validator:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_current_emission_status: local_and_direct_imported_call_modules_emit' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_first_milestone_status: complete' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_inventory_at_completion: 33_total_22_canonical_shared_11_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_current_inventory: 33_total_30_canonical_shared_3_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_current_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_next_milestone_status: complete' "$manifest_doc" >/dev/null
 
     rg -n -F 'const COMPILER_MIR_CANONICAL_MODULE_FORMAT: &str = "gust.compiler_mir_ingestion.v2";' "$source_file" >/dev/null
@@ -7670,10 +7690,11 @@ guard-cranelift-phase9f-call-import-schema-validator:
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected Phase 9F schema/current inventory after the merge-arm imported-call cohort: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected Phase 9F schema/current inventory after joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
       exit 1
     fi
 
@@ -7684,7 +7705,7 @@ guard-cranelift-phase9f-call-import-schema-validator:
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
-    echo "✅ Phase 9F v2 schema validation remains strict; local, direct imported-call, materialization, and merge-arm modules emit, and the current inventory is 30/3."
+    echo "✅ Phase 9F v2 schema validation remains strict; local, imported, materialization, merge-arm, joined, and dual-join modules emit, and the current inventory is 33/0."
 
 
 guard-cranelift-phase9f-module-emitter-local-call-cohort:
@@ -7801,22 +7822,20 @@ guard-cranelift-phase9f-module-emitter-local-call-cohort:
     just guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smoke
 
     rg -n '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_block_param_local_call_branch:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_module_emitter_local_call_cohort\|$' "$manifest_doc" >/dev/null
-    remaining_bespoke="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    expected_remaining="$(printf '%s\n' \
-      block_param_merge_dual_imported_joined_return \
-      block_param_merge_imported_branch_joined_return \
-      block_param_merge_imported_call_return | sort)"
+    remaining_bespoke="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" || true) | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
+    expected_remaining=""
     if [ "$remaining_bespoke" != "$expected_remaining" ]; then
-      echo "The current repository must leave exactly three imported merge-call graph seams bespoke after preserving the Patch 3 milestone."
+      echo "The current repository must contain no bespoke seams while preserving the Patch 3 milestone."
       diff -u <(printf '%s\n' "$expected_remaining") <(printf '%s\n' "$remaining_bespoke") || true
       exit 1
     fi
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$translator_count" != "17" ]; then
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
       echo "Unexpected current inventory while preserving the Phase 9F Patch 3 milestone: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
       exit 1
     fi
@@ -7828,7 +7847,7 @@ guard-cranelift-phase9f-module-emitter-local-call-cohort:
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
-    echo "✅ Phase 9F Patch 3 local-call evidence remains green while later cohorts use the shared emitter; three imported merge-call graph seams remain frozen and production routing is unchanged."
+    echo "✅ Phase 9F Patch 3 local-call evidence remains green while every later call/import cohort uses shared emission and production routing is unchanged."
 
 
 guard-cranelift-phase9f-direct-imported-call-cohort:
@@ -7941,24 +7960,22 @@ guard-cranelift-phase9f-direct-imported-call-cohort:
     just guard-cranelift-compiler-mir-block-param-imported-call-return-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingestion-native-smoke
 
-    expected_remaining="$(printf '%s\n' \
-      block_param_merge_dual_imported_joined_return \
-      block_param_merge_imported_branch_joined_return \
-      block_param_merge_imported_call_return | sort)"
-    actual_remaining="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
+    expected_remaining=""
+    actual_remaining="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" || true) | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
     if [ "$actual_remaining" != "$expected_remaining" ]; then
-      echo "The current repository must leave exactly the three imported merge-call graph seams bespoke while preserving the Patch 4 milestone."
+      echo "The current repository must contain no bespoke seams while preserving the Patch 4 milestone."
       diff -u <(printf '%s\n' "$expected_remaining") <(printf '%s\n' "$actual_remaining") || true
       exit 1
     fi
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
     metadata_count="${metadata_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
       echo "Unexpected current inventory while preserving the Phase 9F direct imported-call milestone: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
       exit 1
     fi
@@ -7970,7 +7987,7 @@ guard-cranelift-phase9f-direct-imported-call-cohort:
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
-    echo "✅ Phase 9F Patch 4 direct-import evidence remains green while three imported merge-call graph seams remain frozen, and production routing is preserved."
+    echo "✅ Phase 9F Patch 4 direct-import evidence remains green within the fully canonical call/import inventory, and production routing is preserved."
 
 
 guard-cranelift-phase9f-imported-materialization-predicate-cohort:
@@ -8048,24 +8065,22 @@ guard-cranelift-phase9f-imported-materialization-predicate-cohort:
     just guard-cranelift-compiler-mir-block-param-imported-materialize-branch-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingestion-native-smoke
 
-    expected_remaining="$(printf '%s\n' \
-      block_param_merge_dual_imported_joined_return \
-      block_param_merge_imported_branch_joined_return \
-      block_param_merge_imported_call_return | sort)"
-    actual_remaining="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
+    expected_remaining=""
+    actual_remaining="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" || true) | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
     if [ "$actual_remaining" != "$expected_remaining" ]; then
-      echo "Patch 5 preservation must leave exactly the three imported merge-call graph seams bespoke."
+      echo "Patch 5 preservation must coexist with a fully canonical current inventory."
       diff -u <(printf '%s\n' "$expected_remaining") <(printf '%s\n' "$actual_remaining") || true
       exit 1
     fi
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
     metadata_count="${metadata_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
       echo "Unexpected current inventory while preserving the Phase 9F imported materialization/predicate milestone: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
       exit 1
     fi
@@ -8078,7 +8093,7 @@ guard-cranelift-phase9f-imported-materialization-predicate-cohort:
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
-    echo "✅ Phase 9F Patch 5 materialization/predicate evidence remains green while three merge-call graph seams remain bespoke, and production routing is preserved."
+    echo "✅ Phase 9F Patch 5 materialization/predicate evidence remains green within the fully canonical call/import inventory, and production routing is preserved."
 
 guard-cranelift-phase9f-merge-arm-imported-call-cohort:
     #!/usr/bin/env bash
@@ -8156,25 +8171,23 @@ guard-cranelift-phase9f-merge-arm-imported-call-cohort:
     just guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke
 
-    expected_remaining="$(printf '%s\n' \
-      block_param_merge_dual_imported_joined_return \
-      block_param_merge_imported_branch_joined_return \
-      block_param_merge_imported_call_return | sort)"
-    actual_remaining="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
+    expected_remaining=""
+    actual_remaining="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" || true) | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
     if [ "$actual_remaining" != "$expected_remaining" ]; then
-      echo "Patch 6 must leave exactly the three remaining imported merge-call graph seams bespoke."
+      echo "Patch 6 preservation must coexist with a fully canonical current inventory."
       diff -u <(printf '%s\n' "$expected_remaining") <(printf '%s\n' "$actual_remaining") || true
       exit 1
     fi
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
     metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
     metadata_count="${metadata_count:-0}"
     translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "30" ] || [ "$bespoke_count" != "3" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected Phase 9F merge-arm imported-call inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected current inventory while preserving the Phase 9F merge-arm imported-call milestone: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
       exit 1
     fi
 
@@ -8186,7 +8199,126 @@ guard-cranelift-phase9f-merge-arm-imported-call-cohort:
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
-    echo "✅ Phase 9F Patch 6 canonicalizes merge-arm imported calls, leaves three imported merge-call graph seams bespoke, and preserves production routing."
+    echo "✅ Phase 9F Patch 6 merge-arm evidence remains green within the fully canonical call/import inventory, and production routing is preserved."
+
+guard-cranelift-phase9f-joined-imported-call-cohort:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9F joined imported-call graph cohort..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+
+    just guard-cranelift-phase9f-merge-arm-imported-call-cohort
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_JOINED_IMPORTED_CALL_COHORT_GUARD: guard-cranelift-phase9f-joined-imported-call-cohort' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_status: phase9f_joined_and_dual_join_imported_call_cohort_complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_module_emitter: lower_compiler_mir_ingestion_module_to_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_body_lowerer: build_compiler_mir_ingestion_body_with_calls' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_call_lowering_policy: reuse_patch4_LocalI32SetCall_and_imported_FuncRef_lowering_without_new_call_variants' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_migrated_lane_count: 3' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_migrated_lanes: block_param_merge_imported_call_return,block_param_merge_imported_branch_joined_return,block_param_merge_dual_imported_joined_return' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_legacy_adapter_policy: lane_specific_parsers_validate_frozen_inputs_then_build_CompilerMirLoweringModule_and_call_the_shared_module_emitter' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_composition_evidence: imported_results_cross_CFG_edges_independent_branch_arms_feed_ordered_parameterized_merges_joined_returns_reuse_imported_results_and_dual_imports_converge_at_a_join' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_historical_command_policy: all_eleven_phase9f_historical_commands_are_thin_compatibility_adapters_into_the_canonical_v2_CompilerMirLoweringModule_model_and_shared_module_emission' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_inventory_after: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_remaining_bespoke_count: 0' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_remaining_bespoke_lanes: none' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_translator_policy: existing_17_translator_seeds_remain_frozen' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_route_policy: experiment_only_static_native_test_shims_no_default_backend_flip_no_production_runtime_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_primary_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_next_milestone: phase9f_closure_contract' "$manifest_doc" >/dev/null
+
+    call_lowering_body="$(sed -n '/^fn build_compiler_mir_ingestion_body_with_calls/,/^fn /p' "$source_file")"
+    printf '%s\n' "$call_lowering_body" | rg -n -F 'CompilerMirLoweringStatement::LocalI32SetCall {' >/dev/null
+    printf '%s\n' "$call_lowering_body" | rg -n -F 'CompilerMirLoweringCallTarget::ImportedFunction(callee)' >/dev/null
+    printf '%s\n' "$call_lowering_body" | rg -n -F 'let call_inst = builder.ins().call(function_ref, &lowered_arguments);' >/dev/null
+
+    for lane in block_param_merge_imported_call_return block_param_merge_imported_branch_joined_return block_param_merge_dual_imported_joined_return; do
+      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_joined_imported_call_cohort\|$" "$manifest_doc" >/dev/null
+      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object/,/^fn build_compiler_mir_${lane}_module/p" "$source_file")"
+      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(" >/dev/null
+      printf '%s\n' "$adapter_body" | rg -n -F "build_compiler_mir_${lane}_module()" >/dev/null
+      printf '%s\n' "$adapter_body" | rg -n -F 'lower_compiler_mir_ingestion_module_to_object(output_path, &module)' >/dev/null
+      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMir(Function|BlockFunction|ParamBlockFunction)|lower_tiny_mir_|define_tiny_mir_' >/dev/null; then
+        echo "Migrated joined-call adapter $lane owns a forbidden bespoke object path."
+        exit 1
+      fi
+      builder_body="$(sed -n "/^fn build_compiler_mir_${lane}_module/,/^fn /p" "$source_file")"
+      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringFunctionLinkage::ImportedHost' >/dev/null
+      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringStatement::LocalI32SetCall {' >/dev/null
+      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal {' >/dev/null
+      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringTerminator::ReturnLocalI32(' >/dev/null
+    done
+
+    merge_return_builder="$(sed -n '/^fn build_compiler_mir_block_param_merge_imported_call_return_module/,/^fn /p' "$source_file")"
+    if [ "$(printf '%s\n' "$merge_return_builder" | rg -c -F 'CompilerMirLoweringStatement::LocalI32SetCall {')" != "1" ]; then
+      echo "Joined imported-call return must lower exactly one post-merge imported call."
+      exit 1
+    fi
+    if [ "$(printf '%s\n' "$merge_return_builder" | rg -c -F 'CompilerMirLoweringEdgeArgument::BlockParamI32(')" != "2" ]; then
+      echo "Joined imported-call return must transport both independent arm values into the merge."
+      exit 1
+    fi
+    printf '%s\n' "$merge_return_builder" | rg -n -F 'CompilerMirLoweringTerminator::ReturnLocalI32("returned")' >/dev/null
+
+    branch_joined_builder="$(sed -n '/^fn build_compiler_mir_block_param_merge_imported_branch_joined_return_module/,/^fn /p' "$source_file")"
+    if [ "$(printf '%s\n' "$branch_joined_builder" | rg -c -F 'CompilerMirLoweringStatement::LocalI32SetCall {')" != "2" ]; then
+      echo "Imported branch joined return must lower one predicate call and one joined return call."
+      exit 1
+    fi
+    printf '%s\n' "$branch_joined_builder" | rg -n -F 'CompilerMirLoweringTerminator::BranchLocalI32Positive {' >/dev/null
+    if [ "$(printf '%s\n' "$branch_joined_builder" | rg -c -F 'target: "return_join"')" != "2" ]; then
+      echo "Imported branch joined return must converge both branch outcomes at return_join."
+      exit 1
+    fi
+
+    dual_joined_builder="$(sed -n '/^fn build_compiler_mir_block_param_merge_dual_imported_joined_return_module/,/^fn /p' "$source_file")"
+    if [ "$(printf '%s\n' "$dual_joined_builder" | rg -c -F 'CompilerMirLoweringFunctionLinkage::ImportedHost')" != "2" ]; then
+      echo "Dual joined return must declare exactly two imported host functions."
+      exit 1
+    fi
+    printf '%s\n' "$dual_joined_builder" | rg -n -F 'CompilerMirLoweringCallTarget::ImportedFunction(' >/dev/null
+    printf '%s\n' "$dual_joined_builder" | rg -n -F '"branch_host_add"' >/dev/null
+    printf '%s\n' "$dual_joined_builder" | rg -n -F '"return_host_add"' >/dev/null
+    if [ "$(printf '%s\n' "$dual_joined_builder" | rg -c -F 'CompilerMirLoweringStatement::LocalI32SetCall {')" != "2" ]; then
+      echo "Dual joined return must lower exactly the predicate and final imported calls."
+      exit 1
+    fi
+
+    just guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke
+    just guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke
+    just guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-native-smoke
+
+    actual_bespoke="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    if [ -n "$actual_bespoke" ]; then
+      echo "Phase 9F closure requires zero bespoke compiler MIR ingestion seams."
+      printf '%s\n' "$actual_bespoke"
+      exit 1
+    fi
+
+    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
+    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
+    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
+    metadata_count="${metadata_count:-0}"
+    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected Phase 9F closure inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
+      exit 1
+    fi
+
+    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 7 completes the joined and dual-join imported-call cohort without changing the Patch 4 call lowering.' >/dev/null
+    tr '\n' ' ' < "$readme_doc" | rg -F '`block_param_merge_imported_call_return` transports independent branch-arm values into a parameterized merge' >/dev/null
+    tr '\n' ' ' < "$readme_doc" | rg -F '`block_param_merge_imported_branch_joined_return` carries imported predicate results through an existing post-merge branch' >/dev/null
+    tr '\n' ' ' < "$readme_doc" | rg -F '`block_param_merge_dual_imported_joined_return` proves the same joined graph with distinct imported symbols' >/dev/null
+    tr '\n' ' ' < "$readme_doc" | rg -F 'The Phase 9F inventory is now closed at 33 total seams, 33 canonical shared-lowering seams, zero bespoke seams, zero metadata-only seams, and seventeen frozen translator seeds.' >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
+    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
+
+    echo "✅ Phase 9F Patch 7 canonicalizes all joined imported-call graphs and closes the inventory at 33/0 without changing production routing."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

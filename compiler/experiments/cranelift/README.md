@@ -290,8 +290,9 @@ patch, it remains frozen on `TinyMirParamBlockFunction`,
 At Phase 9F opening, the generic `compiler-mir-ingestion-object` command
 began dispatching both versions. v1 continues through its frozen
 single-function object path. v2 first gained parse/validation-only behavior,
-then Patch 3 enabled import-free local-call modules and Patch 4 enabled direct
-imported-host calls through the shared module emitter.
+then Patch 3 enabled import-free local-call modules, Patch 4 enabled direct
+imported-host calls, and Patches 5 through 7 completed materialization,
+merge-arm, joined, and dual-join call graphs through the shared module emitter.
 
 Phase 9F is bounded to direct local-function calls and direct imported-function
 calls with ordered i32 arguments, one i32 return value, and every result stored
@@ -428,6 +429,29 @@ seventeen frozen translator seeds. The remaining seams are
 `block_param_merge_imported_call_return`. MIR-to-C remains primary, Cranelift
 remains disabled by default, and no production runtime or backend route is
 enabled. The next milestone is the remaining imported merge graph cohort.
+
+Patch 7 completes the joined and dual-join imported-call cohort without
+changing the Patch 4 call lowering. The final three frozen lane-specific
+parsers now act only as compatibility adapters: they validate the existing
+fixtures, build `CompilerMirLoweringModule`, and invoke the shared module
+emitter.
+
+`block_param_merge_imported_call_return` transports independent branch-arm
+values into a parameterized merge, materializes the imported result in a
+declared local, and returns through that local.
+`block_param_merge_imported_branch_joined_return` carries imported predicate
+results through an existing post-merge branch, converges both return values at
+an ordered block parameter, then performs the joined imported return call.
+`block_param_merge_dual_imported_joined_return` proves the same joined graph
+with distinct imported symbols for the predicate and final return calls.
+
+The Phase 9F inventory is now closed at 33 total seams, 33 canonical
+shared-lowering seams, zero bespoke seams, zero metadata-only seams, and
+seventeen frozen translator seeds. All eleven historical Phase 9F commands are
+thin compatibility adapters into the canonical v2
+`CompilerMirLoweringModule` model and shared module emission. MIR-to-C remains
+primary, Cranelift remains disabled by default, and
+no production runtime or backend route is enabled.
 
 The checked-in lockfile for this crate is owned by:
 
