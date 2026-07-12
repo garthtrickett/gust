@@ -13504,18 +13504,27 @@ fn compiler_mir_ingestion_signature(
     signature
 }
 
+fn compiler_mir_ingestion_import_signature(
+    module: &ObjectModule,
+    imported: &CompilerMirLoweringImportedFunction<'_>,
+) -> cranelift_codegen::ir::Signature {
+    let mut signature = module.make_signature();
+    for param in &imported.params {
+        signature
+            .params
+            .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
+    }
+    if matches!(imported.return_type, TinyMirType::I32) {
+        signature.returns.push(AbiParam::new(types::I32));
+    }
+    signature
+}
+
 fn lower_compiler_mir_ingestion_module_to_object(
     output_path: &Path,
     mir_module: &CompilerMirLoweringModule<'_>,
 ) -> Result<(), Box<dyn Error>> {
     validate_compiler_mir_module(mir_module)?;
-    if !mir_module.imports.is_empty() {
-        return Err(IoError::new(
-            ErrorKind::Unsupported,
-            "canonical compiler MIR imported call emission is not implemented in Phase 9F Patch 3",
-        )
-        .into());
-    }
     for defined in &mir_module.functions {
         validate_compiler_mir_ingestion_lowering_readiness(
             &defined.fixture.function,
@@ -13533,6 +13542,37 @@ fn lower_compiler_mir_ingestion_module_to_object(
     let object_builder =
         ObjectBuilder::new(isa, mir_module.name, default_libcall_names())?;
     let mut module = ObjectModule::new(object_builder);
+
+    let mut imported_link_ids: HashMap<&str, FuncId> = HashMap::new();
+    let mut imported_function_ids: HashMap<&str, FuncId> = HashMap::new();
+    for imported in &mir_module.imports {
+        if imported.linkage != CompilerMirLoweringFunctionLinkage::ImportedHost {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR imported function {} must use imported_host linkage",
+                    imported.name
+                ),
+            )
+            .into());
+        }
+        let function_id = if let Some(existing) =
+            imported_link_ids.get(imported.link_symbol).copied()
+        {
+            existing
+        } else {
+            let signature =
+                compiler_mir_ingestion_import_signature(&module, imported);
+            let declared = module.declare_function(
+                imported.link_symbol,
+                Linkage::Import,
+                &signature,
+            )?;
+            imported_link_ids.insert(imported.link_symbol, declared);
+            declared
+        };
+        imported_function_ids.insert(imported.name, function_id);
+    }
 
     let mut local_function_ids: HashMap<&str, FuncId> = HashMap::new();
     for defined in &mir_module.functions {
@@ -13562,6 +13602,7 @@ fn lower_compiler_mir_ingestion_module_to_object(
             &mut module,
             defined,
             &local_function_ids,
+            &imported_function_ids,
         )?;
     }
 
@@ -13574,6 +13615,7 @@ fn define_compiler_mir_ingestion_module_function(
     module: &mut ObjectModule,
     defined: &CompilerMirLoweringDefinedFunction<'_>,
     local_function_ids: &HashMap<&str, FuncId>,
+    imported_function_ids: &HashMap<&str, FuncId>,
 ) -> Result<(), Box<dyn Error>> {
     let mir_function = &defined.fixture.function;
     let function_id = *local_function_ids
@@ -13603,7 +13645,13 @@ fn define_compiler_mir_ingestion_module_function(
             module.declare_func_in_func(*candidate_id, builder.func),
         );
     }
-    let imported_function_refs: HashMap<&str, FuncRef> = HashMap::new();
+    let mut imported_function_refs: HashMap<&str, FuncRef> = HashMap::new();
+    for (name, imported_id) in imported_function_ids {
+        imported_function_refs.insert(
+            *name,
+            module.declare_func_in_func(*imported_id, builder.func),
+        );
+    }
     build_compiler_mir_ingestion_body_with_calls(
         &mut builder,
         mir_function,
