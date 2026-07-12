@@ -5724,7 +5724,7 @@ guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze:
         exit 1
       fi
       case "$lane" in
-        block_param_local_call_branch|block_param_imported_call_branch|block_param_imported_call_return|block_param_imported_predicate_update_branch|block_param_imported_materialize_branch|block_param_imported_materialize_return|block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return)
+        block_param_local_call_branch|block_param_imported_call_branch|block_param_imported_call_return|block_param_imported_predicate_update_branch|block_param_imported_materialize_branch|block_param_imported_materialize_return|block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return|block_param_merge_imported_call_return|block_param_merge_imported_branch_joined_return|block_param_merge_dual_imported_joined_return)
           [[ "$inventory_line" == *'|rust_model=CompilerMirLoweringModule|'* ]]
           [[ "$inventory_line" == *'|rust_lowering=build_compiler_mir_ingestion_body_with_calls|'* ]]
           [[ "$inventory_line" == *'|object_emitter=lower_compiler_mir_ingestion_module_to_object|'* ]]
