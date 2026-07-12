@@ -287,10 +287,11 @@ patch, it remains frozen on `TinyMirParamBlockFunction`,
 
 `gust.compiler_mir_ingestion.v1` remains frozen, single-function, and call/import-free.
 `gust.compiler_mir_ingestion.v2` is the only new canonical schema allowed to represent modules, imports, and calls.
-The generic `compiler-mir-ingestion-object` command now dispatches both
-versions. v1 continues through its frozen single-function object path, while
-v2 parses and validates the module boundary but deliberately rejects before
-object creation until the shared module emitter lands.
+At Phase 9F opening, the generic `compiler-mir-ingestion-object` command
+began dispatching both versions. v1 continues through its frozen
+single-function object path. v2 first gained parse/validation-only behavior,
+then Patch 3 enabled import-free local-call modules and Patch 4 enabled direct
+imported-host calls through the shared module emitter.
 
 Phase 9F is bounded to direct local-function calls and direct imported-function
 calls with ordered i32 arguments, one i32 return value, and every result stored
@@ -334,10 +335,10 @@ ordering is supported. Exported entries use Cranelift export linkage,
 module-local helpers use local linkage, and direct local calls lower through
 the shared call-aware canonical body builder.
 
-Modules containing imported functions still reject before output creation.
-The canonical import declarations and imported-call validation remain frozen,
-but imported function declaration, linking, and call emission are reserved for
-the next explicit cohort. v1 remains single-function and call/import-free.
+At Patch 3 completion, modules containing imported functions still rejected
+before output creation. That rejection is retained as historical milestone
+evidence; Patch 4 below activates imported-host declarations and direct
+imported-call emission. v1 remains single-function and call/import-free.
 
 The block-param local-call branch seam is the first Phase 9F migration. Its
 legacy lane-specific fixture parser is now only a compatibility adapter: after
@@ -346,11 +347,37 @@ calls the shared module emitter. It no longer owns a lane-specific
 `ObjectModule`, `TinyMirParamBlockFunction`, or bespoke function-definition
 path.
 
-The inventory is now 33 total seams, 23 canonical shared-lowering seams, ten
+Patch 4 completes the imported-function emitter and direct imported-call
+cohort. The shared module emitter declares each unique imported link symbol
+with Cranelift import linkage before defining any function body. Multiple
+canonical source import names may share one imported `FuncId` only when the
+validator has already proved that their link symbol and ordered i32 signature
+match. Every defined function receives imported `FuncRef` values before the
+call-aware body builder lowers `ImportedFunction` calls.
+
+The checked-in Phase 9F schema fixture now provides native object evidence for
+two statically linked imported host functions combined with caller-before-
+callee local calls. Native C shims satisfy the unresolved host symbols only at
+test link time. No dynamic symbol lookup, runtime loader, production runtime
+route, or default-backend change is introduced.
+
+`block_param_imported_call_branch`,
+`block_param_imported_call_return`, and
+`block_param_imported_predicate_update_branch` are canonical compatibility
+adapters in this cohort. Each still validates its frozen lane-specific input,
+then builds `CompilerMirLoweringModule` with typed imported-host declarations,
+`LocalI32SetCall` statements, and existing CFG/block-parameter operations
+before invoking the shared module emitter. None owns a lane-specific
+`ObjectModule`, `TinyMirParamBlockFunction`, or bespoke function-definition
+path.
+
+The inventory is now 33 total seams, 26 canonical shared-lowering seams, seven
 frozen bespoke imported-call seams, zero metadata-only seams, and seventeen
-frozen translator seeds. MIR-to-C remains primary, Cranelift remains disabled
-by default, and no production runtime or backend route is enabled. The next
-milestone is the imported-function emitter and first imported-call cohort.
+frozen translator seeds. The remaining seams are the two imported-call
+materialization lanes and five imported merge/branch graph lanes. MIR-to-C
+remains primary, Cranelift remains disabled by default, and no production
+runtime or backend route is enabled. The next milestone is the imported-call
+materialization cohort.
 
 The checked-in lockfile for this crate is owned by:
 
