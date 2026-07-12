@@ -6710,7 +6710,6 @@ guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort:
     fi
 
     expected_bespoke="$(printf '%s\n' \
-expected_bespoke="$(printf '%s\n' \
       block_param_imported_materialize_branch \
       block_param_imported_materialize_return \
       block_param_merge_arm_update_imported_call_branch \
