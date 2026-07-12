@@ -407,6 +407,28 @@ seventeen frozen translator seeds. The remaining seams are
 remains disabled by default, and no production runtime or backend route is
 enabled. The next milestone is the merge-arm imported-call cohort.
 
+Patch 6 completes the merge-arm imported-call cohort without changing the
+Patch 4 call lowering. Both frozen lane-specific parsers now act only as
+compatibility adapters: they validate the existing fixture, build
+`CompilerMirLoweringModule`, and invoke the shared module emitter.
+
+`block_param_merge_arm_update_imported_call_return` performs imported calls in
+both branch arms, updates the materialized arm locals, passes those locals as
+typed edge arguments into a parameterized merge, then uses a post-merge
+imported result as the existing local return. The branch companion performs an
+imported call in one arm while the other arm uses the existing block-parameter
+to local update, transports both local values into the merge, and lets a
+post-merge imported predicate result drive existing branch behavior.
+
+The inventory is now 33 total seams, 30 canonical shared-lowering seams, three
+frozen bespoke imported merge-call graph seams, zero metadata-only seams, and
+seventeen frozen translator seeds. The remaining seams are
+`block_param_merge_dual_imported_joined_return`,
+`block_param_merge_imported_branch_joined_return`, and
+`block_param_merge_imported_call_return`. MIR-to-C remains primary, Cranelift
+remains disabled by default, and no production runtime or backend route is
+enabled. The next milestone is the remaining imported merge graph cohort.
+
 The checked-in lockfile for this crate is owned by:
 
 ```bash

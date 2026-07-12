@@ -8827,119 +8827,209 @@ fn emit_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion
     parse_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_fixture(
         &contents,
     )?;
-    static COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_FUNCTION_PARAMS:
-        [TinyMirType; 1] = [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS:
-        [TinyMirType; 1] = [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCKS: [TinyMirParamBlock; 6] = [
-        TinyMirParamBlock {
-            label: "entry",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
-                target: "adjust",
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "adjust",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
-                target: "branch",
-                param: 0,
-                value: 4,
-            },
-        },
-        TinyMirParamBlock {
-            label: "branch",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
-                param: 0,
-                then_block: "then_value",
-                then_value: 211,
-                else_block: "else_value",
-                else_value: 223,
-            },
-        },
-        TinyMirParamBlock {
-            label: "then_value",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
-                target: "join",
-                param: 0,
-                value: 7,
-            },
-        },
-        TinyMirParamBlock {
-            label: "else_value",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
-                target: "join",
-                param: 0,
-                value: 9,
-            },
-        },
-        TinyMirParamBlock {
-            label: "join",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal {
-                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL,
-                param: 0,
-                value: 5,
-            },
-        },
-    ];
-    let mir_function = TinyMirParamBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_SYMBOL,
-        params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        entry_block: "entry",
-        blocks: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_BLOCKS,
-    };
+    let module =
+        build_compiler_mir_block_param_merge_arm_update_imported_call_return_module();
+    lower_compiler_mir_ingestion_module_to_object(output_path, &module)
+}
 
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
+fn build_compiler_mir_block_param_merge_arm_update_imported_call_return_module(
+) -> CompilerMirLoweringModule<'static> {
+    CompilerMirLoweringModule {
+        name: "gust_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return",
+        imports: vec![CompilerMirLoweringImportedFunction {
+            name: "host_add",
+            link_symbol:
+                COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL,
+            linkage: CompilerMirLoweringFunctionLinkage::ImportedHost,
+            params: vec![TinyMirType::I32, TinyMirType::I32],
+            return_type: TinyMirType::I32,
+        }],
+        functions: vec![CompilerMirLoweringDefinedFunction {
+            linkage: CompilerMirLoweringFunctionLinkage::ExportedEntry,
+            fixture: ParsedCompilerMirFixture {
+                function: CompilerMirLoweringFunction {
+                    object_name:
+                        "tiny_block_param_merge_arm_update_imported_call_return",
+                    symbol:
+                        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_SYMBOL,
+                    return_type: TinyMirType::I32,
+                    params: vec![TinyMirType::I32],
+                    locals: vec![
+                        CompilerMirLoweringLocal {
+                            name: "then_value",
+                            ty: TinyMirType::I32,
+                        },
+                        CompilerMirLoweringLocal {
+                            name: "else_value",
+                            ty: TinyMirType::I32,
+                        },
+                        CompilerMirLoweringLocal {
+                            name: "returned",
+                            ty: TinyMirType::I32,
+                        },
+                    ],
+                    entry_block: "entry",
+                    blocks: vec![
+                        CompilerMirLoweringBlock {
+                            label: "entry",
+                            parameters: Vec::new(),
+                            statements: Vec::new(),
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "adjust",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::FunctionParamI32(0),
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "adjust",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "input",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: Vec::new(),
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "branch",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal {
+                                            name: "input",
+                                            value: 4,
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "branch",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "adjusted",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: Vec::new(),
+                            terminator:
+                                CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                                    name: "adjusted",
+                                    then_edge: CompilerMirLoweringEdge {
+                                        target: "then_value",
+                                        arguments: vec![
+                                            CompilerMirLoweringEdgeArgument::I32Literal(211),
+                                        ],
+                                    },
+                                    else_edge: CompilerMirLoweringEdge {
+                                        target: "else_value",
+                                        arguments: vec![
+                                            CompilerMirLoweringEdgeArgument::I32Literal(223),
+                                        ],
+                                    },
+                                },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "then_value",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "selected",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: vec![
+                                CompilerMirLoweringStatement::LocalI32SetCall {
+                                    name: "then_value",
+                                    target:
+                                        CompilerMirLoweringCallTarget::ImportedFunction(
+                                            "host_add",
+                                        ),
+                                    arguments: vec![
+                                        CompilerMirLoweringCallArgument::BlockParamI32(
+                                            "selected",
+                                        ),
+                                        CompilerMirLoweringCallArgument::I32Literal(5),
+                                    ],
+                                },
+                                CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                                    name: "then_value",
+                                    value: 2,
+                                },
+                            ],
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "join",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::LocalI32(
+                                            "then_value",
+                                        ),
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "else_value",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "selected",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: vec![
+                                CompilerMirLoweringStatement::LocalI32SetCall {
+                                    name: "else_value",
+                                    target:
+                                        CompilerMirLoweringCallTarget::ImportedFunction(
+                                            "host_add",
+                                        ),
+                                    arguments: vec![
+                                        CompilerMirLoweringCallArgument::BlockParamI32(
+                                            "selected",
+                                        ),
+                                        CompilerMirLoweringCallArgument::I32Literal(5),
+                                    ],
+                                },
+                                CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                                    name: "else_value",
+                                    value: 4,
+                                },
+                            ],
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "join",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::LocalI32(
+                                            "else_value",
+                                        ),
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "join",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "merged",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: vec![
+                                CompilerMirLoweringStatement::LocalI32SetCall {
+                                    name: "returned",
+                                    target:
+                                        CompilerMirLoweringCallTarget::ImportedFunction(
+                                            "host_add",
+                                        ),
+                                    arguments: vec![
+                                        CompilerMirLoweringCallArgument::BlockParamI32(
+                                            "merged",
+                                        ),
+                                        CompilerMirLoweringCallArgument::I32Literal(5),
+                                    ],
+                                },
+                            ],
+                            terminator:
+                                CompilerMirLoweringTerminator::ReturnLocalI32("returned"),
+                        },
+                    ],
+                },
+                return_type: TinyMirType::I32,
+                metadata: Vec::new(),
+                expected_exit: 0,
+            },
+        }],
     }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-
-    let mut imported_add_signature = module.make_signature();
-    imported_add_signature
-        .params
-        .push(AbiParam::new(types::I32));
-    imported_add_signature
-        .params
-        .push(AbiParam::new(types::I32));
-    imported_add_signature
-        .returns
-        .push(AbiParam::new(types::I32));
-    let imported_add_function_id = module.declare_function(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL,
-        Linkage::Import,
-        &imported_add_signature,
-    )?;
-    let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    imported_function_ids.insert(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_HOST_ADD_SYMBOL,
-        imported_add_function_id,
-    );
-
-    define_tiny_mir_param_block_graph_exported_function(
-        &mut module,
-        &mir_function,
-        &imported_function_ids,
-    )?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
 }
 
 fn parse_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_fixture(
@@ -9081,131 +9171,222 @@ fn emit_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion
     parse_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_fixture(
         &contents,
     )?;
-    static COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_FUNCTION_PARAMS:
-        [TinyMirType; 1] = [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_BLOCK_PARAMS:
-        [TinyMirType; 1] = [TinyMirType::I32];
-    static COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_BLOCKS: [TinyMirParamBlock; 8] = [
-        TinyMirParamBlock {
-            label: "entry",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
-                target: "adjust",
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "adjust",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
-                target: "branch",
-                param: 0,
-                value: 4,
-            },
-        },
-        TinyMirParamBlock {
-            label: "branch",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
-                param: 0,
-                then_block: "then_value",
-                then_value: 211,
-                else_block: "else_value",
-                else_value: 223,
-            },
-        },
-        TinyMirParamBlock {
-            label: "then_value",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
-                target: "join",
-                param: 0,
-                value: 7,
-            },
-        },
-        TinyMirParamBlock {
-            label: "else_value",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal {
-                target: "join",
-                param: 0,
-                value: 9,
-            },
-        },
-        TinyMirParamBlock {
-            label: "join",
-            params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallI32LiteralPositive {
-                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_HOST_ADD_SYMBOL,
-                param: 0,
-                value: -220,
-                then_block: "positive",
-                else_block: "non_positive",
-            },
-        },
-        TinyMirParamBlock {
-            label: "positive",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::ReturnI32(241),
-        },
-        TinyMirParamBlock {
-            label: "non_positive",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::ReturnI32(251),
-        },
-    ];
-    let mir_function = TinyMirParamBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_SYMBOL,
-        params: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        entry_block: "entry",
-        blocks: &COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_BLOCKS,
-    };
+    let module =
+        build_compiler_mir_block_param_merge_arm_update_imported_call_branch_module();
+    lower_compiler_mir_ingestion_module_to_object(output_path, &module)
+}
 
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
+fn build_compiler_mir_block_param_merge_arm_update_imported_call_branch_module(
+) -> CompilerMirLoweringModule<'static> {
+    CompilerMirLoweringModule {
+        name: "gust_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch",
+        imports: vec![CompilerMirLoweringImportedFunction {
+            name: "host_add",
+            link_symbol:
+                COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_HOST_ADD_SYMBOL,
+            linkage: CompilerMirLoweringFunctionLinkage::ImportedHost,
+            params: vec![TinyMirType::I32, TinyMirType::I32],
+            return_type: TinyMirType::I32,
+        }],
+        functions: vec![CompilerMirLoweringDefinedFunction {
+            linkage: CompilerMirLoweringFunctionLinkage::ExportedEntry,
+            fixture: ParsedCompilerMirFixture {
+                function: CompilerMirLoweringFunction {
+                    object_name:
+                        "tiny_block_param_merge_arm_update_imported_call_branch",
+                    symbol:
+                        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_SYMBOL,
+                    return_type: TinyMirType::I32,
+                    params: vec![TinyMirType::I32],
+                    locals: vec![
+                        CompilerMirLoweringLocal {
+                            name: "then_value",
+                            ty: TinyMirType::I32,
+                        },
+                        CompilerMirLoweringLocal {
+                            name: "else_value",
+                            ty: TinyMirType::I32,
+                        },
+                        CompilerMirLoweringLocal {
+                            name: "predicate_result",
+                            ty: TinyMirType::I32,
+                        },
+                    ],
+                    entry_block: "entry",
+                    blocks: vec![
+                        CompilerMirLoweringBlock {
+                            label: "entry",
+                            parameters: Vec::new(),
+                            statements: Vec::new(),
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "adjust",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::FunctionParamI32(0),
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "adjust",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "input",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: Vec::new(),
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "branch",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal {
+                                            name: "input",
+                                            value: 4,
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "branch",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "adjusted",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: Vec::new(),
+                            terminator:
+                                CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                                    name: "adjusted",
+                                    then_edge: CompilerMirLoweringEdge {
+                                        target: "then_value",
+                                        arguments: vec![
+                                            CompilerMirLoweringEdgeArgument::I32Literal(211),
+                                        ],
+                                    },
+                                    else_edge: CompilerMirLoweringEdge {
+                                        target: "else_value",
+                                        arguments: vec![
+                                            CompilerMirLoweringEdgeArgument::I32Literal(223),
+                                        ],
+                                    },
+                                },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "then_value",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "selected",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: vec![
+                                CompilerMirLoweringStatement::LocalI32SetCall {
+                                    name: "then_value",
+                                    target:
+                                        CompilerMirLoweringCallTarget::ImportedFunction(
+                                            "host_add",
+                                        ),
+                                    arguments: vec![
+                                        CompilerMirLoweringCallArgument::BlockParamI32(
+                                            "selected",
+                                        ),
+                                        CompilerMirLoweringCallArgument::I32Literal(5),
+                                    ],
+                                },
+                                CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                                    name: "then_value",
+                                    value: 2,
+                                },
+                            ],
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "join",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::LocalI32(
+                                            "then_value",
+                                        ),
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "else_value",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "selected",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: vec![
+                                CompilerMirLoweringStatement::LocalI32SetBlockParam {
+                                    name: "else_value",
+                                    block_param: "selected",
+                                },
+                                CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                                    name: "else_value",
+                                    value: 9,
+                                },
+                            ],
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "join",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::LocalI32(
+                                            "else_value",
+                                        ),
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "join",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "merged",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: vec![
+                                CompilerMirLoweringStatement::LocalI32SetCall {
+                                    name: "predicate_result",
+                                    target:
+                                        CompilerMirLoweringCallTarget::ImportedFunction(
+                                            "host_add",
+                                        ),
+                                    arguments: vec![
+                                        CompilerMirLoweringCallArgument::BlockParamI32(
+                                            "merged",
+                                        ),
+                                        CompilerMirLoweringCallArgument::I32Literal(-220),
+                                    ],
+                                },
+                            ],
+                            terminator:
+                                CompilerMirLoweringTerminator::BranchLocalI32Positive {
+                                    name: "predicate_result",
+                                    then_edge: CompilerMirLoweringEdge {
+                                        target: "positive",
+                                        arguments: Vec::new(),
+                                    },
+                                    else_edge: CompilerMirLoweringEdge {
+                                        target: "non_positive",
+                                        arguments: Vec::new(),
+                                    },
+                                },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "positive",
+                            parameters: Vec::new(),
+                            statements: Vec::new(),
+                            terminator: CompilerMirLoweringTerminator::ReturnI32(241),
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "non_positive",
+                            parameters: Vec::new(),
+                            statements: Vec::new(),
+                            terminator: CompilerMirLoweringTerminator::ReturnI32(251),
+                        },
+                    ],
+                },
+                return_type: TinyMirType::I32,
+                metadata: Vec::new(),
+                expected_exit: 0,
+            },
+        }],
     }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-
-    let mut imported_add_signature = module.make_signature();
-    imported_add_signature
-        .params
-        .push(AbiParam::new(types::I32));
-    imported_add_signature
-        .params
-        .push(AbiParam::new(types::I32));
-    imported_add_signature
-        .returns
-        .push(AbiParam::new(types::I32));
-    let imported_add_function_id = module.declare_function(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_HOST_ADD_SYMBOL,
-        Linkage::Import,
-        &imported_add_signature,
-    )?;
-    let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    imported_function_ids.insert(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_HOST_ADD_SYMBOL,
-        imported_add_function_id,
-    );
-
-    define_tiny_mir_param_block_graph_exported_function(
-        &mut module,
-        &mir_function,
-        &imported_function_ids,
-    )?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
 }
 
 fn parse_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_fixture(
