@@ -8467,7 +8467,11 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
       echo "Expected native link failure for a valid object with an unresolved host import."
       exit 1
     fi
-    rg -n -F 'phase9f_missing_host_symbol' "$build_dir/unresolved-link.log" >/dev/null
+    if ! nm -u "$unresolved_object" | rg -n -F 'phase9f_missing_host_symbol' >/dev/null; then
+      echo "Valid unresolved-import object does not retain the expected undefined host symbol."
+      nm -u "$unresolved_object" || true
+      exit 1
+    fi
     test -s "$unresolved_object"
 
     expect_preoutput_reject() {
