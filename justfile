@@ -8484,7 +8484,14 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
         cat "$log"
         exit 1
       fi
-      rg -n -F "$expected" "$log" >/dev/null
+      if ! rg -n -F "$expected" "$log" >/dev/null; then
+        echo "Pre-output rejection diagnostic mismatch for $label."
+        echo "Expected diagnostic substring: $expected"
+        echo "Actual compiler output:"
+        cat "$log"
+        exit 1
+      fi
+      echo "✅ Pre-output rejection matched: $label"
       if [ -e "$output_dir" ]; then
         echo "Pre-output rejection for $label created an output directory or object."
         find "$output_dir" -maxdepth 2 -print
