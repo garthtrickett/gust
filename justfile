@@ -7503,7 +7503,7 @@ guard-cranelift-phase9f-call-import-schema-validator:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_call_arguments: I32Literal,FunctionParamI32,LocalI32,BlockParamI32,BlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_validation_boundary: parse_and_validate_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_emission_status_at_completion: validation_only_no_v2_object_emission' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_current_emission_status: local_and_direct_imported_call_modules_emit' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_current_emission_status: all_local_imported_materialization_merge_arm_joined_and_dual_join_call_modules_emit' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_first_milestone_status: complete' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_inventory_at_completion: 33_total_22_canonical_shared_11_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_current_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
