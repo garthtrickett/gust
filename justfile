@@ -78,7 +78,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9e-close
         ;;
       cranelift-phase9f-call-import-ladder)
-        just guard-cranelift-phase9f-call-import-completeness-rejection
+        just guard-cranelift-phase9f-close
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -222,7 +222,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9e-cfg-ladder)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-close' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9f-call-import-ladder)' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-call-import-completeness-rejection' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-close' >/dev/null
     if printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9c-differential-ladder)' >/dev/null; then
       echo "PR fast must split the Phase 9C-to-9F differential ladder into focused Phase 9D, Phase 9E, and Phase 9F shards."
       exit 1
@@ -7355,7 +7355,7 @@ guard-cranelift-phase9e-close:
 guard-cranelift-phase9f-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking the open Phase 9F canonical calls and imported runtime boundary contract..."
+    echo "🔒 Checking the closed Phase 9F canonical calls and imported runtime boundary contract..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     if [ ! -f "$manifest_doc" ] || [ ! -f "$readme_doc" ]; then
@@ -7366,7 +7366,7 @@ guard-cranelift-phase9f-opening-contract:
     just guard-cranelift-phase9e-close
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_OPENING_CONTRACT_GUARD: guard-cranelift-phase9f-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_status: phase9f_open_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_predecessor_status: phase9e_closed_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_predecessor_guard: guard-cranelift-phase9e-close' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_opening_inventory: 33_total_22_canonical_shared_11_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
@@ -7442,17 +7442,17 @@ guard-cranelift-phase9f-opening-contract:
       exit 1
     fi
 
-    rg -n -F 'Phase 9F is open as' "$readme_doc" >/dev/null
-    rg -n -F '`phase9f_open_canonical_calls_and_imported_runtime_boundary`.' "$readme_doc" >/dev/null
-    rg -n -F 'The exact eleven migration candidates are frozen as the complete Phase 9F set:' "$readme_doc" >/dev/null
+    rg -n -F 'Phase 9F is closed as' "$readme_doc" >/dev/null
+    rg -n -F '`phase9f_closed_canonical_calls_and_imported_runtime_boundary`.' "$readme_doc" >/dev/null
+    rg -n -F 'The exact eleven migration candidates remain the complete Phase 9F set:' "$readme_doc" >/dev/null
     rg -n -F '`gust.compiler_mir_ingestion.v1` remains frozen, single-function, and call/import-free.' "$readme_doc" >/dev/null
     rg -n -F '`gust.compiler_mir_ingestion.v2` is the only new canonical schema allowed to represent modules, imports, and calls.' "$readme_doc" >/dev/null
-    rg -n -F 'Steps 1 and 2 migrate no seams.' "$readme_doc" >/dev/null
+    rg -n -F 'Steps 1 and 2 migrated no seams.' "$readme_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
-    echo "✅ Phase 9F opened with the exact eleven call/import seams frozen, v1 call-free, v2 reserved as the only canonical call/import schema, and production routing unchanged."
+    echo "✅ Phase 9F contract is closed with the exact eleven call/import seams canonical, v1 call-free, v2 owning module/import/call syntax, and production routing unchanged."
 
 
 
@@ -8627,6 +8627,104 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9F call/import completeness and rejection are frozen at 33/0/17; unresolved imports fail only at link time, and all eleven historical commands remain thin canonical adapters."
+
+guard-cranelift-phase9f-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 9F on canonical local-call and imported-runtime-boundary evidence..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+
+    just guard-cranelift-phase9f-call-import-completeness-rejection
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_CLOSE_GUARD: guard-cranelift-phase9f-close' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_close_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_closure_guard_policy: phase9f_close_guard_is_required_closure_gate' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_next_milestone: phase9f_close' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_next_milestone_status: complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_basis: v2_schema_parser_validator_shared_module_emitter_all_eleven_migrations_completeness_rejection_unresolved_link_classification_and_bypass_retirement_green' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_exact_seam_count: 11' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_exact_seams: block_param_local_call_branch,block_param_imported_call_branch,block_param_imported_call_return,block_param_imported_materialize_branch,block_param_imported_materialize_return,block_param_imported_predicate_update_branch,block_param_merge_arm_update_imported_call_branch,block_param_merge_arm_update_imported_call_return,block_param_merge_dual_imported_joined_return,block_param_merge_imported_branch_joined_return,block_param_merge_imported_call_return' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_v1_policy: gust_compiler_mir_ingestion_v1_remains_frozen_single_function_and_call_import_free' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_v2_policy: gust_compiler_mir_ingestion_v2_exclusively_owns_module_import_and_call_syntax' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_module_emitter_policy: local_and_static_imported_calls_share_CompilerMirLoweringModule_build_compiler_mir_ingestion_body_with_calls_and_lower_compiler_mir_ingestion_module_to_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_i32_policy: every_call_argument_parameter_destination_local_and_result_is_i32_and_every_call_has_exactly_one_i32_result' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_rejection_policy: malformed_canonical_fixtures_reject_during_parse_or_validation_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_unresolved_import_policy: valid_unresolved_imports_parse_validate_and_emit_an_object_then_fail_only_during_native_link' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_bypass_policy: no_phase9f_adapter_uses_TinyMirParamBlockFunction_or_owns_ObjectModule_call_lowering_or_import_declaration_logic' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_translator_policy: translator_seed_inventory_remains_frozen_at_17' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_primary_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_cranelift_default: disabled' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_production_route_policy: no_production_runtime_or_backend_route_enabled' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_freeze_policy: phase9f_closed_no_new_call_import_semantics_translator_seeds_or_routes_without_a_new_phase_contract' "$manifest_doc" >/dev/null
+
+    expected_phase9f="$(printf '%s\n' \
+      block_param_local_call_branch \
+      block_param_imported_call_branch \
+      block_param_imported_call_return \
+      block_param_imported_materialize_branch \
+      block_param_imported_materialize_return \
+      block_param_imported_predicate_update_branch \
+      block_param_merge_arm_update_imported_call_branch \
+      block_param_merge_arm_update_imported_call_return \
+      block_param_merge_dual_imported_joined_return \
+      block_param_merge_imported_branch_joined_return \
+      block_param_merge_imported_call_return | sort)"
+    declared_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9f_closure_exact_seams:' "$manifest_doc" | cut -d: -f2- | tr ',' '\n' | sed 's/^ //' | sort)"
+    if [ "$declared_phase9f" != "$expected_phase9f" ]; then
+      echo "Phase 9F closure must name exactly the eleven frozen migration seams."
+      diff -u <(printf '%s\n' "$expected_phase9f") <(printf '%s\n' "$declared_phase9f") || true
+      exit 1
+    fi
+
+    for lane in $expected_phase9f; do
+      inventory_record="$(rg "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:" "$manifest_doc")"
+      if ! printf '%s\n' "$inventory_record" | rg '\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|' >/dev/null; then
+        echo "Phase 9F seam $lane is not frozen on the canonical shared module path."
+        printf '%s\n' "$inventory_record"
+        exit 1
+      fi
+
+      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object/,/^fn build_compiler_mir_${lane}_module/p" "$source_file")"
+      if [ -z "$adapter_body" ]; then
+        echo "Missing frozen Phase 9F adapter body for $lane."
+        exit 1
+      fi
+      if printf '%s\n' "$adapter_body" | rg 'TinyMirParamBlockFunction|define_tiny_mir_param_block_graph_exported_function|ObjectBuilder::new|ObjectModule::new|module\.declare_function|Linkage::Import|declare_func_in_func|builder\.ins\(\)\.call' >/dev/null; then
+        echo "Phase 9F adapter $lane regained bespoke parameter-block, object-module, call, or import ownership."
+        exit 1
+      fi
+    done
+
+    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
+    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
+    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
+    metadata_count="${metadata_count:-0}"
+    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected Phase 9F closure inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
+      exit 1
+    fi
+
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_signature_policy: ordered_i32_parameters_single_i32_return_only' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_result_policy: call_result_must_target_a_declared_i32_local' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_v1_policy: v1_remains_frozen_single_function_and_call_import_free' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_v2_policy: v2_owns_module_import_and_call_syntax' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
+    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
+    rg -n -F 'Phase 9F is closed as' "$readme_doc" >/dev/null
+    rg -n -F '`phase9f_closed_canonical_calls_and_imported_runtime_boundary`.' "$readme_doc" >/dev/null
+    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 9 closes Phase 9F with all eleven exact call/import seams on the canonical shared module path.' >/dev/null
+    tr '\n' ' ' < "$readme_doc" | rg -F 'Unresolved host symbols remain successful parse, validation, and object-emission cases that fail only at native link time.' >/dev/null
+
+    echo "✅ Phase 9F closed: all eleven call/import seams and all 33 ingestion seams are canonical, v1 remains call-free, v2 owns calls/imports, translator seeds remain 17, and production routing is unchanged."
+
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

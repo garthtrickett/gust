@@ -265,13 +265,13 @@ call/import boundary. Phase 9F is the next contract and is reserved for
 canonicalizing the exact eleven frozen call/import seams. Production routing
 is unchanged.
 
-Phase 9F is open as
-`phase9f_open_canonical_calls_and_imported_runtime_boundary`. It opens from 33
-total ingestion seams: twenty-two canonical shared-lowering seams, eleven
+Phase 9F is closed as
+`phase9f_closed_canonical_calls_and_imported_runtime_boundary`. It opened from
+33 total ingestion seams: twenty-two canonical shared-lowering seams, eleven
 bespoke call/import seams, no metadata-only seam, and seventeen frozen
-translator seeds. Steps 1 and 2 migrate no seams.
+translator seeds. Steps 1 and 2 migrated no seams.
 
-The exact eleven migration candidates are frozen as the complete Phase 9F set:
+The exact eleven migration candidates remain the complete Phase 9F set:
 `block_param_local_call_branch`, `block_param_imported_call_branch`,
 `block_param_imported_call_return`, `block_param_imported_materialize_branch`,
 `block_param_imported_materialize_return`,
@@ -280,10 +280,10 @@ The exact eleven migration candidates are frozen as the complete Phase 9F set:
 `block_param_merge_arm_update_imported_call_return`,
 `block_param_merge_dual_imported_joined_return`,
 `block_param_merge_imported_branch_joined_return`, and
-`block_param_merge_imported_call_return`. Until each seam's explicit migration
-patch, it remains frozen on `TinyMirParamBlockFunction`,
-`define_tiny_mir_param_block_graph_exported_function`, and lane-owned
-`ObjectModule` emission.
+`block_param_merge_imported_call_return`. All eleven now validate their frozen
+lane fixtures, construct `CompilerMirLoweringModule`, and emit through
+`lower_compiler_mir_ingestion_module_to_object`; none remains on
+`TinyMirParamBlockFunction` or lane-owned `ObjectModule` emission.
 
 `gust.compiler_mir_ingestion.v1` remains frozen, single-function, and call/import-free.
 `gust.compiler_mir_ingestion.v2` is the only new canonical schema allowed to represent modules, imports, and calls.
@@ -478,6 +478,20 @@ legacy parameter-block graph emitter. The retained
 work and remain frozen only for existing non-ingestion and translator
 consumers. The final inventory remains 33 canonical shared seams, zero bespoke
 seams, and seventeen translator seeds.
+
+Patch 9 closes Phase 9F with all eleven exact call/import seams on the
+canonical shared module path. `gust.compiler_mir_ingestion.v1` remains frozen
+and call/import-free, while v2 exclusively owns module, import, and call
+syntax. Local and statically imported calls share the same module model, call
+body lowerer, and object emitter, with ordered i32 arguments and one declared
+i32-local result.
+
+Malformed canonical fixtures continue to reject during parsing or validation
+before output creation. Unresolved host symbols remain successful parse,
+validation, and object-emission cases that fail only at native link time. The
+closed inventory is 33 canonical ingestion seams, zero bespoke seams, and
+seventeen frozen translator seeds. MIR-to-C remains primary, Cranelift remains
+disabled by default, and no production runtime or backend route is enabled.
 
 The checked-in lockfile for this crate is owned by:
 
