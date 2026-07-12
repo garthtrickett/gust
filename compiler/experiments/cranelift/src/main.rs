@@ -13992,7 +13992,6 @@ fn build_compiler_mir_ingestion_body_with_calls(
                             })?
                         }
                         CompilerMirLoweringCallTarget::ImportedFunction(callee) => {
-CompilerMirLoweringCallTarget::ImportedFunction(callee) => {
                             *imported_function_refs.get(callee).ok_or_else(|| {
                                 IoError::new(
                                     ErrorKind::InvalidInput,
