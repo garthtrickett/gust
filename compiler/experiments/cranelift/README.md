@@ -453,6 +453,32 @@ thin compatibility adapters into the canonical v2
 primary, Cranelift remains disabled by default, and
 no production runtime or backend route is enabled.
 
+Patch 8 freezes the complete canonical call/import matrix and retires all
+eleven historical bypasses. The checked-in completeness fixture combines local
+and imported callees, zero/one/multiple arguments, every supported argument
+source, return/branch/update/edge uses, calls across entry/arm/merge placement,
+both caller/callee declaration orders, multiple imports, import reuse, and an
+exported entry with a local helper.
+
+The rejection matrix distinguishes parser or validator failures from native
+link failures. Missing callees, bad arity or signatures, duplicate or
+conflicting symbols, linkage and namespace collisions, undeclared
+destinations, recursion, indirect or variadic syntax, unsupported returns, v1
+call/import records, and non-contiguous v2 records reject before output
+creation. A valid module with an unresolved imported host symbol still parses,
+validates, and writes an object; only the native link fails.
+
+All eleven historical call/import commands remain thin compatibility adapters:
+they validate their frozen lane fixtures, build the canonical
+`CompilerMirLoweringModule`, and call
+`lower_compiler_mir_ingestion_module_to_object`. They do not construct an
+`ObjectModule`, own Cranelift call or import declaration logic, or invoke the
+legacy parameter-block graph emitter. The retained
+`TinyMirParamBlockFunction` call variants are dead to new compiler-ingestion
+work and remain frozen only for existing non-ingestion and translator
+consumers. The final inventory remains 33 canonical shared seams, zero bespoke
+seams, and seventeen translator seeds.
+
 The checked-in lockfile for this crate is owned by:
 
 ```bash

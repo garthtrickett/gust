@@ -89,6 +89,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9f-imported-materialization-predicate-cohort
         just guard-cranelift-phase9f-merge-arm-imported-call-cohort
         just guard-cranelift-phase9f-joined-imported-call-cohort
+        just guard-cranelift-phase9f-call-import-completeness-rejection
         ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
@@ -242,6 +243,7 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-imported-materialization-predicate-cohort' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-merge-arm-imported-call-cohort' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-joined-imported-call-cohort' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-call-import-completeness-rejection' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -8227,7 +8229,7 @@ guard-cranelift-phase9f-joined-imported-call-cohort:
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_translator_policy: existing_17_translator_seeds_remain_frozen' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_route_policy: experiment_only_static_native_test_shims_no_default_backend_flip_no_production_runtime_route' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_next_milestone: phase9f_closure_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_next_milestone: call_import_completeness_rejection_and_bypass_retirement' "$manifest_doc" >/dev/null
 
     call_lowering_body="$(sed -n '/^fn build_compiler_mir_ingestion_body_with_calls/,/^fn /p' "$source_file")"
     printf '%s\n' "$call_lowering_body" | rg -n -F 'CompilerMirLoweringStatement::LocalI32SetCall {' >/dev/null
@@ -8319,6 +8321,307 @@ guard-cranelift-phase9f-joined-imported-call-cohort:
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9F Patch 7 canonicalizes all joined imported-call graphs and closes the inventory at 33/0 without changing production routing."
+
+guard-cranelift-phase9f-call-import-completeness-rejection:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Freezing Phase 9F canonical call/import completeness, rejection, and bypass retirement..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    positive_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
+    unresolved_fixture="compiler/fixtures/phase9f_unresolved_import_object.mir"
+    build_dir="build/guards/cranelift_phase9f_call_import_completeness_rejection"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9f-joined-imported-call-cohort
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_CALL_IMPORT_COMPLETENESS_REJECTION_GUARD: guard-cranelift-phase9f-call-import-completeness-rejection' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_status: phase9f_call_import_completeness_rejection_and_bypass_retirement_frozen' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_positive_fixture: compiler/fixtures/phase9f_call_import_completeness.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_unresolved_fixture: compiler/fixtures/phase9f_unresolved_import_object.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_positive_matrix: local_and_imported_callees_zero_one_and_multiple_arguments_literal_parameter_local_and_block_parameter_sources_return_branch_local_update_and_edge_argument_uses_entry_branch_arm_pre_merge_and_post_merge_placement_both_function_orders_one_and_multiple_imports_cross_block_and_cross_function_import_reuse_exported_entry_local_helper_and_import_module_contents_and_successful_native_linking' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_negative_matrix: missing_callee_wrong_argument_count_signature_type_mismatch_duplicate_import_name_conflicting_duplicate_link_symbol_local_import_name_collision_duplicate_backend_symbol_invalid_import_or_defined_linkage_undeclared_destination_local_direct_recursion_mutual_recursion_indirect_call_syntax_variadic_declaration_void_or_non_i32_return_call_or_import_records_in_v1_and_non_contiguous_v2_record_indices' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_unresolved_import_policy: parse_and_validation_succeed_object_is_written_and_native_link_fails_only_because_the_host_symbol_is_absent' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_preoutput_rejection_policy: every_parser_or_validator_failure_occurs_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_bypass_retirement_command_count: 11' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_bypass_retirement_commands: block_param_local_call_branch,block_param_imported_call_branch,block_param_imported_call_return,block_param_imported_materialize_branch,block_param_imported_materialize_return,block_param_imported_predicate_update_branch,block_param_merge_arm_update_imported_call_branch,block_param_merge_arm_update_imported_call_return,block_param_merge_dual_imported_joined_return,block_param_merge_imported_branch_joined_return,block_param_merge_imported_call_return' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_bypass_retirement_adapter_policy: frozen_lane_parser_validation_then_CompilerMirLoweringModule_construction_then_lower_compiler_mir_ingestion_module_to_object_only' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_bypass_retirement_forbidden_adapter_ownership: ObjectModule_ObjectBuilder_TinyMirParamBlockFunction_define_tiny_mir_param_block_graph_exported_function_lane_specific_Cranelift_call_lowering_and_lane_specific_Linkage_Import_declaration' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_legacy_param_block_lowerer_policy: retained_only_for_frozen_non_ingestion_and_existing_translator_consumers_dead_to_new_work' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_legacy_param_block_lowerer_direct_call_count: 24' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_legacy_call_variant_occurrence_freeze: local_return=4,local_branch=4,local_jump=3,import_return=3,import_branch=3,import_literal_return=8,import_literal_jump=4,import_literal_branch=6,import_predicate_branch=4' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_translator_policy: no_new_translator_seed_existing_inventory_remains_exactly_17' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_route_policy: experiment_only_static_native_test_shims_no_default_backend_flip_no_production_runtime_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_primary_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_next_milestone: phase9f_close' "$manifest_doc" >/dev/null
+
+    for fixture in "$positive_fixture" "$unresolved_fixture"; do
+      if [ ! -f "$fixture" ]; then
+        echo "Missing Phase 9F completeness fixture: $fixture"
+        exit 1
+      fi
+      rg -n -F 'format: gust.compiler_mir_ingestion.v2' "$fixture" >/dev/null
+    done
+
+    rg -n -F 'import_count: 3' "$positive_fixture" >/dev/null
+    rg -n -F 'function_count: 3' "$positive_fixture" >/dev/null
+    rg -n -F 'function_0_linkage: exported_entry' "$positive_fixture" >/dev/null
+    rg -n -F 'function_1_linkage: module_local' "$positive_fixture" >/dev/null
+    rg -n -F 'function_2_linkage: module_local' "$positive_fixture" >/dev/null
+    rg -n -F 'function_0_block_0_statement_1_callee_kind: LocalFunction' "$positive_fixture" >/dev/null
+    rg -n -F 'function_0_block_0_statement_1_callee: completeness_graph' "$positive_fixture" >/dev/null
+    rg -n -F 'function_2_block_0_statement_0_callee_kind: LocalFunction' "$positive_fixture" >/dev/null
+    rg -n -F 'function_2_block_0_statement_0_callee: completeness_leaf' "$positive_fixture" >/dev/null
+    rg -n -F 'import_count: 1' "$unresolved_fixture" >/dev/null
+    rg -n -F 'function_0_block_0_statement_0_argument_count: 0' "$positive_fixture" >/dev/null
+    rg -n -F 'function_2_block_0_statement_1_argument_count: 1' "$positive_fixture" >/dev/null
+    rg -n -F 'function_0_block_0_statement_2_argument_count: 3' "$positive_fixture" >/dev/null
+    for argument_kind in I32Literal FunctionParamI32 LocalI32 BlockParamI32 BlockParamI32AddI32Literal; do
+      rg -n -F "_kind: $argument_kind" "$positive_fixture" >/dev/null
+    done
+    rg -n -F 'function_0_block_0_terminator_kind: ReturnLocalI32' "$positive_fixture" >/dev/null
+    rg -n -F 'function_2_block_0_terminator_kind: BranchLocalI32Positive' "$positive_fixture" >/dev/null
+    rg -n -F 'function_2_block_1_statement_1_kind: LocalI32AddI32Literal' "$positive_fixture" >/dev/null
+    rg -n -F 'function_2_block_1_terminator_argument_0_kind: LocalI32' "$positive_fixture" >/dev/null
+    rg -n -F 'function_2_block_3_statement_0_kind: LocalI32SetCall' "$positive_fixture" >/dev/null
+    rg -n -F 'function_2_block_6_terminator_kind: ReturnBlockParamI32' "$positive_fixture" >/dev/null
+    if [ "$(rg -c '_callee: host_add3$' "$positive_fixture")" != "4" ]; then
+      echo "Completeness fixture must reuse host_add3 across functions, an arm, and post-merge placement."
+      exit 1
+    fi
+    if [ "$(rg -c '_callee: host_zero$' "$positive_fixture")" != "2" ]; then
+      echo "Completeness fixture must reuse the zero-argument import from multiple functions/blocks."
+      exit 1
+    fi
+    if [ "$(rg -c '_callee: host_positive$' "$positive_fixture")" != "2" ]; then
+      echo "Completeness fixture must reuse the predicate import before and after the merge."
+      exit 1
+    fi
+
+    cargo_cmd=(cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked --)
+    if ! "${cargo_cmd[@]}" compiler-mir-validate-fixture "$positive_fixture" >"$build_dir/positive-validate.log" 2>&1; then
+      echo "Phase 9F completeness fixture validation failed:"
+      cat "$build_dir/positive-validate.log"
+      exit 1
+    fi
+    rg -n -F 'validated canonical compiler MIR module: phase9f_call_import_completeness (3 defined, 3 imported)' "$build_dir/positive-validate.log" >/dev/null
+
+    positive_object="$build_dir/completeness.o"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$positive_fixture" "$positive_object"
+    test -s "$positive_object"
+    positive_shim="$build_dir/completeness_shim.c"
+    cat >"$positive_shim" <<'C'
+    #include <stdlib.h>
+    int phase9f_completeness_entry(int value);
+    int phase9f_completeness_host_zero(void) { return 2; }
+    int phase9f_completeness_host_add3(int a, int b, int c) { return a + b + c; }
+    int phase9f_completeness_host_positive(int value) { return value > 0; }
+    int main(int argc, char **argv) {
+        if (argc != 2) return 250;
+        return phase9f_completeness_entry(atoi(argv[1]));
+    }
+    C
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    positive_binary="$build_dir/completeness_bin"
+    "$CC_BIN" $CFLAGS_VAL "$positive_shim" "$positive_object" -o "$positive_binary"
+
+    expect_status() {
+      local input="$1"
+      local expected="$2"
+      set +e
+      "$positive_binary" "$input"
+      local status="$?"
+      set -e
+      if [ "$status" != "$expected" ]; then
+        echo "Completeness native result mismatch for input $input: expected $expected, got $status."
+        exit 1
+      fi
+    }
+    expect_status 3 35
+    expect_status 0 14
+    expect_status -20 199
+
+    if ! "${cargo_cmd[@]}" compiler-mir-validate-fixture "$unresolved_fixture" >"$build_dir/unresolved-validate.log" 2>&1; then
+      echo "Valid unresolved-import fixture must parse and validate:"
+      cat "$build_dir/unresolved-validate.log"
+      exit 1
+    fi
+    rg -n -F 'validated canonical compiler MIR module: phase9f_unresolved_import_object (1 defined, 1 imported)' "$build_dir/unresolved-validate.log" >/dev/null
+    unresolved_object="$build_dir/unresolved.o"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$unresolved_fixture" "$unresolved_object"
+    test -s "$unresolved_object"
+    unresolved_driver="$build_dir/unresolved_driver.c"
+    cat >"$unresolved_driver" <<'C'
+    int phase9f_unresolved_import_entry(void);
+    int main(void) { return phase9f_unresolved_import_entry(); }
+    C
+    set +e
+    "$CC_BIN" $CFLAGS_VAL "$unresolved_driver" "$unresolved_object" -o "$build_dir/unresolved_bin" >"$build_dir/unresolved-link.log" 2>&1
+    unresolved_link_status="$?"
+    set -e
+    if [ "$unresolved_link_status" = "0" ]; then
+      echo "Expected native link failure for a valid object with an unresolved host import."
+      exit 1
+    fi
+    rg -n -F 'phase9f_missing_host_symbol' "$build_dir/unresolved-link.log" >/dev/null
+    test -s "$unresolved_object"
+
+    expect_preoutput_reject() {
+      local label="$1"
+      local invalid_fixture="$2"
+      local expected="$3"
+      local output_dir="$build_dir/${label}-output"
+      local log="$build_dir/${label}.log"
+      rm -rf "$output_dir"
+      set +e
+      "${cargo_cmd[@]}" compiler-mir-ingestion-object "$invalid_fixture" "$output_dir/out.o" >"$log" 2>&1
+      local status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Expected pre-output rejection for $label."
+        cat "$log"
+        exit 1
+      fi
+      rg -n -F "$expected" "$log" >/dev/null
+      if [ -e "$output_dir" ]; then
+        echo "Pre-output rejection for $label created an output directory or object."
+        find "$output_dir" -maxdepth 2 -print
+        exit 1
+      fi
+    }
+
+    invalid_import_linkage="$build_dir/invalid-import-linkage.mir"
+    sed 's/import_0_linkage: imported_host/import_0_linkage: module_local/' "$positive_fixture" >"$invalid_import_linkage"
+    expect_preoutput_reject invalid-import-linkage "$invalid_import_linkage" 'invalid canonical compiler MIR imported function linkage'
+
+    direct_recursion="$build_dir/direct-recursion.mir"
+    sed 's/function_2_block_0_statement_0_callee: completeness_leaf/function_2_block_0_statement_0_callee: completeness_graph/' "$positive_fixture" >"$direct_recursion"
+    expect_preoutput_reject direct-recursion "$direct_recursion" 'must not contain recursion or mutual recursion'
+
+    signature_type_mismatch="$build_dir/signature-type-mismatch.mir"
+    sed 's/import_1_parameter_2_type: int/import_1_parameter_2_type: void/' "$positive_fixture" >"$signature_type_mismatch"
+    expect_preoutput_reject signature-type-mismatch "$signature_type_mismatch" 'must use only int parameters and one int return'
+
+    non_i32_return="$build_dir/non-i32-return.mir"
+    sed 's/import_2_return_type: int/import_2_return_type: float/' "$positive_fixture" >"$non_i32_return"
+    expect_preoutput_reject non-i32-return "$non_i32_return" 'unsupported canonical compiler MIR type'
+
+    variadic_declaration="$build_dir/variadic-declaration.mir"
+    cp "$positive_fixture" "$variadic_declaration"
+    printf '%s\n' 'import_1_variadic: true' >>"$variadic_declaration"
+    expect_preoutput_reject variadic-declaration "$variadic_declaration" 'unknown canonical compiler MIR module field(s): import_1_variadic'
+
+    malformed_v2_order="$build_dir/malformed-v2-order.mir"
+    sed 's/function_2_block_0_statement_1_kind:/function_2_block_0_statement_2_kind:/' "$positive_fixture" >"$malformed_v2_order"
+    expect_preoutput_reject malformed-v2-order "$malformed_v2_order" 'missing canonical compiler MIR fixture field: block_0_statement_1_kind'
+
+    v1_import_record="$build_dir/v1-import-record.mir"
+    cat >"$v1_import_record" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: invalid_v1_import
+    backend_symbol: invalid_v1_import
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 1
+    block_0_label: entry
+    block_0_parameter_count: 0
+    block_0_statement_count: 0
+    block_0_terminator_kind: ReturnI32
+    block_0_terminator_value: 0
+    metadata_count: 0
+    expected_exit: 0
+    import_count: 1
+    import_0_name: forbidden_host
+    import_0_link_symbol: forbidden_host
+    import_0_linkage: imported_host
+    import_0_parameter_count: 0
+    import_0_return_type: int
+    MIR
+    expect_preoutput_reject v1-import-record "$v1_import_record" 'unknown canonical compiler MIR fixture field(s):'
+
+    schema_guard_body="$(sed -n '/^guard-cranelift-phase9f-call-import-schema-validator:/,/^guard-cranelift-phase9f-module-emitter-local-call-cohort:/p' justfile)"
+    for inherited_case in duplicate-import-name conflicting-link-signature duplicate-function-name duplicate-backend-symbol import-function-collision backend-import-collision unknown-callee wrong-argument-count undeclared-destination cyclic-local-calls invalid-linkage indirect-call void-import v1-call; do
+      printf '%s\n' "$schema_guard_body" | rg -n -F "expect_reject $inherited_case " >/dev/null
+    done
+
+    historical_lanes=(
+      block_param_local_call_branch
+      block_param_imported_call_branch
+      block_param_imported_call_return
+      block_param_imported_materialize_branch
+      block_param_imported_materialize_return
+      block_param_imported_predicate_update_branch
+      block_param_merge_arm_update_imported_call_branch
+      block_param_merge_arm_update_imported_call_return
+      block_param_merge_dual_imported_joined_return
+      block_param_merge_imported_branch_joined_return
+      block_param_merge_imported_call_return
+    )
+    if [ "${#historical_lanes[@]}" != "11" ]; then
+      echo "Expected exactly eleven retired Phase 9F bypass commands."
+      exit 1
+    fi
+    for lane in "${historical_lanes[@]}"; do
+      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object/,/^fn build_compiler_mir_${lane}_module/p" "$source_file")"
+      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(" >/dev/null
+      printf '%s\n' "$adapter_body" | rg -n -F "build_compiler_mir_${lane}_module()" >/dev/null
+      printf '%s\n' "$adapter_body" | rg -n -F 'lower_compiler_mir_ingestion_module_to_object(output_path, &module)' >/dev/null
+      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMirParamBlockFunction|define_tiny_mir_param_block_graph_exported_function|build_tiny_mir_param_block_graph_body|module\.declare_function|Linkage::Import|declare_func_in_func|builder\.ins\(\)\.call|CompilerMirLoweringStatement::LocalI32SetCall' >/dev/null; then
+        echo "Historical Phase 9F adapter $lane regained bespoke object, import, or call-lowering ownership."
+        exit 1
+      fi
+    done
+
+    legacy_direct_calls="$(rg -c '^[[:space:]]+define_tiny_mir_param_block_graph_exported_function\(' "$source_file")"
+    if [ "$legacy_direct_calls" != "24" ]; then
+      echo "Legacy parameter-block lowerer gained or lost consumers: expected 24, found $legacy_direct_calls."
+      exit 1
+    fi
+    check_variant_count() {
+      local pattern="$1"
+      local expected="$2"
+      local actual
+      actual="$(rg -c -F "$pattern" "$source_file")"
+      if [ "$actual" != "$expected" ]; then
+        echo "Legacy call variant occurrence changed for $pattern: expected $expected, found $actual."
+        exit 1
+      fi
+    }
+    check_variant_count 'ReturnBlockParamLocalFunctionI32Call {' 4
+    check_variant_count 'BranchBlockParamLocalFunctionI32CallPositive {' 4
+    check_variant_count 'JumpBlockParamLocalFunctionI32Call {' 3
+    check_variant_count 'ReturnBlockParamImportedFunctionI32Call {' 3
+    check_variant_count 'BranchBlockParamImportedFunctionI32CallPositive {' 3
+    check_variant_count 'ReturnBlockParamImportedFunctionI32CallI32Literal {' 8
+    check_variant_count 'JumpBlockParamImportedFunctionI32CallI32Literal {' 4
+    check_variant_count 'BranchBlockParamImportedFunctionI32CallI32LiteralPositive {' 6
+    check_variant_count 'BranchBlockParamImportedFunctionI32Predicate {' 4
+
+    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
+    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
+    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
+    metadata_count="${metadata_count:-0}"
+    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected final call/import inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
+      exit 1
+    fi
+
+    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 8 freezes the complete canonical call/import matrix and retires all eleven historical bypasses.' >/dev/null
+    tr '\n' ' ' < "$readme_doc" | rg -F 'A valid module with an unresolved imported host symbol still parses, validates, and writes an object; only the native link fails.' >/dev/null
+    tr '\n' ' ' < "$readme_doc" | rg -F 'The retained `TinyMirParamBlockFunction` call variants are dead to new compiler-ingestion work' >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
+
+    echo "✅ Phase 9F call/import completeness and rejection are frozen at 33/0/17; unresolved imports fail only at link time, and all eleven historical commands remain thin canonical adapters."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
