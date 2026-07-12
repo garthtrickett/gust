@@ -8517,7 +8517,7 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
 
     variadic_declaration="$build_dir/variadic-declaration.mir"
     cp "$positive_fixture" "$variadic_declaration"
-    printf '%s\n' 'import_1_variadic: true' >>"$variadic_declaration"
+    printf '\n%s\n' 'import_1_variadic: true' >>"$variadic_declaration"
     expect_preoutput_reject variadic-declaration "$variadic_declaration" 'unknown canonical compiler MIR module field(s): import_1_variadic'
 
     malformed_v2_order="$build_dir/malformed-v2-order.mir"
