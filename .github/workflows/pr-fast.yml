@@ -57,7 +57,9 @@ jobs:
           - cranelift-local-binding
           - cranelift-branch
           - cranelift-differential
-          - cranelift-phase9c-differential-ladder
+          - cranelift-phase9d-ingestion-ladder
+          - cranelift-phase9e-cfg-ladder
+          - cranelift-phase9f-call-import-ladder
           - cranelift-backend-suite-core-baseline
           - cranelift-backend-suite-core-legacy
           - cranelift-backend-suite-core-mir-basic-arithmetic

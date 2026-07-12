@@ -64,7 +64,7 @@ guard-pr-fast-shard shard:
         just guard-cranelift-backend-surface
         just guard-cranelift-mir-to-c-differential-native-smoke
         ;;
-      cranelift-phase9c-differential-ladder)
+      cranelift-phase9d-ingestion-ladder)
         just guard-cranelift-phase9c-differential-ladder-surface
         just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract
         just guard-cranelift-phase9d-opening-contract
@@ -73,22 +73,11 @@ guard-pr-fast-shard shard:
         just guard-cranelift-phase9d-generic-ingestion-command
         just guard-cranelift-phase9d-phase9c-rebase-metadata
         just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze
-        just guard-cranelift-phase9e-opening-contract
-        just guard-cranelift-phase9e-local-cfg-cohort
-        just guard-cranelift-phase9e-block-parameter-schema-validator
-        just guard-cranelift-phase9e-shared-block-parameter-lowering-core
-        just guard-cranelift-phase9e-single-parameter-cfg-cohort
-        just guard-cranelift-phase9e-variable-arity-block-parameter-cohort
-        just guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort
-        just guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze
+        ;;
+      cranelift-phase9e-cfg-ladder)
         just guard-cranelift-phase9e-close
-        just guard-cranelift-phase9f-opening-contract
-        just guard-cranelift-phase9f-call-import-schema-validator
-        just guard-cranelift-phase9f-module-emitter-local-call-cohort
-        just guard-cranelift-phase9f-direct-imported-call-cohort
-        just guard-cranelift-phase9f-imported-materialization-predicate-cohort
-        just guard-cranelift-phase9f-merge-arm-imported-call-cohort
-        just guard-cranelift-phase9f-joined-imported-call-cohort
+        ;;
+      cranelift-phase9f-call-import-ladder)
         just guard-cranelift-phase9f-call-import-completeness-rejection
         ;;
       cranelift-backend-suite-core-baseline)
@@ -154,7 +143,7 @@ guard-pr-fast-shard shard:
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9c-differential-ladder, cranelift-backend-suite-core-baseline, cranelift-backend-suite-core-legacy, cranelift-backend-suite-core-mir-basic-arithmetic, cranelift-backend-suite-core-mir-basic-calls, cranelift-backend-suite-core-mir-bundles, cranelift-backend-suite-core-mir-block-graphs, cranelift-backend-suite-compiler-mir-scalars, cranelift-backend-suite-compiler-mir-metadata, cranelift-backend-suite-compiler-mir-blocks, cranelift-backend-suite-translator-scalar, cranelift-backend-suite-translator-cfg, cranelift-backend-suite-translator-metadata, cranelift-backend-suite-translator-imports, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
+        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9d-ingestion-ladder, cranelift-phase9e-cfg-ladder, cranelift-phase9f-call-import-ladder, cranelift-backend-suite-core-baseline, cranelift-backend-suite-core-legacy, cranelift-backend-suite-core-mir-basic-arithmetic, cranelift-backend-suite-core-mir-basic-calls, cranelift-backend-suite-core-mir-bundles, cranelift-backend-suite-core-mir-block-graphs, cranelift-backend-suite-compiler-mir-scalars, cranelift-backend-suite-compiler-mir-metadata, cranelift-backend-suite-compiler-mir-blocks, cranelift-backend-suite-translator-scalar, cranelift-backend-suite-translator-cfg, cranelift-backend-suite-translator-metadata, cranelift-backend-suite-translator-imports, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
         exit 1
         ;;
     esac
@@ -194,7 +183,9 @@ guard-pr-fast-ci-surface:
     rg -n -F 'cranelift-local-binding' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-branch' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-differential' "$workflow" justfile >/dev/null
-    rg -n -F 'cranelift-phase9c-differential-ladder' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-phase9d-ingestion-ladder' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-phase9e-cfg-ladder' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-phase9f-call-import-ladder' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-core-baseline' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-core-legacy' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-core-mir-basic-arithmetic' "$workflow" justfile >/dev/null
@@ -219,31 +210,23 @@ guard-pr-fast-ci-surface:
     pr_fast_dispatcher_body="$(sed -n '/^guard-pr-fast-shard shard:/,/^guard-pr-fast-ci-surface:/p' justfile)"
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-differential)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-mir-to-c-differential-native-smoke' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9c-differential-ladder)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9d-ingestion-ladder)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9c-differential-ladder-surface' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-opening-contract' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-ingestion-inventory-architecture' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-schema-parser-validator' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-generic-ingestion-command' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-phase9c-rebase-metadata' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-opening-contract' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-local-cfg-cohort' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-block-parameter-schema-validator' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-shared-block-parameter-lowering-core' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-single-parameter-cfg-cohort' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-variable-arity-block-parameter-cohort' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9e-cfg-ladder)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-close' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-opening-contract' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-call-import-schema-validator' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-module-emitter-local-call-cohort' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-direct-imported-call-cohort' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-imported-materialization-predicate-cohort' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-merge-arm-imported-call-cohort' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-joined-imported-call-cohort' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9f-call-import-ladder)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-call-import-completeness-rejection' >/dev/null
+    if printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9c-differential-ladder)' >/dev/null; then
+      echo "PR fast must split the Phase 9C-to-9F differential ladder into focused Phase 9D, Phase 9E, and Phase 9F shards."
+      exit 1
+    fi
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-baseline)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-experimental-backend-suite-shard core-baseline' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-backend-suite-core-legacy)' >/dev/null
@@ -308,6 +291,10 @@ guard-pr-fast-ci-surface:
       echo "PR fast CI must split the slow migration-suite aggregate into focused migration-* shards."
       exit 1
     fi
+    if rg -n '^[[:space:]]*-[[:space:]]*cranelift-phase9c-differential-ladder$' "$workflow" >/dev/null; then
+      echo "PR fast CI must split cranelift-phase9c-differential-ladder into focused Phase 9D, Phase 9E, and Phase 9F shards."
+      exit 1
+    fi
     if rg -n '^[[:space:]]*-[[:space:]]*cranelift-backend-suite$' "$workflow" >/dev/null; then
       echo "PR fast CI must split cranelift-backend-suite into focused backend suite shards."
       exit 1
@@ -342,8 +329,8 @@ guard-pr-fast-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "24" ]; then
-      echo "Expected exactly 24 PR fast matrix shards, found $shard_count."
+    if [ "$shard_count" != "26" ]; then
+      echo "Expected exactly 26 PR fast matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
