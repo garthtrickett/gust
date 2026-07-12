@@ -10525,94 +10525,144 @@ fn emit_compiler_mir_block_param_imported_materialize_return_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_param_imported_materialize_return_ingestion_fixture(&contents)?;
-    static FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static BLOCKS: [TinyMirParamBlock; 4] = [
-        TinyMirParamBlock {
-            label: "entry",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
-                target: "materialize_imported_call",
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "materialize_imported_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamImportedFunctionI32CallI32Literal {
-                target: "branch_on_materialized_call",
-                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
-                param: 0,
-                value: -5,
-            },
-        },
-        TinyMirParamBlock {
-            label: "branch_on_materialized_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
-                param: 0,
-                then_block: "result",
-                then_value: 331,
-                else_block: "result",
-                else_value: 347,
-            },
-        },
-        TinyMirParamBlock {
-            label: "result",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal {
-                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
-                param: 0,
-                value: 13,
-            },
-        },
-    ];
-    let mir_function = TinyMirParamBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_imported_materialize_return",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_RETURN_SYMBOL,
-        params: &FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        entry_block: "entry",
-        blocks: &BLOCKS,
-    };
+    let module = build_compiler_mir_block_param_imported_materialize_return_module();
+    lower_compiler_mir_ingestion_module_to_object(output_path, &module)
+}
 
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
+fn build_compiler_mir_block_param_imported_materialize_return_module(
+) -> CompilerMirLoweringModule<'static> {
+    CompilerMirLoweringModule {
+        name: "gust_native_backend_compiler_mir_ingested_block_param_imported_materialize_return",
+        imports: vec![CompilerMirLoweringImportedFunction {
+            name: "host_add",
+            link_symbol:
+                COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
+            linkage: CompilerMirLoweringFunctionLinkage::ImportedHost,
+            params: vec![TinyMirType::I32, TinyMirType::I32],
+            return_type: TinyMirType::I32,
+        }],
+        functions: vec![CompilerMirLoweringDefinedFunction {
+            linkage: CompilerMirLoweringFunctionLinkage::ExportedEntry,
+            fixture: ParsedCompilerMirFixture {
+                function: CompilerMirLoweringFunction {
+                    object_name: "tiny_block_param_imported_materialize_return",
+                    symbol:
+                        COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_RETURN_SYMBOL,
+                    return_type: TinyMirType::I32,
+                    params: vec![TinyMirType::I32],
+                    locals: vec![
+                        CompilerMirLoweringLocal {
+                            name: "materialized",
+                            ty: TinyMirType::I32,
+                        },
+                        CompilerMirLoweringLocal {
+                            name: "returned",
+                            ty: TinyMirType::I32,
+                        },
+                    ],
+                    entry_block: "entry",
+                    blocks: vec![
+                        CompilerMirLoweringBlock {
+                            label: "entry",
+                            parameters: Vec::new(),
+                            statements: Vec::new(),
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "materialize_imported_call",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::FunctionParamI32(0),
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "materialize_imported_call",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "input",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: vec![
+                                CompilerMirLoweringStatement::LocalI32SetCall {
+                                    name: "materialized",
+                                    target:
+                                        CompilerMirLoweringCallTarget::ImportedFunction(
+                                            "host_add",
+                                        ),
+                                    arguments: vec![
+                                        CompilerMirLoweringCallArgument::BlockParamI32(
+                                            "input",
+                                        ),
+                                        CompilerMirLoweringCallArgument::I32Literal(-5),
+                                    ],
+                                },
+                            ],
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "branch_on_materialized_call",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::LocalI32(
+                                            "materialized",
+                                        ),
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "branch_on_materialized_call",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "materialized_value",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: Vec::new(),
+                            terminator:
+                                CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                                    name: "materialized_value",
+                                    then_edge: CompilerMirLoweringEdge {
+                                        target: "result",
+                                        arguments: vec![
+                                            CompilerMirLoweringEdgeArgument::I32Literal(331),
+                                        ],
+                                    },
+                                    else_edge: CompilerMirLoweringEdge {
+                                        target: "result",
+                                        arguments: vec![
+                                            CompilerMirLoweringEdgeArgument::I32Literal(347),
+                                        ],
+                                    },
+                                },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "result",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "selected",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: vec![
+                                CompilerMirLoweringStatement::LocalI32SetCall {
+                                    name: "returned",
+                                    target:
+                                        CompilerMirLoweringCallTarget::ImportedFunction(
+                                            "host_add",
+                                        ),
+                                    arguments: vec![
+                                        CompilerMirLoweringCallArgument::BlockParamI32(
+                                            "selected",
+                                        ),
+                                        CompilerMirLoweringCallArgument::I32Literal(13),
+                                    ],
+                                },
+                            ],
+                            terminator:
+                                CompilerMirLoweringTerminator::ReturnLocalI32("returned"),
+                        },
+                    ],
+                },
+                return_type: TinyMirType::I32,
+                metadata: Vec::new(),
+                expected_exit: 0,
+            },
+        }],
     }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_param_imported_materialize_return",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-
-    let mut host_add_signature = module.make_signature();
-    host_add_signature.params.push(AbiParam::new(types::I32));
-    host_add_signature.params.push(AbiParam::new(types::I32));
-    host_add_signature.returns.push(AbiParam::new(types::I32));
-    let host_add_function_id = module.declare_function(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
-        Linkage::Import,
-        &host_add_signature,
-    )?;
-    let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    imported_function_ids.insert(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_RETURN_HOST_ADD_SYMBOL,
-        host_add_function_id,
-    );
-
-    define_tiny_mir_param_block_graph_exported_function(
-        &mut module,
-        &mir_function,
-        &imported_function_ids,
-    )?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
 }
 
 fn parse_compiler_mir_block_param_imported_materialize_return_ingestion_fixture(
@@ -10775,90 +10825,124 @@ fn emit_compiler_mir_block_param_imported_materialize_branch_ingestion_object(
 ) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(input_path)?;
     parse_compiler_mir_block_param_imported_materialize_branch_ingestion_fixture(&contents)?;
-    static FUNCTION_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static BLOCK_PARAMS: [TinyMirType; 1] = [TinyMirType::I32];
-    static BLOCKS: [TinyMirParamBlock; 4] = [
-        TinyMirParamBlock {
-            label: "entry",
-            params: &[],
-            terminator: TinyMirParamBlockTerminator::JumpFunctionParamI32 {
-                target: "materialize_imported_call",
-                param: 0,
-            },
-        },
-        TinyMirParamBlock {
-            label: "materialize_imported_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::JumpBlockParamImportedFunctionI32CallI32Literal {
-                target: "branch_on_materialized_call",
-                function_symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_BRANCH_HOST_ADD_SYMBOL,
-                param: 0,
-                value: -5,
-            },
-        },
-        TinyMirParamBlock {
-            label: "branch_on_materialized_call",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals {
-                param: 0,
-                then_block: "result",
-                then_value: 271,
-                else_block: "result",
-                else_value: 283,
-            },
-        },
-        TinyMirParamBlock {
-            label: "result",
-            params: &BLOCK_PARAMS,
-            terminator: TinyMirParamBlockTerminator::ReturnBlockParamI32(0),
-        },
-    ];
-    let mir_function = TinyMirParamBlockFunction {
-        object_name: "gust_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch",
-        symbol: COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_BRANCH_SYMBOL,
-        params: &FUNCTION_PARAMS,
-        return_type: TinyMirType::I32,
-        entry_block: "entry",
-        blocks: &BLOCKS,
-    };
+    let module = build_compiler_mir_block_param_imported_materialize_branch_module();
+    lower_compiler_mir_ingestion_module_to_object(output_path, &module)
+}
 
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
+fn build_compiler_mir_block_param_imported_materialize_branch_module(
+) -> CompilerMirLoweringModule<'static> {
+    CompilerMirLoweringModule {
+        name: "gust_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch",
+        imports: vec![CompilerMirLoweringImportedFunction {
+            name: "host_add",
+            link_symbol:
+                COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_BRANCH_HOST_ADD_SYMBOL,
+            linkage: CompilerMirLoweringFunctionLinkage::ImportedHost,
+            params: vec![TinyMirType::I32, TinyMirType::I32],
+            return_type: TinyMirType::I32,
+        }],
+        functions: vec![CompilerMirLoweringDefinedFunction {
+            linkage: CompilerMirLoweringFunctionLinkage::ExportedEntry,
+            fixture: ParsedCompilerMirFixture {
+                function: CompilerMirLoweringFunction {
+                    object_name: "tiny_block_param_imported_materialize_branch",
+                    symbol:
+                        COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_BRANCH_SYMBOL,
+                    return_type: TinyMirType::I32,
+                    params: vec![TinyMirType::I32],
+                    locals: vec![CompilerMirLoweringLocal {
+                        name: "materialized",
+                        ty: TinyMirType::I32,
+                    }],
+                    entry_block: "entry",
+                    blocks: vec![
+                        CompilerMirLoweringBlock {
+                            label: "entry",
+                            parameters: Vec::new(),
+                            statements: Vec::new(),
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "materialize_imported_call",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::FunctionParamI32(0),
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "materialize_imported_call",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "input",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: vec![
+                                CompilerMirLoweringStatement::LocalI32SetCall {
+                                    name: "materialized",
+                                    target:
+                                        CompilerMirLoweringCallTarget::ImportedFunction(
+                                            "host_add",
+                                        ),
+                                    arguments: vec![
+                                        CompilerMirLoweringCallArgument::BlockParamI32(
+                                            "input",
+                                        ),
+                                        CompilerMirLoweringCallArgument::I32Literal(-5),
+                                    ],
+                                },
+                            ],
+                            terminator: CompilerMirLoweringTerminator::Jump {
+                                edge: CompilerMirLoweringEdge {
+                                    target: "branch_on_materialized_call",
+                                    arguments: vec![
+                                        CompilerMirLoweringEdgeArgument::LocalI32(
+                                            "materialized",
+                                        ),
+                                    ],
+                                },
+                            },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "branch_on_materialized_call",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "materialized_value",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: Vec::new(),
+                            terminator:
+                                CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                                    name: "materialized_value",
+                                    then_edge: CompilerMirLoweringEdge {
+                                        target: "result",
+                                        arguments: vec![
+                                            CompilerMirLoweringEdgeArgument::I32Literal(271),
+                                        ],
+                                    },
+                                    else_edge: CompilerMirLoweringEdge {
+                                        target: "result",
+                                        arguments: vec![
+                                            CompilerMirLoweringEdgeArgument::I32Literal(283),
+                                        ],
+                                    },
+                                },
+                        },
+                        CompilerMirLoweringBlock {
+                            label: "result",
+                            parameters: vec![CompilerMirLoweringBlockParameter {
+                                name: "selected",
+                                ty: TinyMirType::I32,
+                            }],
+                            statements: Vec::new(),
+                            terminator:
+                                CompilerMirLoweringTerminator::ReturnBlockParamI32("selected"),
+                        },
+                    ],
+                },
+                return_type: TinyMirType::I32,
+                metadata: Vec::new(),
+                expected_exit: 0,
+            },
+        }],
     }
-
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder = ObjectBuilder::new(
-        isa,
-        "gust_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch",
-        default_libcall_names(),
-    )?;
-    let mut module = ObjectModule::new(object_builder);
-
-    let mut host_add_signature = module.make_signature();
-    host_add_signature.params.push(AbiParam::new(types::I32));
-    host_add_signature.params.push(AbiParam::new(types::I32));
-    host_add_signature.returns.push(AbiParam::new(types::I32));
-    let host_add_function_id = module.declare_function(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_BRANCH_HOST_ADD_SYMBOL,
-        Linkage::Import,
-        &host_add_signature,
-    )?;
-    let mut imported_function_ids: HashMap<&'static str, FuncId> = HashMap::new();
-    imported_function_ids.insert(
-        COMPILER_MIR_INGESTED_BLOCK_PARAM_IMPORTED_MATERIALIZE_BRANCH_HOST_ADD_SYMBOL,
-        host_add_function_id,
-    );
-
-    define_tiny_mir_param_block_graph_exported_function(
-        &mut module,
-        &mir_function,
-        &imported_function_ids,
-    )?;
-    let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
-    Ok(())
 }
 
 fn parse_compiler_mir_block_param_imported_materialize_branch_ingestion_fixture(

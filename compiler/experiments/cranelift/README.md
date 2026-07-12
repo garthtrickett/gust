@@ -379,6 +379,34 @@ remains primary, Cranelift remains disabled by default, and no production
 runtime or backend route is enabled. The next milestone is the imported-call
 materialization cohort.
 
+Patch 5 completes the imported materialization and predicate cohort without
+changing Patch 4 call lowering. The two imported-materialization compatibility
+adapters now validate their frozen lane-specific fixtures, construct
+`CompilerMirLoweringModule`, and invoke the shared module emitter. Imported
+results are stored through `LocalI32SetCall`, transported to successor block
+parameters through `LocalI32` edge arguments, branched through existing block
+parameter forms, and returned either through an existing local or through the
+transported block parameter.
+
+`block_param_imported_materialize_return` and
+`block_param_imported_materialize_branch` are newly canonical in this patch.
+`block_param_imported_predicate_update_branch` remains canonical from Patch 4
+and is retained in this cohort as the predicate proof: an updated block
+parameter feeds an imported predicate call whose local result drives existing
+branch lowering. No new call target, argument, result, import declaration, or
+`FuncRef` lowering path is introduced.
+
+The inventory is now 33 total seams, 28 canonical shared-lowering seams, five
+frozen bespoke imported merge-call graph seams, zero metadata-only seams, and
+seventeen frozen translator seeds. The remaining seams are
+`block_param_merge_arm_update_imported_call_branch`,
+`block_param_merge_arm_update_imported_call_return`,
+`block_param_merge_dual_imported_joined_return`,
+`block_param_merge_imported_branch_joined_return`, and
+`block_param_merge_imported_call_return`. MIR-to-C remains primary, Cranelift
+remains disabled by default, and no production runtime or backend route is
+enabled. The next milestone is the merge-arm imported-call cohort.
+
 The checked-in lockfile for this crate is owned by:
 
 ```bash
