@@ -7578,7 +7578,14 @@ guard-cranelift-phase9f-call-import-schema-validator:
         cat "$log"
         exit 1
       fi
-      rg -n -F "$expected" "$log" >/dev/null
+      if ! rg -n -F "$expected" "$log" >/dev/null; then
+        echo "Pre-output rejection diagnostic mismatch for $label."
+        echo "Expected diagnostic substring: $expected"
+        echo "Actual compiler output:"
+        cat "$log"
+        exit 1
+      fi
+      echo "✅ Pre-output rejection matched: $label"
       if [ -e "$output_dir" ]; then
         echo "Phase 9F schema rejection for $label created output before validation completed."
         find "$output_dir" -maxdepth 2 -print
