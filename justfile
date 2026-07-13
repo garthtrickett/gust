@@ -1708,6 +1708,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-link-bypass-retirement' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-reproducibility' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-ci-surface' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-close' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -8764,7 +8765,7 @@ guard-cranelift-phase9f-close:
 guard-cranelift-phase9g-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Opening Phase 9G object and link pipeline hardening..."
+    echo "🔒 Checking the closed Phase 9G transactional object and classified link pipeline..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
@@ -8777,7 +8778,8 @@ guard-cranelift-phase9g-opening-contract:
     done
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_OPENING_CONTRACT_GUARD: guard-cranelift-phase9g-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_status: phase9g_open_object_and_link_pipeline_hardening' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_contract_status: phase9g_closed_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_contract_closure_guard_policy: phase9g_close_guard_is_required_closure_gate' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_contract_predecessor_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_contract_predecessor_guard: guard-cranelift-phase9f-close' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_contract_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
@@ -8839,13 +8841,13 @@ guard-cranelift-phase9g-opening-contract:
     rg -n -F 'unresolved_link_status="$?"' justfile >/dev/null
     rg -n -F 'nm -u "$unresolved_object"' justfile >/dev/null
 
-    rg -n -F 'Phase 9G is open as' "$readme_doc" >/dev/null
-    rg -n -F '`phase9g_open_object_and_link_pipeline_hardening`.' "$readme_doc" >/dev/null
+    rg -n -F 'Phase 9G is closed as' "$readme_doc" >/dev/null
+    rg -n -F '`phase9g_closed_transactional_object_and_classified_link_pipeline`.' "$readme_doc" >/dev/null
     rg -n -F 'Steps 1 and 2 changed only the contract, inventory, and guard surface.' "$readme_doc" >/dev/null
     rg -n -F 'separate Phase 9G inventory does not add a compiler-MIR ingestion seam or' "$readme_doc" >/dev/null
     rg -n -F 'global `-no-pie` flag' "$readme_doc" >/dev/null
 
-    echo "✅ Phase 9G opened with a separate nine-record object/link inventory; the 33/33/0/0/17 semantic boundary, frozen MIR schemas, disabled Cranelift default, and production routing remain unchanged."
+    echo "✅ Closed Phase 9G contract preserved: the opening inventory remains auditable, all 33 ingestion seams are canonical, MIR syntax and translator seeds are frozen, and production routing remains unchanged."
 
 
 cranelift-phase9g-write-canonical-return-int-fixture output:
@@ -11578,6 +11580,197 @@ guard-cranelift-phase9g-ci-surface:
     rg -n -F 'The heavy workflow expands default `cc`, explicit GCC, and explicit Clang across separate positive and negative matrix jobs.' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G CI surface passed: structured reproducibility has a focused PR shard, positive and negative link evidence are separated, and six heavy driver/evidence jobs run without a sequential aggregate."
+
+
+guard-cranelift-phase9g-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 9G on transactional object and classified link-pipeline evidence..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    pr_workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+
+    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$pr_workflow" "$heavy_workflow"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 9G closure input: $required_file"
+        exit 1
+      fi
+    done
+
+    # This is a static meta-gate. Dynamic evidence remains owned by the
+    # focused PR-fast and heavy matrix jobs verified by the CI surface guard.
+    just guard-cranelift-phase9g-opening-contract
+    just guard-cranelift-experiment-guard-wiring-surface
+    just guard-cranelift-phase9g-ci-surface
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_CLOSE_GUARD: guard-cranelift-phase9g-close' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_contract_status: phase9g_closed_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_contract_closure_guard_policy: phase9g_close_guard_is_required_closure_gate' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_close_status: phase9g_closed_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_object_validation_policy: canonical_fixture_parse_validation_metadata_and_lowering_complete_before_output_parent_or_temp_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_object_publication_policy: complete_nonempty_structurally_verified_bytes_publish_by_same_directory_temp_sync_and_atomic_rename' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_object_failure_policy: failed_emission_or_publication_leaves_no_new_final_or_owned_partial_object_and_preserves_any_existing_final' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_target_policy: build_compiler_mir_native_object_builder_is_the_single_canonical_target_relocation_and_PIC_owner' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_pie_policy: canonical_imported_call_objects_link_as_normal_Elf_PIE_executables_without_text_relocation_warnings_or_DT_TEXTREL' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_inspection_policy: complete_object_bytes_are_structurally_inspected_and_fixture_derived_export_local_import_and_duplicate_symbol_contracts_pass_before_publication' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_link_request_policy: linker_driver_and_every_object_library_and_linker_option_are_distinct_Command_argument_vector_entries_never_a_shell_command_string' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_executable_publication_policy: successful_nonempty_hidden_same_directory_temporary_executable_is_atomically_renamed_to_the_final_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_link_failure_artifact_policy: failures_preserve_input_objects_and_native_stdout_stderr_logs_but_leave_no_new_final_or_owned_temporary_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_failure_classification_policy: unresolved_and_duplicate_symbols_are_native_link_failures_and_invalid_objects_reject_before_linker_invocation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_migration_policy: all_33_canonical_phase9c_through_phase9f_ingestion_guards_have_no_lane_owned_link_pipeline' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_reproducibility_policy: same_host_toolchain_structured_object_fingerprints_match_while_cross_platform_byte_identity_is_not_claimed' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_ci_policy: dynamic_evidence_is_split_across_exactly_3_PR_fast_shards_and_6_heavy_driver_evidence_jobs_and_the_close_guard_replays_no_dynamic_matrix' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_schema_policy: gust_compiler_mir_ingestion_v1_and_v2_syntax_remain_frozen' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_primary_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_cranelift_default: disabled' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_production_route_policy: no_production_runtime_or_backend_route_enabled' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_freeze_policy: phase9g_closed_no_object_link_pipeline_MIR_schema_translator_seed_or_route_expansion_without_a_new_phase_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_next_milestone: phase9g_close' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_next_milestone_status: complete' "$manifest_doc" >/dev/null
+
+    object_artifact_body="$(sed -n '/^guard-cranelift-phase9g-object-artifact-contract:/,/^guard-cranelift-phase9g-target-relocation-contract:/p' justfile)"
+    target_body="$(sed -n '/^guard-cranelift-phase9g-target-relocation-contract:/,/^guard-cranelift-phase9g-object-inspection-contract:/p' justfile)"
+    inspection_body="$(sed -n '/^guard-cranelift-phase9g-object-inspection-contract:/,/^guard-cranelift-phase9g-link-driver-contract:/p' justfile)"
+    link_driver_body="$(sed -n '/^guard-cranelift-phase9g-link-driver-contract:/,/^guard-cranelift-phase9g-pipeline-failure-classification:/p' justfile)"
+    taxonomy_body="$(sed -n '/^guard-cranelift-phase9g-pipeline-failure-classification:/,/^guard-cranelift-phase9g-positive-link-matrix:/p' justfile)"
+    positive_body="$(sed -n '/^guard-cranelift-phase9g-positive-link-matrix:/,/^guard-cranelift-phase9g-negative-link-matrix:/p' justfile)"
+    negative_body="$(sed -n '/^guard-cranelift-phase9g-negative-link-matrix:/,/^cranelift-phase9g-link-canonical-ingestion-object /p' justfile)"
+    migration_body="$(sed -n '/^guard-cranelift-phase9g-phase9c-phase9e-link-migration:/,/^guard-cranelift-phase9g-link-bypass-retirement:/p' justfile)"
+    bypass_body="$(sed -n '/^guard-cranelift-phase9g-link-bypass-retirement:/,/^guard-cranelift-phase9g-object-reproducibility:/p' justfile)"
+    reproducibility_body="$(sed -n '/^guard-cranelift-phase9g-object-reproducibility:/,/^guard-cranelift-phase9g-ci-surface:/p' justfile)"
+
+    require_evidence() {
+      local label="$1"
+      local body="$2"
+      shift 2
+      local needle
+      for needle in "$@"; do
+        if ! printf '%s\n' "$body" | rg -n -F "$needle" >/dev/null; then
+          echo "Phase 9G closure is missing $label evidence: $needle"
+          exit 1
+        fi
+      done
+    }
+
+    require_evidence object-artifact "$object_artifact_body" \
+      'allowed_cranelift_phase9g_object_artifact_validation_order: fixture_parse_validation_metadata_and_lowering_complete_before_parent_directory_or_temp_file_creation' \
+      'fs::rename(&temp_path, output_path)?;' \
+      'if [ -e "$rejected_parent" ]; then' \
+      'cmp -s "$preserved_output" "$sentinel"' \
+      'test ! -e "$preserved_temp"' \
+      'if [ -e "$publication_temp" ]; then'
+
+    require_evidence target-relocation "$target_body" \
+      'allowed_cranelift_phase9g_target_relocation_owner: compiler/experiments/cranelift/src/main.rs::build_compiler_mir_native_object_builder' \
+      'flag_builder.set("is_pic", "true")?;' \
+      'allowed_cranelift_phase9g_target_relocation_pie_policy: canonical_imported_call_objects_link_in_normal_Elf_PIE_mode_without_text_relocations_or_DT_TEXTREL' \
+      'DT_TEXTREL|text relocation' \
+      'readelf -d "$binary"'
+
+    require_evidence object-inspection "$inspection_body" \
+      'allowed_cranelift_phase9g_object_inspection_order: complete_object_bytes_then_structural_inspection_and_symbol_contract_then_transactional_publication' \
+      'compiler-mir-verify-object-contract' \
+      'defined_global_symbol_count: 1' \
+      'undefined_symbol_count: 3' \
+      'duplicate_symbol_count: 0' \
+      'publish_compiler_mir_object_artifact(output_path, object_bytes),'
+
+    require_evidence link-driver "$link_driver_body" \
+      'Command::new(&request.linker_driver)' \
+      'command.arg(object_input);' \
+      'command.arg(linker_arg);' \
+      'fs::write(&stdout_log_path, &process_output.stdout),' \
+      'fs::write(&stderr_log_path, &process_output.stderr),' \
+      'fs::rename(&temp_path, &request.output_path)' \
+      'cmp "$failure_binary_before" "$failure_binary"'
+
+    require_evidence failure-taxonomy "$taxonomy_body" \
+      'expected_failure_kind: unresolved_symbol' \
+      'expected_failure_kind: duplicate_symbol' \
+      'invalid-object-input link_input_validation invalid_object' \
+      'pipeline_stage: native_link' \
+      'failure_kind: unresolved_symbol' \
+      'failure_kind: duplicate_symbol'
+
+    require_evidence positive-link "$positive_body" \
+      'compiler-mir-verify-object-contract "$fixture" "$object_file"' \
+      'undefined_symbol_count: 3' \
+      'TEXTREL|FLAGS.*TEXTREL' \
+      'test ! -e "$temp_path"'
+
+    require_evidence negative-link "$negative_body" \
+      'assert_prelink_failure empty-object "$empty_object" invalid_object' \
+      'test ! -e "$linker_marker"' \
+      'expected_failure_kind: unresolved_symbol' \
+      'expected_failure_kind: duplicate_symbol' \
+      'test -s "$stderr_log"' \
+      'cmp "$unresolved_one_before" "$unresolved_one_object"'
+
+    require_evidence phase9c-phase9e-migration "$migration_body" \
+      'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_scope: 22_canonical_phase9c_through_phase9e_ingestion_lanes_plus_bounded_generic_CFG_and_completeness_support_cases' \
+      'must not own link temporary cleanup.' \
+      'PHASE9G_SKIP_DYNAMIC_EVIDENCE'
+
+    require_evidence phase9f-bypass-retirement "$bypass_body" \
+      'allowed_cranelift_phase9g_link_bypass_retirement_canonical_guard_count: 33' \
+      'Canonical lane $recipe_name still owns linker selection' \
+      'Direct Cranelift object-link owners differ from the two exact frozen exception inventories.'
+
+    require_evidence reproducibility "$reproducibility_body" \
+      'allowed_cranelift_phase9g_object_reproducibility_fingerprint_policy: canonical_sorted_structured_inspection_fields_must_have_identical_checksums' \
+      'defined_and_undefined_symbol_sets_identical: true' \
+      'section_and_relocation_summaries_identical: true' \
+      'target_metadata_identical: true' \
+      'same_host_toolchain_byte_equality_observed: %s' \
+      'byte_equality_required: false'
+
+    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
+    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
+    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
+    metadata_count="${metadata_count:-0}"
+    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected Phase 9G closure inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
+      exit 1
+    fi
+
+    rg -n -F 'allowed_cranelift_phase9g_contract_mir_schema_policy: gust_compiler_mir_ingestion_v1_and_v2_are_frozen_and_phase9g_adds_no_new_mir_syntax_or_semantics' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_v1_policy: v1_remains_frozen_single_function_and_call_import_free' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_v2_policy: v2_owns_module_import_and_call_syntax' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
+    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
+
+    close_body="$(sed -n '/^guard-cranelift-phase9g-close:/,/^guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:/p' justfile)"
+    dynamic_close_calls="$(printf '%s\n' "$close_body" | rg '^[[:space:]]+just guard-cranelift-phase9g-(object-artifact-contract|target-relocation-contract|object-inspection-contract|link-driver-contract|pipeline-failure-classification|positive-link-matrix|negative-link-matrix|phase9c-phase9e-link-migration|link-bypass-retirement|object-reproducibility)$' || true)"
+    if [ -n "$dynamic_close_calls" ]; then
+      echo "Phase 9G close must not replay focused dynamic evidence:"
+      printf '%s\n' "$dynamic_close_calls"
+      exit 1
+    fi
+
+    rg -n -F 'Phase 9G closure guard' "$pr_workflow" "$heavy_workflow" >/dev/null
+    closure_wiring_count="$(
+      rg -h -F 'just guard-cranelift-phase9g-close' "$pr_workflow" "$heavy_workflow" |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$closure_wiring_count" != "2" ]; then
+      echo "Phase 9G closure must be wired once in PR-fast and once in heavy CI; found $closure_wiring_count."
+      exit 1
+    fi
+
+    rg -n -F 'Phase 9G is closed as' "$readme_doc" >/dev/null
+    rg -n -F '`phase9g_closed_transactional_object_and_classified_link_pipeline`.' "$readme_doc" >/dev/null
+    rg -n -F 'The closure guard is a static meta-gate and does not replay the focused dynamic matrices.' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G closed: object and executable publication are transactional, object and link failures are classified, all 33 canonical seams are driver-owned, dynamic evidence remains partitioned, MIR syntax and translator seeds are frozen, and production routing is unchanged."
+
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:

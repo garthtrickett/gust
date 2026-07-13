@@ -454,12 +454,12 @@ thin compatibility adapters into the canonical v2
 primary, Cranelift remains disabled by default, and
 no production runtime or backend route is enabled.
 
-Phase 9G is open as
-`phase9g_open_object_and_link_pipeline_hardening`. It inherits the closed
-Phase 9F boundary: all 33 compiler-owned ingestion seams are canonical,
-translator seeds remain frozen at seventeen, v1 and v2 syntax are unchanged,
-MIR-to-C remains primary, Cranelift remains disabled by default, and no
-production runtime or backend route is enabled.
+Phase 9G is closed as
+`phase9g_closed_transactional_object_and_classified_link_pipeline`. It
+preserves the inherited Phase 9F boundary: all 33 compiler-owned ingestion
+seams are canonical, translator seeds remain frozen at seventeen, v1 and v2
+syntax are unchanged, MIR-to-C remains primary, Cranelift remains disabled by
+default, and no production runtime or backend route is enabled.
 
 Steps 1 and 2 changed only the contract, inventory, and guard surface. The
 separate Phase 9G inventory does not add a compiler-MIR ingestion seam or
@@ -745,14 +745,46 @@ remain the sole owners of lane execution.
 The heavy workflow expands default `cc`, explicit GCC, and explicit Clang across separate positive and negative matrix jobs.
 Each matrix job selects one driver and one evidence guard. No job loops through
 all drivers, and no job sequentially executes both dynamic link matrices. The
-CI surface guard verifies this wiring statically; the eventual closure guard
-may depend on that surface but must not replay all PR-fast or heavy dynamic
-jobs inside one aggregate recipe.
+CI surface guard verifies this wiring statically.
+`guard-cranelift-phase9g-close` depends on that surface but does not replay all
+PR-fast or heavy dynamic jobs inside one aggregate recipe.
 
 The inherited boundary remains unchanged: 33 canonical compiler-owned
 ingestion seams, zero bespoke seams, seventeen frozen translator seeds, frozen
 v1 and v2 syntax, MIR-to-C as the primary route, Cranelift disabled by default,
 and no production runtime or backend selection.
+
+Step 23 closes Phase 9G. Canonical object emission finishes parse, validation,
+metadata recognition, lowering, nonempty byte construction, structural
+inspection, and fixture-derived symbol verification before publication touches
+the requested output path. Object publication uses a synchronized hidden
+same-directory temporary file and atomic rename. Rejected emission or
+publication leaves no new final or owned partial object and preserves an
+existing final artifact.
+
+`build_compiler_mir_native_object_builder` is the single canonical owner for
+native target, relocation, calling-convention, and PIC configuration. Imported
+call objects link as normal ELF PIE executables without text-relocation
+warnings or `DT_TEXTREL`. Structured inspection freezes exact exported,
+module-local, unresolved-import, duplicate-symbol, section, and relocation
+contracts before publication.
+
+The canonical link request is an argument-vector protocol: the driver, object
+inputs, optional C or host object, libraries, and linker options are separate
+`Command` arguments, never a shell command string. Successful nonempty
+executables publish through a hidden same-directory temporary and atomic
+rename. Failed links preserve input objects plus deterministic stdout and
+stderr logs, but leave no new final or owned temporary executable. Unresolved
+and duplicate symbols classify at `native_link`; malformed or incompatible
+objects reject before linker invocation.
+
+All 33 canonical Phase 9C-through-9F ingestion guards delegate linking,
+publication, cleanup, logs, and classification to the shared driver. Dynamic
+closure evidence remains split across the three focused PR-fast shards and six
+heavy driver/evidence jobs. The closure guard is a static meta-gate and does
+not replay the focused dynamic matrices. Same-host/toolchain structured object
+fingerprints remain reproducible without claiming byte identity across object
+formats, targets, operating systems, or Cranelift versions.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all

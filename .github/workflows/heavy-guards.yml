@@ -157,3 +157,5 @@ jobs:
         run: |
           just guard-cloud-heavy-ci-surface
           just guard-cranelift-phase9g-ci-surface
+      - name: Phase 9G closure guard
+        run: just guard-cranelift-phase9g-close
