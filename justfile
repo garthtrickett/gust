@@ -9429,16 +9429,16 @@ guard-cranelift-phase9g-link-driver-contract:
     printf '%s\n' 'stale-final' >"$success_binary"
     printf '%s\n' 'stale-temp' >"$success_temp"
     cat >"$success_request" <<EOF
-format: gust.compiler_mir_link_request.v1
-output: success-bin
-object: function.o
-object: padding.o
-c_source: success-shim.c
-link_arg: -O0
-driver: $CC_BIN
-env: LC_ALL=C
-expected_result: success
-EOF
+    format: gust.compiler_mir_link_request.v1
+    output: success-bin
+    object: function.o
+    object: padding.o
+    c_source: success-shim.c
+    link_arg: -O0
+    driver: $CC_BIN
+    env: LC_ALL=C
+    expected_result: success
+    EOF
 
     "${cargo_cmd[@]}" compiler-mir-link-request "$success_request" >"$success_report"
     rg -n -F 'classification: linked' "$success_report" >/dev/null
@@ -9480,14 +9480,14 @@ EOF
     "$CC_BIN" -O0 -c "$host_source" -o "$host_object"
     cp "$host_object" "$host_object_before"
     cat >"$host_request" <<EOF
-format: gust.compiler_mir_link_request.v1
-output: host-object-bin
-object: function.o
-host_object: host-main.o
-link_arg: -O0
-driver: $CC_BIN
-expected_result: success
-EOF
+    format: gust.compiler_mir_link_request.v1
+    output: host-object-bin
+    object: function.o
+    host_object: host-main.o
+    link_arg: -O0
+    driver: $CC_BIN
+    expected_result: success
+    EOF
 
     "${cargo_cmd[@]}" compiler-mir-link-request "$host_request" >"$host_report"
     rg -n -F 'classification: linked' "$host_report" >/dev/null
@@ -9515,13 +9515,13 @@ EOF
     cp "$failure_binary" "$failure_binary_before"
     printf '%s\n' 'stale-temp' >"$failure_temp"
     cat >"$failure_request" <<EOF
-format: gust.compiler_mir_link_request.v1
-output: expected-failure-bin
-object: function.o
-link_arg: -O0
-driver: $CC_BIN
-expected_result: failure
-EOF
+    format: gust.compiler_mir_link_request.v1
+    output: expected-failure-bin
+    object: function.o
+    link_arg: -O0
+    driver: $CC_BIN
+    expected_result: failure
+    EOF
 
     "${cargo_cmd[@]}" compiler-mir-link-request "$failure_request" >"$failure_report"
     rg -n -F 'classification: native_link_failure' "$failure_report" >/dev/null
@@ -9540,13 +9540,13 @@ EOF
     missing_request="$build_dir/missing-input.link"
     missing_log="$build_dir/missing-input.log"
     cat >"$missing_request" <<EOF
-format: gust.compiler_mir_link_request.v1
-output: missing-parent/missing-bin
-object: missing-object.o
-c_source: success-shim.c
-driver: $CC_BIN
-expected_result: success
-EOF
+    format: gust.compiler_mir_link_request.v1
+    output: missing-parent/missing-bin
+    object: missing-object.o
+    c_source: success-shim.c
+    driver: $CC_BIN
+    expected_result: success
+    EOF
     set +e
     "${cargo_cmd[@]}" compiler-mir-link-request "$missing_request" >"$missing_log" 2>&1
     missing_status="$?"
@@ -9569,14 +9569,14 @@ EOF
     publication_stderr_log="$build_dir/.publication-target.phase9g-link.stderr.log"
     mkdir "$publication_target"
     cat >"$publication_request" <<EOF
-format: gust.compiler_mir_link_request.v1
-output: publication-target
-object: function.o
-c_source: success-shim.c
-link_arg: -O0
-driver: $CC_BIN
-expected_result: success
-EOF
+    format: gust.compiler_mir_link_request.v1
+    output: publication-target
+    object: function.o
+    c_source: success-shim.c
+    link_arg: -O0
+    driver: $CC_BIN
+    expected_result: success
+    EOF
     set +e
     "${cargo_cmd[@]}" compiler-mir-link-request "$publication_request" >"$publication_log" 2>&1
     publication_status="$?"
