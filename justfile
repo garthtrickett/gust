@@ -7855,9 +7855,7 @@ guard-cranelift-phase9f-module-emitter-local-call-cohort:
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch(-1) != 83) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
 
     imported_output_dir="$build_dir/imported-output"
@@ -9194,10 +9192,10 @@ guard-cranelift-phase9g-target-relocation-contract:
       exit 1
     fi
 
-    rg -n -F 'Steps 5 and 6 give both canonical compiler-MIR object emitters one explicit native target owner.' "$readme_doc" >/dev/null
+    rg -n -F 'Steps 5 and 6 give both canonical compiler-MIR object emitters one explicit' "$readme_doc" >/dev/null
     rg -n -F 'Position-independent code is enabled in Cranelift with `is_pic=true`' "$readme_doc" >/dev/null
-    rg -n -F 'The ELF guard links the multi-import completeness object as a normal PIE' "$readme_doc" >/dev/null
-    rg -n -F 'No global `-no-pie` escape hatch is added.' "$readme_doc" >/dev/null
+    rg -n -F 'completeness object as a normal PIE, rejects text-relocation linker diagnostics' "$readme_doc" >/dev/null
+    rg -n -F 'and `DT_TEXTREL`, and executes the linked artifact. No global `-no-pie` escape' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G target/relocation contract passed: one explicit native target owner emits PIC canonical objects, and the multi-import object links as an ELF PIE without text relocations or DT_TEXTREL."
 
