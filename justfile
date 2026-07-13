@@ -8941,8 +8941,16 @@ guard-cranelift-phase9g-object-artifact-contract:
     canonical_function_body="$(sed -n '/^fn lower_compiler_mir_ingestion_function_to_object(/,/^fn compiler_mir_ingestion_signature(/p' "$source_file")"
     canonical_module_body="$(sed -n '/^fn lower_compiler_mir_ingestion_module_to_object(/,/^fn define_compiler_mir_ingestion_module_function(/p' "$source_file")"
     for canonical_body in "$canonical_function_body" "$canonical_module_body"; do
-      printf '%s\n' "$canonical_body" | rg -n -F 'let object_bytes = object_product.emit()?;' >/dev/null
-      printf '%s\n' "$canonical_body" | rg -n -F 'publish_compiler_mir_object_artifact(output_path, object_bytes)?;' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'let object_bytes = compiler_mir_pipeline_wrap(' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'object_product.emit(),' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'CompilerMirPipelineFailureKind::ObjectBuildFailed,' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'let inspection_report = compiler_mir_pipeline_wrap_box(' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'inspect_compiler_mir_object_artifact(' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'CompilerMirPipelineStage::ObjectVerification,' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'CompilerMirPipelineFailureKind::InvalidObject,' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'publish_compiler_mir_object_artifact(output_path, object_bytes),' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'CompilerMirPipelineStage::ObjectPublication,' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'CompilerMirPipelineFailureKind::OutputNotWritable,' >/dev/null
       if printf '%s\n' "$canonical_body" | rg -n -F 'fs::write(output_path' >/dev/null; then
         echo "Canonical compiler-MIR emitters must not write object bytes directly to the final path."
         exit 1
@@ -9457,10 +9465,13 @@ guard-cranelift-phase9g-link-driver-contract:
     printf '%s\n' "$link_driver_body" | rg -n -F 'command.arg(object_input);' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'command.env(key, value);' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'command.output()' >/dev/null
-    printf '%s\n' "$link_driver_body" | rg -n -F 'fs::write(&stdout_log_path, &process_output.stdout)?;' >/dev/null
-    printf '%s\n' "$link_driver_body" | rg -n -F 'fs::write(&stderr_log_path, &process_output.stderr)?;' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'fs::write(&stdout_log_path, &process_output.stdout),' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'fs::write(&stderr_log_path, &process_output.stderr),' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'CompilerMirPipelineStage::NativeLink,' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'fs::rename(&temp_path, &request.output_path)' >/dev/null
-    printf '%s\n' "$link_driver_body" | rg -n -F 'remove_compiler_mir_link_temp(&temp_path)?;' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'remove_compiler_mir_link_temp(&temp_path),' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'CompilerMirPipelineStage::ExecutablePublication,' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'CompilerMirPipelineFailureKind::OutputNotWritable,' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'compiler MIR link request reserves executable output control' >/dev/null
     if printf '%s\n' "$link_driver_body" | rg -n 'Command::new[(]"(sh|bash)"|[.]arg[(]"-c"[)]|sh -c|bash -c' >/dev/null; then
       echo "Canonical Phase 9G link driver must not construct or invoke a shell command string."
