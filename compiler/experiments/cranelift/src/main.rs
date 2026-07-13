@@ -5,6 +5,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::io::{Error as IoError, ErrorKind, Write};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use cranelift_codegen::ir::instructions::BlockArg;
 use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, Type, condcodes::IntCC, types};
@@ -1668,6 +1669,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 Path::new(&object_path),
             )
         }
+        "compiler-mir-link-request" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            execute_compiler_mir_link_request_path(Path::new(&request_path))
+        }
         "compiler-mir-ingestion-object" => {
             let Some(input_path) = args.next() else {
                 return Err(usage_error().into());
@@ -2793,6 +2803,7 @@ fn usage_error() -> IoError {
             "  gust-cranelift-experiment compiler-mir-object-target-contract\n",
             "  gust-cranelift-experiment compiler-mir-inspect-object <input.o>\n",
             "  gust-cranelift-experiment compiler-mir-verify-object-contract <input.mir> <input.o>\n",
+            "  gust-cranelift-experiment compiler-mir-link-request <request.link>\n",
             "  gust-cranelift-experiment compiler-mir-ingestion-object <input.mir> <output.o>\n",
             "  gust-cranelift-experiment compiler-mir-validate-fixture <input.mir>\n",
             "  gust-cranelift-experiment compiler-mir-return-int-ingestion-object <input.mir> <output.o>\n",
@@ -14571,6 +14582,648 @@ fn verify_compiler_mir_object_contract_path(
         Some(&symbol_contract),
     )?;
     print_compiler_mir_object_inspection_report(&report);
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CompilerMirLinkExpectedResult {
+    Success,
+    Failure,
+}
+
+impl CompilerMirLinkExpectedResult {
+    fn parse(value: &str) -> Result<Self, Box<dyn Error>> {
+        match value {
+            "success" => Ok(Self::Success),
+            "failure" => Ok(Self::Failure),
+            other => Err(IoError::new(
+                ErrorKind::InvalidData,
+                format!(
+                    "compiler MIR link request expected_result must be success or failure, got {other}"
+                ),
+            )
+            .into()),
+        }
+    }
+
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Success => "success",
+            Self::Failure => "failure",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CompilerMirLinkClassification {
+    Linked,
+    NativeLinkFailure,
+}
+
+impl CompilerMirLinkClassification {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Linked => "linked",
+            Self::NativeLinkFailure => "native_link_failure",
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CompilerMirLinkRequest {
+    output_path: PathBuf,
+    ordered_object_inputs: Vec<PathBuf>,
+    c_source: Option<PathBuf>,
+    host_object: Option<PathBuf>,
+    additional_libraries: Vec<String>,
+    additional_linker_args: Vec<OsString>,
+    linker_driver: OsString,
+    environment_overrides: Vec<(OsString, OsString)>,
+    expected_result: CompilerMirLinkExpectedResult,
+}
+
+#[derive(Debug)]
+struct CompilerMirLinkReport {
+    classification: CompilerMirLinkClassification,
+    expected_result: CompilerMirLinkExpectedResult,
+    matched_expectation: bool,
+    published: bool,
+    exit_code: Option<i32>,
+    output_path: PathBuf,
+    temp_path: PathBuf,
+    stdout_log_path: PathBuf,
+    stderr_log_path: PathBuf,
+    linker_driver: OsString,
+    ordered_object_inputs: Vec<PathBuf>,
+    c_source: Option<PathBuf>,
+    host_object: Option<PathBuf>,
+    additional_libraries: Vec<String>,
+    additional_linker_args: Vec<OsString>,
+    environment_overrides: Vec<(OsString, OsString)>,
+}
+
+fn compiler_mir_link_request_path(base_dir: &Path, value: &str) -> PathBuf {
+    let path = Path::new(value);
+    if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        base_dir.join(path)
+    }
+}
+
+fn parse_compiler_mir_link_request(
+    request_path: &Path,
+) -> Result<CompilerMirLinkRequest, Box<dyn Error>> {
+    let contents = fs::read_to_string(request_path)?;
+    let base_dir = request_path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+
+    let mut format_name: Option<String> = None;
+    let mut output_path: Option<PathBuf> = None;
+    let mut ordered_object_inputs = Vec::new();
+    let mut c_source: Option<PathBuf> = None;
+    let mut host_object: Option<PathBuf> = None;
+    let mut additional_libraries = Vec::new();
+    let mut additional_linker_args = Vec::new();
+    let mut linker_driver: Option<OsString> = None;
+    let mut environment_overrides = Vec::new();
+    let mut expected_result: Option<CompilerMirLinkExpectedResult> = None;
+
+    for (line_index, raw_line) in contents.lines().enumerate() {
+        let line_number = line_index + 1;
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+
+        let Some((field, raw_value)) = line.split_once(':') else {
+            return Err(IoError::new(
+                ErrorKind::InvalidData,
+                format!(
+                    "compiler MIR link request line {line_number} must use field: value syntax"
+                ),
+            )
+            .into());
+        };
+        let field = field.trim();
+        let value = raw_value.trim();
+        if value.is_empty() {
+            return Err(IoError::new(
+                ErrorKind::InvalidData,
+                format!(
+                    "compiler MIR link request field {field} on line {line_number} must not be empty"
+                ),
+            )
+            .into());
+        }
+
+        match field {
+            "format" => {
+                if format_name.replace(value.to_string()).is_some() {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidData,
+                        "compiler MIR link request format may appear only once",
+                    )
+                    .into());
+                }
+            }
+            "output" => {
+                if output_path
+                    .replace(compiler_mir_link_request_path(base_dir, value))
+                    .is_some()
+                {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidData,
+                        "compiler MIR link request output may appear only once",
+                    )
+                    .into());
+                }
+            }
+            "object" => ordered_object_inputs
+                .push(compiler_mir_link_request_path(base_dir, value)),
+            "c_source" => {
+                if c_source
+                    .replace(compiler_mir_link_request_path(base_dir, value))
+                    .is_some()
+                {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidData,
+                        "compiler MIR link request c_source may appear only once",
+                    )
+                    .into());
+                }
+            }
+            "host_object" => {
+                if host_object
+                    .replace(compiler_mir_link_request_path(base_dir, value))
+                    .is_some()
+                {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidData,
+                        "compiler MIR link request host_object may appear only once",
+                    )
+                    .into());
+                }
+            }
+            "library" => additional_libraries.push(value.to_string()),
+            "link_arg" => additional_linker_args.push(OsString::from(value)),
+            "driver" => {
+                if linker_driver.replace(OsString::from(value)).is_some() {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidData,
+                        "compiler MIR link request driver may appear only once",
+                    )
+                    .into());
+                }
+            }
+            "env" => {
+                let Some((key, env_value)) = value.split_once('=') else {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidData,
+                        format!(
+                            "compiler MIR link request env on line {line_number} must use KEY=VALUE syntax"
+                        ),
+                    )
+                    .into());
+                };
+                if key.is_empty() || key.contains('=') {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidData,
+                        format!(
+                            "compiler MIR link request env on line {line_number} has an invalid key"
+                        ),
+                    )
+                    .into());
+                }
+                environment_overrides
+                    .push((OsString::from(key), OsString::from(env_value)));
+            }
+            "expected_result" => {
+                if expected_result
+                    .replace(CompilerMirLinkExpectedResult::parse(value)?)
+                    .is_some()
+                {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidData,
+                        "compiler MIR link request expected_result may appear only once",
+                    )
+                    .into());
+                }
+            }
+            other => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidData,
+                    format!(
+                        "compiler MIR link request line {line_number} has unknown field {other}"
+                    ),
+                )
+                .into());
+            }
+        }
+    }
+
+    if format_name.as_deref() != Some("gust.compiler_mir_link_request.v1") {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR link request format must be gust.compiler_mir_link_request.v1, got {:?}",
+                format_name
+            ),
+        )
+        .into());
+    }
+
+    let request = CompilerMirLinkRequest {
+        output_path: output_path.ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidData,
+                "compiler MIR link request is missing output",
+            )
+        })?,
+        ordered_object_inputs,
+        c_source,
+        host_object,
+        additional_libraries,
+        additional_linker_args,
+        linker_driver: linker_driver.ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidData,
+                "compiler MIR link request is missing driver",
+            )
+        })?,
+        environment_overrides,
+        expected_result: expected_result.ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidData,
+                "compiler MIR link request is missing expected_result",
+            )
+        })?,
+    };
+    validate_compiler_mir_link_request(&request)?;
+    Ok(request)
+}
+
+fn validate_compiler_mir_link_input(
+    input_kind: &str,
+    input_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let metadata = fs::metadata(input_path).map_err(|error| {
+        IoError::new(
+            error.kind(),
+            format!(
+                "compiler MIR link {input_kind} input does not exist or cannot be read: {}: {error}",
+                input_path.display()
+            ),
+        )
+    })?;
+    if !metadata.is_file() {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "compiler MIR link {input_kind} input must be a file: {}",
+                input_path.display()
+            ),
+        )
+        .into());
+    }
+    Ok(())
+}
+
+fn validate_compiler_mir_link_request(
+    request: &CompilerMirLinkRequest,
+) -> Result<(), Box<dyn Error>> {
+    if request.output_path.file_name().is_none() {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "compiler MIR link output path must name a file: {}",
+                request.output_path.display()
+            ),
+        )
+        .into());
+    }
+    if request.ordered_object_inputs.is_empty() {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            "compiler MIR link request requires at least one ordered object input",
+        )
+        .into());
+    }
+    if request.c_source.is_some() && request.host_object.is_some() {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            "compiler MIR link request may contain c_source or host_object, not both",
+        )
+        .into());
+    }
+    if request.linker_driver.as_os_str().is_empty() {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            "compiler MIR link request driver must not be empty",
+        )
+        .into());
+    }
+    for linker_arg in &request.additional_linker_args {
+        let linker_arg = linker_arg.to_string_lossy();
+        if linker_arg == "-o"
+            || linker_arg == "--output"
+            || linker_arg.starts_with("--output=")
+        {
+            return Err(IoError::new(
+                ErrorKind::InvalidData,
+                format!(
+                    "compiler MIR link request reserves executable output control and rejects linker argument {linker_arg}"
+                ),
+            )
+            .into());
+        }
+    }
+
+    for input_path in &request.ordered_object_inputs {
+        validate_compiler_mir_link_input("object", input_path)?;
+    }
+    if let Some(c_source) = request.c_source.as_deref() {
+        validate_compiler_mir_link_input("C source", c_source)?;
+    }
+    if let Some(host_object) = request.host_object.as_deref() {
+        validate_compiler_mir_link_input("host object", host_object)?;
+    }
+
+    let temp_path =
+        compiler_mir_link_sibling_path(&request.output_path, ".phase9g-link.tmp")?;
+    let stdout_log_path = compiler_mir_link_sibling_path(
+        &request.output_path,
+        ".phase9g-link.stdout.log",
+    )?;
+    let stderr_log_path = compiler_mir_link_sibling_path(
+        &request.output_path,
+        ".phase9g-link.stderr.log",
+    )?;
+    for input_path in request
+        .ordered_object_inputs
+        .iter()
+        .map(PathBuf::as_path)
+        .chain(request.c_source.as_deref())
+        .chain(request.host_object.as_deref())
+    {
+        if input_path == request.output_path.as_path()
+            || input_path == temp_path.as_path()
+            || input_path == stdout_log_path.as_path()
+            || input_path == stderr_log_path.as_path()
+        {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "compiler MIR link output or owned sibling artifact must not alias an input: {}",
+                    input_path.display()
+                ),
+            )
+            .into());
+        }
+    }
+
+    Ok(())
+}
+
+fn compiler_mir_link_sibling_path(
+    output_path: &Path,
+    suffix: &str,
+) -> Result<PathBuf, Box<dyn Error>> {
+    let file_name = output_path.file_name().ok_or_else(|| {
+        IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "compiler MIR link output path must name a file: {}",
+                output_path.display()
+            ),
+        )
+    })?;
+    let mut sibling_name = OsString::from(".");
+    sibling_name.push(file_name);
+    sibling_name.push(suffix);
+    Ok(output_path.with_file_name(sibling_name))
+}
+
+fn remove_compiler_mir_link_temp(temp_path: &Path) -> Result<(), Box<dyn Error>> {
+    match fs::remove_file(temp_path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error.into()),
+    }
+}
+
+fn run_compiler_mir_link_request(
+    request: CompilerMirLinkRequest,
+) -> Result<CompilerMirLinkReport, Box<dyn Error>> {
+    validate_compiler_mir_link_request(&request)?;
+
+    let temp_path =
+        compiler_mir_link_sibling_path(&request.output_path, ".phase9g-link.tmp")?;
+    let stdout_log_path = compiler_mir_link_sibling_path(
+        &request.output_path,
+        ".phase9g-link.stdout.log",
+    )?;
+    let stderr_log_path = compiler_mir_link_sibling_path(
+        &request.output_path,
+        ".phase9g-link.stderr.log",
+    )?;
+
+    if let Some(parent) = request
+        .output_path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        fs::create_dir_all(parent)?;
+    }
+    remove_compiler_mir_link_temp(&temp_path)?;
+
+    let mut command = Command::new(&request.linker_driver);
+    for linker_arg in &request.additional_linker_args {
+        command.arg(linker_arg);
+    }
+    for object_input in &request.ordered_object_inputs {
+        command.arg(object_input);
+    }
+    if let Some(c_source) = request.c_source.as_deref() {
+        command.arg(c_source);
+    }
+    if let Some(host_object) = request.host_object.as_deref() {
+        command.arg(host_object);
+    }
+    for library in &request.additional_libraries {
+        command.arg(format!("-l{library}"));
+    }
+    command.arg("-o").arg(&temp_path);
+    for (key, value) in &request.environment_overrides {
+        command.env(key, value);
+    }
+
+    let process_output = match command.output() {
+        Ok(output) => output,
+        Err(error) => {
+            let _ = remove_compiler_mir_link_temp(&temp_path);
+            fs::write(&stdout_log_path, b"")?;
+            fs::write(
+                &stderr_log_path,
+                format!("linker spawn failed: {error}\n").as_bytes(),
+            )?;
+            return Err(IoError::new(
+                error.kind(),
+                format!(
+                    "compiler MIR link classification linker_spawn_failure: {error}; stderr log: {}",
+                    stderr_log_path.display()
+                ),
+            )
+            .into());
+        }
+    };
+
+    fs::write(&stdout_log_path, &process_output.stdout)?;
+    fs::write(&stderr_log_path, &process_output.stderr)?;
+
+    let classification = if process_output.status.success() {
+        CompilerMirLinkClassification::Linked
+    } else {
+        CompilerMirLinkClassification::NativeLinkFailure
+    };
+    let matched_expectation = matches!(
+        (request.expected_result, classification),
+        (
+            CompilerMirLinkExpectedResult::Success,
+            CompilerMirLinkClassification::Linked
+        ) | (
+            CompilerMirLinkExpectedResult::Failure,
+            CompilerMirLinkClassification::NativeLinkFailure
+        )
+    );
+
+    let published = if classification == CompilerMirLinkClassification::Linked
+        && matched_expectation
+    {
+        let temp_metadata = fs::metadata(&temp_path).map_err(|error| {
+            IoError::new(
+                error.kind(),
+                format!(
+                    "compiler MIR link classification executable_publication_failure: linker reported success but temporary executable is unavailable at {}: {error}",
+                    temp_path.display()
+                ),
+            )
+        })?;
+        if temp_metadata.len() == 0 {
+            let _ = remove_compiler_mir_link_temp(&temp_path);
+            return Err(IoError::new(
+                ErrorKind::InvalidData,
+                "compiler MIR link classification executable_publication_failure: linker produced an empty temporary executable",
+            )
+            .into());
+        }
+        if let Err(error) = fs::rename(&temp_path, &request.output_path) {
+            let _ = remove_compiler_mir_link_temp(&temp_path);
+            return Err(IoError::new(
+                error.kind(),
+                format!(
+                    "compiler MIR link classification executable_publication_failure: could not publish {}: {error}",
+                    request.output_path.display()
+                ),
+            )
+            .into());
+        }
+        true
+    } else {
+        remove_compiler_mir_link_temp(&temp_path)?;
+        false
+    };
+
+    if !matched_expectation {
+        return Err(IoError::new(
+            ErrorKind::Other,
+            format!(
+                "compiler MIR link result mismatch: expected {}, classified {}; stdout log: {}; stderr log: {}",
+                request.expected_result.as_str(),
+                classification.as_str(),
+                stdout_log_path.display(),
+                stderr_log_path.display()
+            ),
+        )
+        .into());
+    }
+
+    Ok(CompilerMirLinkReport {
+        classification,
+        expected_result: request.expected_result,
+        matched_expectation,
+        published,
+        exit_code: process_output.status.code(),
+        output_path: request.output_path,
+        temp_path,
+        stdout_log_path,
+        stderr_log_path,
+        linker_driver: request.linker_driver,
+        ordered_object_inputs: request.ordered_object_inputs,
+        c_source: request.c_source,
+        host_object: request.host_object,
+        additional_libraries: request.additional_libraries,
+        additional_linker_args: request.additional_linker_args,
+        environment_overrides: request.environment_overrides,
+    })
+}
+
+fn print_compiler_mir_link_report(report: &CompilerMirLinkReport) {
+    println!("classification: {}", report.classification.as_str());
+    println!("expected_result: {}", report.expected_result.as_str());
+    println!("matched_expectation: {}", report.matched_expectation);
+    println!("published: {}", report.published);
+    match report.exit_code {
+        Some(exit_code) => println!("exit_code: {exit_code}"),
+        None => println!("exit_code: none"),
+    }
+    println!("output_path: {}", report.output_path.display());
+    println!("temp_path: {}", report.temp_path.display());
+    println!("stdout_log_path: {}", report.stdout_log_path.display());
+    println!("stderr_log_path: {}", report.stderr_log_path.display());
+    println!(
+        "linker_driver: {}",
+        report.linker_driver.to_string_lossy()
+    );
+    println!(
+        "ordered_object_input_count: {}",
+        report.ordered_object_inputs.len()
+    );
+    for (index, input_path) in report.ordered_object_inputs.iter().enumerate() {
+        println!("ordered_object_input_{index}: {}", input_path.display());
+    }
+    if let Some(c_source) = report.c_source.as_deref() {
+        println!("c_source: {}", c_source.display());
+    }
+    if let Some(host_object) = report.host_object.as_deref() {
+        println!("host_object: {}", host_object.display());
+    }
+    for library in &report.additional_libraries {
+        println!("additional_library: {library}");
+    }
+    for linker_arg in &report.additional_linker_args {
+        println!(
+            "additional_linker_arg: {}",
+            linker_arg.to_string_lossy()
+        );
+    }
+    for (key, value) in &report.environment_overrides {
+        println!(
+            "environment_override: {}={}",
+            key.to_string_lossy(),
+            value.to_string_lossy()
+        );
+    }
+}
+
+fn execute_compiler_mir_link_request_path(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = parse_compiler_mir_link_request(request_path)?;
+    let report = run_compiler_mir_link_request(request)?;
+    print_compiler_mir_link_report(&report);
     Ok(())
 }
 

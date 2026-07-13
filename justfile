@@ -1674,6 +1674,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-artifact-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-target-relocation-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-inspection-contract' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-link-driver-contract' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -9321,6 +9322,286 @@ guard-cranelift-phase9g-object-inspection-contract:
     rg -n -F 'MIR syntax, the 33/33/0/0/17 inventory, translator seeds, default' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G object inspection passed: canonical bytes are parsed before publication, exports/locals/imports match exact model-derived contracts, relocation targets are recorded, and malformed or truncated objects reject."
+
+
+guard-cranelift-phase9g-link-driver-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G canonical experimental link driver..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
+    function_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    build_dir="build/guards/cranelift_phase9g_link_driver_contract"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9g-object-inspection-contract
+
+    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$function_fixture"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 9G link-driver contract input: $required_file"
+        exit 1
+      fi
+    done
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_LINK_DRIVER_CONTRACT_GUARD: guard-cranelift-phase9g-link-driver-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_status: phase9g_canonical_experimental_link_request_and_transactional_executable_publication' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_owner: compiler/experiments/cranelift/src/main.rs::run_compiler_mir_link_request' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_request_format: gust.compiler_mir_link_request.v1' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_request_fields: output_ordered_object_inputs_optional_c_source_or_host_object_additional_libraries_additional_linker_arguments_selected_driver_environment_overrides_and_expected_result' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_path_policy: request_paths_are_absolute_or_resolved_relative_to_the_request_file_parent' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_input_policy: validate_every_declared_input_before_output_parent_creation_or_linker_spawn' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_argument_policy: each_structured_field_becomes_one_Command_argument_no_shell_command_string_or_shell_splitting' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_output_policy: driver_reserves_minus_o_and_links_only_to_a_hidden_same_directory_temporary_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_log_policy: captured_stdout_and_stderr_are_written_to_deterministic_sibling_logs_for_every_spawned_link' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_result_owner: Rust_driver_classifies_linked_or_native_link_failure_and_matches_the_structured_expected_result' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_publication_policy: successful_expected_nonempty_temporary_executable_is_renamed_atomically_to_the_final_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_failure_policy: spawn_link_expectation_or_publication_failure_removes_the_owned_temporary_executable_and_preserves_final_and_input_artifacts' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_migration_policy: existing_lane_owned_link_commands_remain_frozen_until_the_later_phase9g_migration_patches' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_dynamic_matrix: ordered_multi_object_plus_c_source_success_precompiled_host_object_success_expected_native_link_failure_missing_input_pre_output_rejection_and_publication_failure_cleanup' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_next_milestone: pipeline_failure_classification_contract' "$manifest_doc" >/dev/null
+
+    rg -n -F 'use std::process::Command;' "$source_file" >/dev/null
+    rg -n -F 'enum CompilerMirLinkExpectedResult {' "$source_file" >/dev/null
+    rg -n -F 'enum CompilerMirLinkClassification {' "$source_file" >/dev/null
+    rg -n -F 'struct CompilerMirLinkRequest {' "$source_file" >/dev/null
+    rg -n -F 'struct CompilerMirLinkReport {' "$source_file" >/dev/null
+    rg -n -F 'fn parse_compiler_mir_link_request(' "$source_file" >/dev/null
+    rg -n -F 'fn validate_compiler_mir_link_request(' "$source_file" >/dev/null
+    rg -n -F 'fn run_compiler_mir_link_request(' "$source_file" >/dev/null
+    rg -n -F 'fn execute_compiler_mir_link_request_path(' "$source_file" >/dev/null
+    rg -n -F '"compiler-mir-link-request" => {' "$source_file" >/dev/null
+    rg -n -F 'gust-cranelift-experiment compiler-mir-link-request <request.link>' "$source_file" >/dev/null
+
+    link_driver_body="$(sed -n '/^enum CompilerMirLinkExpectedResult {/,/^struct CompilerMirObjectArtifactReport {/p' "$source_file")"
+    printf '%s\n' "$link_driver_body" | rg -n -F 'gust.compiler_mir_link_request.v1' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F '"object" => ordered_object_inputs' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F '"c_source" => {' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F '"host_object" => {' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F '"library" => additional_libraries.push' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F '"link_arg" => additional_linker_args.push' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F '"driver" => {' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F '"env" => {' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F '"expected_result" => {' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'validate_compiler_mir_link_request(&request)?;' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'Command::new(&request.linker_driver)' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'command.arg(linker_arg);' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'command.arg(object_input);' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'command.env(key, value);' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'command.output()' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'fs::write(&stdout_log_path, &process_output.stdout)?;' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'fs::write(&stderr_log_path, &process_output.stderr)?;' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'fs::rename(&temp_path, &request.output_path)' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'remove_compiler_mir_link_temp(&temp_path)?;' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'compiler MIR link request reserves executable output control' >/dev/null
+    if printf '%s\n' "$link_driver_body" | rg -n 'Command::new[(]"(sh|bash)"|[.]arg[(]"-c"[)]|sh -c|bash -c' >/dev/null; then
+      echo "Canonical Phase 9G link driver must not construct or invoke a shell command string."
+      exit 1
+    fi
+
+    cargo_cmd=(cargo run --quiet --manifest-path "$cargo_manifest" --locked --)
+    CC_BIN="${CC:-cc}"
+
+    function_object="$build_dir/function.o"
+    function_object_before="$build_dir/function.before.o"
+    padding_source="$build_dir/padding.c"
+    padding_object="$build_dir/padding.o"
+    padding_object_before="$build_dir/padding.before.o"
+    c_source="$build_dir/success-shim.c"
+    success_request="$build_dir/success.link"
+    success_binary="$build_dir/success-bin"
+    success_temp="$build_dir/.success-bin.phase9g-link.tmp"
+    success_stdout_log="$build_dir/.success-bin.phase9g-link.stdout.log"
+    success_stderr_log="$build_dir/.success-bin.phase9g-link.stderr.log"
+    success_report="$build_dir/success-report.log"
+
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$function_fixture" "$function_object"
+    printf '%s\n' 'static int phase9g_padding(void) { return 0; }' >"$padding_source"
+    "$CC_BIN" -O0 -c "$padding_source" -o "$padding_object"
+    printf '%s\n' 'extern int tiny_native_backend_compiler_mir_ingested_return_int(void);' >"$c_source"
+    printf '%s\n' 'int main(void) { return tiny_native_backend_compiler_mir_ingested_return_int(); }' >>"$c_source"
+    cp "$function_object" "$function_object_before"
+    cp "$padding_object" "$padding_object_before"
+    printf '%s\n' 'stale-final' >"$success_binary"
+    printf '%s\n' 'stale-temp' >"$success_temp"
+    cat >"$success_request" <<EOF
+format: gust.compiler_mir_link_request.v1
+output: success-bin
+object: function.o
+object: padding.o
+c_source: success-shim.c
+link_arg: -O0
+driver: $CC_BIN
+env: LC_ALL=C
+expected_result: success
+EOF
+
+    "${cargo_cmd[@]}" compiler-mir-link-request "$success_request" >"$success_report"
+    rg -n -F 'classification: linked' "$success_report" >/dev/null
+    rg -n -F 'expected_result: success' "$success_report" >/dev/null
+    rg -n -F 'matched_expectation: true' "$success_report" >/dev/null
+    rg -n -F 'published: true' "$success_report" >/dev/null
+    rg -n -F 'ordered_object_input_count: 2' "$success_report" >/dev/null
+    rg -n 'ordered_object_input_0: .*function[.]o$' "$success_report" >/dev/null
+    rg -n 'ordered_object_input_1: .*padding[.]o$' "$success_report" >/dev/null
+    rg -n 'c_source: .*success-shim[.]c$' "$success_report" >/dev/null
+    rg -n -F 'additional_linker_arg: -O0' "$success_report" >/dev/null
+    rg -n -F 'environment_override: LC_ALL=C' "$success_report" >/dev/null
+    test -s "$success_binary"
+    test -e "$success_stdout_log"
+    test -e "$success_stderr_log"
+    if [ -e "$success_temp" ]; then
+      echo "Successful canonical link left its temporary executable behind."
+      exit 1
+    fi
+    cmp "$function_object_before" "$function_object"
+    cmp "$padding_object_before" "$padding_object"
+    set +e
+    "$success_binary"
+    success_status="$?"
+    set -e
+    if [ "$success_status" != "1" ]; then
+      echo "Expected canonical link-driver C-source binary to exit with status 1, got $success_status."
+      exit 1
+    fi
+
+    host_source="$build_dir/host-main.c"
+    host_object="$build_dir/host-main.o"
+    host_object_before="$build_dir/host-main.before.o"
+    host_request="$build_dir/host-object.link"
+    host_binary="$build_dir/host-object-bin"
+    host_report="$build_dir/host-object-report.log"
+    printf '%s\n' 'extern int tiny_native_backend_compiler_mir_ingested_return_int(void);' >"$host_source"
+    printf '%s\n' 'int main(void) { return tiny_native_backend_compiler_mir_ingested_return_int(); }' >>"$host_source"
+    "$CC_BIN" -O0 -c "$host_source" -o "$host_object"
+    cp "$host_object" "$host_object_before"
+    cat >"$host_request" <<EOF
+format: gust.compiler_mir_link_request.v1
+output: host-object-bin
+object: function.o
+host_object: host-main.o
+link_arg: -O0
+driver: $CC_BIN
+expected_result: success
+EOF
+
+    "${cargo_cmd[@]}" compiler-mir-link-request "$host_request" >"$host_report"
+    rg -n -F 'classification: linked' "$host_report" >/dev/null
+    rg -n -F 'published: true' "$host_report" >/dev/null
+    rg -n 'host_object: .*host-main[.]o$' "$host_report" >/dev/null
+    test -s "$host_binary"
+    cmp "$host_object_before" "$host_object"
+    set +e
+    "$host_binary"
+    host_status="$?"
+    set -e
+    if [ "$host_status" != "1" ]; then
+      echo "Expected canonical link-driver host-object binary to exit with status 1, got $host_status."
+      exit 1
+    fi
+
+    failure_request="$build_dir/expected-failure.link"
+    failure_binary="$build_dir/expected-failure-bin"
+    failure_binary_before="$build_dir/expected-failure.before"
+    failure_temp="$build_dir/.expected-failure-bin.phase9g-link.tmp"
+    failure_stdout_log="$build_dir/.expected-failure-bin.phase9g-link.stdout.log"
+    failure_stderr_log="$build_dir/.expected-failure-bin.phase9g-link.stderr.log"
+    failure_report="$build_dir/expected-failure-report.log"
+    printf '%s\n' 'preserved-final' >"$failure_binary"
+    cp "$failure_binary" "$failure_binary_before"
+    printf '%s\n' 'stale-temp' >"$failure_temp"
+    cat >"$failure_request" <<EOF
+format: gust.compiler_mir_link_request.v1
+output: expected-failure-bin
+object: function.o
+link_arg: -O0
+driver: $CC_BIN
+expected_result: failure
+EOF
+
+    "${cargo_cmd[@]}" compiler-mir-link-request "$failure_request" >"$failure_report"
+    rg -n -F 'classification: native_link_failure' "$failure_report" >/dev/null
+    rg -n -F 'expected_result: failure' "$failure_report" >/dev/null
+    rg -n -F 'matched_expectation: true' "$failure_report" >/dev/null
+    rg -n -F 'published: false' "$failure_report" >/dev/null
+    cmp "$failure_binary_before" "$failure_binary"
+    test -e "$failure_stdout_log"
+    test -e "$failure_stderr_log"
+    if [ -e "$failure_temp" ]; then
+      echo "Expected native link failure left its temporary executable behind."
+      exit 1
+    fi
+    cmp "$function_object_before" "$function_object"
+
+    missing_request="$build_dir/missing-input.link"
+    missing_log="$build_dir/missing-input.log"
+    cat >"$missing_request" <<EOF
+format: gust.compiler_mir_link_request.v1
+output: missing-parent/missing-bin
+object: missing-object.o
+c_source: success-shim.c
+driver: $CC_BIN
+expected_result: success
+EOF
+    set +e
+    "${cargo_cmd[@]}" compiler-mir-link-request "$missing_request" >"$missing_log" 2>&1
+    missing_status="$?"
+    set -e
+    if [ "$missing_status" = "0" ]; then
+      echo "Expected a missing declared object input to reject before linking."
+      exit 1
+    fi
+    rg -n -F 'compiler MIR link object input does not exist or cannot be read' "$missing_log" >/dev/null
+    if [ -e "$build_dir/missing-parent" ]; then
+      echo "Missing-input rejection created the requested output parent."
+      exit 1
+    fi
+
+    publication_target="$build_dir/publication-target"
+    publication_request="$build_dir/publication-failure.link"
+    publication_log="$build_dir/publication-failure.log"
+    publication_temp="$build_dir/.publication-target.phase9g-link.tmp"
+    publication_stdout_log="$build_dir/.publication-target.phase9g-link.stdout.log"
+    publication_stderr_log="$build_dir/.publication-target.phase9g-link.stderr.log"
+    mkdir "$publication_target"
+    cat >"$publication_request" <<EOF
+format: gust.compiler_mir_link_request.v1
+output: publication-target
+object: function.o
+c_source: success-shim.c
+link_arg: -O0
+driver: $CC_BIN
+expected_result: success
+EOF
+    set +e
+    "${cargo_cmd[@]}" compiler-mir-link-request "$publication_request" >"$publication_log" 2>&1
+    publication_status="$?"
+    set -e
+    if [ "$publication_status" = "0" ]; then
+      echo "Expected publication onto an existing directory to fail."
+      exit 1
+    fi
+    rg -n -F 'compiler MIR link classification executable_publication_failure' "$publication_log" >/dev/null
+    test -d "$publication_target"
+    test -e "$publication_stdout_log"
+    test -e "$publication_stderr_log"
+    if [ -e "$publication_temp" ]; then
+      echo "Executable publication failure left its temporary executable behind."
+      exit 1
+    fi
+    cmp "$function_object_before" "$function_object"
+
+    rg -n -F 'Steps 9 and 10 add one canonical experimental linker driver without migrating existing native lanes yet.' "$readme_doc" >/dev/null
+    rg -n -F '`gust.compiler_mir_link_request.v1` keeps linking separate from object emission.' "$readme_doc" >/dev/null
+    rg -n -F 'The driver never constructs a shell command string.' "$readme_doc" >/dev/null
+    rg -n -F 'Executable publication is transactional.' "$readme_doc" >/dev/null
+    rg -n -F 'MIR syntax, object emission, the 33/33/0/0/17 inventory, translator' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G link-driver contract passed: structured requests become direct Command arguments, inputs validate before spawn, logs persist, expected native failures are classified, and only successful links publish executables."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:

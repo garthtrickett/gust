@@ -527,6 +527,35 @@ MIR syntax, the 33/33/0/0/17 inventory, translator seeds, default backend
 state, and production routing remain unchanged. The next milestone is the
 canonical experimental link driver.
 
+Steps 9 and 10 add one canonical experimental linker driver without migrating
+existing native lanes yet. `gust.compiler_mir_link_request.v1` keeps linking
+separate from object emission. A request names the final executable, preserves
+the order of object inputs, selects either an optional C source or precompiled
+host object, carries additional libraries and one-argument-per-record linker
+options, selects the C compiler/link driver, applies explicit environment
+overrides, and declares whether linking is expected to succeed or fail. Relative
+paths are resolved from the request file rather than from hidden process state.
+
+The driver never constructs a shell command string. It validates every declared
+input before creating an output parent, maps each structured field directly to
+`std::process::Command`, reserves executable output control for itself, captures
+stdout and stderr into deterministic sibling logs, and classifies the spawned
+process as `linked` or `native_link_failure`. An expected native link failure is
+a successful test outcome but never publishes an executable.
+
+Executable publication is transactional. The linker receives only a hidden
+same-directory temporary output path. A successful expected link must create a
+nonempty temporary executable before rename to the final path. Spawn failures,
+unexpected results, native-link failures, and publication failures remove that
+owned temporary path while preserving existing final artifacts, all declared
+input objects, and captured logs.
+
+MIR syntax, object emission, the 33/33/0/0/17 inventory, translator seeds,
+default backend state, and production routing remain unchanged. Existing
+lane-owned linker commands are intentionally frozen until the later Phase 9G
+migration patches. The next milestone is stable pipeline-stage and link-failure
+classification.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local
