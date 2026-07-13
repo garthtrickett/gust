@@ -609,6 +609,40 @@ remain unchanged.
 No new ingestion fixture format, production route, or default backend is
 introduced. The next milestone is the negative link and artifact matrix.
 
+Steps 15 and 16 freeze the negative object-input and native-link matrix.
+Structurally malformed inputs reject as `link_input_validation/invalid_object`
+before any linker process starts. Missing paths reject as
+`link_input_validation/missing_input`.
+Valid alternate-format and alternate-architecture relocatable objects reject as `link_input_validation/unsupported_target`.
+The shared inspector checks format, architecture, pointer width, and endianness
+against the native target after first establishing that the input is a
+structurally valid relocatable object.
+
+The experimental object crate enables its write API only for deterministic
+negative test artifacts. The helper command emits a nonempty text section and
+named symbol in a structurally valid alternate-format or
+alternate-architecture object. It adds no MIR syntax, fixture format, compiler
+route, or production dependency.
+
+A fixture-derived symbol contract mismatch remains
+`object_verification/invalid_object` and is demonstrated without entering the
+link driver.
+Native unresolved-symbol, duplicate-symbol, and rejected-option cases are classified only after the linker process completes.
+The guards assert the stable report stage and kind and merely require the
+deterministic stderr log to remain nonempty; native linker wording is retained
+for debugging but is not used by the guard as the classification API.
+
+A missing driver and a present but non-executable driver both reject as
+`linker_spawn/linker_unavailable`. A blocked output parent rejects as
+`executable_publication/output_not_writable` before spawn because executable
+path ownership belongs to the transactional publisher rather than to native
+link classification. Every rejection leaves no final executable and no owned
+temporary executable, while every valid Cranelift input remains byte-identical.
+
+ABI mismatches that link successfully are not link-stage failures and remain outside Phase 9G.
+The next milestone migrates the Phase 9C through Phase 9E native guards onto
+the canonical object inspection and link driver.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

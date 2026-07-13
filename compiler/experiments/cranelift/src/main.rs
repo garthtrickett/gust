@@ -14,7 +14,13 @@ use cranelift_codegen::settings::{self, Configurable};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{FuncId, Linkage, Module, default_libcall_names};
 use cranelift_object::{ObjectBuilder, ObjectModule};
-use object::{Object, ObjectSection, ObjectSymbol, RelocationTarget, SectionKind, SymbolKind};
+use object::write::{
+    Object as WriteObject, StandardSection, Symbol as WriteSymbol, SymbolSection,
+};
+use object::{
+    Architecture, BinaryFormat, Endianness, Object, ObjectSection, ObjectSymbol,
+    RelocationTarget, SectionKind, SymbolFlags, SymbolKind, SymbolScope,
+};
 
 const RETURN_INT_SYMBOL: &str = "tiny_cranelift_return_int";
 const LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_local_binding_read";
@@ -1899,6 +1905,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                 Path::new(&object_path),
             )
         }
+        "compiler-mir-write-negative-object-fixture" => {
+            let Some(fixture_kind) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(output_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            write_compiler_mir_negative_object_fixture(
+                &fixture_kind,
+                Path::new(&output_path),
+            )
+        }
         "compiler-mir-link-request" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -3034,6 +3055,7 @@ fn usage_error() -> IoError {
             "  gust-cranelift-experiment compiler-mir-object-target-contract\n",
             "  gust-cranelift-experiment compiler-mir-inspect-object <input.o>\n",
             "  gust-cranelift-experiment compiler-mir-verify-object-contract <input.mir> <input.o>\n",
+            "  gust-cranelift-experiment compiler-mir-write-negative-object-fixture <wrong-format|unsupported-architecture> <output.o>\n",
             "  gust-cranelift-experiment compiler-mir-link-request <request.link>\n",
             "  gust-cranelift-experiment compiler-mir-ingestion-object <input.mir> <output.o>\n",
             "  gust-cranelift-experiment compiler-mir-validate-fixture <input.mir>\n",
@@ -14330,6 +14352,39 @@ struct CompilerMirObjectTargetContract {
     is_pic: bool,
 }
 
+fn compiler_mir_object_architecture_from_target_name(
+    target_architecture: &str,
+) -> Result<Architecture, Box<dyn Error>> {
+    let normalized = target_architecture.to_ascii_lowercase();
+    let architecture = match normalized.as_str() {
+        "x64" | "x86_64" | "x86-64" => Architecture::X86_64,
+        "i386" | "i486" | "i586" | "i686" | "x86" => Architecture::I386,
+        "aarch64" | "aarch64_be" => Architecture::Aarch64,
+        "arm" => Architecture::Arm,
+        "riscv32" | "riscv32gc" | "riscv32imac" => Architecture::Riscv32,
+        "riscv64" | "riscv64gc" | "riscv64imac" => Architecture::Riscv64,
+        "s390x" => Architecture::S390x,
+        "powerpc" | "ppc" => Architecture::PowerPc,
+        "powerpc64" | "powerpc64le" | "ppc64" | "ppc64le" => {
+            Architecture::PowerPc64
+        }
+        "loongarch64" => Architecture::LoongArch64,
+        other if other.starts_with("armv") => Architecture::Arm,
+        other if other.starts_with("riscv32") => Architecture::Riscv32,
+        other if other.starts_with("riscv64") => Architecture::Riscv64,
+        other => {
+            return Err(IoError::new(
+                ErrorKind::Unsupported,
+                format!(
+                    "canonical compiler MIR object target architecture is unsupported: {other}"
+                ),
+            )
+            .into());
+        }
+    };
+    Ok(architecture)
+}
+
 fn build_compiler_mir_native_object_builder(
     object_name: &str,
 ) -> Result<(ObjectBuilder, CompilerMirObjectTargetContract), Box<dyn Error>> {
@@ -14340,9 +14395,13 @@ fn build_compiler_mir_native_object_builder(
     let isa_builder =
         cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
     let isa = isa_builder.finish(flags)?;
+    let object_architecture =
+        compiler_mir_object_architecture_from_target_name(
+            &isa.triple().architecture.to_string(),
+        )?;
     let target_contract = CompilerMirObjectTargetContract {
         triple: isa.triple().to_string(),
-        architecture: isa.name().to_string(),
+        architecture: format!("{object_architecture:?}"),
         pointer_width_bits: isa.pointer_bits(),
         endianness: format!("{:?}", isa.endianness()),
         object_format: format!("{:?}", isa.triple().binary_format),
@@ -14531,6 +14590,53 @@ fn validate_compiler_mir_object_symbol_contract(
     Ok(())
 }
 
+fn validate_compiler_mir_object_target_contract(
+    report: &CompilerMirObjectInspectionReport,
+    target_contract: &CompilerMirObjectTargetContract,
+) -> Result<(), Box<dyn Error>> {
+    if report.binary_format != target_contract.object_format {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR object format mismatch: target expected {}, object contains {}",
+                target_contract.object_format, report.binary_format
+            ),
+        )
+        .into());
+    }
+    if report.architecture != target_contract.architecture {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR object architecture mismatch: target expected {}, object contains {}",
+                target_contract.architecture, report.architecture
+            ),
+        )
+        .into());
+    }
+    if report.pointer_width_bits != target_contract.pointer_width_bits {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR object pointer width mismatch: target expected {}, object contains {}",
+                target_contract.pointer_width_bits, report.pointer_width_bits
+            ),
+        )
+        .into());
+    }
+    if report.endianness != target_contract.endianness {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR object endianness mismatch: target expected {}, object contains {}",
+                target_contract.endianness, report.endianness
+            ),
+        )
+        .into());
+    }
+    Ok(())
+}
+
 fn inspect_compiler_mir_object_artifact(
     object_bytes: &[u8],
     target_contract: Option<&CompilerMirObjectTargetContract>,
@@ -14699,36 +14805,10 @@ fn inspect_compiler_mir_object_artifact(
     }
 
     if let Some(target_contract) = target_contract {
-        if report.binary_format != target_contract.object_format {
-            return Err(IoError::new(
-                ErrorKind::InvalidData,
-                format!(
-                    "compiler MIR object format mismatch: target expected {}, object contains {}",
-                    target_contract.object_format, report.binary_format
-                ),
-            )
-            .into());
-        }
-        if report.pointer_width_bits != target_contract.pointer_width_bits {
-            return Err(IoError::new(
-                ErrorKind::InvalidData,
-                format!(
-                    "compiler MIR object pointer width mismatch: target expected {}, object contains {}",
-                    target_contract.pointer_width_bits, report.pointer_width_bits
-                ),
-            )
-            .into());
-        }
-        if report.endianness != target_contract.endianness {
-            return Err(IoError::new(
-                ErrorKind::InvalidData,
-                format!(
-                    "compiler MIR object endianness mismatch: target expected {}, object contains {}",
-                    target_contract.endianness, report.endianness
-                ),
-            )
-            .into());
-        }
+        validate_compiler_mir_object_target_contract(
+            &report,
+            target_contract,
+        )?;
     }
 
     if let Some(symbol_contract) = symbol_contract {
@@ -14879,6 +14959,155 @@ fn verify_compiler_mir_object_contract_path(
         CompilerMirPipelineFailureKind::InvalidObject,
     )?;
     print_compiler_mir_object_inspection_report(&report);
+    Ok(())
+}
+
+fn compiler_mir_binary_format_from_contract_name(
+    format_name: &str,
+) -> Result<BinaryFormat, Box<dyn Error>> {
+    match format_name {
+        "Elf" => Ok(BinaryFormat::Elf),
+        "Coff" => Ok(BinaryFormat::Coff),
+        "Macho" => Ok(BinaryFormat::MachO),
+        other => Err(IoError::new(
+            ErrorKind::Unsupported,
+            format!(
+                "compiler MIR negative object fixture cannot map object format {other}"
+            ),
+        )
+        .into()),
+    }
+}
+
+fn compiler_mir_endianness_from_contract_name(
+    endianness: &str,
+) -> Result<Endianness, Box<dyn Error>> {
+    match endianness {
+        "Little" => Ok(Endianness::Little),
+        "Big" => Ok(Endianness::Big),
+        other => Err(IoError::new(
+            ErrorKind::Unsupported,
+            format!(
+                "compiler MIR negative object fixture cannot map endianness {other}"
+            ),
+        )
+        .into()),
+    }
+}
+
+fn compiler_mir_alternate_object_architecture(
+    architecture: Architecture,
+) -> Architecture {
+    match architecture {
+        Architecture::X86_64 => Architecture::Aarch64,
+        Architecture::Aarch64 => Architecture::X86_64,
+        Architecture::I386 => Architecture::Arm,
+        Architecture::Arm => Architecture::I386,
+        Architecture::Riscv32 => Architecture::I386,
+        Architecture::Riscv64 => Architecture::X86_64,
+        Architecture::PowerPc => Architecture::I386,
+        Architecture::PowerPc64 => Architecture::X86_64,
+        Architecture::S390x => Architecture::X86_64,
+        Architecture::LoongArch64 => Architecture::X86_64,
+        _ => Architecture::X86_64,
+    }
+}
+
+fn write_compiler_mir_negative_object_fixture(
+    fixture_kind: &str,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let (_object_builder, target_contract) =
+        build_compiler_mir_native_object_builder(
+            "gust_cranelift_negative_object_fixture_probe",
+        )?;
+    let native_format =
+        compiler_mir_binary_format_from_contract_name(
+            &target_contract.object_format,
+        )?;
+    let native_architecture =
+        compiler_mir_object_architecture_from_target_name(
+            &target_contract.architecture,
+        )?;
+    let native_endianness =
+        compiler_mir_endianness_from_contract_name(
+            &target_contract.endianness,
+        )?;
+
+    let (fixture_format, fixture_architecture, fixture_endianness) =
+        match fixture_kind {
+            "wrong-format" => {
+                let alternate_format = match native_format {
+                    BinaryFormat::Elf => BinaryFormat::Coff,
+                    BinaryFormat::Coff | BinaryFormat::MachO => {
+                        BinaryFormat::Elf
+                    }
+                    _ => {
+                        return Err(IoError::new(
+                            ErrorKind::Unsupported,
+                            "compiler MIR negative object fixture requires Elf, Coff, or Macho",
+                        )
+                        .into());
+                    }
+                };
+                let alternate_endianness =
+                    if alternate_format == BinaryFormat::Coff {
+                        Endianness::Little
+                    } else {
+                        native_endianness
+                    };
+                (
+                    alternate_format,
+                    native_architecture,
+                    alternate_endianness,
+                )
+            }
+            "unsupported-architecture" => (
+                native_format,
+                compiler_mir_alternate_object_architecture(
+                    native_architecture,
+                ),
+                native_endianness,
+            ),
+            other => {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "compiler MIR negative object fixture kind must be wrong-format or unsupported-architecture, got {other}"
+                    ),
+                )
+                .into());
+            }
+        };
+
+    let mut object = WriteObject::new(
+        fixture_format,
+        fixture_architecture,
+        fixture_endianness,
+    );
+    let text_section = object.section_id(StandardSection::Text);
+    let code = [0u8];
+    let symbol_offset =
+        object.append_section_data(text_section, &code, 1);
+    object.add_symbol(WriteSymbol {
+        name: b"phase9g_negative_object_probe".to_vec(),
+        value: symbol_offset,
+        size: code.len() as u64,
+        kind: SymbolKind::Text,
+        scope: SymbolScope::Linkage,
+        weak: false,
+        section: SymbolSection::Section(text_section),
+        flags: SymbolFlags::None,
+    });
+    let object_bytes = object.write()?;
+
+    if let Some(parent) = output_path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(output_path, object_bytes)?;
     Ok(())
 }
 
@@ -15234,6 +15463,7 @@ fn validate_compiler_mir_link_input(
     input_kind: &str,
     input_path: &Path,
     inspect_object: bool,
+    target_contract: Option<&CompilerMirObjectTargetContract>,
 ) -> Result<(), Box<dyn Error>> {
     let metadata = fs::metadata(input_path).map_err(|error| {
         compiler_mir_pipeline_error(
@@ -15266,7 +15496,7 @@ fn validate_compiler_mir_link_input(
                 ),
             )
         })?;
-        compiler_mir_pipeline_wrap_box(
+        let inspection_report = compiler_mir_pipeline_wrap_box(
             inspect_compiler_mir_object_artifact(
                 &object_bytes,
                 None,
@@ -15275,6 +15505,16 @@ fn validate_compiler_mir_link_input(
             CompilerMirPipelineStage::LinkInputValidation,
             CompilerMirPipelineFailureKind::InvalidObject,
         )?;
+        if let Some(target_contract) = target_contract {
+            compiler_mir_pipeline_wrap_box(
+                validate_compiler_mir_object_target_contract(
+                    &inspection_report,
+                    target_contract,
+                ),
+                CompilerMirPipelineStage::LinkInputValidation,
+                CompilerMirPipelineFailureKind::UnsupportedTarget,
+            )?;
+        }
     }
     Ok(())
 }
@@ -15350,14 +15590,37 @@ fn validate_compiler_mir_link_request(
         }
     }
 
+    let (_target_probe, target_contract) =
+        compiler_mir_pipeline_wrap_box(
+            build_compiler_mir_native_object_builder(
+                "gust_cranelift_link_input_validation",
+            ),
+            CompilerMirPipelineStage::LinkInputValidation,
+            CompilerMirPipelineFailureKind::UnsupportedTarget,
+        )?;
     for input_path in &request.ordered_object_inputs {
-        validate_compiler_mir_link_input("object", input_path, true)?;
+        validate_compiler_mir_link_input(
+            "object",
+            input_path,
+            true,
+            Some(&target_contract),
+        )?;
     }
     if let Some(c_source) = request.c_source.as_deref() {
-        validate_compiler_mir_link_input("C source", c_source, false)?;
+        validate_compiler_mir_link_input(
+            "C source",
+            c_source,
+            false,
+            None,
+        )?;
     }
     if let Some(host_object) = request.host_object.as_deref() {
-        validate_compiler_mir_link_input("host object", host_object, true)?;
+        validate_compiler_mir_link_input(
+            "host object",
+            host_object,
+            true,
+            Some(&target_contract),
+        )?;
     }
 
     let temp_path =

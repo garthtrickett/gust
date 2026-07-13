@@ -1677,6 +1677,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-link-driver-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-pipeline-failure-classification' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-positive-link-matrix' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-negative-link-matrix' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -9208,7 +9209,7 @@ guard-cranelift-phase9g-object-inspection-contract:
     rg -n -F 'allowed_cranelift_phase9g_object_inspection_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_object_inspection_next_milestone: canonical_link_driver_contract' "$manifest_doc" >/dev/null
 
-    rg -n -F 'object = { version = "=0.39.1", default-features = false, features = ["read"] }' "$cargo_manifest" >/dev/null
+    rg -n -F 'object = { version = "=0.39.1", default-features = false, features = ["read", "write"] }' "$cargo_manifest" >/dev/null
     cargo_package_block="$(sed -n '/^name = "gust-cranelift-experiment"$/,/^$/p' "$cargo_lock")"
     printf '%s\n' "$cargo_package_block" | rg -n -F '"object",' >/dev/null
 
@@ -10295,6 +10296,361 @@ guard-cranelift-phase9g-positive-link-matrix:
     fi
 
     echo "✅ Phase 9G positive link matrix passed: inspected canonical objects link as normal PIEs across source and precompiled hosts, multiple exports and cross-object resolution work in both object orders, executables run, and all inputs remain unchanged."
+
+
+guard-cranelift-phase9g-negative-link-matrix:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G negative object and native-link matrix..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
+    import_free_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    one_import_fixture="compiler/fixtures/phase9f_unresolved_import_object.mir"
+    multi_import_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
+    build_dir="build/guards/cranelift_phase9g_negative_link_matrix"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9g-positive-link-matrix
+
+    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$import_free_fixture" "$one_import_fixture" "$multi_import_fixture"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 9G negative-link input: $required_file"
+        exit 1
+      fi
+    done
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_NEGATIVE_LINK_MATRIX_GUARD: guard-cranelift-phase9g-negative-link-matrix' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_status: phase9g_object_and_native_link_rejection_matrix' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_prerequisite: guard-cranelift-phase9g-positive-link-matrix' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_object_matrix: empty_truncated_non_object_text_wrong_object_format_missing_object_path_unsupported_architecture_and_fixture_symbol_contract_mismatch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_native_matrix: one_unresolved_symbol_multiple_unresolved_symbols_duplicate_export_across_objects_missing_link_driver_non_executable_link_driver_blocked_output_directory_and_linker_option_rejection' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_preflight_policy: parse_and_structure_failures_are_link_input_validation_invalid_object_target_format_architecture_width_or_endianness_mismatches_are_link_input_validation_unsupported_target_and_missing_paths_are_link_input_validation_missing_input' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_symbol_contract_policy: fixture_expected_symbol_mismatch_is_object_verification_invalid_object_before_any_link_request' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_native_policy: unresolved_and_duplicate_symbols_and_rejected_options_are_classified_only_from_captured_native_link_results' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_spawn_policy: missing_and_non_executable_drivers_are_linker_spawn_linker_unavailable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_output_policy: blocked_output_parent_is_executable_publication_output_not_writable_before_linker_spawn' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_artifact_policy: no_final_or_owned_temporary_executable_survives_any_rejection_and_all_valid_input_objects_remain_byte_identical' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_diagnostic_policy: stable_stage_and_kind_are_the_API_complete_native_stderr_is_preserved_in_the_deterministic_log_without_guard_side_message_inference' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_abi_policy: ABI_mismatches_that_link_successfully_are_not_link_stage_failures_and_remain_outside_Phase9G' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_negative_link_next_milestone: migrate_phase9c_through_phase9e_native_guards' "$manifest_doc" >/dev/null
+
+    rg -n -F 'object = { version = "=0.39.1", default-features = false, features = ["read", "write"] }' "$cargo_manifest" >/dev/null
+    rg -n -F 'Object as WriteObject' "$source_file" >/dev/null
+    rg -n -F 'fn validate_compiler_mir_object_target_contract(' "$source_file" >/dev/null
+    rg -n -F 'compiler MIR object architecture mismatch: target expected' "$source_file" >/dev/null
+    rg -n -F 'fn write_compiler_mir_negative_object_fixture(' "$source_file" >/dev/null
+    rg -n -F '"compiler-mir-write-negative-object-fixture" => {' "$source_file" >/dev/null
+    rg -n -F 'compiler-mir-write-negative-object-fixture <wrong-format|unsupported-architecture> <output.o>' "$source_file" >/dev/null
+
+    input_validator_body="$(sed -n '/^fn validate_compiler_mir_link_input(/,/^fn validate_compiler_mir_link_request(/p' "$source_file")"
+    structural_line="$(printf '%s\n' "$input_validator_body" | rg -n -F 'inspect_compiler_mir_object_artifact(' | head -n1 | cut -d: -f1)"
+    target_line="$(printf '%s\n' "$input_validator_body" | rg -n -F 'validate_compiler_mir_object_target_contract(' | head -n1 | cut -d: -f1)"
+    if [ -z "$structural_line" ] || [ -z "$target_line" ] || [ "$structural_line" -ge "$target_line" ]; then
+      echo "Phase 9G link preflight must establish object structure before checking native target compatibility."
+      exit 1
+    fi
+    printf '%s\n' "$input_validator_body" | rg -n -F 'CompilerMirPipelineFailureKind::InvalidObject' >/dev/null
+    printf '%s\n' "$input_validator_body" | rg -n -F 'CompilerMirPipelineFailureKind::UnsupportedTarget' >/dev/null
+
+    cargo_cmd=(cargo run --quiet --manifest-path "$cargo_manifest" --locked --)
+    CC_BIN="${CC:-cc}"
+    valid_object="$build_dir/valid.o"
+    valid_before="$build_dir/valid.before.o"
+    unresolved_one_object="$build_dir/unresolved-one.o"
+    unresolved_one_before="$build_dir/unresolved-one.before.o"
+    unresolved_many_object="$build_dir/unresolved-many.o"
+    unresolved_many_before="$build_dir/unresolved-many.before.o"
+    duplicate_a_object="$build_dir/duplicate-a.o"
+    duplicate_a_before="$build_dir/duplicate-a.before.o"
+    duplicate_b_object="$build_dir/duplicate-b.o"
+    duplicate_b_before="$build_dir/duplicate-b.before.o"
+
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$import_free_fixture" "$valid_object"
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$import_free_fixture" "$valid_object" >"$build_dir/valid-inspection.log"
+    cp "$valid_object" "$valid_before"
+
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$one_import_fixture" "$unresolved_one_object"
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$one_import_fixture" "$unresolved_one_object" >"$build_dir/unresolved-one-inspection.log"
+    rg -n -F 'undefined_symbol: phase9f_missing_host_symbol' "$build_dir/unresolved-one-inspection.log" >/dev/null
+    cp "$unresolved_one_object" "$unresolved_one_before"
+
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$multi_import_fixture" "$unresolved_many_object"
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$multi_import_fixture" "$unresolved_many_object" >"$build_dir/unresolved-many-inspection.log"
+    for unresolved_symbol in phase9f_completeness_host_zero phase9f_completeness_host_add3 phase9f_completeness_host_positive; do
+      rg -n -F "undefined_symbol: $unresolved_symbol" "$build_dir/unresolved-many-inspection.log" >/dev/null
+    done
+    cp "$unresolved_many_object" "$unresolved_many_before"
+
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$import_free_fixture" "$duplicate_a_object"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$import_free_fixture" "$duplicate_b_object"
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$import_free_fixture" "$duplicate_a_object" >"$build_dir/duplicate-a-inspection.log"
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$import_free_fixture" "$duplicate_b_object" >"$build_dir/duplicate-b-inspection.log"
+    cp "$duplicate_a_object" "$duplicate_a_before"
+    cp "$duplicate_b_object" "$duplicate_b_before"
+
+    linker_marker="$build_dir/forbidden-linker-invoked"
+    forbidden_linker="$build_dir/forbidden-linker"
+    printf '#!/usr/bin/env bash\ntouch "%s"\nexit 99\n' "$linker_marker" >"$forbidden_linker"
+    chmod +x "$forbidden_linker"
+
+    expect_failure_line() {
+      local label="$1"
+      local expected_stage="$2"
+      local expected_kind="$3"
+      shift 3
+      local stdout_capture="$build_dir/${label}.stdout"
+      local stderr_capture="$build_dir/${label}.stderr"
+      set +e
+      "$@" >"$stdout_capture" 2>"$stderr_capture"
+      local status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Expected classified rejection for $label."
+        cat "$stdout_capture"
+        cat "$stderr_capture"
+        exit 1
+      fi
+      rg -n -F "gust_pipeline_failure: stage=$expected_stage kind=$expected_kind" "$stderr_capture" >/dev/null
+    }
+
+    assert_prelink_failure() {
+      local label="$1"
+      local object_path="$2"
+      local expected_kind="$3"
+      local request="$build_dir/${label}.link"
+      local final_path="$build_dir/${label}-bin"
+      local temp_path="$build_dir/.${label}-bin.phase9g-link.tmp"
+      local stdout_log="$build_dir/.${label}-bin.phase9g-link.stdout.log"
+      local stderr_log="$build_dir/.${label}-bin.phase9g-link.stderr.log"
+      rm -f "$linker_marker" "$final_path" "$temp_path" "$stdout_log" "$stderr_log"
+      printf '%s\n' \
+        'format: gust.compiler_mir_link_request.v1' \
+        "output: ${label}-bin" \
+        "object: $(basename "$object_path")" \
+        "driver: $forbidden_linker" \
+        'expected_result: success' >"$request"
+      expect_failure_line "$label" link_input_validation "$expected_kind" \
+        "${cargo_cmd[@]}" compiler-mir-link-request "$request"
+      test ! -e "$linker_marker"
+      test ! -e "$final_path"
+      test ! -e "$temp_path"
+      test ! -e "$stdout_log"
+      test ! -e "$stderr_log"
+    }
+
+    empty_object="$build_dir/empty.o"
+    truncated_object="$build_dir/truncated.o"
+    text_object="$build_dir/not-an-object.o"
+    wrong_format_object="$build_dir/wrong-format.o"
+    unsupported_architecture_object="$build_dir/unsupported-architecture.o"
+    : >"$empty_object"
+    head -c 32 "$valid_object" >"$truncated_object"
+    printf '%s\n' 'this is deliberately not an object file' >"$text_object"
+    "${cargo_cmd[@]}" compiler-mir-write-negative-object-fixture wrong-format "$wrong_format_object"
+    "${cargo_cmd[@]}" compiler-mir-write-negative-object-fixture unsupported-architecture "$unsupported_architecture_object"
+    "${cargo_cmd[@]}" compiler-mir-object-target-contract >"$build_dir/native-target.log"
+    "${cargo_cmd[@]}" compiler-mir-inspect-object "$wrong_format_object" >"$build_dir/wrong-format-structural.log"
+    "${cargo_cmd[@]}" compiler-mir-inspect-object "$unsupported_architecture_object" >"$build_dir/unsupported-architecture-structural.log"
+    rg -n -F 'object_kind: Relocatable' "$build_dir/wrong-format-structural.log" >/dev/null
+    rg -n -F 'has_code_section: true' "$build_dir/wrong-format-structural.log" >/dev/null
+    rg -n -F 'object_kind: Relocatable' "$build_dir/unsupported-architecture-structural.log" >/dev/null
+    rg -n -F 'has_code_section: true' "$build_dir/unsupported-architecture-structural.log" >/dev/null
+    native_format="$(awk '/^object_format:/ { print $2 }' "$build_dir/native-target.log")"
+    native_architecture="$(awk '/^architecture:/ { print $2 }' "$build_dir/native-target.log")"
+    wrong_format="$(awk '/^binary_format:/ { print $2 }' "$build_dir/wrong-format-structural.log")"
+    wrong_format_architecture="$(awk '/^architecture:/ { print $2 }' "$build_dir/wrong-format-structural.log")"
+    unsupported_format="$(awk '/^binary_format:/ { print $2 }' "$build_dir/unsupported-architecture-structural.log")"
+    unsupported_architecture="$(awk '/^architecture:/ { print $2 }' "$build_dir/unsupported-architecture-structural.log")"
+    if [ -z "$native_format" ] || [ -z "$native_architecture" ] || [ "$wrong_format" = "$native_format" ] || [ "$wrong_format_architecture" != "$native_architecture" ] || [ "$unsupported_format" != "$native_format" ] || [ "$unsupported_architecture" = "$native_architecture" ]; then
+      echo "Negative object fixtures did not isolate alternate format and alternate architecture as intended."
+      exit 1
+    fi
+    cp "$wrong_format_object" "$build_dir/wrong-format.before.o"
+    cp "$unsupported_architecture_object" "$build_dir/unsupported-architecture.before.o"
+
+    assert_prelink_failure empty-object "$empty_object" invalid_object
+    assert_prelink_failure truncated-object "$truncated_object" invalid_object
+    assert_prelink_failure text-object "$text_object" invalid_object
+    assert_prelink_failure wrong-format "$wrong_format_object" unsupported_target
+    assert_prelink_failure unsupported-architecture "$unsupported_architecture_object" unsupported_target
+    assert_prelink_failure missing-object "$build_dir/missing.o" missing_input
+
+    expect_failure_line symbol-contract-mismatch object_verification invalid_object \
+      "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$one_import_fixture" "$valid_object"
+    cmp "$valid_before" "$valid_object"
+    cmp "$build_dir/wrong-format.before.o" "$wrong_format_object"
+    cmp "$build_dir/unsupported-architecture.before.o" "$unsupported_architecture_object"
+
+    return_main="$build_dir/return-main.c"
+    unresolved_one_main="$build_dir/unresolved-one-main.c"
+    unresolved_many_main="$build_dir/unresolved-many-main.c"
+    duplicate_main="$build_dir/duplicate-main.c"
+    printf '%s\n' \
+      'extern int tiny_native_backend_compiler_mir_ingested_return_int(void);' \
+      'int main(void) { return tiny_native_backend_compiler_mir_ingested_return_int(); }' >"$return_main"
+    printf '%s\n' \
+      'extern int phase9f_unresolved_import_entry(void);' \
+      'int main(void) { return phase9f_unresolved_import_entry(); }' >"$unresolved_one_main"
+    printf '%s\n' \
+      'extern int phase9f_completeness_entry(int);' \
+      'int main(void) { return phase9f_completeness_entry(5); }' >"$unresolved_many_main"
+    printf '%s\n' \
+      'extern int tiny_native_backend_compiler_mir_ingested_return_int(void);' \
+      'int main(void) { return tiny_native_backend_compiler_mir_ingested_return_int(); }' >"$duplicate_main"
+
+    assert_native_failure() {
+      local label="$1"
+      local expected_kind="$2"
+      local request="$build_dir/${label}.link"
+      local report="$build_dir/${label}.report"
+      local final_path="$build_dir/${label}-bin"
+      local temp_path="$build_dir/.${label}-bin.phase9g-link.tmp"
+      local stdout_log="$build_dir/.${label}-bin.phase9g-link.stdout.log"
+      local stderr_log="$build_dir/.${label}-bin.phase9g-link.stderr.log"
+      "${cargo_cmd[@]}" compiler-mir-link-request "$request" >"$report"
+      rg -n -F 'classification: native_link_failure' "$report" >/dev/null
+      rg -n -F 'pipeline_stage: native_link' "$report" >/dev/null
+      rg -n -F "failure_kind: $expected_kind" "$report" >/dev/null
+      rg -n -F "gust_pipeline_failure: stage=native_link kind=$expected_kind" "$report" >/dev/null
+      rg -n -F "expected_failure_kind: $expected_kind" "$report" >/dev/null
+      rg -n -F 'matched_expectation: true' "$report" >/dev/null
+      rg -n -F 'published: false' "$report" >/dev/null
+      if rg -n -F 'exit_code: none' "$report" >/dev/null; then
+        echo "Native-link rejection $label did not preserve the linker exit status."
+        exit 1
+      fi
+      test ! -e "$final_path"
+      test ! -e "$temp_path"
+      test -e "$stdout_log"
+      test -s "$stderr_log"
+    }
+
+    unresolved_one_request="$build_dir/unresolved-one.link"
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: unresolved-one-bin' \
+      'object: unresolved-one.o' \
+      'c_source: unresolved-one-main.c' \
+      'link_arg: -fPIE' \
+      'link_arg: -pie' \
+      "driver: $CC_BIN" \
+      'expected_result: failure' \
+      'expected_failure_kind: unresolved_symbol' >"$unresolved_one_request"
+    assert_native_failure unresolved-one unresolved_symbol
+
+    unresolved_many_request="$build_dir/unresolved-many.link"
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: unresolved-many-bin' \
+      'object: unresolved-many.o' \
+      'c_source: unresolved-many-main.c' \
+      'link_arg: -fPIE' \
+      'link_arg: -pie' \
+      "driver: $CC_BIN" \
+      'expected_result: failure' \
+      'expected_failure_kind: unresolved_symbol' >"$unresolved_many_request"
+    assert_native_failure unresolved-many unresolved_symbol
+
+    duplicate_request="$build_dir/duplicate-export.link"
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: duplicate-export-bin' \
+      'object: duplicate-a.o' \
+      'object: duplicate-b.o' \
+      'c_source: duplicate-main.c' \
+      'link_arg: -fPIE' \
+      'link_arg: -pie' \
+      "driver: $CC_BIN" \
+      'expected_result: failure' \
+      'expected_failure_kind: duplicate_symbol' >"$duplicate_request"
+    assert_native_failure duplicate-export duplicate_symbol
+
+    rejected_option_request="$build_dir/rejected-option.link"
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: rejected-option-bin' \
+      'object: valid.o' \
+      'c_source: return-main.c' \
+      'link_arg: --phase9g-intentionally-rejected-option' \
+      "driver: $CC_BIN" \
+      'expected_result: failure' \
+      'expected_failure_kind: linker_rejected_options' >"$rejected_option_request"
+    assert_native_failure rejected-option linker_rejected_options
+
+    assert_spawn_failure() {
+      local label="$1"
+      local driver="$2"
+      local request="$build_dir/${label}.link"
+      local final_path="$build_dir/${label}-bin"
+      local temp_path="$build_dir/.${label}-bin.phase9g-link.tmp"
+      local stdout_log="$build_dir/.${label}-bin.phase9g-link.stdout.log"
+      local stderr_log="$build_dir/.${label}-bin.phase9g-link.stderr.log"
+      printf '%s\n' \
+        'format: gust.compiler_mir_link_request.v1' \
+        "output: ${label}-bin" \
+        'object: valid.o' \
+        'c_source: return-main.c' \
+        "driver: $driver" \
+        'expected_result: success' >"$request"
+      expect_failure_line "$label" linker_spawn linker_unavailable \
+        "${cargo_cmd[@]}" compiler-mir-link-request "$request"
+      test ! -e "$final_path"
+      test ! -e "$temp_path"
+      test -e "$stdout_log"
+      test -s "$stderr_log"
+    }
+
+    assert_spawn_failure missing-link-driver "$build_dir/definitely-missing-linker"
+    non_executable_driver="$build_dir/non-executable-linker"
+    printf '%s\n' 'not an executable linker' >"$non_executable_driver"
+    chmod 0644 "$non_executable_driver"
+    assert_spawn_failure linker-spawn-failure "$non_executable_driver"
+
+    blocked_parent="$build_dir/blocked-output-directory"
+    printf '%s\n' 'this regular file blocks executable directory creation' >"$blocked_parent"
+    blocked_request="$build_dir/blocked-output.link"
+    rm -f "$linker_marker"
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: blocked-output-directory/final-bin' \
+      'object: valid.o' \
+      'c_source: return-main.c' \
+      "driver: $forbidden_linker" \
+      'expected_result: success' >"$blocked_request"
+    expect_failure_line blocked-output executable_publication output_not_writable \
+      "${cargo_cmd[@]}" compiler-mir-link-request "$blocked_request"
+    test ! -e "$linker_marker"
+    test ! -e "$blocked_parent/final-bin"
+    test ! -e "$blocked_parent/.final-bin.phase9g-link.tmp"
+
+    cmp "$valid_before" "$valid_object"
+    cmp "$unresolved_one_before" "$unresolved_one_object"
+    cmp "$unresolved_many_before" "$unresolved_many_object"
+    cmp "$duplicate_a_before" "$duplicate_a_object"
+    cmp "$duplicate_b_before" "$duplicate_b_object"
+
+    rg -n -F 'Steps 15 and 16 freeze the negative object-input and native-link matrix.' "$readme_doc" >/dev/null
+    rg -n -F 'Structurally malformed inputs reject as `link_input_validation/invalid_object`' "$readme_doc" >/dev/null
+    rg -n -F 'Valid alternate-format and alternate-architecture relocatable objects reject as `link_input_validation/unsupported_target`' "$readme_doc" >/dev/null
+    rg -n -F 'Native unresolved-symbol, duplicate-symbol, and rejected-option cases are classified only after the linker process completes.' "$readme_doc" >/dev/null
+    rg -n -F 'ABI mismatches that link successfully are not link-stage failures and remain outside Phase 9G.' "$readme_doc" >/dev/null
+
+    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
+    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
+    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
+    metadata_count="${metadata_count:-0}"
+    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected inventory after the Phase 9G negative link matrix: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
+      exit 1
+    fi
+
+    echo "✅ Phase 9G negative link matrix passed: malformed and incompatible objects reject before spawn, native linker failures retain stable classifications and diagnostic logs, no partial executable survives, and valid inputs remain unchanged."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
